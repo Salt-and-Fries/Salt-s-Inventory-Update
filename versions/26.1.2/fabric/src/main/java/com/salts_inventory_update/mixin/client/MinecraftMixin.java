@@ -49,4 +49,9 @@ public abstract class MinecraftMixin {
             }
         }
     }
+
+    @Inject(method = "pick", at = @At("TAIL"))
+    private void salts_inventory_update$pickDesktopCursorTarget(float tickProgress, CallbackInfo ci) {
+        InventoryDesktopScreen.updateDesktopCursorTarget((Minecraft) (Object) this);
+    }
 }

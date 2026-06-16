@@ -3,10 +3,15 @@ package com.salts_inventory_update.client;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -21,24 +26,26 @@ public final class CursorWorldInteraction {
 
     public static boolean startAttackAtCursor(Minecraft minecraft, double mouseX, double mouseY) {
         updateHitResultAtCursor(minecraft, mouseX, mouseY);
-        return ((MinecraftInvoker) minecraft).salts_inventory_update$startAttack();
+        return startAttack(minecraft);
     }
 
     public static void continueAttackAtCursor(Minecraft minecraft, double mouseX, double mouseY) {
         updateHitResultAtCursor(minecraft, mouseX, mouseY);
-        ((MinecraftInvoker) minecraft).salts_inventory_update$continueAttack(true);
+        continueAttack(minecraft);
     }
 
     public static boolean startAttackAtCrosshair(Minecraft minecraft) {
-        return ((MinecraftInvoker) minecraft).salts_inventory_update$startAttack();
+        return startAttack(minecraft);
     }
 
     public static void continueAttackAtCrosshair(Minecraft minecraft) {
-        ((MinecraftInvoker) minecraft).salts_inventory_update$continueAttack(true);
+        continueAttack(minecraft);
     }
 
     public static void stopAttack(Minecraft minecraft) {
-        ((MinecraftInvoker) minecraft).salts_inventory_update$continueAttack(false);
+        if (minecraft.gameMode != null) {
+            minecraft.gameMode.stopDestroyBlock();
+        }
     }
 
     public static void useAtCursor(Minecraft minecraft, double mouseX, double mouseY) {
@@ -46,8 +53,21 @@ public final class CursorWorldInteraction {
         ((MinecraftInvoker) minecraft).salts_inventory_update$startUseItem();
     }
 
+    public static void continueUseAtCursor(Minecraft minecraft, double mouseX, double mouseY) {
+        updateHitResultAtCursor(minecraft, mouseX, mouseY);
+        if (shouldRepeatUse(minecraft)) {
+            ((MinecraftInvoker) minecraft).salts_inventory_update$startUseItem();
+        }
+    }
+
     public static void useAtCrosshair(Minecraft minecraft) {
         ((MinecraftInvoker) minecraft).salts_inventory_update$startUseItem();
+    }
+
+    public static void continueUseAtCrosshair(Minecraft minecraft) {
+        if (shouldRepeatUse(minecraft)) {
+            ((MinecraftInvoker) minecraft).salts_inventory_update$startUseItem();
+        }
     }
 
     public static void updateHitResultAtCursor(Minecraft minecraft, double mouseX, double mouseY) {
@@ -105,12 +125,101 @@ public final class CursorWorldInteraction {
         return blockHit;
     }
 
+    private static boolean shouldRepeatUse(Minecraft minecraft) {
+        if (minecraft.player == null || minecraft.level == null || minecraft.gameMode == null) {
+            return false;
+        }
+        if (minecraft.player.isUsingItem() || minecraft.gameMode.isDestroying()) {
+            return false;
+        }
+        if (((MinecraftInvoker) minecraft).salts_inventory_update$getRightClickDelay() > 0) {
+            return false;
+        }
+        if (minecraft.hitResult instanceof EntityHitResult) {
+            return false;
+        }
+        if (minecraft.hitResult instanceof BlockHitResult blockHit && blockHit.getType() == HitResult.Type.BLOCK) {
+            MenuProvider provider = minecraft.level.getBlockState(blockHit.getBlockPos()).getMenuProvider(minecraft.level, blockHit.getBlockPos());
+            return provider == null;
+        }
+
+        return true;
+    }
+
+    private static boolean startAttack(Minecraft minecraft) {
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.level == null || minecraft.gameMode == null || minecraft.hitResult == null) {
+            return false;
+        }
+        if (player.isHandsBusy()) {
+            return false;
+        }
+
+        if (minecraft.gameMode.isSpectator()) {
+            if (minecraft.hitResult instanceof EntityHitResult entityHit) {
+                minecraft.gameMode.spectate(entityHit.getEntity());
+            }
+            return true;
+        }
+
+        ItemStack stack = player.getItemInHand(InteractionHand.MAIN_HAND);
+        if (!stack.isItemEnabled(minecraft.level.enabledFeatures()) || player.cannotAttackWithItem(stack, 0)) {
+            return false;
+        }
+
+        if (minecraft.hitResult instanceof EntityHitResult entityHit) {
+            minecraft.gameMode.attack(player, entityHit.getEntity());
+            player.swing(InteractionHand.MAIN_HAND);
+            return true;
+        }
+
+        if (minecraft.hitResult instanceof BlockHitResult blockHit && blockHit.getType() == HitResult.Type.BLOCK) {
+            BlockPos pos = blockHit.getBlockPos();
+            BlockState state = minecraft.level.getBlockState(pos);
+            if (!state.isAir()) {
+                minecraft.gameMode.startDestroyBlock(pos, blockHit.getDirection());
+                player.swing(InteractionHand.MAIN_HAND);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void continueAttack(Minecraft minecraft) {
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.level == null || minecraft.gameMode == null) {
+            return;
+        }
+        if (player.isUsingItem()) {
+            return;
+        }
+
+        ItemStack stack = player.getItemInHand(InteractionHand.MAIN_HAND);
+        if (stack.has(net.minecraft.core.component.DataComponents.PIERCING_WEAPON)) {
+            return;
+        }
+
+        if (minecraft.hitResult instanceof BlockHitResult blockHit && blockHit.getType() == HitResult.Type.BLOCK) {
+            BlockPos pos = blockHit.getBlockPos();
+            if (!minecraft.level.getBlockState(pos).isAir()) {
+                if (minecraft.gameMode.continueDestroyBlock(pos, blockHit.getDirection())) {
+                    minecraft.level.addBreakingBlockEffect(pos, blockHit.getDirection());
+                    player.swing(InteractionHand.MAIN_HAND);
+                }
+                return;
+            }
+        }
+
+        minecraft.gameMode.stopDestroyBlock();
+    }
+
     private static Vec3 cursorDirection(Minecraft minecraft, Camera camera, double mouseX, double mouseY) {
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
         float x = width <= 0 ? 0.0F : (float) (mouseX / width * 2.0D - 1.0D);
         float y = height <= 0 ? 0.0F : (float) (1.0D - mouseY / height * 2.0D);
-        float fov = minecraft.options.fov().get();
+        float fov = camera.getFov();
         return camera.getNearPlane(fov).getPointOnPlane(x, y).normalize();
     }
 }

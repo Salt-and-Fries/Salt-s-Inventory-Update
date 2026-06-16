@@ -68,9 +68,11 @@ public final class WindowedInventoryClient {
         Screen screen = minecraft.screen;
         if (screen instanceof InventoryDesktopScreen inventoryScreen) {
             boolean altDown = isAltDown(minecraft);
-            inventoryScreen.setCameraControl(altDown && inventoryScreen.hasWindows());
-            syncMovementKeys(minecraft, inventoryScreen.hasWindows());
-            setCameraMouseGrab(minecraft, false);
+            boolean hasWindows = inventoryScreen.hasWindows();
+            boolean desktopActive = hasWindows || inventoryScreen.isHotbarOnly();
+            inventoryScreen.setCameraControl(altDown && hasWindows);
+            syncMovementKeys(minecraft, desktopActive);
+            setCameraMouseGrab(minecraft, inventoryScreen.isCameraControlActive());
 
             if (inventoryScreen.isHotbarOnly() && !altDown && inventoryScreen.canCloseHotbarOnly()) {
                 inventoryScreen.onClose();
@@ -107,7 +109,7 @@ public final class WindowedInventoryClient {
     }
 
     private static void syncDesktopMovementKeys(Minecraft minecraft) {
-        if (minecraft.screen instanceof InventoryDesktopScreen screen && screen.hasWindows()) {
+        if (minecraft.screen instanceof InventoryDesktopScreen screen && (screen.hasWindows() || screen.isHotbarOnly())) {
             syncMovementKeys(minecraft, true);
         }
     }

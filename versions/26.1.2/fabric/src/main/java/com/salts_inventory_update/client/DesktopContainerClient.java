@@ -12,6 +12,7 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayl
 import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopQuickMovePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopReadyPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionClosedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotPayload;
@@ -83,9 +84,31 @@ public final class DesktopContainerClient {
         }
     }
 
+    public static boolean canUseServerSessions() {
+        try {
+            return ClientPlayNetworking.canSend(DesktopReadyPayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopClickPayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopQuickMovePayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE);
+        } catch (IllegalStateException | IllegalArgumentException ignored) {
+            return false;
+        }
+    }
+
     public static boolean clickSlot(int sessionId, int slotIndex, int button, ContainerInput input) {
         DesktopDebug.trace("client send click session={} slot={} button={} input={}", sessionId, slotIndex, button, input);
-        return send(new DesktopClickPayload(sessionId, slotIndex, button, input.ordinal()), "click");
+        return send(new DesktopClickPayload(sessionId, slotIndex, button, input.name()), "click");
+    }
+
+    public static boolean quickMoveSlot(int sourceSessionId, int sourceSlotIndex, int targetKind, int targetSessionId) {
+        DesktopDebug.trace(
+            "client send quick move sourceSession={} sourceSlot={} targetKind={} targetSession={}",
+            sourceSessionId,
+            sourceSlotIndex,
+            targetKind,
+            targetSessionId
+        );
+        return send(new DesktopQuickMovePayload(sourceSessionId, sourceSlotIndex, targetKind, targetSessionId), "quick-move");
     }
 
     public static void closeSession(int sessionId) {

@@ -22,6 +22,8 @@ public final class DesktopPackets {
     public static final int SPECIAL_GENERIC = 0;
     public static final int SPECIAL_HORSE = 1;
     public static final int SPECIAL_NAUTILUS = 2;
+    public static final int QUICK_TARGET_DEFAULT = 0;
+    public static final int QUICK_TARGET_SESSION = 1;
 
     private DesktopPackets() {
     }
@@ -29,6 +31,7 @@ public final class DesktopPackets {
     public static void registerPayloadTypes() {
         PayloadTypeRegistry.serverboundPlay().register(DesktopReadyPayload.TYPE, DesktopReadyPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopClickPayload.TYPE, DesktopClickPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopQuickMovePayload.TYPE, DesktopQuickMovePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
 
         PayloadTypeRegistry.clientboundPlay().register(DesktopOpenSessionPayload.TYPE, DesktopOpenSessionPayload.CODEC);
@@ -88,7 +91,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopClickPayload(int sessionId, int slotIndex, int button, int inputOrdinal) implements CustomPacketPayload {
+    public record DesktopClickPayload(int sessionId, int slotIndex, int button, String inputName) implements CustomPacketPayload {
         public static final Type<DesktopClickPayload> TYPE = new Type<>(id("desktop_click"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopClickPayload> CODEC = CustomPacketPayload.codec(
             DesktopClickPayload::write,
@@ -96,14 +99,38 @@ public final class DesktopPackets {
         );
 
         private DesktopClickPayload(RegistryFriendlyByteBuf buf) {
-            this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+            this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf());
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
             buf.writeVarInt(this.sessionId);
             buf.writeVarInt(this.slotIndex);
             buf.writeVarInt(this.button);
-            buf.writeVarInt(this.inputOrdinal);
+            buf.writeUtf(this.inputName);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopQuickMovePayload(int sourceSessionId, int sourceSlotIndex, int targetKind, int targetSessionId) implements CustomPacketPayload {
+        public static final Type<DesktopQuickMovePayload> TYPE = new Type<>(id("desktop_quick_move"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopQuickMovePayload> CODEC = CustomPacketPayload.codec(
+            DesktopQuickMovePayload::write,
+            DesktopQuickMovePayload::new
+        );
+
+        private DesktopQuickMovePayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sourceSessionId);
+            buf.writeVarInt(this.sourceSlotIndex);
+            buf.writeVarInt(this.targetKind);
+            buf.writeVarInt(this.targetSessionId);
         }
 
         @Override

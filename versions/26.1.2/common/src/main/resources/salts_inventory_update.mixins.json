@@ -4,6 +4,7 @@
   "package": "com.salts_inventory_update.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "server.ChestOpenersCounterMixin",
     "server.ServerPlayerMixin",
     "server.ServerGamePacketListenerImplMixin"
   ],

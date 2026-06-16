@@ -23,6 +23,7 @@ public abstract class ServerPlayerMixin {
         ServerPlayer player = (ServerPlayer) (Object) this;
         if (DesktopContainerSessions.shouldCapture(player)) {
             cir.setReturnValue(DesktopContainerSessions.openMenuSession(player, provider));
+            cir.cancel();
         }
     }
 

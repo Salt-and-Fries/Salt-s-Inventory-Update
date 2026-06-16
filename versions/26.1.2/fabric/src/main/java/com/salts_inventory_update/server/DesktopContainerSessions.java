@@ -1,5 +1,6 @@
 package com.salts_inventory_update.server;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,11 +17,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.CompoundContainer;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.ContainerSynchronizer;
 import net.minecraft.world.inventory.HorseInventoryMenu;
@@ -45,6 +49,7 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayl
 import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopQuickMovePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopReadyPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionClosedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotPayload;
@@ -64,6 +69,9 @@ public final class DesktopContainerSessions {
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopClickPayload.TYPE, (payload, context) ->
             context.server().execute(() -> click(context.player(), payload))
+        );
+        ServerPlayNetworking.registerGlobalReceiver(DesktopQuickMovePayload.TYPE, (payload, context) ->
+            context.server().execute(() -> quickMove(context.player(), payload))
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopCloseSessionPayload.TYPE, (payload, context) ->
             context.server().execute(() -> closeSession(context.player(), payload.sessionId(), true))
@@ -103,6 +111,32 @@ public final class DesktopContainerSessions {
 
     public static void clearUseTarget(ServerPlayer player) {
         PENDING_USE_TARGETS.remove(player.getUUID());
+    }
+
+    public static boolean hasOpenSessionForContainer(Player player, Container container) {
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return false;
+        }
+
+        PlayerSessions sessions = PLAYERS.get(serverPlayer.getUUID());
+        if (sessions == null || !sessions.ready) {
+            return false;
+        }
+
+        for (Session session : sessions.sessions.values()) {
+            Container sessionContainer = containerForMenu(session.menu);
+            if (sessionContainer != null && containsContainer(sessionContainer, container)) {
+                DesktopDebug.trace(
+                    "server chest opener owned by desktop player={} session={} title={}",
+                    serverPlayer.getName().getString(),
+                    session.sessionId,
+                    session.title.getString()
+                );
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static OptionalInt openMenuSession(ServerPlayer player, MenuProvider provider) {
@@ -251,13 +285,14 @@ public final class DesktopContainerSessions {
             return;
         }
 
-        ContainerInput[] inputs = ContainerInput.values();
-        if (payload.inputOrdinal() < 0 || payload.inputOrdinal() >= inputs.length) {
-            DesktopDebug.warn("server click dropped player={} session={} reason=bad-input ordinal={}", player.getName().getString(), payload.sessionId(), payload.inputOrdinal());
+        ContainerInput input;
+        try {
+            input = ContainerInput.valueOf(payload.inputName());
+        } catch (IllegalArgumentException exception) {
+            DesktopDebug.warn("server click dropped player={} session={} reason=bad-input input={}", player.getName().getString(), payload.sessionId(), payload.inputName());
             return;
         }
 
-        ContainerInput input = inputs[payload.inputOrdinal()];
         if (payload.sessionId() == DesktopPackets.PLAYER_MENU_SESSION) {
             DesktopDebug.trace("server click player-menu player={} slot={} button={} input={}", player.getName().getString(), payload.slotIndex(), payload.button(), input);
             clickMenu(player, sessions, player.inventoryMenu, payload.slotIndex(), payload.button(), input);
@@ -276,6 +311,211 @@ public final class DesktopContainerSessions {
         clickMenu(player, sessions, session.menu, payload.slotIndex(), payload.button(), input);
         session.menu.broadcastChanges();
         syncCarried(player, sessions);
+    }
+
+    private static void quickMove(ServerPlayer player, DesktopQuickMovePayload payload) {
+        PlayerSessions sessions = PLAYERS.get(player.getUUID());
+        if (sessions == null || !sessions.ready) {
+            DesktopDebug.trace("server quick move dropped player={} sourceSession={} reason=not-ready", player.getName().getString(), payload.sourceSessionId());
+            return;
+        }
+
+        if (!sessions.carried.isEmpty()) {
+            DesktopDebug.trace("server quick move dropped player={} sourceSession={} sourceSlot={} reason=carried-not-empty carried={}", player.getName().getString(), payload.sourceSessionId(), payload.sourceSlotIndex(), sessions.carried);
+            syncCarried(player, sessions);
+            return;
+        }
+
+        SlotSource source = resolveSlot(player, sessions, payload.sourceSessionId(), payload.sourceSlotIndex());
+        if (source == null) {
+            return;
+        }
+
+        List<net.minecraft.world.inventory.Slot> targets = quickMoveTargets(player, sessions, source, payload);
+        if (targets.isEmpty()) {
+            DesktopDebug.trace("server quick move dropped player={} sourceSession={} sourceSlot={} reason=no-targets", player.getName().getString(), payload.sourceSessionId(), payload.sourceSlotIndex());
+            return;
+        }
+
+        boolean moved = moveSlotStack(player, source.slot, targets);
+        DesktopDebug.trace(
+            "server quick move player={} sourceSession={} sourceSlot={} targetKind={} targetSession={} moved={}",
+            player.getName().getString(),
+            payload.sourceSessionId(),
+            payload.sourceSlotIndex(),
+            payload.targetKind(),
+            payload.targetSessionId(),
+            moved
+        );
+        if (!moved) {
+            return;
+        }
+
+        source.menu.broadcastChanges();
+        player.inventoryMenu.broadcastChanges();
+        sessions.broadcastAll(player);
+    }
+
+    private static @Nullable SlotSource resolveSlot(ServerPlayer player, PlayerSessions sessions, int sessionId, int slotIndex) {
+        AbstractContainerMenu menu;
+        Session session = null;
+        if (sessionId == DesktopPackets.PLAYER_MENU_SESSION) {
+            menu = player.inventoryMenu;
+        } else {
+            session = sessions.sessions.get(sessionId);
+            if (session == null) {
+                DesktopDebug.trace("server quick move dropped player={} session={} reason=missing-session", player.getName().getString(), sessionId);
+                return null;
+            }
+            if (!session.menu.stillValid(player)) {
+                DesktopDebug.log("server quick move invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
+                sessions.close(player, session.sessionId, true);
+                return null;
+            }
+            menu = session.menu;
+        }
+
+        if (slotIndex < 0 || slotIndex >= menu.slots.size()) {
+            DesktopDebug.trace("server quick move dropped player={} session={} slot={} reason=out-of-range", player.getName().getString(), sessionId, slotIndex);
+            return null;
+        }
+
+        return new SlotSource(sessionId, menu, menu.slots.get(slotIndex), session);
+    }
+
+    private static List<net.minecraft.world.inventory.Slot> quickMoveTargets(ServerPlayer player, PlayerSessions sessions, SlotSource source, DesktopQuickMovePayload payload) {
+        if (payload.targetKind() == DesktopPackets.QUICK_TARGET_SESSION && payload.targetSessionId() != source.sessionId) {
+            Session targetSession = sessions.sessions.get(payload.targetSessionId());
+            if (targetSession != null && targetSession.menu.stillValid(player)) {
+                List<net.minecraft.world.inventory.Slot> targetSlots = containerSlots(targetSession.menu, player);
+                if (!targetSlots.isEmpty()) {
+                    return targetSlots;
+                }
+            }
+        }
+
+        return defaultPlayerTargets(player, source.slot);
+    }
+
+    private static List<net.minecraft.world.inventory.Slot> defaultPlayerTargets(ServerPlayer player, net.minecraft.world.inventory.Slot sourceSlot) {
+        boolean sourceIsPlayerInventory = isPlayerInventorySlot(player, sourceSlot);
+        int sourceContainerSlot = sourceSlot.getContainerSlot();
+        if (sourceIsPlayerInventory && sourceContainerSlot >= 0 && sourceContainerSlot < 9) {
+            return mainInventorySlots(player);
+        }
+        if (sourceIsPlayerInventory && sourceContainerSlot >= 9 && sourceContainerSlot < 36) {
+            return hotbarSlots(player);
+        }
+
+        List<net.minecraft.world.inventory.Slot> slots = new ArrayList<>();
+        slots.addAll(mainInventorySlots(player));
+        slots.addAll(hotbarSlots(player));
+        return slots;
+    }
+
+    private static boolean moveSlotStack(ServerPlayer player, net.minecraft.world.inventory.Slot sourceSlot, List<net.minecraft.world.inventory.Slot> targets) {
+        if (!sourceSlot.isActive() || sourceSlot.isFake() || !sourceSlot.hasItem() || !sourceSlot.mayPickup(player)) {
+            return false;
+        }
+
+        ItemStack sourceStack = sourceSlot.getItem();
+        ItemStack original = sourceStack.copy();
+        ItemStack moving = sourceStack.copy();
+        int originalCount = moving.getCount();
+        insertIntoMatchingSlots(sourceSlot, targets, moving);
+        insertIntoEmptySlots(sourceSlot, targets, moving);
+
+        int moved = originalCount - moving.getCount();
+        if (moved <= 0) {
+            return false;
+        }
+
+        ItemStack taken = original.copyWithCount(moved);
+        sourceStack.shrink(moved);
+        if (sourceStack.isEmpty()) {
+            sourceSlot.setByPlayer(ItemStack.EMPTY, original);
+        } else {
+            sourceSlot.setChanged();
+        }
+        sourceSlot.onTake(player, taken);
+        return true;
+    }
+
+    private static void insertIntoMatchingSlots(net.minecraft.world.inventory.Slot sourceSlot, List<net.minecraft.world.inventory.Slot> targets, ItemStack moving) {
+        if (!moving.isStackable()) {
+            return;
+        }
+
+        for (net.minecraft.world.inventory.Slot target : targets) {
+            if (moving.isEmpty()) {
+                return;
+            }
+            if (target == sourceSlot || !target.isActive() || target.isFake() || !target.hasItem()) {
+                continue;
+            }
+            if (!ItemStack.isSameItemSameComponents(moving, target.getItem())) {
+                continue;
+            }
+            target.safeInsert(moving);
+        }
+    }
+
+    private static void insertIntoEmptySlots(net.minecraft.world.inventory.Slot sourceSlot, List<net.minecraft.world.inventory.Slot> targets, ItemStack moving) {
+        for (net.minecraft.world.inventory.Slot target : targets) {
+            if (moving.isEmpty()) {
+                return;
+            }
+            if (target == sourceSlot || !target.isActive() || target.isFake() || target.hasItem()) {
+                continue;
+            }
+            target.safeInsert(moving);
+        }
+    }
+
+    private static List<net.minecraft.world.inventory.Slot> containerSlots(AbstractContainerMenu menu, ServerPlayer player) {
+        List<net.minecraft.world.inventory.Slot> slots = new ArrayList<>();
+        for (net.minecraft.world.inventory.Slot slot : menu.slots) {
+            if (!isPlayerInventorySlot(player, slot)) {
+                slots.add(slot);
+            }
+        }
+        return slots;
+    }
+
+    private static List<net.minecraft.world.inventory.Slot> mainInventorySlots(ServerPlayer player) {
+        List<net.minecraft.world.inventory.Slot> slots = new ArrayList<>();
+        for (net.minecraft.world.inventory.Slot slot : player.inventoryMenu.slots) {
+            if (isPlayerInventorySlot(player, slot) && slot.getContainerSlot() >= 9 && slot.getContainerSlot() < 36) {
+                slots.add(slot);
+            }
+        }
+        return slots;
+    }
+
+    private static List<net.minecraft.world.inventory.Slot> hotbarSlots(ServerPlayer player) {
+        List<net.minecraft.world.inventory.Slot> slots = new ArrayList<>();
+        for (net.minecraft.world.inventory.Slot slot : player.inventoryMenu.slots) {
+            if (isPlayerInventorySlot(player, slot) && slot.getContainerSlot() >= 0 && slot.getContainerSlot() < 9) {
+                slots.add(slot);
+            }
+        }
+        return slots;
+    }
+
+    private static boolean isPlayerInventorySlot(ServerPlayer player, net.minecraft.world.inventory.Slot slot) {
+        return slot.container == player.getInventory();
+    }
+
+    private static @Nullable Container containerForMenu(AbstractContainerMenu menu) {
+        if (menu instanceof ChestMenu chestMenu) {
+            return chestMenu.getContainer();
+        }
+
+        return null;
+    }
+
+    private static boolean containsContainer(Container owner, Container target) {
+        return owner == target || owner instanceof CompoundContainer compoundContainer && compoundContainer.contains(target);
     }
 
     private static void clickMenu(ServerPlayer player, PlayerSessions sessions, AbstractContainerMenu menu, int slotIndex, int button, ContainerInput input) {
@@ -355,14 +595,15 @@ public final class DesktopContainerSessions {
                 return false;
             }
 
+            boolean closed = false;
             for (Session session : List.copyOf(this.sessions.values())) {
                 if (sourceKey.equals(session.sourceKey)) {
                     this.close(player, session.sessionId, notifyClient);
-                    return true;
+                    closed = true;
                 }
             }
 
-            return false;
+            return closed;
         }
 
         private void close(ServerPlayer player, int sessionId, boolean notifyClient) {
@@ -406,6 +647,9 @@ public final class DesktopContainerSessions {
     }
 
     private record Session(int sessionId, AbstractContainerMenu menu, Component title, int specialKind, int entityId, int columns, int menuTypeId, String sourceKey) {
+    }
+
+    private record SlotSource(int sessionId, AbstractContainerMenu menu, net.minecraft.world.inventory.Slot slot, @Nullable Session session) {
     }
 
     private static final class SessionSynchronizer implements ContainerSynchronizer {
