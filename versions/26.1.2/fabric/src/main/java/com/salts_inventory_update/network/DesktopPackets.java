@@ -32,6 +32,7 @@ public final class DesktopPackets {
         PayloadTypeRegistry.serverboundPlay().register(DesktopReadyPayload.TYPE, DesktopReadyPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopClickPayload.TYPE, DesktopClickPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopQuickMovePayload.TYPE, DesktopQuickMovePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopButtonPayload.TYPE, DesktopButtonPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
 
         PayloadTypeRegistry.clientboundPlay().register(DesktopOpenSessionPayload.TYPE, DesktopOpenSessionPayload.CODEC);
@@ -131,6 +132,28 @@ public final class DesktopPackets {
             buf.writeVarInt(this.sourceSlotIndex);
             buf.writeVarInt(this.targetKind);
             buf.writeVarInt(this.targetSessionId);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopButtonPayload(int sessionId, int buttonId) implements CustomPacketPayload {
+        public static final Type<DesktopButtonPayload> TYPE = new Type<>(id("desktop_button"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopButtonPayload> CODEC = CustomPacketPayload.codec(
+            DesktopButtonPayload::write,
+            DesktopButtonPayload::new
+        );
+
+        private DesktopButtonPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readVarInt());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeVarInt(this.buttonId);
         }
 
         @Override

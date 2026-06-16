@@ -6,6 +6,7 @@ import net.minecraft.world.inventory.ContainerInput;
 
 import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.network.DesktopPackets;
+import com.salts_inventory_update.network.DesktopPackets.DesktopButtonPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCarriedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopClickPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayload;
@@ -89,6 +90,7 @@ public final class DesktopContainerClient {
             return ClientPlayNetworking.canSend(DesktopReadyPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopClickPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopQuickMovePayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopButtonPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE);
         } catch (IllegalStateException | IllegalArgumentException ignored) {
             return false;
@@ -109,6 +111,11 @@ public final class DesktopContainerClient {
             targetSessionId
         );
         return send(new DesktopQuickMovePayload(sourceSessionId, sourceSlotIndex, targetKind, targetSessionId), "quick-move");
+    }
+
+    public static boolean clickButton(int sessionId, int buttonId) {
+        DesktopDebug.trace("client send button session={} button={}", sessionId, buttonId);
+        return send(new DesktopButtonPayload(sessionId, buttonId), "button");
     }
 
     public static void closeSession(int sessionId) {

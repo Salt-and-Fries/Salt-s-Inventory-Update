@@ -3,8 +3,6 @@ package com.salts_inventory_update.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
@@ -37,7 +35,6 @@ public final class WindowedInventoryClient {
         DesktopContainerClient.initializeNetworking();
         ClientTickEvents.START_CLIENT_TICK.register(WindowedInventoryClient::syncDesktopMovementKeys);
         ClientTickEvents.END_CLIENT_TICK.register(WindowedInventoryClient::onClientTick);
-        ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> registerExternalHotbar(screen));
     }
 
     public static KeyMapping characterWindowKey() {
@@ -90,22 +87,6 @@ public final class WindowedInventoryClient {
         return minecraft.screen instanceof InventoryDesktopScreen screen
             && screen.hasWindows()
             && !screen.isCameraControlActive();
-    }
-
-    private static void registerExternalHotbar(Screen screen) {
-        if (screen instanceof InventoryDesktopScreen) {
-            return;
-        }
-
-        ScreenEvents.afterExtract(screen).register((activeScreen, graphics, mouseX, mouseY, tickProgress) ->
-            InventoryDesktopScreen.extractExternalHotbarOverlay(graphics, mouseX, mouseY)
-        );
-        ScreenMouseEvents.afterMouseClick(screen).register((activeScreen, event, consumed) ->
-            consumed || InventoryDesktopScreen.handleExternalHotbarClick(event)
-        );
-        ScreenMouseEvents.afterMouseRelease(screen).register((activeScreen, event, consumed) ->
-            consumed || InventoryDesktopScreen.handleExternalHotbarRelease(event)
-        );
     }
 
     private static void syncDesktopMovementKeys(Minecraft minecraft) {

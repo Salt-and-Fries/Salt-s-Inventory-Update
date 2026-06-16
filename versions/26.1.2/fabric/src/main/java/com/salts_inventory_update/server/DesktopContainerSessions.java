@@ -24,6 +24,7 @@ import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.AbstractCraftingMenu;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.ContainerSynchronizer;
@@ -43,6 +44,7 @@ import org.jspecify.annotations.Nullable;
 
 import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.network.DesktopPackets;
+import com.salts_inventory_update.network.DesktopPackets.DesktopButtonPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCarriedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopClickPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayload;
@@ -72,6 +74,9 @@ public final class DesktopContainerSessions {
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopQuickMovePayload.TYPE, (payload, context) ->
             context.server().execute(() -> quickMove(context.player(), payload))
+        );
+        ServerPlayNetworking.registerGlobalReceiver(DesktopButtonPayload.TYPE, (payload, context) ->
+            context.server().execute(() -> button(context.player(), payload))
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopCloseSessionPayload.TYPE, (payload, context) ->
             context.server().execute(() -> closeSession(context.player(), payload.sessionId(), true))
@@ -310,6 +315,8 @@ public final class DesktopContainerSessions {
         DesktopDebug.trace("server click session player={} session={} slot={} button={} input={}", player.getName().getString(), payload.sessionId(), payload.slotIndex(), payload.button(), input);
         clickMenu(player, sessions, session.menu, payload.slotIndex(), payload.button(), input);
         session.menu.broadcastChanges();
+        syncCraftingResultSlot(player, session);
+        syncMerchantOffers(player, session);
         syncCarried(player, sessions);
     }
 
@@ -352,8 +359,64 @@ public final class DesktopContainerSessions {
         }
 
         source.menu.broadcastChanges();
+        if (source.session != null) {
+            syncCraftingResultSlot(player, source.session);
+            syncMerchantOffers(player, source.session);
+        }
         player.inventoryMenu.broadcastChanges();
         sessions.broadcastAll(player);
+    }
+
+    private static void button(ServerPlayer player, DesktopButtonPayload payload) {
+        PlayerSessions sessions = PLAYERS.get(player.getUUID());
+        if (sessions == null || !sessions.ready) {
+            DesktopDebug.trace("server button dropped player={} session={} button={} reason=not-ready", player.getName().getString(), payload.sessionId(), payload.buttonId());
+            return;
+        }
+
+        Session session = sessions.sessions.get(payload.sessionId());
+        if (session == null) {
+            DesktopDebug.trace("server button dropped player={} session={} button={} reason=missing-session", player.getName().getString(), payload.sessionId(), payload.buttonId());
+            return;
+        }
+
+        if (!session.menu.stillValid(player)) {
+            DesktopDebug.log("server button invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
+            sessions.close(player, session.sessionId, true);
+            return;
+        }
+
+        session.menu.setCarried(sessions.carried.copy());
+        boolean clicked;
+        if (session.menu instanceof MerchantMenu merchantMenu) {
+            clicked = payload.buttonId() >= 0 && payload.buttonId() < merchantMenu.getOffers().size();
+            if (clicked) {
+                merchantMenu.setSelectionHint(payload.buttonId());
+                merchantMenu.tryMoveItems(payload.buttonId());
+            }
+        } else {
+            clicked = session.menu.clickMenuButton(player, payload.buttonId());
+        }
+        sessions.carried = session.menu.getCarried().copy();
+        player.inventoryMenu.setCarried(sessions.carried.copy());
+        for (Session openSession : sessions.sessions.values()) {
+            openSession.menu.setCarried(sessions.carried.copy());
+        }
+
+        DesktopDebug.trace(
+            "server button player={} session={} button={} clicked={}",
+            player.getName().getString(),
+            payload.sessionId(),
+            payload.buttonId(),
+            clicked
+        );
+        if (clicked) {
+            session.menu.broadcastChanges();
+            player.inventoryMenu.broadcastChanges();
+            sessions.broadcastAll(player);
+        } else {
+            syncCarried(player, sessions);
+        }
     }
 
     private static @Nullable SlotSource resolveSlot(ServerPlayer player, PlayerSessions sessions, int sessionId, int slotIndex) {
@@ -537,6 +600,35 @@ public final class DesktopContainerSessions {
         send(player, new DesktopCarriedPayload(sessions.carried.copy()));
     }
 
+    private static void syncCraftingResultSlot(ServerPlayer player, Session session) {
+        if (!(session.menu instanceof AbstractCraftingMenu craftingMenu)) {
+            return;
+        }
+
+        net.minecraft.world.inventory.Slot resultSlot = craftingMenu.getResultSlot();
+        int slotIndex = session.menu.slots.indexOf(resultSlot);
+        if (slotIndex < 0) {
+            return;
+        }
+
+        send(player, new DesktopSlotPayload(session.sessionId, slotIndex, session.menu.getStateId(), resultSlot.getItem().copy()));
+    }
+
+    private static void syncMerchantOffers(ServerPlayer player, Session session) {
+        if (!(session.menu instanceof MerchantMenu merchantMenu)) {
+            return;
+        }
+
+        send(player, new DesktopMerchantOffersPayload(
+            session.sessionId,
+            merchantMenu.getOffers(),
+            merchantMenu.getTraderLevel(),
+            merchantMenu.getTraderXp(),
+            merchantMenu.showProgressBar(),
+            merchantMenu.canRestock()
+        ));
+    }
+
     private static void closeSession(ServerPlayer player, int sessionId, boolean notifyClient) {
         PlayerSessions sessions = PLAYERS.get(player.getUUID());
         if (sessions != null) {
@@ -634,6 +726,8 @@ public final class DesktopContainerSessions {
                     this.close(player, session.sessionId, true);
                 } else {
                     session.menu.broadcastChanges();
+                    syncCraftingResultSlot(player, session);
+                    syncMerchantOffers(player, session);
                 }
             }
         }
@@ -641,6 +735,7 @@ public final class DesktopContainerSessions {
         private void broadcastAll(ServerPlayer player) {
             for (Session session : this.sessions.values()) {
                 session.menu.broadcastChanges();
+                syncMerchantOffers(player, session);
             }
             syncCarried(player, this);
         }
