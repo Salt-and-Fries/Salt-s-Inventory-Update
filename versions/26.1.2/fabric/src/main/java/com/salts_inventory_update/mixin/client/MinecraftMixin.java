@@ -1,0 +1,52 @@
+package com.salts_inventory_update.mixin.client;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Options;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.MultiPlayerGameMode;
+import net.minecraft.client.player.LocalPlayer;
+import org.jspecify.annotations.Nullable;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import com.salts_inventory_update.client.InventoryDesktopScreen;
+
+@Mixin(Minecraft.class)
+public abstract class MinecraftMixin {
+    @Shadow
+    public Options options;
+
+    @Shadow
+    public @Nullable LocalPlayer player;
+
+    @Shadow
+    public @Nullable MultiPlayerGameMode gameMode;
+
+    @Shadow
+    public @Nullable Screen screen;
+
+    @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
+    private void salts_inventory_update$guardSingletonDesktopScreen(@Nullable Screen screen, CallbackInfo ci) {
+        if (screen instanceof InventoryDesktopScreen incoming && this.screen == incoming) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "handleKeybinds", at = @At("HEAD"))
+    private void salts_inventory_update$openWindowedInventory(CallbackInfo ci) {
+        while (this.options.keyInventory.consumeClick()) {
+            if (this.player == null || this.gameMode == null) {
+                return;
+            }
+
+            if (this.gameMode.isServerControlledInventory()) {
+                this.player.sendOpenInventory();
+            } else {
+                InventoryDesktopScreen.openOrToggleInventory((Minecraft) (Object) this);
+            }
+        }
+    }
+}

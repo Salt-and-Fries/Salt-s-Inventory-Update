@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${version}",
+  "name": "${mod_name}",
+  "description": "${description}",
+  "license": "${license}",
+  "authors": [
+    "Salt"
+  ],
+  "entrypoints": {
+    "main": [
+      "com.salts_inventory_update.SaltsInventoryUpdateFabric"
+    ],
+    "client": [
+      "com.salts_inventory_update.SaltsInventoryUpdateFabricClient"
+    ]
+  },
+  "mixins": [
+    "${mod_id}.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${fabric_loader_version}",
+    "minecraft": "${minecraft_version}",
+    "java": ">=${java_version}"
+  }
+}
