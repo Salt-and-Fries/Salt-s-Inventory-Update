@@ -30,6 +30,11 @@ public abstract class MinecraftMixin {
 
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$guardSingletonDesktopScreen(@Nullable Screen screen, CallbackInfo ci) {
+        if (InventoryDesktopScreen.replaceVanillaCreativeScreen((Minecraft) (Object) this, screen)) {
+            ci.cancel();
+            return;
+        }
+
         if (screen instanceof InventoryDesktopScreen incoming && this.screen == incoming) {
             ci.cancel();
         }

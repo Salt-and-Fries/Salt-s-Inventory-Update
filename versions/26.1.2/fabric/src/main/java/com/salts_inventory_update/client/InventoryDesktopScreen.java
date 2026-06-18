@@ -9,10 +9,14 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
+import net.minecraft.client.gui.screens.inventory.CyclingSlotBackground;
 import net.minecraft.client.gui.screens.inventory.EnchantmentNames;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.Screen;
@@ -20,37 +24,78 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.model.object.banner.BannerFlagModel;
 import net.minecraft.client.model.object.book.BookModel;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
+import net.minecraft.client.renderer.entity.state.ArmorStandRenderState;
+import net.minecraft.client.renderer.state.MapRenderState;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.network.protocol.game.ServerboundSetBeaconPacket;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+import net.minecraft.network.protocol.game.ServerboundRenameItemPacket;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.inventory.AbstractFurnaceMenu;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.AnvilMenu;
+import net.minecraft.world.inventory.BeaconMenu;
+import net.minecraft.world.inventory.BrewingStandMenu;
+import net.minecraft.world.inventory.CartographyTableMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.CraftingMenu;
+import net.minecraft.world.inventory.CrafterMenu;
 import net.minecraft.world.inventory.EnchantmentMenu;
+import net.minecraft.world.inventory.GrindstoneMenu;
+import net.minecraft.world.inventory.LoomMenu;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.inventory.StonecutterMenu;
+import net.minecraft.world.item.BannerItem;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.item.SmithingTemplateItem;
+import net.minecraft.world.item.crafting.StonecutterRecipe;
+import net.minecraft.world.item.crafting.SelectableRecipe;
+import net.minecraft.world.item.crafting.display.SlotDisplayContext;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.entity.npc.villager.VillagerData;
+import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.world.level.block.entity.BannerPatternLayers;
+import net.minecraft.world.level.block.entity.BeaconBlockEntity;
+import net.minecraft.world.level.saveddata.maps.MapId;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
@@ -88,6 +133,25 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final Identifier WINDOW_CONTROLS_TEXTURE = WindowedInventoryClient.id("textures/gui/window_controls.png");
     private static final Identifier SLOT_TEXTURE = WindowedInventoryClient.id("textures/gui/slots.png");
     private static final Identifier CONTAINER_WIDGETS_TEXTURE = WindowedInventoryClient.id("textures/gui/container_widgets.png");
+    private static final Identifier ANVIL_HAMMER_TEXTURE = WindowedInventoryClient.id("textures/gui/anvil_hammer.png");
+    private static final Identifier SMITHING_HAMMER_TEXTURE = WindowedInventoryClient.id("textures/gui/smithing_hammer.png");
+    private static final Identifier GRINDSTONE_TEXTURE = WindowedInventoryClient.id("textures/gui/grindstone_sprite.png");
+    private static final Identifier STONECUTTER_CONTAINER_TEXTURE = WindowedInventoryClient.id("textures/gui/stonecutter_container.png");
+    private static final Identifier LOOM_INPUTS_TEXTURE = WindowedInventoryClient.id("textures/gui/loom_inputs.png");
+    private static final Identifier LOOM_OPTIONS_TEXTURE = WindowedInventoryClient.id("textures/gui/loom_options.png");
+    private static final Identifier LOOM_PREVIEW_TEXTURE = WindowedInventoryClient.id("textures/gui/loom_preview.png");
+    private static final Identifier CRAFTER_SLOT_TEXTURE = WindowedInventoryClient.id("textures/gui/crafter_slot.png");
+    private static final Identifier CRAFTER_DISABLED_SLOT_TEXTURE = WindowedInventoryClient.id("textures/gui/crafter_disabled_slot.png");
+    private static final Identifier CRAFTER_OUTPUT_DISPLAY_TEXTURE = WindowedInventoryClient.id("textures/gui/crafter_output_display.png");
+    private static final Identifier CRAFTER_POWERED_REDSTONE_TEXTURE = WindowedInventoryClient.id("textures/gui/crafter_powered_redstone.png");
+    private static final Identifier CRAFTER_UNPOWERED_REDSTONE_TEXTURE = WindowedInventoryClient.id("textures/gui/crafter_unpowered_redstone.png");
+    private static final Identifier BEACON_UI_TEXTURE = WindowedInventoryClient.id("textures/gui/beacon_ui.png");
+    private static final Identifier BREWING_UI_SLOTS_TEXTURE = WindowedInventoryClient.id("textures/gui/brewing_ui_slots.png");
+    private static final Identifier CARTOGRAPHY_PLUS_TEXTURE = WindowedInventoryClient.id("textures/gui/plus.png");
+    private static final Identifier LARGE_SLOT_TEXTURE = WindowedInventoryClient.id("textures/gui/large_slot.png");
+    private static final Identifier CREATIVE_SEARCH_BAR_TEXTURE = WindowedInventoryClient.id("textures/gui/search_bar.png");
+    private static final Identifier SLOT_HIGHLIGHT_BACK_SPRITE = Identifier.withDefaultNamespace("container/slot_highlight_back");
+    private static final Identifier SLOT_HIGHLIGHT_FRONT_SPRITE = Identifier.withDefaultNamespace("container/slot_highlight_front");
     private static final Identifier HOTBAR_OFFHAND_LEFT_SPRITE = Identifier.withDefaultNamespace("hud/hotbar_offhand_left");
     private static final int WINDOW_TEXTURE_SIZE = 11;
     private static final int WINDOW_EDGE_SIZE = 5;
@@ -97,6 +161,31 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int SLOT_TEXTURE_HEIGHT = SLOT_SIZE;
     private static final int CONTAINER_WIDGETS_TEXTURE_WIDTH = 48;
     private static final int CONTAINER_WIDGETS_TEXTURE_HEIGHT = 30;
+    private static final int ANVIL_HAMMER_TEXTURE_SIZE = 30;
+    private static final int SMITHING_HAMMER_TEXTURE_WIDTH = 30;
+    private static final int SMITHING_HAMMER_TEXTURE_HEIGHT = 31;
+    private static final int GRINDSTONE_TEXTURE_WIDTH = 54;
+    private static final int GRINDSTONE_TEXTURE_HEIGHT = 56;
+    private static final int STONECUTTER_CONTAINER_TEXTURE_WIDTH = 81;
+    private static final int STONECUTTER_CONTAINER_TEXTURE_HEIGHT = 56;
+    private static final int LOOM_INPUTS_TEXTURE_WIDTH = 50;
+    private static final int LOOM_INPUTS_TEXTURE_HEIGHT = 55;
+    private static final int LOOM_OPTIONS_TEXTURE_WIDTH = 73;
+    private static final int LOOM_OPTIONS_TEXTURE_HEIGHT = 58;
+    private static final int LOOM_PREVIEW_TEXTURE_WIDTH = 20;
+    private static final int LOOM_PREVIEW_TEXTURE_HEIGHT = 40;
+    private static final int CRAFTER_SLOT_TEXTURE_SIZE = 18;
+    private static final int CRAFTER_OUTPUT_DISPLAY_TEXTURE_SIZE = 26;
+    private static final int CRAFTER_REDSTONE_TEXTURE_SIZE = 16;
+    private static final int BEACON_UI_TEXTURE_WIDTH = 216;
+    private static final int BEACON_UI_TEXTURE_HEIGHT = 123;
+    private static final int BREWING_UI_SLOTS_TEXTURE_WIDTH = 103;
+    private static final int BREWING_UI_SLOTS_TEXTURE_HEIGHT = 60;
+    private static final int CARTOGRAPHY_PLUS_TEXTURE_SIZE = 13;
+    private static final int LARGE_SLOT_TEXTURE_SIZE = 26;
+    private static final int LARGE_SLOT_ITEM_OFFSET = 5;
+    private static final int SLOT_HIGHLIGHT_SIZE = 24;
+    private static final int SLOT_HIGHLIGHT_OFFSET = 4;
     private static final int WIDGET_FLAME_EMPTY_X = 0;
     private static final int WIDGET_FLAME_EMPTY_Y = 0;
     private static final int WIDGET_FLAME_FULL_X = 14;
@@ -136,6 +225,229 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int CRAFTING_TABLE_ARROW_Y = 19;
     private static final int CRAFTING_TABLE_RESULT_X = 104;
     private static final int CRAFTING_TABLE_RESULT_Y = 18;
+    private static final int ANVIL_CONTENT_MARGIN = 6;
+    private static final int ANVIL_CONTENT_WIDTH = 178;
+    private static final int ANVIL_CONTENT_HEIGHT = 78;
+    private static final int ANVIL_INPUT_SLOT = 0;
+    private static final int ANVIL_ADDITIONAL_SLOT = 1;
+    private static final int ANVIL_RESULT_SLOT = 2;
+    private static final int ANVIL_HAMMER_X = 0;
+    private static final int ANVIL_HAMMER_Y = 0;
+    private static final int ANVIL_TEXT_FIELD_X = 48;
+    private static final int ANVIL_TEXT_FIELD_Y = 8;
+    private static final int ANVIL_TEXT_FIELD_WIDTH = 110;
+    private static final int ANVIL_TEXT_FIELD_HEIGHT = 16;
+    private static final int ANVIL_TEXT_X = ANVIL_TEXT_FIELD_X + 4;
+    private static final int ANVIL_TEXT_Y = ANVIL_TEXT_FIELD_Y + 4;
+    private static final int ANVIL_MAX_NAME_LENGTH = 50;
+    private static final int ANVIL_INPUT_SLOT_X = 18;
+    private static final int ANVIL_ADDITIONAL_SLOT_X = 76;
+    private static final int ANVIL_RESULT_SLOT_X = 142;
+    private static final int ANVIL_SLOT_Y = 50;
+    private static final int ANVIL_PLUS_X = 51;
+    private static final int ANVIL_PLUS_Y = 53;
+    private static final int ANVIL_ARROW_X = 107;
+    private static final int ANVIL_ARROW_Y = 51;
+    private static final int ANVIL_ERROR_X = 104;
+    private static final int ANVIL_ERROR_Y = 48;
+    private static final int ANVIL_ERROR_WIDTH = 28;
+    private static final int ANVIL_ERROR_HEIGHT = 21;
+    private static final int ANVIL_COST_Y = 70;
+    private static final int SMITHING_CONTENT_MARGIN = 6;
+    private static final int SMITHING_CONTENT_WIDTH = 178;
+    private static final int SMITHING_CONTENT_HEIGHT = 84;
+    private static final int SMITHING_HAMMER_X = 0;
+    private static final int SMITHING_HAMMER_Y = 0;
+    private static final int SMITHING_LABEL_X = 40;
+    private static final int SMITHING_LABEL_Y = 16;
+    private static final int SMITHING_TEMPLATE_SLOT = 0;
+    private static final int SMITHING_BASE_SLOT = 1;
+    private static final int SMITHING_ADDITION_SLOT = 2;
+    private static final int SMITHING_RESULT_SLOT = 3;
+    private static final int SMITHING_TEMPLATE_SLOT_X = 8;
+    private static final int SMITHING_BASE_SLOT_X = 26;
+    private static final int SMITHING_ADDITION_SLOT_X = 44;
+    private static final int SMITHING_RESULT_SLOT_X = 98;
+    private static final int SMITHING_SLOT_Y = 48;
+    private static final int SMITHING_ARROW_X = 67;
+    private static final int SMITHING_ARROW_Y = 48;
+    private static final int SMITHING_PREVIEW_LEFT = 132;
+    private static final int SMITHING_PREVIEW_TOP = 18;
+    private static final int SMITHING_PREVIEW_RIGHT = 176;
+    private static final int SMITHING_PREVIEW_BOTTOM = 82;
+    private static final int GRINDSTONE_CONTENT_MARGIN = 6;
+    private static final int GRINDSTONE_CONTENT_WIDTH = 122;
+    private static final int GRINDSTONE_CONTENT_HEIGHT = 56;
+    private static final int GRINDSTONE_INPUT_SLOT = 0;
+    private static final int GRINDSTONE_ADDITIONAL_SLOT = 1;
+    private static final int GRINDSTONE_RESULT_SLOT = 2;
+    private static final int GRINDSTONE_SPRITE_X = 0;
+    private static final int GRINDSTONE_SPRITE_Y = 0;
+    private static final int GRINDSTONE_INPUT_SLOT_X = 19;
+    private static final int GRINDSTONE_INPUT_SLOT_Y = 4;
+    private static final int GRINDSTONE_ADDITIONAL_SLOT_X = 19;
+    private static final int GRINDSTONE_ADDITIONAL_SLOT_Y = 24;
+    private static final int GRINDSTONE_ARROW_X = 68;
+    private static final int GRINDSTONE_ARROW_Y = 21;
+    private static final int GRINDSTONE_RESULT_SLOT_X = 104;
+    private static final int GRINDSTONE_RESULT_SLOT_Y = 21;
+    private static final int STONECUTTER_CONTENT_MARGIN = 6;
+    private static final int STONECUTTER_CONTENT_WIDTH = 150;
+    private static final int STONECUTTER_CONTENT_HEIGHT = 56;
+    private static final int STONECUTTER_INPUT_SLOT = 0;
+    private static final int STONECUTTER_RESULT_SLOT = 1;
+    private static final int STONECUTTER_INPUT_SLOT_X = 0;
+    private static final int STONECUTTER_INPUT_SLOT_Y = 19;
+    private static final int STONECUTTER_PANEL_X = 32;
+    private static final int STONECUTTER_PANEL_Y = 0;
+    private static final int STONECUTTER_RECIPE_GRID_X = STONECUTTER_PANEL_X + 1;
+    private static final int STONECUTTER_RECIPE_GRID_Y = STONECUTTER_PANEL_Y + 1;
+    private static final int STONECUTTER_RECIPE_COLUMNS = 4;
+    private static final int STONECUTTER_RECIPE_ROWS = 3;
+    private static final int STONECUTTER_RECIPE_BUTTON_WIDTH = 16;
+    private static final int STONECUTTER_RECIPE_BUTTON_HEIGHT = 18;
+    private static final int STONECUTTER_VISIBLE_RECIPES = STONECUTTER_RECIPE_COLUMNS * STONECUTTER_RECIPE_ROWS;
+    private static final int STONECUTTER_SCROLLBAR_X = STONECUTTER_PANEL_X + 68;
+    private static final int STONECUTTER_SCROLLBAR_Y = STONECUTTER_PANEL_Y + 1;
+    private static final int STONECUTTER_SCROLLBAR_WIDTH = 12;
+    private static final int STONECUTTER_SCROLLBAR_HEIGHT = 15;
+    private static final int STONECUTTER_SCROLLBAR_TRAVEL = 41;
+    private static final int STONECUTTER_RESULT_SLOT_X = 124;
+    private static final int STONECUTTER_RESULT_SLOT_Y = 15;
+    private static final int LOOM_CONTENT_MARGIN = 6;
+    private static final int LOOM_CONTENT_WIDTH = 170;
+    private static final int LOOM_CONTENT_HEIGHT = 69;
+    private static final int LOOM_BANNER_SLOT = 0;
+    private static final int LOOM_DYE_SLOT = 1;
+    private static final int LOOM_PATTERN_SLOT = 2;
+    private static final int LOOM_RESULT_SLOT = 3;
+    private static final int LOOM_INPUTS_X = 0;
+    private static final int LOOM_INPUTS_Y = 4;
+    private static final int LOOM_BANNER_SLOT_X = LOOM_INPUTS_X + 7;
+    private static final int LOOM_BANNER_SLOT_Y = LOOM_INPUTS_Y + 12;
+    private static final int LOOM_DYE_SLOT_X = LOOM_INPUTS_X + 27;
+    private static final int LOOM_DYE_SLOT_Y = LOOM_INPUTS_Y + 12;
+    private static final int LOOM_PATTERN_SLOT_X = LOOM_INPUTS_X + 17;
+    private static final int LOOM_PATTERN_SLOT_Y = LOOM_INPUTS_Y + 31;
+    private static final int LOOM_OPTIONS_X = 58;
+    private static final int LOOM_OPTIONS_Y = 2;
+    private static final int LOOM_PATTERN_GRID_X = LOOM_OPTIONS_X + 1;
+    private static final int LOOM_PATTERN_GRID_Y = LOOM_OPTIONS_Y + 1;
+    private static final int LOOM_PATTERN_COLUMNS = 4;
+    private static final int LOOM_PATTERN_ROWS = 4;
+    private static final int LOOM_PATTERN_BUTTON_SIZE = 14;
+    private static final int LOOM_VISIBLE_PATTERNS = LOOM_PATTERN_COLUMNS * LOOM_PATTERN_ROWS;
+    private static final int LOOM_SCROLLBAR_X = LOOM_OPTIONS_X + 60;
+    private static final int LOOM_SCROLLBAR_Y = LOOM_OPTIONS_Y + 1;
+    private static final int LOOM_SCROLLBAR_WIDTH = 12;
+    private static final int LOOM_SCROLLBAR_HEIGHT = 15;
+    private static final int LOOM_SCROLLBAR_TRAVEL = 41;
+    private static final int LOOM_PREVIEW_X = 142;
+    private static final int LOOM_PREVIEW_Y = -6;
+    private static final int LOOM_RESULT_SLOT_X = 139;
+    private static final int LOOM_RESULT_SLOT_Y = 43;
+    private static final int CRAFTER_CONTENT_MARGIN = 6;
+    private static final int CRAFTER_CONTENT_WIDTH = 134;
+    private static final int CRAFTER_CONTENT_HEIGHT = 54;
+    private static final int CRAFTER_INPUT_SLOT_COUNT = 9;
+    private static final int CRAFTER_GRID_COLUMNS = 3;
+    private static final int CRAFTER_GRID_ROWS = 3;
+    private static final int CRAFTER_GRID_X = 0;
+    private static final int CRAFTER_GRID_Y = 0;
+    private static final int CRAFTER_REDSTONE_X = 76;
+    private static final int CRAFTER_REDSTONE_Y = 19;
+    private static final int CRAFTER_OUTPUT_X = 108;
+    private static final int CRAFTER_OUTPUT_Y = 14;
+    private static final int CRAFTER_OUTPUT_ITEM_OFFSET = 5;
+    private static final int CRAFTER_SLOT_STATE_ENABLED_FLAG = 16;
+    private static final int BEACON_CONTENT_MARGIN = 6;
+    private static final int BEACON_CONTENT_WIDTH = BEACON_UI_TEXTURE_WIDTH;
+    private static final int BEACON_CONTENT_HEIGHT = BEACON_UI_TEXTURE_HEIGHT;
+    private static final int BEACON_BUTTON_SIZE = 22;
+    private static final int BEACON_BUTTON_ICON_OFFSET = 2;
+    private static final int BEACON_BUTTON_ICON_SIZE = 18;
+    private static final int BEACON_PRIMARY_LABEL_CENTER_X = 54;
+    private static final int BEACON_SECONDARY_LABEL_CENTER_X = 162;
+    private static final int BEACON_LABEL_Y = 5;
+    private static final int BEACON_PRIMARY_BUTTON_BASE_X = 46;
+    private static final int BEACON_PRIMARY_BUTTON_BASE_Y = 18;
+    private static final int BEACON_BUTTON_GAP = 2;
+    private static final int BEACON_BUTTON_STEP_X = BEACON_BUTTON_SIZE + BEACON_BUTTON_GAP;
+    private static final int BEACON_BUTTON_STEP_Y = 25;
+    private static final int BEACON_SECONDARY_BUTTON_X = 139;
+    private static final int BEACON_UPGRADE_BUTTON_X = 163;
+    private static final int BEACON_SECONDARY_BUTTON_Y = 43;
+    private static final int BEACON_PAYMENT_SLOT = 0;
+    private static final int BEACON_PAYMENT_SLOT_X = 128;
+    private static final int BEACON_PAYMENT_SLOT_Y = 104;
+    private static final int BEACON_MATERIALS_Y = 106;
+    private static final int[] BEACON_MATERIALS_X = {13, 34, 56, 79, 101};
+    private static final int BEACON_CONFIRM_X = 162;
+    private static final int BEACON_CONFIRM_Y = 101;
+    private static final int BEACON_CANCEL_X = 188;
+    private static final int BEACON_CANCEL_Y = 101;
+    private static final int BEACON_EFFECT_ID_MASK = 0xFFFF;
+    private static final int BEACON_SECONDARY_EFFECT_SHIFT = 16;
+    private static final int BREWING_CONTENT_MARGIN = 6;
+    private static final int BREWING_CONTENT_WIDTH = BREWING_UI_SLOTS_TEXTURE_WIDTH;
+    private static final int BREWING_CONTENT_HEIGHT = BREWING_UI_SLOTS_TEXTURE_HEIGHT;
+    private static final int BREWING_BOTTLE_0_SLOT = 0;
+    private static final int BREWING_BOTTLE_1_SLOT = 1;
+    private static final int BREWING_BOTTLE_2_SLOT = 2;
+    private static final int BREWING_INGREDIENT_SLOT = 3;
+    private static final int BREWING_FUEL_SLOT = 4;
+    private static final int BREWING_FUEL_SLOT_X = 1;
+    private static final int BREWING_FUEL_SLOT_Y = 2;
+    private static final int BREWING_INGREDIENT_SLOT_X = 63;
+    private static final int BREWING_INGREDIENT_SLOT_Y = 2;
+    private static final int BREWING_BOTTLE_0_SLOT_X = 40;
+    private static final int BREWING_BOTTLE_0_SLOT_Y = 36;
+    private static final int BREWING_BOTTLE_1_SLOT_X = 63;
+    private static final int BREWING_BOTTLE_1_SLOT_Y = 43;
+    private static final int BREWING_BOTTLE_2_SLOT_X = 86;
+    private static final int BREWING_BOTTLE_2_SLOT_Y = 36;
+    private static final int BREWING_FUEL_LENGTH_X = 44;
+    private static final int BREWING_FUEL_LENGTH_Y = 29;
+    private static final int BREWING_FUEL_LENGTH_WIDTH = 18;
+    private static final int BREWING_FUEL_LENGTH_HEIGHT = 4;
+    private static final int BREWING_PROGRESS_X = 81;
+    private static final int BREWING_PROGRESS_Y = 1;
+    private static final int BREWING_PROGRESS_WIDTH = 9;
+    private static final int BREWING_PROGRESS_HEIGHT = 28;
+    private static final int BREWING_BUBBLES_X = 47;
+    private static final int BREWING_BUBBLES_BASE_Y = 28;
+    private static final int BREWING_BUBBLES_WIDTH = 12;
+    private static final int BREWING_BUBBLES_HEIGHT = 29;
+    private static final int[] BREWING_BUBBLE_LENGTHS = {29, 24, 20, 16, 11, 6, 0};
+    private static final int CARTOGRAPHY_CONTENT_MARGIN = 6;
+    private static final int CARTOGRAPHY_CONTENT_WIDTH = 174;
+    private static final int CARTOGRAPHY_CONTENT_HEIGHT = 66;
+    private static final int CARTOGRAPHY_MAP_SLOT = 0;
+    private static final int CARTOGRAPHY_ADDITIONAL_SLOT = 1;
+    private static final int CARTOGRAPHY_RESULT_SLOT = 2;
+    private static final int CARTOGRAPHY_MAP_SLOT_X = 0;
+    private static final int CARTOGRAPHY_MAP_SLOT_Y = 1;
+    private static final int CARTOGRAPHY_ADDITIONAL_SLOT_X = 0;
+    private static final int CARTOGRAPHY_ADDITIONAL_SLOT_Y = 39;
+    private static final int CARTOGRAPHY_PREVIEW_X = 68;
+    private static final int CARTOGRAPHY_PREVIEW_Y = 0;
+    private static final int CARTOGRAPHY_PREVIEW_SIZE = 66;
+    private static final int CARTOGRAPHY_INPUT_COLUMN_RIGHT = CARTOGRAPHY_MAP_SLOT_X - 1 + SLOT_SIZE;
+    private static final int CARTOGRAPHY_INPUT_GAP_TOP = CARTOGRAPHY_MAP_SLOT_Y - 1 + SLOT_SIZE;
+    private static final int CARTOGRAPHY_INPUT_GAP_BOTTOM = CARTOGRAPHY_ADDITIONAL_SLOT_Y - 1;
+    private static final int CARTOGRAPHY_PLUS_X = CARTOGRAPHY_MAP_SLOT_X - 1 + (SLOT_SIZE - CARTOGRAPHY_PLUS_TEXTURE_SIZE) / 2;
+    private static final int CARTOGRAPHY_PLUS_Y = CARTOGRAPHY_INPUT_GAP_TOP + (CARTOGRAPHY_INPUT_GAP_BOTTOM - CARTOGRAPHY_INPUT_GAP_TOP - CARTOGRAPHY_PLUS_TEXTURE_SIZE) / 2;
+    private static final int CARTOGRAPHY_ARROW_X = CARTOGRAPHY_INPUT_COLUMN_RIGHT + (CARTOGRAPHY_PREVIEW_X - CARTOGRAPHY_INPUT_COLUMN_RIGHT - WIDGET_ARROW_WIDTH) / 2;
+    private static final int CARTOGRAPHY_ARROW_Y = CARTOGRAPHY_INPUT_GAP_TOP + (CARTOGRAPHY_INPUT_GAP_BOTTOM - CARTOGRAPHY_INPUT_GAP_TOP - WIDGET_ARROW_HEIGHT) / 2;
+    private static final int CARTOGRAPHY_RESULT_SLOT_X = 156;
+    private static final int CARTOGRAPHY_RESULT_SLOT_Y = 24;
+    private static final int CARTOGRAPHY_ERROR_X = 35;
+    private static final int CARTOGRAPHY_ERROR_Y = 25;
+    private static final int CARTOGRAPHY_ERROR_WIDTH = 28;
+    private static final int CARTOGRAPHY_ERROR_HEIGHT = 21;
+    private static final int CARTOGRAPHY_DUPLICATED_WIDTH = 50;
+    private static final int CARTOGRAPHY_LOCKED_WIDTH = 10;
+    private static final int CARTOGRAPHY_LOCKED_HEIGHT = 14;
     private static final int ENCHANTMENT_CONTENT_MARGIN = 6;
     private static final int ENCHANTMENT_CONTENT_WIDTH = 168;
     private static final int ENCHANTMENT_CONTENT_HEIGHT = 58;
@@ -170,20 +482,98 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int MERCHANT_PAYMENT_2_X = 161;
     private static final int MERCHANT_RESULT_X = 213;
     private static final int MERCHANT_SLOT_Y = 45;
-    private static final int MERCHANT_TRADE_ARROW_X = 187;
-    private static final int MERCHANT_TRADE_ARROW_Y = 49;
+    private static final int MERCHANT_TRADE_ARROW_X = 183;
+    private static final int MERCHANT_TRADE_ARROW_Y = 45;
     private static final int MERCHANT_TRADE_ARROW_WIDTH = 10;
     private static final int MERCHANT_TRADE_ARROW_HEIGHT = 9;
+    private static final int MERCHANT_OUT_OF_STOCK_WIDTH = 28;
+    private static final int MERCHANT_OUT_OF_STOCK_HEIGHT = 21;
     private static final int MERCHANT_DETAIL_LABEL_Y = 5;
     private static final int MERCHANT_PROGRESS_X = 134;
     private static final int MERCHANT_PROGRESS_Y = 22;
     private static final int MERCHANT_PROGRESS_WIDTH = 96;
     private static final int MERCHANT_PROGRESS_HEIGHT = 5;
+    private static final int CREATIVE_CONTENT_MARGIN = 6;
+    private static final int CREATIVE_TAB_WIDTH = 26;
+    private static final int CREATIVE_TAB_HEIGHT = 32;
+    private static final int CREATIVE_TABS_PER_ROW = 7;
+    private static final int CREATIVE_PANEL_WIDTH = 184;
+    private static final int CREATIVE_PANEL_HEIGHT = 122;
+    private static final int CREATIVE_CONTENT_WIDTH = CREATIVE_PANEL_WIDTH;
+    private static final int CREATIVE_CONTENT_HEIGHT = CREATIVE_TAB_HEIGHT + CREATIVE_PANEL_HEIGHT + CREATIVE_TAB_HEIGHT - 4;
+    private static final int CREATIVE_GRID_COLUMNS = 9;
+    private static final int CREATIVE_GRID_ROWS = 5;
+    private static final int CREATIVE_GRID_X = 8;
+    private static final int CREATIVE_GRID_Y = 22;
+    private static final int CREATIVE_INVENTORY_GRID_Y = 16;
+    private static final int CREATIVE_SEARCH_X = 8;
+    private static final int CREATIVE_SEARCH_Y = 7;
+    private static final int CREATIVE_SEARCH_WIDTH = 92;
+    private static final int CREATIVE_SEARCH_HEIGHT = 12;
+    private static final int CREATIVE_SEARCH_TEXTURE_WIDTH = 3;
+    private static final int CREATIVE_SEARCH_TEXTURE_HEIGHT = 12;
+    private static final int CREATIVE_SCROLLBAR_X = 171;
+    private static final int CREATIVE_SCROLLBAR_Y = CREATIVE_GRID_Y;
+    private static final int CREATIVE_SCROLLBAR_WIDTH = 12;
+    private static final int CREATIVE_SCROLLBAR_HEIGHT = 15;
+    private static final int CREATIVE_SCROLLBAR_TRACK_HEIGHT = CREATIVE_GRID_ROWS * SLOT_SIZE - CREATIVE_SCROLLBAR_HEIGHT;
+    private static final int CREATIVE_DELETE_SLOT_X = 151;
+    private static final int CREATIVE_DELETE_SLOT_Y = 16;
+    private static final int CREATIVE_TAB_ICON_OFFSET_X = 5;
+    private static final int CREATIVE_TAB_ICON_OFFSET_TOP = 9;
+    private static final int CREATIVE_TAB_ICON_OFFSET_BOTTOM = 7;
+    private static final int CREATIVE_PICKED_STACK_SIZE = 64;
+    private static final int CREATIVE_DROP_SLOT = -1;
+    private static final Component CREATIVE_TITLE = Component.literal("Creative");
+    private static final Component CREATIVE_DELETE_TOOLTIP = Component.translatable("inventory.binSlot");
     private static final Identifier MERCHANT_TRADE_ARROW_SPRITE = Identifier.withDefaultNamespace("container/villager/trade_arrow");
     private static final Identifier MERCHANT_TRADE_ARROW_OUT_OF_STOCK_SPRITE = Identifier.withDefaultNamespace("container/villager/trade_arrow_out_of_stock");
+    private static final Identifier MERCHANT_OUT_OF_STOCK_SPRITE = Identifier.withDefaultNamespace("container/villager/out_of_stock");
     private static final Identifier MERCHANT_SCROLLBAR_SPRITE = Identifier.withDefaultNamespace("container/villager/scroller");
     private static final Identifier MERCHANT_SCROLLBAR_DISABLED_SPRITE = Identifier.withDefaultNamespace("container/villager/scroller_disabled");
     private static final Identifier MERCHANT_DISCOUNT_STRIKETHROUGH_SPRITE = Identifier.withDefaultNamespace("container/villager/discount_strikethrough");
+    private static final Identifier SMITHING_TEMPLATE_ARMOR_TRIM_SPRITE = Identifier.withDefaultNamespace("container/slot/smithing_template_armor_trim");
+    private static final Identifier SMITHING_TEMPLATE_NETHERITE_UPGRADE_SPRITE = Identifier.withDefaultNamespace("container/slot/smithing_template_netherite_upgrade");
+    private static final List<Identifier> SMITHING_TEMPLATE_SPRITES = List.of(SMITHING_TEMPLATE_ARMOR_TRIM_SPRITE, SMITHING_TEMPLATE_NETHERITE_UPGRADE_SPRITE);
+    private static final Vector3f SMITHING_ARMOR_STAND_TRANSLATION = new Vector3f(0.0F, 1.0F, 0.0F);
+    private static final Quaternionf SMITHING_ARMOR_STAND_ANGLE = new Quaternionf().rotationXYZ(0.43633232F, 0.0F, (float) Math.PI);
+    private static final Identifier STONECUTTER_SCROLLER_SPRITE = Identifier.withDefaultNamespace("container/stonecutter/scroller");
+    private static final Identifier STONECUTTER_SCROLLER_DISABLED_SPRITE = Identifier.withDefaultNamespace("container/stonecutter/scroller_disabled");
+    private static final Identifier STONECUTTER_RECIPE_SELECTED_SPRITE = Identifier.withDefaultNamespace("container/stonecutter/recipe_selected");
+    private static final Identifier STONECUTTER_RECIPE_HIGHLIGHTED_SPRITE = Identifier.withDefaultNamespace("container/stonecutter/recipe_highlighted");
+    private static final Identifier STONECUTTER_RECIPE_SPRITE = Identifier.withDefaultNamespace("container/stonecutter/recipe");
+    private static final Identifier LOOM_BANNER_SLOT_SPRITE = Identifier.withDefaultNamespace("container/slot/banner");
+    private static final Identifier LOOM_DYE_SLOT_SPRITE = Identifier.withDefaultNamespace("container/slot/dye");
+    private static final Identifier LOOM_PATTERN_SLOT_SPRITE = Identifier.withDefaultNamespace("container/slot/banner_pattern");
+    private static final Identifier LOOM_SCROLLER_SPRITE = Identifier.withDefaultNamespace("container/loom/scroller");
+    private static final Identifier LOOM_SCROLLER_DISABLED_SPRITE = Identifier.withDefaultNamespace("container/loom/scroller_disabled");
+    private static final Identifier LOOM_PATTERN_SELECTED_SPRITE = Identifier.withDefaultNamespace("container/loom/pattern_selected");
+    private static final Identifier LOOM_PATTERN_HIGHLIGHTED_SPRITE = Identifier.withDefaultNamespace("container/loom/pattern_highlighted");
+    private static final Identifier LOOM_PATTERN_SPRITE = Identifier.withDefaultNamespace("container/loom/pattern");
+    private static final Identifier LOOM_ERROR_SPRITE = Identifier.withDefaultNamespace("container/loom/error");
+    private static final Identifier BEACON_BUTTON_DISABLED_SPRITE = Identifier.withDefaultNamespace("container/beacon/button_disabled");
+    private static final Identifier BEACON_BUTTON_SELECTED_SPRITE = Identifier.withDefaultNamespace("container/beacon/button_selected");
+    private static final Identifier BEACON_BUTTON_HIGHLIGHTED_SPRITE = Identifier.withDefaultNamespace("container/beacon/button_highlighted");
+    private static final Identifier BEACON_BUTTON_SPRITE = Identifier.withDefaultNamespace("container/beacon/button");
+    private static final Identifier BEACON_CONFIRM_SPRITE = Identifier.withDefaultNamespace("container/beacon/confirm");
+    private static final Identifier BEACON_CANCEL_SPRITE = Identifier.withDefaultNamespace("container/beacon/cancel");
+    private static final Identifier ANVIL_TEXT_FIELD_SPRITE = Identifier.withDefaultNamespace("container/anvil/text_field");
+    private static final Identifier ANVIL_TEXT_FIELD_DISABLED_SPRITE = Identifier.withDefaultNamespace("container/anvil/text_field_disabled");
+    private static final Identifier ANVIL_ERROR_SPRITE = Identifier.withDefaultNamespace("container/anvil/error");
+    private static final Identifier CREATIVE_SCROLLER_SPRITE = Identifier.withDefaultNamespace("container/creative_inventory/scroller");
+    private static final Identifier CREATIVE_SCROLLER_DISABLED_SPRITE = Identifier.withDefaultNamespace("container/creative_inventory/scroller_disabled");
+    private static final Identifier[] CREATIVE_TOP_TAB_UNSELECTED_SPRITES = creativeTabSprites("tab_top_unselected");
+    private static final Identifier[] CREATIVE_TOP_TAB_SELECTED_SPRITES = creativeTabSprites("tab_top_selected");
+    private static final Identifier[] CREATIVE_BOTTOM_TAB_UNSELECTED_SPRITES = creativeTabSprites("tab_bottom_unselected");
+    private static final Identifier[] CREATIVE_BOTTOM_TAB_SELECTED_SPRITES = creativeTabSprites("tab_bottom_selected");
+    private static final Identifier CARTOGRAPHY_ERROR_SPRITE = Identifier.withDefaultNamespace("container/cartography_table/error");
+    private static final Identifier CARTOGRAPHY_SCALED_MAP_SPRITE = Identifier.withDefaultNamespace("container/cartography_table/scaled_map");
+    private static final Identifier CARTOGRAPHY_DUPLICATED_MAP_SPRITE = Identifier.withDefaultNamespace("container/cartography_table/duplicated_map");
+    private static final Identifier CARTOGRAPHY_MAP_SPRITE = Identifier.withDefaultNamespace("container/cartography_table/map");
+    private static final Identifier CARTOGRAPHY_LOCKED_SPRITE = Identifier.withDefaultNamespace("container/cartography_table/locked");
+    private static final Identifier BREWING_FUEL_LENGTH_SPRITE = Identifier.withDefaultNamespace("container/brewing_stand/fuel_length");
+    private static final Identifier BREWING_PROGRESS_SPRITE = Identifier.withDefaultNamespace("container/brewing_stand/brew_progress");
+    private static final Identifier BREWING_BUBBLES_SPRITE = Identifier.withDefaultNamespace("container/brewing_stand/bubbles");
     private static final Identifier ENCHANTING_BOOK_TEXTURE = Identifier.withDefaultNamespace("textures/entity/enchantment/enchanting_table_book.png");
     private static final Identifier ENCHANTMENT_SLOT_SPRITE = Identifier.withDefaultNamespace("container/enchanting_table/enchantment_slot");
     private static final Identifier ENCHANTMENT_SLOT_HIGHLIGHTED_SPRITE = Identifier.withDefaultNamespace("container/enchanting_table/enchantment_slot_highlighted");
@@ -203,7 +593,6 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int COLOR_TOP_BAR = 0xFF263143;
     private static final int COLOR_TOP_BAR_FOCUSED = 0xFF345372;
     private static final int COLOR_SLOT = 0xFF252A33;
-    private static final int COLOR_SLOT_HOVER = 0xFF465265;
     private static final int COLOR_SLOT_BORDER = 0xFF9AA3B2;
     private static final int COLOR_WINDOW_TITLE = 0xFF111111;
     private static final int COLOR_TEXT = 0xFFE8EDF5;
@@ -228,6 +617,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable InventoryWindow pressedControlWindow;
     private @Nullable WindowControl pressedControl;
     private boolean pressedControlInPopup;
+    private @Nullable InventoryWindow editingAnvilWindow;
+    private @Nullable InventoryWindow editingCreativeSearchWindow;
     private @Nullable InventoryWindow popupWindow;
     private int moveOffsetX;
     private int moveOffsetY;
@@ -236,9 +627,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private int resizeStartMouseY;
     private int resizeStartWidth;
     private int resizeStartHeight;
+    private @Nullable InventoryWindow scrollingCreativeWindow;
     private @Nullable Slot dragStartSlot;
     private ItemStack sharedCarried = ItemStack.EMPTY;
     private @Nullable BookModel enchantmentBookModel;
+    private @Nullable BannerFlagModel loomBannerFlagModel;
+    private final MapRenderState cartographyMapRenderState = new MapRenderState();
     private boolean attackingWorld;
     private boolean usingWorld;
 
@@ -362,10 +756,47 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return;
         }
 
+        if (isCreativePlayer(minecraft)) {
+            openOrToggleCreative(minecraft);
+            return;
+        }
+
         InventoryDesktopScreen screen = getOrCreate(minecraft);
         DesktopDebug.log("client request E inventory desktop={} active={}", screen.desktopId, minecraft.screen == screen);
         screen.toggleWindow(WindowKind.INVENTORY);
         screen.showIfNeeded(minecraft);
+    }
+
+    public static void openOrToggleCreative(Minecraft minecraft) {
+        if (!canUseDesktopInput(minecraft) || !isCreativePlayer(minecraft)) {
+            return;
+        }
+
+        InventoryDesktopScreen screen = getOrCreate(minecraft);
+        DesktopDebug.log("client request E creative desktop={} active={}", screen.desktopId, minecraft.screen == screen);
+        screen.toggleWindow(WindowKind.CREATIVE);
+        screen.showIfNeeded(minecraft);
+    }
+
+    public static boolean replaceVanillaCreativeScreen(Minecraft minecraft, @Nullable Screen incomingScreen) {
+        if (!(incomingScreen instanceof CreativeModeInventoryScreen) || !isCreativePlayer(minecraft)) {
+            return false;
+        }
+
+        if (minecraft.screen instanceof InventoryDesktopScreen) {
+            InventoryDesktopScreen screen = getOrCreate(minecraft);
+            screen.showWindow(WindowKind.CREATIVE);
+            screen.showIfNeeded(minecraft);
+        } else if (minecraft.screen == null) {
+            InventoryDesktopScreen screen = getOrCreate(minecraft);
+            screen.showWindow(WindowKind.CREATIVE);
+            screen.showIfNeeded(minecraft);
+        } else {
+            return false;
+        }
+
+        DesktopDebug.log("client vanilla creative screen replaced with desktop creative");
+        return true;
     }
 
     public static void openOrToggleCharacter(Minecraft minecraft) {
@@ -421,6 +852,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static boolean canUseDesktopInput(Minecraft minecraft) {
         return minecraft.player != null
             && (minecraft.screen == null || minecraft.screen instanceof InventoryDesktopScreen);
+    }
+
+    private static boolean isCreativePlayer(Minecraft minecraft) {
+        return minecraft.player != null && minecraft.player.isCreative();
     }
 
     public void updateSessionSlot(int sessionId, int slotIndex, int stateId, ItemStack stack) {
@@ -501,6 +936,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (!this.cameraControl && cameraControl) {
             this.movingWindow = null;
             this.resizingWindow = null;
+            this.editingAnvilWindow = null;
+            this.editingCreativeSearchWindow = null;
+            this.scrollingCreativeWindow = null;
             this.popupWindow = null;
             this.dragStartSlot = null;
             this.stopWorldAttack();
@@ -526,6 +964,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.stopWorldUse();
         this.movingWindow = null;
         this.resizingWindow = null;
+        this.editingAnvilWindow = null;
+        this.editingCreativeSearchWindow = null;
+        this.scrollingCreativeWindow = null;
         DesktopDebug.trace("client removed from active screen desktop={} windows={} sessions={}", this.desktopId, this.windows.size(), this.sessions.size());
         super.removed();
     }
@@ -556,6 +997,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         for (InventoryWindow window : this.windows) {
             if (!window.minimized && window.containerMenu() instanceof EnchantmentMenu enchantmentMenu) {
                 window.enchantmentBookState().tick(enchantmentMenu);
+            } else if (!window.minimized && window.containerMenu() instanceof SmithingMenu smithingMenu) {
+                window.smithingState().tick(smithingMenu);
             }
         }
 
@@ -682,6 +1125,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 return true;
             }
 
+            if (window.kind == WindowKind.CREATIVE) {
+                return this.creativeMouseClicked(window, event);
+            }
+
             int enchantmentButton = this.enchantmentButtonAt(window, event.x(), event.y());
             if (enchantmentButton >= 0) {
                 if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
@@ -695,6 +1142,44 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
                     this.merchantTradeClicked(window, merchantTrade);
                 }
+                return true;
+            }
+
+            int stonecutterRecipe = this.stonecutterRecipeAt(window, event.x(), event.y());
+            if (stonecutterRecipe >= 0) {
+                if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                    this.stonecutterRecipeClicked(window, stonecutterRecipe);
+                }
+                return true;
+            }
+
+            int loomPattern = this.loomPatternAt(window, event.x(), event.y());
+            if (loomPattern >= 0) {
+                if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                    this.loomPatternClicked(window, loomPattern);
+                }
+                return true;
+            }
+
+            BeaconButtonHit beaconButton = this.beaconButtonAt(window, event.x(), event.y());
+            if (beaconButton != null) {
+                if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                    this.beaconButtonClicked(window, beaconButton);
+                }
+                return true;
+            }
+
+            if (window.containerMenu() instanceof AnvilMenu && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                if (this.anvilTextFieldContains(window, event.x(), event.y())) {
+                    this.focusAnvilTextField(window);
+                    return true;
+                }
+                if (this.editingAnvilWindow == window) {
+                    this.editingAnvilWindow = null;
+                }
+            }
+
+            if (this.crafterSlotStateClicked(window, event)) {
                 return true;
             }
 
@@ -751,6 +1236,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
+        if (this.scrollingCreativeWindow != null) {
+            this.updateCreativeScrollFromMouse(this.scrollingCreativeWindow, event.y());
+            return true;
+        }
+
         if (this.movingWindow != null) {
             this.movingWindow.x = clamp((int) event.x() - this.moveOffsetX, 0, Math.max(0, this.desktopWidth() - this.movingWindow.width));
             this.movingWindow.y = clamp((int) event.y() - this.moveOffsetY, 0, Math.max(0, this.desktopHeight() - TOP_BAR_HEIGHT));
@@ -796,6 +1286,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.movingWindow = null;
         InventoryWindow resizedWindow = this.resizingWindow;
         this.resizingWindow = null;
+        this.scrollingCreativeWindow = null;
         if (resizedWindow != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             this.snapResizableWindow(resizedWindow);
         }
@@ -854,6 +1345,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void slotClicked(SlotHit hit, int button, ContainerInput input) {
+        if (this.isCreativePlayerMenuSlot(hit)) {
+            this.creativePlayerSlotClicked(hit, button);
+            return;
+        }
+
         DesktopDebug.trace(
             "client slot click desktop={} session={} slot={} button={} input={} menu={}",
             this.desktopId,
@@ -976,6 +1472,120 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    private void stonecutterRecipeClicked(InventoryWindow window, int recipeIndex) {
+        AbstractContainerMenu menu = window.containerMenu();
+        if (!(menu instanceof StonecutterMenu stonecutterMenu) || this.minecraft == null || this.minecraft.player == null) {
+            return;
+        }
+
+        if (recipeIndex < 0 || recipeIndex >= stonecutterMenu.getNumberOfVisibleRecipes()) {
+            return;
+        }
+
+        if (!stonecutterMenu.clickMenuButton(this.minecraft.player, recipeIndex)) {
+            return;
+        }
+
+        DesktopDebug.trace("client stonecutter recipe desktop={} session={} recipe={}", this.desktopId, window.sessionId(), recipeIndex);
+        if (window.session != null) {
+            if (!DesktopContainerClient.clickButton(window.session.sessionId(), recipeIndex)) {
+                DesktopDebug.warn("client stonecutter recipe dropped session={} recipe={} reason=packet-send-failed", window.session.sessionId(), recipeIndex);
+            }
+            return;
+        }
+
+        if (this.minecraft.gameMode != null && window.legacyMenu == menu && this.minecraft.player.containerMenu == menu) {
+            this.minecraft.gameMode.handleInventoryButtonClick(stonecutterMenu.containerId, recipeIndex);
+        }
+    }
+
+    private void loomPatternClicked(InventoryWindow window, int patternIndex) {
+        AbstractContainerMenu menu = window.containerMenu();
+        if (!(menu instanceof LoomMenu loomMenu) || this.minecraft == null || this.minecraft.player == null) {
+            return;
+        }
+
+        if (!this.shouldDisplayLoomPatterns(loomMenu) || patternIndex < 0 || patternIndex >= loomMenu.getSelectablePatterns().size()) {
+            return;
+        }
+
+        if (!loomMenu.clickMenuButton(this.minecraft.player, patternIndex)) {
+            return;
+        }
+
+        DesktopDebug.trace("client loom pattern desktop={} session={} pattern={}", this.desktopId, window.sessionId(), patternIndex);
+        if (window.session != null) {
+            if (!DesktopContainerClient.clickButton(window.session.sessionId(), patternIndex)) {
+                DesktopDebug.warn("client loom pattern dropped session={} pattern={} reason=packet-send-failed", window.session.sessionId(), patternIndex);
+            }
+            return;
+        }
+
+        if (this.minecraft.gameMode != null && window.legacyMenu == menu && this.minecraft.player.containerMenu == menu) {
+            this.minecraft.gameMode.handleInventoryButtonClick(loomMenu.containerId, patternIndex);
+        }
+    }
+
+    private void beaconButtonClicked(InventoryWindow window, BeaconButtonHit hit) {
+        AbstractContainerMenu menu = window.containerMenu();
+        if (!(menu instanceof BeaconMenu beaconMenu) || this.minecraft == null || this.minecraft.player == null) {
+            return;
+        }
+
+        this.syncBeaconSelection(window, beaconMenu);
+        switch (hit.kind()) {
+            case PRIMARY -> {
+                if (!this.canSelectBeaconPrimary(beaconMenu, hit.effect())) {
+                    return;
+                }
+
+                window.beaconPrimary = hit.effect();
+                if (!this.canSelectBeaconSecondary(beaconMenu, window.beaconPrimary, window.beaconSecondary)) {
+                    window.beaconSecondary = null;
+                }
+                window.beaconSelectionDirty = true;
+                DesktopDebug.trace("client beacon primary desktop={} window={} effect={}", this.desktopId, window.debugName(), beaconEffectId(hit.effect()));
+            }
+            case SECONDARY, UPGRADE -> {
+                if (!this.canSelectBeaconSecondary(beaconMenu, window.beaconPrimary, hit.effect())) {
+                    return;
+                }
+
+                window.beaconSecondary = hit.effect();
+                window.beaconSelectionDirty = true;
+                DesktopDebug.trace("client beacon secondary desktop={} window={} effect={}", this.desktopId, window.debugName(), beaconEffectId(hit.effect()));
+            }
+            case CONFIRM -> {
+                if (!this.canConfirmBeacon(beaconMenu, window)) {
+                    return;
+                }
+
+                int buttonId = beaconButtonId(window.beaconPrimary, window.beaconSecondary);
+                DesktopDebug.trace(
+                    "client beacon confirm desktop={} session={} primary={} secondary={}",
+                    this.desktopId,
+                    window.sessionId(),
+                    beaconEffectId(window.beaconPrimary),
+                    beaconEffectId(window.beaconSecondary)
+                );
+                if (window.session != null) {
+                    if (!DesktopContainerClient.clickButton(window.session.sessionId(), buttonId)) {
+                        DesktopDebug.warn("client beacon confirm dropped session={} reason=packet-send-failed", window.session.sessionId());
+                    }
+                    return;
+                }
+
+                if (this.minecraft.getConnection() != null && window.legacyMenu == menu && this.minecraft.player.containerMenu == menu) {
+                    this.minecraft.getConnection().send(new ServerboundSetBeaconPacket(
+                        Optional.ofNullable(window.beaconPrimary),
+                        Optional.ofNullable(window.beaconSecondary)
+                    ));
+                }
+            }
+            case CANCEL -> this.activateControl(window, WindowControl.CLOSE);
+        }
+    }
+
     @Override
     public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
         if (this.cameraControl) {
@@ -983,6 +1593,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         InventoryWindow window = this.windowAt(x, y);
+        if (window != null && !window.minimized && window.kind == WindowKind.CREATIVE && this.creativeGridContains(window, x, y)) {
+            if (this.scrollCreativeWindow(window, scrollY)) {
+                return true;
+            }
+        }
+
         if (window != null && !window.minimized && window.containerMenu() instanceof MerchantMenu merchantMenu && this.merchantTradeListContains(window, x, y)) {
             MerchantOffers offers = merchantMenu.getOffers();
             int maxScroll = Math.max(0, offers.size() - MERCHANT_VISIBLE_TRADES);
@@ -990,6 +1606,26 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 int oldScroll = window.merchantScroll;
                 window.merchantScroll = clamp(window.merchantScroll + (scrollY < 0.0 ? 1 : -1), 0, maxScroll);
                 DesktopDebug.trace("client merchant scroll desktop={} window={} old={} new={} max={}", this.desktopId, window.debugName(), oldScroll, window.merchantScroll, maxScroll);
+                return true;
+            }
+        }
+
+        if (window != null && !window.minimized && window.containerMenu() instanceof StonecutterMenu stonecutterMenu && this.stonecutterRecipePanelContains(window, x, y)) {
+            int maxScroll = stonecutterMaxScroll(stonecutterMenu);
+            if (maxScroll > 0) {
+                int oldScroll = window.stonecutterScroll;
+                window.stonecutterScroll = clamp(window.stonecutterScroll + (scrollY < 0.0 ? 1 : -1), 0, maxScroll);
+                DesktopDebug.trace("client stonecutter scroll desktop={} window={} old={} new={} max={}", this.desktopId, window.debugName(), oldScroll, window.stonecutterScroll, maxScroll);
+                return true;
+            }
+        }
+
+        if (window != null && !window.minimized && window.containerMenu() instanceof LoomMenu loomMenu && this.loomPatternPanelContains(window, x, y)) {
+            int maxScroll = loomMaxScroll(loomMenu);
+            if (maxScroll > 0) {
+                int oldScroll = window.loomScroll;
+                window.loomScroll = clamp(window.loomScroll + (scrollY < 0.0 ? 1 : -1), 0, maxScroll);
+                DesktopDebug.trace("client loom scroll desktop={} window={} old={} new={} max={}", this.desktopId, window.debugName(), oldScroll, window.loomScroll, maxScroll);
                 return true;
             }
         }
@@ -1009,6 +1645,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (this.handleCreativeSearchKey(event)) {
+            return true;
+        }
+
+        if (this.handleCreativeDropKey(event)) {
+            return true;
+        }
+
+        if (this.handleAnvilEditKey(event)) {
+            return true;
+        }
+
         if (this.minecraft.options.keyInventory.matches(event)) {
             this.toggleWindow(WindowKind.INVENTORY);
             this.showIfNeeded(this.minecraft);
@@ -1035,6 +1683,37 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         this.syncMovementKey(event, true);
         return false;
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent event) {
+        InventoryWindow creativeWindow = this.activeCreativeSearchWindow();
+        if (creativeWindow != null) {
+            if (!event.isAllowedChatCharacter()) {
+                return false;
+            }
+
+            String addition = event.codepointAsString();
+            if (!addition.isEmpty()) {
+                creativeWindow.creativeSearch = creativeWindow.creativeSearch + addition;
+                creativeWindow.creativeScrollRow = 0;
+            }
+            return true;
+        }
+
+        InventoryWindow window = this.activeAnvilEditWindow();
+        if (window == null || !event.isAllowedChatCharacter()) {
+            return false;
+        }
+
+        String addition = event.codepointAsString();
+        if (addition.isEmpty() || window.anvilName.length() + addition.length() > ANVIL_MAX_NAME_LENGTH) {
+            return true;
+        }
+
+        window.anvilName = window.anvilName + addition;
+        this.submitAnvilName(window);
+        return true;
     }
 
     @Override
@@ -1077,6 +1756,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.hotbarOnly = false;
     }
 
+    private void showWindow(WindowKind kind) {
+        for (InventoryWindow window : this.windows) {
+            if (window.kind == kind && window.session == null && window.legacyMenu == null) {
+                this.setFocusedWindow(window);
+                this.hotbarOnly = false;
+                return;
+            }
+        }
+
+        this.addWindow(kind);
+        this.hotbarOnly = false;
+    }
+
     private void addWindow(WindowKind kind) {
         InventoryWindow window;
         if (kind == WindowKind.INVENTORY) {
@@ -1090,6 +1782,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 windowWidth,
                 windowHeight
             );
+        } else if (kind == WindowKind.CREATIVE) {
+            int windowWidth = CREATIVE_CONTENT_MARGIN * 2 + CREATIVE_CONTENT_WIDTH;
+            int windowHeight = TOP_BAR_HEIGHT + CREATIVE_CONTENT_MARGIN * 2 + CREATIVE_CONTENT_HEIGHT;
+            window = new InventoryWindow(
+                kind,
+                CREATIVE_TITLE,
+                this.clampedWindowX(this.desktopWidth() / 2 - windowWidth / 2, windowWidth),
+                this.clampedWindowY(this.desktopHeight() / 2 - windowHeight / 2, windowHeight),
+                windowWidth,
+                windowHeight
+            );
+            this.initializeCreativeWindow(window);
         } else if (kind == WindowKind.CHARACTER) {
             int windowWidth = 224;
             int windowHeight = 158;
@@ -1264,7 +1968,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return switch (window.kind) {
             case INVENTORY -> this.mainInventorySlots().size();
             case CONTAINER -> window.containerSlots().size();
-            case CHARACTER -> 0;
+            case CHARACTER, CREATIVE -> 0;
         };
     }
 
@@ -1446,6 +2150,33 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (menu instanceof CraftingMenu) {
             return Math.max(titleWidth, CRAFTING_TABLE_CONTENT_MARGIN * 2 + CRAFTING_TABLE_CONTENT_WIDTH);
         }
+        if (menu instanceof AnvilMenu) {
+            return Math.max(titleWidth, ANVIL_CONTENT_MARGIN * 2 + ANVIL_CONTENT_WIDTH);
+        }
+        if (menu instanceof CrafterMenu) {
+            return Math.max(titleWidth, CRAFTER_CONTENT_MARGIN * 2 + CRAFTER_CONTENT_WIDTH);
+        }
+        if (menu instanceof BeaconMenu) {
+            return Math.max(titleWidth, BEACON_CONTENT_MARGIN * 2 + BEACON_CONTENT_WIDTH);
+        }
+        if (menu instanceof BrewingStandMenu) {
+            return Math.max(titleWidth, BREWING_CONTENT_MARGIN * 2 + BREWING_CONTENT_WIDTH);
+        }
+        if (menu instanceof CartographyTableMenu) {
+            return Math.max(titleWidth, CARTOGRAPHY_CONTENT_MARGIN * 2 + CARTOGRAPHY_CONTENT_WIDTH);
+        }
+        if (menu instanceof SmithingMenu) {
+            return Math.max(titleWidth, SMITHING_CONTENT_MARGIN * 2 + SMITHING_CONTENT_WIDTH);
+        }
+        if (menu instanceof GrindstoneMenu) {
+            return Math.max(titleWidth, GRINDSTONE_CONTENT_MARGIN * 2 + GRINDSTONE_CONTENT_WIDTH);
+        }
+        if (menu instanceof StonecutterMenu) {
+            return Math.max(titleWidth, STONECUTTER_CONTENT_MARGIN * 2 + STONECUTTER_CONTENT_WIDTH);
+        }
+        if (menu instanceof LoomMenu) {
+            return Math.max(titleWidth, LOOM_CONTENT_MARGIN * 2 + LOOM_CONTENT_WIDTH);
+        }
         if (menu instanceof EnchantmentMenu) {
             return Math.max(titleWidth, ENCHANTMENT_CONTENT_MARGIN * 2 + ENCHANTMENT_CONTENT_WIDTH);
         }
@@ -1467,6 +2198,33 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
         if (menu instanceof CraftingMenu) {
             return TOP_BAR_HEIGHT + CRAFTING_TABLE_CONTENT_MARGIN * 2 + CRAFTING_TABLE_CONTENT_HEIGHT;
+        }
+        if (menu instanceof AnvilMenu) {
+            return TOP_BAR_HEIGHT + ANVIL_CONTENT_MARGIN * 2 + ANVIL_CONTENT_HEIGHT;
+        }
+        if (menu instanceof CrafterMenu) {
+            return TOP_BAR_HEIGHT + CRAFTER_CONTENT_MARGIN * 2 + CRAFTER_CONTENT_HEIGHT;
+        }
+        if (menu instanceof BeaconMenu) {
+            return TOP_BAR_HEIGHT + BEACON_CONTENT_MARGIN * 2 + BEACON_CONTENT_HEIGHT;
+        }
+        if (menu instanceof BrewingStandMenu) {
+            return TOP_BAR_HEIGHT + BREWING_CONTENT_MARGIN * 2 + BREWING_CONTENT_HEIGHT;
+        }
+        if (menu instanceof CartographyTableMenu) {
+            return TOP_BAR_HEIGHT + CARTOGRAPHY_CONTENT_MARGIN * 2 + CARTOGRAPHY_CONTENT_HEIGHT;
+        }
+        if (menu instanceof SmithingMenu) {
+            return TOP_BAR_HEIGHT + SMITHING_CONTENT_MARGIN * 2 + SMITHING_CONTENT_HEIGHT;
+        }
+        if (menu instanceof GrindstoneMenu) {
+            return TOP_BAR_HEIGHT + GRINDSTONE_CONTENT_MARGIN * 2 + GRINDSTONE_CONTENT_HEIGHT;
+        }
+        if (menu instanceof StonecutterMenu) {
+            return TOP_BAR_HEIGHT + STONECUTTER_CONTENT_MARGIN * 2 + STONECUTTER_CONTENT_HEIGHT;
+        }
+        if (menu instanceof LoomMenu) {
+            return TOP_BAR_HEIGHT + LOOM_CONTENT_MARGIN * 2 + LOOM_CONTENT_HEIGHT;
         }
         if (menu instanceof EnchantmentMenu) {
             return TOP_BAR_HEIGHT + ENCHANTMENT_CONTENT_MARGIN * 2 + ENCHANTMENT_CONTENT_HEIGHT;
@@ -1585,6 +2343,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (this.popupWindow == window) {
             this.popupWindow = null;
         }
+        if (this.editingAnvilWindow == window) {
+            this.editingAnvilWindow = null;
+        }
+        if (this.editingCreativeSearchWindow == window) {
+            this.editingCreativeSearchWindow = null;
+        }
+        if (this.scrollingCreativeWindow == window) {
+            this.scrollingCreativeWindow = null;
+        }
         if (this.pressedControlWindow == window) {
             this.pressedControlWindow = null;
             this.pressedControl = null;
@@ -1635,9 +2402,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.movingWindow = null;
         this.resizingWindow = null;
         this.popupWindow = null;
+        this.editingAnvilWindow = null;
+        this.editingCreativeSearchWindow = null;
         this.pressedControlWindow = null;
         this.pressedControl = null;
         this.pressedControlInPopup = false;
+        this.scrollingCreativeWindow = null;
         this.dragStartSlot = null;
         this.usingWorld = false;
         this.hideFromScreen();
@@ -1656,6 +2426,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.pressedControl = null;
         this.pressedControlInPopup = false;
         this.popupWindow = null;
+        this.editingAnvilWindow = null;
+        this.editingCreativeSearchWindow = null;
+        this.scrollingCreativeWindow = null;
         this.dragStartSlot = null;
         this.usingWorld = false;
         this.sharedCarried = ItemStack.EMPTY;
@@ -1829,6 +2602,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             case INVENTORY -> this.renderInventoryWindow(graphics, window, mouseX, mouseY);
             case CONTAINER -> this.renderContainerWindow(graphics, window, mouseX, mouseY);
             case CHARACTER -> this.renderCharacterWindow(graphics, window, mouseX, mouseY);
+            case CREATIVE -> this.renderCreativeWindow(graphics, window, mouseX, mouseY);
         }
 
         this.renderResizeGrip(graphics, window, mouseX, mouseY);
@@ -1870,9 +2644,39 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private Component titleBarTitle(InventoryWindow window) {
-        return window.containerMenu() instanceof MerchantMenu
-            ? Component.translatable("merchant.trades")
-            : window.title;
+        AbstractContainerMenu menu = window.containerMenu();
+        if (menu instanceof MerchantMenu) {
+            return Component.translatable("merchant.trades");
+        }
+        if (menu instanceof SmithingMenu) {
+            return Component.literal("Smithing");
+        }
+        if (menu instanceof GrindstoneMenu) {
+            return Component.translatable("block.minecraft.grindstone");
+        }
+        if (menu instanceof StonecutterMenu) {
+            return Component.translatable("block.minecraft.stonecutter");
+        }
+        if (menu instanceof LoomMenu) {
+            return Component.translatable("block.minecraft.loom");
+        }
+        if (menu instanceof AnvilMenu) {
+            return Component.translatable("block.minecraft.anvil");
+        }
+        if (menu instanceof CrafterMenu) {
+            return Component.translatable("block.minecraft.crafter");
+        }
+        if (menu instanceof BeaconMenu) {
+            return Component.translatable("block.minecraft.beacon");
+        }
+        if (menu instanceof BrewingStandMenu) {
+            return Component.translatable("block.minecraft.brewing_stand");
+        }
+        if (menu instanceof CartographyTableMenu) {
+            return Component.translatable("block.minecraft.cartography_table");
+        }
+
+        return window.title;
     }
 
     private List<ControlRect> controlRects(InventoryWindow window, List<WindowControl> controls) {
@@ -2017,6 +2821,587 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.renderScrollbar(graphics, window, layout);
     }
 
+    private void initializeCreativeWindow(InventoryWindow window) {
+        List<CreativeModeTab> tabs = this.creativeTabs();
+        CreativeModeTab defaultTab = CreativeModeTabs.getDefaultTab();
+        window.creativeSelectedTab = tabs.contains(defaultTab) ? defaultTab : tabs.isEmpty() ? null : tabs.get(0);
+        window.creativeScrollRow = 0;
+        window.creativeSearch = "";
+    }
+
+    private void renderCreativeWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        CreativeModeTab selectedTab = this.selectedCreativeTab(window);
+        if (selectedTab == null) {
+            graphics.text(this.font, "No creative tabs", window.contentX(), window.contentY(), COLOR_MUTED_TEXT, false);
+            return;
+        }
+
+        int panelX = creativePanelX(window);
+        int panelY = creativePanelY(window);
+        graphics.fill(panelX, panelY, panelX + CREATIVE_PANEL_WIDTH, panelY + CREATIVE_PANEL_HEIGHT, 0x22000000);
+        this.renderCreativeTabs(graphics, window, selectedTab);
+
+        if (this.isCreativeSearchTab(selectedTab)) {
+            this.renderCreativeSearchBox(graphics, window);
+        }
+
+        if (this.isCreativeInventoryTab(selectedTab)) {
+            this.renderCreativeInventoryTab(graphics, window, mouseX, mouseY);
+        } else {
+            this.renderCreativeCatalogTab(graphics, window, mouseX, mouseY);
+        }
+    }
+
+    private void renderCreativeTabs(GuiGraphicsExtractor graphics, InventoryWindow window, CreativeModeTab selectedTab) {
+        for (CreativeModeTab tab : this.creativeTabs()) {
+            CreativeTabRect rect = this.creativeTabRect(window, tab);
+            if (rect == null) {
+                continue;
+            }
+
+            boolean selected = tab == selectedTab;
+            Identifier sprite = this.creativeTabSprite(tab, rect.column(), selected);
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, rect.x(), rect.y(), CREATIVE_TAB_WIDTH, CREATIVE_TAB_HEIGHT);
+            ItemStack icon = tab.getIconItem();
+            int iconY = rect.topRow() ? rect.y() + CREATIVE_TAB_ICON_OFFSET_TOP : rect.y() + CREATIVE_TAB_ICON_OFFSET_BOTTOM;
+            graphics.item(icon, rect.x() + CREATIVE_TAB_ICON_OFFSET_X, iconY);
+            graphics.itemDecorations(this.font, icon, rect.x() + CREATIVE_TAB_ICON_OFFSET_X, iconY);
+        }
+    }
+
+    private Identifier creativeTabSprite(CreativeModeTab tab, int column, boolean selected) {
+        int index = clamp(column + 1, 1, CREATIVE_TABS_PER_ROW) - 1;
+        boolean top = tab.row() == CreativeModeTab.Row.TOP;
+        if (top) {
+            return selected ? CREATIVE_TOP_TAB_SELECTED_SPRITES[index] : CREATIVE_TOP_TAB_UNSELECTED_SPRITES[index];
+        }
+
+        return selected ? CREATIVE_BOTTOM_TAB_SELECTED_SPRITES[index] : CREATIVE_BOTTOM_TAB_UNSELECTED_SPRITES[index];
+    }
+
+    private void renderCreativeSearchBox(GuiGraphicsExtractor graphics, InventoryWindow window) {
+        int x = creativePanelX(window) + CREATIVE_SEARCH_X;
+        int y = creativePanelY(window) + CREATIVE_SEARCH_Y;
+        blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x, y, 0, 0, 1, CREATIVE_SEARCH_HEIGHT, 1, CREATIVE_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
+        blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x + 1, y, 1, 0, CREATIVE_SEARCH_WIDTH - 2, CREATIVE_SEARCH_HEIGHT, 1, CREATIVE_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
+        blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x + CREATIVE_SEARCH_WIDTH - 1, y, 2, 0, 1, CREATIVE_SEARCH_HEIGHT, 1, CREATIVE_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
+
+        String text = this.creativeSearchVisibleText(window);
+        int textColor = this.editingCreativeSearchWindow == window ? 0xFFFFFFFF : 0xFFE8E8E8;
+        graphics.text(this.font, text, x + 4, y + 2, textColor, false);
+        if (this.editingCreativeSearchWindow == window && (System.currentTimeMillis() / 300L) % 2L == 0L) {
+            int cursorX = x + 4 + this.font.width(text);
+            graphics.fill(cursorX, y + 2, cursorX + 1, y + 10, textColor);
+        }
+    }
+
+    private void renderCreativeInventoryTab(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        int gridX = creativePanelX(window) + CREATIVE_GRID_X;
+        int gridY = creativePanelY(window) + CREATIVE_INVENTORY_GRID_Y;
+        List<Slot> slots = this.mainInventorySlots();
+        for (int i = 0; i < slots.size(); i++) {
+            int x = gridX + i % CREATIVE_GRID_COLUMNS * SLOT_SIZE;
+            int y = gridY + i / CREATIVE_GRID_COLUMNS * SLOT_SIZE;
+            this.renderSlot(graphics, slots.get(i), x, y, mouseX, mouseY);
+        }
+
+        int deleteX = creativePanelX(window) + CREATIVE_DELETE_SLOT_X;
+        int deleteY = creativePanelY(window) + CREATIVE_DELETE_SLOT_Y;
+        boolean hovered = contains(mouseX, mouseY, deleteX - 1, deleteY - 1, SLOT_SIZE, SLOT_SIZE);
+        renderSlotBackground(graphics, deleteX, deleteY);
+        if (hovered) {
+            renderSlotHighlightBack(graphics, deleteX, deleteY);
+        }
+        graphics.centeredText(this.font, "x", deleteX + 8, deleteY + 4, 0xFFFF6060);
+        if (hovered) {
+            renderSlotHighlightFront(graphics, deleteX, deleteY);
+        }
+    }
+
+    private void renderCreativeCatalogTab(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        List<ItemStack> items = this.creativeVisibleItems(window);
+        CreativeGridLayout layout = this.creativeGridLayout(items.size());
+        window.creativeScrollRow = clamp(window.creativeScrollRow, 0, layout.maxScrollRow());
+        int firstIndex = window.creativeScrollRow * CREATIVE_GRID_COLUMNS;
+        int gridX = creativePanelX(window) + CREATIVE_GRID_X;
+        int gridY = creativePanelY(window) + CREATIVE_GRID_Y;
+        for (int row = 0; row < CREATIVE_GRID_ROWS; row++) {
+            for (int column = 0; column < CREATIVE_GRID_COLUMNS; column++) {
+                int index = firstIndex + row * CREATIVE_GRID_COLUMNS + column;
+                if (index >= items.size()) {
+                    continue;
+                }
+
+                int x = gridX + column * SLOT_SIZE;
+                int y = gridY + row * SLOT_SIZE;
+                this.renderCreativeItemSlot(graphics, items.get(index), x, y, mouseX, mouseY);
+            }
+        }
+
+        this.renderCreativeScrollbar(graphics, window, layout);
+    }
+
+    private void renderCreativeItemSlot(GuiGraphicsExtractor graphics, ItemStack stack, int x, int y, int mouseX, int mouseY) {
+        boolean hovered = contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE);
+        renderSlotBackground(graphics, x, y);
+        if (hovered) {
+            renderSlotHighlightBack(graphics, x, y);
+        }
+        if (!stack.isEmpty()) {
+            graphics.item(stack, x, y);
+            graphics.itemDecorations(this.font, stack, x, y);
+        }
+        if (hovered) {
+            renderSlotHighlightFront(graphics, x, y);
+        }
+    }
+
+    private void renderCreativeScrollbar(GuiGraphicsExtractor graphics, InventoryWindow window, CreativeGridLayout layout) {
+        int x = creativePanelX(window) + CREATIVE_SCROLLBAR_X;
+        int y = creativePanelY(window) + CREATIVE_SCROLLBAR_Y;
+        Identifier sprite = layout.scrollable() ? CREATIVE_SCROLLER_SPRITE : CREATIVE_SCROLLER_DISABLED_SPRITE;
+        int offset = layout.maxScrollRow() == 0 ? 0 : Math.round((float) window.creativeScrollRow / (float) layout.maxScrollRow() * CREATIVE_SCROLLBAR_TRACK_HEIGHT);
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y + offset, CREATIVE_SCROLLBAR_WIDTH, CREATIVE_SCROLLBAR_HEIGHT);
+    }
+
+    private List<CreativeModeTab> creativeTabs() {
+        this.refreshCreativeTabs();
+        List<CreativeModeTab> tabs = new ArrayList<>(CreativeModeTabs.allTabs());
+        tabs.removeIf(tab -> tab.getType() == CreativeModeTab.Type.CATEGORY && tab.getDisplayItems().isEmpty());
+        return tabs;
+    }
+
+    private void refreshCreativeTabs() {
+        if (this.minecraft == null || this.minecraft.level == null || this.minecraft.player == null) {
+            return;
+        }
+
+        CreativeModeTabs.tryRebuildTabContents(
+            this.minecraft.level.enabledFeatures(),
+            this.minecraft.player.canUseGameMasterBlocks(),
+            this.minecraft.level.registryAccess()
+        );
+    }
+
+    private @Nullable CreativeModeTab selectedCreativeTab(InventoryWindow window) {
+        List<CreativeModeTab> tabs = this.creativeTabs();
+        if (tabs.isEmpty()) {
+            window.creativeSelectedTab = null;
+            return null;
+        }
+
+        if (window.creativeSelectedTab == null || !tabs.contains(window.creativeSelectedTab)) {
+            CreativeModeTab defaultTab = CreativeModeTabs.getDefaultTab();
+            window.creativeSelectedTab = tabs.contains(defaultTab) ? defaultTab : tabs.get(0);
+            window.creativeScrollRow = 0;
+        }
+
+        return window.creativeSelectedTab;
+    }
+
+    private boolean isCreativeSearchTab(CreativeModeTab tab) {
+        return tab.getType() == CreativeModeTab.Type.SEARCH;
+    }
+
+    private boolean isCreativeInventoryTab(CreativeModeTab tab) {
+        return tab.getType() == CreativeModeTab.Type.INVENTORY;
+    }
+
+    private List<ItemStack> creativeVisibleItems(InventoryWindow window) {
+        CreativeModeTab tab = this.selectedCreativeTab(window);
+        if (tab == null || this.isCreativeInventoryTab(tab)) {
+            return List.of();
+        }
+
+        if (this.isCreativeSearchTab(tab)) {
+            return this.creativeSearchItems(window);
+        }
+
+        return this.copyStacks(tab.getDisplayItems());
+    }
+
+    private List<ItemStack> creativeSearchItems(InventoryWindow window) {
+        String query = window.creativeSearch.trim();
+        if (query.isEmpty()) {
+            CreativeModeTab searchTab = CreativeModeTabs.searchTab();
+            return this.copyStacks(searchTab.getSearchTabDisplayItems());
+        }
+
+        List<ItemStack> results = new ArrayList<>();
+        if (this.minecraft != null && this.minecraft.getConnection() != null) {
+            if (query.startsWith("#")) {
+                results.addAll(this.minecraft.getConnection().searchTrees().creativeTagSearch().search(query.substring(1)));
+            } else {
+                results.addAll(this.minecraft.getConnection().searchTrees().creativeNameSearch().search(query));
+            }
+        }
+
+        if (!results.isEmpty()) {
+            return this.copyStacks(results);
+        }
+
+        String lowered = query.toLowerCase(java.util.Locale.ROOT);
+        for (ItemStack stack : CreativeModeTabs.searchTab().getSearchTabDisplayItems()) {
+            String name = stack.getHoverName().getString().toLowerCase(java.util.Locale.ROOT);
+            String id = stack.getItem().toString().toLowerCase(java.util.Locale.ROOT);
+            if (name.contains(lowered) || id.contains(lowered)) {
+                results.add(stack.copy());
+            }
+        }
+        return results;
+    }
+
+    private List<ItemStack> copyStacks(Collection<ItemStack> stacks) {
+        List<ItemStack> copy = new ArrayList<>(stacks.size());
+        for (ItemStack stack : stacks) {
+            copy.add(stack.copy());
+        }
+        return copy;
+    }
+
+    private CreativeGridLayout creativeGridLayout(int itemCount) {
+        int totalRows = rowsForSlots(itemCount, CREATIVE_GRID_COLUMNS);
+        return new CreativeGridLayout(totalRows, Math.max(0, totalRows - CREATIVE_GRID_ROWS), totalRows > CREATIVE_GRID_ROWS);
+    }
+
+    private boolean creativeMouseClicked(InventoryWindow window, MouseButtonEvent event) {
+        CreativeTabHit tabHit = this.creativeTabAt(window, event.x(), event.y());
+        if (tabHit != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            window.creativeSelectedTab = tabHit.tab();
+            window.creativeScrollRow = 0;
+            this.editingCreativeSearchWindow = this.isCreativeSearchTab(tabHit.tab()) ? window : null;
+            DesktopDebug.trace("client creative tab desktop={} window={} tab={}", this.desktopId, window.debugName(), tabHit.tab().getDisplayName().getString());
+            return true;
+        }
+
+        CreativeModeTab selectedTab = this.selectedCreativeTab(window);
+        if (selectedTab == null) {
+            return true;
+        }
+
+        if (this.isCreativeSearchTab(selectedTab)) {
+            if (this.creativeSearchBoxContains(window, event.x(), event.y()) && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                this.editingCreativeSearchWindow = window;
+                return true;
+            }
+            if (this.editingCreativeSearchWindow == window && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                this.editingCreativeSearchWindow = null;
+            }
+        }
+
+        if (this.isCreativeInventoryTab(selectedTab) && this.creativeDeleteSlotContains(window, event.x(), event.y())) {
+            if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+                this.setSharedCarried(ItemStack.EMPTY);
+            }
+            return true;
+        }
+
+        if (!this.isCreativeInventoryTab(selectedTab) && this.creativeScrollbarContains(window, event.x(), event.y())) {
+            List<ItemStack> items = this.creativeVisibleItems(window);
+            if (this.creativeGridLayout(items.size()).scrollable() && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                this.scrollingCreativeWindow = window;
+                this.updateCreativeScrollFromMouse(window, event.y());
+            }
+            return true;
+        }
+
+        CreativeItemHit itemHit = this.creativeItemAt(window, event.x(), event.y());
+        if (itemHit != null) {
+            if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+                ItemStack picked = itemHit.stack().copy();
+                picked.setCount(event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT ? 1 : Math.min(CREATIVE_PICKED_STACK_SIZE, picked.getMaxStackSize()));
+                this.setSharedCarried(picked);
+            }
+            return true;
+        }
+
+        SlotHit slotHit = this.creativeInventorySlotAt(window, event.x(), event.y());
+        if (slotHit != null) {
+            this.creativePlayerSlotClicked(slotHit, event.button());
+            return true;
+        }
+
+        return true;
+    }
+
+    private boolean scrollCreativeWindow(InventoryWindow window, double scrollY) {
+        if (scrollY == 0.0D) {
+            return false;
+        }
+
+        List<ItemStack> items = this.creativeVisibleItems(window);
+        CreativeGridLayout layout = this.creativeGridLayout(items.size());
+        if (!layout.scrollable()) {
+            return false;
+        }
+
+        int oldScroll = window.creativeScrollRow;
+        window.creativeScrollRow = clamp(window.creativeScrollRow + (scrollY < 0.0 ? 1 : -1), 0, layout.maxScrollRow());
+        DesktopDebug.trace("client creative scroll desktop={} window={} old={} new={} max={}", this.desktopId, window.debugName(), oldScroll, window.creativeScrollRow, layout.maxScrollRow());
+        return true;
+    }
+
+    private void updateCreativeScrollFromMouse(InventoryWindow window, double mouseY) {
+        List<ItemStack> items = this.creativeVisibleItems(window);
+        CreativeGridLayout layout = this.creativeGridLayout(items.size());
+        if (!layout.scrollable()) {
+            window.creativeScrollRow = 0;
+            return;
+        }
+
+        int trackTop = creativePanelY(window) + CREATIVE_SCROLLBAR_Y;
+        double amount = (mouseY - trackTop - CREATIVE_SCROLLBAR_HEIGHT / 2.0D) / Math.max(1.0D, CREATIVE_SCROLLBAR_TRACK_HEIGHT);
+        window.creativeScrollRow = clamp(Math.round((float) amount * layout.maxScrollRow()), 0, layout.maxScrollRow());
+    }
+
+    private @Nullable SlotHit creativeInventorySlotAt(InventoryWindow window, double mouseX, double mouseY) {
+        CreativeModeTab selectedTab = this.selectedCreativeTab(window);
+        if (selectedTab == null || !this.isCreativeInventoryTab(selectedTab)) {
+            return null;
+        }
+
+        AbstractContainerMenu playerMenu = this.playerMenu();
+        List<Slot> slots = this.mainInventorySlots();
+        int gridX = creativePanelX(window) + CREATIVE_GRID_X;
+        int gridY = creativePanelY(window) + CREATIVE_INVENTORY_GRID_Y;
+        for (int i = 0; i < slots.size(); i++) {
+            int x = gridX + i % CREATIVE_GRID_COLUMNS * SLOT_SIZE;
+            int y = gridY + i / CREATIVE_GRID_COLUMNS * SLOT_SIZE;
+            if (contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE)) {
+                Slot slot = slots.get(i);
+                return new SlotHit(slot, playerMenu.slots.indexOf(slot), x, y, playerMenu, DesktopPackets.PLAYER_MENU_SESSION);
+            }
+        }
+
+        return null;
+    }
+
+    private @Nullable CreativeItemHit creativeItemAt(double mouseX, double mouseY) {
+        InventoryWindow window = this.windowAt(mouseX, mouseY);
+        return window == null ? null : this.creativeItemAt(window, mouseX, mouseY);
+    }
+
+    private @Nullable CreativeItemHit creativeItemAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.CREATIVE || window.minimized || !this.creativeGridContains(window, mouseX, mouseY)) {
+            return null;
+        }
+
+        CreativeModeTab selectedTab = this.selectedCreativeTab(window);
+        if (selectedTab == null || this.isCreativeInventoryTab(selectedTab)) {
+            return null;
+        }
+
+        int gridX = creativePanelX(window) + CREATIVE_GRID_X;
+        int gridY = creativePanelY(window) + CREATIVE_GRID_Y;
+        int column = ((int) mouseX - gridX + 1) / SLOT_SIZE;
+        int row = ((int) mouseY - gridY + 1) / SLOT_SIZE;
+        if (column < 0 || column >= CREATIVE_GRID_COLUMNS || row < 0 || row >= CREATIVE_GRID_ROWS) {
+            return null;
+        }
+
+        List<ItemStack> items = this.creativeVisibleItems(window);
+        window.creativeScrollRow = clamp(window.creativeScrollRow, 0, this.creativeGridLayout(items.size()).maxScrollRow());
+        int index = window.creativeScrollRow * CREATIVE_GRID_COLUMNS + row * CREATIVE_GRID_COLUMNS + column;
+        if (index < 0 || index >= items.size()) {
+            return null;
+        }
+
+        return new CreativeItemHit(window, items.get(index), gridX + column * SLOT_SIZE, gridY + row * SLOT_SIZE, index);
+    }
+
+    private @Nullable CreativeTabHit creativeTabAt(double mouseX, double mouseY) {
+        InventoryWindow window = this.windowAt(mouseX, mouseY);
+        return window == null ? null : this.creativeTabAt(window, mouseX, mouseY);
+    }
+
+    private @Nullable CreativeTabHit creativeTabAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.CREATIVE || window.minimized) {
+            return null;
+        }
+
+        for (CreativeModeTab tab : this.creativeTabs()) {
+            CreativeTabRect rect = this.creativeTabRect(window, tab);
+            if (rect != null && contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height())) {
+                return new CreativeTabHit(window, tab, rect);
+            }
+        }
+
+        return null;
+    }
+
+    private @Nullable CreativeTabRect creativeTabRect(InventoryWindow window, CreativeModeTab tab) {
+        int column = tab.column();
+        if (column < 0 || column >= CREATIVE_TABS_PER_ROW) {
+            return null;
+        }
+
+        boolean top = tab.row() == CreativeModeTab.Row.TOP;
+        int x = creativeContentX(window) + column * CREATIVE_TAB_WIDTH;
+        int y = top ? creativeTopTabsY(window) : creativeBottomTabsY(window);
+        return new CreativeTabRect(x, y, CREATIVE_TAB_WIDTH, CREATIVE_TAB_HEIGHT, column, top);
+    }
+
+    private boolean creativeGridContains(InventoryWindow window, double mouseX, double mouseY) {
+        CreativeModeTab selectedTab = this.selectedCreativeTab(window);
+        int gridY = selectedTab != null && this.isCreativeInventoryTab(selectedTab) ? CREATIVE_INVENTORY_GRID_Y : CREATIVE_GRID_Y;
+        return window.kind == WindowKind.CREATIVE
+            && contains(
+                mouseX,
+                mouseY,
+                creativePanelX(window) + CREATIVE_GRID_X - 1,
+                creativePanelY(window) + gridY - 1,
+                CREATIVE_GRID_COLUMNS * SLOT_SIZE,
+                CREATIVE_GRID_ROWS * SLOT_SIZE
+            );
+    }
+
+    private boolean creativeSearchBoxContains(InventoryWindow window, double mouseX, double mouseY) {
+        return window.kind == WindowKind.CREATIVE
+            && contains(mouseX, mouseY, creativePanelX(window) + CREATIVE_SEARCH_X, creativePanelY(window) + CREATIVE_SEARCH_Y, CREATIVE_SEARCH_WIDTH, CREATIVE_SEARCH_HEIGHT);
+    }
+
+    private boolean creativeScrollbarContains(InventoryWindow window, double mouseX, double mouseY) {
+        return window.kind == WindowKind.CREATIVE
+            && contains(mouseX, mouseY, creativePanelX(window) + CREATIVE_SCROLLBAR_X, creativePanelY(window) + CREATIVE_SCROLLBAR_Y, CREATIVE_SCROLLBAR_WIDTH, CREATIVE_GRID_ROWS * SLOT_SIZE);
+    }
+
+    private boolean creativeDeleteSlotContains(InventoryWindow window, double mouseX, double mouseY) {
+        CreativeModeTab selectedTab = this.selectedCreativeTab(window);
+        return selectedTab != null
+            && this.isCreativeInventoryTab(selectedTab)
+            && contains(mouseX, mouseY, creativePanelX(window) + CREATIVE_DELETE_SLOT_X - 1, creativePanelY(window) + CREATIVE_DELETE_SLOT_Y - 1, SLOT_SIZE, SLOT_SIZE);
+    }
+
+    private boolean isCreativePlayerMenuSlot(SlotHit hit) {
+        return this.minecraft != null
+            && isCreativePlayer(this.minecraft)
+            && hit.sessionId() == DesktopPackets.PLAYER_MENU_SESSION
+            && hit.menu() == this.playerMenu()
+            && hit.slotId() >= 9
+            && hit.slotId() <= 45;
+    }
+
+    private void creativePlayerSlotClicked(SlotHit hit, int button) {
+        if (this.minecraft == null || this.minecraft.gameMode == null || this.minecraft.player == null) {
+            return;
+        }
+        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT && button != GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            return;
+        }
+
+        Slot slot = hit.slot();
+        if (this.sharedCarried.isEmpty()) {
+            if (!slot.hasItem()) {
+                return;
+            }
+
+            ItemStack picked = slot.getItem().copy();
+            if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+                picked.setCount(1);
+            }
+            this.setSharedCarried(picked);
+            this.setCreativeSlot(hit, ItemStack.EMPTY);
+            return;
+        }
+
+        ItemStack placed = this.sharedCarried.copy();
+        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            placed.setCount(1);
+        }
+        this.setCreativeSlot(hit, placed);
+    }
+
+    private void setCreativeSlot(SlotHit hit, ItemStack stack) {
+        if (this.minecraft == null || this.minecraft.gameMode == null) {
+            return;
+        }
+
+        ItemStack copy = stack.copy();
+        hit.slot().set(copy);
+        hit.slot().setChanged();
+        this.minecraft.gameMode.handleCreativeModeItemAdd(copy, hit.slotId());
+        DesktopDebug.trace("client creative slot set desktop={} slot={} stack={}", this.desktopId, hit.slotId(), copy);
+    }
+
+    private @Nullable InventoryWindow activeCreativeSearchWindow() {
+        InventoryWindow window = this.editingCreativeSearchWindow;
+        if (window == null || !this.windows.contains(window) || window.minimized || window.kind != WindowKind.CREATIVE) {
+            this.editingCreativeSearchWindow = null;
+            return null;
+        }
+
+        CreativeModeTab selectedTab = this.selectedCreativeTab(window);
+        if (selectedTab == null || !this.isCreativeSearchTab(selectedTab)) {
+            this.editingCreativeSearchWindow = null;
+            return null;
+        }
+
+        return window;
+    }
+
+    private boolean handleCreativeSearchKey(KeyEvent event) {
+        InventoryWindow window = this.activeCreativeSearchWindow();
+        if (window == null) {
+            return false;
+        }
+
+        int key = event.key();
+        if (key == GLFW.GLFW_KEY_BACKSPACE) {
+            if (!window.creativeSearch.isEmpty()) {
+                int cut = window.creativeSearch.offsetByCodePoints(window.creativeSearch.length(), -1);
+                window.creativeSearch = window.creativeSearch.substring(0, cut);
+                window.creativeScrollRow = 0;
+            }
+            return true;
+        }
+        if (key == GLFW.GLFW_KEY_DELETE) {
+            window.creativeSearch = "";
+            window.creativeScrollRow = 0;
+            return true;
+        }
+        if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+            this.editingCreativeSearchWindow = null;
+            return true;
+        }
+        if (event.isEscape()) {
+            if (!window.creativeSearch.isEmpty()) {
+                window.creativeSearch = "";
+                window.creativeScrollRow = 0;
+            } else {
+                this.editingCreativeSearchWindow = null;
+            }
+            return true;
+        }
+
+        return true;
+    }
+
+    private boolean handleCreativeDropKey(KeyEvent event) {
+        if (this.minecraft == null || this.minecraft.gameMode == null || !isCreativePlayer(this.minecraft) || this.sharedCarried.isEmpty()) {
+            return false;
+        }
+        if (!this.minecraft.options.keyDrop.matches(event)) {
+            return false;
+        }
+
+        this.minecraft.gameMode.handleCreativeModeItemDrop(this.sharedCarried.copy());
+        this.setSharedCarried(ItemStack.EMPTY);
+        return true;
+    }
+
+    private String creativeSearchVisibleText(InventoryWindow window) {
+        String text = window.creativeSearch;
+        int maxWidth = CREATIVE_SEARCH_WIDTH - 8;
+        if (this.font.width(text) <= maxWidth) {
+            return text;
+        }
+
+        while (!text.isEmpty() && this.font.width(text) > maxWidth) {
+            text = text.substring(1);
+        }
+        return text;
+    }
+
     private void renderContainerWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
         List<Slot> slots = window.containerSlots();
         AbstractContainerMenu menu = window.containerMenu();
@@ -2033,6 +3418,42 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
         if (menu instanceof CraftingMenu craftingMenu) {
             this.renderCraftingTableWindow(graphics, window, craftingMenu, mouseX, mouseY);
+            return;
+        }
+        if (menu instanceof AnvilMenu anvilMenu) {
+            this.renderAnvilWindow(graphics, window, slots, anvilMenu, mouseX, mouseY);
+            return;
+        }
+        if (menu instanceof CrafterMenu crafterMenu) {
+            this.renderCrafterWindow(graphics, window, slots, crafterMenu, mouseX, mouseY);
+            return;
+        }
+        if (menu instanceof BeaconMenu beaconMenu) {
+            this.renderBeaconWindow(graphics, window, slots, beaconMenu, mouseX, mouseY);
+            return;
+        }
+        if (menu instanceof BrewingStandMenu brewingMenu) {
+            this.renderBrewingStandWindow(graphics, window, slots, brewingMenu, mouseX, mouseY);
+            return;
+        }
+        if (menu instanceof CartographyTableMenu cartographyMenu) {
+            this.renderCartographyTableWindow(graphics, window, slots, cartographyMenu, mouseX, mouseY);
+            return;
+        }
+        if (menu instanceof SmithingMenu smithingMenu) {
+            this.renderSmithingWindow(graphics, window, slots, smithingMenu, mouseX, mouseY);
+            return;
+        }
+        if (menu instanceof GrindstoneMenu) {
+            this.renderGrindstoneWindow(graphics, window, slots, mouseX, mouseY);
+            return;
+        }
+        if (menu instanceof StonecutterMenu stonecutterMenu) {
+            this.renderStonecutterWindow(graphics, window, slots, stonecutterMenu, mouseX, mouseY);
+            return;
+        }
+        if (menu instanceof LoomMenu loomMenu) {
+            this.renderLoomWindow(graphics, window, slots, loomMenu, mouseX, mouseY);
             return;
         }
         if (menu instanceof EnchantmentMenu enchantmentMenu) {
@@ -2160,6 +3581,48 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    private void renderLargeContainerSlotIfPresent(GuiGraphicsExtractor graphics, List<Slot> slots, int containerSlot, int x, int y, int mouseX, int mouseY) {
+        Slot slot = containerSlot(slots, containerSlot);
+        if (slot == null) {
+            return;
+        }
+
+        boolean hovered = contains(
+            mouseX,
+            mouseY,
+            x + LARGE_SLOT_ITEM_OFFSET - 1,
+            y + LARGE_SLOT_ITEM_OFFSET - 1,
+            SLOT_SIZE,
+            SLOT_SIZE
+        );
+        int itemX = x + LARGE_SLOT_ITEM_OFFSET;
+        int itemY = y + LARGE_SLOT_ITEM_OFFSET;
+        blitRegion(
+            graphics,
+            LARGE_SLOT_TEXTURE,
+            x,
+            y,
+            0,
+            0,
+            LARGE_SLOT_TEXTURE_SIZE,
+            LARGE_SLOT_TEXTURE_SIZE,
+            LARGE_SLOT_TEXTURE_SIZE,
+            LARGE_SLOT_TEXTURE_SIZE,
+            LARGE_SLOT_TEXTURE_SIZE,
+            LARGE_SLOT_TEXTURE_SIZE
+        );
+        if (hovered) {
+            renderSlotHighlightBack(graphics, itemX, itemY);
+        }
+        if (slot.hasItem()) {
+            graphics.item(slot.getItem(), itemX, itemY, slot.index);
+            graphics.itemDecorations(this.font, slot.getItem(), itemX, itemY);
+        }
+        if (hovered) {
+            renderSlotHighlightFront(graphics, itemX, itemY);
+        }
+    }
+
     private @Nullable SlotHit furnaceSlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
         int contentX = furnaceContentX(window);
         int contentY = furnaceContentY(window);
@@ -2243,6 +3706,1584 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         return null;
+    }
+
+    private void renderAnvilWindow(GuiGraphicsExtractor graphics, InventoryWindow window, List<Slot> slots, AnvilMenu menu, int mouseX, int mouseY) {
+        int contentX = anvilContentX(window);
+        int contentY = anvilContentY(window);
+        this.syncAnvilNameFromInput(window, menu);
+
+        blitRegion(
+            graphics,
+            ANVIL_HAMMER_TEXTURE,
+            contentX + ANVIL_HAMMER_X,
+            contentY + ANVIL_HAMMER_Y,
+            0,
+            0,
+            ANVIL_HAMMER_TEXTURE_SIZE,
+            ANVIL_HAMMER_TEXTURE_SIZE,
+            ANVIL_HAMMER_TEXTURE_SIZE,
+            ANVIL_HAMMER_TEXTURE_SIZE,
+            ANVIL_HAMMER_TEXTURE_SIZE,
+            ANVIL_HAMMER_TEXTURE_SIZE
+        );
+        this.renderAnvilTextField(graphics, window, menu, contentX, contentY);
+        this.renderContainerSlotIfPresent(graphics, slots, ANVIL_INPUT_SLOT, contentX + ANVIL_INPUT_SLOT_X, contentY + ANVIL_SLOT_Y, mouseX, mouseY);
+        this.renderContainerSlotIfPresent(graphics, slots, ANVIL_ADDITIONAL_SLOT, contentX + ANVIL_ADDITIONAL_SLOT_X, contentY + ANVIL_SLOT_Y, mouseX, mouseY);
+        this.renderContainerSlotIfPresent(graphics, slots, ANVIL_RESULT_SLOT, contentX + ANVIL_RESULT_SLOT_X, contentY + ANVIL_SLOT_Y, mouseX, mouseY);
+        blitRegion(
+            graphics,
+            CARTOGRAPHY_PLUS_TEXTURE,
+            contentX + ANVIL_PLUS_X,
+            contentY + ANVIL_PLUS_Y,
+            0,
+            0,
+            CARTOGRAPHY_PLUS_TEXTURE_SIZE,
+            CARTOGRAPHY_PLUS_TEXTURE_SIZE,
+            CARTOGRAPHY_PLUS_TEXTURE_SIZE,
+            CARTOGRAPHY_PLUS_TEXTURE_SIZE,
+            CARTOGRAPHY_PLUS_TEXTURE_SIZE,
+            CARTOGRAPHY_PLUS_TEXTURE_SIZE
+        );
+        blitRegion(
+            graphics,
+            CONTAINER_WIDGETS_TEXTURE,
+            contentX + ANVIL_ARROW_X,
+            contentY + ANVIL_ARROW_Y,
+            WIDGET_ARROW_EMPTY_X,
+            WIDGET_ARROW_EMPTY_Y,
+            WIDGET_ARROW_WIDTH,
+            WIDGET_ARROW_HEIGHT,
+            WIDGET_ARROW_WIDTH,
+            WIDGET_ARROW_HEIGHT,
+            CONTAINER_WIDGETS_TEXTURE_WIDTH,
+            CONTAINER_WIDGETS_TEXTURE_HEIGHT
+        );
+
+        boolean hasInput = anvilSlotHasItem(slots, ANVIL_INPUT_SLOT);
+        boolean hasAdditional = anvilSlotHasItem(slots, ANVIL_ADDITIONAL_SLOT);
+        boolean hasResult = anvilSlotHasItem(slots, ANVIL_RESULT_SLOT);
+        if ((hasInput || hasAdditional) && !hasResult) {
+            graphics.blitSprite(
+                RenderPipelines.GUI_TEXTURED,
+                ANVIL_ERROR_SPRITE,
+                contentX + ANVIL_ERROR_X,
+                contentY + ANVIL_ERROR_Y,
+                ANVIL_ERROR_WIDTH,
+                ANVIL_ERROR_HEIGHT
+            );
+        }
+
+        this.renderAnvilCost(graphics, menu, slots, contentX, contentY);
+    }
+
+    private void renderAnvilTextField(GuiGraphicsExtractor graphics, InventoryWindow window, AnvilMenu menu, int contentX, int contentY) {
+        boolean enabled = anvilInputSlot(menu).hasItem();
+        graphics.blitSprite(
+            RenderPipelines.GUI_TEXTURED,
+            enabled ? ANVIL_TEXT_FIELD_SPRITE : ANVIL_TEXT_FIELD_DISABLED_SPRITE,
+            contentX + ANVIL_TEXT_FIELD_X,
+            contentY + ANVIL_TEXT_FIELD_Y,
+            ANVIL_TEXT_FIELD_WIDTH,
+            ANVIL_TEXT_FIELD_HEIGHT
+        );
+        if (!enabled) {
+            return;
+        }
+
+        int textColor = this.editingAnvilWindow == window ? 0xFFFFFFFF : 0xFFE8E8E8;
+        String text = anvilVisibleText(window.anvilName, ANVIL_TEXT_FIELD_WIDTH - 8, this.font);
+        int textX = contentX + ANVIL_TEXT_X;
+        int textY = contentY + ANVIL_TEXT_Y;
+        graphics.text(this.font, text, textX, textY, textColor, false);
+        if (this.editingAnvilWindow == window && (System.currentTimeMillis() / 300L) % 2L == 0L) {
+            int cursorX = textX + this.font.width(text) + 1;
+            graphics.fill(cursorX, textY - 1, cursorX + 1, textY + 10, 0xFFFFFFFF);
+        }
+    }
+
+    private void renderAnvilCost(GuiGraphicsExtractor graphics, AnvilMenu menu, List<Slot> slots, int contentX, int contentY) {
+        int cost = menu.getCost();
+        if (cost <= 0 || !anvilSlotHasItem(slots, ANVIL_RESULT_SLOT)) {
+            return;
+        }
+
+        LocalPlayer player = this.player();
+        boolean tooExpensive = cost >= 40 && player != null && !player.hasInfiniteMaterials();
+        Component label = tooExpensive
+            ? Component.translatable("container.repair.expensive")
+            : Component.translatable("container.repair.cost", cost);
+        int color = tooExpensive ? 0xFFFF6060 : 0xFF80FF20;
+        graphics.text(this.font, label, contentX + ANVIL_TEXT_FIELD_X, contentY + ANVIL_COST_Y, color, false);
+    }
+
+    private @Nullable SlotHit anvilSlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
+        int contentX = anvilContentX(window);
+        int contentY = anvilContentY(window);
+        int[] containerSlots = {ANVIL_INPUT_SLOT, ANVIL_ADDITIONAL_SLOT, ANVIL_RESULT_SLOT};
+        int[] slotXs = {contentX + ANVIL_INPUT_SLOT_X, contentX + ANVIL_ADDITIONAL_SLOT_X, contentX + ANVIL_RESULT_SLOT_X};
+        int[] slotYs = {contentY + ANVIL_SLOT_Y, contentY + ANVIL_SLOT_Y, contentY + ANVIL_SLOT_Y};
+
+        for (int i = 0; i < containerSlots.length; i++) {
+            if (!contains(mouseX, mouseY, slotXs[i] - 1, slotYs[i] - 1, SLOT_SIZE, SLOT_SIZE)) {
+                continue;
+            }
+
+            Slot slot = containerSlot(slots, containerSlots[i]);
+            if (slot != null) {
+                return new SlotHit(slot, menu.slots.indexOf(slot), slotXs[i], slotYs[i], menu, window.sessionId());
+            }
+        }
+
+        return null;
+    }
+
+    private boolean anvilTextFieldContains(InventoryWindow window, double mouseX, double mouseY) {
+        return window.containerMenu() instanceof AnvilMenu
+            && contains(
+                mouseX,
+                mouseY,
+                anvilContentX(window) + ANVIL_TEXT_FIELD_X,
+                anvilContentY(window) + ANVIL_TEXT_FIELD_Y,
+                ANVIL_TEXT_FIELD_WIDTH,
+                ANVIL_TEXT_FIELD_HEIGHT
+            );
+    }
+
+    private void focusAnvilTextField(InventoryWindow window) {
+        if (!(window.containerMenu() instanceof AnvilMenu anvilMenu)) {
+            return;
+        }
+
+        this.syncAnvilNameFromInput(window, anvilMenu);
+        if (!anvilInputSlot(anvilMenu).hasItem()) {
+            this.editingAnvilWindow = null;
+            return;
+        }
+
+        this.editingAnvilWindow = window;
+        window.anvilNameDirty = true;
+        DesktopDebug.trace("client anvil focus desktop={} window={} name={}", this.desktopId, window.debugName(), window.anvilName);
+    }
+
+    private @Nullable InventoryWindow activeAnvilEditWindow() {
+        InventoryWindow window = this.editingAnvilWindow;
+        if (window == null || !this.windows.contains(window) || window.minimized || !(window.containerMenu() instanceof AnvilMenu anvilMenu)) {
+            this.editingAnvilWindow = null;
+            return null;
+        }
+
+        if (!anvilInputSlot(anvilMenu).hasItem()) {
+            this.editingAnvilWindow = null;
+            return null;
+        }
+
+        return window;
+    }
+
+    private boolean handleAnvilEditKey(KeyEvent event) {
+        InventoryWindow window = this.activeAnvilEditWindow();
+        if (window == null) {
+            return false;
+        }
+
+        int key = event.key();
+        if (key == GLFW.GLFW_KEY_BACKSPACE) {
+            if (!window.anvilName.isEmpty()) {
+                int cut = window.anvilName.offsetByCodePoints(window.anvilName.length(), -1);
+                window.anvilName = window.anvilName.substring(0, cut);
+                this.submitAnvilName(window);
+            }
+            return true;
+        }
+        if (key == GLFW.GLFW_KEY_DELETE) {
+            if (!window.anvilName.isEmpty()) {
+                window.anvilName = "";
+                this.submitAnvilName(window);
+            }
+            return true;
+        }
+        if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+            this.editingAnvilWindow = null;
+            return true;
+        }
+        if (event.isEscape()) {
+            this.editingAnvilWindow = null;
+            return true;
+        }
+
+        return true;
+    }
+
+    private void syncAnvilNameFromInput(InventoryWindow window, AnvilMenu menu) {
+        ItemStack input = anvilInputSlot(menu).getItem();
+        String inputName = input.isEmpty() ? "" : input.getHoverName().getString();
+        if (input.isEmpty()) {
+            window.anvilName = "";
+            window.anvilLastInputName = "";
+            window.anvilNameDirty = false;
+            if (this.editingAnvilWindow == window) {
+                this.editingAnvilWindow = null;
+            }
+            return;
+        }
+
+        if (!window.anvilLastInputName.equals(inputName) && (this.editingAnvilWindow != window || !window.anvilNameDirty)) {
+            window.anvilName = inputName;
+            window.anvilNameDirty = false;
+        }
+        window.anvilLastInputName = inputName;
+    }
+
+    private void submitAnvilName(InventoryWindow window) {
+        if (!(window.containerMenu() instanceof AnvilMenu anvilMenu)) {
+            return;
+        }
+
+        String name = window.anvilName.length() > ANVIL_MAX_NAME_LENGTH
+            ? window.anvilName.substring(0, ANVIL_MAX_NAME_LENGTH)
+            : window.anvilName;
+        window.anvilName = name;
+        window.anvilNameDirty = true;
+        anvilMenu.setItemName(name);
+        DesktopDebug.trace("client anvil rename desktop={} session={} name={}", this.desktopId, window.sessionId(), name);
+        if (window.session != null) {
+            if (!DesktopContainerClient.renameAnvil(window.session.sessionId(), name)) {
+                DesktopDebug.warn("client anvil rename dropped session={} reason=packet-send-failed", window.session.sessionId());
+            }
+            return;
+        }
+
+        if (this.minecraft != null
+            && this.minecraft.getConnection() != null
+            && window.legacyMenu == anvilMenu
+            && this.minecraft.player != null
+            && this.minecraft.player.containerMenu == anvilMenu) {
+            this.minecraft.getConnection().send(new ServerboundRenameItemPacket(name));
+        }
+    }
+
+    private static String anvilVisibleText(String text, int maxWidth, net.minecraft.client.gui.Font font) {
+        String visible = text;
+        while (!visible.isEmpty() && font.width(visible) > maxWidth) {
+            visible = visible.substring(1);
+        }
+        return visible;
+    }
+
+    private static Slot anvilInputSlot(AnvilMenu menu) {
+        return menu.getSlot(ANVIL_INPUT_SLOT);
+    }
+
+    private static boolean anvilSlotHasItem(List<Slot> slots, int containerSlot) {
+        Slot slot = containerSlot(slots, containerSlot);
+        return slot != null && slot.hasItem();
+    }
+
+    private void renderCrafterWindow(GuiGraphicsExtractor graphics, InventoryWindow window, List<Slot> slots, CrafterMenu menu, int mouseX, int mouseY) {
+        int contentX = crafterContentX(window);
+        int contentY = crafterContentY(window);
+        for (int row = 0; row < CRAFTER_GRID_ROWS; row++) {
+            for (int column = 0; column < CRAFTER_GRID_COLUMNS; column++) {
+                int slotId = row * CRAFTER_GRID_COLUMNS + column;
+                Slot slot = slotId < slots.size() ? slots.get(slotId) : null;
+                if (slot == null) {
+                    continue;
+                }
+
+                int x = contentX + CRAFTER_GRID_X + column * SLOT_SIZE;
+                int y = contentY + CRAFTER_GRID_Y + row * SLOT_SIZE;
+                this.renderCrafterInputSlot(graphics, menu, slot, x, y, mouseX, mouseY);
+            }
+        }
+
+        Identifier redstoneTexture = menu.isPowered() ? CRAFTER_POWERED_REDSTONE_TEXTURE : CRAFTER_UNPOWERED_REDSTONE_TEXTURE;
+        blitRegion(
+            graphics,
+            redstoneTexture,
+            contentX + CRAFTER_REDSTONE_X,
+            contentY + CRAFTER_REDSTONE_Y,
+            0,
+            0,
+            CRAFTER_REDSTONE_TEXTURE_SIZE,
+            CRAFTER_REDSTONE_TEXTURE_SIZE,
+            CRAFTER_REDSTONE_TEXTURE_SIZE,
+            CRAFTER_REDSTONE_TEXTURE_SIZE,
+            CRAFTER_REDSTONE_TEXTURE_SIZE,
+            CRAFTER_REDSTONE_TEXTURE_SIZE
+        );
+        this.renderCrafterOutput(graphics, slots, contentX + CRAFTER_OUTPUT_X, contentY + CRAFTER_OUTPUT_Y, mouseX, mouseY);
+    }
+
+    private void renderCrafterInputSlot(GuiGraphicsExtractor graphics, CrafterMenu menu, Slot slot, int x, int y, int mouseX, int mouseY) {
+        boolean hovered = contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE);
+        Identifier texture = menu.isSlotDisabled(slot.index) ? CRAFTER_DISABLED_SLOT_TEXTURE : CRAFTER_SLOT_TEXTURE;
+        blitRegion(
+            graphics,
+            texture,
+            x - 1,
+            y - 1,
+            0,
+            0,
+            CRAFTER_SLOT_TEXTURE_SIZE,
+            CRAFTER_SLOT_TEXTURE_SIZE,
+            CRAFTER_SLOT_TEXTURE_SIZE,
+            CRAFTER_SLOT_TEXTURE_SIZE,
+            CRAFTER_SLOT_TEXTURE_SIZE,
+            CRAFTER_SLOT_TEXTURE_SIZE
+        );
+        if (hovered) {
+            renderSlotHighlightBack(graphics, x, y);
+        }
+        if (slot.hasItem()) {
+            graphics.item(slot.getItem(), x, y, slot.index);
+            graphics.itemDecorations(this.font, slot.getItem(), x, y);
+        }
+        if (hovered) {
+            renderSlotHighlightFront(graphics, x, y);
+        }
+    }
+
+    private void renderCrafterOutput(GuiGraphicsExtractor graphics, List<Slot> slots, int x, int y, int mouseX, int mouseY) {
+        blitRegion(
+            graphics,
+            CRAFTER_OUTPUT_DISPLAY_TEXTURE,
+            x,
+            y,
+            0,
+            0,
+            CRAFTER_OUTPUT_DISPLAY_TEXTURE_SIZE,
+            CRAFTER_OUTPUT_DISPLAY_TEXTURE_SIZE,
+            CRAFTER_OUTPUT_DISPLAY_TEXTURE_SIZE,
+            CRAFTER_OUTPUT_DISPLAY_TEXTURE_SIZE,
+            CRAFTER_OUTPUT_DISPLAY_TEXTURE_SIZE,
+            CRAFTER_OUTPUT_DISPLAY_TEXTURE_SIZE
+        );
+        Slot outputSlot = crafterOutputSlot(slots);
+        if (outputSlot == null || !outputSlot.hasItem()) {
+            return;
+        }
+
+        int itemX = x + CRAFTER_OUTPUT_ITEM_OFFSET;
+        int itemY = y + CRAFTER_OUTPUT_ITEM_OFFSET;
+        boolean hovered = contains(mouseX, mouseY, itemX - 1, itemY - 1, SLOT_SIZE, SLOT_SIZE);
+        if (hovered) {
+            renderSlotHighlightBack(graphics, itemX, itemY);
+        }
+        graphics.item(outputSlot.getItem(), itemX, itemY, outputSlot.index);
+        graphics.itemDecorations(this.font, outputSlot.getItem(), itemX, itemY);
+        if (hovered) {
+            renderSlotHighlightFront(graphics, itemX, itemY);
+        }
+    }
+
+    private @Nullable SlotHit crafterSlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
+        int contentX = crafterContentX(window);
+        int contentY = crafterContentY(window);
+        for (int row = 0; row < CRAFTER_GRID_ROWS; row++) {
+            for (int column = 0; column < CRAFTER_GRID_COLUMNS; column++) {
+                int slotId = row * CRAFTER_GRID_COLUMNS + column;
+                if (slotId >= slots.size()) {
+                    continue;
+                }
+
+                int slotX = contentX + CRAFTER_GRID_X + column * SLOT_SIZE;
+                int slotY = contentY + CRAFTER_GRID_Y + row * SLOT_SIZE;
+                if (contains(mouseX, mouseY, slotX - 1, slotY - 1, SLOT_SIZE, SLOT_SIZE)) {
+                    Slot slot = slots.get(slotId);
+                    return new SlotHit(slot, menu.slots.indexOf(slot), slotX, slotY, menu, window.sessionId());
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private boolean crafterSlotStateClicked(InventoryWindow window, MouseButtonEvent event) {
+        if (!(window.containerMenu() instanceof CrafterMenu crafterMenu) || this.minecraft == null || this.minecraft.player == null || this.minecraft.player.isSpectator()) {
+            return false;
+        }
+
+        SlotHit hit = this.crafterSlotAt(window, window.containerSlots(), crafterMenu, event.x(), event.y());
+        if (hit == null || hit.slotId() < 0 || hit.slotId() >= CRAFTER_INPUT_SLOT_COUNT || hit.slot().hasItem()) {
+            return false;
+        }
+
+        boolean disabled = crafterMenu.isSlotDisabled(hit.slotId());
+        if (!disabled && !this.sharedCarried.isEmpty()) {
+            return false;
+        }
+
+        boolean enabled = disabled;
+        crafterMenu.setSlotState(hit.slotId(), enabled);
+        DesktopDebug.trace("client crafter slot state desktop={} session={} slot={} enabled={}", this.desktopId, window.sessionId(), hit.slotId(), enabled);
+        if (window.session != null) {
+            if (!DesktopContainerClient.clickButton(window.session.sessionId(), crafterSlotStateButtonId(hit.slotId(), enabled))) {
+                DesktopDebug.warn("client crafter slot state dropped session={} slot={} enabled={} reason=packet-send-failed", window.session.sessionId(), hit.slotId(), enabled);
+            }
+            return true;
+        }
+
+        if (this.minecraft.gameMode != null && window.legacyMenu == crafterMenu && this.minecraft.player.containerMenu == crafterMenu) {
+            this.minecraft.gameMode.handleSlotStateChanged(hit.slotId(), crafterMenu.containerId, enabled);
+        }
+        return true;
+    }
+
+    private void renderBeaconWindow(
+        GuiGraphicsExtractor graphics,
+        InventoryWindow window,
+        List<Slot> slots,
+        BeaconMenu menu,
+        int mouseX,
+        int mouseY
+    ) {
+        int contentX = beaconContentX(window);
+        int contentY = beaconContentY(window);
+        this.syncBeaconSelection(window, menu);
+        blitRegion(
+            graphics,
+            BEACON_UI_TEXTURE,
+            contentX,
+            contentY,
+            0,
+            0,
+            BEACON_UI_TEXTURE_WIDTH,
+            BEACON_UI_TEXTURE_HEIGHT,
+            BEACON_UI_TEXTURE_WIDTH,
+            BEACON_UI_TEXTURE_HEIGHT,
+            BEACON_UI_TEXTURE_WIDTH,
+            BEACON_UI_TEXTURE_HEIGHT
+        );
+
+        this.renderCenteredBeaconLabel(graphics, Component.translatable("block.minecraft.beacon.primary"), contentX + BEACON_PRIMARY_LABEL_CENTER_X, contentY + BEACON_LABEL_Y);
+        this.renderCenteredBeaconLabel(graphics, Component.translatable("block.minecraft.beacon.secondary"), contentX + BEACON_SECONDARY_LABEL_CENTER_X, contentY + BEACON_LABEL_Y);
+        this.renderBeaconPowerButtons(graphics, window, menu, contentX, contentY, mouseX, mouseY);
+        this.renderBeaconMaterials(graphics, contentX, contentY);
+        this.renderContainerSlotIfPresent(graphics, slots, BEACON_PAYMENT_SLOT, contentX + BEACON_PAYMENT_SLOT_X, contentY + BEACON_PAYMENT_SLOT_Y, mouseX, mouseY);
+        this.renderBeaconActionButton(
+            graphics,
+            BEACON_CONFIRM_SPRITE,
+            contentX + BEACON_CONFIRM_X,
+            contentY + BEACON_CONFIRM_Y,
+            this.canConfirmBeacon(menu, window),
+            contains(mouseX, mouseY, contentX + BEACON_CONFIRM_X, contentY + BEACON_CONFIRM_Y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE)
+        );
+        this.renderBeaconActionButton(
+            graphics,
+            BEACON_CANCEL_SPRITE,
+            contentX + BEACON_CANCEL_X,
+            contentY + BEACON_CANCEL_Y,
+            true,
+            contains(mouseX, mouseY, contentX + BEACON_CANCEL_X, contentY + BEACON_CANCEL_Y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE)
+        );
+    }
+
+    private void renderCenteredBeaconLabel(GuiGraphicsExtractor graphics, Component label, int centerX, int y) {
+        int x = centerX - this.font.width(label) / 2;
+        graphics.text(this.font, label, x, y, 0xFFE8E8E8, false);
+    }
+
+    private void renderBeaconPowerButtons(
+        GuiGraphicsExtractor graphics,
+        InventoryWindow window,
+        BeaconMenu menu,
+        int contentX,
+        int contentY,
+        int mouseX,
+        int mouseY
+    ) {
+        int levels = menu.getLevels();
+        for (int tier = 0; tier < Math.min(3, BeaconBlockEntity.BEACON_EFFECTS.size()); tier++) {
+            List<Holder<MobEffect>> effects = BeaconBlockEntity.BEACON_EFFECTS.get(tier);
+            int rowWidth = effects.size() * BEACON_BUTTON_SIZE + Math.max(0, effects.size() - 1) * BEACON_BUTTON_GAP;
+            int rowX = contentX + BEACON_PRIMARY_BUTTON_BASE_X + (2 * BEACON_BUTTON_SIZE + BEACON_BUTTON_GAP - rowWidth) / 2;
+            int rowY = contentY + BEACON_PRIMARY_BUTTON_BASE_Y + tier * BEACON_BUTTON_STEP_Y;
+            for (int i = 0; i < effects.size(); i++) {
+                Holder<MobEffect> effect = effects.get(i);
+                int x = rowX + i * BEACON_BUTTON_STEP_X;
+                this.renderBeaconPowerButton(
+                    graphics,
+                    effect,
+                    x,
+                    rowY,
+                    tier < levels,
+                    sameBeaconEffect(effect, window.beaconPrimary),
+                    contains(mouseX, mouseY, x, rowY, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE)
+                );
+            }
+        }
+
+        if (BeaconBlockEntity.BEACON_EFFECTS.size() > 3) {
+            for (Holder<MobEffect> effect : BeaconBlockEntity.BEACON_EFFECTS.get(3)) {
+                int x = contentX + BEACON_SECONDARY_BUTTON_X;
+                int y = contentY + BEACON_SECONDARY_BUTTON_Y;
+                this.renderBeaconPowerButton(
+                    graphics,
+                    effect,
+                    x,
+                    y,
+                    this.canSelectBeaconSecondary(menu, window.beaconPrimary, effect),
+                    sameBeaconEffect(effect, window.beaconSecondary),
+                    contains(mouseX, mouseY, x, y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE)
+                );
+            }
+        }
+
+        if (window.beaconPrimary != null) {
+            int x = contentX + BEACON_UPGRADE_BUTTON_X;
+            int y = contentY + BEACON_SECONDARY_BUTTON_Y;
+            this.renderBeaconPowerButton(
+                graphics,
+                window.beaconPrimary,
+                x,
+                y,
+                this.canSelectBeaconSecondary(menu, window.beaconPrimary, window.beaconPrimary),
+                sameBeaconEffect(window.beaconPrimary, window.beaconSecondary),
+                contains(mouseX, mouseY, x, y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE)
+            );
+        }
+    }
+
+    private void renderBeaconPowerButton(
+        GuiGraphicsExtractor graphics,
+        Holder<MobEffect> effect,
+        int x,
+        int y,
+        boolean enabled,
+        boolean selected,
+        boolean hovered
+    ) {
+        Identifier buttonSprite = !enabled
+            ? BEACON_BUTTON_DISABLED_SPRITE
+            : selected ? BEACON_BUTTON_SELECTED_SPRITE : hovered ? BEACON_BUTTON_HIGHLIGHTED_SPRITE : BEACON_BUTTON_SPRITE;
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, buttonSprite, x, y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE);
+        if (this.minecraft != null) {
+            Identifier effectSprite = this.minecraft.gui.getMobEffectSprite(effect);
+            graphics.blitSprite(
+                RenderPipelines.GUI_TEXTURED,
+                effectSprite,
+                x + BEACON_BUTTON_ICON_OFFSET,
+                y + BEACON_BUTTON_ICON_OFFSET,
+                BEACON_BUTTON_ICON_SIZE,
+                BEACON_BUTTON_ICON_SIZE
+            );
+        }
+    }
+
+    private void renderBeaconActionButton(GuiGraphicsExtractor graphics, Identifier icon, int x, int y, boolean enabled, boolean hovered) {
+        Identifier buttonSprite = !enabled ? BEACON_BUTTON_DISABLED_SPRITE : hovered ? BEACON_BUTTON_HIGHLIGHTED_SPRITE : BEACON_BUTTON_SPRITE;
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, buttonSprite, x, y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE);
+        graphics.blitSprite(
+            RenderPipelines.GUI_TEXTURED,
+            icon,
+            x + BEACON_BUTTON_ICON_OFFSET,
+            y + BEACON_BUTTON_ICON_OFFSET,
+            BEACON_BUTTON_ICON_SIZE,
+            BEACON_BUTTON_ICON_SIZE
+        );
+    }
+
+    private void renderBeaconMaterials(GuiGraphicsExtractor graphics, int contentX, int contentY) {
+        ItemStack[] materials = {
+            Items.NETHERITE_INGOT.getDefaultInstance(),
+            Items.EMERALD.getDefaultInstance(),
+            Items.DIAMOND.getDefaultInstance(),
+            Items.GOLD_INGOT.getDefaultInstance(),
+            Items.IRON_INGOT.getDefaultInstance()
+        };
+        for (int i = 0; i < materials.length && i < BEACON_MATERIALS_X.length; i++) {
+            graphics.item(materials[i], contentX + BEACON_MATERIALS_X[i], contentY + BEACON_MATERIALS_Y, i);
+        }
+    }
+
+    private @Nullable SlotHit beaconSlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
+        int x = beaconContentX(window) + BEACON_PAYMENT_SLOT_X;
+        int y = beaconContentY(window) + BEACON_PAYMENT_SLOT_Y;
+        if (!contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE)) {
+            return null;
+        }
+
+        Slot slot = containerSlot(slots, BEACON_PAYMENT_SLOT);
+        return slot == null ? null : new SlotHit(slot, menu.slots.indexOf(slot), x, y, menu, window.sessionId());
+    }
+
+    private @Nullable BeaconButtonHit beaconButtonAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.minimized || !(window.containerMenu() instanceof BeaconMenu beaconMenu)) {
+            return null;
+        }
+
+        int contentX = beaconContentX(window);
+        int contentY = beaconContentY(window);
+        this.syncBeaconSelection(window, beaconMenu);
+        for (int tier = 0; tier < Math.min(3, BeaconBlockEntity.BEACON_EFFECTS.size()); tier++) {
+            List<Holder<MobEffect>> effects = BeaconBlockEntity.BEACON_EFFECTS.get(tier);
+            int rowWidth = effects.size() * BEACON_BUTTON_SIZE + Math.max(0, effects.size() - 1) * BEACON_BUTTON_GAP;
+            int rowX = contentX + BEACON_PRIMARY_BUTTON_BASE_X + (2 * BEACON_BUTTON_SIZE + BEACON_BUTTON_GAP - rowWidth) / 2;
+            int rowY = contentY + BEACON_PRIMARY_BUTTON_BASE_Y + tier * BEACON_BUTTON_STEP_Y;
+            for (int i = 0; i < effects.size(); i++) {
+                int x = rowX + i * BEACON_BUTTON_STEP_X;
+                if (contains(mouseX, mouseY, x, rowY, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE)) {
+                    return new BeaconButtonHit(BeaconButtonKind.PRIMARY, effects.get(i));
+                }
+            }
+        }
+
+        if (BeaconBlockEntity.BEACON_EFFECTS.size() > 3) {
+            for (Holder<MobEffect> effect : BeaconBlockEntity.BEACON_EFFECTS.get(3)) {
+                int x = contentX + BEACON_SECONDARY_BUTTON_X;
+                int y = contentY + BEACON_SECONDARY_BUTTON_Y;
+                if (contains(mouseX, mouseY, x, y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE)) {
+                    return new BeaconButtonHit(BeaconButtonKind.SECONDARY, effect);
+                }
+            }
+        }
+
+        if (window.beaconPrimary != null
+            && contains(mouseX, mouseY, contentX + BEACON_UPGRADE_BUTTON_X, contentY + BEACON_SECONDARY_BUTTON_Y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE)) {
+            return new BeaconButtonHit(BeaconButtonKind.UPGRADE, window.beaconPrimary);
+        }
+
+        if (contains(mouseX, mouseY, contentX + BEACON_CONFIRM_X, contentY + BEACON_CONFIRM_Y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE)) {
+            return new BeaconButtonHit(BeaconButtonKind.CONFIRM, null);
+        }
+        if (contains(mouseX, mouseY, contentX + BEACON_CANCEL_X, contentY + BEACON_CANCEL_Y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE)) {
+            return new BeaconButtonHit(BeaconButtonKind.CANCEL, null);
+        }
+
+        return null;
+    }
+
+    private void syncBeaconSelection(InventoryWindow window, BeaconMenu menu) {
+        Holder<MobEffect> menuPrimary = menu.getPrimaryEffect();
+        Holder<MobEffect> menuSecondary = menu.getSecondaryEffect();
+        if (!window.beaconSelectionDirty || sameBeaconEffect(window.beaconPrimary, menuPrimary) && sameBeaconEffect(window.beaconSecondary, menuSecondary)) {
+            window.beaconPrimary = menuPrimary;
+            window.beaconSecondary = menuSecondary;
+            window.beaconSelectionDirty = false;
+        }
+    }
+
+    private boolean canSelectBeaconPrimary(BeaconMenu menu, @Nullable Holder<MobEffect> effect) {
+        if (effect == null) {
+            return false;
+        }
+
+        int unlockedTiers = Math.min(menu.getLevels(), Math.min(3, BeaconBlockEntity.BEACON_EFFECTS.size()));
+        for (int tier = 0; tier < unlockedTiers; tier++) {
+            if (BeaconBlockEntity.BEACON_EFFECTS.get(tier).contains(effect)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean canSelectBeaconSecondary(BeaconMenu menu, @Nullable Holder<MobEffect> primary, @Nullable Holder<MobEffect> secondary) {
+        if (secondary == null) {
+            return true;
+        }
+        if (menu.getLevels() < 4 || primary == null) {
+            return false;
+        }
+        if (sameBeaconEffect(primary, secondary)) {
+            return true;
+        }
+        return BeaconBlockEntity.BEACON_EFFECTS.size() > 3 && BeaconBlockEntity.BEACON_EFFECTS.get(3).contains(secondary);
+    }
+
+    private boolean canConfirmBeacon(BeaconMenu menu, InventoryWindow window) {
+        return menu.hasPayment()
+            && this.canSelectBeaconPrimary(menu, window.beaconPrimary)
+            && this.canSelectBeaconSecondary(menu, window.beaconPrimary, window.beaconSecondary);
+    }
+
+    private static boolean sameBeaconEffect(@Nullable Holder<MobEffect> first, @Nullable Holder<MobEffect> second) {
+        return first == second || first != null && first.equals(second);
+    }
+
+    private static int beaconButtonId(@Nullable Holder<MobEffect> primary, @Nullable Holder<MobEffect> secondary) {
+        int primaryId = BeaconMenu.encodeEffect(primary) & BEACON_EFFECT_ID_MASK;
+        int secondaryId = BeaconMenu.encodeEffect(secondary) & BEACON_EFFECT_ID_MASK;
+        return primaryId | (secondaryId << BEACON_SECONDARY_EFFECT_SHIFT);
+    }
+
+    private static int beaconEffectId(@Nullable Holder<MobEffect> effect) {
+        return BeaconMenu.encodeEffect(effect);
+    }
+
+    private void renderBrewingStandWindow(
+        GuiGraphicsExtractor graphics,
+        InventoryWindow window,
+        List<Slot> slots,
+        BrewingStandMenu menu,
+        int mouseX,
+        int mouseY
+    ) {
+        int contentX = brewingContentX(window);
+        int contentY = brewingContentY(window);
+        blitRegion(
+            graphics,
+            BREWING_UI_SLOTS_TEXTURE,
+            contentX,
+            contentY,
+            0,
+            0,
+            BREWING_UI_SLOTS_TEXTURE_WIDTH,
+            BREWING_UI_SLOTS_TEXTURE_HEIGHT,
+            BREWING_UI_SLOTS_TEXTURE_WIDTH,
+            BREWING_UI_SLOTS_TEXTURE_HEIGHT,
+            BREWING_UI_SLOTS_TEXTURE_WIDTH,
+            BREWING_UI_SLOTS_TEXTURE_HEIGHT
+        );
+        this.renderBrewingWidgets(graphics, menu, contentX, contentY);
+        this.renderBrewingSlotItem(graphics, slots, BREWING_FUEL_SLOT, contentX + BREWING_FUEL_SLOT_X, contentY + BREWING_FUEL_SLOT_Y, mouseX, mouseY);
+        this.renderBrewingSlotItem(graphics, slots, BREWING_INGREDIENT_SLOT, contentX + BREWING_INGREDIENT_SLOT_X, contentY + BREWING_INGREDIENT_SLOT_Y, mouseX, mouseY);
+        this.renderBrewingSlotItem(graphics, slots, BREWING_BOTTLE_0_SLOT, contentX + BREWING_BOTTLE_0_SLOT_X, contentY + BREWING_BOTTLE_0_SLOT_Y, mouseX, mouseY);
+        this.renderBrewingSlotItem(graphics, slots, BREWING_BOTTLE_1_SLOT, contentX + BREWING_BOTTLE_1_SLOT_X, contentY + BREWING_BOTTLE_1_SLOT_Y, mouseX, mouseY);
+        this.renderBrewingSlotItem(graphics, slots, BREWING_BOTTLE_2_SLOT, contentX + BREWING_BOTTLE_2_SLOT_X, contentY + BREWING_BOTTLE_2_SLOT_Y, mouseX, mouseY);
+    }
+
+    private void renderBrewingWidgets(GuiGraphicsExtractor graphics, BrewingStandMenu menu, int contentX, int contentY) {
+        int fuelWidth = Mth.clamp((BREWING_FUEL_LENGTH_WIDTH * menu.getFuel() + 20 - 1) / 20, 0, BREWING_FUEL_LENGTH_WIDTH);
+        if (fuelWidth > 0) {
+            graphics.blitSprite(
+                RenderPipelines.GUI_TEXTURED,
+                BREWING_FUEL_LENGTH_SPRITE,
+                BREWING_FUEL_LENGTH_WIDTH,
+                BREWING_FUEL_LENGTH_HEIGHT,
+                0,
+                0,
+                contentX + BREWING_FUEL_LENGTH_X,
+                contentY + BREWING_FUEL_LENGTH_Y,
+                fuelWidth,
+                BREWING_FUEL_LENGTH_HEIGHT
+            );
+        }
+
+        int brewingTicks = menu.getBrewingTicks();
+        if (brewingTicks <= 0) {
+            return;
+        }
+
+        int progressHeight = (int) (BREWING_PROGRESS_HEIGHT * (1.0F - brewingTicks / 400.0F));
+        if (progressHeight > 0) {
+            graphics.blitSprite(
+                RenderPipelines.GUI_TEXTURED,
+                BREWING_PROGRESS_SPRITE,
+                BREWING_PROGRESS_WIDTH,
+                BREWING_PROGRESS_HEIGHT,
+                0,
+                0,
+                contentX + BREWING_PROGRESS_X,
+                contentY + BREWING_PROGRESS_Y,
+                BREWING_PROGRESS_WIDTH,
+                progressHeight
+            );
+        }
+
+        int bubbleLength = BREWING_BUBBLE_LENGTHS[brewingTicks / 2 % BREWING_BUBBLE_LENGTHS.length];
+        if (bubbleLength > 0) {
+            graphics.blitSprite(
+                RenderPipelines.GUI_TEXTURED,
+                BREWING_BUBBLES_SPRITE,
+                BREWING_BUBBLES_WIDTH,
+                BREWING_BUBBLES_HEIGHT,
+                0,
+                BREWING_BUBBLES_HEIGHT - bubbleLength,
+                contentX + BREWING_BUBBLES_X,
+                contentY + BREWING_BUBBLES_BASE_Y - bubbleLength,
+                BREWING_BUBBLES_WIDTH,
+                bubbleLength
+            );
+        }
+    }
+
+    private void renderBrewingSlotItem(GuiGraphicsExtractor graphics, List<Slot> slots, int containerSlot, int x, int y, int mouseX, int mouseY) {
+        Slot slot = containerSlot(slots, containerSlot);
+        if (slot == null) {
+            return;
+        }
+
+        boolean hovered = contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE);
+        if (hovered && slot.isHighlightable()) {
+            renderSlotHighlightBack(graphics, x, y);
+        }
+        if (slot.hasItem()) {
+            graphics.item(slot.getItem(), x, y, slot.index);
+            graphics.itemDecorations(this.font, slot.getItem(), x, y);
+        }
+        if (hovered && slot.isHighlightable()) {
+            renderSlotHighlightFront(graphics, x, y);
+        }
+    }
+
+    private @Nullable SlotHit brewingSlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
+        int contentX = brewingContentX(window);
+        int contentY = brewingContentY(window);
+        int[] containerSlots = {BREWING_FUEL_SLOT, BREWING_INGREDIENT_SLOT, BREWING_BOTTLE_0_SLOT, BREWING_BOTTLE_1_SLOT, BREWING_BOTTLE_2_SLOT};
+        int[] slotXs = {
+            contentX + BREWING_FUEL_SLOT_X,
+            contentX + BREWING_INGREDIENT_SLOT_X,
+            contentX + BREWING_BOTTLE_0_SLOT_X,
+            contentX + BREWING_BOTTLE_1_SLOT_X,
+            contentX + BREWING_BOTTLE_2_SLOT_X
+        };
+        int[] slotYs = {
+            contentY + BREWING_FUEL_SLOT_Y,
+            contentY + BREWING_INGREDIENT_SLOT_Y,
+            contentY + BREWING_BOTTLE_0_SLOT_Y,
+            contentY + BREWING_BOTTLE_1_SLOT_Y,
+            contentY + BREWING_BOTTLE_2_SLOT_Y
+        };
+
+        for (int i = 0; i < containerSlots.length; i++) {
+            if (!contains(mouseX, mouseY, slotXs[i] - 1, slotYs[i] - 1, SLOT_SIZE, SLOT_SIZE)) {
+                continue;
+            }
+
+            Slot slot = containerSlot(slots, containerSlots[i]);
+            if (slot != null) {
+                return new SlotHit(slot, menu.slots.indexOf(slot), slotXs[i], slotYs[i], menu, window.sessionId());
+            }
+        }
+
+        return null;
+    }
+
+    private void renderCartographyTableWindow(
+        GuiGraphicsExtractor graphics,
+        InventoryWindow window,
+        List<Slot> slots,
+        CartographyTableMenu menu,
+        int mouseX,
+        int mouseY
+    ) {
+        int contentX = cartographyContentX(window);
+        int contentY = cartographyContentY(window);
+        this.renderContainerSlotIfPresent(graphics, slots, CARTOGRAPHY_MAP_SLOT, contentX + CARTOGRAPHY_MAP_SLOT_X, contentY + CARTOGRAPHY_MAP_SLOT_Y, mouseX, mouseY);
+        blitRegion(
+            graphics,
+            CARTOGRAPHY_PLUS_TEXTURE,
+            contentX + CARTOGRAPHY_PLUS_X,
+            contentY + CARTOGRAPHY_PLUS_Y,
+            0,
+            0,
+            CARTOGRAPHY_PLUS_TEXTURE_SIZE,
+            CARTOGRAPHY_PLUS_TEXTURE_SIZE,
+            CARTOGRAPHY_PLUS_TEXTURE_SIZE,
+            CARTOGRAPHY_PLUS_TEXTURE_SIZE,
+            CARTOGRAPHY_PLUS_TEXTURE_SIZE,
+            CARTOGRAPHY_PLUS_TEXTURE_SIZE
+        );
+        this.renderContainerSlotIfPresent(graphics, slots, CARTOGRAPHY_ADDITIONAL_SLOT, contentX + CARTOGRAPHY_ADDITIONAL_SLOT_X, contentY + CARTOGRAPHY_ADDITIONAL_SLOT_Y, mouseX, mouseY);
+        blitRegion(
+            graphics,
+            CONTAINER_WIDGETS_TEXTURE,
+            contentX + CARTOGRAPHY_ARROW_X,
+            contentY + CARTOGRAPHY_ARROW_Y,
+            WIDGET_ARROW_EMPTY_X,
+            WIDGET_ARROW_EMPTY_Y,
+            WIDGET_ARROW_WIDTH,
+            WIDGET_ARROW_HEIGHT,
+            WIDGET_ARROW_WIDTH,
+            WIDGET_ARROW_HEIGHT,
+            CONTAINER_WIDGETS_TEXTURE_WIDTH,
+            CONTAINER_WIDGETS_TEXTURE_HEIGHT
+        );
+
+        CartographyPreview preview = this.cartographyPreview(menu);
+        if (preview.error()) {
+            graphics.blitSprite(
+                RenderPipelines.GUI_TEXTURED,
+                CARTOGRAPHY_ERROR_SPRITE,
+                contentX + CARTOGRAPHY_ERROR_X,
+                contentY + CARTOGRAPHY_ERROR_Y,
+                CARTOGRAPHY_ERROR_WIDTH,
+                CARTOGRAPHY_ERROR_HEIGHT
+            );
+        }
+        this.renderCartographyPreview(graphics, preview, contentX + CARTOGRAPHY_PREVIEW_X, contentY + CARTOGRAPHY_PREVIEW_Y);
+        this.renderContainerSlotIfPresent(graphics, slots, CARTOGRAPHY_RESULT_SLOT, contentX + CARTOGRAPHY_RESULT_SLOT_X, contentY + CARTOGRAPHY_RESULT_SLOT_Y, mouseX, mouseY);
+    }
+
+    private CartographyPreview cartographyPreview(CartographyTableMenu menu) {
+        ItemStack additional = menu.getSlot(CARTOGRAPHY_ADDITIONAL_SLOT).getItem();
+        boolean emptyMap = additional.is(Items.MAP);
+        boolean paper = additional.is(Items.PAPER);
+        boolean glassPane = additional.is(Items.GLASS_PANE);
+        ItemStack mapStack = menu.getSlot(CARTOGRAPHY_MAP_SLOT).getItem();
+        MapId mapId = mapStack.get(DataComponents.MAP_ID);
+        MapItemSavedData mapData = null;
+        boolean error = false;
+        if (mapId != null && this.minecraft != null && this.minecraft.level != null) {
+            mapData = MapItem.getSavedData(mapId, this.minecraft.level);
+            if (mapData != null) {
+                if (mapData.locked && (paper || glassPane)) {
+                    error = true;
+                }
+                if (paper && mapData.scale >= 4) {
+                    error = true;
+                }
+            }
+        }
+
+        return new CartographyPreview(mapId, mapData, emptyMap, paper, glassPane, error);
+    }
+
+    private void renderCartographyPreview(GuiGraphicsExtractor graphics, CartographyPreview preview, int x, int y) {
+        if (preview.paper() && !preview.error()) {
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, CARTOGRAPHY_SCALED_MAP_SPRITE, x, y, CARTOGRAPHY_PREVIEW_SIZE, CARTOGRAPHY_PREVIEW_SIZE);
+            this.renderCartographyMap(graphics, preview.mapId(), preview.mapData(), x + 18, y + 18, 0.226F);
+            return;
+        }
+
+        if (preview.emptyMap()) {
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, CARTOGRAPHY_DUPLICATED_MAP_SPRITE, x + 16, y, CARTOGRAPHY_DUPLICATED_WIDTH, CARTOGRAPHY_PREVIEW_SIZE);
+            this.renderCartographyMap(graphics, preview.mapId(), preview.mapData(), x + 19, y + 3, 0.34F);
+            graphics.nextStratum();
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, CARTOGRAPHY_DUPLICATED_MAP_SPRITE, x, y + 16, CARTOGRAPHY_DUPLICATED_WIDTH, CARTOGRAPHY_PREVIEW_SIZE);
+            this.renderCartographyMap(graphics, preview.mapId(), preview.mapData(), x + 3, y + 19, 0.34F);
+            return;
+        }
+
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, CARTOGRAPHY_MAP_SPRITE, x, y, CARTOGRAPHY_PREVIEW_SIZE, CARTOGRAPHY_PREVIEW_SIZE);
+        this.renderCartographyMap(graphics, preview.mapId(), preview.mapData(), x + 4, y + 4, 0.45F);
+        if (preview.glassPane()) {
+            graphics.blitSprite(
+                RenderPipelines.GUI_TEXTURED,
+                CARTOGRAPHY_LOCKED_SPRITE,
+                x + 51,
+                y + 47,
+                CARTOGRAPHY_LOCKED_WIDTH,
+                CARTOGRAPHY_LOCKED_HEIGHT
+            );
+        }
+    }
+
+    private void renderCartographyMap(GuiGraphicsExtractor graphics, @Nullable MapId mapId, @Nullable MapItemSavedData mapData, int x, int y, float scale) {
+        if (mapId == null || mapData == null || this.minecraft == null) {
+            return;
+        }
+
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(x, y);
+        graphics.pose().scale(scale, scale);
+        this.minecraft.getMapRenderer().extractRenderState(mapId, mapData, this.cartographyMapRenderState);
+        graphics.map(this.cartographyMapRenderState);
+        graphics.pose().popMatrix();
+    }
+
+    private @Nullable SlotHit cartographySlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
+        int contentX = cartographyContentX(window);
+        int contentY = cartographyContentY(window);
+        int[] containerSlots = {CARTOGRAPHY_MAP_SLOT, CARTOGRAPHY_ADDITIONAL_SLOT, CARTOGRAPHY_RESULT_SLOT};
+        int[] slotXs = {
+            contentX + CARTOGRAPHY_MAP_SLOT_X,
+            contentX + CARTOGRAPHY_ADDITIONAL_SLOT_X,
+            contentX + CARTOGRAPHY_RESULT_SLOT_X
+        };
+        int[] slotYs = {
+            contentY + CARTOGRAPHY_MAP_SLOT_Y,
+            contentY + CARTOGRAPHY_ADDITIONAL_SLOT_Y,
+            contentY + CARTOGRAPHY_RESULT_SLOT_Y
+        };
+
+        for (int i = 0; i < containerSlots.length; i++) {
+            if (!contains(mouseX, mouseY, slotXs[i] - 1, slotYs[i] - 1, SLOT_SIZE, SLOT_SIZE)) {
+                continue;
+            }
+
+            Slot slot = containerSlot(slots, containerSlots[i]);
+            if (slot != null) {
+                return new SlotHit(slot, menu.slots.indexOf(slot), slotXs[i], slotYs[i], menu, window.sessionId());
+            }
+        }
+
+        return null;
+    }
+
+    private void renderSmithingWindow(
+        GuiGraphicsExtractor graphics,
+        InventoryWindow window,
+        List<Slot> slots,
+        SmithingMenu menu,
+        int mouseX,
+        int mouseY
+    ) {
+        int contentX = smithingContentX(window);
+        int contentY = smithingContentY(window);
+        SmithingWindowState state = window.smithingState();
+
+        blitRegion(
+            graphics,
+            SMITHING_HAMMER_TEXTURE,
+            contentX + SMITHING_HAMMER_X,
+            contentY + SMITHING_HAMMER_Y,
+            0,
+            0,
+            SMITHING_HAMMER_TEXTURE_WIDTH,
+            SMITHING_HAMMER_TEXTURE_HEIGHT,
+            SMITHING_HAMMER_TEXTURE_WIDTH,
+            SMITHING_HAMMER_TEXTURE_HEIGHT,
+            SMITHING_HAMMER_TEXTURE_WIDTH,
+            SMITHING_HAMMER_TEXTURE_HEIGHT
+        );
+        graphics.text(this.font, Component.translatable("container.upgrade"), contentX + SMITHING_LABEL_X, contentY + SMITHING_LABEL_Y, COLOR_WINDOW_TITLE, false);
+
+        this.renderContainerSlotIfPresent(graphics, slots, SMITHING_TEMPLATE_SLOT, contentX + SMITHING_TEMPLATE_SLOT_X, contentY + SMITHING_SLOT_Y, mouseX, mouseY);
+        this.renderContainerSlotIfPresent(graphics, slots, SMITHING_BASE_SLOT, contentX + SMITHING_BASE_SLOT_X, contentY + SMITHING_SLOT_Y, mouseX, mouseY);
+        this.renderContainerSlotIfPresent(graphics, slots, SMITHING_ADDITION_SLOT, contentX + SMITHING_ADDITION_SLOT_X, contentY + SMITHING_SLOT_Y, mouseX, mouseY);
+        state.renderSlotIcons(menu, graphics, this.minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false), contentX, contentY);
+        this.renderSmithingArrow(graphics, contentX + SMITHING_ARROW_X, contentY + SMITHING_ARROW_Y);
+        this.renderContainerSlotIfPresent(graphics, slots, SMITHING_RESULT_SLOT, contentX + SMITHING_RESULT_SLOT_X, contentY + SMITHING_SLOT_Y, mouseX, mouseY);
+        this.renderSmithingPreview(graphics, state, menu, contentX, contentY);
+    }
+
+    private void renderSmithingArrow(GuiGraphicsExtractor graphics, int x, int y) {
+        blitRegion(
+            graphics,
+            CONTAINER_WIDGETS_TEXTURE,
+            x,
+            y,
+            WIDGET_ARROW_EMPTY_X,
+            WIDGET_ARROW_EMPTY_Y,
+            WIDGET_ARROW_WIDTH,
+            WIDGET_ARROW_HEIGHT,
+            WIDGET_ARROW_WIDTH,
+            WIDGET_ARROW_HEIGHT,
+            CONTAINER_WIDGETS_TEXTURE_WIDTH,
+            CONTAINER_WIDGETS_TEXTURE_HEIGHT
+        );
+    }
+
+    private void renderSmithingPreview(GuiGraphicsExtractor graphics, SmithingWindowState state, SmithingMenu menu, int contentX, int contentY) {
+        ItemStack result = menu.getSlot(SMITHING_RESULT_SLOT).getItem();
+        state.updateArmorStandPreview(this.minecraft, result);
+        graphics.entity(
+            state.armorStandPreview(),
+            25.0F,
+            SMITHING_ARMOR_STAND_TRANSLATION,
+            SMITHING_ARMOR_STAND_ANGLE,
+            null,
+            contentX + SMITHING_PREVIEW_LEFT,
+            contentY + SMITHING_PREVIEW_TOP,
+            contentX + SMITHING_PREVIEW_RIGHT,
+            contentY + SMITHING_PREVIEW_BOTTOM
+        );
+    }
+
+    private @Nullable SlotHit smithingSlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
+        int contentX = smithingContentX(window);
+        int contentY = smithingContentY(window);
+        int[] containerSlots = {SMITHING_TEMPLATE_SLOT, SMITHING_BASE_SLOT, SMITHING_ADDITION_SLOT, SMITHING_RESULT_SLOT};
+        int[] slotXs = {
+            contentX + SMITHING_TEMPLATE_SLOT_X,
+            contentX + SMITHING_BASE_SLOT_X,
+            contentX + SMITHING_ADDITION_SLOT_X,
+            contentX + SMITHING_RESULT_SLOT_X
+        };
+        int[] slotYs = {
+            contentY + SMITHING_SLOT_Y,
+            contentY + SMITHING_SLOT_Y,
+            contentY + SMITHING_SLOT_Y,
+            contentY + SMITHING_SLOT_Y
+        };
+
+        for (int i = 0; i < containerSlots.length; i++) {
+            if (!contains(mouseX, mouseY, slotXs[i] - 1, slotYs[i] - 1, SLOT_SIZE, SLOT_SIZE)) {
+                continue;
+            }
+
+            Slot slot = containerSlot(slots, containerSlots[i]);
+            if (slot != null) {
+                return new SlotHit(slot, menu.slots.indexOf(slot), slotXs[i], slotYs[i], menu, window.sessionId());
+            }
+        }
+
+        return null;
+    }
+
+    private void renderGrindstoneWindow(GuiGraphicsExtractor graphics, InventoryWindow window, List<Slot> slots, int mouseX, int mouseY) {
+        int contentX = grindstoneContentX(window);
+        int contentY = grindstoneContentY(window);
+        blitRegion(
+            graphics,
+            GRINDSTONE_TEXTURE,
+            contentX + GRINDSTONE_SPRITE_X,
+            contentY + GRINDSTONE_SPRITE_Y,
+            0,
+            0,
+            GRINDSTONE_TEXTURE_WIDTH,
+            GRINDSTONE_TEXTURE_HEIGHT,
+            GRINDSTONE_TEXTURE_WIDTH,
+            GRINDSTONE_TEXTURE_HEIGHT,
+            GRINDSTONE_TEXTURE_WIDTH,
+            GRINDSTONE_TEXTURE_HEIGHT
+        );
+        this.renderContainerSlotIfPresent(graphics, slots, GRINDSTONE_INPUT_SLOT, contentX + GRINDSTONE_INPUT_SLOT_X, contentY + GRINDSTONE_INPUT_SLOT_Y, mouseX, mouseY);
+        this.renderContainerSlotIfPresent(graphics, slots, GRINDSTONE_ADDITIONAL_SLOT, contentX + GRINDSTONE_ADDITIONAL_SLOT_X, contentY + GRINDSTONE_ADDITIONAL_SLOT_Y, mouseX, mouseY);
+        this.renderSmithingArrow(graphics, contentX + GRINDSTONE_ARROW_X, contentY + GRINDSTONE_ARROW_Y);
+        this.renderContainerSlotIfPresent(graphics, slots, GRINDSTONE_RESULT_SLOT, contentX + GRINDSTONE_RESULT_SLOT_X, contentY + GRINDSTONE_RESULT_SLOT_Y, mouseX, mouseY);
+    }
+
+    private @Nullable SlotHit grindstoneSlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
+        int contentX = grindstoneContentX(window);
+        int contentY = grindstoneContentY(window);
+        int[] containerSlots = {GRINDSTONE_INPUT_SLOT, GRINDSTONE_ADDITIONAL_SLOT, GRINDSTONE_RESULT_SLOT};
+        int[] slotXs = {
+            contentX + GRINDSTONE_INPUT_SLOT_X,
+            contentX + GRINDSTONE_ADDITIONAL_SLOT_X,
+            contentX + GRINDSTONE_RESULT_SLOT_X
+        };
+        int[] slotYs = {
+            contentY + GRINDSTONE_INPUT_SLOT_Y,
+            contentY + GRINDSTONE_ADDITIONAL_SLOT_Y,
+            contentY + GRINDSTONE_RESULT_SLOT_Y
+        };
+
+        for (int i = 0; i < containerSlots.length; i++) {
+            if (!contains(mouseX, mouseY, slotXs[i] - 1, slotYs[i] - 1, SLOT_SIZE, SLOT_SIZE)) {
+                continue;
+            }
+
+            Slot slot = containerSlot(slots, containerSlots[i]);
+            if (slot != null) {
+                return new SlotHit(slot, menu.slots.indexOf(slot), slotXs[i], slotYs[i], menu, window.sessionId());
+            }
+        }
+
+        return null;
+    }
+
+    private void renderStonecutterWindow(
+        GuiGraphicsExtractor graphics,
+        InventoryWindow window,
+        List<Slot> slots,
+        StonecutterMenu menu,
+        int mouseX,
+        int mouseY
+    ) {
+        int contentX = stonecutterContentX(window);
+        int contentY = stonecutterContentY(window);
+        this.clampStonecutterState(window, menu);
+
+        this.renderContainerSlotIfPresent(graphics, slots, STONECUTTER_INPUT_SLOT, contentX + STONECUTTER_INPUT_SLOT_X, contentY + STONECUTTER_INPUT_SLOT_Y, mouseX, mouseY);
+        blitRegion(
+            graphics,
+            STONECUTTER_CONTAINER_TEXTURE,
+            contentX + STONECUTTER_PANEL_X,
+            contentY + STONECUTTER_PANEL_Y,
+            0,
+            0,
+            STONECUTTER_CONTAINER_TEXTURE_WIDTH,
+            STONECUTTER_CONTAINER_TEXTURE_HEIGHT,
+            STONECUTTER_CONTAINER_TEXTURE_WIDTH,
+            STONECUTTER_CONTAINER_TEXTURE_HEIGHT,
+            STONECUTTER_CONTAINER_TEXTURE_WIDTH,
+            STONECUTTER_CONTAINER_TEXTURE_HEIGHT
+        );
+        this.renderStonecutterRecipes(graphics, window, menu, contentX, contentY, mouseX, mouseY);
+        this.renderStonecutterScrollbar(graphics, window, menu, contentX, contentY);
+        this.renderLargeContainerSlotIfPresent(graphics, slots, STONECUTTER_RESULT_SLOT, contentX + STONECUTTER_RESULT_SLOT_X, contentY + STONECUTTER_RESULT_SLOT_Y, mouseX, mouseY);
+    }
+
+    private void renderStonecutterRecipes(
+        GuiGraphicsExtractor graphics,
+        InventoryWindow window,
+        StonecutterMenu menu,
+        int contentX,
+        int contentY,
+        int mouseX,
+        int mouseY
+    ) {
+        int recipeCount = menu.getNumberOfVisibleRecipes();
+        int selectedRecipe = menu.getSelectedRecipeIndex();
+        int firstRecipe = window.stonecutterScroll * STONECUTTER_RECIPE_COLUMNS;
+        int lastRecipe = Math.min(recipeCount, firstRecipe + STONECUTTER_VISIBLE_RECIPES);
+        for (int recipeIndex = firstRecipe; recipeIndex < lastRecipe; recipeIndex++) {
+            int visibleIndex = recipeIndex - firstRecipe;
+            int x = contentX + STONECUTTER_RECIPE_GRID_X + visibleIndex % STONECUTTER_RECIPE_COLUMNS * STONECUTTER_RECIPE_BUTTON_WIDTH;
+            int y = contentY + STONECUTTER_RECIPE_GRID_Y + visibleIndex / STONECUTTER_RECIPE_COLUMNS * STONECUTTER_RECIPE_BUTTON_HEIGHT;
+            Identifier sprite = recipeIndex == selectedRecipe
+                ? STONECUTTER_RECIPE_SELECTED_SPRITE
+                : contains(mouseX, mouseY, x, y, STONECUTTER_RECIPE_BUTTON_WIDTH, STONECUTTER_RECIPE_BUTTON_HEIGHT)
+                    ? STONECUTTER_RECIPE_HIGHLIGHTED_SPRITE
+                    : STONECUTTER_RECIPE_SPRITE;
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, STONECUTTER_RECIPE_BUTTON_WIDTH, STONECUTTER_RECIPE_BUTTON_HEIGHT);
+
+            ItemStack result = this.stonecutterRecipeStack(menu, recipeIndex);
+            if (!result.isEmpty()) {
+                graphics.item(result, x, y + 1);
+            }
+        }
+    }
+
+    private void renderStonecutterScrollbar(GuiGraphicsExtractor graphics, InventoryWindow window, StonecutterMenu menu, int contentX, int contentY) {
+        int maxScroll = stonecutterMaxScroll(menu);
+        Identifier sprite = maxScroll > 0 ? STONECUTTER_SCROLLER_SPRITE : STONECUTTER_SCROLLER_DISABLED_SPRITE;
+        int thumbOffset = maxScroll <= 0 ? 0 : Math.round(STONECUTTER_SCROLLBAR_TRAVEL * (window.stonecutterScroll / (float) maxScroll));
+        graphics.blitSprite(
+            RenderPipelines.GUI_TEXTURED,
+            sprite,
+            contentX + STONECUTTER_SCROLLBAR_X,
+            contentY + STONECUTTER_SCROLLBAR_Y + thumbOffset,
+            STONECUTTER_SCROLLBAR_WIDTH,
+            STONECUTTER_SCROLLBAR_HEIGHT
+        );
+    }
+
+    private @Nullable SlotHit stonecutterSlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
+        int contentX = stonecutterContentX(window);
+        int contentY = stonecutterContentY(window);
+        int inputX = contentX + STONECUTTER_INPUT_SLOT_X;
+        int inputY = contentY + STONECUTTER_INPUT_SLOT_Y;
+        if (contains(mouseX, mouseY, inputX - 1, inputY - 1, SLOT_SIZE, SLOT_SIZE)) {
+            Slot slot = containerSlot(slots, STONECUTTER_INPUT_SLOT);
+            if (slot != null) {
+                return new SlotHit(slot, menu.slots.indexOf(slot), inputX, inputY, menu, window.sessionId());
+            }
+        }
+
+        int resultX = contentX + STONECUTTER_RESULT_SLOT_X + LARGE_SLOT_ITEM_OFFSET;
+        int resultY = contentY + STONECUTTER_RESULT_SLOT_Y + LARGE_SLOT_ITEM_OFFSET;
+        if (contains(mouseX, mouseY, resultX - 1, resultY - 1, SLOT_SIZE, SLOT_SIZE)) {
+            Slot slot = containerSlot(slots, STONECUTTER_RESULT_SLOT);
+            if (slot != null) {
+                return new SlotHit(slot, menu.slots.indexOf(slot), resultX, resultY, menu, window.sessionId());
+            }
+        }
+
+        return null;
+    }
+
+    private int stonecutterRecipeAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.minimized || !(window.containerMenu() instanceof StonecutterMenu stonecutterMenu) || !this.stonecutterRecipeGridContains(window, mouseX, mouseY)) {
+            return -1;
+        }
+
+        this.clampStonecutterState(window, stonecutterMenu);
+        int contentX = stonecutterContentX(window);
+        int contentY = stonecutterContentY(window);
+        int relativeX = (int) mouseX - contentX - STONECUTTER_RECIPE_GRID_X;
+        int relativeY = (int) mouseY - contentY - STONECUTTER_RECIPE_GRID_Y;
+        int column = relativeX / STONECUTTER_RECIPE_BUTTON_WIDTH;
+        int row = relativeY / STONECUTTER_RECIPE_BUTTON_HEIGHT;
+        int recipeIndex = window.stonecutterScroll * STONECUTTER_RECIPE_COLUMNS + row * STONECUTTER_RECIPE_COLUMNS + column;
+        return recipeIndex >= 0 && recipeIndex < stonecutterMenu.getNumberOfVisibleRecipes() ? recipeIndex : -1;
+    }
+
+    private boolean stonecutterRecipeGridContains(InventoryWindow window, double mouseX, double mouseY) {
+        return contains(
+            mouseX,
+            mouseY,
+            stonecutterContentX(window) + STONECUTTER_RECIPE_GRID_X,
+            stonecutterContentY(window) + STONECUTTER_RECIPE_GRID_Y,
+            STONECUTTER_RECIPE_COLUMNS * STONECUTTER_RECIPE_BUTTON_WIDTH,
+            STONECUTTER_RECIPE_ROWS * STONECUTTER_RECIPE_BUTTON_HEIGHT
+        );
+    }
+
+    private boolean stonecutterRecipePanelContains(InventoryWindow window, double mouseX, double mouseY) {
+        return contains(
+            mouseX,
+            mouseY,
+            stonecutterContentX(window) + STONECUTTER_PANEL_X,
+            stonecutterContentY(window) + STONECUTTER_PANEL_Y,
+            STONECUTTER_CONTAINER_TEXTURE_WIDTH,
+            STONECUTTER_CONTAINER_TEXTURE_HEIGHT
+        );
+    }
+
+    private void clampStonecutterState(InventoryWindow window, StonecutterMenu menu) {
+        window.stonecutterScroll = clamp(window.stonecutterScroll, 0, stonecutterMaxScroll(menu));
+    }
+
+    private static int stonecutterMaxScroll(StonecutterMenu menu) {
+        return Math.max(0, rowsForSlots(menu.getNumberOfVisibleRecipes(), STONECUTTER_RECIPE_COLUMNS) - STONECUTTER_RECIPE_ROWS);
+    }
+
+    private ItemStack stonecutterRecipeStack(StonecutterMenu menu, int recipeIndex) {
+        if (this.minecraft == null || this.minecraft.level == null || recipeIndex < 0 || recipeIndex >= menu.getNumberOfVisibleRecipes()) {
+            return ItemStack.EMPTY;
+        }
+
+        SelectableRecipe.SingleInputSet<StonecutterRecipe> recipes = menu.getVisibleRecipes();
+        if (recipeIndex >= recipes.entries().size()) {
+            return ItemStack.EMPTY;
+        }
+
+        return recipes.entries()
+            .get(recipeIndex)
+            .recipe()
+            .optionDisplay()
+            .resolveForFirstStack(SlotDisplayContext.fromLevel(this.minecraft.level));
+    }
+
+    private void renderLoomWindow(
+        GuiGraphicsExtractor graphics,
+        InventoryWindow window,
+        List<Slot> slots,
+        LoomMenu menu,
+        int mouseX,
+        int mouseY
+    ) {
+        int contentX = loomContentX(window);
+        int contentY = loomContentY(window);
+        this.clampLoomState(window, menu);
+
+        blitRegion(
+            graphics,
+            LOOM_INPUTS_TEXTURE,
+            contentX + LOOM_INPUTS_X,
+            contentY + LOOM_INPUTS_Y,
+            0,
+            0,
+            LOOM_INPUTS_TEXTURE_WIDTH,
+            LOOM_INPUTS_TEXTURE_HEIGHT,
+            LOOM_INPUTS_TEXTURE_WIDTH,
+            LOOM_INPUTS_TEXTURE_HEIGHT,
+            LOOM_INPUTS_TEXTURE_WIDTH,
+            LOOM_INPUTS_TEXTURE_HEIGHT
+        );
+        this.renderLoomSlotIfPresent(graphics, slots, LOOM_BANNER_SLOT, contentX + LOOM_BANNER_SLOT_X, contentY + LOOM_BANNER_SLOT_Y, LOOM_BANNER_SLOT_SPRITE, mouseX, mouseY);
+        this.renderLoomSlotIfPresent(graphics, slots, LOOM_DYE_SLOT, contentX + LOOM_DYE_SLOT_X, contentY + LOOM_DYE_SLOT_Y, LOOM_DYE_SLOT_SPRITE, mouseX, mouseY);
+        this.renderLoomSlotIfPresent(graphics, slots, LOOM_PATTERN_SLOT, contentX + LOOM_PATTERN_SLOT_X, contentY + LOOM_PATTERN_SLOT_Y, LOOM_PATTERN_SLOT_SPRITE, mouseX, mouseY);
+
+        blitRegion(
+            graphics,
+            LOOM_OPTIONS_TEXTURE,
+            contentX + LOOM_OPTIONS_X,
+            contentY + LOOM_OPTIONS_Y,
+            0,
+            0,
+            LOOM_OPTIONS_TEXTURE_WIDTH,
+            LOOM_OPTIONS_TEXTURE_HEIGHT,
+            LOOM_OPTIONS_TEXTURE_WIDTH,
+            LOOM_OPTIONS_TEXTURE_HEIGHT,
+            LOOM_OPTIONS_TEXTURE_WIDTH,
+            LOOM_OPTIONS_TEXTURE_HEIGHT
+        );
+        this.renderLoomPatterns(graphics, window, menu, contentX, contentY, mouseX, mouseY);
+        this.renderLoomScrollbar(graphics, window, menu, contentX, contentY);
+
+        this.renderLoomPreview(graphics, menu, contentX, contentY);
+        this.renderLargeContainerSlotIfPresent(graphics, slots, LOOM_RESULT_SLOT, contentX + LOOM_RESULT_SLOT_X, contentY + LOOM_RESULT_SLOT_Y, mouseX, mouseY);
+        if (this.loomHasMaxPatterns(menu)) {
+            graphics.blitSprite(
+                RenderPipelines.GUI_TEXTURED,
+                LOOM_ERROR_SPRITE,
+                contentX + LOOM_RESULT_SLOT_X + LARGE_SLOT_ITEM_OFFSET - 5,
+                contentY + LOOM_RESULT_SLOT_Y + LARGE_SLOT_ITEM_OFFSET - 5,
+                26,
+                26
+            );
+        }
+    }
+
+    private void renderLoomSlotIfPresent(
+        GuiGraphicsExtractor graphics,
+        List<Slot> slots,
+        int containerSlot,
+        int x,
+        int y,
+        Identifier emptySprite,
+        int mouseX,
+        int mouseY
+    ) {
+        Slot slot = containerSlot(slots, containerSlot);
+        if (slot == null) {
+            return;
+        }
+
+        boolean hovered = contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE);
+        renderSlotBackground(graphics, x, y);
+        if (hovered && slot.isHighlightable()) {
+            renderSlotHighlightBack(graphics, x, y);
+        }
+        if (slot.hasItem()) {
+            graphics.item(slot.getItem(), x, y, slot.index);
+            graphics.itemDecorations(this.font, slot.getItem(), x, y);
+        } else {
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, emptySprite, x, y, SLOT_ITEM_SIZE, SLOT_ITEM_SIZE);
+        }
+        if (hovered && slot.isHighlightable()) {
+            renderSlotHighlightFront(graphics, x, y);
+        }
+    }
+
+    private void renderLoomPatterns(GuiGraphicsExtractor graphics, InventoryWindow window, LoomMenu menu, int contentX, int contentY, int mouseX, int mouseY) {
+        if (!this.shouldDisplayLoomPatterns(menu)) {
+            return;
+        }
+
+        List<Holder<BannerPattern>> patterns = menu.getSelectablePatterns();
+        int selectedPattern = menu.getSelectedBannerPatternIndex();
+        int firstPattern = window.loomScroll * LOOM_PATTERN_COLUMNS;
+        int lastPattern = Math.min(patterns.size(), firstPattern + LOOM_VISIBLE_PATTERNS);
+        for (int patternIndex = firstPattern; patternIndex < lastPattern; patternIndex++) {
+            int visibleIndex = patternIndex - firstPattern;
+            int x = contentX + LOOM_PATTERN_GRID_X + visibleIndex % LOOM_PATTERN_COLUMNS * LOOM_PATTERN_BUTTON_SIZE;
+            int y = contentY + LOOM_PATTERN_GRID_Y + visibleIndex / LOOM_PATTERN_COLUMNS * LOOM_PATTERN_BUTTON_SIZE;
+            boolean hovered = contains(mouseX, mouseY, x, y, LOOM_PATTERN_BUTTON_SIZE, LOOM_PATTERN_BUTTON_SIZE);
+            Identifier sprite = patternIndex == selectedPattern
+                ? LOOM_PATTERN_SELECTED_SPRITE
+                : hovered ? LOOM_PATTERN_HIGHLIGHTED_SPRITE : LOOM_PATTERN_SPRITE;
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, LOOM_PATTERN_BUTTON_SIZE, LOOM_PATTERN_BUTTON_SIZE);
+            this.renderLoomPatternIcon(graphics, patterns.get(patternIndex), x, y);
+        }
+    }
+
+    private void renderLoomPatternIcon(GuiGraphicsExtractor graphics, Holder<BannerPattern> pattern, int x, int y) {
+        TextureAtlasSprite sprite = graphics.getSprite(Sheets.getBannerSprite(pattern));
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(x + 4.0F, y + 2.0F);
+        float u0 = sprite.getU0();
+        float u1 = u0 + (sprite.getU1() - sprite.getU0()) * 21.0F / 64.0F;
+        float vDelta = sprite.getV1() - sprite.getV0();
+        float v0 = sprite.getV0() + vDelta / 64.0F;
+        float v1 = v0 + vDelta * 40.0F / 64.0F;
+        graphics.fill(0, 0, 5, 10, DyeColor.GRAY.getTextureDiffuseColor());
+        graphics.blit(sprite.atlasLocation(), 0, 0, 5, 10, u0, u1, v0, v1);
+        graphics.pose().popMatrix();
+    }
+
+    private void renderLoomScrollbar(GuiGraphicsExtractor graphics, InventoryWindow window, LoomMenu menu, int contentX, int contentY) {
+        int maxScroll = loomMaxScroll(menu);
+        Identifier sprite = maxScroll > 0 ? LOOM_SCROLLER_SPRITE : LOOM_SCROLLER_DISABLED_SPRITE;
+        int thumbOffset = maxScroll <= 0 ? 0 : Math.round(LOOM_SCROLLBAR_TRAVEL * (window.loomScroll / (float) maxScroll));
+        graphics.blitSprite(
+            RenderPipelines.GUI_TEXTURED,
+            sprite,
+            contentX + LOOM_SCROLLBAR_X,
+            contentY + LOOM_SCROLLBAR_Y + thumbOffset,
+            LOOM_SCROLLBAR_WIDTH,
+            LOOM_SCROLLBAR_HEIGHT
+        );
+    }
+
+    private void renderLoomPreview(GuiGraphicsExtractor graphics, LoomMenu menu, int contentX, int contentY) {
+        int x = contentX + LOOM_PREVIEW_X;
+        int y = contentY + LOOM_PREVIEW_Y;
+        blitRegion(
+            graphics,
+            LOOM_PREVIEW_TEXTURE,
+            x,
+            y,
+            0,
+            0,
+            LOOM_PREVIEW_TEXTURE_WIDTH,
+            LOOM_PREVIEW_TEXTURE_HEIGHT,
+            LOOM_PREVIEW_TEXTURE_WIDTH,
+            LOOM_PREVIEW_TEXTURE_HEIGHT,
+            LOOM_PREVIEW_TEXTURE_WIDTH,
+            LOOM_PREVIEW_TEXTURE_HEIGHT
+        );
+
+        ItemStack result = menu.getResultSlot().getItem();
+        if (!result.isEmpty() && !this.loomHasMaxPatterns(menu) && result.getItem() instanceof BannerItem bannerItem) {
+            BannerPatternLayers patterns = result.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY);
+            graphics.bannerPattern(this.loomBannerFlagModel(), bannerItem.getColor(), patterns, x, y, x + LOOM_PREVIEW_TEXTURE_WIDTH, y + LOOM_PREVIEW_TEXTURE_HEIGHT);
+        }
+    }
+
+    private @Nullable SlotHit loomSlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
+        int contentX = loomContentX(window);
+        int contentY = loomContentY(window);
+        int[] containerSlots = {LOOM_BANNER_SLOT, LOOM_DYE_SLOT, LOOM_PATTERN_SLOT};
+        int[] slotXs = {
+            contentX + LOOM_BANNER_SLOT_X,
+            contentX + LOOM_DYE_SLOT_X,
+            contentX + LOOM_PATTERN_SLOT_X
+        };
+        int[] slotYs = {
+            contentY + LOOM_BANNER_SLOT_Y,
+            contentY + LOOM_DYE_SLOT_Y,
+            contentY + LOOM_PATTERN_SLOT_Y
+        };
+
+        for (int i = 0; i < containerSlots.length; i++) {
+            if (!contains(mouseX, mouseY, slotXs[i] - 1, slotYs[i] - 1, SLOT_SIZE, SLOT_SIZE)) {
+                continue;
+            }
+
+            Slot slot = containerSlot(slots, containerSlots[i]);
+            if (slot != null) {
+                return new SlotHit(slot, menu.slots.indexOf(slot), slotXs[i], slotYs[i], menu, window.sessionId());
+            }
+        }
+
+        int resultX = contentX + LOOM_RESULT_SLOT_X + LARGE_SLOT_ITEM_OFFSET;
+        int resultY = contentY + LOOM_RESULT_SLOT_Y + LARGE_SLOT_ITEM_OFFSET;
+        if (contains(mouseX, mouseY, resultX - 1, resultY - 1, SLOT_SIZE, SLOT_SIZE)) {
+            Slot slot = containerSlot(slots, LOOM_RESULT_SLOT);
+            if (slot != null) {
+                return new SlotHit(slot, menu.slots.indexOf(slot), resultX, resultY, menu, window.sessionId());
+            }
+        }
+
+        return null;
+    }
+
+    private int loomPatternAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.minimized || !(window.containerMenu() instanceof LoomMenu loomMenu) || !this.shouldDisplayLoomPatterns(loomMenu) || !this.loomPatternGridContains(window, mouseX, mouseY)) {
+            return -1;
+        }
+
+        this.clampLoomState(window, loomMenu);
+        int contentX = loomContentX(window);
+        int contentY = loomContentY(window);
+        int relativeX = (int) mouseX - contentX - LOOM_PATTERN_GRID_X;
+        int relativeY = (int) mouseY - contentY - LOOM_PATTERN_GRID_Y;
+        int column = relativeX / LOOM_PATTERN_BUTTON_SIZE;
+        int row = relativeY / LOOM_PATTERN_BUTTON_SIZE;
+        int patternIndex = window.loomScroll * LOOM_PATTERN_COLUMNS + row * LOOM_PATTERN_COLUMNS + column;
+        return patternIndex >= 0 && patternIndex < loomMenu.getSelectablePatterns().size() ? patternIndex : -1;
+    }
+
+    private boolean loomPatternGridContains(InventoryWindow window, double mouseX, double mouseY) {
+        return contains(
+            mouseX,
+            mouseY,
+            loomContentX(window) + LOOM_PATTERN_GRID_X,
+            loomContentY(window) + LOOM_PATTERN_GRID_Y,
+            LOOM_PATTERN_COLUMNS * LOOM_PATTERN_BUTTON_SIZE,
+            LOOM_PATTERN_ROWS * LOOM_PATTERN_BUTTON_SIZE
+        );
+    }
+
+    private boolean loomPatternPanelContains(InventoryWindow window, double mouseX, double mouseY) {
+        return contains(
+            mouseX,
+            mouseY,
+            loomContentX(window) + LOOM_OPTIONS_X,
+            loomContentY(window) + LOOM_OPTIONS_Y,
+            LOOM_OPTIONS_TEXTURE_WIDTH,
+            LOOM_OPTIONS_TEXTURE_HEIGHT
+        );
+    }
+
+    private void clampLoomState(InventoryWindow window, LoomMenu menu) {
+        window.loomScroll = clamp(window.loomScroll, 0, loomMaxScroll(menu));
+    }
+
+    private boolean shouldDisplayLoomPatterns(LoomMenu menu) {
+        return !menu.getBannerSlot().getItem().isEmpty()
+            && !menu.getDyeSlot().getItem().isEmpty()
+            && !this.loomHasMaxPatterns(menu)
+            && !menu.getSelectablePatterns().isEmpty();
+    }
+
+    private boolean loomHasMaxPatterns(LoomMenu menu) {
+        ItemStack banner = menu.getBannerSlot().getItem();
+        if (banner.isEmpty()) {
+            return false;
+        }
+
+        return banner.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY).layers().size() >= 6;
+    }
+
+    private static int loomMaxScroll(LoomMenu menu) {
+        return Math.max(0, rowsForSlots(menu.getSelectablePatterns().size(), LOOM_PATTERN_COLUMNS) - LOOM_PATTERN_ROWS);
     }
 
     private void renderEnchantmentWindow(
@@ -2380,9 +5421,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (slot != null) {
             if (containerSlot == ENCHANTMENT_LAPIS_SLOT && !slot.hasItem()) {
                 boolean hovered = contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE);
-                renderSlotBackground(graphics, x, y, hovered);
+                renderSlotBackground(graphics, x, y);
+                if (hovered) {
+                    renderSlotHighlightBack(graphics, x, y);
+                }
                 graphics.item(Items.LAPIS_LAZULI.getDefaultInstance(), x, y, slot.index);
                 graphics.fill(x, y, x + SLOT_ITEM_SIZE, y + SLOT_ITEM_SIZE, 0xAA8F8F8F);
+                if (hovered) {
+                    renderSlotHighlightFront(graphics, x, y);
+                }
                 return;
             }
             this.renderSlot(graphics, slot, x, y, mouseX, mouseY);
@@ -2466,16 +5513,38 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.renderContainerSlotIfPresent(graphics, slots, MERCHANT_PAYMENT_2_SLOT, contentX + MERCHANT_PAYMENT_2_X, contentY + MERCHANT_SLOT_Y, mouseX, mouseY);
 
         MerchantOffer selectedOffer = window.merchantSelectedTrade >= 0 && window.merchantSelectedTrade < offers.size() ? offers.get(window.merchantSelectedTrade) : null;
-        graphics.blitSprite(
-            RenderPipelines.GUI_TEXTURED,
-            selectedOffer != null && selectedOffer.isOutOfStock() ? MERCHANT_TRADE_ARROW_OUT_OF_STOCK_SPRITE : MERCHANT_TRADE_ARROW_SPRITE,
-            contentX + MERCHANT_TRADE_ARROW_X,
-            contentY + MERCHANT_TRADE_ARROW_Y,
-            MERCHANT_TRADE_ARROW_WIDTH,
-            MERCHANT_TRADE_ARROW_HEIGHT
-        );
+        this.renderMerchantSlotArrow(graphics, contentX + MERCHANT_TRADE_ARROW_X, contentY + MERCHANT_TRADE_ARROW_Y, selectedOffer != null && selectedOffer.isOutOfStock());
         this.renderContainerSlotIfPresent(graphics, slots, MERCHANT_RESULT_SLOT, contentX + MERCHANT_RESULT_X, contentY + MERCHANT_SLOT_Y, mouseX, mouseY);
         this.renderMerchantProgress(graphics, menu, selectedOffer, contentX, contentY);
+    }
+
+    private void renderMerchantSlotArrow(GuiGraphicsExtractor graphics, int x, int y, boolean outOfStock) {
+        if (outOfStock) {
+            graphics.blitSprite(
+                RenderPipelines.GUI_TEXTURED,
+                MERCHANT_OUT_OF_STOCK_SPRITE,
+                x - 3,
+                y - 2,
+                MERCHANT_OUT_OF_STOCK_WIDTH,
+                MERCHANT_OUT_OF_STOCK_HEIGHT
+            );
+            return;
+        }
+
+        blitRegion(
+            graphics,
+            CONTAINER_WIDGETS_TEXTURE,
+            x,
+            y,
+            WIDGET_ARROW_EMPTY_X,
+            WIDGET_ARROW_EMPTY_Y,
+            WIDGET_ARROW_WIDTH,
+            WIDGET_ARROW_HEIGHT,
+            WIDGET_ARROW_WIDTH,
+            WIDGET_ARROW_HEIGHT,
+            CONTAINER_WIDGETS_TEXTURE_WIDTH,
+            CONTAINER_WIDGETS_TEXTURE_HEIGHT
+        );
     }
 
     private void renderMerchantDetailLabel(GuiGraphicsExtractor graphics, InventoryWindow window, MerchantMenu menu, int contentX, int contentY) {
@@ -2484,7 +5553,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         String label = Component.translatable("merchant.title", window.title, level).getString();
         int labelMaxWidth = MERCHANT_CONTENT_WIDTH - MERCHANT_PROGRESS_X;
         label = this.truncatedTitle(label, labelMaxWidth);
-        int x = contentX + MERCHANT_PROGRESS_X + Math.max(0, (labelMaxWidth - this.font.width(label)) / 2);
+        int x = contentX + MERCHANT_PROGRESS_X + Math.max(0, (labelMaxWidth - this.font.width(label)) / 2) - 3;
         graphics.text(this.font, label, x, contentY + MERCHANT_DETAIL_LABEL_Y, COLOR_WINDOW_TITLE, false);
     }
 
@@ -2707,6 +5776,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return this.enchantmentBookModel;
     }
 
+    private BannerFlagModel loomBannerFlagModel() {
+        if (this.loomBannerFlagModel == null) {
+            this.loomBannerFlagModel = new BannerFlagModel(this.minecraft.getEntityModels().bakeLayer(ModelLayers.STANDING_BANNER_FLAG));
+        }
+
+        return this.loomBannerFlagModel;
+    }
+
     private static int enchantmentContentX(InventoryWindow window) {
         return window.x + ENCHANTMENT_CONTENT_MARGIN;
     }
@@ -2723,6 +5800,38 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return window.y + TOP_BAR_HEIGHT + MERCHANT_CONTENT_MARGIN;
     }
 
+    private static int smithingContentX(InventoryWindow window) {
+        return window.x + SMITHING_CONTENT_MARGIN;
+    }
+
+    private static int smithingContentY(InventoryWindow window) {
+        return window.y + TOP_BAR_HEIGHT + SMITHING_CONTENT_MARGIN;
+    }
+
+    private static int grindstoneContentX(InventoryWindow window) {
+        return window.x + GRINDSTONE_CONTENT_MARGIN;
+    }
+
+    private static int grindstoneContentY(InventoryWindow window) {
+        return window.y + TOP_BAR_HEIGHT + GRINDSTONE_CONTENT_MARGIN;
+    }
+
+    private static int stonecutterContentX(InventoryWindow window) {
+        return window.x + STONECUTTER_CONTENT_MARGIN;
+    }
+
+    private static int stonecutterContentY(InventoryWindow window) {
+        return window.y + TOP_BAR_HEIGHT + STONECUTTER_CONTENT_MARGIN;
+    }
+
+    private static int loomContentX(InventoryWindow window) {
+        return window.x + LOOM_CONTENT_MARGIN;
+    }
+
+    private static int loomContentY(InventoryWindow window) {
+        return window.y + TOP_BAR_HEIGHT + LOOM_CONTENT_MARGIN;
+    }
+
     private static int furnaceContentX(InventoryWindow window) {
         return window.x + FURNACE_CONTENT_MARGIN;
     }
@@ -2737,6 +5846,46 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private static int craftingTableContentY(InventoryWindow window) {
         return window.y + TOP_BAR_HEIGHT + CRAFTING_TABLE_CONTENT_MARGIN;
+    }
+
+    private static int anvilContentX(InventoryWindow window) {
+        return window.x + ANVIL_CONTENT_MARGIN;
+    }
+
+    private static int anvilContentY(InventoryWindow window) {
+        return window.y + TOP_BAR_HEIGHT + ANVIL_CONTENT_MARGIN;
+    }
+
+    private static int crafterContentX(InventoryWindow window) {
+        return window.x + CRAFTER_CONTENT_MARGIN;
+    }
+
+    private static int crafterContentY(InventoryWindow window) {
+        return window.y + TOP_BAR_HEIGHT + CRAFTER_CONTENT_MARGIN;
+    }
+
+    private static int beaconContentX(InventoryWindow window) {
+        return window.x + BEACON_CONTENT_MARGIN;
+    }
+
+    private static int beaconContentY(InventoryWindow window) {
+        return window.y + TOP_BAR_HEIGHT + BEACON_CONTENT_MARGIN;
+    }
+
+    private static int brewingContentX(InventoryWindow window) {
+        return window.x + BREWING_CONTENT_MARGIN;
+    }
+
+    private static int brewingContentY(InventoryWindow window) {
+        return window.y + TOP_BAR_HEIGHT + BREWING_CONTENT_MARGIN;
+    }
+
+    private static int cartographyContentX(InventoryWindow window) {
+        return window.x + CARTOGRAPHY_CONTENT_MARGIN;
+    }
+
+    private static int cartographyContentY(InventoryWindow window) {
+        return window.y + TOP_BAR_HEIGHT + CARTOGRAPHY_CONTENT_MARGIN;
     }
 
     private void renderCompactSlots(GuiGraphicsExtractor graphics, InventoryWindow window, List<Slot> slots, SlotGridLayout layout, int mouseX, int mouseY) {
@@ -2870,12 +6019,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void renderSlot(GuiGraphicsExtractor graphics, Slot slot, int x, int y, int mouseX, int mouseY) {
         boolean hovered = contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE);
-        renderSlotBackground(graphics, x, y, hovered);
+        renderSlotBackground(graphics, x, y);
+        if (hovered && slot.isHighlightable()) {
+            renderSlotHighlightBack(graphics, x, y);
+        }
         if (slot.hasItem()) {
             graphics.item(slot.getItem(), x, y, slot.index);
             graphics.itemDecorations(this.font, slot.getItem(), x, y);
         } else if (slot.getNoItemIcon() != null) {
             graphics.centeredText(this.font, ".", x + 8, y + 4, COLOR_MUTED_TEXT);
+        }
+        if (hovered && slot.isHighlightable()) {
+            renderSlotHighlightFront(graphics, x, y);
         }
     }
 
@@ -2889,6 +6044,24 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         MerchantOfferItemHit offerHit = this.merchantOfferItemAt(mouseX, mouseY);
         if (offerHit != null && !offerHit.stack().isEmpty() && this.sharedCarried.isEmpty()) {
             graphics.setTooltipForNextFrame(this.font, offerHit.stack(), mouseX, mouseY);
+            return;
+        }
+
+        CreativeItemHit creativeItemHit = this.creativeItemAt(mouseX, mouseY);
+        if (creativeItemHit != null && !creativeItemHit.stack().isEmpty() && this.sharedCarried.isEmpty()) {
+            graphics.setTooltipForNextFrame(this.font, creativeItemHit.stack(), mouseX, mouseY);
+            return;
+        }
+
+        CreativeTabHit creativeTabHit = this.creativeTabAt(mouseX, mouseY);
+        if (creativeTabHit != null && this.sharedCarried.isEmpty()) {
+            graphics.setTooltipForNextFrame(this.font, creativeTabHit.tab().getDisplayName(), mouseX, mouseY);
+            return;
+        }
+
+        InventoryWindow window = this.windowAt(mouseX, mouseY);
+        if (window != null && window.kind == WindowKind.CREATIVE && this.creativeDeleteSlotContains(window, mouseX, mouseY) && this.sharedCarried.isEmpty()) {
+            graphics.setTooltipForNextFrame(this.font, CREATIVE_DELETE_TOOLTIP, mouseX, mouseY);
         }
     }
 
@@ -2998,13 +6171,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
-    private static void renderSlotBackground(GuiGraphicsExtractor graphics, int x, int y, boolean hovered) {
+    private static void renderSlotBackground(GuiGraphicsExtractor graphics, int x, int y) {
         blitRegion(
             graphics,
             SLOT_TEXTURE,
             x - 1,
             y - 1,
-            hovered ? SLOT_SIZE : 0,
+            0,
             0,
             SLOT_SIZE,
             SLOT_SIZE,
@@ -3012,6 +6185,28 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             SLOT_SIZE,
             SLOT_TEXTURE_WIDTH,
             SLOT_TEXTURE_HEIGHT
+        );
+    }
+
+    private static void renderSlotHighlightBack(GuiGraphicsExtractor graphics, int x, int y) {
+        graphics.blitSprite(
+            RenderPipelines.GUI_TEXTURED,
+            SLOT_HIGHLIGHT_BACK_SPRITE,
+            x - SLOT_HIGHLIGHT_OFFSET,
+            y - SLOT_HIGHLIGHT_OFFSET,
+            SLOT_HIGHLIGHT_SIZE,
+            SLOT_HIGHLIGHT_SIZE
+        );
+    }
+
+    private static void renderSlotHighlightFront(GuiGraphicsExtractor graphics, int x, int y) {
+        graphics.blitSprite(
+            RenderPipelines.GUI_TEXTURED,
+            SLOT_HIGHLIGHT_FRONT_SPRITE,
+            x - SLOT_HIGHLIGHT_OFFSET,
+            y - SLOT_HIGHLIGHT_OFFSET,
+            SLOT_HIGHLIGHT_SIZE,
+            SLOT_HIGHLIGHT_SIZE
         );
     }
 
@@ -3112,6 +6307,34 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return Minecraft.getInstance().getWindow().getGuiScaledHeight() - 19;
     }
 
+    private static int creativeContentX(InventoryWindow window) {
+        return window.x + CREATIVE_CONTENT_MARGIN;
+    }
+
+    private static int creativeTopTabsY(InventoryWindow window) {
+        return window.y + TOP_BAR_HEIGHT + CREATIVE_CONTENT_MARGIN;
+    }
+
+    private static int creativePanelX(InventoryWindow window) {
+        return creativeContentX(window);
+    }
+
+    private static int creativePanelY(InventoryWindow window) {
+        return creativeTopTabsY(window) + CREATIVE_TAB_HEIGHT - 4;
+    }
+
+    private static int creativeBottomTabsY(InventoryWindow window) {
+        return creativePanelY(window) + CREATIVE_PANEL_HEIGHT - 4;
+    }
+
+    private static Identifier[] creativeTabSprites(String baseName) {
+        Identifier[] sprites = new Identifier[CREATIVE_TABS_PER_ROW];
+        for (int i = 0; i < sprites.length; i++) {
+            sprites[i] = Identifier.withDefaultNamespace("container/creative_inventory/" + baseName + "_" + (i + 1));
+        }
+        return sprites;
+    }
+
     private static void slotClicked(AbstractContainerMenu menu, Slot slot, int button, ContainerInput input, Minecraft minecraft) {
         slotClicked(menu, menu.slots.indexOf(slot), button, input, minecraft);
     }
@@ -3183,6 +6406,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return containerSlot >= 0 && containerSlot < slots.size() ? slots.get(containerSlot) : null;
     }
 
+    private static @Nullable Slot crafterOutputSlot(List<Slot> slots) {
+        return slots.size() > CRAFTER_INPUT_SLOT_COUNT ? slots.get(CRAFTER_INPUT_SLOT_COUNT) : null;
+    }
+
+    private static int crafterSlotStateButtonId(int slotId, boolean enabled) {
+        return slotId | (enabled ? CRAFTER_SLOT_STATE_ENABLED_FLAG : 0);
+    }
+
     private static float clampProgress(float progress) {
         return Math.max(0.0F, Math.min(1.0F, progress));
     }
@@ -3198,7 +6429,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private enum WindowKind {
         INVENTORY,
         CONTAINER,
-        CHARACTER
+        CHARACTER,
+        CREATIVE
     }
 
     private enum WindowControl {
@@ -3214,10 +6446,43 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    private enum BeaconButtonKind {
+        PRIMARY,
+        SECONDARY,
+        UPGRADE,
+        CONFIRM,
+        CANCEL
+    }
+
     private record SlotHit(Slot slot, int slotId, int x, int y, AbstractContainerMenu menu, int sessionId) {
     }
 
+    private record BeaconButtonHit(BeaconButtonKind kind, @Nullable Holder<MobEffect> effect) {
+    }
+
     private record MerchantOfferItemHit(ItemStack stack) {
+    }
+
+    private record CreativeItemHit(InventoryWindow window, ItemStack stack, int x, int y, int index) {
+    }
+
+    private record CreativeTabHit(InventoryWindow window, CreativeModeTab tab, CreativeTabRect rect) {
+    }
+
+    private record CreativeTabRect(int x, int y, int width, int height, int column, boolean topRow) {
+    }
+
+    private record CreativeGridLayout(int totalRows, int maxScrollRow, boolean scrollable) {
+    }
+
+    private record CartographyPreview(
+        @Nullable MapId mapId,
+        @Nullable MapItemSavedData mapData,
+        boolean emptyMap,
+        boolean paper,
+        boolean glassPane,
+        boolean error
+    ) {
     }
 
     private record SlotGridLayout(int columns, int visibleRows, int totalRows, int maxScrollRow, boolean scrollable) {
@@ -3313,6 +6578,101 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    private static final class SmithingWindowState {
+        private final CyclingSlotBackground templateIcon = new CyclingSlotBackground(SMITHING_TEMPLATE_SLOT);
+        private final CyclingSlotBackground baseIcon = new CyclingSlotBackground(SMITHING_BASE_SLOT);
+        private final CyclingSlotBackground additionIcon = new CyclingSlotBackground(SMITHING_ADDITION_SLOT);
+        private final ArmorStandRenderState armorStandPreview = new ArmorStandRenderState();
+        private ItemStack previewStack = ItemStack.EMPTY;
+
+        private SmithingWindowState() {
+            this.armorStandPreview.entityType = EntityType.ARMOR_STAND;
+            this.armorStandPreview.showBasePlate = false;
+            this.armorStandPreview.showArms = true;
+            this.armorStandPreview.xRot = 25.0F;
+            this.armorStandPreview.bodyRot = 210.0F;
+        }
+
+        private void tick(SmithingMenu menu) {
+            this.templateIcon.tick(SMITHING_TEMPLATE_SPRITES);
+            ItemStack templateStack = menu.getSlot(SMITHING_TEMPLATE_SLOT).getItem();
+            if (templateStack.getItem() instanceof SmithingTemplateItem templateItem) {
+                this.baseIcon.tick(templateItem.getBaseSlotEmptyIcons());
+                this.additionIcon.tick(templateItem.getAdditionalSlotEmptyIcons());
+            } else {
+                this.baseIcon.tick(List.of());
+                this.additionIcon.tick(List.of());
+            }
+        }
+
+        private void renderSlotIcons(SmithingMenu menu, GuiGraphicsExtractor graphics, float partialTick, int leftPos, int topPos) {
+            this.templateIcon.extractRenderState(menu, graphics, partialTick, leftPos, topPos);
+            this.baseIcon.extractRenderState(menu, graphics, partialTick, leftPos, topPos);
+            this.additionIcon.extractRenderState(menu, graphics, partialTick, leftPos, topPos);
+        }
+
+        private ArmorStandRenderState armorStandPreview() {
+            return this.armorStandPreview;
+        }
+
+        private void updateArmorStandPreview(Minecraft minecraft, ItemStack stack) {
+            if (ItemStack.matches(this.previewStack, stack) && this.previewStack.getCount() == stack.getCount()) {
+                return;
+            }
+
+            this.previewStack = stack.copy();
+            this.clearArmorStandPreview();
+            if (stack.isEmpty()) {
+                return;
+            }
+
+            Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
+            EquipmentSlot slot = equippable == null ? null : equippable.slot();
+            if (slot == EquipmentSlot.HEAD) {
+                if (HumanoidArmorLayer.shouldRender(stack, EquipmentSlot.HEAD)) {
+                    this.armorStandPreview.headEquipment = stack.copy();
+                } else {
+                    minecraft.getItemModelResolver().updateForTopItem(
+                        this.armorStandPreview.headItem,
+                        stack,
+                        ItemDisplayContext.HEAD,
+                        null,
+                        null,
+                        0
+                    );
+                }
+            } else if (slot == EquipmentSlot.CHEST) {
+                this.armorStandPreview.chestEquipment = stack.copy();
+            } else if (slot == EquipmentSlot.LEGS) {
+                this.armorStandPreview.legsEquipment = stack.copy();
+            } else if (slot == EquipmentSlot.FEET) {
+                this.armorStandPreview.feetEquipment = stack.copy();
+            } else {
+                this.armorStandPreview.leftHandItemStack = stack.copy();
+                minecraft.getItemModelResolver().updateForTopItem(
+                    this.armorStandPreview.leftHandItemState,
+                    stack,
+                    ItemDisplayContext.THIRD_PERSON_LEFT_HAND,
+                    null,
+                    null,
+                    0
+                );
+            }
+        }
+
+        private void clearArmorStandPreview() {
+            this.armorStandPreview.leftHandItemStack = ItemStack.EMPTY;
+            this.armorStandPreview.leftHandItemState.clear();
+            this.armorStandPreview.rightHandItemStack = ItemStack.EMPTY;
+            this.armorStandPreview.rightHandItemState.clear();
+            this.armorStandPreview.headEquipment = ItemStack.EMPTY;
+            this.armorStandPreview.headItem.clear();
+            this.armorStandPreview.chestEquipment = ItemStack.EMPTY;
+            this.armorStandPreview.legsEquipment = ItemStack.EMPTY;
+            this.armorStandPreview.feetEquipment = ItemStack.EMPTY;
+        }
+    }
+
     private static final class InventoryWindow {
         private final WindowKind kind;
         private final Component title;
@@ -3330,7 +6690,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private int scrollRow;
         private int merchantScroll;
         private int merchantSelectedTrade;
+        private int stonecutterScroll;
+        private int loomScroll;
+        private @Nullable CreativeModeTab creativeSelectedTab;
+        private int creativeScrollRow;
+        private String creativeSearch = "";
+        private String anvilName = "";
+        private String anvilLastInputName = "";
+        private boolean anvilNameDirty;
+        private @Nullable Holder<MobEffect> beaconPrimary;
+        private @Nullable Holder<MobEffect> beaconSecondary;
+        private boolean beaconSelectionDirty;
         private @Nullable EnchantmentBookState enchantmentBookState;
+        private @Nullable SmithingWindowState smithingState;
 
         private InventoryWindow(WindowKind kind, Component title, int x, int y, int width, int height) {
             this(kind, title, x, y, width, height, null, null, List.of(), 0, 0);
@@ -3444,6 +6816,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return this.enchantmentBookState;
         }
 
+        private SmithingWindowState smithingState() {
+            if (this.smithingState == null) {
+                this.smithingState = new SmithingWindowState();
+            }
+
+            return this.smithingState;
+        }
+
         private @Nullable SlotHit slotAt(InventoryDesktopScreen screen, double mouseX, double mouseY) {
             if (this.kind == WindowKind.INVENTORY) {
                 List<Slot> inventorySlots = screen.mainInventorySlots();
@@ -3477,6 +6857,33 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 }
                 if (menu instanceof CraftingMenu craftingMenu) {
                     return screen.craftingTableSlotAt(this, craftingMenu, mouseX, mouseY);
+                }
+                if (menu instanceof AnvilMenu) {
+                    return screen.anvilSlotAt(this, slots, menu, mouseX, mouseY);
+                }
+                if (menu instanceof CrafterMenu) {
+                    return screen.crafterSlotAt(this, slots, menu, mouseX, mouseY);
+                }
+                if (menu instanceof BeaconMenu) {
+                    return screen.beaconSlotAt(this, slots, menu, mouseX, mouseY);
+                }
+                if (menu instanceof BrewingStandMenu) {
+                    return screen.brewingSlotAt(this, slots, menu, mouseX, mouseY);
+                }
+                if (menu instanceof CartographyTableMenu) {
+                    return screen.cartographySlotAt(this, slots, menu, mouseX, mouseY);
+                }
+                if (menu instanceof SmithingMenu) {
+                    return screen.smithingSlotAt(this, slots, menu, mouseX, mouseY);
+                }
+                if (menu instanceof GrindstoneMenu) {
+                    return screen.grindstoneSlotAt(this, slots, menu, mouseX, mouseY);
+                }
+                if (menu instanceof StonecutterMenu) {
+                    return screen.stonecutterSlotAt(this, slots, menu, mouseX, mouseY);
+                }
+                if (menu instanceof LoomMenu) {
+                    return screen.loomSlotAt(this, slots, menu, mouseX, mouseY);
                 }
                 if (menu instanceof EnchantmentMenu) {
                     return screen.enchantmentSlotAt(this, slots, menu, mouseX, mouseY);
@@ -3516,6 +6923,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                         return new SlotHit(slot, menu.slots.indexOf(slot), slotX, slotY, menu, this.sessionId());
                     }
                 }
+            } else if (this.kind == WindowKind.CREATIVE) {
+                return screen.creativeInventorySlotAt(this, mouseX, mouseY);
             } else {
                 AbstractContainerMenu playerMenu = screen.playerMenu();
                 int armorX = this.contentX();

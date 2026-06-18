@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.UUID;
 
@@ -12,6 +13,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.network.HashedStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -20,22 +22,28 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.CompoundContainer;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.AbstractCraftingMenu;
+import net.minecraft.world.inventory.AnvilMenu;
+import net.minecraft.world.inventory.BeaconMenu;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.ContainerSynchronizer;
+import net.minecraft.world.inventory.CrafterMenu;
 import net.minecraft.world.inventory.HorseInventoryMenu;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.inventory.NautilusInventoryMenu;
 import net.minecraft.world.inventory.RemoteSlot;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BeaconBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.phys.BlockHitResult;
@@ -53,11 +61,16 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPa
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopQuickMovePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopReadyPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopRenamePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionClosedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotPayload;
 
 public final class DesktopContainerSessions {
     private static final int MAX_SESSIONS = 16;
+    private static final int CRAFTER_INPUT_SLOT_COUNT = 9;
+    private static final int CRAFTER_SLOT_STATE_ENABLED_FLAG = 16;
+    private static final int BEACON_EFFECT_ID_MASK = 0xFFFF;
+    private static final int BEACON_SECONDARY_EFFECT_SHIFT = 16;
     private static final Map<UUID, PlayerSessions> PLAYERS = new LinkedHashMap<>();
     private static final Map<UUID, String> PENDING_USE_TARGETS = new LinkedHashMap<>();
 
@@ -77,6 +90,9 @@ public final class DesktopContainerSessions {
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopButtonPayload.TYPE, (payload, context) ->
             context.server().execute(() -> button(context.player(), payload))
+        );
+        ServerPlayNetworking.registerGlobalReceiver(DesktopRenamePayload.TYPE, (payload, context) ->
+            context.server().execute(() -> rename(context.player(), payload))
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopCloseSessionPayload.TYPE, (payload, context) ->
             context.server().execute(() -> closeSession(context.player(), payload.sessionId(), true))
@@ -388,7 +404,20 @@ public final class DesktopContainerSessions {
 
         session.menu.setCarried(sessions.carried.copy());
         boolean clicked;
-        if (session.menu instanceof MerchantMenu merchantMenu) {
+        if (session.menu instanceof CrafterMenu crafterMenu) {
+            int slotId = payload.buttonId() & ~CRAFTER_SLOT_STATE_ENABLED_FLAG;
+            boolean enabled = (payload.buttonId() & CRAFTER_SLOT_STATE_ENABLED_FLAG) != 0;
+            clicked = slotId >= 0 && slotId < CRAFTER_INPUT_SLOT_COUNT;
+            if (clicked) {
+                Slot slot = crafterMenu.getSlot(slotId);
+                clicked = enabled || (!slot.hasItem() && crafterMenu.getCarried().isEmpty());
+                if (clicked) {
+                    crafterMenu.setSlotState(slotId, enabled);
+                }
+            }
+        } else if (session.menu instanceof BeaconMenu beaconMenu) {
+            clicked = applyBeaconButton(beaconMenu, payload.buttonId());
+        } else if (session.menu instanceof MerchantMenu merchantMenu) {
             clicked = payload.buttonId() >= 0 && payload.buttonId() < merchantMenu.getOffers().size();
             if (clicked) {
                 merchantMenu.setSelectionHint(payload.buttonId());
@@ -417,6 +446,79 @@ public final class DesktopContainerSessions {
         } else {
             syncCarried(player, sessions);
         }
+    }
+
+    private static void rename(ServerPlayer player, DesktopRenamePayload payload) {
+        PlayerSessions sessions = PLAYERS.get(player.getUUID());
+        if (sessions == null || !sessions.ready) {
+            DesktopDebug.trace("server rename dropped player={} session={} reason=not-ready", player.getName().getString(), payload.sessionId());
+            return;
+        }
+
+        Session session = sessions.sessions.get(payload.sessionId());
+        if (session == null) {
+            DesktopDebug.trace("server rename dropped player={} session={} reason=missing-session", player.getName().getString(), payload.sessionId());
+            return;
+        }
+
+        if (!session.menu.stillValid(player)) {
+            DesktopDebug.log("server rename invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
+            sessions.close(player, session.sessionId, true);
+            return;
+        }
+
+        if (!(session.menu instanceof AnvilMenu anvilMenu)) {
+            DesktopDebug.trace("server rename dropped player={} session={} reason=not-anvil", player.getName().getString(), payload.sessionId());
+            return;
+        }
+
+        boolean changed = anvilMenu.setItemName(payload.name());
+        DesktopDebug.trace("server rename player={} session={} changed={} name={}", player.getName().getString(), payload.sessionId(), changed, payload.name());
+        if (changed) {
+            anvilMenu.broadcastChanges();
+            player.inventoryMenu.broadcastChanges();
+            sessions.broadcastAll(player);
+        }
+    }
+
+    private static boolean applyBeaconButton(BeaconMenu menu, int buttonId) {
+        int primaryId = buttonId & BEACON_EFFECT_ID_MASK;
+        int secondaryId = buttonId >>> BEACON_SECONDARY_EFFECT_SHIFT & BEACON_EFFECT_ID_MASK;
+        Holder<MobEffect> primary = BeaconMenu.decodeEffect(primaryId);
+        Holder<MobEffect> secondary = BeaconMenu.decodeEffect(secondaryId);
+        if (!menu.hasPayment() || !canSelectBeaconPrimary(menu, primary) || !canSelectBeaconSecondary(menu, primary, secondary)) {
+            return false;
+        }
+
+        menu.updateEffects(Optional.of(primary), Optional.ofNullable(secondary));
+        return true;
+    }
+
+    private static boolean canSelectBeaconPrimary(BeaconMenu menu, @Nullable Holder<MobEffect> effect) {
+        if (effect == null) {
+            return false;
+        }
+
+        int unlockedTiers = Math.min(menu.getLevels(), Math.min(3, BeaconBlockEntity.BEACON_EFFECTS.size()));
+        for (int tier = 0; tier < unlockedTiers; tier++) {
+            if (BeaconBlockEntity.BEACON_EFFECTS.get(tier).contains(effect)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean canSelectBeaconSecondary(BeaconMenu menu, Holder<MobEffect> primary, @Nullable Holder<MobEffect> secondary) {
+        if (secondary == null) {
+            return true;
+        }
+        if (menu.getLevels() < 4) {
+            return false;
+        }
+        if (primary.equals(secondary)) {
+            return true;
+        }
+        return BeaconBlockEntity.BEACON_EFFECTS.size() > 3 && BeaconBlockEntity.BEACON_EFFECTS.get(3).contains(secondary);
     }
 
     private static @Nullable SlotSource resolveSlot(ServerPlayer player, PlayerSessions sessions, int sessionId, int slotIndex) {

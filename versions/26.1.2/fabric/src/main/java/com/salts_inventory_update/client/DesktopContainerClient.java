@@ -15,6 +15,7 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPa
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopQuickMovePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopReadyPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopRenamePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionClosedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotPayload;
 
@@ -91,6 +92,7 @@ public final class DesktopContainerClient {
                 && ClientPlayNetworking.canSend(DesktopClickPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopQuickMovePayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopButtonPayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopRenamePayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE);
         } catch (IllegalStateException | IllegalArgumentException ignored) {
             return false;
@@ -116,6 +118,11 @@ public final class DesktopContainerClient {
     public static boolean clickButton(int sessionId, int buttonId) {
         DesktopDebug.trace("client send button session={} button={}", sessionId, buttonId);
         return send(new DesktopButtonPayload(sessionId, buttonId), "button");
+    }
+
+    public static boolean renameAnvil(int sessionId, String name) {
+        DesktopDebug.trace("client send rename session={} name={}", sessionId, name);
+        return send(new DesktopRenamePayload(sessionId, name), "rename");
     }
 
     public static void closeSession(int sessionId) {

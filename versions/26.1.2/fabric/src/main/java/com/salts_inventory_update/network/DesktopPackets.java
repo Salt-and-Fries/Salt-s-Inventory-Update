@@ -33,6 +33,7 @@ public final class DesktopPackets {
         PayloadTypeRegistry.serverboundPlay().register(DesktopClickPayload.TYPE, DesktopClickPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopQuickMovePayload.TYPE, DesktopQuickMovePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopButtonPayload.TYPE, DesktopButtonPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopRenamePayload.TYPE, DesktopRenamePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
 
         PayloadTypeRegistry.clientboundPlay().register(DesktopOpenSessionPayload.TYPE, DesktopOpenSessionPayload.CODEC);
@@ -154,6 +155,28 @@ public final class DesktopPackets {
         private void write(RegistryFriendlyByteBuf buf) {
             buf.writeVarInt(this.sessionId);
             buf.writeVarInt(this.buttonId);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopRenamePayload(int sessionId, String name) implements CustomPacketPayload {
+        public static final Type<DesktopRenamePayload> TYPE = new Type<>(id("desktop_rename"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopRenamePayload> CODEC = CustomPacketPayload.codec(
+            DesktopRenamePayload::write,
+            DesktopRenamePayload::new
+        );
+
+        private DesktopRenamePayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readUtf(50));
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeUtf(this.name, 50);
         }
 
         @Override
