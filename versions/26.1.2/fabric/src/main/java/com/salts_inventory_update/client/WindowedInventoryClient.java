@@ -7,6 +7,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.Options;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
@@ -51,8 +52,10 @@ public final class WindowedInventoryClient {
     }
 
     private static void onClientTick(Minecraft minecraft) {
+        InventoryKeyHoldController.tick(minecraft);
         DesktopContainerClient.tick(minecraft);
         if (minecraft.player == null || minecraft.level == null) {
+            InventoryKeyHoldController.reset();
             InventoryDesktopScreen.reset(minecraft);
             setCameraMouseGrab(minecraft, false);
             return;
@@ -76,9 +79,18 @@ public final class WindowedInventoryClient {
             }
         } else {
             setCameraMouseGrab(minecraft, false);
+            InventoryDesktopScreen.tickPassiveGhostWindows(minecraft);
             if (screen == null && isAltDown(minecraft)) {
                 InventoryDesktopScreen.openHotbarOnly(minecraft);
             }
+        }
+    }
+
+    public static void extractPassiveGhostWindows(GuiGraphicsExtractor graphics) {
+        Minecraft minecraft = Minecraft.getInstance();
+        InventoryDesktopScreen.extractPassiveGhostWindows(minecraft, graphics);
+        if (!(minecraft.screen instanceof InventoryDesktopScreen)) {
+            InventoryKeyHoldController.extractOverlay(minecraft, graphics);
         }
     }
 

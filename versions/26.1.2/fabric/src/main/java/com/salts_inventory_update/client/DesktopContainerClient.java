@@ -18,6 +18,8 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopQuickMovePayload
 import com.salts_inventory_update.network.DesktopPackets.DesktopReadyPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopRenamePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionClosedPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopSessionPinPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopSessionVisibilityPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotPayload;
 
 public final class DesktopContainerClient {
@@ -29,7 +31,7 @@ public final class DesktopContainerClient {
     public static void initializeNetworking() {
         ClientPlayNetworking.registerGlobalReceiver(DesktopOpenSessionPayload.TYPE, (payload, context) -> {
             DesktopDebug.log("client payload open session={} title={} type={} special={}", payload.sessionId(), payload.title().getString(), payload.menuTypeId(), payload.specialKind());
-            InventoryDesktopScreen.openOrAddSession(context.client(), DesktopContainerSession.create(context.client(), payload));
+            InventoryDesktopScreen.openOrAddSession(context.client(), DesktopContainerSession.create(context.client(), payload), payload.visible());
         });
         ClientPlayNetworking.registerGlobalReceiver(DesktopSlotPayload.TYPE, (payload, context) -> {
             InventoryDesktopScreen screen = InventoryDesktopScreen.current(context.client());
@@ -56,6 +58,12 @@ public final class DesktopContainerClient {
             InventoryDesktopScreen screen = InventoryDesktopScreen.current(context.client());
             if (screen != null) {
                 screen.removeSession(payload.sessionId());
+            }
+        });
+        ClientPlayNetworking.registerGlobalReceiver(DesktopSessionVisibilityPayload.TYPE, (payload, context) -> {
+            InventoryDesktopScreen screen = InventoryDesktopScreen.current(context.client());
+            if (screen != null) {
+                screen.setSessionVisible(payload.sessionId(), payload.visible());
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(DesktopMerchantOffersPayload.TYPE, (payload, context) -> {
@@ -95,7 +103,9 @@ public final class DesktopContainerClient {
                 && ClientPlayNetworking.canSend(DesktopQuickMovePayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopButtonPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopRenamePayload.TYPE)
-                && ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE);
+                && ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopSessionPinPayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopSessionVisibilityPayload.TYPE);
         } catch (IllegalStateException | IllegalArgumentException ignored) {
             return false;
         }
@@ -130,6 +140,24 @@ public final class DesktopContainerClient {
     public static void closeSession(int sessionId) {
         DesktopDebug.log("client send close session={}", sessionId);
         send(new DesktopCloseSessionPayload(sessionId), "close");
+    }
+
+    public static void setSessionPinMode(int sessionId, PinMode pinMode) {
+        DesktopDebug.trace("client send pin session={} pin={}", sessionId, pinMode);
+        send(new DesktopSessionPinPayload(sessionId, pinModeToPacket(pinMode)), "pin");
+    }
+
+    public static void setSessionVisible(int sessionId, boolean visible) {
+        DesktopDebug.trace("client send visibility session={} visible={}", sessionId, visible);
+        send(new DesktopSessionVisibilityPayload(sessionId, visible), "visibility");
+    }
+
+    private static int pinModeToPacket(PinMode pinMode) {
+        return switch (pinMode) {
+            case UNPINNED -> DesktopPackets.PIN_MODE_UNPINNED;
+            case PINNED -> DesktopPackets.PIN_MODE_PINNED;
+            case GHOST_PINNED -> DesktopPackets.PIN_MODE_GHOST_PINNED;
+        };
     }
 
     private static boolean send(net.minecraft.network.protocol.common.custom.CustomPacketPayload payload, String label) {

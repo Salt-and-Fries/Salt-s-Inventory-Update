@@ -24,6 +24,9 @@ public final class DesktopPackets {
     public static final int SPECIAL_NAUTILUS = 2;
     public static final int QUICK_TARGET_DEFAULT = 0;
     public static final int QUICK_TARGET_SESSION = 1;
+    public static final int PIN_MODE_UNPINNED = 0;
+    public static final int PIN_MODE_PINNED = 1;
+    public static final int PIN_MODE_GHOST_PINNED = 2;
 
     private DesktopPackets() {
     }
@@ -35,12 +38,15 @@ public final class DesktopPackets {
         PayloadTypeRegistry.serverboundPlay().register(DesktopButtonPayload.TYPE, DesktopButtonPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopRenamePayload.TYPE, DesktopRenamePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopSessionPinPayload.TYPE, DesktopSessionPinPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
 
         PayloadTypeRegistry.clientboundPlay().register(DesktopOpenSessionPayload.TYPE, DesktopOpenSessionPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopSlotPayload.TYPE, DesktopSlotPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopDataPayload.TYPE, DesktopDataPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopCarriedPayload.TYPE, DesktopCarriedPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopSessionClosedPayload.TYPE, DesktopSessionClosedPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopMerchantOffersPayload.TYPE, DesktopMerchantOffersPayload.CODEC);
     }
 
@@ -215,6 +221,50 @@ public final class DesktopPackets {
         }
     }
 
+    public record DesktopSessionPinPayload(int sessionId, int pinMode) implements CustomPacketPayload {
+        public static final Type<DesktopSessionPinPayload> TYPE = new Type<>(id("desktop_session_pin"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopSessionPinPayload> CODEC = CustomPacketPayload.codec(
+            DesktopSessionPinPayload::write,
+            DesktopSessionPinPayload::new
+        );
+
+        private DesktopSessionPinPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readVarInt());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeVarInt(this.pinMode);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopSessionVisibilityPayload(int sessionId, boolean visible) implements CustomPacketPayload {
+        public static final Type<DesktopSessionVisibilityPayload> TYPE = new Type<>(id("desktop_session_visibility"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopSessionVisibilityPayload> CODEC = CustomPacketPayload.codec(
+            DesktopSessionVisibilityPayload::write,
+            DesktopSessionVisibilityPayload::new
+        );
+
+        private DesktopSessionVisibilityPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readBoolean());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeBoolean(this.visible);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
     public record DesktopOpenSessionPayload(
         int sessionId,
         int menuTypeId,
@@ -222,6 +272,7 @@ public final class DesktopPackets {
         int entityId,
         int columns,
         int stateId,
+        boolean visible,
         String sourceKey,
         Component title,
         List<ItemStack> items,
@@ -242,6 +293,7 @@ public final class DesktopPackets {
                 buf.readVarInt(),
                 buf.readVarInt(),
                 buf.readVarInt(),
+                buf.readBoolean(),
                 buf.readUtf(),
                 ComponentSerialization.STREAM_CODEC.decode(buf),
                 readItemList(buf),
@@ -257,6 +309,7 @@ public final class DesktopPackets {
             buf.writeVarInt(this.entityId);
             buf.writeVarInt(this.columns);
             buf.writeVarInt(this.stateId);
+            buf.writeBoolean(this.visible);
             buf.writeUtf(this.sourceKey);
             ComponentSerialization.STREAM_CODEC.encode(buf, this.title);
             writeItemList(buf, this.items);

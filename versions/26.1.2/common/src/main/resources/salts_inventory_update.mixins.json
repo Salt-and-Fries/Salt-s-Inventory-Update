@@ -10,6 +10,7 @@
   ],
   "client": [
     "client.GuiMixin",
+    "client.KeyboardHandlerMixin",
     "client.MinecraftMixin",
     "client.MinecraftInvoker",
     "client.MenuScreensAccessor",

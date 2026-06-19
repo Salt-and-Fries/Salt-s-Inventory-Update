@@ -18,4 +18,9 @@ public abstract class GuiMixin {
             ci.cancel();
         }
     }
+
+    @Inject(method = "extractCrosshair", at = @At("TAIL"))
+    private void salts_inventory_update$extractPassiveGhostWindows(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+        WindowedInventoryClient.extractPassiveGhostWindows(graphics);
+    }
 }
