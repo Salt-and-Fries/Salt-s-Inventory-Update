@@ -4,11 +4,17 @@
   "package": "com.salts_inventory_update.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "accessor.AbstractContainerMenuAccessor",
+    "InventoryExpansionInventoryMixin",
+    "InventoryMenuMixin",
+    "PlayerInventoryExpansionMixin",
     "server.ChestOpenersCounterMixin",
+    "server.ServerPlayerInventoryExpansionMixin",
     "server.ServerPlayerMixin",
     "server.ServerGamePacketListenerImplMixin"
   ],
   "client": [
+    "client.ClientPacketListenerInventoryExpansionMixin",
     "client.GuiMixin",
     "client.KeyboardHandlerMixin",
     "client.MinecraftMixin",

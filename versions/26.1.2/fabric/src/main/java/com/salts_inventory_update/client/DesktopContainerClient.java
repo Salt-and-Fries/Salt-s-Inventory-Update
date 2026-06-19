@@ -6,6 +6,7 @@ import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 
 import com.salts_inventory_update.debug.DesktopDebug;
+import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopPackets.DesktopButtonPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCarriedPayload;
@@ -21,6 +22,8 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopSessionClosedPay
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionPinPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionVisibilityPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotPayload;
+import com.salts_inventory_update.network.DesktopPackets.InventoryExpansionSyncPayload;
+import com.salts_inventory_update.network.DesktopPackets.InventorySlotPurchasePayload;
 
 public final class DesktopContainerClient {
     private static boolean readySent;
@@ -72,6 +75,19 @@ public final class DesktopContainerClient {
                 screen.applyMerchantOffers(payload);
             }
         });
+        ClientPlayNetworking.registerGlobalReceiver(InventoryExpansionSyncPayload.TYPE, (payload, context) -> {
+            DesktopDebug.trace("client payload inventory expansion slots={} stacks={}", payload.slotCount(), payload.items().size());
+            if (context.client().player != null) {
+                int slotCount = InventoryExpansion.clampSlotCount(payload.slotCount());
+                InventoryExpansion.access(context.client().player).salts_inventory_update$setExtraSlotCount(slotCount);
+                InventoryExpansion.access(context.client().player).salts_inventory_update$getExtraInventory().loadSnapshot(slotCount, payload.items());
+                InventoryExpansion.appendMissingMenuSlots(context.client().player.inventoryMenu, context.client().player);
+                InventoryDesktopScreen screen = InventoryDesktopScreen.current(context.client());
+                if (screen != null) {
+                    screen.refreshInventoryWindowLayout();
+                }
+            }
+        });
     }
 
     public static void tick(Minecraft minecraft) {
@@ -105,7 +121,8 @@ public final class DesktopContainerClient {
                 && ClientPlayNetworking.canSend(DesktopRenamePayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopSessionPinPayload.TYPE)
-                && ClientPlayNetworking.canSend(DesktopSessionVisibilityPayload.TYPE);
+                && ClientPlayNetworking.canSend(DesktopSessionVisibilityPayload.TYPE)
+                && ClientPlayNetworking.canSend(InventorySlotPurchasePayload.TYPE);
         } catch (IllegalStateException | IllegalArgumentException ignored) {
             return false;
         }
@@ -130,6 +147,11 @@ public final class DesktopContainerClient {
     public static boolean clickButton(int sessionId, int buttonId) {
         DesktopDebug.trace("client send button session={} button={}", sessionId, buttonId);
         return send(new DesktopButtonPayload(sessionId, buttonId), "button");
+    }
+
+    public static boolean purchaseInventorySlot() {
+        DesktopDebug.trace("client send inventory slot purchase");
+        return send(new InventorySlotPurchasePayload(), "inventory-slot-purchase");
     }
 
     public static boolean renameAnvil(int sessionId, String name) {

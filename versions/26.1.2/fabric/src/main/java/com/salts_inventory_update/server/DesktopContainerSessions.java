@@ -1,6 +1,7 @@
 package com.salts_inventory_update.server;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,6 +55,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 import com.salts_inventory_update.debug.DesktopDebug;
+import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopPackets.DesktopButtonPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCarriedPayload;
@@ -69,6 +71,7 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopSessionClosedPay
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionPinPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionVisibilityPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotPayload;
+import com.salts_inventory_update.network.DesktopPackets.InventorySlotPurchasePayload;
 
 public final class DesktopContainerSessions {
     private static final int MAX_SESSIONS = 16;
@@ -108,6 +111,9 @@ public final class DesktopContainerSessions {
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopSessionVisibilityPayload.TYPE, (payload, context) ->
             context.server().execute(() -> setSessionVisibility(context.player(), payload))
+        );
+        ServerPlayNetworking.registerGlobalReceiver(InventorySlotPurchasePayload.TYPE, (payload, context) ->
+            context.server().execute(() -> InventoryExpansion.tryPurchase(context.player()))
         );
         ServerTickEvents.END_SERVER_TICK.register(DesktopContainerSessions::tick);
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> disconnect(handler.player));
@@ -306,6 +312,9 @@ public final class DesktopContainerSessions {
         DesktopDebug.log("server ready player={} ready={} sessions={}", player.getName().getString(), ready, sessions.sessions.size());
         if (!ready) {
             sessions.closeAll(player, false);
+        } else {
+            InventoryExpansion.appendMissingMenuSlots(player.inventoryMenu, player);
+            InventoryExpansion.syncToClient(player);
         }
     }
 
@@ -607,11 +616,12 @@ public final class DesktopContainerSessions {
 
     private static List<net.minecraft.world.inventory.Slot> defaultPlayerTargets(ServerPlayer player, net.minecraft.world.inventory.Slot sourceSlot) {
         boolean sourceIsPlayerInventory = isPlayerInventorySlot(player, sourceSlot);
+        boolean sourceIsMainInventory = InventoryExpansion.isMainInventorySlot(player, sourceSlot);
         int sourceContainerSlot = sourceSlot.getContainerSlot();
         if (sourceIsPlayerInventory && sourceContainerSlot >= 0 && sourceContainerSlot < 9) {
             return mainInventorySlots(player);
         }
-        if (sourceIsPlayerInventory && sourceContainerSlot >= 9 && sourceContainerSlot < 36) {
+        if (sourceIsMainInventory) {
             return hotbarSlots(player);
         }
 
@@ -683,7 +693,7 @@ public final class DesktopContainerSessions {
     private static List<net.minecraft.world.inventory.Slot> containerSlots(AbstractContainerMenu menu, ServerPlayer player) {
         List<net.minecraft.world.inventory.Slot> slots = new ArrayList<>();
         for (net.minecraft.world.inventory.Slot slot : menu.slots) {
-            if (!isPlayerInventorySlot(player, slot)) {
+            if (!isPlayerInventorySlot(player, slot) && !InventoryExpansion.isExtraSlot(slot)) {
                 slots.add(slot);
             }
         }
@@ -693,10 +703,11 @@ public final class DesktopContainerSessions {
     private static List<net.minecraft.world.inventory.Slot> mainInventorySlots(ServerPlayer player) {
         List<net.minecraft.world.inventory.Slot> slots = new ArrayList<>();
         for (net.minecraft.world.inventory.Slot slot : player.inventoryMenu.slots) {
-            if (isPlayerInventorySlot(player, slot) && slot.getContainerSlot() >= 9 && slot.getContainerSlot() < 36) {
+            if (InventoryExpansion.isMainInventorySlot(player, slot)) {
                 slots.add(slot);
             }
         }
+        slots.sort(Comparator.comparingInt(InventoryExpansion::storageOrder));
         return slots;
     }
 

@@ -100,6 +100,7 @@ import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import com.salts_inventory_update.debug.DesktopDebug;
+import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.mixin.client.MenuScreensAccessor;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
@@ -118,6 +119,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int CONTROL_POPUP_PADDING = 4;
     private static final int INVENTORY_DEFAULT_COLUMNS = 9;
     private static final int INVENTORY_DEFAULT_VISIBLE_ROWS = 3;
+    private static final int INVENTORY_MAX_AUTO_VISIBLE_ROWS = 8;
     private static final int HOTBAR_SLOT_COUNT = 9;
     private static final int OFFHAND_CONTAINER_SLOT = 40;
     private static final int OFFHAND_MENU_SLOT_FALLBACK = 45;
@@ -151,6 +153,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final Identifier LARGE_SLOT_TEXTURE = WindowedInventoryClient.id("textures/gui/large_slot.png");
     private static final Identifier CREATIVE_SEARCH_BAR_TEXTURE = WindowedInventoryClient.id("textures/gui/search_bar.png");
     private static final Identifier CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE = WindowedInventoryClient.id("textures/gui/scroll_bar_behind.png");
+    private static final Identifier INCREASE_INVENTORY_BUTTON_TEXTURE = WindowedInventoryClient.id("textures/gui/increase_inventory_button.png");
     private static final Identifier SLOT_HIGHLIGHT_BACK_SPRITE = Identifier.withDefaultNamespace("container/slot_highlight_back");
     private static final Identifier SLOT_HIGHLIGHT_FRONT_SPRITE = Identifier.withDefaultNamespace("container/slot_highlight_front");
     private static final Identifier HOTBAR_OFFHAND_LEFT_SPRITE = Identifier.withDefaultNamespace("hud/hotbar_offhand_left");
@@ -185,6 +188,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int CARTOGRAPHY_PLUS_TEXTURE_SIZE = 13;
     private static final int LARGE_SLOT_TEXTURE_SIZE = 26;
     private static final int LARGE_SLOT_ITEM_OFFSET = 5;
+    private static final int INCREASE_INVENTORY_BUTTON_TEXTURE_WIDTH = 36;
+    private static final int INCREASE_INVENTORY_BUTTON_TEXTURE_HEIGHT = 18;
+    private static final int INCREASE_INVENTORY_BUTTON_FRAME_SIZE = 18;
     private static final int SLOT_HIGHLIGHT_SIZE = 24;
     private static final int SLOT_HIGHLIGHT_OFFSET = 4;
     private static final int WIDGET_FLAME_EMPTY_X = 0;
@@ -976,6 +982,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    public void refreshInventoryWindowLayout() {
+        for (InventoryWindow window : this.windows) {
+            if (window.kind == WindowKind.INVENTORY) {
+                this.ensureInventoryWindowAutoSize(window);
+            }
+        }
+    }
+
     @Override
     protected void init() {
         DesktopDebug.trace("client init desktop={} width={} height={} windows={}", this.desktopId, this.width, this.height, this.windows.size());
@@ -1241,6 +1255,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
             if (window.kind == WindowKind.CREATIVE) {
                 return this.creativeMouseClicked(window, event, doubleClick);
+            }
+
+            if (window.kind == WindowKind.INVENTORY && this.increaseInventoryButtonContains(window, event.x(), event.y())) {
+                if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.sharedCarried.isEmpty()) {
+                    DesktopContainerClient.purchaseInventorySlot();
+                }
+                return true;
             }
 
             int enchantmentButton = this.enchantmentButtonAt(window, event.x(), event.y());
@@ -2444,8 +2465,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private void addWindow(WindowKind kind) {
         InventoryWindow window;
         if (kind == WindowKind.INVENTORY) {
-            int windowWidth = storageWindowWidth(INVENTORY_DEFAULT_COLUMNS, false);
-            int windowHeight = storageWindowHeight(INVENTORY_DEFAULT_VISIBLE_ROWS);
+            int inventorySlotCount = this.inventoryVirtualSlotCount();
+            int totalRows = rowsForSlots(inventorySlotCount, INVENTORY_DEFAULT_COLUMNS);
+            int visibleRows = Math.max(INVENTORY_DEFAULT_VISIBLE_ROWS, Math.min(INVENTORY_MAX_AUTO_VISIBLE_ROWS, Math.max(1, totalRows)));
+            boolean scrollbar = totalRows > visibleRows;
+            int windowWidth = storageWindowWidth(INVENTORY_DEFAULT_COLUMNS, scrollbar);
+            int windowHeight = storageWindowHeight(visibleRows);
             window = new InventoryWindow(
                 kind,
                 Component.literal("Inventory"),
@@ -2455,6 +2480,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 windowHeight
             );
             this.placeOrRestoreWindow(window, WindowPlacement.CENTER);
+            this.ensureInventoryWindowAutoSize(window);
         } else if (kind == WindowKind.CREATIVE) {
             int windowWidth = CREATIVE_CONTENT_MARGIN * 2 + CREATIVE_CONTENT_WIDTH;
             int windowHeight = TOP_BAR_HEIGHT + CREATIVE_CONTENT_MARGIN * 2 + CREATIVE_CONTENT_HEIGHT;
@@ -2630,15 +2656,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         AbstractContainerMenu menu = this.playerMenu();
         List<Slot> slots = new ArrayList<>();
         for (Slot slot : menu.slots) {
-            if (this.isPlayerInventorySlot(slot)
-                && slot.index >= 9
-                && slot.getContainerSlot() >= HOTBAR_SLOT_COUNT
-                && slot.getContainerSlot() < 36) {
+            if (InventoryExpansion.isMainInventorySlot(this.player(), slot)) {
                 slots.add(slot);
             }
         }
-        slots.sort(Comparator.comparingInt(Slot::getContainerSlot));
+        slots.sort(Comparator.comparingInt(InventoryExpansion::storageOrder));
         return slots;
+    }
+
+    private int inventoryVirtualSlotCount() {
+        return this.mainInventorySlots().size() + 1;
     }
 
     private List<Slot> hotbarSlots() {
@@ -2663,10 +2690,31 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private int storageSlotCount(InventoryWindow window) {
         return switch (window.kind) {
-            case INVENTORY -> this.mainInventorySlots().size();
+            case INVENTORY -> this.inventoryVirtualSlotCount();
             case CONTAINER -> window.containerSlots().size();
             case CHARACTER, CREATIVE -> 0;
         };
+    }
+
+    private void ensureInventoryWindowAutoSize(InventoryWindow window) {
+        if (window.kind != WindowKind.INVENTORY) {
+            return;
+        }
+
+        int slotCount = this.inventoryVirtualSlotCount();
+        int totalRows = rowsForSlots(slotCount, INVENTORY_DEFAULT_COLUMNS);
+        int visibleRows = Math.max(1, Math.min(INVENTORY_MAX_AUTO_VISIBLE_ROWS, Math.max(1, totalRows)));
+        boolean scrollbar = totalRows > visibleRows;
+        int desiredWidth = Math.max(this.minimumTitleBarWidth(window.title), storageWindowWidth(INVENTORY_DEFAULT_COLUMNS, scrollbar));
+        int desiredHeight = storageWindowHeight(visibleRows);
+        int maxWidth = Math.max(SLOT_SIZE + WINDOW_CONTENT_PADDING * 2, this.desktopWidth() - WINDOW_PLACEMENT_MARGIN * 2);
+        int maxHeight = Math.max(this.minResizableHeight(), this.desktopHeight() - WINDOW_PLACEMENT_MARGIN * 2);
+        int minWidth = Math.min(this.minResizableWidth(window), maxWidth);
+        int minHeight = Math.min(this.minResizableHeight(), maxHeight);
+        window.width = clamp(Math.max(window.width, desiredWidth), minWidth, maxWidth);
+        window.height = clamp(Math.max(window.height, desiredHeight), minHeight, maxHeight);
+        this.clampStorageScroll(window);
+        this.clampWindowIntoDesktop(window);
     }
 
     private SlotGridLayout storageLayout(InventoryWindow window, int slotCount) {
@@ -3948,9 +3996,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void renderInventoryWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
         List<Slot> inventorySlots = this.mainInventorySlots();
-        SlotGridLayout layout = this.storageLayout(window, inventorySlots.size());
+        SlotGridLayout layout = this.storageLayout(window, inventorySlots.size() + 1);
         this.clampStorageScroll(window);
         this.renderCompactSlots(graphics, window, inventorySlots, layout, mouseX, mouseY);
+        this.renderIncreaseInventoryButton(graphics, window, layout, mouseX, mouseY);
         this.renderScrollbar(graphics, window, layout);
     }
 
@@ -7159,6 +7208,62 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    private void renderIncreaseInventoryButton(GuiGraphicsExtractor graphics, InventoryWindow window, SlotGridLayout layout, int mouseX, int mouseY) {
+        InventoryIncreaseButtonRect rect = this.increaseInventoryButtonRect(window, layout);
+        if (rect == null) {
+            return;
+        }
+
+        boolean hovered = contains(mouseX, mouseY, rect.x() - 1, rect.y() - 1, SLOT_SIZE, SLOT_SIZE);
+        int sourceX = hovered ? INCREASE_INVENTORY_BUTTON_FRAME_SIZE : 0;
+        blitRegion(
+            graphics,
+            INCREASE_INVENTORY_BUTTON_TEXTURE,
+            rect.x() - 1,
+            rect.y() - 1,
+            sourceX,
+            0,
+            INCREASE_INVENTORY_BUTTON_FRAME_SIZE,
+            INCREASE_INVENTORY_BUTTON_FRAME_SIZE,
+            INCREASE_INVENTORY_BUTTON_FRAME_SIZE,
+            INCREASE_INVENTORY_BUTTON_FRAME_SIZE,
+            INCREASE_INVENTORY_BUTTON_TEXTURE_WIDTH,
+            INCREASE_INVENTORY_BUTTON_TEXTURE_HEIGHT
+        );
+
+        LocalPlayer player = this.player();
+        if (player != null && player.experienceLevel < InventoryExpansion.costForNextSlot(player)) {
+            graphics.fill(rect.x() - 1, rect.y() - 1, rect.x() - 1 + SLOT_SIZE, rect.y() - 1 + SLOT_SIZE, this.uiColor(0x66000000));
+        }
+    }
+
+    private @Nullable InventoryIncreaseButtonRect increaseInventoryButtonRect(InventoryWindow window) {
+        if (window.kind != WindowKind.INVENTORY || window.minimized) {
+            return null;
+        }
+
+        return this.increaseInventoryButtonRect(window, this.storageLayout(window, this.inventoryVirtualSlotCount()));
+    }
+
+    private @Nullable InventoryIncreaseButtonRect increaseInventoryButtonRect(InventoryWindow window, SlotGridLayout layout) {
+        int buttonIndex = this.mainInventorySlots().size();
+        window.scrollRow = clamp(window.scrollRow, 0, layout.maxScrollRow());
+        int firstVisibleSlot = window.scrollRow * layout.columns();
+        int visibleIndex = buttonIndex - firstVisibleSlot;
+        if (visibleIndex < 0 || visibleIndex >= layout.visibleRows() * layout.columns()) {
+            return null;
+        }
+
+        int column = visibleIndex % layout.columns();
+        int row = visibleIndex / layout.columns();
+        return new InventoryIncreaseButtonRect(window.contentX() + column * SLOT_SIZE, window.contentY() + row * SLOT_SIZE);
+    }
+
+    private boolean increaseInventoryButtonContains(InventoryWindow window, double mouseX, double mouseY) {
+        InventoryIncreaseButtonRect rect = this.increaseInventoryButtonRect(window);
+        return rect != null && contains(mouseX, mouseY, rect.x() - 1, rect.y() - 1, SLOT_SIZE, SLOT_SIZE);
+    }
+
     private void renderScrollbar(GuiGraphicsExtractor graphics, InventoryWindow window, SlotGridLayout layout) {
         if (!layout.scrollable()) {
             return;
@@ -7337,6 +7442,24 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void extractHoveredTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        InventoryWindow hoveredWindow = this.windowAt(mouseX, mouseY);
+        if (hoveredWindow != null
+            && this.sharedCarried.isEmpty()
+            && hoveredWindow.kind == WindowKind.INVENTORY
+            && this.increaseInventoryButtonContains(hoveredWindow, mouseX, mouseY)) {
+            LocalPlayer player = this.player();
+            if (player != null) {
+                int cost = InventoryExpansion.costForNextSlot(player);
+                List<Component> tooltip = new ArrayList<>();
+                tooltip.add(Component.translatable("tooltip.salts_inventory_update.inventory_slot.add"));
+                tooltip.add(Component.translatable("tooltip.salts_inventory_update.inventory_slot.cost", cost)
+                    .withStyle(player.experienceLevel >= cost ? ChatFormatting.GRAY : ChatFormatting.RED));
+                tooltip.add(Component.translatable("tooltip.salts_inventory_update.inventory_slot.have", player.experienceLevel).withStyle(ChatFormatting.GRAY));
+                graphics.setComponentTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
+                return;
+            }
+        }
+
         SlotHit hit = this.slotAt(mouseX, mouseY);
         if (hit != null && hit.slot().hasItem() && this.sharedCarried.isEmpty()) {
             graphics.setTooltipForNextFrame(this.font, hit.slot().getItem(), mouseX, mouseY);
@@ -7830,6 +7953,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private record CreativeGridLayout(int totalRows, int maxScrollRow, boolean scrollable) {
     }
 
+    private record InventoryIncreaseButtonRect(int x, int y) {
+    }
+
     private record CartographyPreview(
         @Nullable MapId mapId,
         @Nullable MapItemSavedData mapData,
@@ -8239,7 +8365,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             if (this.kind == WindowKind.INVENTORY) {
                 List<Slot> inventorySlots = screen.mainInventorySlots();
                 AbstractContainerMenu playerMenu = screen.playerMenu();
-                SlotGridLayout layout = screen.storageLayout(this, inventorySlots.size());
+                SlotGridLayout layout = screen.storageLayout(this, inventorySlots.size() + 1);
                 this.scrollRow = clamp(this.scrollRow, 0, layout.maxScrollRow());
                 for (int row = 0; row < layout.visibleRows(); row++) {
                     for (int column = 0; column < layout.columns(); column++) {

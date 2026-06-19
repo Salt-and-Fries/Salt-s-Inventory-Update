@@ -1,5 +1,8 @@
 {
   "key.salts_inventory_update.character_window": "Character Window",
   "modmenu.descriptionTranslation.salts_inventory_update": "Inventory quality-of-life updates for Minecraft.",
-  "itemGroup.salts_inventory_update.main": "Salt's Inventory Update"
+  "itemGroup.salts_inventory_update.main": "Salt's Inventory Update",
+  "tooltip.salts_inventory_update.inventory_slot.add": "Add inventory slot",
+  "tooltip.salts_inventory_update.inventory_slot.cost": "Cost: %s levels",
+  "tooltip.salts_inventory_update.inventory_slot.have": "You have: %s levels"
 }
