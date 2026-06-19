@@ -3,6 +3,7 @@ package com.salts_inventory_update.client;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.item.ItemStack;
 
 import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.network.DesktopPackets;
@@ -43,6 +44,7 @@ public final class DesktopContainerClient {
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(DesktopCarriedPayload.TYPE, (payload, context) -> {
+            DesktopDebug.trace("client payload carried stack={}", payload.carried());
             InventoryDesktopScreen screen = InventoryDesktopScreen.current(context.client());
             if (screen != null) {
                 screen.setSharedCarried(payload.carried());
@@ -99,9 +101,9 @@ public final class DesktopContainerClient {
         }
     }
 
-    public static boolean clickSlot(int sessionId, int slotIndex, int button, ContainerInput input) {
-        DesktopDebug.trace("client send click session={} slot={} button={} input={}", sessionId, slotIndex, button, input);
-        return send(new DesktopClickPayload(sessionId, slotIndex, button, input.name()), "click");
+    public static boolean clickSlot(int debugId, int sessionId, int slotIndex, int button, ContainerInput input, ItemStack clientCarried) {
+        DesktopDebug.trace("client send click id={} session={} slot={} button={} input={} clientCarried={}", debugId, sessionId, slotIndex, button, input, clientCarried);
+        return send(new DesktopClickPayload(debugId, sessionId, slotIndex, button, input.name(), clientCarried.copy()), "click");
     }
 
     public static boolean quickMoveSlot(int sourceSessionId, int sourceSlotIndex, int targetKind, int targetSessionId) {

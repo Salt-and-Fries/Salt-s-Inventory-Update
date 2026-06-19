@@ -150,6 +150,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final Identifier CARTOGRAPHY_PLUS_TEXTURE = WindowedInventoryClient.id("textures/gui/plus.png");
     private static final Identifier LARGE_SLOT_TEXTURE = WindowedInventoryClient.id("textures/gui/large_slot.png");
     private static final Identifier CREATIVE_SEARCH_BAR_TEXTURE = WindowedInventoryClient.id("textures/gui/search_bar.png");
+    private static final Identifier CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE = WindowedInventoryClient.id("textures/gui/scroll_bar_behind.png");
     private static final Identifier SLOT_HIGHLIGHT_BACK_SPRITE = Identifier.withDefaultNamespace("container/slot_highlight_back");
     private static final Identifier SLOT_HIGHLIGHT_FRONT_SPRITE = Identifier.withDefaultNamespace("container/slot_highlight_front");
     private static final Identifier HOTBAR_OFFHAND_LEFT_SPRITE = Identifier.withDefaultNamespace("hud/hotbar_offhand_left");
@@ -496,29 +497,41 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int CREATIVE_CONTENT_MARGIN = 6;
     private static final int CREATIVE_TAB_WIDTH = 26;
     private static final int CREATIVE_TAB_HEIGHT = 32;
+    private static final int CREATIVE_TAB_FRAME_OVERLAP = 5;
+    private static final int CREATIVE_TAB_X_OFFSET = -6;
+    private static final int CREATIVE_TOP_TAB_Y_OFFSET = -1;
+    private static final int CREATIVE_BOTTOM_TAB_Y_OFFSET = 1;
     private static final int CREATIVE_TABS_PER_ROW = 7;
     private static final int CREATIVE_PANEL_WIDTH = 184;
-    private static final int CREATIVE_PANEL_HEIGHT = 122;
+    private static final int CREATIVE_PANEL_HEIGHT = 96;
     private static final int CREATIVE_CONTENT_WIDTH = CREATIVE_PANEL_WIDTH;
-    private static final int CREATIVE_CONTENT_HEIGHT = CREATIVE_TAB_HEIGHT + CREATIVE_PANEL_HEIGHT + CREATIVE_TAB_HEIGHT - 4;
+    private static final int CREATIVE_CONTENT_HEIGHT = CREATIVE_PANEL_HEIGHT;
     private static final int CREATIVE_GRID_COLUMNS = 9;
     private static final int CREATIVE_GRID_ROWS = 5;
-    private static final int CREATIVE_GRID_X = 8;
-    private static final int CREATIVE_GRID_Y = 22;
-    private static final int CREATIVE_INVENTORY_GRID_Y = 16;
-    private static final int CREATIVE_SEARCH_X = 8;
-    private static final int CREATIVE_SEARCH_Y = 7;
-    private static final int CREATIVE_SEARCH_WIDTH = 92;
+    private static final int CREATIVE_GRID_X = 4;
+    private static final int CREATIVE_GRID_Y = 4;
+    private static final int CREATIVE_INVENTORY_GRID_Y = 4;
+    private static final int CREATIVE_SEARCH_TITLE_GAP = 8;
+    private static final int CREATIVE_SEARCH_CONTROLS_GAP = 6;
+    private static final int CREATIVE_SEARCH_MIN_WIDTH = 24;
     private static final int CREATIVE_SEARCH_HEIGHT = 12;
     private static final int CREATIVE_SEARCH_TEXTURE_WIDTH = 3;
     private static final int CREATIVE_SEARCH_TEXTURE_HEIGHT = 12;
-    private static final int CREATIVE_SCROLLBAR_X = 171;
-    private static final int CREATIVE_SCROLLBAR_Y = CREATIVE_GRID_Y;
+    private static final int CREATIVE_SCROLLBAR_X = 167;
+    private static final int CREATIVE_SCROLLBAR_Y = CREATIVE_GRID_Y - 1;
+    private static final int CREATIVE_SCROLLBAR_BACKGROUND_WIDTH = 14;
+    private static final int CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE_WIDTH = 14;
+    private static final int CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE_HEIGHT = 3;
     private static final int CREATIVE_SCROLLBAR_WIDTH = 12;
     private static final int CREATIVE_SCROLLBAR_HEIGHT = 15;
-    private static final int CREATIVE_SCROLLBAR_TRACK_HEIGHT = CREATIVE_GRID_ROWS * SLOT_SIZE - CREATIVE_SCROLLBAR_HEIGHT;
-    private static final int CREATIVE_DELETE_SLOT_X = 151;
-    private static final int CREATIVE_DELETE_SLOT_Y = 16;
+    private static final int CREATIVE_SCROLLBAR_INSET = 1;
+    private static final int CREATIVE_SCROLLBAR_BACKGROUND_HEIGHT = CREATIVE_GRID_ROWS * SLOT_SIZE;
+    private static final int CREATIVE_SCROLLBAR_TRACK_HEIGHT = CREATIVE_SCROLLBAR_BACKGROUND_HEIGHT - CREATIVE_SCROLLBAR_INSET * 2 - CREATIVE_SCROLLBAR_HEIGHT;
+    private static final int CREATIVE_DELETE_SLOT_X = 167;
+    private static final int CREATIVE_DELETE_SLOT_Y = CREATIVE_INVENTORY_GRID_Y;
+    private static final int CREATIVE_INVENTORY_SCROLLBAR_X = CREATIVE_SCROLLBAR_X;
+    private static final int CREATIVE_INVENTORY_SCROLLBAR_Y = CREATIVE_DELETE_SLOT_Y + SLOT_SIZE + 4;
+    private static final int CREATIVE_INVENTORY_SCROLLBAR_BACKGROUND_HEIGHT = CREATIVE_PANEL_HEIGHT - CREATIVE_INVENTORY_SCROLLBAR_Y - 3;
     private static final int CREATIVE_TAB_ICON_OFFSET_X = 5;
     private static final int CREATIVE_TAB_ICON_OFFSET_TOP = 9;
     private static final int CREATIVE_TAB_ICON_OFFSET_BOTTOM = 7;
@@ -620,6 +633,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable InventoryWindow editingAnvilWindow;
     private @Nullable InventoryWindow editingCreativeSearchWindow;
     private @Nullable InventoryWindow popupWindow;
+    private @Nullable CreativeModeTab rememberedCreativeTab;
+    private int rememberedCreativeScrollRow;
+    private String rememberedCreativeSearch = "";
     private int moveOffsetX;
     private int moveOffsetY;
     private @Nullable InventoryWindow resizingWindow;
@@ -629,7 +645,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private int resizeStartHeight;
     private @Nullable InventoryWindow scrollingCreativeWindow;
     private @Nullable Slot dragStartSlot;
+    private @Nullable PendingSlotClick pendingSlotClick;
+    private @Nullable DragDistribution dragDistribution;
+    private @Nullable SlotKey lastClickedSlotKey;
     private ItemStack sharedCarried = ItemStack.EMPTY;
+    private ItemStack lastQuickMoved = ItemStack.EMPTY;
+    private int nextDebugClickId = 1;
     private @Nullable BookModel enchantmentBookModel;
     private @Nullable BannerFlagModel loomBannerFlagModel;
     private final MapRenderState cartographyMapRenderState = new MapRenderState();
@@ -774,6 +795,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         InventoryDesktopScreen screen = getOrCreate(minecraft);
         DesktopDebug.log("client request E creative desktop={} active={}", screen.desktopId, minecraft.screen == screen);
+        screen.removeStandaloneWindow(WindowKind.INVENTORY, "creative-inventory-key");
         screen.toggleWindow(WindowKind.CREATIVE);
         screen.showIfNeeded(minecraft);
     }
@@ -785,10 +807,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         if (minecraft.screen instanceof InventoryDesktopScreen) {
             InventoryDesktopScreen screen = getOrCreate(minecraft);
+            screen.removeStandaloneWindow(WindowKind.INVENTORY, "creative-screen-replace");
             screen.showWindow(WindowKind.CREATIVE);
             screen.showIfNeeded(minecraft);
         } else if (minecraft.screen == null) {
             InventoryDesktopScreen screen = getOrCreate(minecraft);
+            screen.removeStandaloneWindow(WindowKind.INVENTORY, "creative-screen-replace");
             screen.showWindow(WindowKind.CREATIVE);
             screen.showIfNeeded(minecraft);
         } else {
@@ -954,6 +978,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return this.cameraControl;
     }
 
+    public boolean isCreativeSearchActive() {
+        return this.activeCreativeSearchWindow() != null;
+    }
+
     @Override
     public void removed() {
         if (this.minecraft != null) {
@@ -1058,12 +1086,24 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        DesktopDebug.trace(
+            "client mouse down desktop={} button={} double={} x={} y={} carried={} hotbarOnly={} windows={} hover={}",
+            this.desktopId,
+            event.button(),
+            doubleClick,
+            event.x(),
+            event.y(),
+            this.sharedCarried,
+            this.hotbarOnly,
+            this.windows.size(),
+            this.describeSlotHit(this.slotAt(event.x(), event.y()))
+        );
         if (this.cameraControl) {
             this.handleGameplayClick(event);
             return true;
         }
 
-        if (event.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT && event.button() != GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+        if (!this.isContainerMouseButton(event)) {
             return false;
         }
 
@@ -1115,7 +1155,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 return true;
             }
 
-            if (window.isTopBar(event.x(), event.y())) {
+            boolean creativeSearchClick = window.kind == WindowKind.CREATIVE && this.creativeSearchBoxContains(window, event.x(), event.y());
+            if (window.isTopBar(event.x(), event.y()) && !creativeSearchClick) {
                 this.movingWindow = window;
                 this.resizingWindow = null;
                 this.popupWindow = null;
@@ -1126,7 +1167,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
 
             if (window.kind == WindowKind.CREATIVE) {
-                return this.creativeMouseClicked(window, event);
+                return this.creativeMouseClicked(window, event, doubleClick);
             }
 
             int enchantmentButton = this.enchantmentButtonAt(window, event.x(), event.y());
@@ -1185,24 +1226,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
             SlotHit slotHit = this.slotAt(event.x(), event.y());
             if (slotHit != null) {
-                if (this.shouldQuickMove()) {
-                    this.quickMoveSlot(slotHit);
-                    return true;
-                }
-                this.dragStartSlot = slotHit.slot();
-                this.slotClicked(slotHit, event.button(), ContainerInput.PICKUP);
+                this.handleSlotMouseClicked(slotHit, event, doubleClick);
             }
             return true;
         }
 
         SlotHit slotHit = this.slotAt(event.x(), event.y());
         if (slotHit != null) {
-            if (this.shouldQuickMove()) {
-                this.quickMoveSlot(slotHit);
-                return true;
-            }
-            this.dragStartSlot = slotHit.slot();
-            this.slotClicked(slotHit, event.button(), ContainerInput.PICKUP);
+            this.handleSlotMouseClicked(slotHit, event, doubleClick);
+            return true;
+        }
+
+        if ((this.hasWindows() || this.hotbarOnly) && !this.sharedCarried.isEmpty()) {
+            this.dropCarriedOutside(event.button());
             return true;
         }
 
@@ -1247,11 +1283,26 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
+        if (this.pendingSlotClick != null) {
+            this.updateDragDistribution(event.x(), event.y());
+            return true;
+        }
+
         return this.sharedCarried.isEmpty() ? this.hotbarOnly : true;
     }
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
+        DesktopDebug.trace(
+            "client mouse up desktop={} button={} x={} y={} carried={} pending={} drag={}",
+            this.desktopId,
+            event.button(),
+            event.x(),
+            event.y(),
+            this.sharedCarried,
+            this.describePendingClick(),
+            this.dragDistribution == null ? "none" : "button=" + this.dragDistribution.button() + ",type=" + this.dragDistribution.quickCraftType() + ",slots=" + this.dragDistribution.size()
+        );
         if (this.cameraControl) {
             this.pressedControlWindow = null;
             this.pressedControl = null;
@@ -1290,6 +1341,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (resizedWindow != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             this.snapResizableWindow(resizedWindow);
         }
+        if (this.pendingSlotClick != null && this.pendingSlotClick.button() == event.button()) {
+            this.completePendingSlotClick();
+            return true;
+        }
+
         if (event.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT && event.button() != GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             return false;
         }
@@ -1301,6 +1357,143 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.stopWorldUse();
         }
         return this.windowAt(event.x(), event.y()) != null || this.hotbarOnly || !this.sharedCarried.isEmpty();
+    }
+
+    private boolean isContainerMouseButton(MouseButtonEvent event) {
+        return event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT
+            || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT
+            || this.isCreativeCloneMouse(event)
+            || this.isSwapOffhandMouse(event)
+            || this.hotbarMouseButton(event) >= 0;
+    }
+
+    private boolean handleSlotMouseClicked(SlotHit hit, MouseButtonEvent event, boolean doubleClick) {
+        boolean creativePlayerSlot = this.isCreativePlayerMenuSlot(hit);
+        boolean vanillaDoubleClick = doubleClick && this.isSameLastClickedSlot(hit);
+        this.lastClickedSlotKey = SlotKey.of(hit);
+        DesktopDebug.trace(
+            "client slot mouse branch desktop={} button={} double={} vanillaDouble={} creativePlayerSlot={} shift={} carried={} hit={}",
+            this.desktopId,
+            event.button(),
+            doubleClick,
+            vanillaDoubleClick,
+            creativePlayerSlot,
+            this.isShiftHeld(),
+            this.sharedCarried,
+            this.describeSlotHit(hit)
+        );
+        if (this.trySpecialSlotMouseClick(hit, event)) {
+            DesktopDebug.trace("client slot mouse branch consumed special desktop={} hit={}", this.desktopId, this.describeSlotHit(hit));
+            return true;
+        }
+
+        if (event.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT && event.button() != GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            DesktopDebug.trace("client slot mouse branch ignored non-pickup desktop={} button={} hit={}", this.desktopId, event.button(), this.describeSlotHit(hit));
+            return true;
+        }
+
+        if (vanillaDoubleClick && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.isShiftHeld() && !this.lastQuickMoved.isEmpty()) {
+            DesktopDebug.trace("client slot mouse branch shift-double-move desktop={} hit={} lastQuickMoved={}", this.desktopId, this.describeSlotHit(hit), this.lastQuickMoved);
+            this.quickMoveMatchingSlots(hit, this.lastQuickMoved);
+            return true;
+        }
+
+        if (this.shouldQuickMove()) {
+            DesktopDebug.trace("client slot mouse branch quick-move desktop={} hit={}", this.desktopId, this.describeSlotHit(hit));
+            this.rememberLastQuickMoved(hit);
+            this.quickMoveSlot(hit);
+            return true;
+        }
+
+        if (vanillaDoubleClick && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && !this.sharedCarried.isEmpty()) {
+            DesktopDebug.trace("client slot mouse branch pickup-all desktop={} hit={} carried={}", this.desktopId, this.describeSlotHit(hit), this.sharedCarried);
+            this.slotClicked(hit, GLFW.GLFW_MOUSE_BUTTON_LEFT, ContainerInput.PICKUP_ALL);
+            return true;
+        }
+
+        if (this.beginPendingSlotClick(hit, event)) {
+            DesktopDebug.trace("client slot mouse branch pending desktop={} hit={} carried={}", this.desktopId, this.describeSlotHit(hit), this.sharedCarried);
+            return true;
+        }
+
+        DesktopDebug.trace("client slot mouse branch direct-pickup desktop={} hit={} carried={}", this.desktopId, this.describeSlotHit(hit), this.sharedCarried);
+        this.dragStartSlot = hit.slot();
+        this.slotClicked(hit, event.button(), ContainerInput.PICKUP);
+        return true;
+    }
+
+    private boolean isSameLastClickedSlot(SlotHit hit) {
+        return SlotKey.of(hit).equals(this.lastClickedSlotKey);
+    }
+
+    private boolean trySpecialSlotMouseClick(SlotHit hit, MouseButtonEvent event) {
+        if (this.sharedCarried.isEmpty() && this.isCreativeCloneMouse(event) && hit.slot().hasItem()) {
+            DesktopDebug.trace("client special slot click clone desktop={} button={} hit={}", this.desktopId, event.button(), this.describeSlotHit(hit));
+            this.slotClicked(hit, event.button(), ContainerInput.CLONE);
+            return true;
+        }
+
+        if (!this.sharedCarried.isEmpty() && this.isCreativeCloneMouse(event)) {
+            DesktopDebug.trace("client special slot click clone-drag-start desktop={} button={} hit={} carried={}", this.desktopId, event.button(), this.describeSlotHit(hit), this.sharedCarried);
+            return this.beginPendingSlotClick(hit, event);
+        }
+
+        if (!this.sharedCarried.isEmpty()) {
+            return false;
+        }
+
+        if (this.isSwapOffhandMouse(event)) {
+            DesktopDebug.trace("client special slot click offhand-swap desktop={} hit={}", this.desktopId, this.describeSlotHit(hit));
+            this.slotClicked(hit, Inventory.SLOT_OFFHAND, ContainerInput.SWAP);
+            return true;
+        }
+
+        int hotbarSlot = this.hotbarMouseButton(event);
+        if (hotbarSlot >= 0) {
+            DesktopDebug.trace("client special slot click hotbar-swap desktop={} hotbar={} hit={}", this.desktopId, hotbarSlot, this.describeSlotHit(hit));
+            this.slotClicked(hit, hotbarSlot, ContainerInput.SWAP);
+            return true;
+        }
+
+        return false;
+    }
+
+    private void dropCarriedOutside(int button) {
+        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT && button != GLFW.GLFW_MOUSE_BUTTON_RIGHT || this.sharedCarried.isEmpty()) {
+            return;
+        }
+
+        DesktopDebug.trace("client carried outside click desktop={} button={} carried={}", this.desktopId, button, this.sharedCarried);
+        if (this.minecraft != null && this.minecraft.gameMode != null && isCreativePlayer(this.minecraft)) {
+            ItemStack dropped = button == GLFW.GLFW_MOUSE_BUTTON_LEFT ? this.sharedCarried.copy() : this.sharedCarried.copyWithCount(1);
+            ItemStack remaining = this.sharedCarried.copy();
+            remaining.shrink(dropped.getCount());
+            DesktopDebug.trace("client creative carried outside drop desktop={} dropped={} remaining={}", this.desktopId, dropped, remaining);
+            this.minecraft.gameMode.handleCreativeModeItemDrop(dropped);
+            this.setSharedCarried(remaining);
+            return;
+        }
+
+        SlotHit outside = this.outsidePlayerMenuHit();
+        if (outside != null) {
+            this.slotClicked(outside, button, ContainerInput.PICKUP);
+        }
+    }
+
+    private @Nullable SlotHit outsidePlayerMenuHit() {
+        AbstractContainerMenu menu = this.playerMenu();
+        if (menu.slots.isEmpty()) {
+            return null;
+        }
+
+        return new SlotHit(
+            menu.slots.get(0),
+            AbstractContainerMenu.SLOT_CLICKED_OUTSIDE,
+            0,
+            0,
+            menu,
+            DesktopPackets.PLAYER_MENU_SESSION
+        );
     }
 
     private void handleWorldClick(MouseButtonEvent event) {
@@ -1333,6 +1526,43 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    private boolean isCreativeCloneMouse(MouseButtonEvent event) {
+        return this.minecraft != null
+            && this.minecraft.player != null
+            && this.minecraft.player.hasInfiniteMaterials()
+            && this.minecraft.options.keyPickItem.matchesMouse(event);
+    }
+
+    private boolean isSwapOffhandMouse(MouseButtonEvent event) {
+        return this.minecraft != null && this.minecraft.options.keySwapOffhand.matchesMouse(event);
+    }
+
+    private int hotbarMouseButton(MouseButtonEvent event) {
+        if (this.minecraft == null) {
+            return -1;
+        }
+
+        for (int i = 0; i < this.minecraft.options.keyHotbarSlots.length && i < HOTBAR_SLOT_COUNT; i++) {
+            if (this.minecraft.options.keyHotbarSlots[i].matchesMouse(event)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private int quickCraftTypeFor(MouseButtonEvent event) {
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            return AbstractContainerMenu.QUICKCRAFT_TYPE_CHARITABLE;
+        }
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            return AbstractContainerMenu.QUICKCRAFT_TYPE_GREEDY;
+        }
+        if (this.isCreativeCloneMouse(event)) {
+            return AbstractContainerMenu.QUICKCRAFT_TYPE_CLONE;
+        }
+        return -1;
+    }
+
     private void stopWorldAttack() {
         if (this.attackingWorld && this.minecraft != null) {
             CursorWorldInteraction.stopAttack(this.minecraft);
@@ -1344,20 +1574,244 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.usingWorld = false;
     }
 
-    private void slotClicked(SlotHit hit, int button, ContainerInput input) {
-        if (this.isCreativePlayerMenuSlot(hit)) {
-            this.creativePlayerSlotClicked(hit, button);
+    private boolean beginPendingSlotClick(SlotHit hit, MouseButtonEvent event) {
+        int quickCraftType = this.quickCraftTypeFor(event);
+        if (this.sharedCarried.isEmpty() || quickCraftType < 0) {
+            DesktopDebug.trace(
+                "client pending slot skipped desktop={} reason={} button={} carried={} hit={}",
+                this.desktopId,
+                this.sharedCarried.isEmpty() ? "carried-empty" : "unsupported-button",
+                event.button(),
+                this.sharedCarried,
+                this.describeSlotHit(hit)
+            );
+            return false;
+        }
+
+        this.pendingSlotClick = new PendingSlotClick(hit, event.button(), quickCraftType);
+        this.dragDistribution = null;
+        this.dragStartSlot = hit.slot();
+        DesktopDebug.trace("client pending slot click desktop={} hit={} button={} quickCraftType={} carried={}", this.desktopId, this.describeSlotHit(hit), event.button(), quickCraftType, this.sharedCarried);
+        return true;
+    }
+
+    private void updateDragDistribution(double mouseX, double mouseY) {
+        PendingSlotClick pending = this.pendingSlotClick;
+        if (pending == null || this.sharedCarried.isEmpty()) {
+            this.clearPendingSlotClick();
             return;
         }
 
+        SlotHit hit = this.slotAt(mouseX, mouseY);
+        if (hit == null || !this.canDragDistributeTo(hit)) {
+            DesktopDebug.trace(
+                "client pending drag hover ignored desktop={} x={} y={} reason={} carried={} hit={}",
+                this.desktopId,
+                mouseX,
+                mouseY,
+                hit == null ? "no-slot" : "cannot-distribute",
+                this.sharedCarried,
+                this.describeSlotHit(hit)
+            );
+            return;
+        }
+
+        if (this.dragDistribution == null) {
+            this.dragDistribution = new DragDistribution(pending.button(), pending.quickCraftType());
+            if (this.canDragDistributeTo(pending.hit())) {
+                this.dragDistribution.add(pending.hit());
+            }
+        }
+
+        this.dragDistribution.add(hit);
+        DesktopDebug.trace("client pending drag add desktop={} size={} hit={}", this.desktopId, this.dragDistribution.size(), this.describeSlotHit(hit));
+    }
+
+    private void completePendingSlotClick() {
+        PendingSlotClick pending = this.pendingSlotClick;
+        DragDistribution drag = this.dragDistribution;
+        this.clearPendingSlotClick();
+        if (pending == null) {
+            return;
+        }
+
+        if (drag != null && drag.size() > 1 && !this.sharedCarried.isEmpty()) {
+            DesktopDebug.trace("client pending complete drag desktop={} dragSlots={} carried={}", this.desktopId, drag.size(), this.sharedCarried);
+            this.applyDragDistribution(drag);
+            return;
+        }
+
+        if (pending.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT || pending.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            DesktopDebug.trace("client pending complete click desktop={} hit={} button={} carried={}", this.desktopId, this.describeSlotHit(pending.hit()), pending.button(), this.sharedCarried);
+            this.slotClicked(pending.hit(), pending.button(), ContainerInput.PICKUP);
+        } else {
+            DesktopDebug.trace("client pending complete ignored desktop={} button={} hit={}", this.desktopId, pending.button(), this.describeSlotHit(pending.hit()));
+        }
+    }
+
+    private void clearPendingSlotClick() {
+        this.pendingSlotClick = null;
+        this.dragDistribution = null;
+        this.dragStartSlot = null;
+    }
+
+    private boolean canDragDistributeTo(SlotHit hit) {
+        if (this.sharedCarried.isEmpty()) {
+            return false;
+        }
+
+        Slot slot = hit.slot();
+        if (!slot.isActive() || slot.isFake() || !slot.mayPlace(this.sharedCarried)) {
+            return false;
+        }
+
+        ItemStack existing = slot.getItem();
+        if (existing.isEmpty()) {
+            return true;
+        }
+
+        return ItemStack.isSameItemSameComponents(existing, this.sharedCarried)
+            && existing.getCount() < this.creativeSlotMaxStackSize(slot, this.sharedCarried);
+    }
+
+    private void applyDragDistribution(DragDistribution drag) {
+        if (this.applyVanillaQuickCraft(drag)) {
+            return;
+        }
+
+        this.applyManualDragDistribution(drag);
+    }
+
+    private boolean applyVanillaQuickCraft(DragDistribution drag) {
+        List<SlotHit> slots = drag.slots();
+        if (slots.isEmpty() || !this.dragUsesSingleSession(slots)) {
+            return false;
+        }
+
+        int quickcraftType = drag.quickCraftType();
+        int startMask = AbstractContainerMenu.getQuickcraftMask(AbstractContainerMenu.QUICKCRAFT_HEADER_START, quickcraftType);
+        int continueMask = AbstractContainerMenu.getQuickcraftMask(AbstractContainerMenu.QUICKCRAFT_HEADER_CONTINUE, quickcraftType);
+        int endMask = AbstractContainerMenu.getQuickcraftMask(AbstractContainerMenu.QUICKCRAFT_HEADER_END, quickcraftType);
+        SlotHit first = slots.get(0);
+
+        DesktopDebug.trace("client vanilla quick craft desktop={} button={} type={} session={} slots={}", this.desktopId, drag.button(), quickcraftType, first.sessionId(), slots.size());
+        this.slotClicked(new SlotHit(first.slot(), AbstractContainerMenu.SLOT_CLICKED_OUTSIDE, first.x(), first.y(), first.menu(), first.sessionId()), startMask, ContainerInput.QUICK_CRAFT);
+        for (SlotHit hit : slots) {
+            this.slotClicked(hit, continueMask, ContainerInput.QUICK_CRAFT);
+        }
+        this.slotClicked(new SlotHit(first.slot(), AbstractContainerMenu.SLOT_CLICKED_OUTSIDE, first.x(), first.y(), first.menu(), first.sessionId()), endMask, ContainerInput.QUICK_CRAFT);
+        return true;
+    }
+
+    private boolean dragUsesSingleSession(List<SlotHit> slots) {
+        if (slots.isEmpty()) {
+            return false;
+        }
+
+        int sessionId = slots.get(0).sessionId();
+        for (SlotHit hit : slots) {
+            if (hit.sessionId() != sessionId) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void applyManualDragDistribution(DragDistribution drag) {
+        if (drag.quickCraftType() == AbstractContainerMenu.QUICKCRAFT_TYPE_CLONE) {
+            return;
+        }
+
+        List<SlotHit> slots = drag.slots();
+        int remaining = this.sharedCarried.getCount();
+        if (remaining <= 0 || slots.isEmpty()) {
+            return;
+        }
+
+        Map<SlotKey, Integer> capacities = new LinkedHashMap<>();
+        for (SlotHit hit : slots) {
+            int capacity = this.dragPlacementCapacity(hit, this.sharedCarried);
+            if (capacity > 0) {
+                capacities.put(SlotKey.of(hit), capacity);
+            }
+        }
+        if (capacities.isEmpty()) {
+            return;
+        }
+
+        DesktopDebug.trace("client drag distribute desktop={} button={} slots={} carried={}", this.desktopId, drag.button(), capacities.size(), this.sharedCarried);
+        if (drag.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            for (SlotHit hit : slots) {
+                SlotKey key = SlotKey.of(hit);
+                Integer capacity = capacities.get(key);
+                if (capacity == null || capacity <= 0 || remaining <= 0) {
+                    continue;
+                }
+
+                this.slotClicked(hit, GLFW.GLFW_MOUSE_BUTTON_RIGHT, ContainerInput.PICKUP);
+                capacities.put(key, capacity - 1);
+                remaining--;
+            }
+            return;
+        }
+
+        while (remaining > 0) {
+            boolean placedAny = false;
+            for (SlotHit hit : slots) {
+                SlotKey key = SlotKey.of(hit);
+                int capacity = capacities.getOrDefault(key, 0);
+                if (capacity <= 0) {
+                    continue;
+                }
+
+                this.slotClicked(hit, GLFW.GLFW_MOUSE_BUTTON_RIGHT, ContainerInput.PICKUP);
+                capacities.put(key, capacity - 1);
+                remaining--;
+                placedAny = true;
+                if (remaining <= 0) {
+                    break;
+                }
+            }
+
+            if (!placedAny) {
+                break;
+            }
+        }
+    }
+
+    private int dragPlacementCapacity(SlotHit hit, ItemStack carried) {
+        Slot slot = hit.slot();
+        if (!slot.isActive() || slot.isFake() || !slot.mayPlace(carried)) {
+            return 0;
+        }
+
+        ItemStack existing = slot.getItem();
+        int max = this.creativeSlotMaxStackSize(slot, carried);
+        if (existing.isEmpty()) {
+            return Math.max(0, max);
+        }
+        if (!ItemStack.isSameItemSameComponents(existing, carried)) {
+            return 0;
+        }
+        return Math.max(0, max - existing.getCount());
+    }
+
+    private void slotClicked(SlotHit hit, int button, ContainerInput input) {
+        int debugId = this.nextDebugClickId++;
+        ItemStack slotBefore = hit.slot().getItem().copy();
+        ItemStack carriedBefore = this.sharedCarried.copy();
         DesktopDebug.trace(
-            "client slot click desktop={} session={} slot={} button={} input={} menu={}",
+            "client slot click id={} desktop={} session={} slot={} button={} input={} menu={} slotBefore={} carriedBefore={} hit={}",
+            debugId,
             this.desktopId,
             hit.sessionId(),
             hit.slotId(),
             button,
             input,
-            hit.menu().containerId
+            hit.menu().containerId,
+            slotBefore,
+            carriedBefore,
+            this.describeSlotHit(hit)
         );
 
         if (hit.sessionId() == LEGACY_MENU_SESSION) {
@@ -1372,23 +1826,63 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
             slotClicked(hit.menu(), hit.slotId(), button, input, this.minecraft);
             this.setSharedCarried(hit.menu().getCarried());
+            DesktopDebug.trace("client slot click local result id={} slotAfter={} carriedAfter={}", debugId, hit.slot().getItem(), this.sharedCarried);
             return;
         }
 
-        if (!DesktopContainerClient.clickSlot(hit.sessionId(), hit.slotId(), button, input)) {
+        if (!DesktopContainerClient.clickSlot(debugId, hit.sessionId(), hit.slotId(), button, input, carriedBefore)) {
             if (hit.sessionId() == DesktopPackets.PLAYER_MENU_SESSION) {
                 slotClicked(hit.menu(), hit.slotId(), button, input, this.minecraft);
                 this.setSharedCarried(hit.menu().getCarried());
+                DesktopDebug.trace("client slot click fallback result id={} slotAfter={} carriedAfter={}", debugId, hit.slot().getItem(), this.sharedCarried);
             } else {
                 DesktopDebug.warn("client session click dropped session={} menu={} slot={} reason=packet-send-failed", hit.sessionId(), hit.menu().containerId, hit.slotId());
             }
+        } else {
+            DesktopDebug.trace("client slot click sent id={} awaiting server sync session={} slot={} carriedStill={}", debugId, hit.sessionId(), hit.slotId(), this.sharedCarried);
         }
     }
 
     private boolean shouldQuickMove() {
-        return this.sharedCarried.isEmpty() && this.minecraft != null
+        return this.sharedCarried.isEmpty() && this.isShiftHeld();
+    }
+
+    private boolean isShiftHeld() {
+        return this.minecraft != null
             && (InputConstants.isKeyDown(this.minecraft.getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT)
                 || InputConstants.isKeyDown(this.minecraft.getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT));
+    }
+
+    private void rememberLastQuickMoved(SlotHit hit) {
+        this.lastQuickMoved = hit.slot().hasItem() ? hit.slot().getItem().copy() : ItemStack.EMPTY;
+    }
+
+    private void quickMoveMatchingSlots(SlotHit anchor, ItemStack stack) {
+        if (this.minecraft == null || this.minecraft.player == null || stack.isEmpty()) {
+            return;
+        }
+
+        DesktopDebug.trace(
+            "client quick move matching desktop={} session={} anchorSlot={} stack={}",
+            this.desktopId,
+            anchor.sessionId(),
+            anchor.slotId(),
+            stack
+        );
+        for (Slot slot : anchor.menu().slots) {
+            if (slot == null
+                || slot.container != anchor.slot().container
+                || !slot.mayPickup(this.minecraft.player)
+                || !slot.hasItem()
+                || !AbstractContainerMenu.canItemQuickReplace(slot, stack, true)) {
+                continue;
+            }
+
+            int slotId = anchor.menu().slots.indexOf(slot);
+            if (slotId >= 0) {
+                this.quickMoveSlot(new SlotHit(slot, slotId, slot.x, slot.y, anchor.menu(), anchor.sessionId()));
+            }
+        }
     }
 
     private void quickMoveSlot(SlotHit hit) {
@@ -1416,6 +1910,33 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             slotClicked(hit.menu(), hit.slotId(), 0, ContainerInput.QUICK_MOVE, this.minecraft);
             this.setSharedCarried(hit.menu().getCarried());
         }
+    }
+
+    private String describePendingClick() {
+        PendingSlotClick pending = this.pendingSlotClick;
+        if (pending == null) {
+            return "none";
+        }
+
+        return "button=" + pending.button()
+            + ",type=" + pending.quickCraftType()
+            + ",hit=" + this.describeSlotHit(pending.hit());
+    }
+
+    private String describeSlotHit(@Nullable SlotHit hit) {
+        if (hit == null) {
+            return "none";
+        }
+
+        Slot slot = hit.slot();
+        return "session=" + hit.sessionId()
+            + ",menu=" + hit.menu().containerId
+            + ",slot=" + hit.slotId()
+            + ",containerSlot=" + slot.getContainerSlot()
+            + ",active=" + slot.isActive()
+            + ",fake=" + slot.isFake()
+            + ",mayPlaceCarried=" + (!this.sharedCarried.isEmpty() && slot.mayPlace(this.sharedCarried))
+            + ",stack=" + slot.getItem();
     }
 
     private void enchantmentButtonClicked(InventoryWindow window, int buttonId) {
@@ -1658,8 +2179,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         if (this.minecraft.options.keyInventory.matches(event)) {
-            this.toggleWindow(WindowKind.INVENTORY);
-            this.showIfNeeded(this.minecraft);
+            if (isCreativePlayer(this.minecraft)) {
+                openOrToggleCreative(this.minecraft);
+            } else {
+                this.toggleWindow(WindowKind.INVENTORY);
+                this.showIfNeeded(this.minecraft);
+            }
             return true;
         }
 
@@ -1674,14 +2199,70 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
+        SlotHit hoveredSlot = this.hoveredSlotForKeyboardInput();
+        if (hoveredSlot != null && this.handleSlotKeyPressed(hoveredSlot, event)) {
+            return true;
+        }
+
         for (int i = 0; i < this.minecraft.options.keyHotbarSlots.length && i < HOTBAR_SLOT_COUNT; i++) {
             if (this.minecraft.options.keyHotbarSlots[i].matches(event)) {
+                if (hoveredSlot != null) {
+                    return true;
+                }
                 this.selectHotbarSlot(i);
                 return true;
             }
         }
 
+        if (hoveredSlot != null && this.minecraft.options.keySwapOffhand.matches(event)) {
+            return true;
+        }
+
         this.syncMovementKey(event, true);
+        return false;
+    }
+
+    private @Nullable SlotHit hoveredSlotForKeyboardInput() {
+        if (this.minecraft == null) {
+            return null;
+        }
+
+        double mouseX = this.minecraft.mouseHandler.getScaledXPos(this.minecraft.getWindow());
+        double mouseY = this.minecraft.mouseHandler.getScaledYPos(this.minecraft.getWindow());
+        return this.slotAt(mouseX, mouseY);
+    }
+
+    private boolean handleSlotKeyPressed(SlotHit hit, KeyEvent event) {
+        if (this.minecraft == null || !this.sharedCarried.isEmpty()) {
+            return false;
+        }
+
+        if (this.minecraft.options.keySwapOffhand.matches(event)) {
+            this.slotClicked(hit, Inventory.SLOT_OFFHAND, ContainerInput.SWAP);
+            return true;
+        }
+
+        for (int i = 0; i < this.minecraft.options.keyHotbarSlots.length && i < HOTBAR_SLOT_COUNT; i++) {
+            if (this.minecraft.options.keyHotbarSlots[i].matches(event)) {
+                this.slotClicked(hit, i, ContainerInput.SWAP);
+                return true;
+            }
+        }
+
+        if (!hit.slot().hasItem()) {
+            return false;
+        }
+
+        if (this.minecraft.options.keyPickItem.matches(event) && this.minecraft.player != null && this.minecraft.player.hasInfiniteMaterials()) {
+            this.slotClicked(hit, 0, ContainerInput.CLONE);
+            return true;
+        }
+
+        if (this.minecraft.options.keyDrop.matches(event)) {
+            this.slotClicked(hit, event.hasControlDown() ? 1 : 0, ContainerInput.THROW);
+            return true;
+        }
+
         return false;
     }
 
@@ -1697,6 +2278,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             if (!addition.isEmpty()) {
                 creativeWindow.creativeSearch = creativeWindow.creativeSearch + addition;
                 creativeWindow.creativeScrollRow = 0;
+                this.rememberCreativeWindow(creativeWindow);
             }
             return true;
         }
@@ -1744,6 +2326,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         for (int i = 0; i < this.windows.size(); i++) {
             InventoryWindow window = this.windows.get(i);
             if (window.kind == kind && window.session == null && window.legacyMenu == null) {
+                this.rememberCreativeWindow(window);
                 this.clearPopupStateFor(window);
                 this.windows.remove(i);
                 DesktopDebug.log("client window remove desktop={} kind={} reason=toggle", this.desktopId, kind);
@@ -1754,6 +2337,25 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         this.addWindow(kind);
         this.hotbarOnly = false;
+    }
+
+    private boolean removeStandaloneWindow(WindowKind kind, String reason) {
+        boolean removed = false;
+        for (int i = this.windows.size() - 1; i >= 0; i--) {
+            InventoryWindow window = this.windows.get(i);
+            if (window.kind == kind && window.session == null && window.legacyMenu == null) {
+                this.rememberCreativeWindow(window);
+                this.clearPopupStateFor(window);
+                this.windows.remove(i);
+                removed = true;
+                DesktopDebug.log("client window remove desktop={} kind={} reason={}", this.desktopId, kind, reason);
+            }
+        }
+
+        if (removed) {
+            this.closeIfEmpty();
+        }
+        return removed;
     }
 
     private void showWindow(WindowKind kind) {
@@ -1794,6 +2396,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 windowHeight
             );
             this.initializeCreativeWindow(window);
+            this.restoreCreativeWindow(window);
         } else if (kind == WindowKind.CHARACTER) {
             int windowWidth = 224;
             int windowHeight = 158;
@@ -2390,6 +2993,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private void closeAllWindowsAndHide() {
         DesktopDebug.log("client close all desktop={} windows={} sessions={}", this.desktopId, this.windows.size(), this.sessions.size());
         for (InventoryWindow window : List.copyOf(this.windows)) {
+            this.rememberCreativeWindow(window);
             if (window.session != null) {
                 DesktopContainerClient.closeSession(window.session.sessionId());
             } else if (window.legacyMenu != null) {
@@ -2429,6 +3033,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.editingAnvilWindow = null;
         this.editingCreativeSearchWindow = null;
         this.scrollingCreativeWindow = null;
+        this.rememberedCreativeTab = null;
+        this.rememberedCreativeScrollRow = 0;
+        this.rememberedCreativeSearch = "";
         this.dragStartSlot = null;
         this.usingWorld = false;
         this.sharedCarried = ItemStack.EMPTY;
@@ -2439,6 +3046,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         DesktopDebug.log("client control desktop={} window={} control={}", this.desktopId, window.debugName(), control);
         switch (control) {
             case CLOSE -> {
+                this.rememberCreativeWindow(window);
                 this.clearPopupStateFor(window);
                 if (window.session != null) {
                     DesktopContainerClient.closeSession(window.session.sessionId());
@@ -2590,8 +3198,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private void renderWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
         int visibleHeight = window.minimized ? TOP_BAR_HEIGHT : window.height;
         TitleBarLayout titleLayout = this.titleBarLayout(window);
+        CreativeModeTab selectedCreativeTab = window.kind == WindowKind.CREATIVE && !window.minimized ? this.selectedCreativeTab(window) : null;
+        if (selectedCreativeTab != null) {
+            this.renderCreativeTabs(graphics, window, selectedCreativeTab, false);
+        }
+
         renderNineSlice(graphics, WINDOW_TEXTURE, window.x, window.y, window.width, visibleHeight);
         graphics.text(this.font, titleLayout.displayTitle(), window.x + TITLE_LEFT_PADDING, window.y + 5, COLOR_WINDOW_TITLE, false);
+        if (selectedCreativeTab != null && this.isCreativeSearchTab(selectedCreativeTab)) {
+            this.renderCreativeSearchBox(graphics, window, titleLayout);
+        }
         this.renderControls(graphics, window, titleLayout, mouseX, mouseY);
 
         if (window.minimized) {
@@ -2606,6 +3222,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         this.renderResizeGrip(graphics, window, mouseX, mouseY);
+        if (selectedCreativeTab != null) {
+            this.renderCreativeTabs(graphics, window, selectedCreativeTab, true);
+        }
     }
 
     private void renderControls(GuiGraphicsExtractor graphics, InventoryWindow window, TitleBarLayout layout, int mouseX, int mouseY) {
@@ -2829,20 +3448,58 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         window.creativeSearch = "";
     }
 
+    private void restoreCreativeWindow(InventoryWindow window) {
+        if (window.kind != WindowKind.CREATIVE) {
+            return;
+        }
+
+        List<CreativeModeTab> tabs = this.creativeTabs();
+        if (this.rememberedCreativeTab != null && tabs.contains(this.rememberedCreativeTab)) {
+            window.creativeSelectedTab = this.rememberedCreativeTab;
+        }
+        window.creativeSearch = this.rememberedCreativeSearch;
+        this.clampCreativeScroll(window, this.rememberedCreativeScrollRow);
+        DesktopDebug.trace(
+            "client creative restore desktop={} window={} tab={} search='{}' scroll={}",
+            this.desktopId,
+            window.debugName(),
+            window.creativeSelectedTab == null ? "none" : window.creativeSelectedTab.getDisplayName().getString(),
+            window.creativeSearch,
+            window.creativeScrollRow
+        );
+    }
+
+    private void rememberCreativeWindow(InventoryWindow window) {
+        if (window.kind != WindowKind.CREATIVE) {
+            return;
+        }
+
+        CreativeModeTab selectedTab = this.selectedCreativeTab(window);
+        if (selectedTab != null) {
+            this.rememberedCreativeTab = selectedTab;
+        }
+        this.rememberedCreativeSearch = window.creativeSearch;
+        this.rememberedCreativeScrollRow = window.creativeScrollRow;
+        DesktopDebug.trace(
+            "client creative remember desktop={} window={} tab={} search='{}' scroll={}",
+            this.desktopId,
+            window.debugName(),
+            selectedTab == null ? "none" : selectedTab.getDisplayName().getString(),
+            this.rememberedCreativeSearch,
+            this.rememberedCreativeScrollRow
+        );
+    }
+
+    private void clampCreativeScroll(InventoryWindow window, int preferredScrollRow) {
+        CreativeGridLayout layout = this.creativeGridLayout(this.creativeVisibleItems(window).size());
+        window.creativeScrollRow = clamp(preferredScrollRow, 0, layout.maxScrollRow());
+    }
+
     private void renderCreativeWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
         CreativeModeTab selectedTab = this.selectedCreativeTab(window);
         if (selectedTab == null) {
             graphics.text(this.font, "No creative tabs", window.contentX(), window.contentY(), COLOR_MUTED_TEXT, false);
             return;
-        }
-
-        int panelX = creativePanelX(window);
-        int panelY = creativePanelY(window);
-        graphics.fill(panelX, panelY, panelX + CREATIVE_PANEL_WIDTH, panelY + CREATIVE_PANEL_HEIGHT, 0x22000000);
-        this.renderCreativeTabs(graphics, window, selectedTab);
-
-        if (this.isCreativeSearchTab(selectedTab)) {
-            this.renderCreativeSearchBox(graphics, window);
         }
 
         if (this.isCreativeInventoryTab(selectedTab)) {
@@ -2852,7 +3509,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
-    private void renderCreativeTabs(GuiGraphicsExtractor graphics, InventoryWindow window, CreativeModeTab selectedTab) {
+    private void renderCreativeTabs(GuiGraphicsExtractor graphics, InventoryWindow window, CreativeModeTab selectedTab, boolean selectedOnly) {
         for (CreativeModeTab tab : this.creativeTabs()) {
             CreativeTabRect rect = this.creativeTabRect(window, tab);
             if (rect == null) {
@@ -2860,6 +3517,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
 
             boolean selected = tab == selectedTab;
+            if (selected != selectedOnly) {
+                continue;
+            }
+
             Identifier sprite = this.creativeTabSprite(tab, rect.column(), selected);
             graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, rect.x(), rect.y(), CREATIVE_TAB_WIDTH, CREATIVE_TAB_HEIGHT);
             ItemStack icon = tab.getIconItem();
@@ -2870,7 +3531,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private Identifier creativeTabSprite(CreativeModeTab tab, int column, boolean selected) {
-        int index = clamp(column + 1, 1, CREATIVE_TABS_PER_ROW) - 1;
+        int spriteColumn = column == CREATIVE_TABS_PER_ROW - 1 ? CREATIVE_TABS_PER_ROW - 2 : column;
+        int index = clamp(spriteColumn + 1, 1, CREATIVE_TABS_PER_ROW) - 1;
         boolean top = tab.row() == CreativeModeTab.Row.TOP;
         if (top) {
             return selected ? CREATIVE_TOP_TAB_SELECTED_SPRITES[index] : CREATIVE_TOP_TAB_UNSELECTED_SPRITES[index];
@@ -2879,20 +3541,54 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return selected ? CREATIVE_BOTTOM_TAB_SELECTED_SPRITES[index] : CREATIVE_BOTTOM_TAB_UNSELECTED_SPRITES[index];
     }
 
-    private void renderCreativeSearchBox(GuiGraphicsExtractor graphics, InventoryWindow window) {
-        int x = creativePanelX(window) + CREATIVE_SEARCH_X;
-        int y = creativePanelY(window) + CREATIVE_SEARCH_Y;
-        blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x, y, 0, 0, 1, CREATIVE_SEARCH_HEIGHT, 1, CREATIVE_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
-        blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x + 1, y, 1, 0, CREATIVE_SEARCH_WIDTH - 2, CREATIVE_SEARCH_HEIGHT, 1, CREATIVE_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
-        blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x + CREATIVE_SEARCH_WIDTH - 1, y, 2, 0, 1, CREATIVE_SEARCH_HEIGHT, 1, CREATIVE_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
+    private void renderCreativeSearchBox(GuiGraphicsExtractor graphics, InventoryWindow window, TitleBarLayout titleLayout) {
+        CreativeSearchRect rect = this.creativeSearchRect(window, titleLayout);
+        if (rect == null) {
+            return;
+        }
 
-        String text = this.creativeSearchVisibleText(window);
+        int x = rect.x();
+        int y = rect.y();
+        int width = rect.width();
+        blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x, y, 0, 0, 1, CREATIVE_SEARCH_HEIGHT, 1, CREATIVE_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
+        blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x + 1, y, 1, 0, width - 2, CREATIVE_SEARCH_HEIGHT, 1, CREATIVE_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
+        blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x + width - 1, y, 2, 0, 1, CREATIVE_SEARCH_HEIGHT, 1, CREATIVE_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
+
+        String text = this.creativeSearchVisibleText(window, width - 8);
         int textColor = this.editingCreativeSearchWindow == window ? 0xFFFFFFFF : 0xFFE8E8E8;
         graphics.text(this.font, text, x + 4, y + 2, textColor, false);
         if (this.editingCreativeSearchWindow == window && (System.currentTimeMillis() / 300L) % 2L == 0L) {
             int cursorX = x + 4 + this.font.width(text);
             graphics.fill(cursorX, y + 2, cursorX + 1, y + 10, textColor);
         }
+    }
+
+    private @Nullable CreativeSearchRect creativeSearchRect(InventoryWindow window) {
+        return this.creativeSearchRect(window, this.titleBarLayout(window));
+    }
+
+    private @Nullable CreativeSearchRect creativeSearchRect(InventoryWindow window, TitleBarLayout titleLayout) {
+        if (window.kind != WindowKind.CREATIVE || window.minimized) {
+            return null;
+        }
+
+        CreativeModeTab selectedTab = this.selectedCreativeTab(window);
+        if (selectedTab == null || !this.isCreativeSearchTab(selectedTab)) {
+            return null;
+        }
+
+        int x = window.x + TITLE_LEFT_PADDING + this.font.width(titleLayout.displayTitle()) + CREATIVE_SEARCH_TITLE_GAP;
+        int controlsLeft = window.x + window.width - CONTROL_RIGHT_EXTRA_INSET;
+        for (ControlRect control : titleLayout.controls()) {
+            controlsLeft = Math.min(controlsLeft, control.x());
+        }
+
+        int width = controlsLeft - CREATIVE_SEARCH_CONTROLS_GAP - x;
+        if (width < CREATIVE_SEARCH_MIN_WIDTH) {
+            return null;
+        }
+
+        return new CreativeSearchRect(x, window.y + 4, width, CREATIVE_SEARCH_HEIGHT);
     }
 
     private void renderCreativeInventoryTab(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
@@ -2916,6 +3612,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (hovered) {
             renderSlotHighlightFront(graphics, deleteX, deleteY);
         }
+        this.renderCreativeInventoryScrollbar(graphics, window);
     }
 
     private void renderCreativeCatalogTab(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
@@ -2959,9 +3656,64 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private void renderCreativeScrollbar(GuiGraphicsExtractor graphics, InventoryWindow window, CreativeGridLayout layout) {
         int x = creativePanelX(window) + CREATIVE_SCROLLBAR_X;
         int y = creativePanelY(window) + CREATIVE_SCROLLBAR_Y;
+        this.renderCreativeScrollbarBackground(graphics, x - 1, y, CREATIVE_SCROLLBAR_BACKGROUND_HEIGHT);
         Identifier sprite = layout.scrollable() ? CREATIVE_SCROLLER_SPRITE : CREATIVE_SCROLLER_DISABLED_SPRITE;
         int offset = layout.maxScrollRow() == 0 ? 0 : Math.round((float) window.creativeScrollRow / (float) layout.maxScrollRow() * CREATIVE_SCROLLBAR_TRACK_HEIGHT);
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y + offset, CREATIVE_SCROLLBAR_WIDTH, CREATIVE_SCROLLBAR_HEIGHT);
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y + CREATIVE_SCROLLBAR_INSET + offset, CREATIVE_SCROLLBAR_WIDTH, CREATIVE_SCROLLBAR_HEIGHT);
+    }
+
+    private void renderCreativeInventoryScrollbar(GuiGraphicsExtractor graphics, InventoryWindow window) {
+        int x = creativePanelX(window) + CREATIVE_INVENTORY_SCROLLBAR_X;
+        int y = creativePanelY(window) + CREATIVE_INVENTORY_SCROLLBAR_Y;
+        this.renderCreativeScrollbarBackground(graphics, x - 1, y, CREATIVE_INVENTORY_SCROLLBAR_BACKGROUND_HEIGHT);
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, CREATIVE_SCROLLER_DISABLED_SPRITE, x, y + CREATIVE_SCROLLBAR_INSET, CREATIVE_SCROLLBAR_WIDTH, CREATIVE_SCROLLBAR_HEIGHT);
+    }
+
+    private void renderCreativeScrollbarBackground(GuiGraphicsExtractor graphics, int x, int y, int height) {
+        blitRegion(
+            graphics,
+            CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE,
+            x,
+            y,
+            0,
+            0,
+            CREATIVE_SCROLLBAR_BACKGROUND_WIDTH,
+            1,
+            CREATIVE_SCROLLBAR_BACKGROUND_WIDTH,
+            1,
+            CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE_WIDTH,
+            CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE_HEIGHT
+        );
+        if (height > 2) {
+            blitRegion(
+                graphics,
+                CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE,
+                x,
+                y + 1,
+                0,
+                1,
+                CREATIVE_SCROLLBAR_BACKGROUND_WIDTH,
+                height - 2,
+                CREATIVE_SCROLLBAR_BACKGROUND_WIDTH,
+                1,
+                CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE_WIDTH,
+                CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE_HEIGHT
+            );
+        }
+        blitRegion(
+            graphics,
+            CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE,
+            x,
+            y + height - 1,
+            0,
+            2,
+            CREATIVE_SCROLLBAR_BACKGROUND_WIDTH,
+            1,
+            CREATIVE_SCROLLBAR_BACKGROUND_WIDTH,
+            1,
+            CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE_WIDTH,
+            CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE_HEIGHT
+        );
     }
 
     private List<CreativeModeTab> creativeTabs() {
@@ -2991,7 +3743,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         if (window.creativeSelectedTab == null || !tabs.contains(window.creativeSelectedTab)) {
-            CreativeModeTab defaultTab = CreativeModeTabs.getDefaultTab();
+            CreativeModeTab defaultTab = this.rememberedCreativeTab != null && tabs.contains(this.rememberedCreativeTab)
+                ? this.rememberedCreativeTab
+                : CreativeModeTabs.getDefaultTab();
             window.creativeSelectedTab = tabs.contains(defaultTab) ? defaultTab : tabs.get(0);
             window.creativeScrollRow = 0;
         }
@@ -3064,12 +3818,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return new CreativeGridLayout(totalRows, Math.max(0, totalRows - CREATIVE_GRID_ROWS), totalRows > CREATIVE_GRID_ROWS);
     }
 
-    private boolean creativeMouseClicked(InventoryWindow window, MouseButtonEvent event) {
+    private boolean creativeMouseClicked(InventoryWindow window, MouseButtonEvent event, boolean doubleClick) {
         CreativeTabHit tabHit = this.creativeTabAt(window, event.x(), event.y());
         if (tabHit != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             window.creativeSelectedTab = tabHit.tab();
             window.creativeScrollRow = 0;
             this.editingCreativeSearchWindow = this.isCreativeSearchTab(tabHit.tab()) ? window : null;
+            this.rememberCreativeWindow(window);
             DesktopDebug.trace("client creative tab desktop={} window={} tab={}", this.desktopId, window.debugName(), tabHit.tab().getDisplayName().getString());
             return true;
         }
@@ -3091,7 +3846,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         if (this.isCreativeInventoryTab(selectedTab) && this.creativeDeleteSlotContains(window, event.x(), event.y())) {
             if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-                this.setSharedCarried(ItemStack.EMPTY);
+                if (this.sharedCarried.isEmpty() && this.isShiftHeld()) {
+                    this.clearCreativePlayerInventory();
+                } else {
+                    this.setSharedCarried(ItemStack.EMPTY);
+                }
             }
             return true;
         }
@@ -3108,8 +3867,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         CreativeItemHit itemHit = this.creativeItemAt(window, event.x(), event.y());
         if (itemHit != null) {
             if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+                if (!this.sharedCarried.isEmpty()) {
+                    this.setSharedCarried(ItemStack.EMPTY);
+                    return true;
+                }
+
                 ItemStack picked = itemHit.stack().copy();
-                picked.setCount(event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT ? 1 : Math.min(CREATIVE_PICKED_STACK_SIZE, picked.getMaxStackSize()));
+                picked.setCount(this.isShiftHeld() ? Math.min(CREATIVE_PICKED_STACK_SIZE, picked.getMaxStackSize()) : 1);
                 this.setSharedCarried(picked);
             }
             return true;
@@ -3117,7 +3881,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         SlotHit slotHit = this.creativeInventorySlotAt(window, event.x(), event.y());
         if (slotHit != null) {
-            this.creativePlayerSlotClicked(slotHit, event.button());
+            this.handleSlotMouseClicked(slotHit, event, doubleClick);
             return true;
         }
 
@@ -3137,6 +3901,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         int oldScroll = window.creativeScrollRow;
         window.creativeScrollRow = clamp(window.creativeScrollRow + (scrollY < 0.0 ? 1 : -1), 0, layout.maxScrollRow());
+        this.rememberCreativeWindow(window);
         DesktopDebug.trace("client creative scroll desktop={} window={} old={} new={} max={}", this.desktopId, window.debugName(), oldScroll, window.creativeScrollRow, layout.maxScrollRow());
         return true;
     }
@@ -3146,12 +3911,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         CreativeGridLayout layout = this.creativeGridLayout(items.size());
         if (!layout.scrollable()) {
             window.creativeScrollRow = 0;
+            this.rememberCreativeWindow(window);
             return;
         }
 
         int trackTop = creativePanelY(window) + CREATIVE_SCROLLBAR_Y;
-        double amount = (mouseY - trackTop - CREATIVE_SCROLLBAR_HEIGHT / 2.0D) / Math.max(1.0D, CREATIVE_SCROLLBAR_TRACK_HEIGHT);
+        double amount = (mouseY - trackTop - CREATIVE_SCROLLBAR_INSET - CREATIVE_SCROLLBAR_HEIGHT / 2.0D) / Math.max(1.0D, CREATIVE_SCROLLBAR_TRACK_HEIGHT);
         window.creativeScrollRow = clamp(Math.round((float) amount * layout.maxScrollRow()), 0, layout.maxScrollRow());
+        this.rememberCreativeWindow(window);
     }
 
     private @Nullable SlotHit creativeInventorySlotAt(InventoryWindow window, double mouseX, double mouseY) {
@@ -3236,7 +4003,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         boolean top = tab.row() == CreativeModeTab.Row.TOP;
-        int x = creativeContentX(window) + column * CREATIVE_TAB_WIDTH;
+        int x = creativeContentX(window) + CREATIVE_TAB_X_OFFSET + column * CREATIVE_TAB_WIDTH;
         int y = top ? creativeTopTabsY(window) : creativeBottomTabsY(window);
         return new CreativeTabRect(x, y, CREATIVE_TAB_WIDTH, CREATIVE_TAB_HEIGHT, column, top);
     }
@@ -3256,13 +4023,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean creativeSearchBoxContains(InventoryWindow window, double mouseX, double mouseY) {
-        return window.kind == WindowKind.CREATIVE
-            && contains(mouseX, mouseY, creativePanelX(window) + CREATIVE_SEARCH_X, creativePanelY(window) + CREATIVE_SEARCH_Y, CREATIVE_SEARCH_WIDTH, CREATIVE_SEARCH_HEIGHT);
+        CreativeSearchRect rect = this.creativeSearchRect(window);
+        return rect != null && contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height());
     }
 
     private boolean creativeScrollbarContains(InventoryWindow window, double mouseX, double mouseY) {
         return window.kind == WindowKind.CREATIVE
-            && contains(mouseX, mouseY, creativePanelX(window) + CREATIVE_SCROLLBAR_X, creativePanelY(window) + CREATIVE_SCROLLBAR_Y, CREATIVE_SCROLLBAR_WIDTH, CREATIVE_GRID_ROWS * SLOT_SIZE);
+            && contains(mouseX, mouseY, creativePanelX(window) + CREATIVE_SCROLLBAR_X - 1, creativePanelY(window) + CREATIVE_SCROLLBAR_Y, CREATIVE_SCROLLBAR_BACKGROUND_WIDTH, CREATIVE_SCROLLBAR_BACKGROUND_HEIGHT);
     }
 
     private boolean creativeDeleteSlotContains(InventoryWindow window, double mouseX, double mouseY) {
@@ -3281,46 +4048,31 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             && hit.slotId() <= 45;
     }
 
-    private void creativePlayerSlotClicked(SlotHit hit, int button) {
-        if (this.minecraft == null || this.minecraft.gameMode == null || this.minecraft.player == null) {
-            return;
-        }
-        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT && button != GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-            return;
-        }
-
-        Slot slot = hit.slot();
-        if (this.sharedCarried.isEmpty()) {
-            if (!slot.hasItem()) {
-                return;
-            }
-
-            ItemStack picked = slot.getItem().copy();
-            if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-                picked.setCount(1);
-            }
-            this.setSharedCarried(picked);
-            this.setCreativeSlot(hit, ItemStack.EMPTY);
-            return;
-        }
-
-        ItemStack placed = this.sharedCarried.copy();
-        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-            placed.setCount(1);
-        }
-        this.setCreativeSlot(hit, placed);
+    private int creativeSlotMaxStackSize(Slot slot, ItemStack stack) {
+        return Math.min(slot.getMaxStackSize(stack), stack.getMaxStackSize());
     }
 
-    private void setCreativeSlot(SlotHit hit, ItemStack stack) {
-        if (this.minecraft == null || this.minecraft.gameMode == null) {
+    private void clearCreativePlayerInventory() {
+        if (this.minecraft == null || this.minecraft.gameMode == null || this.minecraft.player == null || !this.minecraft.player.hasInfiniteMaterials()) {
             return;
         }
 
-        ItemStack copy = stack.copy();
-        hit.slot().set(copy);
-        hit.slot().setChanged();
-        this.minecraft.gameMode.handleCreativeModeItemAdd(copy, hit.slotId());
-        DesktopDebug.trace("client creative slot set desktop={} slot={} stack={}", this.desktopId, hit.slotId(), copy);
+        AbstractContainerMenu menu = this.playerMenu();
+        int cleared = 0;
+        for (int slotId = 0; slotId < menu.slots.size(); slotId++) {
+            Slot slot = menu.slots.get(slotId);
+            if (!this.isPlayerInventorySlot(slot) || !slot.hasItem()) {
+                continue;
+            }
+
+            slot.set(ItemStack.EMPTY);
+            slot.setChanged();
+            this.minecraft.gameMode.handleCreativeModeItemAdd(ItemStack.EMPTY, slotId);
+            cleared++;
+        }
+
+        this.setSharedCarried(ItemStack.EMPTY);
+        DesktopDebug.trace("client creative clear inventory desktop={} cleared={}", this.desktopId, cleared);
     }
 
     private @Nullable InventoryWindow activeCreativeSearchWindow() {
@@ -3351,12 +4103,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 int cut = window.creativeSearch.offsetByCodePoints(window.creativeSearch.length(), -1);
                 window.creativeSearch = window.creativeSearch.substring(0, cut);
                 window.creativeScrollRow = 0;
+                this.rememberCreativeWindow(window);
             }
             return true;
         }
         if (key == GLFW.GLFW_KEY_DELETE) {
             window.creativeSearch = "";
             window.creativeScrollRow = 0;
+            this.rememberCreativeWindow(window);
             return true;
         }
         if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
@@ -3367,6 +4121,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             if (!window.creativeSearch.isEmpty()) {
                 window.creativeSearch = "";
                 window.creativeScrollRow = 0;
+                this.rememberCreativeWindow(window);
             } else {
                 this.editingCreativeSearchWindow = null;
             }
@@ -3384,14 +4139,22 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return false;
         }
 
-        this.minecraft.gameMode.handleCreativeModeItemDrop(this.sharedCarried.copy());
-        this.setSharedCarried(ItemStack.EMPTY);
+        ItemStack dropped = this.isControlHeld() ? this.sharedCarried.copy() : this.sharedCarried.copyWithCount(1);
+        ItemStack remaining = this.sharedCarried.copy();
+        remaining.shrink(dropped.getCount());
+        this.minecraft.gameMode.handleCreativeModeItemDrop(dropped);
+        this.setSharedCarried(remaining);
         return true;
     }
 
-    private String creativeSearchVisibleText(InventoryWindow window) {
+    private boolean isControlHeld() {
+        return this.minecraft != null
+            && (InputConstants.isKeyDown(this.minecraft.getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)
+                || InputConstants.isKeyDown(this.minecraft.getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL));
+    }
+
+    private String creativeSearchVisibleText(InventoryWindow window, int maxWidth) {
         String text = window.creativeSearch;
-        int maxWidth = CREATIVE_SEARCH_WIDTH - 8;
         if (this.font.width(text) <= maxWidth) {
             return text;
         }
@@ -6312,7 +7075,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private static int creativeTopTabsY(InventoryWindow window) {
-        return window.y + TOP_BAR_HEIGHT + CREATIVE_CONTENT_MARGIN;
+        return window.y - CREATIVE_TAB_HEIGHT + CREATIVE_TAB_FRAME_OVERLAP + CREATIVE_TOP_TAB_Y_OFFSET;
     }
 
     private static int creativePanelX(InventoryWindow window) {
@@ -6320,11 +7083,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private static int creativePanelY(InventoryWindow window) {
-        return creativeTopTabsY(window) + CREATIVE_TAB_HEIGHT - 4;
+        return window.y + TOP_BAR_HEIGHT + CREATIVE_CONTENT_MARGIN;
     }
 
     private static int creativeBottomTabsY(InventoryWindow window) {
-        return creativePanelY(window) + CREATIVE_PANEL_HEIGHT - 4;
+        return window.y + window.height - CREATIVE_TAB_FRAME_OVERLAP + CREATIVE_BOTTOM_TAB_Y_OFFSET;
     }
 
     private static Identifier[] creativeTabSprites(String baseName) {
@@ -6457,6 +7220,46 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private record SlotHit(Slot slot, int slotId, int x, int y, AbstractContainerMenu menu, int sessionId) {
     }
 
+    private record PendingSlotClick(SlotHit hit, int button, int quickCraftType) {
+    }
+
+    private record SlotKey(int sessionId, int slotId) {
+        private static SlotKey of(SlotHit hit) {
+            return new SlotKey(hit.sessionId(), hit.slotId());
+        }
+    }
+
+    private static final class DragDistribution {
+        private final int button;
+        private final int quickCraftType;
+        private final LinkedHashMap<SlotKey, SlotHit> slots = new LinkedHashMap<>();
+
+        private DragDistribution(int button, int quickCraftType) {
+            this.button = button;
+            this.quickCraftType = quickCraftType;
+        }
+
+        private int button() {
+            return this.button;
+        }
+
+        private int quickCraftType() {
+            return this.quickCraftType;
+        }
+
+        private void add(SlotHit hit) {
+            this.slots.putIfAbsent(SlotKey.of(hit), hit);
+        }
+
+        private int size() {
+            return this.slots.size();
+        }
+
+        private List<SlotHit> slots() {
+            return List.copyOf(this.slots.values());
+        }
+    }
+
     private record BeaconButtonHit(BeaconButtonKind kind, @Nullable Holder<MobEffect> effect) {
     }
 
@@ -6470,6 +7273,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private record CreativeTabRect(int x, int y, int width, int height, int column, boolean topRow) {
+    }
+
+    private record CreativeSearchRect(int x, int y, int width, int height) {
     }
 
     private record CreativeGridLayout(int totalRows, int maxScrollRow, boolean scrollable) {
@@ -6753,7 +7559,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         private boolean contains(double mouseX, double mouseY) {
             int visibleHeight = this.minimized ? TOP_BAR_HEIGHT : this.height;
-            return InventoryDesktopScreen.contains(mouseX, mouseY, this.x, this.y, this.width, visibleHeight);
+            if (InventoryDesktopScreen.contains(mouseX, mouseY, this.x, this.y, this.width, visibleHeight)) {
+                return true;
+            }
+
+            if (this.kind != WindowKind.CREATIVE || this.minimized) {
+                return false;
+            }
+
+            int tabsX = InventoryDesktopScreen.creativeContentX(this) + CREATIVE_TAB_X_OFFSET;
+            int tabsWidth = CREATIVE_TAB_WIDTH * CREATIVE_TABS_PER_ROW;
+            return InventoryDesktopScreen.contains(mouseX, mouseY, tabsX, InventoryDesktopScreen.creativeTopTabsY(this), tabsWidth, CREATIVE_TAB_HEIGHT)
+                || InventoryDesktopScreen.contains(mouseX, mouseY, tabsX, InventoryDesktopScreen.creativeBottomTabsY(this), tabsWidth, CREATIVE_TAB_HEIGHT);
         }
 
         private boolean isTopBar(double mouseX, double mouseY) {

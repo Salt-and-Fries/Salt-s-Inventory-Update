@@ -93,7 +93,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopClickPayload(int sessionId, int slotIndex, int button, String inputName) implements CustomPacketPayload {
+    public record DesktopClickPayload(int debugId, int sessionId, int slotIndex, int button, String inputName, ItemStack clientCarried) implements CustomPacketPayload {
         public static final Type<DesktopClickPayload> TYPE = new Type<>(id("desktop_click"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopClickPayload> CODEC = CustomPacketPayload.codec(
             DesktopClickPayload::write,
@@ -101,14 +101,23 @@ public final class DesktopPackets {
         );
 
         private DesktopClickPayload(RegistryFriendlyByteBuf buf) {
-            this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf());
+            this(
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readUtf(),
+                ItemStack.OPTIONAL_STREAM_CODEC.decode(buf)
+            );
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.debugId);
             buf.writeVarInt(this.sessionId);
             buf.writeVarInt(this.slotIndex);
             buf.writeVarInt(this.button);
             buf.writeUtf(this.inputName);
+            ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, this.clientCarried);
         }
 
         @Override

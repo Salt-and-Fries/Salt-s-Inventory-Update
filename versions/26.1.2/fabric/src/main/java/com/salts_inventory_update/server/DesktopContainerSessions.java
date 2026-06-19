@@ -315,8 +315,8 @@ public final class DesktopContainerSessions {
         }
 
         if (payload.sessionId() == DesktopPackets.PLAYER_MENU_SESSION) {
-            DesktopDebug.trace("server click player-menu player={} slot={} button={} input={}", player.getName().getString(), payload.slotIndex(), payload.button(), input);
-            clickMenu(player, sessions, player.inventoryMenu, payload.slotIndex(), payload.button(), input);
+            DesktopDebug.trace("server click player-menu id={} player={} slot={} button={} input={} clientCarried={}", payload.debugId(), player.getName().getString(), payload.slotIndex(), payload.button(), input, payload.clientCarried());
+            clickMenu(payload.debugId(), player, sessions, player.inventoryMenu, payload.slotIndex(), payload.button(), input, payload.clientCarried());
             player.inventoryMenu.broadcastChanges();
             sessions.broadcastAll(player);
             return;
@@ -328,8 +328,8 @@ public final class DesktopContainerSessions {
             return;
         }
 
-        DesktopDebug.trace("server click session player={} session={} slot={} button={} input={}", player.getName().getString(), payload.sessionId(), payload.slotIndex(), payload.button(), input);
-        clickMenu(player, sessions, session.menu, payload.slotIndex(), payload.button(), input);
+        DesktopDebug.trace("server click session id={} player={} session={} slot={} button={} input={} clientCarried={}", payload.debugId(), player.getName().getString(), payload.sessionId(), payload.slotIndex(), payload.button(), input, payload.clientCarried());
+        clickMenu(payload.debugId(), player, sessions, session.menu, payload.slotIndex(), payload.button(), input, payload.clientCarried());
         session.menu.broadcastChanges();
         syncCraftingResultSlot(player, session);
         syncMerchantOffers(player, session);
@@ -683,22 +683,60 @@ public final class DesktopContainerSessions {
         return owner == target || owner instanceof CompoundContainer compoundContainer && compoundContainer.contains(target);
     }
 
-    private static void clickMenu(ServerPlayer player, PlayerSessions sessions, AbstractContainerMenu menu, int slotIndex, int button, ContainerInput input) {
+    private static void clickMenu(int debugId, ServerPlayer player, PlayerSessions sessions, AbstractContainerMenu menu, int slotIndex, int button, ContainerInput input, ItemStack clientCarried) {
         if (slotIndex < AbstractContainerMenu.SLOT_CLICKED_OUTSIDE || slotIndex >= menu.slots.size()) {
-            DesktopDebug.trace("server click ignored player={} menu={} slot={} reason=out-of-range", player.getName().getString(), menu.containerId, slotIndex);
+            DesktopDebug.trace("server click ignored id={} player={} menu={} slot={} reason=out-of-range", debugId, player.getName().getString(), menu.containerId, slotIndex);
             return;
         }
 
-        menu.setCarried(sessions.carried.copy());
+        ItemStack slotBefore = serverSlotStack(menu, slotIndex);
+        ItemStack carriedBefore = sessions.carried.copy();
+        ItemStack menuCarriedBefore = menu.getCarried().copy();
+        ItemStack effectiveCarried = player.hasInfiniteMaterials() ? clientCarried.copy() : sessions.carried.copy();
+        DesktopDebug.trace(
+            "server click before id={} player={} menu={} slot={} button={} input={} slotBefore={} sessionsCarried={} menuCarried={} clientCarried={} effectiveCarried={} creative={}",
+            debugId,
+            player.getName().getString(),
+            menu.containerId,
+            slotIndex,
+            button,
+            input,
+            slotBefore,
+            carriedBefore,
+            menuCarriedBefore,
+            clientCarried,
+            effectiveCarried,
+            player.hasInfiniteMaterials()
+        );
+        menu.setCarried(effectiveCarried);
         menu.clicked(slotIndex, button, input, player);
         sessions.carried = menu.getCarried().copy();
         player.inventoryMenu.setCarried(sessions.carried.copy());
         for (Session session : sessions.sessions.values()) {
             session.menu.setCarried(sessions.carried.copy());
         }
+        DesktopDebug.trace(
+            "server click after id={} player={} menu={} slot={} slotAfter={} sessionsCarried={} playerMenuCarried={}",
+            debugId,
+            player.getName().getString(),
+            menu.containerId,
+            slotIndex,
+            serverSlotStack(menu, slotIndex),
+            sessions.carried,
+            player.inventoryMenu.getCarried()
+        );
+    }
+
+    private static ItemStack serverSlotStack(AbstractContainerMenu menu, int slotIndex) {
+        if (slotIndex < 0 || slotIndex >= menu.slots.size()) {
+            return ItemStack.EMPTY;
+        }
+
+        return menu.slots.get(slotIndex).getItem().copy();
     }
 
     private static void syncCarried(ServerPlayer player, PlayerSessions sessions) {
+        DesktopDebug.trace("server sync carried player={} stack={}", player.getName().getString(), sessions.carried);
         send(player, new DesktopCarriedPayload(sessions.carried.copy()));
     }
 
