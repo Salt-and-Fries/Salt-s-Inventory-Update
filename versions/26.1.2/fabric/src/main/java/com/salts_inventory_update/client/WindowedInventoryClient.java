@@ -71,7 +71,7 @@ public final class WindowedInventoryClient {
             boolean hasWindows = inventoryScreen.hasWindows();
             boolean desktopActive = hasWindows || inventoryScreen.isHotbarOnly();
             inventoryScreen.setCameraControl(altDown && hasWindows);
-            syncMovementKeys(minecraft, desktopActive && !inventoryScreen.isCreativeSearchActive());
+            syncMovementKeys(minecraft, desktopActive && !inventoryScreen.isCreativeSearchActive(), !hasWindows || inventoryScreen.isCameraControlActive());
             setCameraMouseGrab(minecraft, inventoryScreen.isCameraControlActive());
 
             if (inventoryScreen.isHotbarOnly() && !altDown && inventoryScreen.canCloseHotbarOnly()) {
@@ -103,18 +103,22 @@ public final class WindowedInventoryClient {
 
     private static void syncDesktopMovementKeys(Minecraft minecraft) {
         if (minecraft.screen instanceof InventoryDesktopScreen screen && (screen.hasWindows() || screen.isHotbarOnly())) {
-            syncMovementKeys(minecraft, !screen.isCreativeSearchActive());
+            syncMovementKeys(minecraft, !screen.isCreativeSearchActive(), !screen.hasWindows() || screen.isCameraControlActive());
         }
     }
 
     public static void syncMovementKeys(Minecraft minecraft, boolean enabled) {
+        syncMovementKeys(minecraft, enabled, true);
+    }
+
+    public static void syncMovementKeys(Minecraft minecraft, boolean enabled, boolean allowShift) {
         Options options = minecraft.options;
         syncKey(minecraft, options.keyUp, enabled);
         syncKey(minecraft, options.keyLeft, enabled);
         syncKey(minecraft, options.keyDown, enabled);
         syncKey(minecraft, options.keyRight, enabled);
         syncKey(minecraft, options.keyJump, enabled);
-        syncKey(minecraft, options.keyShift, enabled);
+        syncKey(minecraft, options.keyShift, enabled && allowShift);
         syncKey(minecraft, options.keySprint, enabled);
     }
 

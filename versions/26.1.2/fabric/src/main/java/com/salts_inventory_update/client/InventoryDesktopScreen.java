@@ -52,10 +52,12 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.inventory.AbstractFurnaceMenu;
+import net.minecraft.world.inventory.AbstractCraftingMenu;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.BeaconMenu;
@@ -154,9 +156,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final Identifier CREATIVE_SEARCH_BAR_TEXTURE = WindowedInventoryClient.id("textures/gui/search_bar.png");
     private static final Identifier CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE = WindowedInventoryClient.id("textures/gui/scroll_bar_behind.png");
     private static final Identifier INCREASE_INVENTORY_BUTTON_TEXTURE = WindowedInventoryClient.id("textures/gui/increase_inventory_button.png");
+    private static final Identifier MODEL_DISPLAY_TEXTURE = WindowedInventoryClient.id("textures/gui/3d_model_display.png");
     private static final Identifier SLOT_HIGHLIGHT_BACK_SPRITE = Identifier.withDefaultNamespace("container/slot_highlight_back");
     private static final Identifier SLOT_HIGHLIGHT_FRONT_SPRITE = Identifier.withDefaultNamespace("container/slot_highlight_front");
     private static final Identifier HOTBAR_OFFHAND_LEFT_SPRITE = Identifier.withDefaultNamespace("hud/hotbar_offhand_left");
+    private static final Identifier INVENTORY_EFFECT_BACKGROUND_SPRITE = Identifier.withDefaultNamespace("container/inventory/effect_background");
+    private static final Identifier INVENTORY_EFFECT_BACKGROUND_AMBIENT_SPRITE = Identifier.withDefaultNamespace("container/inventory/effect_background_ambient");
     private static final int WINDOW_TEXTURE_SIZE = 11;
     private static final int WINDOW_EDGE_SIZE = 5;
     private static final int CONTROL_TEXTURE_WIDTH = CONTROL_SIZE * 9;
@@ -191,6 +196,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int INCREASE_INVENTORY_BUTTON_TEXTURE_WIDTH = 36;
     private static final int INCREASE_INVENTORY_BUTTON_TEXTURE_HEIGHT = 18;
     private static final int INCREASE_INVENTORY_BUTTON_FRAME_SIZE = 18;
+    private static final int MODEL_DISPLAY_TEXTURE_SIZE = 3;
     private static final int SLOT_HIGHLIGHT_SIZE = 24;
     private static final int SLOT_HIGHLIGHT_OFFSET = 4;
     private static final int WIDGET_FLAME_EMPTY_X = 0;
@@ -205,6 +211,53 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int WIDGET_ARROW_FULL_Y = 14;
     private static final int WIDGET_ARROW_WIDTH = 24;
     private static final int WIDGET_ARROW_HEIGHT = 16;
+    private static final int CHARACTER_WINDOW_WIDTH = 180;
+    private static final int CHARACTER_WINDOW_HEIGHT = 136;
+    private static final int CHARACTER_CONTENT_MARGIN = 6;
+    private static final int CHARACTER_ARMOR_X = 0;
+    private static final int CHARACTER_ARMOR_Y = 0;
+    private static final int CHARACTER_MODEL_X = 22;
+    private static final int CHARACTER_MODEL_Y = 0;
+    private static final int CHARACTER_MODEL_WIDTH = 50;
+    private static final int CHARACTER_MODEL_HEIGHT = 72;
+    private static final int CHARACTER_MODEL_SCALE = 28;
+    private static final int CHARACTER_STATS_X = 0;
+    private static final int CHARACTER_STATS_Y = 78;
+    private static final int CHARACTER_STATS_VALUE_X = 54;
+    private static final int CHARACTER_STATS_LINE_HEIGHT = 10;
+    private static final int CHARACTER_CRAFT_X = 88;
+    private static final int CHARACTER_CRAFT_Y = 22;
+    private static final int CHARACTER_CRAFT_ARROW_X = 125;
+    private static final int CHARACTER_CRAFT_ARROW_Y = 31;
+    private static final int CHARACTER_CRAFT_RESULT_X = 150;
+    private static final int CHARACTER_CRAFT_RESULT_Y = 31;
+    private static final int CHARACTER_EFFECT_GAP = 4;
+    private static final int CHARACTER_EFFECT_WIDTH = 120;
+    private static final int CHARACTER_EFFECT_HEIGHT = 32;
+    private static final int CHARACTER_EFFECT_ICON_SIZE = 18;
+    private static final int CHARACTER_EFFECT_ICON_X = 7;
+    private static final int CHARACTER_EFFECT_ICON_Y = 7;
+    private static final int CHARACTER_EFFECT_TEXT_X = 32;
+    private static final int CHARACTER_EFFECT_NAME_Y = 7;
+    private static final int CHARACTER_EFFECT_DURATION_Y = 17;
+    private static final int CHARACTER_EFFECT_NAME_COLOR = 0xFFFFFFFF;
+    private static final int CHARACTER_EFFECT_DURATION_COLOR = 0xFF7F7F7F;
+    private static final int MOUNT_SADDLE_SLOT = 0;
+    private static final int MOUNT_BODY_SLOT = 1;
+    private static final int MOUNT_STORAGE_START_SLOT = 2;
+    private static final int MOUNT_STORAGE_ROWS = 3;
+    private static final int MOUNT_EQUIPMENT_X = 0;
+    private static final int MOUNT_EQUIPMENT_Y = 9;
+    private static final int MOUNT_MODEL_X = 26;
+    private static final int MOUNT_MODEL_Y = 0;
+    private static final int MOUNT_MODEL_WIDTH = 70;
+    private static final int MOUNT_MODEL_HEIGHT = 54;
+    private static final int MOUNT_MODEL_SCALE = 17;
+    private static final float MOUNT_MODEL_MOUSE_SCALE = 0.25F;
+    private static final int MOUNT_STORAGE_GAP = 8;
+    private static final int MOUNT_STORAGE_X = MOUNT_MODEL_X + MOUNT_MODEL_WIDTH + MOUNT_STORAGE_GAP;
+    private static final int MOUNT_STORAGE_Y = 0;
+    private static final int MOUNT_CONTENT_HEIGHT = Math.max(MOUNT_MODEL_HEIGHT, MOUNT_STORAGE_ROWS * SLOT_SIZE);
     private static final int FURNACE_CONTENT_MARGIN = 6;
     private static final int FURNACE_CONTENT_WIDTH = 90;
     private static final int FURNACE_CONTENT_HEIGHT = 58;
@@ -1504,7 +1557,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
-        if (vanillaDoubleClick && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && !this.sharedCarried.isEmpty()) {
+        if (vanillaDoubleClick && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && !this.sharedCarried.isEmpty() && !isCraftingResultSlot(hit)) {
             DesktopDebug.trace("client slot mouse branch pickup-all desktop={} hit={} carried={}", this.desktopId, this.describeSlotHit(hit), this.sharedCarried);
             this.slotClicked(hit, GLFW.GLFW_MOUSE_BUTTON_LEFT, ContainerInput.PICKUP_ALL);
             return true;
@@ -2011,6 +2064,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    private static boolean isCraftingResultSlot(SlotHit hit) {
+        return hit.menu() instanceof AbstractCraftingMenu craftingMenu && hit.slot() == craftingMenu.getResultSlot();
+    }
+
     private String describePendingClick() {
         PendingSlotClick pending = this.pendingSlotClick;
         if (pending == null) {
@@ -2413,10 +2470,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         } else if (this.minecraft.options.keyJump.matches(event)) {
             this.minecraft.options.keyJump.setDown(down);
         } else if (this.minecraft.options.keyShift.matches(event)) {
-            this.minecraft.options.keyShift.setDown(down);
+            this.minecraft.options.keyShift.setDown(down && this.shouldPassShiftToMovement());
         } else if (this.minecraft.options.keySprint.matches(event)) {
             this.minecraft.options.keySprint.setDown(down);
         }
+    }
+
+    private boolean shouldPassShiftToMovement() {
+        return !this.hasWindows() || this.isCameraControlActive();
     }
 
     private void toggleWindow(WindowKind kind) {
@@ -2496,15 +2557,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.initializeCreativeWindow(window);
             this.restoreCreativeWindow(window);
         } else if (kind == WindowKind.CHARACTER) {
-            int windowWidth = 224;
-            int windowHeight = 158;
             window = new InventoryWindow(
                 kind,
                 Component.literal("Character"),
                 0,
                 0,
-                windowWidth,
-                windowHeight
+                CHARACTER_WINDOW_WIDTH,
+                CHARACTER_WINDOW_HEIGHT
             );
             this.placeOrRestoreWindow(window, WindowPlacement.BOTTOM_LEFT);
         } else {
@@ -2599,8 +2658,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.sessions.add(session);
         session.setCarried(this.sharedCarried);
 
-        int windowWidth = this.containerWindowWidth(session.menu(), session.title(), session.containerSlots().size(), session.contentWidth());
-        int windowHeight = containerWindowHeight(session.menu(), session.containerSlots().size(), session.contentHeight());
+        int windowWidth = session.isMountSession()
+            ? this.mountWindowWidth(session, session.title())
+            : this.containerWindowWidth(session.menu(), session.title(), session.containerSlots().size(), session.contentWidth());
+        int windowHeight = session.isMountSession()
+            ? mountWindowHeight()
+            : containerWindowHeight(session.menu(), session.containerSlots().size(), session.contentHeight());
         InventoryWindow window = new InventoryWindow(
             WindowKind.CONTAINER,
             session.title(),
@@ -2794,6 +2857,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return false;
         }
 
+        if (window.session != null && window.session.isMountSession()) {
+            return false;
+        }
+
         AbstractContainerMenu menu = window.containerMenu();
         if (menu == null) {
             return false;
@@ -2885,6 +2952,30 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private static int storageWindowHeight(int rows) {
         return TOP_BAR_HEIGHT + WINDOW_CONTENT_PADDING * 2 + rows * SLOT_SIZE;
+    }
+
+    private int mountWindowWidth(DesktopContainerSession session, Component title) {
+        int storageColumns = this.mountStorageColumns(session);
+        int contentWidth = MOUNT_MODEL_X + MOUNT_MODEL_WIDTH;
+        if (storageColumns > 0) {
+            contentWidth = MOUNT_STORAGE_X + storageColumns * SLOT_SIZE;
+        }
+
+        return Math.max(this.fullTitleBarWidth(title), WINDOW_CONTENT_PADDING * 2 + contentWidth);
+    }
+
+    private static int mountWindowHeight() {
+        return TOP_BAR_HEIGHT + WINDOW_CONTENT_PADDING * 2 + MOUNT_CONTENT_HEIGHT;
+    }
+
+    private int mountStorageColumns(DesktopContainerSession session) {
+        int storageSlotCount = Math.max(0, session.containerSlots().size() - MOUNT_STORAGE_START_SLOT);
+        if (storageSlotCount <= 0) {
+            return 0;
+        }
+
+        int neededColumns = rowsForSlots(storageSlotCount, MOUNT_STORAGE_ROWS);
+        return session.columns() > 0 ? Math.min(session.columns(), neededColumns) : neededColumns;
     }
 
     private int containerWindowWidth(AbstractContainerMenu menu, Component title, int slotCount, int contentWidth) {
@@ -3071,6 +3162,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void placeWindow(InventoryWindow window, WindowPlacement placement) {
+        this.forceFixedWindowSize(window);
         this.clampInitialWindowSize(window);
         WindowPosition position = switch (placement) {
             case CENTER -> this.centeredWindowPosition(window.width, window.height);
@@ -3096,6 +3188,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             window.width = state.width;
             window.height = state.height;
         }
+        this.forceFixedWindowSize(window);
 
         this.clampInitialWindowSize(window);
         if (window.pinMode == PinMode.UNPINNED) {
@@ -3171,6 +3264,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private void clampWindowIntoDesktop(InventoryWindow window) {
         window.x = this.clampedWindowX(window.x, window.width);
         window.y = this.clampedWindowY(window.y, window.minimized ? TOP_BAR_HEIGHT : window.height);
+    }
+
+    private void forceFixedWindowSize(InventoryWindow window) {
+        if (window.kind == WindowKind.CHARACTER) {
+            window.width = CHARACTER_WINDOW_WIDTH;
+            window.height = CHARACTER_WINDOW_HEIGHT;
+        } else if (window.session != null && window.session.isMountSession()) {
+            window.width = this.mountWindowWidth(window.session, window.title);
+            window.height = mountWindowHeight();
+        }
     }
 
     private void clampInitialWindowSize(InventoryWindow window) {
@@ -4736,6 +4839,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return;
         }
 
+        if (window.session != null && window.session.isMountSession()) {
+            this.renderMountWindow(graphics, window, slots, menu, mouseX, mouseY);
+            return;
+        }
+
         if (menu instanceof AbstractFurnaceMenu furnaceMenu) {
             this.renderFurnaceWindow(graphics, window, slots, furnaceMenu, mouseX, mouseY);
             return;
@@ -4802,6 +4910,125 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             int y = window.contentY() + slot.y - minY;
             this.renderSlot(graphics, slot, x, y, mouseX, mouseY);
         }
+    }
+
+    private void renderMountWindow(GuiGraphicsExtractor graphics, InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, int mouseX, int mouseY) {
+        DesktopContainerSession session = window.session;
+        if (session == null) {
+            return;
+        }
+
+        int contentX = window.contentX();
+        int contentY = window.contentY();
+        this.renderMountSlotIfPresent(graphics, slots, MOUNT_SADDLE_SLOT, contentX + MOUNT_EQUIPMENT_X, contentY + MOUNT_EQUIPMENT_Y, mouseX, mouseY);
+        this.renderMountSlotIfPresent(graphics, slots, MOUNT_BODY_SLOT, contentX + MOUNT_EQUIPMENT_X, contentY + MOUNT_EQUIPMENT_Y + SLOT_SIZE, mouseX, mouseY);
+
+        int modelX0 = contentX + MOUNT_MODEL_X;
+        int modelY0 = contentY + MOUNT_MODEL_Y;
+        int modelX1 = modelX0 + MOUNT_MODEL_WIDTH;
+        int modelY1 = modelY0 + MOUNT_MODEL_HEIGHT;
+        renderOnePixelNineSlice(graphics, MODEL_DISPLAY_TEXTURE, modelX0, modelY0, MOUNT_MODEL_WIDTH, MOUNT_MODEL_HEIGHT);
+        LivingEntity mount = session.mountEntity(this.minecraft);
+        if (mount != null) {
+            InventoryScreen.extractEntityInInventoryFollowsMouse(
+                graphics,
+                modelX0,
+                modelY0,
+                modelX1,
+                modelY1,
+                MOUNT_MODEL_SCALE,
+                MOUNT_MODEL_MOUSE_SCALE,
+                mouseX,
+                mouseY,
+                mount
+            );
+        }
+
+        int storageColumns = this.mountStorageColumns(session);
+        for (int column = 0; column < storageColumns; column++) {
+            for (int row = 0; row < MOUNT_STORAGE_ROWS; row++) {
+                int slotIndex = MOUNT_STORAGE_START_SLOT + row * storageColumns + column;
+                this.renderMountSlotIfPresent(
+                    graphics,
+                    slots,
+                    slotIndex,
+                    contentX + MOUNT_STORAGE_X + column * SLOT_SIZE,
+                    contentY + MOUNT_STORAGE_Y + row * SLOT_SIZE,
+                    mouseX,
+                    mouseY
+                );
+            }
+        }
+    }
+
+    private void renderMountSlotIfPresent(GuiGraphicsExtractor graphics, List<Slot> slots, int slotIndex, int x, int y, int mouseX, int mouseY) {
+        Slot slot = mountSlot(slots, slotIndex);
+        if (slot != null && slot.isActive()) {
+            this.renderSlot(graphics, slot, x, y, mouseX, mouseY);
+        }
+    }
+
+    private static @Nullable Slot mountSlot(List<Slot> slots, int slotIndex) {
+        return slotIndex >= 0 && slotIndex < slots.size() ? slots.get(slotIndex) : null;
+    }
+
+    private @Nullable SlotHit mountSlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
+        SlotHit saddleHit = this.mountSlotHitAt(window, slots, menu, MOUNT_SADDLE_SLOT, window.contentX() + MOUNT_EQUIPMENT_X, window.contentY() + MOUNT_EQUIPMENT_Y, mouseX, mouseY);
+        if (saddleHit != null) {
+            return saddleHit;
+        }
+
+        SlotHit bodyHit = this.mountSlotHitAt(window, slots, menu, MOUNT_BODY_SLOT, window.contentX() + MOUNT_EQUIPMENT_X, window.contentY() + MOUNT_EQUIPMENT_Y + SLOT_SIZE, mouseX, mouseY);
+        if (bodyHit != null) {
+            return bodyHit;
+        }
+
+        if (window.session == null) {
+            return null;
+        }
+
+        int storageColumns = this.mountStorageColumns(window.session);
+        for (int column = 0; column < storageColumns; column++) {
+            for (int row = 0; row < MOUNT_STORAGE_ROWS; row++) {
+                int slotIndex = MOUNT_STORAGE_START_SLOT + row * storageColumns + column;
+                SlotHit hit = this.mountSlotHitAt(
+                    window,
+                    slots,
+                    menu,
+                    slotIndex,
+                    window.contentX() + MOUNT_STORAGE_X + column * SLOT_SIZE,
+                    window.contentY() + MOUNT_STORAGE_Y + row * SLOT_SIZE,
+                    mouseX,
+                    mouseY
+                );
+                if (hit != null) {
+                    return hit;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private @Nullable SlotHit mountSlotHitAt(
+        InventoryWindow window,
+        List<Slot> slots,
+        AbstractContainerMenu menu,
+        int slotIndex,
+        int slotX,
+        int slotY,
+        double mouseX,
+        double mouseY
+    ) {
+        Slot slot = mountSlot(slots, slotIndex);
+        if (slot == null || !slot.isActive()) {
+            return null;
+        }
+        if (!contains(mouseX, mouseY, slotX - 1, slotY - 1, SLOT_SIZE, SLOT_SIZE)) {
+            return null;
+        }
+
+        return new SlotHit(slot, menu.slots.indexOf(slot), slotX, slotY, menu, window.sessionId());
     }
 
     private void renderFurnaceWindow(
@@ -7192,6 +7419,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return window.y + TOP_BAR_HEIGHT + CARTOGRAPHY_CONTENT_MARGIN;
     }
 
+    private static int characterContentX(InventoryWindow window) {
+        return window.x + CHARACTER_CONTENT_MARGIN;
+    }
+
+    private static int characterContentY(InventoryWindow window) {
+        return window.y + TOP_BAR_HEIGHT + CHARACTER_CONTENT_MARGIN;
+    }
+
     private void renderCompactSlots(GuiGraphicsExtractor graphics, InventoryWindow window, List<Slot> slots, SlotGridLayout layout, int mouseX, int mouseY) {
         int firstVisibleSlot = window.scrollRow * layout.columns();
         for (int row = 0; row < layout.visibleRows(); row++) {
@@ -7296,58 +7531,82 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void renderCharacterWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
         AbstractContainerMenu menu = this.playerMenu();
-        int x = window.contentX();
-        int y = window.contentY();
-        graphics.text(this.font, "Armor", x, y, this.uiColor(COLOR_MUTED_TEXT), false);
+        int contentX = characterContentX(window);
+        int contentY = characterContentY(window);
+        int armorX = contentX + CHARACTER_ARMOR_X;
+        int armorY = contentY + CHARACTER_ARMOR_Y;
         for (int i = 0; i < 4; i++) {
             int index = 5 + i;
             if (index < menu.slots.size()) {
-                this.renderSlot(graphics, menu.slots.get(index), x, y + 12 + i * SLOT_SIZE, mouseX, mouseY);
+                this.renderSlot(graphics, menu.slots.get(index), armorX, armorY + i * SLOT_SIZE, mouseX, mouseY);
             }
         }
 
-        int modelX0 = x + 36;
-        int modelY0 = y + 12;
-        int modelX1 = x + 86;
-        int modelY1 = y + 96;
-        graphics.outline(modelX0, modelY0, modelX1 - modelX0, modelY1 - modelY0, this.uiColor(0xFF596273));
+        int modelX0 = contentX + CHARACTER_MODEL_X;
+        int modelY0 = contentY + CHARACTER_MODEL_Y;
+        int modelX1 = modelX0 + CHARACTER_MODEL_WIDTH;
+        int modelY1 = modelY0 + CHARACTER_MODEL_HEIGHT;
+        renderOnePixelNineSlice(graphics, MODEL_DISPLAY_TEXTURE, modelX0, modelY0, CHARACTER_MODEL_WIDTH, CHARACTER_MODEL_HEIGHT);
         if (this.minecraft.player != null) {
-            InventoryScreen.extractEntityInInventoryFollowsMouse(graphics, modelX0, modelY0, modelX1, modelY1, 30, 0.0625F, mouseX, mouseY, this.minecraft.player);
+            InventoryScreen.extractEntityInInventoryFollowsMouse(graphics, modelX0, modelY0, modelX1, modelY1, CHARACTER_MODEL_SCALE, 0.0625F, mouseX, mouseY, this.minecraft.player);
         }
 
-        this.renderStats(graphics, x + 96, y + 12);
-        this.renderCraftingSlots(graphics, window, mouseX, mouseY);
+        this.renderCharacterStats(graphics, contentX + CHARACTER_STATS_X, contentY + CHARACTER_STATS_Y);
+        this.renderCharacterCraftingSlots(graphics, window, mouseX, mouseY);
+        this.renderCharacterEffects(graphics, window);
     }
 
-    private void renderStats(GuiGraphicsExtractor graphics, int x, int y) {
+    private void renderCharacterStats(GuiGraphicsExtractor graphics, int x, int y) {
         Player player = this.minecraft.player;
         if (player == null) {
             return;
         }
 
         FoodData food = player.getFoodData();
-        graphics.text(this.font, "HP " + Math.round(player.getHealth()) + "/" + Math.round(player.getMaxHealth()), x, y, this.uiColor(COLOR_TEXT), false);
-        this.renderBar(graphics, x, y + 11, 86, player.getHealth() / player.getMaxHealth(), 0xFF7E2E3A);
-        graphics.text(this.font, "Hunger " + food.getFoodLevel() + "/20", x, y + 25, this.uiColor(COLOR_TEXT), false);
-        this.renderBar(graphics, x, y + 36, 86, food.getFoodLevel() / 20.0F, 0xFF8A6730);
-        graphics.text(this.font, "XP Lv " + player.experienceLevel, x, y + 50, this.uiColor(COLOR_TEXT), false);
-        this.renderBar(graphics, x, y + 61, 86, player.experienceProgress, 0xFF3C7F4C);
+        this.renderCharacterStatLine(graphics, x, y, "Health", Math.round(player.getHealth()) + "/" + Math.round(player.getMaxHealth()));
+        this.renderCharacterStatLine(graphics, x, y + CHARACTER_STATS_LINE_HEIGHT, "Hunger", food.getFoodLevel() + "/20");
+        this.renderCharacterStatLine(graphics, x, y + CHARACTER_STATS_LINE_HEIGHT * 2, "XP", Integer.toString(player.experienceLevel));
+    }
 
-        int effectY = y + 76;
-        Collection<MobEffectInstance> effects = player.getActiveEffects();
-        if (effects.isEmpty()) {
-            graphics.text(this.font, "No effects", x, effectY, this.uiColor(COLOR_MUTED_TEXT), false);
+    private void renderCharacterStatLine(GuiGraphicsExtractor graphics, int x, int y, String label, String value) {
+        graphics.text(this.font, label, x, y, this.uiColor(COLOR_WINDOW_TITLE), false);
+        graphics.text(this.font, value, x + CHARACTER_STATS_VALUE_X, y, this.uiColor(COLOR_WINDOW_TITLE), false);
+    }
+
+    private void renderCharacterEffects(GuiGraphicsExtractor graphics, InventoryWindow window) {
+        Player player = this.minecraft.player;
+        if (player == null || player.getActiveEffects().isEmpty()) {
             return;
         }
 
+        int x = Math.min(window.x + window.width + CHARACTER_EFFECT_GAP, Math.max(0, this.desktopWidth() - CHARACTER_EFFECT_WIDTH - 2));
+        int y = Math.max(2, window.y + TOP_BAR_HEIGHT);
+        int maxRows = Math.max(1, (this.desktopHeight() - y - 2) / CHARACTER_EFFECT_HEIGHT);
+        Collection<MobEffectInstance> effectCollection = player.getActiveEffects();
+        List<MobEffectInstance> effects = new ArrayList<>(effectCollection);
+        effects.sort(null);
+        int visibleEffectRows = effects.size() > maxRows ? Math.max(0, maxRows - 1) : maxRows;
         int rendered = 0;
         for (MobEffectInstance effect : effects) {
-            if (rendered >= 3) {
-                graphics.text(this.font, "+" + (effects.size() - rendered) + " more", x, effectY + rendered * 10, this.uiColor(COLOR_MUTED_TEXT), false);
+            if (rendered >= visibleEffectRows) {
                 break;
             }
-            graphics.text(this.font, Component.translatable(effect.getDescriptionId()), x, effectY + rendered * 10, this.uiColor(COLOR_MUTED_TEXT), false);
+            int rowY = y + rendered * CHARACTER_EFFECT_HEIGHT;
+            Identifier background = effect.getEffect().value().isBeneficial()
+                ? INVENTORY_EFFECT_BACKGROUND_SPRITE
+                : INVENTORY_EFFECT_BACKGROUND_AMBIENT_SPRITE;
+            this.blitSprite(graphics, background, x, rowY, CHARACTER_EFFECT_WIDTH, CHARACTER_EFFECT_HEIGHT);
+            Identifier effectSprite = this.minecraft.gui.getMobEffectSprite(effect.getEffect());
+            this.blitSprite(graphics, effectSprite, x + CHARACTER_EFFECT_ICON_X, rowY + CHARACTER_EFFECT_ICON_Y, CHARACTER_EFFECT_ICON_SIZE, CHARACTER_EFFECT_ICON_SIZE);
+            graphics.text(this.font, Component.translatable(effect.getDescriptionId()), x + CHARACTER_EFFECT_TEXT_X, rowY + CHARACTER_EFFECT_NAME_Y, this.uiColor(CHARACTER_EFFECT_NAME_COLOR), false);
+            graphics.text(this.font, effectDurationText(effect), x + CHARACTER_EFFECT_TEXT_X, rowY + CHARACTER_EFFECT_DURATION_Y, this.uiColor(CHARACTER_EFFECT_DURATION_COLOR), false);
             rendered++;
+        }
+
+        if (rendered < effects.size()) {
+            int rowY = y + rendered * CHARACTER_EFFECT_HEIGHT;
+            this.blitSprite(graphics, INVENTORY_EFFECT_BACKGROUND_SPRITE, x, rowY, CHARACTER_EFFECT_WIDTH, CHARACTER_EFFECT_HEIGHT);
+            graphics.text(this.font, "+" + (effects.size() - rendered) + " more", x + 8, rowY + 8, this.uiColor(CHARACTER_EFFECT_NAME_COLOR), false);
         }
     }
 
@@ -7358,17 +7617,40 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         graphics.outline(x, y, width, 5, this.uiColor(0xFF697386));
     }
 
-    private void renderCraftingSlots(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+    private void renderCharacterCraftingSlots(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
         AbstractContainerMenu menu = this.playerMenu();
-        int craftX = window.x + 148;
-        int craftY = window.y + 82;
-        graphics.text(this.font, "Craft", craftX, craftY - 12, this.uiColor(COLOR_MUTED_TEXT), false);
+        int contentX = characterContentX(window);
+        int contentY = characterContentY(window);
+        int craftX = contentX + CHARACTER_CRAFT_X;
+        int craftY = contentY + CHARACTER_CRAFT_Y;
         this.renderSlotIfPresent(graphics, menu, 1, craftX, craftY, mouseX, mouseY);
         this.renderSlotIfPresent(graphics, menu, 2, craftX + SLOT_SIZE, craftY, mouseX, mouseY);
         this.renderSlotIfPresent(graphics, menu, 3, craftX, craftY + SLOT_SIZE, mouseX, mouseY);
         this.renderSlotIfPresent(graphics, menu, 4, craftX + SLOT_SIZE, craftY + SLOT_SIZE, mouseX, mouseY);
-        graphics.text(this.font, ">", craftX + 42, craftY + 10, this.uiColor(COLOR_MUTED_TEXT), false);
-        this.renderSlotIfPresent(graphics, menu, 0, craftX + 56, craftY + 9, mouseX, mouseY);
+        blitRegion(
+            graphics,
+            CONTAINER_WIDGETS_TEXTURE,
+            contentX + CHARACTER_CRAFT_ARROW_X,
+            contentY + CHARACTER_CRAFT_ARROW_Y,
+            WIDGET_ARROW_EMPTY_X,
+            WIDGET_ARROW_EMPTY_Y,
+            WIDGET_ARROW_WIDTH,
+            WIDGET_ARROW_HEIGHT,
+            WIDGET_ARROW_WIDTH,
+            WIDGET_ARROW_HEIGHT,
+            CONTAINER_WIDGETS_TEXTURE_WIDTH,
+            CONTAINER_WIDGETS_TEXTURE_HEIGHT
+        );
+        this.renderSlotIfPresent(graphics, menu, 0, contentX + CHARACTER_CRAFT_RESULT_X, contentY + CHARACTER_CRAFT_RESULT_Y, mouseX, mouseY);
+    }
+
+    private static String effectDurationText(MobEffectInstance effect) {
+        if (effect.isInfiniteDuration()) {
+            return "**:**";
+        }
+
+        int seconds = Math.max(0, effect.getDuration() / 20);
+        return seconds / 60 + ":" + String.format("%02d", seconds % 60);
     }
 
     private void renderSlotIfPresent(GuiGraphicsExtractor graphics, AbstractContainerMenu menu, int slotIndex, int x, int y, int mouseX, int mouseY) {
@@ -7386,7 +7668,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (slot.hasItem()) {
             this.renderItemStack(graphics, slot.getItem(), x, y, slot.index);
         } else if (slot.getNoItemIcon() != null) {
-            graphics.centeredText(this.font, ".", x + 8, y + 4, this.uiColor(COLOR_MUTED_TEXT));
+            this.blitSprite(graphics, slot.getNoItemIcon(), x, y, SLOT_ITEM_SIZE, SLOT_ITEM_SIZE);
         }
         if (hovered && slot.isHighlightable()) {
             renderSlotHighlightFront(graphics, x, y);
@@ -7495,6 +7777,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int offhandX = offhandSlotX();
         int hotbarY = hotbarY();
         this.blitSprite(graphics, HOTBAR_OFFHAND_LEFT_SPRITE, offhandX - 3, hotbarY - 4, 29, 24);
+        boolean offhandHovered = offhandSlot != null && contains(mouseX, mouseY, offhandX - 1, hotbarY - 1, SLOT_SIZE, SLOT_SIZE);
+        if (offhandHovered) {
+            graphics.fill(offhandX, hotbarY, offhandX + SLOT_ITEM_SIZE, hotbarY + SLOT_ITEM_SIZE, COLOR_HOTBAR_HOVER);
+        }
+        if (offhandSlot != null && offhandSlot.hasItem()) {
+            this.renderItemStack(graphics, offhandSlot.getItem(), offhandX, hotbarY, offhandSlot.index);
+        }
 
         for (Slot slot : this.hotbarSlots()) {
             int x = hotbarSlotX(slot.getContainerSlot());
@@ -7504,9 +7793,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
         }
 
-        if (offhandSlot != null && contains(mouseX, mouseY, offhandX - 1, hotbarY - 1, SLOT_SIZE, SLOT_SIZE)) {
-            this.renderHotbarHover(graphics, offhandSlot, offhandX, hotbarY);
-        }
+        // Offhand hover is handled above so the item always renders over the frame.
     }
 
     private void renderHotbarHover(GuiGraphicsExtractor graphics, Slot slot, int x, int y) {
@@ -7592,6 +7879,37 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
         if (centerWidth > 0 && centerHeight > 0) {
             blitRegion(graphics, texture, x + edge, y + edge, 5, 5, centerWidth, centerHeight, 1, 1, WINDOW_TEXTURE_SIZE, WINDOW_TEXTURE_SIZE);
+        }
+    }
+
+    private static void renderOnePixelNineSlice(GuiGraphicsExtractor graphics, Identifier texture, int x, int y, int width, int height) {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+
+        int edge = Math.min(1, Math.min(width, height) / 2);
+        if (edge <= 0) {
+            blitRegion(graphics, texture, x, y, 1, 1, width, height, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+            return;
+        }
+
+        int centerWidth = Math.max(0, width - 2);
+        int centerHeight = Math.max(0, height - 2);
+        blitRegion(graphics, texture, x, y, 0, 0, 1, 1, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+        blitRegion(graphics, texture, x + width - 1, y, 2, 0, 1, 1, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+        blitRegion(graphics, texture, x, y + height - 1, 0, 2, 1, 1, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+        blitRegion(graphics, texture, x + width - 1, y + height - 1, 2, 2, 1, 1, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+
+        if (centerWidth > 0) {
+            blitRegion(graphics, texture, x + 1, y, 1, 0, centerWidth, 1, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+            blitRegion(graphics, texture, x + 1, y + height - 1, 1, 2, centerWidth, 1, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+        }
+        if (centerHeight > 0) {
+            blitRegion(graphics, texture, x, y + 1, 0, 1, 1, centerHeight, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+            blitRegion(graphics, texture, x + width - 1, y + 1, 2, 1, 1, centerHeight, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+        }
+        if (centerWidth > 0 && centerHeight > 0) {
+            blitRegion(graphics, texture, x + 1, y + 1, 1, 1, centerWidth, centerHeight, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
         }
     }
 
@@ -8389,6 +8707,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 }
 
                 List<Slot> slots = this.containerSlots();
+                if (this.session != null && this.session.isMountSession()) {
+                    return screen.mountSlotAt(this, slots, menu, mouseX, mouseY);
+                }
                 if (menu instanceof AbstractFurnaceMenu) {
                     return screen.furnaceSlotAt(this, slots, menu, mouseX, mouseY);
                 }
@@ -8464,8 +8785,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 return screen.creativeInventorySlotAt(this, mouseX, mouseY);
             } else {
                 AbstractContainerMenu playerMenu = screen.playerMenu();
-                int armorX = this.contentX();
-                int armorY = this.contentY() + 12;
+                int contentX = characterContentX(this);
+                int contentY = characterContentY(this);
+                int armorX = contentX + CHARACTER_ARMOR_X;
+                int armorY = contentY + CHARACTER_ARMOR_Y;
                 for (int i = 0; i < 4; i++) {
                     int slotIndex = 5 + i;
                     int slotY = armorY + i * SLOT_SIZE;
@@ -8475,11 +8798,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     }
                 }
 
-                int craftX = this.x + 148;
-                int craftY = this.y + 82;
+                int craftX = contentX + CHARACTER_CRAFT_X;
+                int craftY = contentY + CHARACTER_CRAFT_Y;
                 int[] slotIndexes = {1, 2, 3, 4, 0};
-                int[] slotXs = {craftX, craftX + SLOT_SIZE, craftX, craftX + SLOT_SIZE, craftX + 56};
-                int[] slotYs = {craftY, craftY, craftY + SLOT_SIZE, craftY + SLOT_SIZE, craftY + 9};
+                int[] slotXs = {craftX, craftX + SLOT_SIZE, craftX, craftX + SLOT_SIZE, contentX + CHARACTER_CRAFT_RESULT_X};
+                int[] slotYs = {craftY, craftY, craftY + SLOT_SIZE, craftY + SLOT_SIZE, contentY + CHARACTER_CRAFT_RESULT_Y};
                 for (int i = 0; i < slotIndexes.length; i++) {
                     if (slotIndexes[i] < playerMenu.slots.size()
                         && InventoryDesktopScreen.contains(mouseX, mouseY, slotXs[i] - 1, slotYs[i] - 1, SLOT_SIZE, SLOT_SIZE)) {

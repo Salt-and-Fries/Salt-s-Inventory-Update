@@ -394,6 +394,24 @@ public final class DesktopContainerSessions {
             return;
         }
 
+        if (isCraftingResultSource(source)) {
+            DesktopDebug.trace(
+                "server quick move vanilla crafting result player={} sourceSession={} sourceSlot={}",
+                player.getName().getString(),
+                payload.sourceSessionId(),
+                payload.sourceSlotIndex()
+            );
+            clickMenu(0, player, sessions, source.menu, payload.sourceSlotIndex(), 0, ContainerInput.QUICK_MOVE, sessions.carried.copy());
+            source.menu.broadcastChanges();
+            if (source.session != null) {
+                syncCraftingResultSlot(player, source.session);
+                syncMerchantOffers(player, source.session);
+            }
+            player.inventoryMenu.broadcastChanges();
+            sessions.broadcastAll(player);
+            return;
+        }
+
         List<net.minecraft.world.inventory.Slot> targets = quickMoveTargets(player, sessions, source, payload);
         if (targets.isEmpty()) {
             DesktopDebug.trace("server quick move dropped player={} sourceSession={} sourceSlot={} reason=no-targets", player.getName().getString(), payload.sourceSessionId(), payload.sourceSlotIndex());
@@ -421,6 +439,10 @@ public final class DesktopContainerSessions {
         }
         player.inventoryMenu.broadcastChanges();
         sessions.broadcastAll(player);
+    }
+
+    private static boolean isCraftingResultSource(SlotSource source) {
+        return source.menu instanceof AbstractCraftingMenu craftingMenu && source.slot == craftingMenu.getResultSlot();
     }
 
     private static void button(ServerPlayer player, DesktopButtonPayload payload) {

@@ -8,6 +8,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
 import net.minecraft.world.entity.player.Inventory;
@@ -29,17 +30,32 @@ public final class DesktopContainerSession {
     private final AbstractContainerMenu menu;
     private final Component title;
     private final String sourceKey;
+    private final int specialKind;
+    private final int entityId;
+    private final int columns;
     private final List<Slot> containerSlots;
     private final int minSlotX;
     private final int minSlotY;
     private final int contentWidth;
     private final int contentHeight;
 
-    private DesktopContainerSession(int sessionId, AbstractContainerMenu menu, Inventory playerInventory, Component title, String sourceKey) {
+    private DesktopContainerSession(
+        int sessionId,
+        AbstractContainerMenu menu,
+        Inventory playerInventory,
+        Component title,
+        String sourceKey,
+        int specialKind,
+        int entityId,
+        int columns
+    ) {
         this.sessionId = sessionId;
         this.menu = menu;
         this.title = title;
         this.sourceKey = sourceKey;
+        this.specialKind = specialKind;
+        this.entityId = entityId;
+        this.columns = columns;
         this.containerSlots = findContainerSlots(menu, playerInventory);
         this.minSlotX = minSlotX(this.containerSlots);
         this.minSlotY = minSlotY(this.containerSlots);
@@ -67,7 +83,16 @@ public final class DesktopContainerSession {
             }
         }
 
-        return new DesktopContainerSession(payload.sessionId(), menu, player.getInventory(), payload.title(), payload.sourceKey());
+        return new DesktopContainerSession(
+            payload.sessionId(),
+            menu,
+            player.getInventory(),
+            payload.title(),
+            payload.sourceKey(),
+            payload.specialKind(),
+            payload.entityId(),
+            payload.columns()
+        );
     }
 
     private static AbstractContainerMenu createMenu(Minecraft minecraft, DesktopOpenSessionPayload payload, LocalPlayer player) {
@@ -117,6 +142,27 @@ public final class DesktopContainerSession {
 
     public String sourceKey() {
         return this.sourceKey;
+    }
+
+    public int specialKind() {
+        return this.specialKind;
+    }
+
+    public int entityId() {
+        return this.entityId;
+    }
+
+    public int columns() {
+        return this.columns;
+    }
+
+    public boolean isMountSession() {
+        return this.specialKind == DesktopPackets.SPECIAL_HORSE || this.specialKind == DesktopPackets.SPECIAL_NAUTILUS;
+    }
+
+    public LivingEntity mountEntity(Minecraft minecraft) {
+        Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(this.entityId);
+        return entity instanceof LivingEntity livingEntity ? livingEntity : null;
     }
 
     public List<Slot> containerSlots() {
