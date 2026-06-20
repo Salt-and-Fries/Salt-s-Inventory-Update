@@ -2,6 +2,7 @@ package com.salts_inventory_update.client;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 
@@ -12,6 +13,7 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopButtonPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCarriedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopClickPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
@@ -75,6 +77,12 @@ public final class DesktopContainerClient {
                 screen.applyMerchantOffers(payload);
             }
         });
+        ClientPlayNetworking.registerGlobalReceiver(DesktopCustomPayload.TYPE, (payload, context) -> {
+            InventoryDesktopScreen screen = InventoryDesktopScreen.current(context.client());
+            if (screen != null) {
+                screen.applyCustomPayload(payload);
+            }
+        });
         ClientPlayNetworking.registerGlobalReceiver(InventoryExpansionSyncPayload.TYPE, (payload, context) -> {
             DesktopDebug.trace("client payload inventory expansion slots={} stacks={}", payload.slotCount(), payload.items().size());
             if (context.client().player != null) {
@@ -122,6 +130,7 @@ public final class DesktopContainerClient {
                 && ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopSessionPinPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopSessionVisibilityPayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopCustomPayload.TYPE)
                 && ClientPlayNetworking.canSend(InventorySlotPurchasePayload.TYPE);
         } catch (IllegalStateException | IllegalArgumentException ignored) {
             return false;
@@ -157,6 +166,11 @@ public final class DesktopContainerClient {
     public static boolean renameAnvil(int sessionId, String name) {
         DesktopDebug.trace("client send rename session={} name={}", sessionId, name);
         return send(new DesktopRenamePayload(sessionId, name), "rename");
+    }
+
+    public static boolean sendCustomPayload(int sessionId, Identifier channel, byte[] data) {
+        DesktopDebug.trace("client send custom session={} channel={} bytes={}", sessionId, channel, data.length);
+        return send(new DesktopCustomPayload(sessionId, channel, data), "custom");
     }
 
     public static void closeSession(int sessionId) {

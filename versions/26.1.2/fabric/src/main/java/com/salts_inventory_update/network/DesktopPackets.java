@@ -18,6 +18,7 @@ import net.minecraft.world.item.trading.MerchantOffers;
 import com.salts_inventory_update.SaltsInventoryUpdate;
 
 public final class DesktopPackets {
+    private static final int CUSTOM_PAYLOAD_MAX_BYTES = 32 * 1024;
     public static final int PLAYER_MENU_SESSION = 0;
     public static final int SPECIAL_GENERIC = 0;
     public static final int SPECIAL_HORSE = 1;
@@ -40,6 +41,7 @@ public final class DesktopPackets {
         PayloadTypeRegistry.serverboundPlay().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopSessionPinPayload.TYPE, DesktopSessionPinPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopCustomPayload.TYPE, DesktopCustomPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(InventorySlotPurchasePayload.TYPE, InventorySlotPurchasePayload.CODEC);
 
         PayloadTypeRegistry.clientboundPlay().register(DesktopOpenSessionPayload.TYPE, DesktopOpenSessionPayload.CODEC);
@@ -49,6 +51,7 @@ public final class DesktopPackets {
         PayloadTypeRegistry.clientboundPlay().register(DesktopSessionClosedPayload.TYPE, DesktopSessionClosedPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopMerchantOffersPayload.TYPE, DesktopMerchantOffersPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopCustomPayload.TYPE, DesktopCustomPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(InventoryExpansionSyncPayload.TYPE, InventoryExpansionSyncPayload.CODEC);
     }
 
@@ -236,6 +239,45 @@ public final class DesktopPackets {
         private void write(RegistryFriendlyByteBuf buf) {
             buf.writeVarInt(this.sessionId);
             buf.writeUtf(this.name, 50);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopCustomPayload(int sessionId, Identifier channel, byte[] data) implements CustomPacketPayload {
+        public static final Type<DesktopCustomPayload> TYPE = new Type<>(id("desktop_custom"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopCustomPayload> CODEC = CustomPacketPayload.codec(
+            DesktopCustomPayload::write,
+            DesktopCustomPayload::new
+        );
+
+        private DesktopCustomPayload(RegistryFriendlyByteBuf buf) {
+            this(
+                buf.readVarInt(),
+                Identifier.parse(buf.readUtf()),
+                buf.readByteArray(CUSTOM_PAYLOAD_MAX_BYTES)
+            );
+        }
+
+        public DesktopCustomPayload {
+            if (data.length > CUSTOM_PAYLOAD_MAX_BYTES) {
+                throw new IllegalArgumentException("Desktop custom payload is too large: " + data.length);
+            }
+            data = data.clone();
+        }
+
+        @Override
+        public byte[] data() {
+            return this.data.clone();
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeUtf(this.channel.toString());
+            buf.writeByteArray(this.data);
         }
 
         @Override

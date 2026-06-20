@@ -35,6 +35,7 @@ public final class WindowedInventoryClient {
             )
         );
 
+        InventoryDesktopScreen.registerInternalApiDefinitions();
         InventoryDesktopScreen.registerContainerScreens();
         DesktopContainerClient.initializeNetworking();
         registerClientCommands();

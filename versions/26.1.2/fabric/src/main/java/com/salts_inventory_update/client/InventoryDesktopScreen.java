@@ -102,9 +102,21 @@ import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import com.salts_inventory_update.debug.DesktopDebug;
+import com.salts_inventory_update.api.client.desktop.DesktopInputContext;
+import com.salts_inventory_update.api.client.desktop.DesktopRenderContext;
+import com.salts_inventory_update.api.client.desktop.DesktopResizePolicy;
+import com.salts_inventory_update.api.client.desktop.DesktopSlotContext;
+import com.salts_inventory_update.api.client.desktop.DesktopSlotHit;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowContext;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowDefinition;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowLookupContext;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowSetupContext;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowSize;
+import com.salts_inventory_update.api.desktop.SaltsInventoryDesktopApi;
 import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.mixin.client.MenuScreensAccessor;
 import com.salts_inventory_update.network.DesktopPackets;
+import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -685,6 +697,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private static @Nullable InventoryDesktopScreen singleton;
     private static final Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> VANILLA_SCREEN_CONSTRUCTORS = new LinkedHashMap<>();
+    private static boolean internalApiDefinitionsRegistered;
     private static int nextDesktopId = 1;
 
     private final int desktopId;
@@ -805,6 +818,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         registerContainerScreen(MenuType.SMOKER, constructor);
         registerContainerScreen(MenuType.CARTOGRAPHY_TABLE, constructor);
         registerContainerScreen(MenuType.STONECUTTER, constructor);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static void registerInternalApiDefinitions() {
+        if (internalApiDefinitionsRegistered) {
+            return;
+        }
+
+        DesktopWindowDefinition furnaceDefinition = new FurnaceDesktopWindowDefinition();
+        SaltsInventoryDesktopApi.replace((MenuType) MenuType.FURNACE, furnaceDefinition);
+        SaltsInventoryDesktopApi.replace((MenuType) MenuType.BLAST_FURNACE, furnaceDefinition);
+        SaltsInventoryDesktopApi.replace((MenuType) MenuType.SMOKER, furnaceDefinition);
+        internalApiDefinitionsRegistered = true;
     }
 
     private static void registerContainerScreen(MenuType<?> menuType, MenuScreens.ScreenConstructor constructor) {
@@ -1210,9 +1236,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void tickWindowAnimations() {
         for (InventoryWindow window : this.windows) {
-            if (!window.minimized && window.containerMenu() instanceof EnchantmentMenu enchantmentMenu) {
+            if (window.minimized) {
+                continue;
+            }
+            if (this.apiTick(window)) {
+                continue;
+            }
+            if (window.containerMenu() instanceof EnchantmentMenu enchantmentMenu) {
                 window.enchantmentBookState().tick(enchantmentMenu);
-            } else if (!window.minimized && window.containerMenu() instanceof SmithingMenu smithingMenu) {
+            } else if (window.containerMenu() instanceof SmithingMenu smithingMenu) {
                 window.smithingState().tick(smithingMenu);
             }
         }
@@ -1317,6 +1349,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 return true;
             }
 
+            if (this.apiMouseClicked(window, event, doubleClick)) {
+                return true;
+            }
+
             int enchantmentButton = this.enchantmentButtonAt(window, event.x(), event.y());
             if (enchantmentButton >= 0) {
                 if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
@@ -1410,7 +1446,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (this.resizingWindow != null) {
             InventoryWindow window = this.resizingWindow;
             int minWidth = this.minResizableWidth(window);
-            int minHeight = this.minResizableHeight();
+            int minHeight = this.minResizableHeight(window);
             int maxWidth = Math.max(minWidth, this.desktopWidth() - window.x);
             int maxHeight = Math.max(minHeight, this.desktopHeight() - window.y);
             window.width = clamp(this.resizeStartWidth + (int) event.x() - this.resizeStartMouseX, minWidth, maxWidth);
@@ -1427,6 +1463,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (this.movingWindow != null) {
             this.movingWindow.x = clamp((int) event.x() - this.moveOffsetX, 0, Math.max(0, this.desktopWidth() - this.movingWindow.width));
             this.movingWindow.y = clamp((int) event.y() - this.moveOffsetY, 0, Math.max(0, this.desktopHeight() - TOP_BAR_HEIGHT));
+            return true;
+        }
+
+        InventoryWindow apiDragWindow = this.windowAt(event.x(), event.y());
+        if (apiDragWindow != null && this.apiMouseDragged(apiDragWindow, event, dx, dy)) {
             return true;
         }
 
@@ -1495,6 +1536,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
         if (this.pendingSlotClick != null && this.pendingSlotClick.button() == event.button()) {
             this.completePendingSlotClick();
+            return true;
+        }
+
+        InventoryWindow apiReleaseWindow = this.windowAt(event.x(), event.y());
+        if (apiReleaseWindow != null && this.apiMouseReleased(apiReleaseWindow, event)) {
             return true;
         }
 
@@ -2276,6 +2322,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
         }
 
+        if (window != null && !window.minimized && this.apiMouseScrolled(window, x, y, scrollX, scrollY)) {
+            return true;
+        }
+
         if (window != null && !window.minimized && window.containerMenu() instanceof MerchantMenu merchantMenu && this.merchantTradeListContains(window, x, y)) {
             MerchantOffers offers = merchantMenu.getOffers();
             int maxScroll = Math.max(0, offers.size() - MERCHANT_VISIBLE_TRADES);
@@ -2331,6 +2381,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         if (this.handleAnvilEditKey(event)) {
+            return true;
+        }
+
+        if (this.apiKeyPressed(event)) {
             return true;
         }
 
@@ -2435,7 +2489,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         InventoryWindow window = this.activeAnvilEditWindow();
         if (window == null || !event.isAllowedChatCharacter()) {
-            return false;
+            return this.apiCharTyped(event);
         }
 
         String addition = event.codepointAsString();
@@ -2582,21 +2636,44 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int minY = minSlotY(slots);
         int contentWidth = containerContentWidth(slots, minX);
         int contentHeight = containerContentHeight(slots, minY);
-        int windowWidth = this.containerWindowWidth(menu, title, slots.size(), contentWidth);
-        int windowHeight = containerWindowHeight(menu, slots.size(), contentHeight);
+        int defaultWindowWidth = this.containerWindowWidth(menu, title, slots.size(), contentWidth);
+        int defaultWindowHeight = containerWindowHeight(menu, slots.size(), contentHeight);
+        DesktopWindowDefinition<?, ?> apiDefinition = this.apiDefinitionFor(
+            menu,
+            title,
+            slots,
+            contentWidth,
+            contentHeight,
+            LEGACY_MENU_SESSION,
+            "",
+            DesktopPackets.SPECIAL_GENERIC
+        );
+        DesktopWindowSetupContext<?> apiSetup = this.apiSetupContext(
+            menu,
+            title,
+            slots,
+            contentWidth,
+            contentHeight,
+            defaultWindowWidth,
+            defaultWindowHeight,
+            LEGACY_MENU_SESSION,
+            ""
+        );
+        DesktopWindowSize apiSize = this.apiDefaultSize(apiDefinition, apiSetup, defaultWindowWidth, defaultWindowHeight);
         InventoryWindow window = new InventoryWindow(
             WindowKind.CONTAINER,
             title,
             0,
             0,
-            windowWidth,
-            windowHeight,
+            apiSize.width(),
+            apiSize.height(),
             null,
             menu,
             slots,
             minX,
             minY
         );
+        this.initializeApiWindow(window, apiDefinition, apiSetup);
         this.placeOrRestoreWindow(window, WindowPlacement.CONTAINER);
         this.windows.add(window);
         this.setFocusedWindow(window);
@@ -2658,21 +2735,46 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.sessions.add(session);
         session.setCarried(this.sharedCarried);
 
-        int windowWidth = session.isMountSession()
+        int defaultWindowWidth = session.isMountSession()
             ? this.mountWindowWidth(session, session.title())
             : this.containerWindowWidth(session.menu(), session.title(), session.containerSlots().size(), session.contentWidth());
-        int windowHeight = session.isMountSession()
+        int defaultWindowHeight = session.isMountSession()
             ? mountWindowHeight()
             : containerWindowHeight(session.menu(), session.containerSlots().size(), session.contentHeight());
+        DesktopWindowDefinition<?, ?> apiDefinition = session.isMountSession()
+            ? null
+            : this.apiDefinitionFor(
+                session.menu(),
+                session.title(),
+                session.containerSlots(),
+                session.contentWidth(),
+                session.contentHeight(),
+                session.sessionId(),
+                session.sourceKey(),
+                session.specialKind()
+            );
+        DesktopWindowSetupContext<?> apiSetup = this.apiSetupContext(
+            session.menu(),
+            session.title(),
+            session.containerSlots(),
+            session.contentWidth(),
+            session.contentHeight(),
+            defaultWindowWidth,
+            defaultWindowHeight,
+            session.sessionId(),
+            session.sourceKey()
+        );
+        DesktopWindowSize apiSize = this.apiDefaultSize(apiDefinition, apiSetup, defaultWindowWidth, defaultWindowHeight);
         InventoryWindow window = new InventoryWindow(
             WindowKind.CONTAINER,
             session.title(),
             0,
             0,
-            windowWidth,
-            windowHeight,
+            apiSize.width(),
+            apiSize.height(),
             session
         );
+        this.initializeApiWindow(window, apiDefinition, apiSetup);
         this.placeOrRestoreWindow(window, WindowPlacement.CONTAINER);
         boolean promoteHiddenGhost = !visible && window.pinMode == PinMode.GHOST_PINNED && this.hasInteractiveWindows();
         if (!visible && window.pinMode == PinMode.GHOST_PINNED && !promoteHiddenGhost) {
@@ -2704,6 +2806,95 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.windows.size(),
             this.sessions.size()
         );
+    }
+
+    private DesktopWindowDefinition<?, ?> apiDefinitionFor(
+        AbstractContainerMenu menu,
+        Component title,
+        List<Slot> slots,
+        int contentWidth,
+        int contentHeight,
+        int sessionId,
+        String sourceKey,
+        int specialKind
+    ) {
+        DesktopWindowLookupContext context = new DesktopWindowLookupContext(
+            menu,
+            menu.getType(),
+            title,
+            sessionId,
+            sourceKey,
+            specialKind,
+            slots,
+            contentWidth,
+            contentHeight
+        );
+        DesktopWindowDefinition<?, ?> definition = SaltsInventoryDesktopApi.findDefinition(context);
+        if (definition != null) {
+            DesktopDebug.log("client api window matched desktop={} menu={} title={}", this.desktopId, menu.getType(), title.getString());
+        }
+        return definition;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private DesktopWindowSetupContext<?> apiSetupContext(
+        AbstractContainerMenu menu,
+        Component title,
+        List<Slot> slots,
+        int contentWidth,
+        int contentHeight,
+        int defaultWindowWidth,
+        int defaultWindowHeight,
+        int sessionId,
+        String sourceKey
+    ) {
+        return new DesktopWindowSetupContext(
+            this.minecraft,
+            menu,
+            title,
+            sessionId,
+            sourceKey,
+            slots,
+            contentWidth,
+            contentHeight,
+            defaultWindowWidth,
+            defaultWindowHeight
+        );
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private DesktopWindowSize apiDefaultSize(
+        @Nullable DesktopWindowDefinition definition,
+        DesktopWindowSetupContext setup,
+        int defaultWidth,
+        int defaultHeight
+    ) {
+        if (definition == null) {
+            return DesktopWindowSize.of(defaultWidth, defaultHeight);
+        }
+
+        try {
+            return definition.defaultSize(setup);
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api default size failed desktop={} menu={} reason={}", this.desktopId, setup.menu().getType(), exception.toString());
+            return DesktopWindowSize.of(defaultWidth, defaultHeight);
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void initializeApiWindow(InventoryWindow window, @Nullable DesktopWindowDefinition definition, DesktopWindowSetupContext setup) {
+        window.apiDefinition = definition;
+        if (definition == null) {
+            window.apiState = null;
+            return;
+        }
+
+        try {
+            window.apiState = definition.createState(setup);
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api state failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            window.apiState = null;
+        }
     }
 
     private @Nullable DesktopContainerSession session(int sessionId) {
@@ -2807,6 +2998,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void snapResizableWindow(InventoryWindow window) {
+        if (window.apiDefinition != null) {
+            DesktopWindowSize minSize = this.apiMinSize(window);
+            window.width = Math.max(window.width, minSize.width());
+            window.height = Math.max(window.height, minSize.height());
+            return;
+        }
+
         if (!this.isResizableStorageWindow(window)) {
             return;
         }
@@ -2869,6 +3067,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         AbstractContainerMenu menu = window.containerMenu();
         if (menu == null) {
             return false;
+        }
+
+        DesktopResizePolicy apiResizePolicy = this.apiResizePolicy(window);
+        if (apiResizePolicy != null) {
+            return apiResizePolicy == DesktopResizePolicy.STORAGE_GRID;
         }
 
         MenuType<?> type = menu.getType();
@@ -2944,7 +3147,17 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private int minResizableWidth(InventoryWindow window) {
+        if (window.apiDefinition != null) {
+            return Math.max(this.apiMinSize(window).width(), this.minimumTitleBarWidth(window.title));
+        }
         return Math.max(WINDOW_CONTENT_PADDING * 2 + SLOT_SIZE + SCROLLBAR_WIDTH, this.minimumTitleBarWidth(window.title));
+    }
+
+    private int minResizableHeight(InventoryWindow window) {
+        if (window.apiDefinition != null) {
+            return this.apiMinSize(window).height();
+        }
+        return this.minResizableHeight();
     }
 
     private int minResizableHeight() {
@@ -3289,7 +3502,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int maxWidth = Math.max(SLOT_SIZE + WINDOW_CONTENT_PADDING * 2, this.desktopWidth() - WINDOW_PLACEMENT_MARGIN * 2);
         int maxHeight = Math.max(TOP_BAR_HEIGHT + SLOT_SIZE + WINDOW_CONTENT_PADDING * 2, this.desktopHeight() - WINDOW_PLACEMENT_MARGIN * 2);
         int minWidth = Math.min(this.minResizableWidth(window), maxWidth);
-        int minHeight = Math.min(this.minResizableHeight(), maxHeight);
+        int minHeight = Math.min(this.minResizableHeight(window), maxHeight);
         window.width = clamp(window.width, minWidth, maxWidth);
         window.height = clamp(window.height, minHeight, maxHeight);
         this.clampStorageScroll(window);
@@ -4058,6 +4271,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private Component titleBarTitle(InventoryWindow window) {
+        Component apiTitle = this.apiTitle(window);
+        if (apiTitle != null) {
+            return apiTitle;
+        }
+
         AbstractContainerMenu menu = window.containerMenu();
         if (menu instanceof MerchantMenu) {
             return Component.translatable("merchant.trades");
@@ -4091,6 +4309,186 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         return window.title;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private @Nullable Component apiTitle(InventoryWindow window) {
+        if (window.apiDefinition == null || window.containerMenu() == null) {
+            return null;
+        }
+
+        try {
+            return ((DesktopWindowDefinition) window.apiDefinition).title(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api title failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            return null;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private DesktopWindowSize apiMinSize(InventoryWindow window) {
+        if (window.apiDefinition == null || window.containerMenu() == null) {
+            return DesktopWindowSize.of(Math.max(1, window.width), Math.max(1, window.height));
+        }
+
+        try {
+            return ((DesktopWindowDefinition) window.apiDefinition).minSize(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api min size failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            return DesktopWindowSize.of(Math.max(1, window.width), Math.max(1, window.height));
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private @Nullable DesktopResizePolicy apiResizePolicy(InventoryWindow window) {
+        if (window.apiDefinition == null || window.containerMenu() == null) {
+            return null;
+        }
+
+        try {
+            return ((DesktopWindowDefinition) window.apiDefinition).resizePolicy(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api resize policy failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            return DesktopResizePolicy.FIXED;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean apiTick(InventoryWindow window) {
+        if (window.apiDefinition == null || window.containerMenu() == null) {
+            return false;
+        }
+
+        try {
+            ((DesktopWindowDefinition) window.apiDefinition).tick(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
+            return true;
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api tick failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            return false;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean apiAppendTooltip(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        if (window.apiDefinition == null || window.containerMenu() == null || window.minimized) {
+            return false;
+        }
+
+        try {
+            return ((DesktopWindowDefinition) window.apiDefinition).appendTooltip(this.apiContext(window, graphics, mouseX, mouseY), mouseX, mouseY);
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api tooltip failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            return false;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean apiMouseClicked(InventoryWindow window, MouseButtonEvent event, boolean doubleClick) {
+        if (window.apiDefinition == null || window.containerMenu() == null || window.minimized) {
+            return false;
+        }
+
+        try {
+            return ((DesktopWindowDefinition) window.apiDefinition).mouseClicked(this.apiContext(window, null, (int) event.x(), (int) event.y()), event, doubleClick);
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api mouseClicked failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            return false;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean apiMouseReleased(InventoryWindow window, MouseButtonEvent event) {
+        if (window.apiDefinition == null || window.containerMenu() == null || window.minimized) {
+            return false;
+        }
+
+        try {
+            return ((DesktopWindowDefinition) window.apiDefinition).mouseReleased(this.apiContext(window, null, (int) event.x(), (int) event.y()), event);
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api mouseReleased failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            return false;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean apiMouseDragged(InventoryWindow window, MouseButtonEvent event, double dx, double dy) {
+        if (window.apiDefinition == null || window.containerMenu() == null || window.minimized) {
+            return false;
+        }
+
+        try {
+            return ((DesktopWindowDefinition) window.apiDefinition).mouseDragged(this.apiContext(window, null, (int) event.x(), (int) event.y()), event, dx, dy);
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api mouseDragged failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            return false;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean apiMouseScrolled(InventoryWindow window, double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (window.apiDefinition == null || window.containerMenu() == null || window.minimized) {
+            return false;
+        }
+
+        try {
+            return ((DesktopWindowDefinition) window.apiDefinition).mouseScrolled(this.apiContext(window, null, (int) mouseX, (int) mouseY), mouseX, mouseY, scrollX, scrollY);
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api mouseScrolled failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            return false;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean apiKeyPressed(KeyEvent event) {
+        for (int i = this.windows.size() - 1; i >= 0; i--) {
+            InventoryWindow window = this.windows.get(i);
+            if (window.apiDefinition == null || window.containerMenu() == null || window.minimized || window.ghosted) {
+                continue;
+            }
+
+            try {
+                if (((DesktopWindowDefinition) window.apiDefinition).keyPressed(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), event)) {
+                    return true;
+                }
+            } catch (RuntimeException exception) {
+                DesktopDebug.warn("client api keyPressed failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean apiCharTyped(CharacterEvent event) {
+        for (int i = this.windows.size() - 1; i >= 0; i--) {
+            InventoryWindow window = this.windows.get(i);
+            if (window.apiDefinition == null || window.containerMenu() == null || window.minimized || window.ghosted) {
+                continue;
+            }
+
+            try {
+                if (((DesktopWindowDefinition) window.apiDefinition).charTyped(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), event)) {
+                    return true;
+                }
+            } catch (RuntimeException exception) {
+                DesktopDebug.warn("client api charTyped failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void applyCustomPayload(DesktopCustomPayload payload) {
+        InventoryWindow window = this.windowForSession(payload.sessionId());
+        if (window == null || window.apiDefinition == null || window.containerMenu() == null) {
+            DesktopDebug.trace("client custom payload dropped desktop={} session={} channel={} reason=no-api-window", this.desktopId, payload.sessionId(), payload.channel());
+            return;
+        }
+
+        try {
+            ((DesktopWindowDefinition) window.apiDefinition).customPayload(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), payload.channel(), payload.data());
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api custom payload failed desktop={} window={} channel={} reason={}", this.desktopId, window.debugName(), payload.channel(), exception.toString());
+        }
     }
 
     private List<ControlRect> controlRects(InventoryWindow window, List<WindowControl> controls) {
@@ -4976,6 +5374,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return;
         }
 
+        if (this.renderApiWindow(graphics, window, mouseX, mouseY)) {
+            return;
+        }
+
         if (menu instanceof AbstractFurnaceMenu furnaceMenu) {
             this.renderFurnaceWindow(graphics, window, slots, furnaceMenu, mouseX, mouseY);
             return;
@@ -5044,6 +5446,21 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean renderApiWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        if (window.apiDefinition == null || window.containerMenu() == null) {
+            return false;
+        }
+
+        try {
+            ((DesktopWindowDefinition) window.apiDefinition).render(this.apiContext(window, graphics, mouseX, mouseY));
+            return true;
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api render failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            return false;
+        }
+    }
+
     private void renderMountWindow(GuiGraphicsExtractor graphics, InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, int mouseX, int mouseY) {
         DesktopContainerSession session = window.session;
         if (session == null) {
@@ -5102,6 +5519,34 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private static @Nullable Slot mountSlot(List<Slot> slots, int slotIndex) {
         return slotIndex >= 0 && slotIndex < slots.size() ? slots.get(slotIndex) : null;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private @Nullable SlotHit apiSlotAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.apiDefinition == null || window.containerMenu() == null) {
+            return null;
+        }
+
+        DesktopSlotHit apiHit;
+        try {
+            apiHit = ((DesktopWindowDefinition) window.apiDefinition).slotAt(this.apiContext(window, null, (int) mouseX, (int) mouseY), mouseX, mouseY);
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client api slotAt failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            return null;
+        }
+        if (apiHit == null) {
+            return null;
+        }
+
+        AbstractContainerMenu menu = window.containerMenu();
+        int slotId = apiHit.menuSlotId();
+        if (slotId < 0 || slotId >= menu.slots.size()) {
+            DesktopDebug.warn("client api slotAt ignored desktop={} window={} slot={} reason=out-of-range", this.desktopId, window.debugName(), slotId);
+            return null;
+        }
+
+        Slot slot = menu.slots.get(slotId);
+        return new SlotHit(slot, slotId, apiHit.x(), apiHit.y(), menu, window.sessionId());
     }
 
     private @Nullable SlotHit mountSlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
@@ -7874,6 +8319,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
         }
 
+        if (this.sharedCarried.isEmpty() && hoveredWindow != null && this.apiAppendTooltip(graphics, hoveredWindow, mouseX, mouseY)) {
+            return;
+        }
+
         SlotHit hit = this.slotAt(mouseX, mouseY);
         if (hit != null && hit.slot().hasItem() && this.sharedCarried.isEmpty()) {
             graphics.setTooltipForNextFrame(this.font, hit.slot().getItem(), mouseX, mouseY);
@@ -8488,6 +8937,447 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private record ControlHit(InventoryWindow window, WindowControl control) {
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private ApiContext apiContext(InventoryWindow window, @Nullable GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        return new ApiContext(window, graphics, mouseX, mouseY);
+    }
+
+    private final class ApiContext<T extends AbstractContainerMenu, S>
+        implements DesktopRenderContext<T, S>, DesktopSlotContext<T, S>, DesktopInputContext<T, S> {
+        private final InventoryWindow window;
+        private final @Nullable GuiGraphicsExtractor graphics;
+        private final int mouseX;
+        private final int mouseY;
+
+        private ApiContext(InventoryWindow window, @Nullable GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+            this.window = window;
+            this.graphics = graphics;
+            this.mouseX = mouseX;
+            this.mouseY = mouseY;
+        }
+
+        private GuiGraphicsExtractor graphics() {
+            if (this.graphics == null) {
+                throw new IllegalStateException("This desktop API context is not in a render pass");
+            }
+            return this.graphics;
+        }
+
+        @Override
+        public Minecraft minecraft() {
+            return InventoryDesktopScreen.this.minecraft;
+        }
+
+        @Override
+        public T menu() {
+            return (T) this.window.containerMenu();
+        }
+
+        @Override
+        public Component originalTitle() {
+            return this.window.title;
+        }
+
+        @Override
+        public int sessionId() {
+            return this.window.sessionId();
+        }
+
+        @Override
+        public String sourceKey() {
+            return this.window.session == null ? "" : this.window.session.sourceKey();
+        }
+
+        @Override
+        public S state() {
+            return (S) this.window.apiState;
+        }
+
+        @Override
+        public List<Slot> containerSlots() {
+            return this.window.containerSlots();
+        }
+
+        @Override
+        public int windowX() {
+            return this.window.x;
+        }
+
+        @Override
+        public int windowY() {
+            return this.window.y;
+        }
+
+        @Override
+        public int windowWidth() {
+            return this.window.width;
+        }
+
+        @Override
+        public int windowHeight() {
+            return this.window.height;
+        }
+
+        @Override
+        public int contentX() {
+            return this.window.contentX();
+        }
+
+        @Override
+        public int contentY() {
+            return this.window.contentY();
+        }
+
+        @Override
+        public boolean focused() {
+            return this.window.focused;
+        }
+
+        @Override
+        public boolean minimized() {
+            return this.window.minimized;
+        }
+
+        @Override
+        public boolean ghosted() {
+            return this.window.ghosted;
+        }
+
+        @Override
+        public ItemStack carriedStack() {
+            return InventoryDesktopScreen.this.sharedCarried.copy();
+        }
+
+        @Override
+        public @Nullable Slot menuSlot(int menuSlotId) {
+            AbstractContainerMenu menu = this.window.containerMenu();
+            return menu != null && menuSlotId >= 0 && menuSlotId < menu.slots.size() ? menu.slots.get(menuSlotId) : null;
+        }
+
+        @Override
+        public @Nullable Slot containerSlot(int containerSlotIndex) {
+            List<Slot> slots = this.window.containerSlots();
+            return containerSlotIndex >= 0 && containerSlotIndex < slots.size() ? slots.get(containerSlotIndex) : null;
+        }
+
+        @Override
+        public int menuSlotId(Slot slot) {
+            AbstractContainerMenu menu = this.window.containerMenu();
+            return menu == null ? -1 : menu.slots.indexOf(slot);
+        }
+
+        @Override
+        public int mouseX() {
+            return this.mouseX;
+        }
+
+        @Override
+        public int mouseY() {
+            return this.mouseY;
+        }
+
+        @Override
+        public void fill(int x1, int y1, int x2, int y2, int color) {
+            this.graphics().fill(x1, y1, x2, y2, InventoryDesktopScreen.this.uiColor(color));
+        }
+
+        @Override
+        public void text(String text, int x, int y, int color, boolean shadow) {
+            this.graphics().text(InventoryDesktopScreen.this.font, text, x, y, InventoryDesktopScreen.this.uiColor(color), shadow);
+        }
+
+        @Override
+        public void text(Component text, int x, int y, int color, boolean shadow) {
+            this.graphics().text(InventoryDesktopScreen.this.font, text, x, y, InventoryDesktopScreen.this.uiColor(color), shadow);
+        }
+
+        @Override
+        public void sprite(Identifier sprite, int x, int y, int width, int height) {
+            InventoryDesktopScreen.this.blitSprite(this.graphics(), sprite, x, y, width, height);
+        }
+
+        @Override
+        public void sprite(Identifier sprite, int sourceWidth, int sourceHeight, int sourceX, int sourceY, int x, int y, int width, int height) {
+            InventoryDesktopScreen.this.blitSprite(this.graphics(), sprite, sourceWidth, sourceHeight, sourceX, sourceY, x, y, width, height);
+        }
+
+        @Override
+        public void texture(Identifier texture, int x, int y, int sourceX, int sourceY, int width, int height, int sourceWidth, int sourceHeight, int textureWidth, int textureHeight) {
+            blitRegion(this.graphics(), texture, x, y, sourceX, sourceY, width, height, sourceWidth, sourceHeight, textureWidth, textureHeight);
+        }
+
+        @Override
+        public void windowNineSlice(Identifier texture, int x, int y, int width, int height) {
+            renderNineSlice(this.graphics(), texture, x, y, width, height);
+        }
+
+        @Override
+        public void onePixelNineSlice(Identifier texture, int x, int y, int width, int height) {
+            renderOnePixelNineSlice(this.graphics(), texture, x, y, width, height);
+        }
+
+        @Override
+        public void item(ItemStack stack, int x, int y) {
+            InventoryDesktopScreen.this.renderItemStack(this.graphics(), stack, x, y);
+        }
+
+        @Override
+        public void item(ItemStack stack, int x, int y, int seed) {
+            InventoryDesktopScreen.this.renderItemStack(this.graphics(), stack, x, y, seed);
+        }
+
+        @Override
+        public void slot(int menuSlotId, int x, int y) {
+            Slot slot = this.menuSlot(menuSlotId);
+            if (slot != null) {
+                InventoryDesktopScreen.this.renderSlot(this.graphics(), slot, x, y, this.mouseX, this.mouseY);
+            }
+        }
+
+        @Override
+        public void slot(Slot slot, int x, int y) {
+            InventoryDesktopScreen.this.renderSlot(this.graphics(), slot, x, y, this.mouseX, this.mouseY);
+        }
+
+        @Override
+        public void texturelessSlot(int menuSlotId, int x, int y) {
+            Slot slot = this.menuSlot(menuSlotId);
+            if (slot == null) {
+                return;
+            }
+
+            boolean hovered = contains(this.mouseX, this.mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE);
+            if (hovered && slot.isHighlightable()) {
+                renderSlotHighlightBack(this.graphics(), x, y);
+            }
+            if (slot.hasItem()) {
+                InventoryDesktopScreen.this.renderItemStack(this.graphics(), slot.getItem(), x, y, slot.index);
+            } else if (slot.getNoItemIcon() != null) {
+                InventoryDesktopScreen.this.blitSprite(this.graphics(), slot.getNoItemIcon(), x, y, SLOT_ITEM_SIZE, SLOT_ITEM_SIZE);
+            }
+            if (hovered && slot.isHighlightable()) {
+                renderSlotHighlightFront(this.graphics(), x, y);
+            }
+        }
+
+        @Override
+        public void slotBackground(int x, int y) {
+            renderSlotBackground(this.graphics(), x, y);
+        }
+
+        @Override
+        public void slotHighlight(int x, int y) {
+            renderSlotHighlightBack(this.graphics(), x, y);
+            renderSlotHighlightFront(this.graphics(), x, y);
+        }
+
+        @Override
+        public void entityPreview(LivingEntity entity, int x0, int y0, int x1, int y1, int scale, float mouseScale) {
+            InventoryScreen.extractEntityInInventoryFollowsMouse(this.graphics(), x0, y0, x1, y1, scale, mouseScale, this.mouseX, this.mouseY, entity);
+        }
+
+        @Override
+        public void tooltip(ItemStack stack, int mouseX, int mouseY) {
+            this.graphics().setTooltipForNextFrame(InventoryDesktopScreen.this.font, stack, mouseX, mouseY);
+        }
+
+        @Override
+        public void tooltip(Component text, int mouseX, int mouseY) {
+            this.graphics().setTooltipForNextFrame(InventoryDesktopScreen.this.font, text, mouseX, mouseY);
+        }
+
+        @Override
+        public void tooltip(List<Component> lines, int mouseX, int mouseY) {
+            this.graphics().setComponentTooltipForNextFrame(InventoryDesktopScreen.this.font, lines, mouseX, mouseY);
+        }
+
+        @Override
+        public boolean contains(double mouseX, double mouseY, int x, int y, int width, int height) {
+            return InventoryDesktopScreen.contains(mouseX, mouseY, x, y, width, height);
+        }
+
+        @Override
+        public @Nullable DesktopSlotHit menuSlotHit(int menuSlotId, int x, int y, double mouseX, double mouseY) {
+            return this.menuSlot(menuSlotId) != null && InventoryDesktopScreen.contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE)
+                ? DesktopSlotHit.of(menuSlotId, x, y)
+                : null;
+        }
+
+        @Override
+        public @Nullable DesktopSlotHit containerSlotHit(int containerSlotIndex, int x, int y, double mouseX, double mouseY) {
+            Slot slot = this.containerSlot(containerSlotIndex);
+            int slotId = slot == null ? -1 : this.menuSlotId(slot);
+            return slotId >= 0 && InventoryDesktopScreen.contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE)
+                ? DesktopSlotHit.of(slotId, x, y)
+                : null;
+        }
+
+        @Override
+        public boolean shiftDown() {
+            return InventoryDesktopScreen.this.isShiftHeld();
+        }
+
+        @Override
+        public boolean sendMenuButton(int buttonId) {
+            return DesktopContainerClient.clickButton(this.sessionId(), buttonId);
+        }
+
+        @Override
+        public boolean sendRename(String name) {
+            return DesktopContainerClient.renameAnvil(this.sessionId(), name);
+        }
+
+        @Override
+        public boolean clickSlot(int menuSlotId, int button, ContainerInput input) {
+            Slot slot = this.menuSlot(menuSlotId);
+            AbstractContainerMenu menu = this.window.containerMenu();
+            if (slot == null || menu == null) {
+                return false;
+            }
+
+            InventoryDesktopScreen.this.slotClicked(new SlotHit(slot, menuSlotId, slot.x, slot.y, menu, this.sessionId()), button, input);
+            return true;
+        }
+
+        @Override
+        public boolean quickMoveSlot(int menuSlotId) {
+            Slot slot = this.menuSlot(menuSlotId);
+            AbstractContainerMenu menu = this.window.containerMenu();
+            if (slot == null || menu == null) {
+                return false;
+            }
+
+            InventoryDesktopScreen.this.quickMoveSlot(new SlotHit(slot, menuSlotId, slot.x, slot.y, menu, this.sessionId()));
+            return true;
+        }
+
+        @Override
+        public boolean sendCustomPayload(Identifier channel, byte[] data) {
+            return DesktopContainerClient.sendCustomPayload(this.sessionId(), channel, data);
+        }
+    }
+
+    private static final class FurnaceDesktopWindowDefinition implements DesktopWindowDefinition<AbstractFurnaceMenu, Void> {
+        @Override
+        public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractFurnaceMenu> context) {
+            return DesktopWindowSize.of(context.defaultWindowWidth(), context.defaultWindowHeight());
+        }
+
+        @Override
+        public void render(DesktopRenderContext<AbstractFurnaceMenu, Void> context) {
+            AbstractFurnaceMenu menu = context.menu();
+            int contentX = context.windowX() + FURNACE_CONTENT_MARGIN;
+            int contentY = context.windowY() + TOP_BAR_HEIGHT + FURNACE_CONTENT_MARGIN;
+            this.renderSlot(context, FURNACE_INPUT_SLOT, contentX + FURNACE_INPUT_X, contentY + FURNACE_INPUT_Y);
+            this.renderSlot(context, FURNACE_FUEL_SLOT, contentX + FURNACE_FUEL_X, contentY + FURNACE_FUEL_Y);
+            this.renderSlot(context, FURNACE_RESULT_SLOT, contentX + FURNACE_RESULT_X, contentY + FURNACE_RESULT_Y);
+
+            int flameX = contentX + FURNACE_FLAME_X;
+            int flameY = contentY + FURNACE_FLAME_Y;
+            context.texture(
+                CONTAINER_WIDGETS_TEXTURE,
+                flameX,
+                flameY,
+                WIDGET_FLAME_EMPTY_X,
+                WIDGET_FLAME_EMPTY_Y,
+                WIDGET_FLAME_WIDTH,
+                WIDGET_FLAME_HEIGHT,
+                WIDGET_FLAME_WIDTH,
+                WIDGET_FLAME_HEIGHT,
+                CONTAINER_WIDGETS_TEXTURE_WIDTH,
+                CONTAINER_WIDGETS_TEXTURE_HEIGHT
+            );
+
+            int flameFill = menu.isLit() ? Math.round(clampProgress(menu.getLitProgress()) * WIDGET_FLAME_HEIGHT) : 0;
+            if (flameFill > 0) {
+                int clippedY = WIDGET_FLAME_HEIGHT - flameFill;
+                context.texture(
+                    CONTAINER_WIDGETS_TEXTURE,
+                    flameX,
+                    flameY + clippedY,
+                    WIDGET_FLAME_FULL_X,
+                    WIDGET_FLAME_FULL_Y + clippedY,
+                    WIDGET_FLAME_WIDTH,
+                    flameFill,
+                    WIDGET_FLAME_WIDTH,
+                    flameFill,
+                    CONTAINER_WIDGETS_TEXTURE_WIDTH,
+                    CONTAINER_WIDGETS_TEXTURE_HEIGHT
+                );
+            }
+
+            int arrowX = contentX + FURNACE_ARROW_X;
+            int arrowY = contentY + FURNACE_ARROW_Y;
+            context.texture(
+                CONTAINER_WIDGETS_TEXTURE,
+                arrowX,
+                arrowY,
+                WIDGET_ARROW_EMPTY_X,
+                WIDGET_ARROW_EMPTY_Y,
+                WIDGET_ARROW_WIDTH,
+                WIDGET_ARROW_HEIGHT,
+                WIDGET_ARROW_WIDTH,
+                WIDGET_ARROW_HEIGHT,
+                CONTAINER_WIDGETS_TEXTURE_WIDTH,
+                CONTAINER_WIDGETS_TEXTURE_HEIGHT
+            );
+
+            int arrowFill = Math.round(clampProgress(menu.getBurnProgress()) * WIDGET_ARROW_WIDTH);
+            if (arrowFill > 0) {
+                context.texture(
+                    CONTAINER_WIDGETS_TEXTURE,
+                    arrowX,
+                    arrowY,
+                    WIDGET_ARROW_FULL_X,
+                    WIDGET_ARROW_FULL_Y,
+                    arrowFill,
+                    WIDGET_ARROW_HEIGHT,
+                    arrowFill,
+                    WIDGET_ARROW_HEIGHT,
+                    CONTAINER_WIDGETS_TEXTURE_WIDTH,
+                    CONTAINER_WIDGETS_TEXTURE_HEIGHT
+                );
+            }
+        }
+
+        @Override
+        public @Nullable DesktopSlotHit slotAt(DesktopSlotContext<AbstractFurnaceMenu, Void> context, double mouseX, double mouseY) {
+            int contentX = context.windowX() + FURNACE_CONTENT_MARGIN;
+            int contentY = context.windowY() + TOP_BAR_HEIGHT + FURNACE_CONTENT_MARGIN;
+            DesktopSlotHit input = this.slotHit(context, FURNACE_INPUT_SLOT, contentX + FURNACE_INPUT_X, contentY + FURNACE_INPUT_Y, mouseX, mouseY);
+            if (input != null) {
+                return input;
+            }
+            DesktopSlotHit fuel = this.slotHit(context, FURNACE_FUEL_SLOT, contentX + FURNACE_FUEL_X, contentY + FURNACE_FUEL_Y, mouseX, mouseY);
+            if (fuel != null) {
+                return fuel;
+            }
+            return this.slotHit(context, FURNACE_RESULT_SLOT, contentX + FURNACE_RESULT_X, contentY + FURNACE_RESULT_Y, mouseX, mouseY);
+        }
+
+        private void renderSlot(DesktopRenderContext<AbstractFurnaceMenu, Void> context, int containerSlot, int x, int y) {
+            Slot slot = containerSlot(context.containerSlots(), containerSlot);
+            if (slot != null) {
+                context.slot(slot, x, y);
+            }
+        }
+
+        private @Nullable DesktopSlotHit slotHit(
+            DesktopSlotContext<AbstractFurnaceMenu, Void> context,
+            int containerSlot,
+            int x,
+            int y,
+            double mouseX,
+            double mouseY
+        ) {
+            Slot slot = containerSlot(context.containerSlots(), containerSlot);
+            int slotId = slot == null ? -1 : context.menuSlotId(slot);
+            return slotId >= 0 && context.contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE)
+                ? DesktopSlotHit.of(slotId, x, y)
+                : null;
+        }
+    }
+
     private static final class EnchantmentBookState {
         private final RandomSource random = RandomSource.create();
         private ItemStack last = ItemStack.EMPTY;
@@ -8661,6 +9551,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private boolean beaconSelectionDirty;
         private @Nullable EnchantmentBookState enchantmentBookState;
         private @Nullable SmithingWindowState smithingState;
+        private @Nullable DesktopWindowDefinition<?, ?> apiDefinition;
+        private @Nullable Object apiState;
 
         private InventoryWindow(WindowKind kind, Component title, int x, int y, int width, int height) {
             this(kind, title, x, y, width, height, null, null, List.of(), 0, 0);
@@ -8841,6 +9733,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 List<Slot> slots = this.containerSlots();
                 if (this.session != null && this.session.isMountSession()) {
                     return screen.mountSlotAt(this, slots, menu, mouseX, mouseY);
+                }
+                if (this.apiDefinition != null) {
+                    return screen.apiSlotAt(this, mouseX, mouseY);
                 }
                 if (menu instanceof AbstractFurnaceMenu) {
                     return screen.furnaceSlotAt(this, slots, menu, mouseX, mouseY);

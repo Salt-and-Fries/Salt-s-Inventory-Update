@@ -54,6 +54,11 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
+import net.minecraft.resources.Identifier;
+
+import com.salts_inventory_update.api.server.desktop.DesktopServerApi;
+import com.salts_inventory_update.api.server.desktop.DesktopServerPayloadContext;
+import com.salts_inventory_update.api.server.desktop.DesktopServerPayloadHandler;
 import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.network.DesktopPackets;
@@ -61,6 +66,7 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopButtonPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCarriedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopClickPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
@@ -111,6 +117,9 @@ public final class DesktopContainerSessions {
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopSessionVisibilityPayload.TYPE, (payload, context) ->
             context.server().execute(() -> setSessionVisibility(context.player(), payload))
+        );
+        ServerPlayNetworking.registerGlobalReceiver(DesktopCustomPayload.TYPE, (payload, context) ->
+            context.server().execute(() -> customPayload(context.player(), payload))
         );
         ServerPlayNetworking.registerGlobalReceiver(InventorySlotPurchasePayload.TYPE, (payload, context) ->
             context.server().execute(() -> InventoryExpansion.tryPurchase(context.player()))
@@ -548,6 +557,61 @@ public final class DesktopContainerSessions {
             anvilMenu.broadcastChanges();
             player.inventoryMenu.broadcastChanges();
             sessions.broadcastAll(player);
+        }
+    }
+
+    private static void customPayload(ServerPlayer player, DesktopCustomPayload payload) {
+        PlayerSessions sessions = PLAYERS.get(player.getUUID());
+        if (sessions == null || !sessions.ready) {
+            DesktopDebug.trace("server custom dropped player={} session={} channel={} reason=not-ready", player.getName().getString(), payload.sessionId(), payload.channel());
+            return;
+        }
+
+        Session session = sessions.sessions.get(payload.sessionId());
+        if (session == null) {
+            DesktopDebug.trace("server custom dropped player={} session={} channel={} reason=missing-session", player.getName().getString(), payload.sessionId(), payload.channel());
+            return;
+        }
+        if (!session.visibleToClient) {
+            DesktopDebug.trace("server custom dropped player={} session={} channel={} reason=hidden", player.getName().getString(), payload.sessionId(), payload.channel());
+            return;
+        }
+
+        if (!session.menu.stillValid(player)) {
+            DesktopDebug.log("server custom invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
+            sessions.close(player, session.sessionId, true);
+            return;
+        }
+
+        DesktopServerPayloadHandler<AbstractContainerMenu> handler = DesktopServerApi.findPayloadHandler(session.menu.getType(), payload.channel());
+        if (handler == null) {
+            DesktopDebug.warn(
+                "server custom dropped player={} session={} channel={} menu={} reason=no-handler",
+                player.getName().getString(),
+                payload.sessionId(),
+                payload.channel(),
+                session.menu.getType()
+            );
+            return;
+        }
+
+        DesktopDebug.trace(
+            "server custom player={} session={} channel={} bytes={}",
+            player.getName().getString(),
+            payload.sessionId(),
+            payload.channel(),
+            payload.data().length
+        );
+        try {
+            handler.handle(new ServerPayloadContext(player, sessions, session, payload));
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn(
+                "server custom handler failed player={} session={} channel={} reason={}",
+                player.getName().getString(),
+                payload.sessionId(),
+                payload.channel(),
+                exception.toString()
+            );
         }
     }
 
@@ -1097,6 +1161,51 @@ public final class DesktopContainerSessions {
     }
 
     private record DormantGhostSource(String sourceKey) {
+    }
+
+    private record ServerPayloadContext(
+        ServerPlayer player,
+        PlayerSessions sessions,
+        Session session,
+        DesktopCustomPayload payload
+    ) implements DesktopServerPayloadContext<AbstractContainerMenu> {
+        @Override
+        public AbstractContainerMenu menu() {
+            return this.session.menu;
+        }
+
+        @Override
+        public int sessionId() {
+            return this.session.sessionId;
+        }
+
+        @Override
+        public String sourceKey() {
+            return this.session.sourceKey;
+        }
+
+        @Override
+        public Identifier channel() {
+            return this.payload.channel();
+        }
+
+        @Override
+        public byte[] data() {
+            return this.payload.data();
+        }
+
+        @Override
+        public void sendToClient(Identifier channel, byte[] data) {
+            send(this.player, new DesktopCustomPayload(this.session.sessionId, channel, data));
+        }
+
+        @Override
+        public void broadcastChanges() {
+            this.session.menu.broadcastChanges();
+            this.player.inventoryMenu.broadcastChanges();
+            this.sessions.broadcastAll(this.player);
+            syncCarried(this.player, this.sessions);
+        }
     }
 
     private static final class SessionSynchronizer implements ContainerSynchronizer {
