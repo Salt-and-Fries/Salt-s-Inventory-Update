@@ -2728,7 +2728,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private int inventoryVirtualSlotCount() {
-        return this.mainInventorySlots().size() + 1;
+        return this.mainInventorySlots().size() + (SaltsInventoryConfig.get().expandableInventory ? 1 : 0);
     }
 
     private List<Slot> hotbarSlots() {
@@ -2845,7 +2845,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean canResizeWindow(InventoryWindow window) {
-        return !this.cameraControl && !window.ghosted && !window.locked && !window.minimized && this.isResizableStorageWindow(window);
+        return SaltsInventoryConfig.get().allowResizing
+            && !this.cameraControl
+            && !window.ghosted
+            && !window.locked
+            && !window.minimized
+            && this.isResizableStorageWindow(window);
     }
 
     private boolean isResizableStorageWindow(InventoryWindow window) {
@@ -3305,6 +3310,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private WindowPosition containerWindowPosition(int windowWidth, int windowHeight) {
+        return switch (SaltsInventoryConfig.get().windowOpeningStyle()) {
+            case TOP_OUTSIDE -> this.topOutsideContainerWindowPosition(windowWidth, windowHeight);
+            case AROUND_INVENTORY -> this.anchoredContainerWindowPosition(windowWidth, windowHeight, false);
+            case VINTAGE_STORY -> this.anchoredContainerWindowPosition(windowWidth, windowHeight, true);
+        };
+    }
+
+    private WindowPosition topOutsideContainerWindowPosition(int windowWidth, int windowHeight) {
         List<WindowPosition> candidates = new ArrayList<>();
         int topY = WINDOW_PLACEMENT_MARGIN;
         int centerX = (this.desktopWidth() - windowWidth) / 2;
@@ -3348,6 +3361,118 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.clampedWindowX(centerX + cascade, windowWidth),
             this.clampedWindowY(topY + cascade, windowHeight)
         );
+    }
+
+    private WindowPosition anchoredContainerWindowPosition(int windowWidth, int windowHeight, boolean vintageStory) {
+        WindowBounds anchor = this.inventoryPlacementAnchor();
+        List<WindowPosition> candidates = new ArrayList<>();
+        if (vintageStory) {
+            this.addVintageStoryPlacementCandidates(candidates, anchor, windowWidth, windowHeight);
+        } else {
+            this.addAroundInventoryPlacementCandidates(candidates, anchor, windowWidth, windowHeight);
+        }
+
+        for (WindowPosition candidate : candidates) {
+            if (this.canPlaceWindowAt(candidate.x(), candidate.y(), windowWidth, windowHeight, anchor)) {
+                return candidate;
+            }
+        }
+
+        WindowPosition nearest = this.findNearestFreeWindowPosition(windowWidth, windowHeight, anchor);
+        if (nearest != null) {
+            return nearest;
+        }
+
+        return this.topOutsideContainerWindowPosition(windowWidth, windowHeight);
+    }
+
+    private void addAroundInventoryPlacementCandidates(List<WindowPosition> candidates, WindowBounds anchor, int windowWidth, int windowHeight) {
+        int centeredX = anchor.x() + (anchor.width() - windowWidth) / 2;
+        int centeredY = anchor.y() + (anchor.height() - windowHeight) / 2;
+        int rightX = anchor.right() + WINDOW_PLACEMENT_GAP;
+        int leftX = anchor.x() - windowWidth - WINDOW_PLACEMENT_GAP;
+        int topY = anchor.y() - windowHeight - WINDOW_PLACEMENT_GAP;
+        int bottomY = anchor.bottom() + WINDOW_PLACEMENT_GAP;
+
+        this.addPlacementCandidate(candidates, centeredX, topY);
+        this.addPlacementCandidate(candidates, rightX, centeredY);
+        this.addPlacementCandidate(candidates, leftX, centeredY);
+        this.addPlacementCandidate(candidates, rightX, topY);
+        this.addPlacementCandidate(candidates, leftX, topY);
+        this.addPlacementCandidate(candidates, rightX, bottomY);
+        this.addPlacementCandidate(candidates, leftX, bottomY);
+    }
+
+    private void addVintageStoryPlacementCandidates(List<WindowPosition> candidates, WindowBounds anchor, int windowWidth, int windowHeight) {
+        int rightX = anchor.right() + WINDOW_PLACEMENT_GAP;
+        int leftX = anchor.x() - windowWidth - WINDOW_PLACEMENT_GAP;
+        int middleY = anchor.y() + (anchor.height() - windowHeight) / 2;
+        int topY = anchor.y();
+        int bottomY = anchor.bottom() - windowHeight;
+
+        this.addPlacementCandidate(candidates, rightX, middleY);
+        this.addPlacementCandidate(candidates, rightX, topY);
+        this.addPlacementCandidate(candidates, rightX, bottomY);
+        this.addPlacementCandidate(candidates, leftX, middleY);
+        this.addPlacementCandidate(candidates, leftX, topY);
+        this.addPlacementCandidate(candidates, leftX, bottomY);
+    }
+
+    private WindowBounds inventoryPlacementAnchor() {
+        for (InventoryWindow window : this.windows) {
+            if (window.kind == WindowKind.INVENTORY && !window.ghosted) {
+                return this.visibleWindowBounds(window);
+            }
+        }
+
+        int inventoryWidth = Math.max(this.minimumTitleBarWidth(Component.literal("Inventory")), storageWindowWidth(INVENTORY_DEFAULT_COLUMNS, false));
+        int inventoryHeight = storageWindowHeight(INVENTORY_MAX_AUTO_VISIBLE_ROWS);
+        DesktopWindowStateStore.WindowState state = DesktopWindowStateStore
+            .load(this.minecraft == null ? Minecraft.getInstance() : this.minecraft, "local:inventory")
+            .orElse(null);
+        if (state != null && state.pinMode() != PinMode.UNPINNED) {
+            int width = state.width > 0 ? state.width : inventoryWidth;
+            int height = state.height > 0 ? state.height : inventoryHeight;
+            return new WindowBounds(
+                this.clampedWindowX(state.x, width),
+                this.clampedWindowY(state.y, height),
+                width,
+                height
+            );
+        }
+
+        WindowPosition position = this.centeredWindowPosition(inventoryWidth, inventoryHeight);
+        return new WindowBounds(position.x(), position.y(), inventoryWidth, inventoryHeight);
+    }
+
+    private @Nullable WindowPosition findNearestFreeWindowPosition(int windowWidth, int windowHeight, WindowBounds anchor) {
+        int maxX = this.desktopWidth() - windowWidth - WINDOW_PLACEMENT_MARGIN;
+        int maxY = this.desktopHeight() - windowHeight - WINDOW_PLACEMENT_MARGIN;
+        if (maxX < WINDOW_PLACEMENT_MARGIN || maxY < WINDOW_PLACEMENT_MARGIN) {
+            return null;
+        }
+
+        double anchorCenterX = anchor.x() + anchor.width() / 2.0D;
+        double anchorCenterY = anchor.y() + anchor.height() / 2.0D;
+        WindowPosition best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (int y = WINDOW_PLACEMENT_MARGIN; y <= maxY; y += WINDOW_PLACEMENT_GAP) {
+            for (int x = WINDOW_PLACEMENT_MARGIN; x <= maxX; x += WINDOW_PLACEMENT_GAP) {
+                if (!this.canPlaceWindowAt(x, y, windowWidth, windowHeight, anchor)) {
+                    continue;
+                }
+
+                double centerX = x + windowWidth / 2.0D;
+                double centerY = y + windowHeight / 2.0D;
+                double distance = (centerX - anchorCenterX) * (centerX - anchorCenterX)
+                    + (centerY - anchorCenterY) * (centerY - anchorCenterY);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = new WindowPosition(x, y);
+                }
+            }
+        }
+        return best;
     }
 
     private void addPlacementCandidate(List<WindowPosition> candidates, int x, int y) {
@@ -3408,6 +3533,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean canPlaceWindowAt(int x, int y, int windowWidth, int windowHeight) {
+        return this.canPlaceWindowAt(x, y, windowWidth, windowHeight, null);
+    }
+
+    private boolean canPlaceWindowAt(int x, int y, int windowWidth, int windowHeight, @Nullable WindowBounds reservedBounds) {
         if (x < WINDOW_PLACEMENT_MARGIN
             || y < WINDOW_PLACEMENT_MARGIN
             || x + windowWidth > this.desktopWidth() - WINDOW_PLACEMENT_MARGIN
@@ -3416,6 +3545,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         WindowBounds candidate = new WindowBounds(x, y, windowWidth, windowHeight);
+        if (reservedBounds != null && candidate.intersectsWithGap(reservedBounds, WINDOW_PLACEMENT_GAP)) {
+            return false;
+        }
         for (InventoryWindow window : this.windows) {
             if (candidate.intersectsWithGap(this.visibleWindowBounds(window), WINDOW_PLACEMENT_GAP)) {
                 return false;
@@ -4099,7 +4231,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void renderInventoryWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
         List<Slot> inventorySlots = this.mainInventorySlots();
-        SlotGridLayout layout = this.storageLayout(window, inventorySlots.size() + 1);
+        SlotGridLayout layout = this.storageLayout(window, this.inventoryVirtualSlotCount());
         this.clampStorageScroll(window);
         this.renderCompactSlots(graphics, window, inventorySlots, layout, mouseX, mouseY);
         this.renderIncreaseInventoryButton(graphics, window, layout, mouseX, mouseY);
@@ -7473,7 +7605,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable InventoryIncreaseButtonRect increaseInventoryButtonRect(InventoryWindow window) {
-        if (window.kind != WindowKind.INVENTORY || window.minimized) {
+        if (window.kind != WindowKind.INVENTORY || window.minimized || !SaltsInventoryConfig.get().expandableInventory) {
             return null;
         }
 
@@ -8510,7 +8642,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private final int legacyMinSlotY;
         private boolean minimized;
         private boolean focused;
-        private boolean locked = true;
+        private boolean locked = !SaltsInventoryConfig.get().openUnlocked;
         private PinMode pinMode = PinMode.UNPINNED;
         private boolean ghosted;
         private int scrollRow;
@@ -8683,7 +8815,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             if (this.kind == WindowKind.INVENTORY) {
                 List<Slot> inventorySlots = screen.mainInventorySlots();
                 AbstractContainerMenu playerMenu = screen.playerMenu();
-                SlotGridLayout layout = screen.storageLayout(this, inventorySlots.size() + 1);
+                SlotGridLayout layout = screen.storageLayout(this, screen.inventoryVirtualSlotCount());
                 this.scrollRow = clamp(this.scrollRow, 0, layout.maxScrollRow());
                 for (int row = 0; row < layout.visibleRows(); row++) {
                     for (int column = 0; column < layout.columns(); column++) {

@@ -2,6 +2,8 @@ package com.salts_inventory_update.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -23,6 +25,7 @@ public final class WindowedInventoryClient {
     }
 
     public static void initialize() {
+        SaltsInventoryConfig.load();
         characterWindowKey = KeyMappingHelper.registerKeyMapping(
             new KeyMapping(
                 "key.salts_inventory_update.character_window",
@@ -34,6 +37,7 @@ public final class WindowedInventoryClient {
 
         InventoryDesktopScreen.registerContainerScreens();
         DesktopContainerClient.initializeNetworking();
+        registerClientCommands();
         ClientTickEvents.START_CLIENT_TICK.register(WindowedInventoryClient::syncDesktopMovementKeys);
         ClientTickEvents.END_CLIENT_TICK.register(WindowedInventoryClient::onClientTick);
     }
@@ -44,6 +48,20 @@ public final class WindowedInventoryClient {
 
     public static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(SaltsInventoryUpdate.MOD_ID, path);
+    }
+
+    private static void registerClientCommands() {
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
+            ClientCommands.literal("salts_inventory")
+                .then(ClientCommands.literal("config").executes(context -> {
+                    Minecraft minecraft = context.getSource().getClient();
+                    minecraft.execute(() -> {
+                        SaltsInventoryConfig.reload();
+                        minecraft.setScreen(new SaltsInventoryConfigScreen(minecraft.screen));
+                    });
+                    return 1;
+                }))
+        ));
     }
 
     public static boolean isAltDown(Minecraft minecraft) {
