@@ -22,8 +22,11 @@ public abstract class ServerPlayerMixin {
     private void salts_inventory_update$openDesktopMenu(MenuProvider provider, CallbackInfoReturnable<OptionalInt> cir) {
         ServerPlayer player = (ServerPlayer) (Object) this;
         if (DesktopContainerSessions.shouldCapture(player)) {
-            cir.setReturnValue(DesktopContainerSessions.openMenuSession(player, provider));
-            cir.cancel();
+            OptionalInt desktopSession = DesktopContainerSessions.openMenuSession(player, provider);
+            if (desktopSession != null) {
+                cir.setReturnValue(desktopSession);
+                cir.cancel();
+            }
         }
     }
 

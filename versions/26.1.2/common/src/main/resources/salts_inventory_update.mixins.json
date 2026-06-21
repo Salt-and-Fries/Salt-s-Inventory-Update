@@ -20,7 +20,9 @@
     "client.MinecraftMixin",
     "client.MinecraftInvoker",
     "client.MenuScreensAccessor",
-    "client.MouseHandlerAccessor"
+    "client.MultiPlayerGameModeMixin",
+    "client.MouseHandlerAccessor",
+    "client.RecipeBookComponentAccessor"
   ],
   "server": [],
   "injectors": {

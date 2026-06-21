@@ -18,6 +18,8 @@ public interface DesktopRenderContext<T extends AbstractContainerMenu, S> extend
 
     void text(String text, int x, int y, int color, boolean shadow);
 
+    void scaledText(String text, int x, int y, int color, boolean shadow, float scale);
+
     void text(Component text, int x, int y, int color, boolean shadow);
 
     void sprite(Identifier sprite, int x, int y, int width, int height);
@@ -34,7 +36,13 @@ public interface DesktopRenderContext<T extends AbstractContainerMenu, S> extend
 
     void item(ItemStack stack, int x, int y, int seed);
 
+    void virtualItem(ItemStack stack, long count, int x, int y);
+
     void slot(int menuSlotId, int x, int y);
+
+    default void renderSlot(int menuSlotId, int x, int y) {
+        this.slot(menuSlotId, x, y);
+    }
 
     void slot(Slot slot, int x, int y);
 

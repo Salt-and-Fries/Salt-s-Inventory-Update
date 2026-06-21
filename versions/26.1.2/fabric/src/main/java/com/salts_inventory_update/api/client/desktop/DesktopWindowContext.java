@@ -37,6 +37,10 @@ public interface DesktopWindowContext<T extends AbstractContainerMenu, S> {
 
     int contentY();
 
+    int contentWidth();
+
+    int contentHeight();
+
     boolean focused();
 
     boolean minimized();
@@ -45,9 +49,19 @@ public interface DesktopWindowContext<T extends AbstractContainerMenu, S> {
 
     ItemStack carriedStack();
 
+    boolean recipeBookVisible();
+
+    boolean refreshRecipeBook();
+
     @Nullable Slot menuSlot(int menuSlotId);
 
     @Nullable Slot containerSlot(int containerSlotIndex);
 
     int menuSlotId(Slot slot);
+
+    int fontWidth(String text);
+
+    int fontWidth(Component text);
+
+    String trimToWidth(String text, int maxWidth);
 }

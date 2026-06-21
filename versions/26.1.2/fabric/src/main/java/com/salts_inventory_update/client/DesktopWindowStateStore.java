@@ -16,6 +16,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
 import com.salts_inventory_update.debug.DesktopDebug;
@@ -137,6 +139,7 @@ final class DesktopWindowStateStore {
         int height;
         boolean locked = true;
         String pinMode = PinMode.UNPINNED.name();
+        String localState = "{}";
 
         WindowState() {
         }
@@ -156,6 +159,23 @@ final class DesktopWindowStateStore {
             } catch (IllegalArgumentException | NullPointerException ignored) {
                 return PinMode.UNPINNED;
             }
+        }
+
+        CompoundTag localState() {
+            if (this.localState == null || this.localState.isBlank()) {
+                return new CompoundTag();
+            }
+
+            try {
+                return TagParser.parseCompoundFully(this.localState);
+            } catch (Exception exception) {
+                DesktopDebug.warn("client window local state parse failed reason={}", exception.toString());
+                return new CompoundTag();
+            }
+        }
+
+        void localState(CompoundTag tag) {
+            this.localState = tag == null || tag.isEmpty() ? "{}" : tag.toString();
         }
     }
 

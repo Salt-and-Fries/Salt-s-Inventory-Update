@@ -9,5 +9,9 @@ public interface DesktopSlotContext<T extends AbstractContainerMenu, S> extends 
 
     @Nullable DesktopSlotHit menuSlotHit(int menuSlotId, int x, int y, double mouseX, double mouseY);
 
+    default @Nullable DesktopSlotHit hitSlot(int menuSlotId, int x, int y, double mouseX, double mouseY) {
+        return this.menuSlotHit(menuSlotId, x, y, mouseX, mouseY);
+    }
+
     @Nullable DesktopSlotHit containerSlotHit(int containerSlotIndex, int x, int y, double mouseX, double mouseY);
 }

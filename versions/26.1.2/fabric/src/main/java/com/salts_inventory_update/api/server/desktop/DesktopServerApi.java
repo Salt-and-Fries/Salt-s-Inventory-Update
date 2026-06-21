@@ -7,13 +7,27 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.resources.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 
+import com.salts_inventory_update.api.desktop.DesktopPayloadCodecs;
+
 public final class DesktopServerApi {
     private static final Map<MenuType<?>, Map<Identifier, DesktopServerPayloadHandler<?>>> PAYLOAD_HANDLERS = new LinkedHashMap<>();
+    private static final Map<MenuType<?>, DesktopServerWindowHandler<?, ?>> WINDOW_HANDLERS = new LinkedHashMap<>();
 
     private DesktopServerApi() {
+    }
+
+    public static synchronized <T extends AbstractContainerMenu, S> void registerWindow(
+        MenuType<T> menuType,
+        DesktopServerWindowHandler<T, S> handler
+    ) {
+        Objects.requireNonNull(menuType, "menuType");
+        Objects.requireNonNull(handler, "handler");
+        WINDOW_HANDLERS.put(menuType, handler);
     }
 
     public static synchronized <T extends AbstractContainerMenu> void registerPayload(
@@ -27,6 +41,21 @@ public final class DesktopServerApi {
         PAYLOAD_HANDLERS.computeIfAbsent(menuType, ignored -> new LinkedHashMap<>()).put(channel, handler);
     }
 
+    public static synchronized <T extends AbstractContainerMenu, P> void registerPayload(
+        MenuType<T> menuType,
+        Identifier channel,
+        StreamCodec<? super RegistryFriendlyByteBuf, P> codec,
+        DesktopTypedServerPayloadHandler<T, P> handler
+    ) {
+        Objects.requireNonNull(menuType, "menuType");
+        Objects.requireNonNull(channel, "channel");
+        Objects.requireNonNull(codec, "codec");
+        Objects.requireNonNull(handler, "handler");
+        registerPayload(menuType, channel, context ->
+            handler.handle(context, DesktopPayloadCodecs.decode(context.player().registryAccess(), codec, context.data()))
+        );
+    }
+
     @SuppressWarnings("unchecked")
     public static synchronized @Nullable DesktopServerPayloadHandler<AbstractContainerMenu> findPayloadHandler(MenuType<?> menuType, Identifier channel) {
         Map<Identifier, DesktopServerPayloadHandler<?>> handlers = PAYLOAD_HANDLERS.get(menuType);
@@ -35,5 +64,14 @@ public final class DesktopServerApi {
         }
 
         return (DesktopServerPayloadHandler<AbstractContainerMenu>) handlers.get(channel);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static synchronized @Nullable DesktopServerWindowHandler<AbstractContainerMenu, Object> findWindowHandler(MenuType<?> menuType) {
+        return (DesktopServerWindowHandler<AbstractContainerMenu, Object>) WINDOW_HANDLERS.get(menuType);
+    }
+
+    public static synchronized boolean hasWindowSupport(MenuType<?> menuType) {
+        return WINDOW_HANDLERS.containsKey(menuType) || PAYLOAD_HANDLERS.containsKey(menuType);
     }
 }

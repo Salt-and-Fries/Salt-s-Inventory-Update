@@ -13,6 +13,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.display.RecipeDisplay;
+import net.minecraft.world.item.crafting.display.RecipeDisplayId;
 import net.minecraft.world.item.trading.MerchantOffers;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
@@ -37,11 +39,13 @@ public final class DesktopPackets {
         PayloadTypeRegistry.serverboundPlay().register(DesktopClickPayload.TYPE, DesktopClickPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopQuickMovePayload.TYPE, DesktopQuickMovePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopButtonPayload.TYPE, DesktopButtonPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopPlaceRecipePayload.TYPE, DesktopPlaceRecipePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopRenamePayload.TYPE, DesktopRenamePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopSessionPinPayload.TYPE, DesktopSessionPinPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopCustomPayload.TYPE, DesktopCustomPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopCarriedPayload.TYPE, DesktopCarriedPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(InventorySlotPurchasePayload.TYPE, InventorySlotPurchasePayload.CODEC);
 
         PayloadTypeRegistry.clientboundPlay().register(DesktopOpenSessionPayload.TYPE, DesktopOpenSessionPayload.CODEC);
@@ -52,6 +56,7 @@ public final class DesktopPackets {
         PayloadTypeRegistry.clientboundPlay().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopMerchantOffersPayload.TYPE, DesktopMerchantOffersPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopCustomPayload.TYPE, DesktopCustomPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopGhostRecipePayload.TYPE, DesktopGhostRecipePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(InventoryExpansionSyncPayload.TYPE, InventoryExpansionSyncPayload.CODEC);
     }
 
@@ -217,6 +222,29 @@ public final class DesktopPackets {
         private void write(RegistryFriendlyByteBuf buf) {
             buf.writeVarInt(this.sessionId);
             buf.writeVarInt(this.buttonId);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopPlaceRecipePayload(int sessionId, RecipeDisplayId recipeId, boolean useMaxItems) implements CustomPacketPayload {
+        public static final Type<DesktopPlaceRecipePayload> TYPE = new Type<>(id("desktop_place_recipe"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopPlaceRecipePayload> CODEC = CustomPacketPayload.codec(
+            DesktopPlaceRecipePayload::write,
+            DesktopPlaceRecipePayload::new
+        );
+
+        private DesktopPlaceRecipePayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), RecipeDisplayId.STREAM_CODEC.decode(buf), buf.readBoolean());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            RecipeDisplayId.STREAM_CODEC.encode(buf, this.recipeId);
+            buf.writeBoolean(this.useMaxItems);
         }
 
         @Override
@@ -474,6 +502,28 @@ public final class DesktopPackets {
 
         private void write(RegistryFriendlyByteBuf buf) {
             ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, this.carried);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopGhostRecipePayload(int sessionId, RecipeDisplay recipeDisplay) implements CustomPacketPayload {
+        public static final Type<DesktopGhostRecipePayload> TYPE = new Type<>(id("desktop_ghost_recipe"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopGhostRecipePayload> CODEC = CustomPacketPayload.codec(
+            DesktopGhostRecipePayload::write,
+            DesktopGhostRecipePayload::new
+        );
+
+        private DesktopGhostRecipePayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), RecipeDisplay.STREAM_CODEC.decode(buf));
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            RecipeDisplay.STREAM_CODEC.encode(buf, this.recipeDisplay);
         }
 
         @Override

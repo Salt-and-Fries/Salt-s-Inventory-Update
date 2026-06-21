@@ -15,6 +15,7 @@ import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
+import com.salts_inventory_update.compat.toms_storage.client.TomsStorageClientCompat;
 import com.salts_inventory_update.mixin.client.MouseHandlerAccessor;
 
 public final class WindowedInventoryClient {
@@ -36,6 +37,7 @@ public final class WindowedInventoryClient {
         );
 
         InventoryDesktopScreen.registerInternalApiDefinitions();
+        TomsStorageClientCompat.initialize();
         InventoryDesktopScreen.registerContainerScreens();
         DesktopContainerClient.initializeNetworking();
         registerClientCommands();
@@ -80,17 +82,20 @@ public final class WindowedInventoryClient {
             return;
         }
 
+        Screen screen = minecraft.screen;
+        boolean desktopTextInput = screen instanceof InventoryDesktopScreen inventoryScreen && inventoryScreen.isTextInputActive();
         while (characterWindowKey.consumeClick()) {
-            InventoryDesktopScreen.openOrToggleCharacter(minecraft);
+            if (!desktopTextInput) {
+                InventoryDesktopScreen.openOrToggleCharacter(minecraft);
+            }
         }
 
-        Screen screen = minecraft.screen;
         if (screen instanceof InventoryDesktopScreen inventoryScreen) {
             boolean altDown = isAltDown(minecraft);
             boolean hasWindows = inventoryScreen.hasWindows();
             boolean desktopActive = hasWindows || inventoryScreen.isHotbarOnly();
             inventoryScreen.setCameraControl(altDown && hasWindows);
-            syncMovementKeys(minecraft, desktopActive && !inventoryScreen.isCreativeSearchActive(), !hasWindows || inventoryScreen.isCameraControlActive());
+            syncMovementKeys(minecraft, desktopActive && !inventoryScreen.isTextInputActive(), !hasWindows || inventoryScreen.isCameraControlActive());
             setCameraMouseGrab(minecraft, inventoryScreen.isCameraControlActive());
 
             if (inventoryScreen.isHotbarOnly() && !altDown && inventoryScreen.canCloseHotbarOnly()) {
@@ -122,7 +127,7 @@ public final class WindowedInventoryClient {
 
     private static void syncDesktopMovementKeys(Minecraft minecraft) {
         if (minecraft.screen instanceof InventoryDesktopScreen screen && (screen.hasWindows() || screen.isHotbarOnly())) {
-            syncMovementKeys(minecraft, !screen.isCreativeSearchActive(), !screen.hasWindows() || screen.isCameraControlActive());
+            syncMovementKeys(minecraft, !screen.isTextInputActive(), !screen.hasWindows() || screen.isCameraControlActive());
         }
     }
 

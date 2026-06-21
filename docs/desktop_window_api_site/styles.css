@@ -1,0 +1,378 @@
+:root {
+  color-scheme: light;
+  --bg: #eef1f3;
+  --paper: #f9faf9;
+  --ink: #151719;
+  --muted: #5b636b;
+  --line: #cfd5d9;
+  --line-dark: #2b2f33;
+  --accent: #2f8a57;
+  --accent-soft: #dcefe4;
+  --warn: #f2d47b;
+  --warn-soft: #fff6d6;
+  --good: #9dd6af;
+  --good-soft: #e5f5e9;
+  --code: #1f2428;
+  --code-bg: #f0f2f3;
+  --shadow: rgba(20, 24, 28, 0.14);
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, rgba(47, 138, 87, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(47, 138, 87, 0.06) 1px, transparent 1px),
+    var(--bg);
+  background-size: 18px 18px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 36px clamp(18px, 4vw, 56px);
+  background: var(--paper);
+  border-bottom: 4px solid var(--line-dark);
+  box-shadow: 0 5px 0 var(--shadow);
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 4.8rem);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.lead {
+  max-width: 760px;
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1.55;
+}
+
+.version-card {
+  align-self: start;
+  min-width: 190px;
+  padding: 16px;
+  display: grid;
+  gap: 6px;
+  background: var(--accent-soft);
+  border: 3px solid var(--line-dark);
+  box-shadow: 5px 5px 0 var(--line-dark);
+}
+
+.version-card span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.version-card strong {
+  font-size: 1rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 24px;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.sidebar {
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 12px;
+  background: var(--paper);
+  border: 3px solid var(--line-dark);
+  box-shadow: 4px 4px 0 var(--line-dark);
+}
+
+.sidebar a {
+  display: block;
+  padding: 8px 10px;
+  color: var(--ink);
+  text-decoration: none;
+  border: 2px solid transparent;
+  font-weight: 650;
+}
+
+.sidebar a:hover,
+.sidebar a:focus {
+  background: var(--accent-soft);
+  border-color: var(--line-dark);
+  outline: none;
+}
+
+.content {
+  min-width: 0;
+  display: grid;
+  gap: 22px;
+}
+
+.panel {
+  padding: clamp(18px, 3vw, 30px);
+  background: var(--paper);
+  border: 3px solid var(--line-dark);
+  box-shadow: 5px 5px 0 var(--line-dark);
+}
+
+.panel h2 {
+  margin: 0 0 14px;
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.panel h3 {
+  margin: 24px 0 8px;
+  font-size: 1.05rem;
+}
+
+.panel p,
+.panel li {
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.panel p {
+  margin: 0 0 14px;
+}
+
+.panel ul,
+.panel ol {
+  margin: 8px 0 0;
+  padding-left: 22px;
+}
+
+.grid {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mini {
+  padding: 16px;
+  background: #ffffff;
+  border: 2px solid var(--line-dark);
+}
+
+.mini h3 {
+  margin-top: 0;
+}
+
+.callout {
+  margin: 16px 0;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 2px solid var(--line-dark);
+  border-left: 10px solid var(--accent);
+}
+
+.callout.good {
+  background: var(--good-soft);
+  border-left-color: var(--good);
+}
+
+.callout.warn {
+  background: var(--warn-soft);
+  border-left-color: var(--warn);
+}
+
+code {
+  padding: 0.12em 0.35em;
+  color: var(--code);
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-size: 0.92em;
+}
+
+pre {
+  overflow: auto;
+  margin: 16px 0;
+  padding: 16px;
+  color: #f4f7f8;
+  background: #1f2428;
+  border: 3px solid var(--line-dark);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+pre code {
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  background: #ffffff;
+  border: 3px solid var(--line-dark);
+}
+
+th,
+td {
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+  border: 1px solid var(--line);
+}
+
+th {
+  color: var(--ink);
+  background: var(--accent-soft);
+  border-bottom: 3px solid var(--line-dark);
+}
+
+td {
+  color: var(--muted);
+}
+
+.diagram {
+  margin: 18px 0;
+}
+
+.box {
+  padding: 16px;
+  border: 3px solid var(--line-dark);
+  background: #ffffff;
+}
+
+.box strong,
+.box span {
+  display: block;
+}
+
+.box span {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.box.desktop {
+  background: #e7f3ec;
+}
+
+.box.session {
+  margin-top: 16px;
+  background: #f7f8f8;
+}
+
+.box.mod {
+  margin-top: 16px;
+  background: #fffdf3;
+}
+
+.footer {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 24px 36px;
+  color: var(--muted);
+}
+
+.footer p {
+  padding: 16px;
+  background: var(--paper);
+  border: 3px solid var(--line-dark);
+}
+
+@media (max-width: 1050px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    max-height: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid.two,
+  .grid.three {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .topbar {
+    flex-direction: column;
+    padding: 24px 16px;
+  }
+
+  .layout {
+    padding: 16px;
+  }
+
+  .sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .layout {
+    display: block;
+    padding: 0;
+  }
+
+  .panel,
+  .topbar,
+  .footer p {
+    box-shadow: none;
+    border-color: #000000;
+  }
+
+  pre {
+    white-space: pre-wrap;
+  }
+}

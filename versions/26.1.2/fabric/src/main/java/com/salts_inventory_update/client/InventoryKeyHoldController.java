@@ -135,6 +135,10 @@ public final class InventoryKeyHoldController {
         }
 
         Screen screen = minecraft.screen;
+        if (screen instanceof InventoryDesktopScreen desktop && desktop.isTextInputActive()) {
+            return false;
+        }
+
         return screen == null || screen instanceof InventoryDesktopScreen;
     }
 

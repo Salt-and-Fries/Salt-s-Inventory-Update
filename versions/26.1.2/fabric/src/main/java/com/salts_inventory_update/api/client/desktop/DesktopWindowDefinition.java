@@ -5,6 +5,8 @@ import org.jspecify.annotations.Nullable;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -12,6 +14,12 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 public interface DesktopWindowDefinition<T extends AbstractContainerMenu, S> {
     default @Nullable S createState(DesktopWindowSetupContext<T> context) {
         return null;
+    }
+
+    default void loadLocalState(DesktopWindowContext<T, S> context, CompoundTag tag) {
+    }
+
+    default void saveLocalState(DesktopWindowContext<T, S> context, CompoundTag tag) {
     }
 
     default Component title(DesktopWindowContext<T, S> context) {
@@ -30,10 +38,39 @@ public interface DesktopWindowDefinition<T extends AbstractContainerMenu, S> {
         return DesktopResizePolicy.FIXED;
     }
 
+    default @Nullable DesktopWindowSize snapSize(DesktopWindowContext<T, S> context) {
+        return null;
+    }
+
+    default void opened(DesktopWindowContext<T, S> context) {
+    }
+
+    default void closed(DesktopWindowContext<T, S> context) {
+    }
+
+    default void moved(DesktopWindowContext<T, S> context) {
+    }
+
+    default void resized(DesktopWindowContext<T, S> context) {
+    }
+
+    default void focusChanged(DesktopWindowContext<T, S> context, boolean focused) {
+    }
+
+    default void ghosted(DesktopWindowContext<T, S> context) {
+    }
+
+    default void unghosted(DesktopWindowContext<T, S> context) {
+    }
+
     default void tick(DesktopWindowContext<T, S> context) {
     }
 
     default void render(DesktopRenderContext<T, S> context) {
+    }
+
+    default @Nullable RecipeBookComponent<?> createRecipeBook(DesktopWindowContext<T, S> context) {
+        return null;
     }
 
     default @Nullable DesktopSlotHit slotAt(DesktopSlotContext<T, S> context, double mouseX, double mouseY) {
@@ -61,6 +98,10 @@ public interface DesktopWindowDefinition<T extends AbstractContainerMenu, S> {
     }
 
     default boolean charTyped(DesktopInputContext<T, S> context, CharacterEvent event) {
+        return false;
+    }
+
+    default boolean wantsTextInput(DesktopWindowContext<T, S> context) {
         return false;
     }
 

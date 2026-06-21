@@ -9,6 +9,8 @@ import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
 
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
@@ -19,6 +21,8 @@ import com.salts_inventory_update.api.client.desktop.DesktopWindowLookupContext;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowMatcher;
 import com.salts_inventory_update.api.server.desktop.DesktopServerApi;
 import com.salts_inventory_update.api.server.desktop.DesktopServerPayloadHandler;
+import com.salts_inventory_update.api.server.desktop.DesktopServerWindowHandler;
+import com.salts_inventory_update.api.server.desktop.DesktopTypedServerPayloadHandler;
 
 public final class SaltsInventoryDesktopApi {
     public static final int CUSTOM_PAYLOAD_MAX_BYTES = 32 * 1024;
@@ -29,7 +33,7 @@ public final class SaltsInventoryDesktopApi {
     private SaltsInventoryDesktopApi() {
     }
 
-    public static synchronized <T extends AbstractContainerMenu, S> void register(MenuType<T> menuType, DesktopWindowDefinition<T, S> definition) {
+    public static synchronized <T extends AbstractContainerMenu, S> void registerClientWindow(MenuType<T> menuType, DesktopWindowDefinition<T, S> definition) {
         Objects.requireNonNull(menuType, "menuType");
         Objects.requireNonNull(definition, "definition");
         if (DEFINITIONS.containsKey(menuType)) {
@@ -38,13 +42,13 @@ public final class SaltsInventoryDesktopApi {
         DEFINITIONS.put(menuType, definition);
     }
 
-    public static synchronized <T extends AbstractContainerMenu, S> void replace(MenuType<T> menuType, DesktopWindowDefinition<T, S> definition) {
+    public static synchronized <T extends AbstractContainerMenu, S> void replaceClientWindow(MenuType<T> menuType, DesktopWindowDefinition<T, S> definition) {
         Objects.requireNonNull(menuType, "menuType");
         Objects.requireNonNull(definition, "definition");
         DEFINITIONS.put(menuType, definition);
     }
 
-    public static synchronized void registerPredicate(
+    public static synchronized void registerClientWindowPredicate(
         Identifier id,
         int priority,
         DesktopWindowMatcher matcher,
@@ -58,6 +62,15 @@ public final class SaltsInventoryDesktopApi {
         PREDICATES.sort(Comparator.comparingInt(PredicateRegistration::priority).reversed());
     }
 
+    public static synchronized <T extends AbstractContainerMenu, S> void registerServerWindow(
+        MenuType<T> menuType,
+        DesktopServerWindowHandler<T, S> handler
+    ) {
+        Objects.requireNonNull(menuType, "menuType");
+        Objects.requireNonNull(handler, "handler");
+        DesktopServerApi.registerWindow(menuType, handler);
+    }
+
     public static synchronized <T extends AbstractContainerMenu> void registerServerPayload(
         MenuType<T> menuType,
         Identifier channel,
@@ -67,6 +80,39 @@ public final class SaltsInventoryDesktopApi {
         Objects.requireNonNull(channel, "channel");
         Objects.requireNonNull(handler, "handler");
         DesktopServerApi.registerPayload(menuType, channel, handler);
+    }
+
+    public static synchronized <T extends AbstractContainerMenu, P> void registerServerPayload(
+        MenuType<T> menuType,
+        Identifier channel,
+        StreamCodec<? super RegistryFriendlyByteBuf, P> codec,
+        DesktopTypedServerPayloadHandler<T, P> handler
+    ) {
+        Objects.requireNonNull(menuType, "menuType");
+        Objects.requireNonNull(channel, "channel");
+        Objects.requireNonNull(codec, "codec");
+        Objects.requireNonNull(handler, "handler");
+        DesktopServerApi.registerPayload(menuType, channel, codec, handler);
+    }
+
+    @Deprecated
+    public static synchronized <T extends AbstractContainerMenu, S> void register(MenuType<T> menuType, DesktopWindowDefinition<T, S> definition) {
+        registerClientWindow(menuType, definition);
+    }
+
+    @Deprecated
+    public static synchronized <T extends AbstractContainerMenu, S> void replace(MenuType<T> menuType, DesktopWindowDefinition<T, S> definition) {
+        replaceClientWindow(menuType, definition);
+    }
+
+    @Deprecated
+    public static synchronized void registerPredicate(
+        Identifier id,
+        int priority,
+        DesktopWindowMatcher matcher,
+        DesktopWindowDefinitionFactory factory
+    ) {
+        registerClientWindowPredicate(id, priority, matcher, factory);
     }
 
     public static synchronized @Nullable DesktopWindowDefinition<?, ?> findDefinition(DesktopWindowLookupContext context) {
