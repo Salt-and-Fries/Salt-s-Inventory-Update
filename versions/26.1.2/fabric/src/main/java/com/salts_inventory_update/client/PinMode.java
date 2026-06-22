@@ -5,10 +5,10 @@ enum PinMode {
     PINNED,
     GHOST_PINNED;
 
-    PinMode next() {
+    PinMode next(boolean enableGhostPins) {
         return switch (this) {
             case UNPINNED -> PINNED;
-            case PINNED -> GHOST_PINNED;
+            case PINNED -> enableGhostPins ? GHOST_PINNED : UNPINNED;
             case GHOST_PINNED -> UNPINNED;
         };
     }

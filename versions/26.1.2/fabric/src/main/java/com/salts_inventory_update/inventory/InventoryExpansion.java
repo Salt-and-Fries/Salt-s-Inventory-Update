@@ -15,6 +15,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 
 import com.salts_inventory_update.mixin.accessor.AbstractContainerMenuAccessor;
 import com.salts_inventory_update.network.DesktopPackets.InventoryExpansionSyncPayload;
+import com.salts_inventory_update.SaltsInventoryRuntime;
 
 public final class InventoryExpansion {
     public static final int VANILLA_MAIN_START = 9;
@@ -50,7 +51,7 @@ public final class InventoryExpansion {
     }
 
     public static boolean isExtraSlot(Slot slot) {
-        return slot instanceof InventoryExpansionSlot;
+        return SaltsInventoryRuntime.isEnabled() && slot instanceof InventoryExpansionSlot;
     }
 
     public static boolean isMainInventorySlot(net.minecraft.world.entity.player.Player player, Slot slot) {
@@ -68,6 +69,10 @@ public final class InventoryExpansion {
     }
 
     public static void appendMissingMenuSlots(InventoryMenu menu, net.minecraft.world.entity.player.Player player) {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return;
+        }
+
         PlayerExtraInventory extraInventory = access(player).salts_inventory_update$getExtraInventory();
         int existing = 0;
         for (Slot slot : menu.slots) {
@@ -84,10 +89,18 @@ public final class InventoryExpansion {
     }
 
     public static boolean insertIntoExtra(net.minecraft.world.entity.player.Player player, ItemStack stack) {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return false;
+        }
+
         return access(player).salts_inventory_update$getExtraInventory().insert(stack);
     }
 
     public static void ensurePlayerMenuCanReadSlotCount(net.minecraft.world.entity.player.Player player, int packetSlotCount) {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return;
+        }
+
         if (packetSlotCount <= player.inventoryMenu.slots.size()) {
             return;
         }
@@ -136,6 +149,10 @@ public final class InventoryExpansion {
         net.minecraft.world.entity.player.Player source,
         boolean copyContents
     ) {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return;
+        }
+
         InventoryExpansionAccess sourceAccess = access(source);
         InventoryExpansionAccess targetAccess = access(target);
         targetAccess.salts_inventory_update$setExtraSlotCount(sourceAccess.salts_inventory_update$getExtraSlotCount());
@@ -144,7 +161,7 @@ public final class InventoryExpansion {
     }
 
     public static void syncToClient(ServerPlayer player) {
-        if (ServerPlayNetworking.canSend(player, InventoryExpansionSyncPayload.TYPE)) {
+        if (SaltsInventoryRuntime.isEnabled() && ServerPlayNetworking.canSend(player, InventoryExpansionSyncPayload.TYPE)) {
             InventoryExpansionAccess access = access(player);
             ServerPlayNetworking.send(
                 player,
@@ -157,6 +174,10 @@ public final class InventoryExpansion {
     }
 
     public static boolean tryPurchase(ServerPlayer player) {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return false;
+        }
+
         InventoryExpansionAccess access = access(player);
         int currentCount = access.salts_inventory_update$getExtraSlotCount();
         int cost = costForNextSlot(currentCount);

@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.client.InventoryDesktopScreen;
 import com.salts_inventory_update.debug.DesktopDebug;
 
@@ -35,6 +36,10 @@ public abstract class MinecraftMixin {
 
     @Inject(method = "handleKeybinds", at = @At("HEAD"))
     private void salts_inventory_update$openWindowedInventory(CallbackInfo ci) {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return;
+        }
+
         while (this.options.keyInventory.consumeClick()) {
             DesktopDebug.trace("client consumed legacy inventory key click; release/hold controller owns E");
         }

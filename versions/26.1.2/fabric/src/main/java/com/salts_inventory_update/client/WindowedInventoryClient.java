@@ -15,6 +15,7 @@ import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
+import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.compat.toms_storage.client.TomsStorageClientCompat;
 import com.salts_inventory_update.mixin.client.MouseHandlerAccessor;
 
@@ -73,8 +74,18 @@ public final class WindowedInventoryClient {
     }
 
     private static void onClientTick(Minecraft minecraft) {
-        InventoryKeyHoldController.tick(minecraft);
         DesktopContainerClient.tick(minecraft);
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            InventoryKeyHoldController.reset();
+            InventoryDesktopScreen.reset(minecraft);
+            setCameraMouseGrab(minecraft, false);
+            if (minecraft.screen instanceof InventoryDesktopScreen) {
+                minecraft.setScreen(null);
+            }
+            return;
+        }
+
+        InventoryKeyHoldController.tick(minecraft);
         if (minecraft.player == null || minecraft.level == null) {
             InventoryKeyHoldController.reset();
             InventoryDesktopScreen.reset(minecraft);
@@ -111,6 +122,10 @@ public final class WindowedInventoryClient {
     }
 
     public static void extractPassiveGhostWindows(GuiGraphicsExtractor graphics) {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return;
+        }
+
         Minecraft minecraft = Minecraft.getInstance();
         InventoryDesktopScreen.extractPassiveGhostWindows(minecraft, graphics);
         if (!(minecraft.screen instanceof InventoryDesktopScreen)) {
@@ -119,6 +134,10 @@ public final class WindowedInventoryClient {
     }
 
     public static boolean shouldHideCrosshair() {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return false;
+        }
+
         Minecraft minecraft = Minecraft.getInstance();
         return minecraft.screen instanceof InventoryDesktopScreen screen
             && screen.hasWindows()
@@ -126,6 +145,10 @@ public final class WindowedInventoryClient {
     }
 
     private static void syncDesktopMovementKeys(Minecraft minecraft) {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return;
+        }
+
         if (minecraft.screen instanceof InventoryDesktopScreen screen && (screen.hasWindows() || screen.isHotbarOnly())) {
             syncMovementKeys(minecraft, !screen.isTextInputActive(), !screen.hasWindows() || screen.isCameraControlActive());
         }

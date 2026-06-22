@@ -66,6 +66,7 @@ import com.salts_inventory_update.api.server.desktop.DesktopServerPayloadContext
 import com.salts_inventory_update.api.server.desktop.DesktopServerPayloadHandler;
 import com.salts_inventory_update.api.server.desktop.DesktopServerSessionContext;
 import com.salts_inventory_update.api.server.desktop.DesktopServerWindowHandler;
+import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.compat.toms_storage.TomsStorageCompat;
 import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.inventory.InventoryExpansion;
@@ -145,6 +146,10 @@ public final class DesktopContainerSessions {
     }
 
     public static boolean shouldCapture(ServerPlayer player) {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return false;
+        }
+
         PlayerSessions sessions = PLAYERS.get(player.getUUID());
         if (sessions != null && sessions.ready) {
             return true;
@@ -164,6 +169,10 @@ public final class DesktopContainerSessions {
     }
 
     public static void captureUseTarget(ServerPlayer player, BlockHitResult hitResult) {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return;
+        }
+
         if (hitResult.getType() != HitResult.Type.BLOCK) {
             return;
         }
@@ -178,6 +187,10 @@ public final class DesktopContainerSessions {
     }
 
     public static boolean hasOpenSessionForContainer(Player player, Container container) {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return false;
+        }
+
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return false;
         }
@@ -357,7 +370,6 @@ public final class DesktopContainerSessions {
             || type == MenuType.FURNACE
             || type == MenuType.GRINDSTONE
             || type == MenuType.HOPPER
-            || type == MenuType.LECTERN
             || type == MenuType.LOOM
             || type == MenuType.MERCHANT
             || type == MenuType.SHULKER_BOX
@@ -388,7 +400,7 @@ public final class DesktopContainerSessions {
 
     private static void setReady(ServerPlayer player, boolean ready) {
         PlayerSessions sessions = sessions(player);
-        sessions.ready = ready;
+        sessions.ready = ready && SaltsInventoryRuntime.isEnabled();
         DesktopDebug.log("server ready player={} ready={} sessions={}", player.getName().getString(), ready, sessions.sessions.size());
         if (!ready) {
             sessions.closeAll(player, false);
@@ -407,6 +419,17 @@ public final class DesktopContainerSessions {
     }
 
     private static void tick(MinecraftServer server) {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                PlayerSessions sessions = PLAYERS.get(player.getUUID());
+                if (sessions != null && sessions.ready) {
+                    sessions.ready = false;
+                    sessions.closeAll(player, true);
+                }
+            }
+            return;
+        }
+
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             PlayerSessions sessions = PLAYERS.get(player.getUUID());
             if (sessions != null && sessions.ready) {
@@ -486,15 +509,20 @@ public final class DesktopContainerSessions {
             return;
         }
 
-        if (!sessions.carried.isEmpty()) {
-            DesktopDebug.trace("server quick move dropped player={} sourceSession={} sourceSlot={} reason=carried-not-empty carried={}", player.getName().getString(), payload.sourceSessionId(), payload.sourceSlotIndex(), sessions.carried);
-            syncCarried(player, sessions);
-            return;
-        }
-
         SlotSource source = resolveSlot(player, sessions, payload.sourceSessionId(), payload.sourceSlotIndex());
         if (source == null) {
             return;
+        }
+
+        ItemStack carriedBeforeQuickMove = sessions.carried.copy();
+        if (!carriedBeforeQuickMove.isEmpty()) {
+            DesktopDebug.trace(
+                "server quick move treating carried as empty player={} sourceSession={} sourceSlot={} carried={}",
+                player.getName().getString(),
+                payload.sourceSessionId(),
+                payload.sourceSlotIndex(),
+                carriedBeforeQuickMove
+            );
         }
 
         if (isCraftingResultSource(source)) {
@@ -504,7 +532,13 @@ public final class DesktopContainerSessions {
                 payload.sourceSessionId(),
                 payload.sourceSlotIndex()
             );
-            clickMenu(0, player, sessions, source.menu, payload.sourceSlotIndex(), 0, ContainerInput.QUICK_MOVE, sessions.carried.copy());
+            if (!carriedBeforeQuickMove.isEmpty()) {
+                setSharedCarried(player, sessions, ItemStack.EMPTY);
+            }
+            clickMenu(0, player, sessions, source.menu, payload.sourceSlotIndex(), 0, ContainerInput.QUICK_MOVE, ItemStack.EMPTY);
+            if (!carriedBeforeQuickMove.isEmpty()) {
+                setSharedCarried(player, sessions, carriedBeforeQuickMove);
+            }
             source.menu.broadcastChanges();
             if (source.session != null) {
                 syncCraftingResultSlot(player, source.session);
@@ -512,6 +546,7 @@ public final class DesktopContainerSessions {
             }
             player.inventoryMenu.broadcastChanges();
             sessions.broadcastAll(player);
+            syncCarried(player, sessions);
             return;
         }
 
@@ -549,6 +584,9 @@ public final class DesktopContainerSessions {
         }
         player.inventoryMenu.broadcastChanges();
         sessions.broadcastAll(player);
+        if (!carriedBeforeQuickMove.isEmpty()) {
+            syncCarried(player, sessions);
+        }
     }
 
     private static boolean quickMoveIntoTomStorageTerminal(ServerPlayer player, PlayerSessions sessions, SlotSource source, @Nullable Session targetSession) {
@@ -580,8 +618,15 @@ public final class DesktopContainerSessions {
             return false;
         }
 
+        ItemStack carriedBeforeQuickMove = sessions.carried.copy();
+        if (!carriedBeforeQuickMove.isEmpty()) {
+            setSharedCarried(player, sessions, ItemStack.EMPTY);
+        }
         ItemStack before = targetSession.menu.slots.get(targetSlotIndex).getItem().copy();
         targetSession.menu.quickMoveStack(player, targetSlotIndex);
+        if (!carriedBeforeQuickMove.isEmpty()) {
+            setSharedCarried(player, sessions, carriedBeforeQuickMove);
+        }
         ItemStack after = targetSession.menu.slots.get(targetSlotIndex).getItem();
         boolean moved = !ItemStack.matches(before, after);
         DesktopDebug.trace(
@@ -1120,6 +1165,15 @@ public final class DesktopContainerSessions {
     private static void syncCarried(ServerPlayer player, PlayerSessions sessions) {
         DesktopDebug.trace("server sync carried player={} stack={}", player.getName().getString(), sessions.carried);
         send(player, new DesktopCarriedPayload(sessions.carried.copy()));
+    }
+
+    private static void setSharedCarried(ServerPlayer player, PlayerSessions sessions, ItemStack stack) {
+        ItemStack carried = stack.copy();
+        sessions.carried = carried.copy();
+        player.inventoryMenu.setCarried(carried.copy());
+        for (Session session : sessions.sessions.values()) {
+            session.menu.setCarried(carried.copy());
+        }
     }
 
     private static void syncCraftingResultSlot(ServerPlayer player, Session session) {

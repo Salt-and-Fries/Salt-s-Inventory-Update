@@ -7,6 +7,7 @@ import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.display.RecipeDisplayId;
 
+import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.network.DesktopPackets;
@@ -38,6 +39,10 @@ public final class DesktopContainerClient {
 
     public static void initializeNetworking() {
         ClientPlayNetworking.registerGlobalReceiver(DesktopOpenSessionPayload.TYPE, (payload, context) -> {
+            if (!SaltsInventoryRuntime.isEnabled()) {
+                DesktopDebug.trace("client payload open ignored session={} reason=runtime-disabled", payload.sessionId());
+                return;
+            }
             DesktopDebug.log("client payload open session={} title={} type={} special={}", payload.sessionId(), payload.title().getString(), payload.menuTypeId(), payload.specialKind());
             InventoryDesktopScreen.openOrAddSession(context.client(), DesktopContainerSession.create(context.client(), payload), payload.visible());
         });
@@ -93,6 +98,10 @@ public final class DesktopContainerClient {
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(InventoryExpansionSyncPayload.TYPE, (payload, context) -> {
+            if (!SaltsInventoryRuntime.isEnabled()) {
+                DesktopDebug.trace("client payload inventory expansion ignored reason=runtime-disabled");
+                return;
+            }
             DesktopDebug.trace("client payload inventory expansion slots={} stacks={}", payload.slotCount(), payload.items().size());
             if (context.client().player != null) {
                 int slotCount = InventoryExpansion.clampSlotCount(payload.slotCount());
@@ -110,6 +119,18 @@ public final class DesktopContainerClient {
     public static void tick(Minecraft minecraft) {
         if (minecraft.player == null || minecraft.level == null) {
             readySent = false;
+            SaltsInventoryRuntime.setServerDesktopAvailable(true);
+            return;
+        }
+
+        boolean remoteServer = minecraft.getCurrentServer() != null && minecraft.getSingleplayerServer() == null;
+        boolean desktopAvailable = !remoteServer || canUseServerSessionsRaw();
+        SaltsInventoryRuntime.setServerDesktopAvailable(desktopAvailable);
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            if (readySent && desktopAvailable) {
+                send(new DesktopReadyPayload(false), "ready-disabled");
+            }
+            readySent = false;
             return;
         }
 
@@ -122,6 +143,10 @@ public final class DesktopContainerClient {
     }
 
     public static boolean canSendDesktopPackets() {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return false;
+        }
+
         try {
             return ClientPlayNetworking.canSend(DesktopClickPayload.TYPE);
         } catch (IllegalStateException | IllegalArgumentException ignored) {
@@ -130,6 +155,14 @@ public final class DesktopContainerClient {
     }
 
     public static boolean canUseServerSessions() {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return false;
+        }
+
+        return canUseServerSessionsRaw();
+    }
+
+    private static boolean canUseServerSessionsRaw() {
         try {
             return ClientPlayNetworking.canSend(DesktopReadyPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopClickPayload.TYPE)
@@ -218,6 +251,10 @@ public final class DesktopContainerClient {
     }
 
     private static boolean send(net.minecraft.network.protocol.common.custom.CustomPacketPayload payload, String label) {
+        if (!SaltsInventoryRuntime.isEnabled() && !(payload instanceof DesktopReadyPayload)) {
+            DesktopDebug.trace("client desktop packet skipped label={} type={} reason=runtime-disabled", label, payload.type().id());
+            return false;
+        }
         try {
             ClientPlayNetworking.send(payload);
             return true;

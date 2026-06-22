@@ -12,6 +12,7 @@ import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
+import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.debug.DesktopDebug;
 
 public final class SaltsInventoryConfig {
@@ -43,6 +44,7 @@ public final class SaltsInventoryConfig {
         }
 
         current = loaded == null ? new ConfigFile() : loaded.normalized();
+        SaltsInventoryRuntime.setConfiguredEnabled(current.enableMod);
         save();
         return current;
     }
@@ -56,6 +58,7 @@ public final class SaltsInventoryConfig {
         ConfigFile config = get();
         updater.accept(config);
         current = config.normalized();
+        SaltsInventoryRuntime.setConfiguredEnabled(current.enableMod);
         save();
     }
 
@@ -71,13 +74,21 @@ public final class SaltsInventoryConfig {
     }
 
     public static final class ConfigFile {
+        public boolean enableMod = true;
         public boolean expandableInventory = true;
         public String windowOpeningStyle = WindowOpeningStyle.TOP_OUTSIDE.name();
         public boolean openUnlocked = false;
         public boolean allowResizing = true;
+        public boolean enableWindowSnapping = true;
+        public boolean resetLockedWindows = true;
+        public boolean enableGhostPins = true;
+        public double ghostWindowOpacity = 0.53D;
+        public double eHoldCloseAllSeconds = 1.0D;
 
         private ConfigFile normalized() {
             this.windowOpeningStyle = WindowOpeningStyle.parse(this.windowOpeningStyle).name();
+            this.ghostWindowOpacity = clamp(this.ghostWindowOpacity, 0.15D, 0.90D);
+            this.eHoldCloseAllSeconds = clamp(roundToQuarter(this.eHoldCloseAllSeconds), 0.5D, 10.0D);
             return this;
         }
 
@@ -87,6 +98,29 @@ public final class SaltsInventoryConfig {
 
         public void setWindowOpeningStyle(WindowOpeningStyle style) {
             this.windowOpeningStyle = (style == null ? WindowOpeningStyle.TOP_OUTSIDE : style).name();
+        }
+
+        public float ghostWindowOpacity() {
+            return (float) clamp(this.ghostWindowOpacity, 0.15D, 0.90D);
+        }
+
+        public long eHoldCloseAllMs() {
+            return Math.round(clamp(this.eHoldCloseAllSeconds, 0.5D, 10.0D) * 1000.0D);
+        }
+
+        public long eHoldOverlayDelayMs() {
+            return Math.max(0L, this.eHoldCloseAllMs() / 4L);
+        }
+
+        private static double roundToQuarter(double value) {
+            return Math.round(value * 4.0D) / 4.0D;
+        }
+
+        private static double clamp(double value, double min, double max) {
+            if (Double.isNaN(value) || Double.isInfinite(value)) {
+                return min;
+            }
+            return Math.max(min, Math.min(max, value));
         }
     }
 }

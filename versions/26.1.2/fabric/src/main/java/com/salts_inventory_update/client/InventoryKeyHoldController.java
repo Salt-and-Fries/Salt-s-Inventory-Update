@@ -7,11 +7,10 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import org.lwjgl.glfw.GLFW;
 
+import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.debug.DesktopDebug;
 
 public final class InventoryKeyHoldController {
-    private static final long OVERLAY_DELAY_MS = 250L;
-    private static final long CLOSE_ALL_MS = 1_000L;
     private static final int BOX_BACKGROUND = 0xCC101010;
     private static final int BOX_OUTLINE = 0xFF303030;
     private static final int TEXT_COLOR = 0xFFFFFFFF;
@@ -56,7 +55,7 @@ public final class InventoryKeyHoldController {
             return;
         }
 
-        if (!closedByHold && elapsedMs() >= CLOSE_ALL_MS) {
+        if (!closedByHold && elapsedMs() >= closeAllMs()) {
             closedByHold = true;
             DesktopDebug.log("client E hold close-all elapsedMs={}", elapsedMs());
             InventoryDesktopScreen.closeAllOpenWindows(minecraft);
@@ -70,7 +69,9 @@ public final class InventoryKeyHoldController {
     }
 
     public static void extractOverlay(Minecraft minecraft, GuiGraphicsExtractor graphics) {
-        if (!holdingInventoryKey || closedByHold || elapsedMs() < OVERLAY_DELAY_MS || !canHandleInventoryKey(minecraft)) {
+        long overlayDelayMs = overlayDelayMs();
+        long closeAllMs = closeAllMs();
+        if (!holdingInventoryKey || closedByHold || elapsedMs() < overlayDelayMs || !canHandleInventoryKey(minecraft)) {
             return;
         }
 
@@ -83,7 +84,7 @@ public final class InventoryKeyHoldController {
         int y = 8;
         int textX = x + (width - textWidth) / 2;
         int textY = y + 8;
-        float progress = (float) Math.min(1.0, Math.max(0.0, (elapsedMs() - OVERLAY_DELAY_MS) / (double) (CLOSE_ALL_MS - OVERLAY_DELAY_MS)));
+        float progress = (float) Math.min(1.0, Math.max(0.0, (elapsedMs() - overlayDelayMs) / (double) Math.max(1L, closeAllMs - overlayDelayMs)));
 
         graphics.fill(x, y, x + width, y + height, BOX_BACKGROUND);
         graphics.outline(x, y, width, height, BOX_OUTLINE);
@@ -108,7 +109,7 @@ public final class InventoryKeyHoldController {
         }
 
         long elapsed = elapsedMs();
-        boolean shouldToggle = !closedByHold && elapsed < CLOSE_ALL_MS;
+        boolean shouldToggle = !closedByHold && elapsed < closeAllMs();
         DesktopDebug.trace("client E hold finish elapsedMs={} toggle={}", elapsed, shouldToggle);
         reset();
 
@@ -130,6 +131,10 @@ public final class InventoryKeyHoldController {
     }
 
     private static boolean canHandleInventoryKey(Minecraft minecraft) {
+        if (!SaltsInventoryRuntime.isEnabled()) {
+            return false;
+        }
+
         if (minecraft.player == null || minecraft.gameMode == null) {
             return false;
         }
@@ -144,6 +149,14 @@ public final class InventoryKeyHoldController {
 
     private static long elapsedMs() {
         return holdStartedMs == 0L ? 0L : System.currentTimeMillis() - holdStartedMs;
+    }
+
+    private static long closeAllMs() {
+        return SaltsInventoryConfig.get().eHoldCloseAllMs();
+    }
+
+    private static long overlayDelayMs() {
+        return SaltsInventoryConfig.get().eHoldOverlayDelayMs();
     }
 
     private static void drawWrappingProgress(GuiGraphicsExtractor graphics, int x, int y, int width, int height, float progress) {
