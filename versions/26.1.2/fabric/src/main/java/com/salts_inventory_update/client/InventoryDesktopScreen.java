@@ -164,8 +164,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int OFFHAND_MENU_SLOT_FALLBACK = 45;
     private static final int OFFHAND_HOTBAR_GAP = 11;
     private static final int WINDOW_CONTENT_PADDING = 8;
-    private static final int SCROLLBAR_WIDTH = 10;
-    private static final int SCROLLBAR_TRACK_WIDTH = 4;
+    private static final int SCROLLBAR_WIDTH = 14;
+    private static final int SCROLLBAR_BACKGROUND_TEXTURE_WIDTH = 14;
+    private static final int SCROLLBAR_BACKGROUND_TEXTURE_HEIGHT = 3;
+    private static final int SCROLLBAR_THUMB_WIDTH = 12;
+    private static final int SCROLLBAR_THUMB_HEIGHT = 15;
+    private static final int SCROLLBAR_INSET = 1;
+    private static final int SCROLLBAR_RIGHT_INSET = -2;
+    private static final int SCROLLBAR_RESERVED_WIDTH = SCROLLBAR_WIDTH - 2;
     private static final int RESIZE_GRIP_SIZE = 9;
     private static final int MIN_CONTAINER_WIDTH = 128;
     private static final int MIN_CONTAINER_HEIGHT = 64;
@@ -335,8 +341,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int CRAFTING_TABLE_RECIPE_BUTTON_X = CRAFTING_TABLE_RESULT_X + SLOT_SIZE + 4;
     private static final int CRAFTING_TABLE_RECIPE_BUTTON_Y = CRAFTING_TABLE_RESULT_Y - 1;
     private static final int ANVIL_CONTENT_MARGIN = 6;
-    private static final int ANVIL_CONTENT_WIDTH = 178;
-    private static final int ANVIL_CONTENT_HEIGHT = 78;
+    private static final int ANVIL_CONTENT_WIDTH = 158;
+    private static final int ANVIL_CONTENT_HEIGHT = 70;
     private static final int ANVIL_INPUT_SLOT = 0;
     private static final int ANVIL_ADDITIONAL_SLOT = 1;
     private static final int ANVIL_RESULT_SLOT = 2;
@@ -349,22 +355,22 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int ANVIL_TEXT_X = ANVIL_TEXT_FIELD_X + 4;
     private static final int ANVIL_TEXT_Y = ANVIL_TEXT_FIELD_Y + 4;
     private static final int ANVIL_MAX_NAME_LENGTH = 50;
-    private static final int ANVIL_INPUT_SLOT_X = 18;
-    private static final int ANVIL_ADDITIONAL_SLOT_X = 76;
-    private static final int ANVIL_RESULT_SLOT_X = 142;
+    private static final int ANVIL_INPUT_SLOT_X = 0;
+    private static final int ANVIL_ADDITIONAL_SLOT_X = 58;
+    private static final int ANVIL_RESULT_SLOT_X = 124;
     private static final int ANVIL_SLOT_Y = 50;
-    private static final int ANVIL_PLUS_X = 51;
+    private static final int ANVIL_PLUS_X = 33;
     private static final int ANVIL_PLUS_Y = 53;
-    private static final int ANVIL_ARROW_X = 107;
+    private static final int ANVIL_ARROW_X = 89;
     private static final int ANVIL_ARROW_Y = 51;
-    private static final int ANVIL_ERROR_X = 104;
+    private static final int ANVIL_ERROR_X = 86;
     private static final int ANVIL_ERROR_Y = 48;
     private static final int ANVIL_ERROR_WIDTH = 28;
     private static final int ANVIL_ERROR_HEIGHT = 21;
-    private static final int ANVIL_COST_Y = 70;
+    private static final int ANVIL_COST_Y = 38;
     private static final int SMITHING_CONTENT_MARGIN = 6;
-    private static final int SMITHING_CONTENT_WIDTH = 178;
-    private static final int SMITHING_CONTENT_HEIGHT = 84;
+    private static final int SMITHING_CONTENT_WIDTH = 168;
+    private static final int SMITHING_CONTENT_HEIGHT = 66;
     private static final int SMITHING_HAMMER_X = 0;
     private static final int SMITHING_HAMMER_Y = 0;
     private static final int SMITHING_LABEL_X = 40;
@@ -380,10 +386,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int SMITHING_SLOT_Y = 48;
     private static final int SMITHING_ARROW_X = 67;
     private static final int SMITHING_ARROW_Y = 48;
-    private static final int SMITHING_PREVIEW_LEFT = 132;
-    private static final int SMITHING_PREVIEW_TOP = 18;
-    private static final int SMITHING_PREVIEW_RIGHT = 176;
-    private static final int SMITHING_PREVIEW_BOTTOM = 82;
+    private static final int SMITHING_PREVIEW_LEFT = 126;
+    private static final int SMITHING_PREVIEW_TOP = 2;
+    private static final int SMITHING_PREVIEW_RIGHT = 166;
+    private static final int SMITHING_PREVIEW_BOTTOM = 66;
     private static final int GRINDSTONE_CONTENT_MARGIN = 6;
     private static final int GRINDSTONE_CONTENT_WIDTH = 122;
     private static final int GRINDSTONE_CONTENT_HEIGHT = 56;
@@ -558,19 +564,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int CARTOGRAPHY_LOCKED_WIDTH = 10;
     private static final int CARTOGRAPHY_LOCKED_HEIGHT = 14;
     private static final int ENCHANTMENT_CONTENT_MARGIN = 6;
-    private static final int ENCHANTMENT_CONTENT_WIDTH = 168;
+    private static final int ENCHANTMENT_CONTENT_WIDTH = 154;
     private static final int ENCHANTMENT_CONTENT_HEIGHT = 58;
     private static final int ENCHANTMENT_ITEM_SLOT = 0;
     private static final int ENCHANTMENT_LAPIS_SLOT = 1;
-    private static final int ENCHANTMENT_ITEM_SLOT_X = 15;
+    private static final int ENCHANTMENT_ITEM_SLOT_X = 1;
     private static final int ENCHANTMENT_ITEM_SLOT_Y = 33;
-    private static final int ENCHANTMENT_LAPIS_SLOT_X = 35;
+    private static final int ENCHANTMENT_LAPIS_SLOT_X = 21;
     private static final int ENCHANTMENT_LAPIS_SLOT_Y = 33;
-    private static final int ENCHANTMENT_BOOK_X = 14;
+    private static final int ENCHANTMENT_BOOK_X = 0;
     private static final int ENCHANTMENT_BOOK_Y = 0;
     private static final int ENCHANTMENT_BOOK_WIDTH = 38;
     private static final int ENCHANTMENT_BOOK_HEIGHT = 31;
-    private static final int ENCHANTMENT_BUTTON_X = 60;
+    private static final int ENCHANTMENT_BUTTON_X = 46;
     private static final int ENCHANTMENT_BUTTON_Y = 0;
     private static final int ENCHANTMENT_BUTTON_WIDTH = 108;
     private static final int ENCHANTMENT_BUTTON_HEIGHT = 19;
@@ -610,6 +616,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int CREATIVE_TOP_TAB_Y_OFFSET = -1;
     private static final int CREATIVE_BOTTOM_TAB_Y_OFFSET = 1;
     private static final int CREATIVE_TABS_PER_ROW = 7;
+    private static final int CREATIVE_TABS_PER_PAGE = CREATIVE_TABS_PER_ROW * 2;
+    private static final int CREATIVE_TAB_PAGE_BUTTON_WIDTH = 10;
+    private static final int CREATIVE_TAB_PAGE_BUTTON_HEIGHT = 12;
+    private static final int CREATIVE_TAB_PAGE_BUTTON_GAP = 0;
+    private static final int CREATIVE_TAB_PAGE_BUTTON_TITLE_GAP = 5;
+    private static final int CREATIVE_TAB_PAGE_BUTTON_Y_OFFSET = 4;
     private static final int CREATIVE_PANEL_WIDTH = 184;
     private static final int CREATIVE_PANEL_HEIGHT = 96;
     private static final int CREATIVE_CONTENT_WIDTH = CREATIVE_PANEL_WIDTH;
@@ -683,6 +695,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final Identifier ANVIL_ERROR_SPRITE = Identifier.withDefaultNamespace("container/anvil/error");
     private static final Identifier CREATIVE_SCROLLER_SPRITE = Identifier.withDefaultNamespace("container/creative_inventory/scroller");
     private static final Identifier CREATIVE_SCROLLER_DISABLED_SPRITE = Identifier.withDefaultNamespace("container/creative_inventory/scroller_disabled");
+    private static final Identifier FABRIC_CREATIVE_BUTTONS_TEXTURE = Identifier.fromNamespaceAndPath("fabric", "textures/gui/creative_buttons.png");
     private static final Identifier[] CREATIVE_TOP_TAB_UNSELECTED_SPRITES = creativeTabSprites("tab_top_unselected");
     private static final Identifier[] CREATIVE_TOP_TAB_SELECTED_SPRITES = creativeTabSprites("tab_top_selected");
     private static final Identifier[] CREATIVE_BOTTOM_TAB_UNSELECTED_SPRITES = creativeTabSprites("tab_bottom_unselected");
@@ -761,6 +774,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private int resizeStartWidth;
     private int resizeStartHeight;
     private @Nullable InventoryWindow scrollingCreativeWindow;
+    private @Nullable InventoryWindow scrollingStorageWindow;
     private @Nullable Slot dragStartSlot;
     private @Nullable PendingSlotClick pendingSlotClick;
     private @Nullable DragDistribution dragDistribution;
@@ -1185,6 +1199,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.editingAnvilWindow = null;
             this.editingCreativeSearchWindow = null;
             this.scrollingCreativeWindow = null;
+            this.scrollingStorageWindow = null;
             this.popupWindow = null;
             this.dragStartSlot = null;
             this.stopWorldAttack();
@@ -1223,6 +1238,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.editingAnvilWindow = null;
         this.editingCreativeSearchWindow = null;
         this.scrollingCreativeWindow = null;
+        this.scrollingStorageWindow = null;
         DesktopDebug.trace("client removed from active screen desktop={} windows={} sessions={}", this.desktopId, this.windows.size(), this.sessions.size());
         super.removed();
     }
@@ -1431,6 +1447,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.canResizeWindow(window) && window.resizeGripAt(event.x(), event.y())) {
                 this.resizingWindow = window;
                 this.movingWindow = null;
+                this.scrollingStorageWindow = null;
                 this.popupWindow = null;
                 this.resizeStartMouseX = (int) event.x();
                 this.resizeStartMouseY = (int) event.y();
@@ -1440,8 +1457,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 return true;
             }
 
-            boolean creativeSearchClick = window.kind == WindowKind.CREATIVE && this.creativeSearchBoxContains(window, event.x(), event.y());
-            if (!window.locked && window.isTopBar(event.x(), event.y()) && !creativeSearchClick) {
+            boolean creativeTitleWidgetClick = window.kind == WindowKind.CREATIVE
+                && (this.creativeSearchBoxContains(window, event.x(), event.y()) || this.creativeTabPageButtonAt(window, event.x(), event.y()) != null);
+            if (!window.locked && window.isTopBar(event.x(), event.y()) && !creativeTitleWidgetClick) {
                 this.movingWindow = window;
                 this.resizingWindow = null;
                 this.popupWindow = null;
@@ -1460,6 +1478,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
             if (window.kind == WindowKind.CREATIVE) {
                 return this.creativeMouseClicked(window, event, doubleClick);
+            }
+
+            if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.storageScrollbarContains(window, event.x(), event.y())) {
+                this.scrollingStorageWindow = window;
+                this.movingWindow = null;
+                this.resizingWindow = null;
+                this.popupWindow = null;
+                this.updateStorageScrollFromMouse(window, event.y());
+                DesktopDebug.trace("client storage scrollbar drag start desktop={} window={} scroll={}", this.desktopId, window.debugName(), window.scrollRow);
+                return true;
             }
 
             if (window.kind == WindowKind.INVENTORY && this.increaseInventoryButtonContains(window, event.x(), event.y())) {
@@ -1587,6 +1615,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
+        if (this.scrollingStorageWindow != null) {
+            this.updateStorageScrollFromMouse(this.scrollingStorageWindow, event.y());
+            return true;
+        }
+
         if (this.movingWindow != null) {
             this.movingWindow.x = clamp((int) event.x() - this.moveOffsetX, 0, Math.max(0, this.desktopWidth() - this.movingWindow.width));
             this.movingWindow.y = clamp((int) event.y() - this.moveOffsetY, 0, Math.max(0, this.desktopHeight() - TOP_BAR_HEIGHT));
@@ -1654,6 +1687,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         InventoryWindow resizedWindow = this.resizingWindow;
         this.resizingWindow = null;
         this.scrollingCreativeWindow = null;
+        this.scrollingStorageWindow = null;
         if (movedWindow != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             this.saveWindowState(movedWindow);
             this.apiMoved(movedWindow);
@@ -2339,6 +2373,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             && focusedWindow.session.sessionId() != hit.sessionId()) {
             targetKind = DesktopPackets.QUICK_TARGET_SESSION;
             targetSessionId = focusedWindow.session.sessionId();
+        } else if (hit.sessionId() != DesktopPackets.PLAYER_MENU_SESSION && !this.hasVisibleInventoryWindow()) {
+            targetKind = DesktopPackets.QUICK_TARGET_HOTBAR;
         }
 
         DesktopDebug.trace(
@@ -2354,6 +2390,21 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             slotClicked(hit.menu(), hit.slotId(), 0, ContainerInput.QUICK_MOVE, this.minecraft);
             this.setSharedCarried(hit.menu().getCarried());
         }
+    }
+
+    private boolean hasVisibleInventoryWindow() {
+        for (InventoryWindow window : this.windows) {
+            if (window.kind == WindowKind.INVENTORY && !window.minimized && !window.ghosted) {
+                return true;
+            }
+            if (window.kind == WindowKind.CREATIVE && !window.minimized && !window.ghosted) {
+                CreativeModeTab selectedTab = this.selectedCreativeTab(window);
+                if (selectedTab != null && this.isCreativeInventoryTab(selectedTab)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static boolean isCraftingResultSlot(SlotHit hit) {
@@ -2826,7 +2877,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return false;
         }
 
-        window.creativeSelectedTab = searchTab;
+        this.selectCreativeTab(window, searchTab);
         window.creativeScrollRow = 0;
         this.editingCreativeSearchWindow = window;
         this.rememberCreativeWindow(window);
@@ -3564,7 +3615,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int totalRows = rowsForSlots(slotCount, columns);
         boolean scrollable = totalRows > visibleRows;
         if (scrollable) {
-            int availableWithScrollbar = Math.max(SLOT_SIZE, availableWidth - SCROLLBAR_WIDTH);
+            int availableWithScrollbar = Math.max(SLOT_SIZE, availableWidth - SCROLLBAR_RESERVED_WIDTH);
             columns = Math.max(1, availableWithScrollbar / SLOT_SIZE);
             totalRows = rowsForSlots(slotCount, columns);
             scrollable = totalRows > visibleRows;
@@ -3754,7 +3805,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (window.apiDefinition != null) {
             return Math.max(this.apiMinSize(window).width(), this.minimumTitleBarWidth(window.title));
         }
-        return Math.max(WINDOW_CONTENT_PADDING * 2 + SLOT_SIZE + SCROLLBAR_WIDTH, this.minimumTitleBarWidth(window.title));
+        return Math.max(WINDOW_CONTENT_PADDING * 2 + SLOT_SIZE + SCROLLBAR_RESERVED_WIDTH, this.minimumTitleBarWidth(window.title));
     }
 
     private int minResizableHeight(InventoryWindow window) {
@@ -3769,7 +3820,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private static int storageWindowWidth(int columns, boolean scrollbar) {
-        return WINDOW_CONTENT_PADDING * 2 + columns * SLOT_SIZE + (scrollbar ? SCROLLBAR_WIDTH : 0);
+        return WINDOW_CONTENT_PADDING * 2 + columns * SLOT_SIZE + (scrollbar ? SCROLLBAR_RESERVED_WIDTH : 0);
     }
 
     private static int storageWindowHeight(int rows) {
@@ -3783,7 +3834,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             contentWidth = MOUNT_STORAGE_X + storageColumns * SLOT_SIZE;
         }
 
-        return Math.max(this.fullTitleBarWidth(title), WINDOW_CONTENT_PADDING * 2 + contentWidth);
+        return Math.max(this.minimumTitleBarWidth(title), WINDOW_CONTENT_PADDING * 2 + contentWidth);
     }
 
     private static int mountWindowHeight() {
@@ -3801,7 +3852,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private int containerWindowWidth(AbstractContainerMenu menu, Component title, int slotCount, int contentWidth) {
-        int titleWidth = this.fullTitleBarWidth(title);
+        int titleWidth = this.minimumTitleBarWidth(this.vanillaTitleBarTitle(menu, title));
         if (menu instanceof AbstractFurnaceMenu) {
             return Math.max(titleWidth, FURNACE_CONTENT_MARGIN * 2 + FURNACE_CONTENT_WIDTH);
         }
@@ -4187,6 +4238,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         } else if (window.session != null && window.session.isMountSession()) {
             window.width = this.mountWindowWidth(window.session, window.title);
             window.height = mountWindowHeight();
+        } else if (window.kind == WindowKind.CONTAINER && !this.isResizableStorageWindow(window)) {
+            DesktopWindowSize fixedSize = this.defaultContainerWindowSize(window);
+            window.width = fixedSize.width();
+            window.height = fixedSize.height();
         }
     }
 
@@ -4518,6 +4573,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (this.scrollingCreativeWindow == window) {
             this.scrollingCreativeWindow = null;
         }
+        if (this.scrollingStorageWindow == window) {
+            this.scrollingStorageWindow = null;
+        }
         if (this.pressedControlWindow == window) {
             this.pressedControlWindow = null;
             this.pressedControl = null;
@@ -4598,6 +4656,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.pressedControl = null;
         this.pressedControlInPopup = false;
         this.scrollingCreativeWindow = null;
+        this.scrollingStorageWindow = null;
         this.clearSlotInteractionState("close-all");
         this.usingWorld = false;
         this.closeIfEmpty();
@@ -4623,6 +4682,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.editingAnvilWindow = null;
         this.editingCreativeSearchWindow = null;
         this.scrollingCreativeWindow = null;
+        this.scrollingStorageWindow = null;
         this.rememberedCreativeTab = null;
         this.rememberedCreativeScrollRow = 0;
         this.rememberedCreativeSearch = "";
@@ -4758,6 +4818,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.editingAnvilWindow = this.editingAnvilWindow == window ? null : this.editingAnvilWindow;
         this.editingCreativeSearchWindow = this.editingCreativeSearchWindow == window ? null : this.editingCreativeSearchWindow;
         this.scrollingCreativeWindow = this.scrollingCreativeWindow == window ? null : this.scrollingCreativeWindow;
+        this.scrollingStorageWindow = this.scrollingStorageWindow == window ? null : this.scrollingStorageWindow;
         this.movingWindow = this.movingWindow == window ? null : this.movingWindow;
         this.resizingWindow = this.resizingWindow == window ? null : this.resizingWindow;
 
@@ -4915,6 +4976,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 renderNineSlice(graphics, WINDOW_TEXTURE, window.x, window.y, window.width, visibleHeight);
             }
             graphics.text(this.font, titleLayout.displayTitle(), window.x + TITLE_LEFT_PADDING, window.y + 5, this.uiColor(COLOR_WINDOW_TITLE), false);
+            if (selectedCreativeTab != null && !ghosted) {
+                this.renderCreativeTabPageButtons(graphics, window, titleLayout, mouseX, mouseY);
+            }
             if (selectedCreativeTab != null && !ghosted && this.isCreativeSearchTab(selectedCreativeTab)) {
                 this.renderCreativeSearchBox(graphics, window, titleLayout);
             }
@@ -5327,6 +5391,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         AbstractContainerMenu menu = window.containerMenu();
+        return menu == null ? window.title : this.vanillaTitleBarTitle(menu, window.title);
+    }
+
+    private Component vanillaTitleBarTitle(AbstractContainerMenu menu, Component fallback) {
         if (menu instanceof MerchantMenu) {
             return Component.translatable("merchant.trades");
         }
@@ -5358,7 +5426,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return Component.translatable("block.minecraft.cartography_table");
         }
 
-        return window.title;
+        return fallback;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -5887,6 +5955,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         List<CreativeModeTab> tabs = this.creativeTabs();
         CreativeModeTab defaultTab = CreativeModeTabs.getDefaultTab();
         window.creativeSelectedTab = tabs.contains(defaultTab) ? defaultTab : tabs.isEmpty() ? null : tabs.get(0);
+        window.creativeTabPage = this.creativePageForTab(tabs, window.creativeSelectedTab);
         window.creativeScrollRow = 0;
         window.creativeSearch = "";
     }
@@ -5900,6 +5969,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (this.rememberedCreativeTab != null && tabs.contains(this.rememberedCreativeTab)) {
             window.creativeSelectedTab = this.rememberedCreativeTab;
         }
+        window.creativeTabPage = this.creativePageForTab(tabs, window.creativeSelectedTab);
         window.creativeSearch = this.rememberedCreativeSearch;
         this.clampCreativeScroll(window, this.rememberedCreativeScrollRow);
         DesktopDebug.trace(
@@ -5953,7 +6023,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void renderCreativeTabs(GuiGraphicsExtractor graphics, InventoryWindow window, CreativeModeTab selectedTab, boolean selectedOnly) {
-        for (CreativeModeTab tab : this.creativeTabs()) {
+        for (CreativeModeTab tab : this.creativeTabsForPage(window)) {
             CreativeTabRect rect = this.creativeTabRect(window, tab);
             if (rect == null) {
                 continue;
@@ -5964,7 +6034,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 continue;
             }
 
-            Identifier sprite = this.creativeTabSprite(tab, rect.column(), selected);
+            Identifier sprite = this.creativeTabSprite(rect, selected);
             this.blitSprite(graphics, sprite, rect.x(), rect.y(), CREATIVE_TAB_WIDTH, CREATIVE_TAB_HEIGHT);
             ItemStack icon = tab.getIconItem();
             int iconY = rect.topRow() ? rect.y() + CREATIVE_TAB_ICON_OFFSET_TOP : rect.y() + CREATIVE_TAB_ICON_OFFSET_BOTTOM;
@@ -5972,15 +6042,91 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
-    private Identifier creativeTabSprite(CreativeModeTab tab, int column, boolean selected) {
+    private Identifier creativeTabSprite(CreativeTabRect rect, boolean selected) {
+        int column = rect.column();
         int spriteColumn = column == CREATIVE_TABS_PER_ROW - 1 ? CREATIVE_TABS_PER_ROW - 2 : column;
         int index = clamp(spriteColumn + 1, 1, CREATIVE_TABS_PER_ROW) - 1;
-        boolean top = tab.row() == CreativeModeTab.Row.TOP;
+        boolean top = rect.topRow();
         if (top) {
             return selected ? CREATIVE_TOP_TAB_SELECTED_SPRITES[index] : CREATIVE_TOP_TAB_UNSELECTED_SPRITES[index];
         }
 
         return selected ? CREATIVE_BOTTOM_TAB_SELECTED_SPRITES[index] : CREATIVE_BOTTOM_TAB_UNSELECTED_SPRITES[index];
+    }
+
+    private void renderCreativeTabPageButtons(GuiGraphicsExtractor graphics, InventoryWindow window, TitleBarLayout titleLayout, int mouseX, int mouseY) {
+        if (this.creativeMaxTabPage(this.creativeTabs()) <= 0) {
+            return;
+        }
+
+        this.renderCreativeTabPageButtonBackground(graphics, window, titleLayout);
+        this.renderCreativeTabPageButton(graphics, window, titleLayout, -1, mouseX, mouseY);
+        this.renderCreativeTabPageButton(graphics, window, titleLayout, 1, mouseX, mouseY);
+    }
+
+    private void renderCreativeTabPageButtonBackground(GuiGraphicsExtractor graphics, InventoryWindow window, TitleBarLayout titleLayout) {
+        CreativeTabPageButtonRect previous = this.creativeTabPageButtonRect(window, titleLayout, -1);
+        CreativeTabPageButtonRect next = this.creativeTabPageButtonRect(window, titleLayout, 1);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, FABRIC_CREATIVE_BUTTONS_TEXTURE, previous.x(), previous.y(), 0, 12, previous.width(), previous.height(), 256, 256);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, FABRIC_CREATIVE_BUTTONS_TEXTURE, next.x(), next.y(), 10, 12, next.width(), next.height(), 256, 256);
+    }
+
+    private void renderCreativeTabPageButton(GuiGraphicsExtractor graphics, InventoryWindow window, TitleBarLayout titleLayout, int direction, int mouseX, int mouseY) {
+        CreativeTabPageButtonRect rect = this.creativeTabPageButtonRect(window, titleLayout, direction);
+        boolean enabled = this.canChangeCreativeTabPage(window, direction);
+        boolean hovered = enabled && contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height());
+        int u = (enabled && hovered ? 20 : 0) + (direction > 0 ? 10 : 0);
+        int v = enabled ? 0 : 12;
+        graphics.blit(RenderPipelines.GUI_TEXTURED, FABRIC_CREATIVE_BUTTONS_TEXTURE, rect.x(), rect.y(), u, v, rect.width(), rect.height(), 256, 256);
+    }
+
+    private @Nullable CreativeTabPageButtonHit creativeTabPageButtonAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.CREATIVE || window.minimized || this.creativeMaxTabPage(this.creativeTabs()) <= 0) {
+            return null;
+        }
+
+        TitleBarLayout titleLayout = this.titleBarLayout(window);
+        CreativeTabPageButtonRect previous = this.creativeTabPageButtonRect(window, titleLayout, -1);
+        if (contains(mouseX, mouseY, previous.x(), previous.y(), previous.width(), previous.height())) {
+            return new CreativeTabPageButtonHit(window, -1);
+        }
+
+        CreativeTabPageButtonRect next = this.creativeTabPageButtonRect(window, titleLayout, 1);
+        return contains(mouseX, mouseY, next.x(), next.y(), next.width(), next.height())
+            ? new CreativeTabPageButtonHit(window, 1)
+            : null;
+    }
+
+    private CreativeTabPageButtonRect creativeTabPageButtonRect(InventoryWindow window, TitleBarLayout titleLayout, int direction) {
+        int x = window.x + TITLE_LEFT_PADDING + this.font.width(titleLayout.displayTitle()) + CREATIVE_TAB_PAGE_BUTTON_TITLE_GAP;
+        if (direction > 0) {
+            x += CREATIVE_TAB_PAGE_BUTTON_WIDTH + CREATIVE_TAB_PAGE_BUTTON_GAP;
+        }
+        int y = window.y + (TOP_BAR_HEIGHT - CREATIVE_TAB_PAGE_BUTTON_HEIGHT) / 2 + CREATIVE_TAB_PAGE_BUTTON_Y_OFFSET;
+        return new CreativeTabPageButtonRect(x, y, CREATIVE_TAB_PAGE_BUTTON_WIDTH, CREATIVE_TAB_PAGE_BUTTON_HEIGHT, direction);
+    }
+
+    private boolean canChangeCreativeTabPage(InventoryWindow window, int direction) {
+        int maxPage = this.creativeMaxTabPage(this.creativeTabs());
+        return direction < 0 ? window.creativeTabPage > 0 : window.creativeTabPage < maxPage;
+    }
+
+    private boolean changeCreativeTabPage(InventoryWindow window, int direction) {
+        List<CreativeModeTab> tabs = this.creativeTabs();
+        int maxPage = this.creativeMaxTabPage(tabs);
+        int oldPage = window.creativeTabPage;
+        window.creativeTabPage = clamp(window.creativeTabPage + direction, 0, maxPage);
+        if (oldPage != window.creativeTabPage && (window.creativeSelectedTab == null || !this.isCreativeCommonTab(window.creativeSelectedTab))) {
+            List<CreativeModeTab> pageSpecificTabs = this.creativePageSpecificTabs(window, tabs);
+            if (!pageSpecificTabs.isEmpty()) {
+                window.creativeSelectedTab = pageSpecificTabs.get(0);
+                window.creativeScrollRow = 0;
+                this.editingCreativeSearchWindow = null;
+                this.rememberCreativeWindow(window);
+            }
+        }
+        DesktopDebug.trace("client creative tab page desktop={} window={} old={} new={} max={}", this.desktopId, window.debugName(), oldPage, window.creativeTabPage, maxPage);
+        return oldPage != window.creativeTabPage;
     }
 
     private void renderCreativeSearchBox(GuiGraphicsExtractor graphics, InventoryWindow window, TitleBarLayout titleLayout) {
@@ -6019,7 +6165,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return null;
         }
 
-        int x = window.x + TITLE_LEFT_PADDING + this.font.width(titleLayout.displayTitle()) + CREATIVE_SEARCH_TITLE_GAP;
+        int x = this.creativeTitleInlineRight(window, titleLayout) + CREATIVE_SEARCH_TITLE_GAP;
         int controlsLeft = window.x + window.width - CONTROL_RIGHT_EXTRA_INSET;
         for (ControlRect control : titleLayout.controls()) {
             controlsLeft = Math.min(controlsLeft, control.x());
@@ -6030,7 +6176,17 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return null;
         }
 
-        return new CreativeSearchRect(x, window.y + 4, width, CREATIVE_SEARCH_HEIGHT);
+        return new CreativeSearchRect(x, window.y + 6, width, CREATIVE_SEARCH_HEIGHT);
+    }
+
+    private int creativeTitleInlineRight(InventoryWindow window, TitleBarLayout titleLayout) {
+        int right = window.x + TITLE_LEFT_PADDING + this.font.width(titleLayout.displayTitle());
+        if (this.creativeMaxTabPage(this.creativeTabs()) <= 0) {
+            return right;
+        }
+
+        CreativeTabPageButtonRect next = this.creativeTabPageButtonRect(window, titleLayout, 1);
+        return next.x() + next.width();
     }
 
     private void renderCreativeInventoryTab(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
@@ -6169,6 +6325,90 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return tabs;
     }
 
+    private List<CreativeModeTab> creativeTabsForPage(InventoryWindow window) {
+        List<CreativeModeTab> tabs = this.creativeTabs();
+        int maxPage = this.creativeMaxTabPage(tabs);
+        window.creativeTabPage = clamp(window.creativeTabPage, 0, maxPage);
+        List<CreativeModeTab> pageTabs = new ArrayList<>(this.creativeCommonTabs(tabs));
+        pageTabs.addAll(this.creativePageSpecificTabs(window, tabs));
+        return pageTabs;
+    }
+
+    private List<CreativeModeTab> creativePageSpecificTabs(InventoryWindow window, List<CreativeModeTab> tabs) {
+        List<CreativeModeTab> pageableTabs = this.creativePageableTabs(tabs);
+        int capacity = this.creativePageCapacity(tabs);
+        int start = window.creativeTabPage * capacity;
+        int end = Math.min(pageableTabs.size(), start + capacity);
+        return start >= end ? List.of() : pageableTabs.subList(start, end);
+    }
+
+    private int creativeMaxTabPage(List<CreativeModeTab> tabs) {
+        return Math.max(0, rowsForSlots(this.creativePageableTabs(tabs).size(), this.creativePageCapacity(tabs)) - 1);
+    }
+
+    private int creativePageCapacity(List<CreativeModeTab> tabs) {
+        return Math.max(1, CREATIVE_TABS_PER_PAGE - this.creativeCommonTabs(tabs).size());
+    }
+
+    private int creativePageForTab(List<CreativeModeTab> tabs, @Nullable CreativeModeTab tab) {
+        if (tab == null || this.isCreativeCommonTab(tab)) {
+            return 0;
+        }
+
+        List<CreativeModeTab> pageableTabs = this.creativePageableTabs(tabs);
+        int index = pageableTabs.indexOf(tab);
+        return index < 0 ? 0 : index / this.creativePageCapacity(tabs);
+    }
+
+    private List<CreativeModeTab> creativeCommonTabs(List<CreativeModeTab> tabs) {
+        List<CreativeModeTab> commonTabs = new ArrayList<>();
+        for (CreativeModeTab tab : tabs) {
+            if (this.isCreativeCommonTab(tab)) {
+                commonTabs.add(tab);
+            }
+        }
+        commonTabs.sort(Comparator.comparingInt((CreativeModeTab tab) -> tab.row() == CreativeModeTab.Row.TOP ? 0 : 1).thenComparingInt(CreativeModeTab::column));
+        return commonTabs;
+    }
+
+    private List<CreativeModeTab> creativePageableTabs(List<CreativeModeTab> tabs) {
+        List<CreativeModeTab> vanillaTabs = new ArrayList<>();
+        List<CreativeModeTab> moddedTabs = new ArrayList<>();
+        for (CreativeModeTab tab : tabs) {
+            if (this.isCreativeCommonTab(tab)) {
+                continue;
+            }
+            if (this.isVanillaCreativeTab(tab)) {
+                vanillaTabs.add(tab);
+            } else {
+                moddedTabs.add(tab);
+            }
+        }
+
+        vanillaTabs.sort(Comparator.comparingInt((CreativeModeTab tab) -> tab.row() == CreativeModeTab.Row.TOP ? 0 : 1).thenComparingInt(CreativeModeTab::column));
+        List<CreativeModeTab> orderedTabs = new ArrayList<>(vanillaTabs.size() + moddedTabs.size());
+        orderedTabs.addAll(vanillaTabs);
+        orderedTabs.addAll(moddedTabs);
+        return orderedTabs;
+    }
+
+    private boolean isCreativeCommonTab(CreativeModeTab tab) {
+        return this.isCreativeSearchTab(tab)
+            || this.isCreativeInventoryTab(tab)
+            || tab.getType() == CreativeModeTab.Type.HOTBAR
+            || this.isCreativeOperatorTab(tab);
+    }
+
+    private boolean isCreativeOperatorTab(CreativeModeTab tab) {
+        Optional<ResourceKey<CreativeModeTab>> key = BuiltInRegistries.CREATIVE_MODE_TAB.getResourceKey(tab);
+        return key.isPresent() && key.get().equals(CreativeModeTabs.OP_BLOCKS);
+    }
+
+    private boolean isVanillaCreativeTab(CreativeModeTab tab) {
+        Optional<ResourceKey<CreativeModeTab>> key = BuiltInRegistries.CREATIVE_MODE_TAB.getResourceKey(tab);
+        return key.isPresent() && "minecraft".equals(key.get().identifier().getNamespace());
+    }
+
     private void refreshCreativeTabs() {
         if (this.minecraft == null || this.minecraft.level == null || this.minecraft.player == null) {
             return;
@@ -6193,9 +6433,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 ? this.rememberedCreativeTab
                 : CreativeModeTabs.getDefaultTab();
             window.creativeSelectedTab = tabs.contains(defaultTab) ? defaultTab : tabs.get(0);
+            window.creativeTabPage = this.creativePageForTab(tabs, window.creativeSelectedTab);
             window.creativeScrollRow = 0;
         }
 
+        window.creativeTabPage = clamp(window.creativeTabPage, 0, this.creativeMaxTabPage(tabs));
         return window.creativeSelectedTab;
     }
 
@@ -6304,9 +6546,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean creativeMouseClicked(InventoryWindow window, MouseButtonEvent event, boolean doubleClick) {
+        CreativeTabPageButtonHit pageHit = this.creativeTabPageButtonAt(window, event.x(), event.y());
+        if (pageHit != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            this.changeCreativeTabPage(window, pageHit.direction());
+            return true;
+        }
+
         CreativeTabHit tabHit = this.creativeTabAt(window, event.x(), event.y());
         if (tabHit != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            window.creativeSelectedTab = tabHit.tab();
+            this.selectCreativeTab(window, tabHit.tab());
             window.creativeScrollRow = 0;
             this.editingCreativeSearchWindow = this.isCreativeSearchTab(tabHit.tab()) ? window : null;
             this.rememberCreativeWindow(window);
@@ -6389,6 +6637,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         return true;
+    }
+
+    private void selectCreativeTab(InventoryWindow window, CreativeModeTab tab) {
+        List<CreativeModeTab> tabs = this.creativeTabs();
+        window.creativeSelectedTab = tab;
+        if (!this.isCreativeCommonTab(tab)) {
+            window.creativeTabPage = this.creativePageForTab(tabs, tab);
+        } else {
+            window.creativeTabPage = clamp(window.creativeTabPage, 0, this.creativeMaxTabPage(tabs));
+        }
     }
 
     private boolean isCreativeCatalogStackActionable(ItemStack stack) {
@@ -6493,7 +6751,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return null;
         }
 
-        for (CreativeModeTab tab : this.creativeTabs()) {
+        for (CreativeModeTab tab : this.creativeTabsForPage(window)) {
             CreativeTabRect rect = this.creativeTabRect(window, tab);
             if (rect != null && contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height())) {
                 return new CreativeTabHit(window, tab, rect);
@@ -6504,15 +6762,60 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable CreativeTabRect creativeTabRect(InventoryWindow window, CreativeModeTab tab) {
-        int column = tab.column();
-        if (column < 0 || column >= CREATIVE_TABS_PER_ROW) {
+        CreativeTabPosition position = this.creativeTabPosition(window, tab);
+        if (position == null) {
             return null;
         }
 
-        boolean top = tab.row() == CreativeModeTab.Row.TOP;
+        boolean top = position.topRow();
+        int column = position.column();
         int x = creativeContentX(window) + CREATIVE_TAB_X_OFFSET + column * CREATIVE_TAB_WIDTH;
         int y = top ? creativeTopTabsY(window) : creativeBottomTabsY(window);
         return new CreativeTabRect(x, y, CREATIVE_TAB_WIDTH, CREATIVE_TAB_HEIGHT, column, top);
+    }
+
+    private @Nullable CreativeTabPosition creativeTabPosition(InventoryWindow window, CreativeModeTab tab) {
+        if (this.isCreativeCommonTab(tab)) {
+            int column = tab.column();
+            if (column < 0 || column >= CREATIVE_TABS_PER_ROW) {
+                return null;
+            }
+            return new CreativeTabPosition(column, tab.row() == CreativeModeTab.Row.TOP);
+        }
+
+        List<CreativeModeTab> tabs = this.creativeTabs();
+        List<CreativeModeTab> pageTabs = this.creativePageSpecificTabs(window, tabs);
+        int pageIndex = pageTabs.indexOf(tab);
+        if (pageIndex < 0) {
+            return null;
+        }
+
+        List<CreativeTabPosition> availablePositions = this.creativeAvailableTabPositions(tabs);
+        return pageIndex >= availablePositions.size() ? null : availablePositions.get(pageIndex);
+    }
+
+    private List<CreativeTabPosition> creativeAvailableTabPositions(List<CreativeModeTab> tabs) {
+        Set<Integer> occupiedPositions = new HashSet<>();
+        for (CreativeModeTab tab : this.creativeCommonTabs(tabs)) {
+            int column = tab.column();
+            if (column >= 0 && column < CREATIVE_TABS_PER_ROW) {
+                occupiedPositions.add(creativeTabPositionKey(column, tab.row() == CreativeModeTab.Row.TOP));
+            }
+        }
+
+        List<CreativeTabPosition> positions = new ArrayList<>();
+        for (boolean top : List.of(true, false)) {
+            for (int column = 0; column < CREATIVE_TABS_PER_ROW; column++) {
+                if (!occupiedPositions.contains(creativeTabPositionKey(column, top))) {
+                    positions.add(new CreativeTabPosition(column, top));
+                }
+            }
+        }
+        return positions;
+    }
+
+    private static int creativeTabPositionKey(int column, boolean top) {
+        return (top ? 0 : CREATIVE_TABS_PER_ROW) + column;
     }
 
     private boolean creativeGridContains(InventoryWindow window, double mouseX, double mouseY) {
@@ -7260,7 +7563,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             ? Component.translatable("container.repair.expensive")
             : Component.translatable("container.repair.cost", cost);
         int color = tooExpensive ? 0xFFFF6060 : 0xFF80FF20;
-        graphics.text(this.font, label, contentX + ANVIL_TEXT_FIELD_X, contentY + ANVIL_COST_Y, this.uiColor(color), false);
+        int x = contentX + ANVIL_INPUT_SLOT_X;
+        int y = contentY + ANVIL_COST_Y;
+        int width = this.font.width(label);
+        graphics.fill(x - 2, y - 1, x + width + 2, y + 10, this.uiColor(0xCC3A3A3A));
+        graphics.text(this.font, label, x, y, this.uiColor(color), false);
     }
 
     private @Nullable SlotHit anvilSlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
@@ -9442,13 +9749,59 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         int maxScroll = layout.maxScrollRow();
-        int x = window.x + window.width - WINDOW_CONTENT_PADDING - SCROLLBAR_WIDTH + (SCROLLBAR_WIDTH - SCROLLBAR_TRACK_WIDTH) / 2;
-        int y = window.contentY();
-        int height = layout.visibleRows() * SLOT_SIZE;
-        graphics.fill(x, y, x + SCROLLBAR_TRACK_WIDTH, y + height, this.uiColor(0xFF20242C));
-        int thumbHeight = maxScroll == 0 ? height : Math.max(12, height / (maxScroll + 1));
-        int thumbY = maxScroll == 0 ? y : y + (height - thumbHeight) * window.scrollRow / maxScroll;
-        graphics.fill(x, thumbY, x + SCROLLBAR_TRACK_WIDTH, thumbY + thumbHeight, this.uiColor(0xFF96A0AF));
+        int x = this.storageScrollbarX(window);
+        int y = this.storageScrollbarY(window);
+        int height = this.storageScrollbarHeight(layout);
+        this.renderCreativeScrollbarBackground(graphics, x, y, height);
+        Identifier sprite = maxScroll > 0 ? CREATIVE_SCROLLER_SPRITE : CREATIVE_SCROLLER_DISABLED_SPRITE;
+        int offset = maxScroll == 0 ? 0 : Math.round((float) window.scrollRow / (float) maxScroll * this.storageScrollbarTrackHeight(layout));
+        this.blitSprite(graphics, sprite, x + SCROLLBAR_INSET, y + SCROLLBAR_INSET + offset, SCROLLBAR_THUMB_WIDTH, SCROLLBAR_THUMB_HEIGHT);
+    }
+
+    private boolean storageScrollbarContains(InventoryWindow window, double mouseX, double mouseY) {
+        if (!this.isResizableStorageWindow(window) || window.minimized) {
+            return false;
+        }
+
+        SlotGridLayout layout = this.storageLayout(window, this.storageSlotCount(window));
+        return layout.scrollable()
+            && contains(mouseX, mouseY, this.storageScrollbarX(window), this.storageScrollbarY(window), SCROLLBAR_WIDTH, this.storageScrollbarHeight(layout));
+    }
+
+    private void updateStorageScrollFromMouse(InventoryWindow window, double mouseY) {
+        if (!this.isResizableStorageWindow(window) || window.minimized) {
+            return;
+        }
+
+        SlotGridLayout layout = this.storageLayout(window, this.storageSlotCount(window));
+        if (!layout.scrollable()) {
+            window.scrollRow = 0;
+            return;
+        }
+
+        int trackTop = this.storageScrollbarY(window);
+        double amount = (mouseY - trackTop - SCROLLBAR_INSET - SCROLLBAR_THUMB_HEIGHT / 2.0D) / Math.max(1.0D, this.storageScrollbarTrackHeight(layout));
+        int oldScroll = window.scrollRow;
+        window.scrollRow = clamp(Math.round((float) amount * layout.maxScrollRow()), 0, layout.maxScrollRow());
+        if (oldScroll != window.scrollRow) {
+            DesktopDebug.trace("client storage scrollbar drag desktop={} window={} old={} new={} max={}", this.desktopId, window.debugName(), oldScroll, window.scrollRow, layout.maxScrollRow());
+        }
+    }
+
+    private int storageScrollbarX(InventoryWindow window) {
+        return window.x + window.width - WINDOW_CONTENT_PADDING - SCROLLBAR_WIDTH - SCROLLBAR_RIGHT_INSET - 1;
+    }
+
+    private int storageScrollbarY(InventoryWindow window) {
+        return window.contentY() - 1;
+    }
+
+    private int storageScrollbarHeight(SlotGridLayout layout) {
+        return layout.visibleRows() * SLOT_SIZE;
+    }
+
+    private int storageScrollbarTrackHeight(SlotGridLayout layout) {
+        return Math.max(1, this.storageScrollbarHeight(layout) - SCROLLBAR_INSET * 2 - SCROLLBAR_THUMB_HEIGHT);
     }
 
     private void renderResizeGrip(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
@@ -10244,6 +10597,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private record CreativeTabRect(int x, int y, int width, int height, int column, boolean topRow) {
+    }
+
+    private record CreativeTabPosition(int column, boolean topRow) {
+    }
+
+    private record CreativeTabPageButtonHit(InventoryWindow window, int direction) {
+    }
+
+    private record CreativeTabPageButtonRect(int x, int y, int width, int height, int direction) {
     }
 
     private record CreativeSearchRect(int x, int y, int width, int height) {
@@ -11070,6 +11432,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private int stonecutterScroll;
         private int loomScroll;
         private @Nullable CreativeModeTab creativeSelectedTab;
+        private int creativeTabPage;
         private int creativeScrollRow;
         private String creativeSearch = "";
         private String anvilName = "";

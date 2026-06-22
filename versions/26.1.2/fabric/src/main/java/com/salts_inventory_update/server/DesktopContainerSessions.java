@@ -984,6 +984,10 @@ public final class DesktopContainerSessions {
             }
         }
 
+        if (payload.targetKind() == DesktopPackets.QUICK_TARGET_HOTBAR && !isPlayerInventorySlot(player, source.slot)) {
+            return hotbarSlots(player);
+        }
+
         return defaultPlayerTargets(player, source.slot);
     }
 

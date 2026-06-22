@@ -4,6 +4,7 @@
   "itemGroup.salts_inventory_update.main": "Salt's Inventory Update",
   "config.salts_inventory_update.title": "Salt's Inventory Update Settings",
   "config.salts_inventory_update.option": "%s: %s",
+  "config.salts_inventory_update.reset_defaults": "Reset Defaults",
   "config.salts_inventory_update.enable_mod": "Enable the Mod",
   "config.salts_inventory_update.enable_mod.description": "Turns Salt's Inventory Update gameplay features on or off. When off, vanilla inventory and container screens are used and Salt desktop networking stays inactive.",
   "config.salts_inventory_update.expandable_inventory": "Expandable Inventory",

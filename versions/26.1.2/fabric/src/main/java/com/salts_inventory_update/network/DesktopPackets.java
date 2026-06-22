@@ -27,6 +27,7 @@ public final class DesktopPackets {
     public static final int SPECIAL_NAUTILUS = 2;
     public static final int QUICK_TARGET_DEFAULT = 0;
     public static final int QUICK_TARGET_SESSION = 1;
+    public static final int QUICK_TARGET_HOTBAR = 2;
     public static final int PIN_MODE_UNPINNED = 0;
     public static final int PIN_MODE_PINNED = 1;
     public static final int PIN_MODE_GHOST_PINNED = 2;

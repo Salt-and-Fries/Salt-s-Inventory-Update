@@ -75,15 +75,15 @@ public final class SaltsInventoryConfig {
 
     public static final class ConfigFile {
         public boolean enableMod = true;
-        public boolean expandableInventory = true;
-        public String windowOpeningStyle = WindowOpeningStyle.TOP_OUTSIDE.name();
+        public boolean expandableInventory = false;
+        public String windowOpeningStyle = WindowOpeningStyle.AROUND_INVENTORY.name();
         public boolean openUnlocked = false;
-        public boolean allowResizing = true;
+        public boolean allowResizing = false;
         public boolean enableWindowSnapping = true;
         public boolean resetLockedWindows = true;
-        public boolean enableGhostPins = true;
-        public double ghostWindowOpacity = 0.53D;
-        public double eHoldCloseAllSeconds = 1.0D;
+        public boolean enableGhostPins = false;
+        public double ghostWindowOpacity = 0.5D;
+        public double eHoldCloseAllSeconds = 0.5D;
 
         private ConfigFile normalized() {
             this.windowOpeningStyle = WindowOpeningStyle.parse(this.windowOpeningStyle).name();
@@ -97,7 +97,7 @@ public final class SaltsInventoryConfig {
         }
 
         public void setWindowOpeningStyle(WindowOpeningStyle style) {
-            this.windowOpeningStyle = (style == null ? WindowOpeningStyle.TOP_OUTSIDE : style).name();
+            this.windowOpeningStyle = (style == null ? WindowOpeningStyle.AROUND_INVENTORY : style).name();
         }
 
         public float ghostWindowOpacity() {
@@ -110,6 +110,20 @@ public final class SaltsInventoryConfig {
 
         public long eHoldOverlayDelayMs() {
             return Math.max(0L, this.eHoldCloseAllMs() / 4L);
+        }
+
+        public void resetToDefaults() {
+            ConfigFile defaults = new ConfigFile();
+            this.enableMod = defaults.enableMod;
+            this.expandableInventory = defaults.expandableInventory;
+            this.windowOpeningStyle = defaults.windowOpeningStyle;
+            this.openUnlocked = defaults.openUnlocked;
+            this.allowResizing = defaults.allowResizing;
+            this.enableWindowSnapping = defaults.enableWindowSnapping;
+            this.resetLockedWindows = defaults.resetLockedWindows;
+            this.enableGhostPins = defaults.enableGhostPins;
+            this.ghostWindowOpacity = defaults.ghostWindowOpacity;
+            this.eHoldCloseAllSeconds = defaults.eHoldCloseAllSeconds;
         }
 
         private static double roundToQuarter(double value) {

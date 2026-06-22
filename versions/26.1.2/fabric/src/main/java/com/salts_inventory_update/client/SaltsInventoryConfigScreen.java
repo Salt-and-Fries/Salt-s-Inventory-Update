@@ -11,6 +11,7 @@ import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
@@ -34,10 +35,18 @@ public final class SaltsInventoryConfigScreen extends Screen {
     private static final int CONTROL_WIDTH = 150;
     private static final int CONTROL_HEIGHT = 20;
     private static final int MIN_ROW_HEIGHT = 42;
+    private static final int FOOTER_BUTTON_GAP = 8;
+    private static final int SCROLLBAR_WIDTH = 8;
+    private static final int SCROLLBAR_MIN_THUMB_HEIGHT = 22;
+    private static final int SCROLLBAR_TRACK_COLOR = 0x77333333;
+    private static final int SCROLLBAR_THUMB_COLOR = 0xFFB8B8B8;
+    private static final int SCROLLBAR_THUMB_BORDER = 0xFF4A4A4A;
 
     private final @Nullable Screen previousScreen;
     private final List<OptionRow> rows = new ArrayList<>();
     private double scrollOffset;
+    private boolean draggingScrollbar;
+    private double scrollbarDragOffset;
 
     public SaltsInventoryConfigScreen(@Nullable Screen previousScreen) {
         super(TITLE);
@@ -108,8 +117,13 @@ public final class SaltsInventoryConfigScreen extends Screen {
             value -> Component.translatable("config.salts_inventory_update.value.seconds", String.format(Locale.ROOT, "%.2f", value))
         );
 
+        int footerWidth = Button.DEFAULT_WIDTH * 2 + FOOTER_BUTTON_GAP;
+        int footerX = (this.width - footerWidth) / 2;
+        this.addRenderableWidget(Button.builder(Component.translatable("config.salts_inventory_update.reset_defaults"), button -> this.resetToDefaults())
+            .bounds(footerX, this.height - 26, Button.DEFAULT_WIDTH, CONTROL_HEIGHT)
+            .build());
         this.addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> this.onClose())
-            .bounds((this.width - Button.DEFAULT_WIDTH) / 2, this.height - 26, Button.DEFAULT_WIDTH, CONTROL_HEIGHT)
+            .bounds(footerX + Button.DEFAULT_WIDTH + FOOTER_BUTTON_GAP, this.height - 26, Button.DEFAULT_WIDTH, CONTROL_HEIGHT)
             .build());
         this.updateRowPositions();
     }
@@ -122,7 +136,35 @@ public final class SaltsInventoryConfigScreen extends Screen {
         this.renderRuntimeStatus(graphics);
         this.updateRowPositions();
         this.renderRows(graphics);
+        this.renderScrollbar(graphics);
         super.extractRenderState(graphics, mouseX, mouseY, tickProgress);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (event.button() == 0 && this.isOverScrollbar(event.x(), event.y())) {
+            this.beginScrollbarDrag(event.y());
+            return true;
+        }
+        return super.mouseClicked(event, doubleClick);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        if (this.draggingScrollbar) {
+            this.scrollToThumbTop(event.y() - this.scrollbarDragOffset);
+            return true;
+        }
+        return super.mouseDragged(event, dx, dy);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() == 0 && this.draggingScrollbar) {
+            this.draggingScrollbar = false;
+            return true;
+        }
+        return super.mouseReleased(event);
     }
 
     @Override
@@ -143,6 +185,13 @@ public final class SaltsInventoryConfigScreen extends Screen {
         SaltsInventoryConfig.save();
         if (this.minecraft != null) {
             this.minecraft.setScreen(!SaltsInventoryRuntime.isEnabled() && this.previousScreen instanceof InventoryDesktopScreen ? null : this.previousScreen);
+        }
+    }
+
+    private void resetToDefaults() {
+        SaltsInventoryConfig.update(SaltsInventoryConfig.ConfigFile::resetToDefaults);
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(new SaltsInventoryConfigScreen(this.previousScreen));
         }
     }
 
@@ -214,6 +263,24 @@ public final class SaltsInventoryConfigScreen extends Screen {
         graphics.disableScissor();
     }
 
+    private void renderScrollbar(GuiGraphicsExtractor graphics) {
+        if (this.maxScrollOffset() <= 0.0D) {
+            return;
+        }
+
+        int x = this.scrollbarX();
+        int top = this.listTop();
+        int bottom = this.listBottom();
+        int height = Math.max(1, bottom - top);
+        int thumbHeight = this.scrollbarThumbHeight();
+        int thumbY = this.scrollbarThumbY();
+
+        graphics.fill(x, top, x + SCROLLBAR_WIDTH, bottom, SCROLLBAR_TRACK_COLOR);
+        graphics.outline(x, top, SCROLLBAR_WIDTH, height, ROW_BORDER);
+        graphics.fill(x + 1, thumbY, x + SCROLLBAR_WIDTH - 1, thumbY + thumbHeight, SCROLLBAR_THUMB_COLOR);
+        graphics.outline(x + 1, thumbY, SCROLLBAR_WIDTH - 2, thumbHeight, SCROLLBAR_THUMB_BORDER);
+    }
+
     private void renderDescription(GuiGraphicsExtractor graphics, Component description, int x, int y, int width) {
         List<FormattedCharSequence> lines = this.font.split(description, (int) (width / DESCRIPTION_SCALE));
         graphics.pose().pushMatrix();
@@ -261,6 +328,66 @@ public final class SaltsInventoryConfigScreen extends Screen {
             totalHeight += this.rowHeight(row, labelWidth) + ROW_GAP;
         }
         return Math.max(0.0D, totalHeight - Math.max(1, this.listBottom() - this.listTop()));
+    }
+
+    private int scrollbarX() {
+        return this.width - SIDE_MARGIN + (SIDE_MARGIN - SCROLLBAR_WIDTH) / 2;
+    }
+
+    private boolean isOverScrollbar(double mouseX, double mouseY) {
+        if (this.maxScrollOffset() <= 0.0D) {
+            return false;
+        }
+
+        int x = this.scrollbarX();
+        return mouseX >= x && mouseX <= x + SCROLLBAR_WIDTH && mouseY >= this.listTop() && mouseY <= this.listBottom();
+    }
+
+    private void beginScrollbarDrag(double mouseY) {
+        int thumbY = this.scrollbarThumbY();
+        int thumbHeight = this.scrollbarThumbHeight();
+        if (mouseY >= thumbY && mouseY <= thumbY + thumbHeight) {
+            this.scrollbarDragOffset = mouseY - thumbY;
+        } else {
+            this.scrollbarDragOffset = thumbHeight / 2.0D;
+        }
+        this.draggingScrollbar = true;
+        this.scrollToThumbTop(mouseY - this.scrollbarDragOffset);
+    }
+
+    private void scrollToThumbTop(double thumbTop) {
+        double maxScroll = this.maxScrollOffset();
+        if (maxScroll <= 0.0D) {
+            this.scrollOffset = 0.0D;
+            return;
+        }
+
+        int top = this.listTop();
+        int travel = Math.max(1, this.listBottom() - top - this.scrollbarThumbHeight());
+        this.scrollOffset = clamp((thumbTop - top) / travel * maxScroll, 0.0D, maxScroll);
+        this.updateRowPositions();
+    }
+
+    private int scrollbarThumbHeight() {
+        double maxScroll = this.maxScrollOffset();
+        int viewportHeight = Math.max(1, this.listBottom() - this.listTop());
+        if (maxScroll <= 0.0D) {
+            return viewportHeight;
+        }
+
+        int totalHeight = viewportHeight + (int) Math.ceil(maxScroll);
+        return Math.max(SCROLLBAR_MIN_THUMB_HEIGHT, viewportHeight * viewportHeight / Math.max(1, totalHeight));
+    }
+
+    private int scrollbarThumbY() {
+        double maxScroll = this.maxScrollOffset();
+        int top = this.listTop();
+        if (maxScroll <= 0.0D) {
+            return top;
+        }
+
+        int travel = Math.max(0, this.listBottom() - top - this.scrollbarThumbHeight());
+        return top + (int) Math.round(this.scrollOffset / maxScroll * travel);
     }
 
     private Component onOff(boolean value) {
