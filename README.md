@@ -23,6 +23,10 @@ versions/
     common/
     fabric/
     neoforge/
+  26.2/
+    common/
+    fabric/
+    neoforge/
 ```
 
 The version and loader matrix is declared in [settings.gradle.kts](settings.gradle.kts). Dependency versions and mod metadata live in [build.gradle.kts](build.gradle.kts).

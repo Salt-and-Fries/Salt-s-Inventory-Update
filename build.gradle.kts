@@ -52,6 +52,16 @@ prism {
         }
     }
 
+    version("26.2") {
+        fabric {
+            loaderVersion = "0.19.3"
+            fabricApi("0.153.0+26.2")
+        }
+        neoforge {
+            loaderVersion = "26.2.0.7-beta"
+        }
+    }
+
     version("1.21.11") {
         fabric {
             loaderVersion = "0.19.2"
