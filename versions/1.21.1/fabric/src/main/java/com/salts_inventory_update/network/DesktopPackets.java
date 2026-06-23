@@ -1,0 +1,593 @@
+package com.salts_inventory_update.network;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.trading.MerchantOffers;
+
+import com.salts_inventory_update.SaltsInventoryUpdate;
+
+public final class DesktopPackets {
+    private static final int CUSTOM_PAYLOAD_MAX_BYTES = 32 * 1024;
+    public static final int PLAYER_MENU_SESSION = 0;
+    public static final int SPECIAL_GENERIC = 0;
+    public static final int SPECIAL_HORSE = 1;
+    public static final int QUICK_TARGET_DEFAULT = 0;
+    public static final int QUICK_TARGET_SESSION = 1;
+    public static final int QUICK_TARGET_HOTBAR = 2;
+    public static final int PIN_MODE_UNPINNED = 0;
+    public static final int PIN_MODE_PINNED = 1;
+    public static final int PIN_MODE_GHOST_PINNED = 2;
+
+    private DesktopPackets() {
+    }
+
+    public static void registerPayloadTypes() {
+        PayloadTypeRegistry.playC2S().register(DesktopReadyPayload.TYPE, DesktopReadyPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DesktopClickPayload.TYPE, DesktopClickPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DesktopQuickMovePayload.TYPE, DesktopQuickMovePayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DesktopButtonPayload.TYPE, DesktopButtonPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DesktopPlaceRecipePayload.TYPE, DesktopPlaceRecipePayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DesktopRenamePayload.TYPE, DesktopRenamePayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DesktopSessionPinPayload.TYPE, DesktopSessionPinPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DesktopCustomPayload.TYPE, DesktopCustomPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DesktopCarriedPayload.TYPE, DesktopCarriedPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(InventorySlotPurchasePayload.TYPE, InventorySlotPurchasePayload.CODEC);
+
+        PayloadTypeRegistry.playS2C().register(DesktopOpenSessionPayload.TYPE, DesktopOpenSessionPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(DesktopSlotPayload.TYPE, DesktopSlotPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(DesktopDataPayload.TYPE, DesktopDataPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(DesktopCarriedPayload.TYPE, DesktopCarriedPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(DesktopSessionClosedPayload.TYPE, DesktopSessionClosedPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(DesktopMerchantOffersPayload.TYPE, DesktopMerchantOffersPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(DesktopCustomPayload.TYPE, DesktopCustomPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(DesktopGhostRecipePayload.TYPE, DesktopGhostRecipePayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(InventoryExpansionSyncPayload.TYPE, InventoryExpansionSyncPayload.CODEC);
+    }
+
+    public static ResourceLocation id(String path) {
+        return ResourceLocation.fromNamespaceAndPath(SaltsInventoryUpdate.MOD_ID, path);
+    }
+
+    public static int menuTypeId(MenuType<?> menuType) {
+        return BuiltInRegistries.MENU.getId(menuType);
+    }
+
+    public static MenuType<?> menuTypeById(int id) {
+        return BuiltInRegistries.MENU.byId(id);
+    }
+
+    private static void writeItemList(RegistryFriendlyByteBuf buf, List<ItemStack> stacks) {
+        buf.writeVarInt(stacks.size());
+        for (ItemStack stack : stacks) {
+            ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, stack);
+        }
+    }
+
+    private static List<ItemStack> readItemList(RegistryFriendlyByteBuf buf) {
+        int size = buf.readVarInt();
+        List<ItemStack> stacks = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            stacks.add(ItemStack.OPTIONAL_STREAM_CODEC.decode(buf));
+        }
+        return stacks;
+    }
+
+    public record InventorySlotPurchasePayload() implements CustomPacketPayload {
+        public static final Type<InventorySlotPurchasePayload> TYPE = new Type<>(id("inventory_slot_purchase"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, InventorySlotPurchasePayload> CODEC = CustomPacketPayload.codec(
+            InventorySlotPurchasePayload::write,
+            InventorySlotPurchasePayload::new
+        );
+
+        private InventorySlotPurchasePayload(RegistryFriendlyByteBuf buf) {
+            this();
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record InventoryExpansionSyncPayload(int slotCount, List<ItemStack> items) implements CustomPacketPayload {
+        public static final Type<InventoryExpansionSyncPayload> TYPE = new Type<>(id("inventory_expansion_sync"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, InventoryExpansionSyncPayload> CODEC = CustomPacketPayload.codec(
+            InventoryExpansionSyncPayload::write,
+            InventoryExpansionSyncPayload::new
+        );
+
+        private InventoryExpansionSyncPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), readItemList(buf));
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.slotCount);
+            writeItemList(buf, this.items);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopReadyPayload(boolean ready) implements CustomPacketPayload {
+        public static final Type<DesktopReadyPayload> TYPE = new Type<>(id("desktop_ready"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopReadyPayload> CODEC = CustomPacketPayload.codec(
+            DesktopReadyPayload::write,
+            DesktopReadyPayload::new
+        );
+
+        private DesktopReadyPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readBoolean());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeBoolean(this.ready);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopClickPayload(int debugId, int sessionId, int slotIndex, int button, String inputName, ItemStack clientCarried) implements CustomPacketPayload {
+        public static final Type<DesktopClickPayload> TYPE = new Type<>(id("desktop_click"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopClickPayload> CODEC = CustomPacketPayload.codec(
+            DesktopClickPayload::write,
+            DesktopClickPayload::new
+        );
+
+        private DesktopClickPayload(RegistryFriendlyByteBuf buf) {
+            this(
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readUtf(),
+                ItemStack.OPTIONAL_STREAM_CODEC.decode(buf)
+            );
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.debugId);
+            buf.writeVarInt(this.sessionId);
+            buf.writeVarInt(this.slotIndex);
+            buf.writeVarInt(this.button);
+            buf.writeUtf(this.inputName);
+            ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, this.clientCarried);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopQuickMovePayload(int sourceSessionId, int sourceSlotIndex, int targetKind, int targetSessionId) implements CustomPacketPayload {
+        public static final Type<DesktopQuickMovePayload> TYPE = new Type<>(id("desktop_quick_move"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopQuickMovePayload> CODEC = CustomPacketPayload.codec(
+            DesktopQuickMovePayload::write,
+            DesktopQuickMovePayload::new
+        );
+
+        private DesktopQuickMovePayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sourceSessionId);
+            buf.writeVarInt(this.sourceSlotIndex);
+            buf.writeVarInt(this.targetKind);
+            buf.writeVarInt(this.targetSessionId);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopButtonPayload(int sessionId, int buttonId) implements CustomPacketPayload {
+        public static final Type<DesktopButtonPayload> TYPE = new Type<>(id("desktop_button"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopButtonPayload> CODEC = CustomPacketPayload.codec(
+            DesktopButtonPayload::write,
+            DesktopButtonPayload::new
+        );
+
+        private DesktopButtonPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readVarInt());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeVarInt(this.buttonId);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopPlaceRecipePayload(int sessionId, ResourceLocation recipeId, boolean useMaxItems) implements CustomPacketPayload {
+        public static final Type<DesktopPlaceRecipePayload> TYPE = new Type<>(id("desktop_place_recipe"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopPlaceRecipePayload> CODEC = CustomPacketPayload.codec(
+            DesktopPlaceRecipePayload::write,
+            DesktopPlaceRecipePayload::new
+        );
+
+        private DesktopPlaceRecipePayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readResourceLocation(), buf.readBoolean());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeResourceLocation(this.recipeId);
+            buf.writeBoolean(this.useMaxItems);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopRenamePayload(int sessionId, String name) implements CustomPacketPayload {
+        public static final Type<DesktopRenamePayload> TYPE = new Type<>(id("desktop_rename"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopRenamePayload> CODEC = CustomPacketPayload.codec(
+            DesktopRenamePayload::write,
+            DesktopRenamePayload::new
+        );
+
+        private DesktopRenamePayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readUtf(50));
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeUtf(this.name, 50);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopCustomPayload(int sessionId, ResourceLocation channel, byte[] data) implements CustomPacketPayload {
+        public static final Type<DesktopCustomPayload> TYPE = new Type<>(id("desktop_custom"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopCustomPayload> CODEC = CustomPacketPayload.codec(
+            DesktopCustomPayload::write,
+            DesktopCustomPayload::new
+        );
+
+        private DesktopCustomPayload(RegistryFriendlyByteBuf buf) {
+            this(
+                buf.readVarInt(),
+                ResourceLocation.parse(buf.readUtf()),
+                buf.readByteArray(CUSTOM_PAYLOAD_MAX_BYTES)
+            );
+        }
+
+        public DesktopCustomPayload {
+            if (data.length > CUSTOM_PAYLOAD_MAX_BYTES) {
+                throw new IllegalArgumentException("Desktop custom payload is too large: " + data.length);
+            }
+            data = data.clone();
+        }
+
+        @Override
+        public byte[] data() {
+            return this.data.clone();
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeUtf(this.channel.toString());
+            buf.writeByteArray(this.data);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopCloseSessionPayload(int sessionId) implements CustomPacketPayload {
+        public static final Type<DesktopCloseSessionPayload> TYPE = new Type<>(id("desktop_close_session"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopCloseSessionPayload> CODEC = CustomPacketPayload.codec(
+            DesktopCloseSessionPayload::write,
+            DesktopCloseSessionPayload::new
+        );
+
+        private DesktopCloseSessionPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopSessionPinPayload(int sessionId, int pinMode) implements CustomPacketPayload {
+        public static final Type<DesktopSessionPinPayload> TYPE = new Type<>(id("desktop_session_pin"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopSessionPinPayload> CODEC = CustomPacketPayload.codec(
+            DesktopSessionPinPayload::write,
+            DesktopSessionPinPayload::new
+        );
+
+        private DesktopSessionPinPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readVarInt());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeVarInt(this.pinMode);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopSessionVisibilityPayload(int sessionId, boolean visible) implements CustomPacketPayload {
+        public static final Type<DesktopSessionVisibilityPayload> TYPE = new Type<>(id("desktop_session_visibility"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopSessionVisibilityPayload> CODEC = CustomPacketPayload.codec(
+            DesktopSessionVisibilityPayload::write,
+            DesktopSessionVisibilityPayload::new
+        );
+
+        private DesktopSessionVisibilityPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readBoolean());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeBoolean(this.visible);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopOpenSessionPayload(
+        int sessionId,
+        int menuTypeId,
+        int specialKind,
+        int entityId,
+        int columns,
+        int stateId,
+        boolean visible,
+        String sourceKey,
+        Component title,
+        List<ItemStack> items,
+        ItemStack carried,
+        int[] data
+    ) implements CustomPacketPayload {
+        public static final Type<DesktopOpenSessionPayload> TYPE = new Type<>(id("desktop_open_session"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopOpenSessionPayload> CODEC = CustomPacketPayload.codec(
+            DesktopOpenSessionPayload::write,
+            DesktopOpenSessionPayload::new
+        );
+
+        private DesktopOpenSessionPayload(RegistryFriendlyByteBuf buf) {
+            this(
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readBoolean(),
+                buf.readUtf(),
+                ComponentSerialization.STREAM_CODEC.decode(buf),
+                readItemList(buf),
+                ItemStack.OPTIONAL_STREAM_CODEC.decode(buf),
+                buf.readVarIntArray()
+            );
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeVarInt(this.menuTypeId);
+            buf.writeVarInt(this.specialKind);
+            buf.writeVarInt(this.entityId);
+            buf.writeVarInt(this.columns);
+            buf.writeVarInt(this.stateId);
+            buf.writeBoolean(this.visible);
+            buf.writeUtf(this.sourceKey);
+            ComponentSerialization.STREAM_CODEC.encode(buf, this.title);
+            writeItemList(buf, this.items);
+            ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, this.carried);
+            buf.writeVarIntArray(this.data);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopSlotPayload(int sessionId, int slotIndex, int stateId, ItemStack stack) implements CustomPacketPayload {
+        public static final Type<DesktopSlotPayload> TYPE = new Type<>(id("desktop_slot"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopSlotPayload> CODEC = CustomPacketPayload.codec(
+            DesktopSlotPayload::write,
+            DesktopSlotPayload::new
+        );
+
+        private DesktopSlotPayload(RegistryFriendlyByteBuf buf) {
+            this(
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readVarInt(),
+                ItemStack.OPTIONAL_STREAM_CODEC.decode(buf)
+            );
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeVarInt(this.slotIndex);
+            buf.writeVarInt(this.stateId);
+            ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, this.stack);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopDataPayload(int sessionId, int dataSlot, int value) implements CustomPacketPayload {
+        public static final Type<DesktopDataPayload> TYPE = new Type<>(id("desktop_data"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopDataPayload> CODEC = CustomPacketPayload.codec(
+            DesktopDataPayload::write,
+            DesktopDataPayload::new
+        );
+
+        private DesktopDataPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeVarInt(this.dataSlot);
+            buf.writeVarInt(this.value);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopCarriedPayload(ItemStack carried) implements CustomPacketPayload {
+        public static final Type<DesktopCarriedPayload> TYPE = new Type<>(id("desktop_carried"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopCarriedPayload> CODEC = CustomPacketPayload.codec(
+            DesktopCarriedPayload::write,
+            DesktopCarriedPayload::new
+        );
+
+        private DesktopCarriedPayload(RegistryFriendlyByteBuf buf) {
+            this(ItemStack.OPTIONAL_STREAM_CODEC.decode(buf));
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, this.carried);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopGhostRecipePayload(int sessionId, ResourceLocation recipeId) implements CustomPacketPayload {
+        public static final Type<DesktopGhostRecipePayload> TYPE = new Type<>(id("desktop_ghost_recipe"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopGhostRecipePayload> CODEC = CustomPacketPayload.codec(
+            DesktopGhostRecipePayload::write,
+            DesktopGhostRecipePayload::new
+        );
+
+        private DesktopGhostRecipePayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readResourceLocation());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeResourceLocation(this.recipeId);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopSessionClosedPayload(int sessionId) implements CustomPacketPayload {
+        public static final Type<DesktopSessionClosedPayload> TYPE = new Type<>(id("desktop_session_closed"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopSessionClosedPayload> CODEC = CustomPacketPayload.codec(
+            DesktopSessionClosedPayload::write,
+            DesktopSessionClosedPayload::new
+        );
+
+        private DesktopSessionClosedPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopMerchantOffersPayload(
+        int sessionId,
+        MerchantOffers offers,
+        int villagerLevel,
+        int villagerXp,
+        boolean showProgress,
+        boolean canRestock
+    ) implements CustomPacketPayload {
+        public static final Type<DesktopMerchantOffersPayload> TYPE = new Type<>(id("desktop_merchant_offers"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopMerchantOffersPayload> CODEC = CustomPacketPayload.codec(
+            DesktopMerchantOffersPayload::write,
+            DesktopMerchantOffersPayload::new
+        );
+
+        private DesktopMerchantOffersPayload(RegistryFriendlyByteBuf buf) {
+            this(
+                buf.readVarInt(),
+                MerchantOffers.STREAM_CODEC.decode(buf),
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readBoolean(),
+                buf.readBoolean()
+            );
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            MerchantOffers.STREAM_CODEC.encode(buf, this.offers);
+            buf.writeVarInt(this.villagerLevel);
+            buf.writeVarInt(this.villagerXp);
+            buf.writeBoolean(this.showProgress);
+            buf.writeBoolean(this.canRestock);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+}
