@@ -26,7 +26,9 @@ import net.minecraft.world.CompoundContainer;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.animal.camel.Camel;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
+import net.minecraft.world.entity.animal.equine.Llama;
 import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -294,25 +296,82 @@ public final class DesktopContainerSessions {
     public static void openHorseSession(ServerPlayer player, AbstractHorse horse, Container container) {
         PlayerSessions sessions = sessions(player);
         String sourceKey = sourceKeyForEntity(player, horse.getId());
+        int columns = horse.getInventoryColumns();
+        int specialKind = horseSpecialKind(horse);
+        if (isCamelOrLlama(horse)) {
+            mountDiag(
+                "server_openHorse_start player={} entityId={} entityType={} entityClass={} special={} source={} columns={} containerClass={} containerSize={} sessions={} ready={}",
+                player.getName().getString(),
+                horse.getId(),
+                BuiltInRegistries.ENTITY_TYPE.getKey(horse.getType()),
+                horse.getClass().getName(),
+                specialKind,
+                sourceKey,
+                columns,
+                container.getClass().getName(),
+                container.getContainerSize(),
+                sessions.sessions.size(),
+                sessions.ready
+            );
+        }
         if (sessions.closeBySourceKey(player, sourceKey, true)) {
             DesktopDebug.log("server toggle close horse player={} source={}", player.getName().getString(), sourceKey);
+            if (isCamelOrLlama(horse)) {
+                mountDiag("server_openHorse_toggled_closed player={} entityId={} source={}", player.getName().getString(), horse.getId(), sourceKey);
+            }
             return;
         }
 
-        int columns = horse.getInventoryColumns();
         int sessionId = nextSessionId(player);
         HorseInventoryMenu menu = new HorseInventoryMenu(sessionId, player.getInventory(), container, horse, columns);
+        if (isCamelOrLlama(horse)) {
+            mountDiag(
+                "server_openHorse_menu_created player={} session={} entityId={} special={} menuClass={} menuSlots={} stillValid={}",
+                player.getName().getString(),
+                sessionId,
+                horse.getId(),
+                specialKind,
+                menu.getClass().getName(),
+                menu.slots.size(),
+                menu.stillValid(player)
+            );
+        }
         sessions.add(player, new Session(
             sessionId,
             menu,
             horse.getDisplayName(),
-            DesktopPackets.SPECIAL_HORSE,
+            specialKind,
             horse.getId(),
             columns,
             -1,
             sourceKey
         ));
-        DesktopDebug.log("server capture horse player={} session={} entity={} columns={}", player.getName().getString(), sessionId, horse.getId(), columns);
+        DesktopDebug.log("server capture horse player={} session={} entity={} kind={} columns={}", player.getName().getString(), sessionId, horse.getId(), specialKind, columns);
+        if (isCamelOrLlama(horse)) {
+            mountDiag("server_openHorse_session_added player={} session={} entityId={} special={} source={}", player.getName().getString(), sessionId, horse.getId(), specialKind, sourceKey);
+        }
+    }
+
+    private static int horseSpecialKind(AbstractHorse horse) {
+        if (horse instanceof Camel) {
+            return DesktopPackets.SPECIAL_CAMEL;
+        }
+        if (horse instanceof Llama) {
+            return DesktopPackets.SPECIAL_LLAMA;
+        }
+        return DesktopPackets.SPECIAL_HORSE;
+    }
+
+    private static boolean isCamelOrLlama(AbstractHorse horse) {
+        return horse instanceof Camel || horse instanceof Llama;
+    }
+
+    private static boolean isCamelOrLlamaSpecial(int specialKind) {
+        return specialKind == DesktopPackets.SPECIAL_CAMEL || specialKind == DesktopPackets.SPECIAL_LLAMA;
+    }
+
+    private static void mountDiag(String message, Object... args) {
+        DesktopDebug.warn("SIU_MOUNT_DIAG " + message, args);
     }
 
     public static void openNautilusSession(ServerPlayer player, AbstractNautilus nautilus, Container container) {
@@ -590,10 +649,12 @@ public final class DesktopContainerSessions {
     }
 
     private static boolean quickMoveIntoTomStorageTerminal(ServerPlayer player, PlayerSessions sessions, SlotSource source, @Nullable Session targetSession) {
+        @Nullable MenuType<?> targetMenuType = targetSession == null ? null : targetSession.menuType();
         if (targetSession == null
             || !targetSession.visibleToClient
             || !targetSession.menu.stillValid(player)
-            || !TomsStorageCompat.isTerminal(targetSession.menu.getType())
+            || targetMenuType == null
+            || !TomsStorageCompat.isTerminal(targetMenuType)
             || !isPlayerInventorySlot(player, source.slot)
             || !source.slot.hasItem()) {
             return false;
@@ -750,7 +811,7 @@ public final class DesktopContainerSessions {
             return;
         }
         if (!(session.menu instanceof RecipeBookMenu recipeBookMenu)) {
-            DesktopDebug.trace("server recipe place dropped player={} session={} recipe={} menu={} reason=not-recipe-menu", player.getName().getString(), payload.sessionId(), payload.recipeId(), session.menu.getType());
+            DesktopDebug.trace("server recipe place dropped player={} session={} recipe={} menu={} reason=not-recipe-menu", player.getName().getString(), payload.sessionId(), payload.recipeId(), session.menuTypeDescription());
             return;
         }
 
@@ -870,14 +931,20 @@ public final class DesktopContainerSessions {
             return;
         }
 
-        DesktopServerPayloadHandler<AbstractContainerMenu> handler = DesktopServerApi.findPayloadHandler(session.menu.getType(), payload.channel());
+        @Nullable MenuType<?> menuType = session.menuType();
+        if (menuType == null) {
+            DesktopDebug.trace("server custom dropped player={} session={} channel={} reason=no-menu-type", player.getName().getString(), payload.sessionId(), payload.channel());
+            return;
+        }
+
+        DesktopServerPayloadHandler<AbstractContainerMenu> handler = DesktopServerApi.findPayloadHandler(menuType, payload.channel());
         if (handler == null) {
             DesktopDebug.warn(
                 "server custom dropped player={} session={} channel={} menu={} reason=no-handler",
                 player.getName().getString(),
                 payload.sessionId(),
                 payload.channel(),
-                session.menu.getType()
+                menuType
             );
             return;
         }
@@ -1272,7 +1339,23 @@ public final class DesktopContainerSessions {
     }
 
     private static void send(ServerPlayer player, CustomPacketPayload payload) {
-        if (ServerPlayNetworking.canSend(player, payload.type())) {
+        boolean canSend = ServerPlayNetworking.canSend(player, payload.type());
+        if (payload instanceof DesktopOpenSessionPayload openPayload && isCamelOrLlamaSpecial(openPayload.specialKind())) {
+            mountDiag(
+                "server_send_open player={} session={} special={} entityId={} columns={} visible={} source={} items={} data={} canSend={}",
+                player.getName().getString(),
+                openPayload.sessionId(),
+                openPayload.specialKind(),
+                openPayload.entityId(),
+                openPayload.columns(),
+                openPayload.visible(),
+                openPayload.sourceKey(),
+                openPayload.items().size(),
+                openPayload.data().length,
+                canSend
+            );
+        }
+        if (canSend) {
             ServerPlayNetworking.send(player, payload);
         }
     }
@@ -1373,6 +1456,18 @@ public final class DesktopContainerSessions {
             for (Session session : List.copyOf(this.sessions.values())) {
                 if (!session.menu.stillValid(player)) {
                     DesktopDebug.log("server session invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
+                    if (isCamelOrLlamaSpecial(session.specialKind)) {
+                        mountDiag(
+                            "server_session_invalid player={} session={} special={} entityId={} title={} visible={} source={}",
+                            player.getName().getString(),
+                            session.sessionId,
+                            session.specialKind,
+                            session.entityId,
+                            session.title.getString(),
+                            session.visibleToClient,
+                            session.sourceKey
+                        );
+                    }
                     this.rememberDormantGhost(session, "invalid");
                     this.close(player, session.sessionId, true);
                 } else {
@@ -1465,8 +1560,29 @@ public final class DesktopContainerSessions {
             this.sourceKey = sourceKey;
         }
 
+        private @Nullable MenuType<?> menuType() {
+            if (this.menuTypeId < 0) {
+                return null;
+            }
+            try {
+                return this.menu.getType();
+            } catch (UnsupportedOperationException exception) {
+                return null;
+            }
+        }
+
+        private String menuTypeDescription() {
+            MenuType<?> menuType = this.menuType();
+            return menuType == null ? "special:" + this.specialKind : String.valueOf(menuType);
+        }
+
         private void initializeServerHandler(ServerPlayer player, PlayerSessions sessions) {
-            this.serverHandler = DesktopServerApi.findWindowHandler(this.menu.getType());
+            MenuType<?> menuType = this.menuType();
+            if (menuType == null) {
+                return;
+            }
+
+            this.serverHandler = DesktopServerApi.findWindowHandler(menuType);
             if (this.serverHandler == null) {
                 return;
             }
@@ -1673,6 +1789,22 @@ public final class DesktopContainerSessions {
         @Override
         public void sendInitialData(AbstractContainerMenu menu, java.util.List<ItemStack> stacks, ItemStack carried, int[] dataSlots) {
             DesktopDebug.log("server send initial player={} session={} title={} slots={} data={}", this.player.getName().getString(), this.session.sessionId, this.session.title.getString(), stacks.size(), dataSlots.length);
+            if (isCamelOrLlamaSpecial(this.session.specialKind)) {
+                mountDiag(
+                    "server_initial_data player={} session={} special={} entityId={} columns={} visible={} source={} menuSlots={} stacks={} data={} carried={}",
+                    this.player.getName().getString(),
+                    this.session.sessionId,
+                    this.session.specialKind,
+                    this.session.entityId,
+                    this.session.columns,
+                    this.session.visibleToClient,
+                    this.session.sourceKey,
+                    menu.slots.size(),
+                    stacks.size(),
+                    dataSlots.length,
+                    carried
+                );
+            }
             send(this.player, new DesktopOpenSessionPayload(
                 this.session.sessionId,
                 this.session.menuTypeId,

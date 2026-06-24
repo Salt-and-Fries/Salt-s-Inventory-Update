@@ -926,6 +926,22 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    private static @Nullable MenuType<?> safeMenuType(AbstractContainerMenu menu) {
+        try {
+            return menu.getType();
+        } catch (UnsupportedOperationException exception) {
+            return null;
+        }
+    }
+
+    private static String safeMenuKey(@Nullable AbstractContainerMenu menu) {
+        if (menu == null) {
+            return "none";
+        }
+        MenuType<?> menuType = safeMenuType(menu);
+        return menuType == null ? "unknown" : String.valueOf(BuiltInRegistries.MENU.getKey(menuType));
+    }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static Screen createContainerFallbackScreen(
         Minecraft minecraft,
@@ -933,7 +949,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         Inventory playerInventory,
         Component title
     ) {
-        MenuScreens.ScreenConstructor vanillaConstructor = VANILLA_SCREEN_CONSTRUCTORS.get(menu.getType());
+        MenuType<?> menuType = safeMenuType(menu);
+        MenuScreens.ScreenConstructor vanillaConstructor = menuType == null ? null : VANILLA_SCREEN_CONSTRUCTORS.get(menuType);
         if (vanillaConstructor != null) {
             DesktopDebug.log(
                 "client vanilla screen delegated container={} title={} serverSessions={}",
@@ -3358,10 +3375,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         String sourceKey,
         int specialKind
     ) {
-        Identifier menuKey = BuiltInRegistries.MENU.getKey(menu.getType());
+        MenuType<?> menuType = safeMenuType(menu);
+        if (menuType == null) {
+            return null;
+        }
+        var menuKey = BuiltInRegistries.MENU.getKey(menuType);
         DesktopWindowLookupContext context = new DesktopWindowLookupContext(
             menu,
-            menu.getType(),
+            menuType,
             title,
             sessionId,
             sourceKey,
@@ -3377,7 +3398,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 "client api lookup desktop={} menu={} menuType={} title='{}' session={} source='{}' special={} slots={} content={}x{} definition={}",
                 this.desktopId,
                 menuKey,
-                menu.getType(),
+                menuType,
                 title.getString(),
                 sessionId,
                 sourceKey,
@@ -3440,7 +3461,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         DesktopWindowSize apiSize,
         @Nullable DesktopWindowDefinition<?, ?> apiDefinition
     ) {
-        Identifier menuKey = BuiltInRegistries.MENU.getKey(menu.getType());
+        MenuType<?> menuType = safeMenuType(menu);
+        if (menuType == null) {
+            return;
+        }
+        var menuKey = BuiltInRegistries.MENU.getKey(menuType);
         if (apiDefinition == null && !isTomStorageMenu(menuKey)) {
             return;
         }
@@ -3775,7 +3800,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return apiResizePolicy == DesktopResizePolicy.STORAGE_GRID;
         }
 
-        MenuType<?> type = menu.getType();
+        MenuType<?> type = safeMenuType(menu);
         if (isKnownStorageMenuType(type)) {
             return true;
         }
@@ -3937,7 +3962,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (menu instanceof MerchantMenu) {
             return Math.max(titleWidth, MERCHANT_CONTENT_MARGIN * 2 + MERCHANT_CONTENT_WIDTH);
         }
-        StorageGridSize defaultGrid = defaultStorageGridSize(menu.getType(), slotCount);
+        StorageGridSize defaultGrid = defaultStorageGridSize(safeMenuType(menu), slotCount);
         if (defaultGrid != null) {
             return Math.max(this.minimumTitleBarWidth(title), storageWindowWidth(defaultGrid.columns(), false));
         }
@@ -3985,7 +4010,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (menu instanceof MerchantMenu) {
             return TOP_BAR_HEIGHT + MERCHANT_CONTENT_MARGIN * 2 + MERCHANT_CONTENT_HEIGHT;
         }
-        StorageGridSize defaultGrid = defaultStorageGridSize(menu.getType(), slotCount);
+        StorageGridSize defaultGrid = defaultStorageGridSize(safeMenuType(menu), slotCount);
         if (defaultGrid != null) {
             return storageWindowHeight(defaultGrid.rows());
         }
@@ -5776,7 +5801,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     payload.data().length,
                     window == null ? "none" : window.debugName(),
                     window == null ? "none" : definitionName(window.apiDefinition),
-                    window == null || window.containerMenu() == null ? "none" : BuiltInRegistries.MENU.getKey(window.containerMenu().getType())
+                    safeMenuKey(window == null ? null : window.containerMenu())
                 );
                 TomsStorageCompat.warn(
                     "client custom payload dropped session={} channel={} bytes={} reason=no-api-window window={} api={} menu={}",
@@ -5785,7 +5810,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     payload.data().length,
                     window == null ? "none" : window.debugName(),
                     window == null ? "none" : definitionName(window.apiDefinition),
-                    window == null || window.containerMenu() == null ? "none" : BuiltInRegistries.MENU.getKey(window.containerMenu().getType())
+                    safeMenuKey(window == null ? null : window.containerMenu())
                 );
             } else {
                 DesktopDebug.trace("client custom payload dropped desktop={} session={} channel={} reason=no-api-window", this.desktopId, payload.sessionId(), payload.channel());
@@ -5800,7 +5825,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     this.desktopId,
                     payload.sessionId(),
                     window.debugName(),
-                    BuiltInRegistries.MENU.getKey(window.containerMenu().getType()),
+                    safeMenuKey(window.containerMenu()),
                     payload.channel(),
                     payload.data().length,
                     definitionName(window.apiDefinition)
@@ -5809,7 +5834,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     "client custom payload apply session={} window={} menu={} channel={} bytes={} definition={}",
                     payload.sessionId(),
                     window.debugName(),
-                    BuiltInRegistries.MENU.getKey(window.containerMenu().getType()),
+                    safeMenuKey(window.containerMenu()),
                     payload.channel(),
                     payload.data().length,
                     definitionName(window.apiDefinition)

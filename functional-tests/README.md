@@ -362,7 +362,7 @@ These verify that built-in desktop API definitions were registered for furnace-s
 | `packets.menu_type_round_trip.crafter` | Same round-trip for `MenuType.CRAFTER_3x3`, when present. |
 | `packets.pin_mode_order` | Pin constants are `UNPINNED = 0`, `PINNED = 1`, `GHOST_PINNED = 2`. |
 | `packets.quick_target_order` | Quick-move target constants are `DEFAULT = 0`, `SESSION = 1`, `HOTBAR = 2`. |
-| `packets.special_kinds` | Special-kind constants are `GENERIC = 0`, `HORSE = 1`. |
+| `packets.special_kinds` | Special-kind constants keep `GENERIC = 0`, `HORSE = 1`, with camel and llama ordered after horse-family support constants. |
 
 ### Runtime Suite: `inventory-expansion`
 

@@ -153,7 +153,12 @@ public final class FunctionalTestHarness {
         }
         recorder.check("packets.pin_mode_order", DesktopPackets.PIN_MODE_UNPINNED == 0 && DesktopPackets.PIN_MODE_PINNED == 1 && DesktopPackets.PIN_MODE_GHOST_PINNED == 2);
         recorder.check("packets.quick_target_order", DesktopPackets.QUICK_TARGET_DEFAULT == 0 && DesktopPackets.QUICK_TARGET_SESSION == 1 && DesktopPackets.QUICK_TARGET_HOTBAR == 2);
-        recorder.check("packets.special_kinds", DesktopPackets.SPECIAL_GENERIC == 0 && DesktopPackets.SPECIAL_HORSE == 1);
+        recorder.check("packets.special_kinds",
+            DesktopPackets.SPECIAL_GENERIC == 0
+                && DesktopPackets.SPECIAL_HORSE == 1
+                && DesktopPackets.SPECIAL_CAMEL > DesktopPackets.SPECIAL_HORSE
+                && DesktopPackets.SPECIAL_LLAMA > DesktopPackets.SPECIAL_CAMEL
+        );
     }
 
     private static void testInventoryExpansion(ResultRecorder recorder) {

@@ -5,11 +5,14 @@ import java.util.List;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.camel.Camel;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
+import net.minecraft.world.entity.animal.equine.Llama;
 import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -21,6 +24,7 @@ import net.minecraft.world.inventory.NautilusInventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
+import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
@@ -96,8 +100,23 @@ public final class DesktopContainerSession {
     }
 
     private static AbstractContainerMenu createMenu(Minecraft minecraft, DesktopOpenSessionPayload payload, LocalPlayer player) {
-        if (payload.specialKind() == DesktopPackets.SPECIAL_HORSE) {
+        if (isHorseSpecialKind(payload.specialKind())) {
             Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(payload.entityId());
+            if (isCamelOrLlamaSpecial(payload.specialKind())) {
+                mountDiag(
+                    "client_create_horse_lookup session={} special={} entityId={} levelPresent={} entityPresent={} entityType={} entityClass={} abstractHorse={} camel={} llama={}",
+                    payload.sessionId(),
+                    payload.specialKind(),
+                    payload.entityId(),
+                    minecraft.level != null,
+                    entity != null,
+                    entity == null ? "null" : BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()),
+                    entity == null ? "null" : entity.getClass().getName(),
+                    entity instanceof AbstractHorse,
+                    entity instanceof Camel,
+                    entity instanceof Llama
+                );
+            }
             if (entity instanceof AbstractHorse horse) {
                 return new HorseInventoryMenu(
                     payload.sessionId(),
@@ -125,7 +144,36 @@ public final class DesktopContainerSession {
             }
         }
 
-        throw new IllegalStateException("Unsupported desktop container session " + payload.sessionId());
+        throw new IllegalStateException(
+            "Unsupported desktop container session "
+                + payload.sessionId()
+                + " special="
+                + payload.specialKind()
+                + " entity="
+                + describeEntity(minecraft, payload.entityId())
+        );
+    }
+
+    private static boolean isHorseSpecialKind(int specialKind) {
+        return specialKind == DesktopPackets.SPECIAL_HORSE
+            || specialKind == DesktopPackets.SPECIAL_CAMEL
+            || specialKind == DesktopPackets.SPECIAL_LLAMA;
+    }
+
+    private static boolean isCamelOrLlamaSpecial(int specialKind) {
+        return specialKind == DesktopPackets.SPECIAL_CAMEL || specialKind == DesktopPackets.SPECIAL_LLAMA;
+    }
+
+    private static String describeEntity(Minecraft minecraft, int entityId) {
+        Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(entityId);
+        if (entity == null) {
+            return "null";
+        }
+        return BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()) + "/" + entity.getClass().getName();
+    }
+
+    private static void mountDiag(String message, Object... args) {
+        DesktopDebug.warn("SIU_MOUNT_DIAG " + message, args);
     }
 
     public int sessionId() {
@@ -157,7 +205,7 @@ public final class DesktopContainerSession {
     }
 
     public boolean isMountSession() {
-        return this.specialKind == DesktopPackets.SPECIAL_HORSE || this.specialKind == DesktopPackets.SPECIAL_NAUTILUS;
+        return isHorseSpecialKind(this.specialKind) || this.specialKind == DesktopPackets.SPECIAL_NAUTILUS;
     }
 
     public LivingEntity mountEntity(Minecraft minecraft) {

@@ -22,6 +22,8 @@ public final class DesktopPackets {
     public static final int PLAYER_MENU_SESSION = 0;
     public static final int SPECIAL_GENERIC = 0;
     public static final int SPECIAL_HORSE = 1;
+    public static final int SPECIAL_CAMEL = 2;
+    public static final int SPECIAL_LLAMA = 3;
     public static final int QUICK_TARGET_DEFAULT = 0;
     public static final int QUICK_TARGET_SESSION = 1;
     public static final int QUICK_TARGET_HOTBAR = 2;

@@ -27,8 +27,10 @@ import net.minecraft.world.CompoundContainer;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.animal.camel.Camel;
 import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.animal.horse.Llama;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.StackedContents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -294,19 +296,30 @@ public final class DesktopContainerSessions {
         int columns = horse instanceof AbstractChestedHorse chestedHorse && chestedHorse.hasChest()
             ? chestedHorse.getInventoryColumns()
             : 0;
+        int specialKind = horseSpecialKind(horse);
         int sessionId = nextSessionId(player);
         HorseInventoryMenu menu = new HorseInventoryMenu(sessionId, player.getInventory(), container, horse);
         sessions.add(player, new Session(
             sessionId,
             menu,
             horse.getDisplayName(),
-            DesktopPackets.SPECIAL_HORSE,
+            specialKind,
             horse.getId(),
             columns,
             -1,
             sourceKey
         ));
-        DesktopDebug.log("server capture horse player={} session={} entity={} columns={}", player.getName().getString(), sessionId, horse.getId(), columns);
+        DesktopDebug.log("server capture horse player={} session={} entity={} kind={} columns={}", player.getName().getString(), sessionId, horse.getId(), specialKind, columns);
+    }
+
+    private static int horseSpecialKind(AbstractHorse horse) {
+        if (horse instanceof Camel) {
+            return DesktopPackets.SPECIAL_CAMEL;
+        }
+        if (horse instanceof Llama) {
+            return DesktopPackets.SPECIAL_LLAMA;
+        }
+        return DesktopPackets.SPECIAL_HORSE;
     }
 
     private static boolean isDesktopSupportedMenu(AbstractContainerMenu menu) {
@@ -593,10 +606,12 @@ public final class DesktopContainerSessions {
     }
 
     private static boolean quickMoveIntoTomStorageTerminal(ServerPlayer player, PlayerSessions sessions, SlotSource source, @Nullable Session targetSession) {
+        @Nullable MenuType<?> targetMenuType = targetSession == null ? null : targetSession.menuType();
         if (targetSession == null
             || !targetSession.visibleToClient
             || !targetSession.menu.stillValid(player)
-            || !TomsStorageCompat.isTerminal(targetSession.menu.getType())
+            || targetMenuType == null
+            || !TomsStorageCompat.isTerminal(targetMenuType)
             || !isPlayerInventorySlot(player, source.slot)
             || !source.slot.hasItem()) {
             return false;
@@ -741,7 +756,7 @@ public final class DesktopContainerSessions {
             return;
         }
         if (!(session.menu instanceof RecipeBookMenu recipeBookMenu)) {
-            DesktopDebug.trace("server recipe place dropped player={} session={} recipe={} menu={} reason=not-recipe-menu", player.getName().getString(), payload.sessionId(), payload.recipeId(), session.menu.getType());
+            DesktopDebug.trace("server recipe place dropped player={} session={} recipe={} menu={} reason=not-recipe-menu", player.getName().getString(), payload.sessionId(), payload.recipeId(), session.menuTypeDescription());
             return;
         }
 
@@ -866,14 +881,20 @@ public final class DesktopContainerSessions {
             return;
         }
 
-        DesktopServerPayloadHandler<AbstractContainerMenu> handler = DesktopServerApi.findPayloadHandler(session.menu.getType(), payload.channel());
+        @Nullable MenuType<?> menuType = session.menuType();
+        if (menuType == null) {
+            DesktopDebug.trace("server custom dropped player={} session={} channel={} reason=no-menu-type", player.getName().getString(), payload.sessionId(), payload.channel());
+            return;
+        }
+
+        DesktopServerPayloadHandler<AbstractContainerMenu> handler = DesktopServerApi.findPayloadHandler(menuType, payload.channel());
         if (handler == null) {
             DesktopDebug.warn(
                 "server custom dropped player={} session={} channel={} menu={} reason=no-handler",
                 player.getName().getString(),
                 payload.sessionId(),
                 payload.channel(),
-                session.menu.getType()
+                menuType
             );
             return;
         }
@@ -1501,8 +1522,29 @@ public final class DesktopContainerSessions {
             this.sourceKey = sourceKey;
         }
 
+        private @Nullable MenuType<?> menuType() {
+            if (this.menuTypeId < 0) {
+                return null;
+            }
+            try {
+                return this.menu.getType();
+            } catch (UnsupportedOperationException exception) {
+                return null;
+            }
+        }
+
+        private String menuTypeDescription() {
+            MenuType<?> menuType = this.menuType();
+            return menuType == null ? "special:" + this.specialKind : String.valueOf(menuType);
+        }
+
         private void initializeServerHandler(ServerPlayer player, PlayerSessions sessions) {
-            this.serverHandler = DesktopServerApi.findWindowHandler(this.menu.getType());
+            MenuType<?> menuType = this.menuType();
+            if (menuType == null) {
+                return;
+            }
+
+            this.serverHandler = DesktopServerApi.findWindowHandler(menuType);
             if (this.serverHandler == null) {
                 return;
             }

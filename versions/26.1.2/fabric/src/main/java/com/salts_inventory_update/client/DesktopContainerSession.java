@@ -96,7 +96,7 @@ public final class DesktopContainerSession {
     }
 
     private static AbstractContainerMenu createMenu(Minecraft minecraft, DesktopOpenSessionPayload payload, LocalPlayer player) {
-        if (payload.specialKind() == DesktopPackets.SPECIAL_HORSE) {
+        if (isHorseSpecialKind(payload.specialKind())) {
             Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(payload.entityId());
             if (entity instanceof AbstractHorse horse) {
                 return new HorseInventoryMenu(
@@ -128,6 +128,12 @@ public final class DesktopContainerSession {
         throw new IllegalStateException("Unsupported desktop container session " + payload.sessionId());
     }
 
+    private static boolean isHorseSpecialKind(int specialKind) {
+        return specialKind == DesktopPackets.SPECIAL_HORSE
+            || specialKind == DesktopPackets.SPECIAL_CAMEL
+            || specialKind == DesktopPackets.SPECIAL_LLAMA;
+    }
+
     public int sessionId() {
         return this.sessionId;
     }
@@ -157,7 +163,7 @@ public final class DesktopContainerSession {
     }
 
     public boolean isMountSession() {
-        return this.specialKind == DesktopPackets.SPECIAL_HORSE || this.specialKind == DesktopPackets.SPECIAL_NAUTILUS;
+        return isHorseSpecialKind(this.specialKind) || this.specialKind == DesktopPackets.SPECIAL_NAUTILUS;
     }
 
     public LivingEntity mountEntity(Minecraft minecraft) {
