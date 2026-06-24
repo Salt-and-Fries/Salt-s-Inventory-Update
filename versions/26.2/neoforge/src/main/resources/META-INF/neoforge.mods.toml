@@ -8,6 +8,9 @@ version = "${version}"
 displayName = "${mod_name}"
 description = "${description}"
 
+[[mixins]]
+config = "${mod_id}.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId = "neoforge"
 type = "required"

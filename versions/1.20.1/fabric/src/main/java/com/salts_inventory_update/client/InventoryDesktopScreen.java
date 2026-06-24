@@ -3,6 +3,7 @@ package com.salts_inventory_update.client;
 import net.minecraft.ChatFormatting;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.datafixers.util.Pair;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -16,8 +17,8 @@ import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.input.CharacterEvent;
+import com.salts_inventory_update.client.gui.GuiGraphicsExtractor;
+import com.salts_inventory_update.client.input.CharacterEvent;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.CyclingSlotBackground;
@@ -30,14 +31,14 @@ import net.minecraft.client.gui.screens.recipebook.BlastingRecipeBookComponent;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
 import net.minecraft.client.gui.screens.recipebook.SmeltingRecipeBookComponent;
 import net.minecraft.client.gui.screens.recipebook.SmokingRecipeBookComponent;
-import net.minecraft.client.input.KeyEvent;
+import com.salts_inventory_update.client.input.KeyEvent;
 import net.minecraft.client.model.geom.ModelLayers;
-import net.minecraft.client.model.object.banner.BannerFlagModel;
+import com.salts_inventory_update.client.model.object.banner.BannerFlagModel;
 import net.minecraft.client.model.BookModel;
 import net.minecraft.client.player.inventory.Hotbar;
-import net.minecraft.client.input.MouseButtonEvent;
+import com.salts_inventory_update.client.input.MouseButtonEvent;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.RenderPipelines;
+import com.salts_inventory_update.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -747,6 +748,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private static @Nullable InventoryDesktopScreen singleton;
     private static final Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> VANILLA_SCREEN_CONSTRUCTORS = new LinkedHashMap<>();
+    private static Field menuScreensField;
     private static boolean internalApiDefinitionsRegistered;
     private static int nextDesktopId = 1;
 
@@ -894,17 +896,40 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private static void registerContainerScreen(MenuType<?> menuType, MenuScreens.ScreenConstructor constructor) {
-        Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> screens = MenuScreensAccessor.salts_inventory_update$getScreens();
+        Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> screens = getMenuScreenConstructors();
         VANILLA_SCREEN_CONSTRUCTORS.putIfAbsent(menuType, screens.get(menuType));
         screens.put(menuType, constructor);
     }
 
     public static void registerExternalDesktopContainerScreen(MenuType<?> menuType, String owner) {
-        Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> screens = MenuScreensAccessor.salts_inventory_update$getScreens();
+        Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> screens = getMenuScreenConstructors();
         MenuScreens.ScreenConstructor constructor = (menu, inventory, title) ->
             InventoryDesktopScreen.addLegacyContainerWindow(Minecraft.getInstance(), (AbstractContainerMenu) menu, inventory, title);
         screens.put(menuType, constructor);
         DesktopDebug.log("client external desktop screen registered owner={} menu={}", owner, BuiltInRegistries.MENU.getKey(menuType));
+    }
+
+    private static Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> getMenuScreenConstructors() {
+        try {
+            return MenuScreensAccessor.salts_inventory_update$getScreens();
+        } catch (AssertionError accessorError) {
+            return getMenuScreenConstructorsReflectively(accessorError);
+        }
+    }
+
+    private static Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> getMenuScreenConstructorsReflectively(AssertionError accessorError) {
+        try {
+            Field field = menuScreensField;
+            if (field == null) {
+                field = MenuScreens.class.getDeclaredField("SCREENS");
+                field.setAccessible(true);
+                menuScreensField = field;
+            }
+            return (Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>>) field.get(null);
+        } catch (ReflectiveOperationException | RuntimeException exception) {
+            accessorError.addSuppressed(exception);
+            throw accessorError;
+        }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

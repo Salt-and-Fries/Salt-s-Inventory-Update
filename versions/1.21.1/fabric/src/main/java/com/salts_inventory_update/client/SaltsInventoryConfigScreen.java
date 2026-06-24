@@ -7,12 +7,12 @@ import java.util.function.DoubleConsumer;
 import java.util.function.DoubleFunction;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import com.salts_inventory_update.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.MouseButtonEvent;
+import com.salts_inventory_update.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;

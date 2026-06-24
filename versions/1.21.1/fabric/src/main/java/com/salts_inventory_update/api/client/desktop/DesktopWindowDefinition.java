@@ -2,9 +2,9 @@ package com.salts_inventory_update.api.client.desktop;
 
 import org.jspecify.annotations.Nullable;
 
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
+import com.salts_inventory_update.client.input.CharacterEvent;
+import com.salts_inventory_update.client.input.KeyEvent;
+import com.salts_inventory_update.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;

@@ -15,9 +15,9 @@ import com.mojang.serialization.Codec;
 
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.UUIDUtil;
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
+import com.salts_inventory_update.client.input.CharacterEvent;
+import com.salts_inventory_update.client.input.KeyEvent;
+import com.salts_inventory_update.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.CompoundTag;

@@ -1,4 +1,4 @@
-package net.minecraft.client;
+package com.salts_inventory_update.client.input;
 
 import org.joml.Vector2i;
 

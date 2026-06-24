@@ -1,0 +1,11 @@
+Functional runtime failed for 1.20.1 fabric. Logs: C:\Users\texca\IdeaProjects\Salts Inventory 
+Update\functional-tests\results\1.20.1-fabric.out.log C:\Users\texca\IdeaProjects\Salts Inventory 
+Update\functional-tests\results\1.20.1-fabric.err.log
+At C:\Users\texca\IdeaProjects\Salts Inventory Update\functional-tests\scripts\Run-FunctionalMatrix.ps1:72 char:13
++             throw "Functional runtime failed for $($Entry.Version) $( ...
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Functional runt...-fabric.err.log:String) [], RuntimeException
+    + FullyQualifiedErrorId : Functional runtime failed for 1.20.1 fabric. Logs: C:\Users\texca\IdeaProjects\Salts Inv 
+   entory Update\functional-tests\results\1.20.1-fabric.out.log C:\Users\texca\IdeaProjects\Salts Inventory Update\fu  
+  nctional-tests\results\1.20.1-fabric.err.log
+ 

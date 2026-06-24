@@ -7,7 +7,7 @@ import java.util.function.DoubleConsumer;
 import java.util.function.DoubleFunction;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import com.salts_inventory_update.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;

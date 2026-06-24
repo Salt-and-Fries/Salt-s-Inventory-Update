@@ -1,6 +1,7 @@
 package com.salts_inventory_update.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import java.lang.reflect.Field;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -9,7 +10,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.Options;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import com.salts_inventory_update.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.ResourceLocation;
@@ -23,6 +24,9 @@ import com.salts_inventory_update.mixin.client.MouseHandlerAccessor;
 public final class WindowedInventoryClient {
     private static KeyMapping characterWindowKey;
     private static boolean customMouseGrab;
+    private static Field mouseGrabbedField;
+    private static Field mouseXposField;
+    private static Field mouseYposField;
     private static int pendingConfigScreenOpenTicks;
 
     private WindowedInventoryClient() {
@@ -44,6 +48,7 @@ public final class WindowedInventoryClient {
         InventoryDesktopScreen.registerContainerScreens();
         DesktopContainerClient.initializeNetworking();
         registerClientCommands();
+        initializeFunctionalTests();
         ClientTickEvents.START_CLIENT_TICK.register(WindowedInventoryClient::syncDesktopMovementKeys);
         ClientTickEvents.END_CLIENT_TICK.register(WindowedInventoryClient::onClientTick);
     }
@@ -60,11 +65,41 @@ public final class WindowedInventoryClient {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
             ClientCommandManager.literal("salts_inventory")
                 .then(ClientCommandManager.literal("config").executes(context -> {
-                    Minecraft minecraft = context.getSource().getClient();
+                    Minecraft minecraft = Minecraft.getInstance();
                     minecraft.execute(() -> pendingConfigScreenOpenTicks = 2);
                     return 1;
                 }))
         ));
+    }
+
+    private static void initializeFunctionalTests() {
+        if (!functionalTestsRequested()) {
+            return;
+        }
+
+        try {
+            Class.forName("com.salts_inventory_update.functionaltest.FunctionalTestHarness")
+                .getMethod("tryInitialize")
+                .invoke(null);
+        } catch (ClassNotFoundException exception) {
+            SaltsInventoryUpdate.LOGGER.warn("Functional tests requested, but test sources were not included. Re-run with -PincludeFunctionalTests=true.");
+        } catch (ReflectiveOperationException exception) {
+            SaltsInventoryUpdate.LOGGER.error("Functional test harness failed to initialize", exception);
+        }
+    }
+
+    private static boolean functionalTestsRequested() {
+        return Boolean.getBoolean("salts_inventory_update.functionalTests")
+            || isTruthy(System.getenv("SIU_FUNCTIONAL_TESTS"));
+    }
+
+    private static boolean isTruthy(String value) {
+        return value != null && (
+            value.equalsIgnoreCase("true")
+                || value.equalsIgnoreCase("1")
+                || value.equalsIgnoreCase("yes")
+                || value.equalsIgnoreCase("on")
+        );
     }
 
     public static boolean isAltDown(Minecraft minecraft) {
@@ -198,14 +233,11 @@ public final class WindowedInventoryClient {
 
     public static void setCameraMouseGrab(Minecraft minecraft, boolean grabbed) {
         MouseHandler mouseHandler = minecraft.mouseHandler;
-        MouseHandlerAccessor accessor = (MouseHandlerAccessor) mouseHandler;
         if (grabbed) {
             if (!customMouseGrab) {
                 double x = minecraft.getWindow().getScreenWidth() / 2.0;
                 double y = minecraft.getWindow().getScreenHeight() / 2.0;
-                accessor.salts_inventory_update$setXpos(x);
-                accessor.salts_inventory_update$setYpos(y);
-                accessor.salts_inventory_update$setMouseGrabbed(true);
+                setMouseGrabState(mouseHandler, x, y, true);
                 InputConstants.grabOrReleaseMouse(minecraft.getWindow().getWindow(), GLFW.GLFW_CURSOR_DISABLED, x, y);
                 mouseHandler.setIgnoreFirstMove();
                 customMouseGrab = true;
@@ -216,12 +248,58 @@ public final class WindowedInventoryClient {
         if (customMouseGrab) {
             double x = minecraft.getWindow().getScreenWidth() / 2.0;
             double y = minecraft.getWindow().getScreenHeight() / 2.0;
-            accessor.salts_inventory_update$setXpos(x);
-            accessor.salts_inventory_update$setYpos(y);
-            accessor.salts_inventory_update$setMouseGrabbed(false);
+            setMouseGrabState(mouseHandler, x, y, false);
             InputConstants.grabOrReleaseMouse(minecraft.getWindow().getWindow(), GLFW.GLFW_CURSOR_NORMAL, x, y);
             mouseHandler.setIgnoreFirstMove();
             customMouseGrab = false;
+        }
+    }
+
+    private static void setMouseGrabState(MouseHandler mouseHandler, double x, double y, boolean grabbed) {
+        if (mouseHandler instanceof MouseHandlerAccessor accessor) {
+            accessor.salts_inventory_update$setXpos(x);
+            accessor.salts_inventory_update$setYpos(y);
+            accessor.salts_inventory_update$setMouseGrabbed(grabbed);
+            return;
+        }
+
+        try {
+            mouseXposField().setDouble(mouseHandler, x);
+            mouseYposField().setDouble(mouseHandler, y);
+            mouseGrabbedField().setBoolean(mouseHandler, grabbed);
+        } catch (IllegalAccessException exception) {
+            throw new IllegalStateException("Unable to update mouse grab state", exception);
+        }
+    }
+
+    private static Field mouseGrabbedField() {
+        if (mouseGrabbedField == null) {
+            mouseGrabbedField = mouseHandlerField("mouseGrabbed");
+        }
+        return mouseGrabbedField;
+    }
+
+    private static Field mouseXposField() {
+        if (mouseXposField == null) {
+            mouseXposField = mouseHandlerField("xpos");
+        }
+        return mouseXposField;
+    }
+
+    private static Field mouseYposField() {
+        if (mouseYposField == null) {
+            mouseYposField = mouseHandlerField("ypos");
+        }
+        return mouseYposField;
+    }
+
+    private static Field mouseHandlerField(String name) {
+        try {
+            Field field = MouseHandler.class.getDeclaredField(name);
+            field.setAccessible(true);
+            return field;
+        } catch (ReflectiveOperationException | RuntimeException exception) {
+            throw new IllegalStateException("Unable to access MouseHandler." + name, exception);
         }
     }
 }

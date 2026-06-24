@@ -1,4 +1,4 @@
-package net.minecraft.client.input;
+package com.salts_inventory_update.client.input;
 
 import net.minecraft.client.gui.screens.Screen;
 

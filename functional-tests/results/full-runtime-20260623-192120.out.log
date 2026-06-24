@@ -1,0 +1,519 @@
+== 1.20.1 shared source ==
+PASS 1.20.1 client menu GENERIC_9x1
+PASS 1.20.1 server menu GENERIC_9x1
+PASS 1.20.1 client menu GENERIC_9x2
+PASS 1.20.1 server menu GENERIC_9x2
+PASS 1.20.1 client menu GENERIC_9x3
+PASS 1.20.1 server menu GENERIC_9x3
+PASS 1.20.1 client menu GENERIC_9x4
+PASS 1.20.1 server menu GENERIC_9x4
+PASS 1.20.1 client menu GENERIC_9x5
+PASS 1.20.1 server menu GENERIC_9x5
+PASS 1.20.1 client menu GENERIC_9x6
+PASS 1.20.1 server menu GENERIC_9x6
+PASS 1.20.1 client menu GENERIC_3x3
+PASS 1.20.1 server menu GENERIC_3x3
+PASS 1.20.1 client menu ANVIL
+PASS 1.20.1 server menu ANVIL
+PASS 1.20.1 client menu BEACON
+PASS 1.20.1 server menu BEACON
+PASS 1.20.1 client menu BLAST_FURNACE
+PASS 1.20.1 server menu BLAST_FURNACE
+PASS 1.20.1 client menu BREWING_STAND
+PASS 1.20.1 server menu BREWING_STAND
+PASS 1.20.1 client menu CRAFTING
+PASS 1.20.1 server menu CRAFTING
+PASS 1.20.1 client menu ENCHANTMENT
+PASS 1.20.1 server menu ENCHANTMENT
+PASS 1.20.1 client menu FURNACE
+PASS 1.20.1 server menu FURNACE
+PASS 1.20.1 client menu GRINDSTONE
+PASS 1.20.1 server menu GRINDSTONE
+PASS 1.20.1 client menu HOPPER
+PASS 1.20.1 server menu HOPPER
+PASS 1.20.1 client menu LOOM
+PASS 1.20.1 server menu LOOM
+PASS 1.20.1 client menu MERCHANT
+PASS 1.20.1 server menu MERCHANT
+PASS 1.20.1 client menu SHULKER_BOX
+PASS 1.20.1 server menu SHULKER_BOX
+PASS 1.20.1 client menu SMITHING
+PASS 1.20.1 server menu SMITHING
+PASS 1.20.1 client menu SMOKER
+PASS 1.20.1 server menu SMOKER
+PASS 1.20.1 client menu CARTOGRAPHY_TABLE
+PASS 1.20.1 server menu CARTOGRAPHY_TABLE
+PASS 1.20.1 client menu STONECUTTER
+PASS 1.20.1 server menu STONECUTTER
+PASS 1.20.1 packet InventorySlotPurchasePayload
+PASS 1.20.1 packet InventoryExpansionSyncPayload
+PASS 1.20.1 packet DesktopReadyPayload
+PASS 1.20.1 packet DesktopClickPayload
+PASS 1.20.1 packet DesktopQuickMovePayload
+PASS 1.20.1 packet DesktopButtonPayload
+PASS 1.20.1 packet DesktopPlaceRecipePayload
+PASS 1.20.1 packet DesktopRenamePayload
+PASS 1.20.1 packet DesktopCustomPayload
+PASS 1.20.1 packet DesktopCloseSessionPayload
+PASS 1.20.1 packet DesktopSessionPinPayload
+PASS 1.20.1 packet DesktopSessionVisibilityPayload
+PASS 1.20.1 packet DesktopOpenSessionPayload
+PASS 1.20.1 packet DesktopSlotPayload
+PASS 1.20.1 packet DesktopDataPayload
+PASS 1.20.1 packet DesktopCarriedPayload
+PASS 1.20.1 packet DesktopGhostRecipePayload
+PASS 1.20.1 packet DesktopSessionClosedPayload
+PASS 1.20.1 packet DesktopMerchantOffersPayload
+PASS 1.20.1 packet pin modes
+PASS 1.20.1 quick move target
+PASS 1.20.1 character keybind
+PASS 1.20.1 client command root
+PASS 1.20.1 config command
+PASS 1.20.1 functional hook
+PASS 1.20.1 config enableMod
+PASS 1.20.1 config expandableInventory
+PASS 1.20.1 config ghost pins
+== 1.21.1 shared source ==
+PASS 1.21.1 client menu GENERIC_9x1
+PASS 1.21.1 server menu GENERIC_9x1
+PASS 1.21.1 client menu GENERIC_9x2
+PASS 1.21.1 server menu GENERIC_9x2
+PASS 1.21.1 client menu GENERIC_9x3
+PASS 1.21.1 server menu GENERIC_9x3
+PASS 1.21.1 client menu GENERIC_9x4
+PASS 1.21.1 server menu GENERIC_9x4
+PASS 1.21.1 client menu GENERIC_9x5
+PASS 1.21.1 server menu GENERIC_9x5
+PASS 1.21.1 client menu GENERIC_9x6
+PASS 1.21.1 server menu GENERIC_9x6
+PASS 1.21.1 client menu GENERIC_3x3
+PASS 1.21.1 server menu GENERIC_3x3
+PASS 1.21.1 client menu ANVIL
+PASS 1.21.1 server menu ANVIL
+PASS 1.21.1 client menu BEACON
+PASS 1.21.1 server menu BEACON
+PASS 1.21.1 client menu BLAST_FURNACE
+PASS 1.21.1 server menu BLAST_FURNACE
+PASS 1.21.1 client menu BREWING_STAND
+PASS 1.21.1 server menu BREWING_STAND
+PASS 1.21.1 client menu CRAFTING
+PASS 1.21.1 server menu CRAFTING
+PASS 1.21.1 client menu ENCHANTMENT
+PASS 1.21.1 server menu ENCHANTMENT
+PASS 1.21.1 client menu FURNACE
+PASS 1.21.1 server menu FURNACE
+PASS 1.21.1 client menu GRINDSTONE
+PASS 1.21.1 server menu GRINDSTONE
+PASS 1.21.1 client menu HOPPER
+PASS 1.21.1 server menu HOPPER
+PASS 1.21.1 client menu LOOM
+PASS 1.21.1 server menu LOOM
+PASS 1.21.1 client menu MERCHANT
+PASS 1.21.1 server menu MERCHANT
+PASS 1.21.1 client menu SHULKER_BOX
+PASS 1.21.1 server menu SHULKER_BOX
+PASS 1.21.1 client menu SMITHING
+PASS 1.21.1 server menu SMITHING
+PASS 1.21.1 client menu SMOKER
+PASS 1.21.1 server menu SMOKER
+PASS 1.21.1 client menu CARTOGRAPHY_TABLE
+PASS 1.21.1 server menu CARTOGRAPHY_TABLE
+PASS 1.21.1 client menu STONECUTTER
+PASS 1.21.1 server menu STONECUTTER
+PASS 1.21.1 client menu CRAFTER_3x3
+PASS 1.21.1 server menu CRAFTER_3x3
+PASS 1.21.1 packet InventorySlotPurchasePayload
+PASS 1.21.1 packet InventoryExpansionSyncPayload
+PASS 1.21.1 packet DesktopReadyPayload
+PASS 1.21.1 packet DesktopClickPayload
+PASS 1.21.1 packet DesktopQuickMovePayload
+PASS 1.21.1 packet DesktopButtonPayload
+PASS 1.21.1 packet DesktopPlaceRecipePayload
+PASS 1.21.1 packet DesktopRenamePayload
+PASS 1.21.1 packet DesktopCustomPayload
+PASS 1.21.1 packet DesktopCloseSessionPayload
+PASS 1.21.1 packet DesktopSessionPinPayload
+PASS 1.21.1 packet DesktopSessionVisibilityPayload
+PASS 1.21.1 packet DesktopOpenSessionPayload
+PASS 1.21.1 packet DesktopSlotPayload
+PASS 1.21.1 packet DesktopDataPayload
+PASS 1.21.1 packet DesktopCarriedPayload
+PASS 1.21.1 packet DesktopGhostRecipePayload
+PASS 1.21.1 packet DesktopSessionClosedPayload
+PASS 1.21.1 packet DesktopMerchantOffersPayload
+PASS 1.21.1 packet pin modes
+PASS 1.21.1 quick move target
+PASS 1.21.1 character keybind
+PASS 1.21.1 client command root
+PASS 1.21.1 config command
+PASS 1.21.1 functional hook
+PASS 1.21.1 config enableMod
+PASS 1.21.1 config expandableInventory
+PASS 1.21.1 config ghost pins
+== 1.21.11 shared source ==
+PASS 1.21.11 client menu GENERIC_9x1
+PASS 1.21.11 server menu GENERIC_9x1
+PASS 1.21.11 client menu GENERIC_9x2
+PASS 1.21.11 server menu GENERIC_9x2
+PASS 1.21.11 client menu GENERIC_9x3
+PASS 1.21.11 server menu GENERIC_9x3
+PASS 1.21.11 client menu GENERIC_9x4
+PASS 1.21.11 server menu GENERIC_9x4
+PASS 1.21.11 client menu GENERIC_9x5
+PASS 1.21.11 server menu GENERIC_9x5
+PASS 1.21.11 client menu GENERIC_9x6
+PASS 1.21.11 server menu GENERIC_9x6
+PASS 1.21.11 client menu GENERIC_3x3
+PASS 1.21.11 server menu GENERIC_3x3
+PASS 1.21.11 client menu ANVIL
+PASS 1.21.11 server menu ANVIL
+PASS 1.21.11 client menu BEACON
+PASS 1.21.11 server menu BEACON
+PASS 1.21.11 client menu BLAST_FURNACE
+PASS 1.21.11 server menu BLAST_FURNACE
+PASS 1.21.11 client menu BREWING_STAND
+PASS 1.21.11 server menu BREWING_STAND
+PASS 1.21.11 client menu CRAFTING
+PASS 1.21.11 server menu CRAFTING
+PASS 1.21.11 client menu ENCHANTMENT
+PASS 1.21.11 server menu ENCHANTMENT
+PASS 1.21.11 client menu FURNACE
+PASS 1.21.11 server menu FURNACE
+PASS 1.21.11 client menu GRINDSTONE
+PASS 1.21.11 server menu GRINDSTONE
+PASS 1.21.11 client menu HOPPER
+PASS 1.21.11 server menu HOPPER
+PASS 1.21.11 client menu LOOM
+PASS 1.21.11 server menu LOOM
+PASS 1.21.11 client menu MERCHANT
+PASS 1.21.11 server menu MERCHANT
+PASS 1.21.11 client menu SHULKER_BOX
+PASS 1.21.11 server menu SHULKER_BOX
+PASS 1.21.11 client menu SMITHING
+PASS 1.21.11 server menu SMITHING
+PASS 1.21.11 client menu SMOKER
+PASS 1.21.11 server menu SMOKER
+PASS 1.21.11 client menu CARTOGRAPHY_TABLE
+PASS 1.21.11 server menu CARTOGRAPHY_TABLE
+PASS 1.21.11 client menu STONECUTTER
+PASS 1.21.11 server menu STONECUTTER
+PASS 1.21.11 client menu CRAFTER_3x3
+PASS 1.21.11 server menu CRAFTER_3x3
+PASS 1.21.11 packet InventorySlotPurchasePayload
+PASS 1.21.11 packet InventoryExpansionSyncPayload
+PASS 1.21.11 packet DesktopReadyPayload
+PASS 1.21.11 packet DesktopClickPayload
+PASS 1.21.11 packet DesktopQuickMovePayload
+PASS 1.21.11 packet DesktopButtonPayload
+PASS 1.21.11 packet DesktopPlaceRecipePayload
+PASS 1.21.11 packet DesktopRenamePayload
+PASS 1.21.11 packet DesktopCustomPayload
+PASS 1.21.11 packet DesktopCloseSessionPayload
+PASS 1.21.11 packet DesktopSessionPinPayload
+PASS 1.21.11 packet DesktopSessionVisibilityPayload
+PASS 1.21.11 packet DesktopOpenSessionPayload
+PASS 1.21.11 packet DesktopSlotPayload
+PASS 1.21.11 packet DesktopDataPayload
+PASS 1.21.11 packet DesktopCarriedPayload
+PASS 1.21.11 packet DesktopGhostRecipePayload
+PASS 1.21.11 packet DesktopSessionClosedPayload
+PASS 1.21.11 packet DesktopMerchantOffersPayload
+PASS 1.21.11 packet pin modes
+PASS 1.21.11 quick move target
+PASS 1.21.11 character keybind
+PASS 1.21.11 client command root
+PASS 1.21.11 config command
+PASS 1.21.11 functional hook
+PASS 1.21.11 config enableMod
+PASS 1.21.11 config expandableInventory
+PASS 1.21.11 config ghost pins
+== 26.1.2 shared source ==
+PASS 26.1.2 client menu GENERIC_9x1
+PASS 26.1.2 server menu GENERIC_9x1
+PASS 26.1.2 client menu GENERIC_9x2
+PASS 26.1.2 server menu GENERIC_9x2
+PASS 26.1.2 client menu GENERIC_9x3
+PASS 26.1.2 server menu GENERIC_9x3
+PASS 26.1.2 client menu GENERIC_9x4
+PASS 26.1.2 server menu GENERIC_9x4
+PASS 26.1.2 client menu GENERIC_9x5
+PASS 26.1.2 server menu GENERIC_9x5
+PASS 26.1.2 client menu GENERIC_9x6
+PASS 26.1.2 server menu GENERIC_9x6
+PASS 26.1.2 client menu GENERIC_3x3
+PASS 26.1.2 server menu GENERIC_3x3
+PASS 26.1.2 client menu ANVIL
+PASS 26.1.2 server menu ANVIL
+PASS 26.1.2 client menu BEACON
+PASS 26.1.2 server menu BEACON
+PASS 26.1.2 client menu BLAST_FURNACE
+PASS 26.1.2 server menu BLAST_FURNACE
+PASS 26.1.2 client menu BREWING_STAND
+PASS 26.1.2 server menu BREWING_STAND
+PASS 26.1.2 client menu CRAFTING
+PASS 26.1.2 server menu CRAFTING
+PASS 26.1.2 client menu ENCHANTMENT
+PASS 26.1.2 server menu ENCHANTMENT
+PASS 26.1.2 client menu FURNACE
+PASS 26.1.2 server menu FURNACE
+PASS 26.1.2 client menu GRINDSTONE
+PASS 26.1.2 server menu GRINDSTONE
+PASS 26.1.2 client menu HOPPER
+PASS 26.1.2 server menu HOPPER
+PASS 26.1.2 client menu LOOM
+PASS 26.1.2 server menu LOOM
+PASS 26.1.2 client menu MERCHANT
+PASS 26.1.2 server menu MERCHANT
+PASS 26.1.2 client menu SHULKER_BOX
+PASS 26.1.2 server menu SHULKER_BOX
+PASS 26.1.2 client menu SMITHING
+PASS 26.1.2 server menu SMITHING
+PASS 26.1.2 client menu SMOKER
+PASS 26.1.2 server menu SMOKER
+PASS 26.1.2 client menu CARTOGRAPHY_TABLE
+PASS 26.1.2 server menu CARTOGRAPHY_TABLE
+PASS 26.1.2 client menu STONECUTTER
+PASS 26.1.2 server menu STONECUTTER
+PASS 26.1.2 client menu CRAFTER_3x3
+PASS 26.1.2 server menu CRAFTER_3x3
+PASS 26.1.2 packet InventorySlotPurchasePayload
+PASS 26.1.2 packet InventoryExpansionSyncPayload
+PASS 26.1.2 packet DesktopReadyPayload
+PASS 26.1.2 packet DesktopClickPayload
+PASS 26.1.2 packet DesktopQuickMovePayload
+PASS 26.1.2 packet DesktopButtonPayload
+PASS 26.1.2 packet DesktopPlaceRecipePayload
+PASS 26.1.2 packet DesktopRenamePayload
+PASS 26.1.2 packet DesktopCustomPayload
+PASS 26.1.2 packet DesktopCloseSessionPayload
+PASS 26.1.2 packet DesktopSessionPinPayload
+PASS 26.1.2 packet DesktopSessionVisibilityPayload
+PASS 26.1.2 packet DesktopOpenSessionPayload
+PASS 26.1.2 packet DesktopSlotPayload
+PASS 26.1.2 packet DesktopDataPayload
+PASS 26.1.2 packet DesktopCarriedPayload
+PASS 26.1.2 packet DesktopGhostRecipePayload
+PASS 26.1.2 packet DesktopSessionClosedPayload
+PASS 26.1.2 packet DesktopMerchantOffersPayload
+PASS 26.1.2 packet pin modes
+PASS 26.1.2 quick move target
+PASS 26.1.2 character keybind
+PASS 26.1.2 client command root
+PASS 26.1.2 config command
+PASS 26.1.2 functional hook
+PASS 26.1.2 config enableMod
+PASS 26.1.2 config expandableInventory
+PASS 26.1.2 config ghost pins
+== 26.2 shared source ==
+PASS 26.2 client menu GENERIC_9x1
+PASS 26.2 server menu GENERIC_9x1
+PASS 26.2 client menu GENERIC_9x2
+PASS 26.2 server menu GENERIC_9x2
+PASS 26.2 client menu GENERIC_9x3
+PASS 26.2 server menu GENERIC_9x3
+PASS 26.2 client menu GENERIC_9x4
+PASS 26.2 server menu GENERIC_9x4
+PASS 26.2 client menu GENERIC_9x5
+PASS 26.2 server menu GENERIC_9x5
+PASS 26.2 client menu GENERIC_9x6
+PASS 26.2 server menu GENERIC_9x6
+PASS 26.2 client menu GENERIC_3x3
+PASS 26.2 server menu GENERIC_3x3
+PASS 26.2 client menu ANVIL
+PASS 26.2 server menu ANVIL
+PASS 26.2 client menu BEACON
+PASS 26.2 server menu BEACON
+PASS 26.2 client menu BLAST_FURNACE
+PASS 26.2 server menu BLAST_FURNACE
+PASS 26.2 client menu BREWING_STAND
+PASS 26.2 server menu BREWING_STAND
+PASS 26.2 client menu CRAFTING
+PASS 26.2 server menu CRAFTING
+PASS 26.2 client menu ENCHANTMENT
+PASS 26.2 server menu ENCHANTMENT
+PASS 26.2 client menu FURNACE
+PASS 26.2 server menu FURNACE
+PASS 26.2 client menu GRINDSTONE
+PASS 26.2 server menu GRINDSTONE
+PASS 26.2 client menu HOPPER
+PASS 26.2 server menu HOPPER
+PASS 26.2 client menu LOOM
+PASS 26.2 server menu LOOM
+PASS 26.2 client menu MERCHANT
+PASS 26.2 server menu MERCHANT
+PASS 26.2 client menu SHULKER_BOX
+PASS 26.2 server menu SHULKER_BOX
+PASS 26.2 client menu SMITHING
+PASS 26.2 server menu SMITHING
+PASS 26.2 client menu SMOKER
+PASS 26.2 server menu SMOKER
+PASS 26.2 client menu CARTOGRAPHY_TABLE
+PASS 26.2 server menu CARTOGRAPHY_TABLE
+PASS 26.2 client menu STONECUTTER
+PASS 26.2 server menu STONECUTTER
+PASS 26.2 client menu CRAFTER_3x3
+PASS 26.2 server menu CRAFTER_3x3
+PASS 26.2 packet InventorySlotPurchasePayload
+PASS 26.2 packet InventoryExpansionSyncPayload
+PASS 26.2 packet DesktopReadyPayload
+PASS 26.2 packet DesktopClickPayload
+PASS 26.2 packet DesktopQuickMovePayload
+PASS 26.2 packet DesktopButtonPayload
+PASS 26.2 packet DesktopPlaceRecipePayload
+PASS 26.2 packet DesktopRenamePayload
+PASS 26.2 packet DesktopCustomPayload
+PASS 26.2 packet DesktopCloseSessionPayload
+PASS 26.2 packet DesktopSessionPinPayload
+PASS 26.2 packet DesktopSessionVisibilityPayload
+PASS 26.2 packet DesktopOpenSessionPayload
+PASS 26.2 packet DesktopSlotPayload
+PASS 26.2 packet DesktopDataPayload
+PASS 26.2 packet DesktopCarriedPayload
+PASS 26.2 packet DesktopGhostRecipePayload
+PASS 26.2 packet DesktopSessionClosedPayload
+PASS 26.2 packet DesktopMerchantOffersPayload
+PASS 26.2 packet pin modes
+PASS 26.2 quick move target
+PASS 26.2 character keybind
+PASS 26.2 client command root
+PASS 26.2 config command
+PASS 26.2 functional hook
+PASS 26.2 config enableMod
+PASS 26.2 config expandableInventory
+PASS 26.2 config ghost pins
+== 1.20.1 fabric loader ==
+PASS 1.20.1 fabric payload registration
+PASS 1.20.1 fabric server session init
+PASS 1.20.1 fabric client init
+PASS 1.20.1 fabric entrypoint metadata
+PASS 1.20.1 fabric main entrypoint metadata
+PASS 1.20.1 fabric client entrypoint metadata
+PASS 1.20.1 fabric mixin metadata block
+PASS 1.20.1 fabric mixin metadata config
+== 1.20.1 forge loader ==
+PASS 1.20.1 forge payload registration
+PASS 1.20.1 forge server session init
+PASS 1.20.1 forge mixin metadata block
+PASS 1.20.1 forge mixin metadata config
+== 1.21.1 fabric loader ==
+PASS 1.21.1 fabric payload registration
+PASS 1.21.1 fabric server session init
+PASS 1.21.1 fabric client init
+PASS 1.21.1 fabric entrypoint metadata
+PASS 1.21.1 fabric main entrypoint metadata
+PASS 1.21.1 fabric client entrypoint metadata
+PASS 1.21.1 fabric mixin metadata block
+PASS 1.21.1 fabric mixin metadata config
+== 1.21.1 neoforge loader ==
+PASS 1.21.1 neoforge payload registration
+PASS 1.21.1 neoforge server session init
+PASS 1.21.1 neoforge mixin metadata block
+PASS 1.21.1 neoforge mixin metadata config
+== 1.21.11 fabric loader ==
+PASS 1.21.11 fabric payload registration
+PASS 1.21.11 fabric server session init
+PASS 1.21.11 fabric client init
+PASS 1.21.11 fabric entrypoint metadata
+PASS 1.21.11 fabric main entrypoint metadata
+PASS 1.21.11 fabric client entrypoint metadata
+PASS 1.21.11 fabric mixin metadata block
+PASS 1.21.11 fabric mixin metadata config
+== 1.21.11 neoforge loader ==
+PASS 1.21.11 neoforge payload registration
+PASS 1.21.11 neoforge server session init
+PASS 1.21.11 neoforge mixin metadata block
+PASS 1.21.11 neoforge mixin metadata config
+== 26.1.2 fabric loader ==
+PASS 26.1.2 fabric payload registration
+PASS 26.1.2 fabric server session init
+PASS 26.1.2 fabric client init
+PASS 26.1.2 fabric entrypoint metadata
+PASS 26.1.2 fabric main entrypoint metadata
+PASS 26.1.2 fabric client entrypoint metadata
+PASS 26.1.2 fabric mixin metadata block
+PASS 26.1.2 fabric mixin metadata config
+== 26.1.2 neoforge loader ==
+PASS 26.1.2 neoforge payload registration
+PASS 26.1.2 neoforge server session init
+PASS 26.1.2 neoforge mixin metadata block
+PASS 26.1.2 neoforge mixin metadata config
+== 26.2 fabric loader ==
+PASS 26.2 fabric payload registration
+PASS 26.2 fabric server session init
+PASS 26.2 fabric client init
+PASS 26.2 fabric entrypoint metadata
+PASS 26.2 fabric main entrypoint metadata
+PASS 26.2 fabric client entrypoint metadata
+PASS 26.2 fabric mixin metadata block
+PASS 26.2 fabric mixin metadata config
+== 26.2 neoforge loader ==
+PASS 26.2 neoforge payload registration
+PASS 26.2 neoforge server session init
+PASS 26.2 neoforge mixin metadata block
+PASS 26.2 neoforge mixin metadata config
+Source feature parity passed.
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :
+Fabric Loom: 1.16.1
+Fabric Loom: 1.16.1
+Fabric Loom: 1.16.1
+The mixin annotation is no longer enabled by default, you should remove any loom.mixin configuration. If you wish to continue to use the mixin AP you can set useLegacyMixinAp = true.
+Fabric Loom: 1.16.1
+The mixin annotation is no longer enabled by default, you should remove any loom.mixin configuration. If you wish to continue to use the mixin AP you can set useLegacyMixinAp = true.
+Fabric Loom: 1.16.1
+The mixin annotation is no longer enabled by default, you should remove any loom.mixin configuration. If you wish to continue to use the mixin AP you can set useLegacyMixinAp = true.
+Prism: Found Forge mixin config(s) [salts_inventory_update.mixins.json] for :1.20.1:forge, but no @Mixin classes. Skipping Forge mixin AP/refmap wiring.
+
+> Task :common:compileJava UP-TO-DATE
+> Task :1.20.1:common:createMinecraftArtifacts UP-TO-DATE
+> Task :1.20.1:common:compileJava UP-TO-DATE
+> Task :1.20.1:fabric:compileJava
+> Task :1.20.1:forge:createMinecraftArtifacts UP-TO-DATE
+> Task :1.20.1:forge:compileJava
+> Task :1.21.1:common:createMinecraftArtifacts UP-TO-DATE
+> Task :1.21.1:common:compileJava UP-TO-DATE
+> Task :1.21.1:fabric:compileJava
+> Task :1.21.1:neoforge:createMinecraftArtifacts UP-TO-DATE
+> Task :1.21.1:neoforge:compileJava
+> Task :1.21.11:common:createMinecraftArtifacts UP-TO-DATE
+> Task :1.21.11:common:compileJava UP-TO-DATE
+> Task :1.21.11:fabric:compileJava
+> Task :1.21.11:neoforge:createMinecraftArtifacts UP-TO-DATE
+> Task :1.21.11:neoforge:compileJava
+> Task :26.1.2:common:createMinecraftArtifacts UP-TO-DATE
+> Task :26.1.2:common:compileJava UP-TO-DATE
+> Task :26.1.2:fabric:compileJava
+> Task :26.1.2:neoforge:createMinecraftArtifacts UP-TO-DATE
+> Task :26.1.2:neoforge:compileJava
+> Task :26.2:common:createMinecraftArtifacts UP-TO-DATE
+> Task :26.2:common:compileJava UP-TO-DATE
+> Task :26.2:fabric:compileJava
+> Task :26.2:neoforge:createMinecraftArtifacts UP-TO-DATE
+> Task :26.2:neoforge:compileJava
+> Task :functionalTestCompile
+
+BUILD SUCCESSFUL in 24s
+27 actionable tasks: 11 executed, 16 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.4.0/userguide/configuration_cache_enabling.html
+Launching 1.20.1 fabric functional runtime...
+SIU_FUNCTIONAL_TEST_SUMMARY status=PASS passed=42 failed=0 mc=1.20.1 loader=fabric
+Launching 1.20.1 forge functional runtime...
+SIU_FUNCTIONAL_TEST_SUMMARY status=PASS passed=42 failed=0 mc=1.20.1 loader=forge
+Launching 1.21.1 fabric functional runtime...
+SIU_FUNCTIONAL_TEST_SUMMARY status=PASS passed=44 failed=0 mc=1.21.1 loader=fabric
+Launching 1.21.1 neoforge functional runtime...
+SIU_FUNCTIONAL_TEST_SUMMARY status=PASS passed=44 failed=0 mc=1.21.1 loader=neoforge
+Launching 1.21.11 fabric functional runtime...
+SIU_FUNCTIONAL_TEST_SUMMARY status=PASS passed=44 failed=0 mc=1.21.11 loader=fabric
+Launching 1.21.11 neoforge functional runtime...
+SIU_FUNCTIONAL_TEST_SUMMARY status=PASS passed=44 failed=0 mc=1.21.11 loader=neoforge
+Launching 26.1.2 fabric functional runtime...
+SIU_FUNCTIONAL_TEST_SUMMARY status=PASS passed=44 failed=0 mc=26.1.2 loader=fabric
+Launching 26.1.2 neoforge functional runtime...
+SIU_FUNCTIONAL_TEST_SUMMARY status=PASS passed=44 failed=0 mc=26.1.2 loader=neoforge
+Launching 26.2 fabric functional runtime...
+SIU_FUNCTIONAL_TEST_SUMMARY status=PASS passed=44 failed=0 mc=26.2 loader=fabric
+Launching 26.2 neoforge functional runtime...
+SIU_FUNCTIONAL_TEST_SUMMARY status=PASS passed=44 failed=0 mc=26.2 loader=neoforge

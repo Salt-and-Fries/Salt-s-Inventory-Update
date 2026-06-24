@@ -1,10 +1,12 @@
-package net.minecraft.client.gui;
+package com.salts_inventory_update.client.gui;
 
 import java.util.List;
 import java.util.Optional;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;

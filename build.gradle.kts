@@ -1,9 +1,38 @@
+import org.gradle.api.GradleException
+import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.SourceSetContainer
+
 plugins {
     id("dev.prism")
 }
 
 group = "com.salts_inventory_update"
 version = "0.1.0"
+
+val includeFunctionalTests = providers.gradleProperty("includeFunctionalTests")
+    .map { it.equals("true", ignoreCase = true) }
+    .orElse(false)
+
+fun SourceSet.addLoaderSourceDirs(minecraftVersion: String, loaderName: String) {
+    val sourceDirs = listOf(
+        rootProject.file("versions/$minecraftVersion/fabric/src/main/java"),
+        rootProject.file("versions/$loaderName-shim/src/main/java")
+    )
+    val currentDirs = java.srcDirs.map { it.canonicalFile }.toMutableSet()
+    sourceDirs.forEach { sourceDir ->
+        if (currentDirs.add(sourceDir.canonicalFile)) {
+            java.srcDir(sourceDir)
+        }
+    }
+}
+
+fun SourceSet.addFunctionalTestSourceDir() {
+    val sourceDir = rootProject.file("functional-tests/src/main/java")
+    val currentDirs = java.srcDirs.map { it.canonicalFile }.toMutableSet()
+    if (currentDirs.add(sourceDir.canonicalFile)) {
+        java.srcDir(sourceDir)
+    }
+}
 
 prism {
     metadata {
@@ -90,5 +119,91 @@ prism {
         forge {
             loaderVersion = "47.4.0"
         }
+    }
+}
+
+subprojects {
+    val minecraftVersion = parent?.name
+    if (minecraftVersion != null && (name == "forge" || name == "neoforge")) {
+        val loaderName = name
+        afterEvaluate {
+            extensions.findByType(SourceSetContainer::class.java)?.named("main") {
+                addLoaderSourceDirs(minecraftVersion, loaderName)
+            }
+        }
+        plugins.withId("java") {
+            extensions.findByType(SourceSetContainer::class.java)?.named("main") {
+                addLoaderSourceDirs(minecraftVersion, loaderName)
+            }
+        }
+        plugins.withId("java-library") {
+            extensions.findByType(SourceSetContainer::class.java)?.named("main") {
+                addLoaderSourceDirs(minecraftVersion, loaderName)
+            }
+        }
+    }
+
+    if (minecraftVersion != null && (name == "fabric" || name == "forge" || name == "neoforge") && includeFunctionalTests.get()) {
+        afterEvaluate {
+            extensions.findByType(SourceSetContainer::class.java)?.named("main") {
+                addFunctionalTestSourceDir()
+            }
+        }
+        plugins.withId("java") {
+            extensions.findByType(SourceSetContainer::class.java)?.named("main") {
+                addFunctionalTestSourceDir()
+            }
+        }
+        plugins.withId("java-library") {
+            extensions.findByType(SourceSetContainer::class.java)?.named("main") {
+                addFunctionalTestSourceDir()
+            }
+        }
+    }
+}
+
+gradle.projectsEvaluated {
+    subprojects {
+        val minecraftVersion = parent?.name
+        if (minecraftVersion != null && (name == "forge" || name == "neoforge")) {
+            val loaderName = name
+            extensions.findByType(SourceSetContainer::class.java)?.named("main") {
+                addLoaderSourceDirs(minecraftVersion, loaderName)
+            }
+            tasks.named<JavaCompile>("compileJava") {
+                val sourceDirs = listOf(
+                    rootProject.file("versions/$minecraftVersion/fabric/src/main/java"),
+                    rootProject.file("versions/$loaderName-shim/src/main/java")
+                )
+                val currentSourceFiles = source.files.map { it.canonicalFile }.toMutableSet()
+                sourceDirs.forEach { sourceDir ->
+                    if (currentSourceFiles.add(sourceDir.canonicalFile)) {
+                        source(sourceDir)
+                    }
+                }
+            }
+        }
+
+        if (minecraftVersion != null && (name == "fabric" || name == "forge" || name == "neoforge") && includeFunctionalTests.get()) {
+            extensions.findByType(SourceSetContainer::class.java)?.named("main") {
+                addFunctionalTestSourceDir()
+            }
+            tasks.named<JavaCompile>("compileJava") {
+                source(rootProject.file("functional-tests/src/main/java"))
+            }
+        }
+    }
+
+    tasks.register("functionalTestCompile") {
+        group = "verification"
+        description = "Compiles every loader/version with the shared functional test harness. Use -PincludeFunctionalTests=true."
+        doFirst {
+            if (!includeFunctionalTests.get()) {
+                throw GradleException("functionalTestCompile requires -PincludeFunctionalTests=true")
+            }
+        }
+        dependsOn(subprojects
+            .filter { it.parent?.name != null && (it.name == "fabric" || it.name == "forge" || it.name == "neoforge") }
+            .map { it.tasks.named("compileJava") })
     }
 }
