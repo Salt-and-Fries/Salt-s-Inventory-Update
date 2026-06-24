@@ -751,6 +751,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static Field menuScreensField;
     private static boolean internalApiDefinitionsRegistered;
     private static int nextDesktopId = 1;
+    private static int screenRegistrationProbeLogs;
+    private static int fallbackProbeLogs;
+    private static int inputProbeLogs;
+    private static int openSessionProbeLogs;
 
     private final int desktopId;
     private final List<DesktopContainerSession> sessions = new ArrayList<>();
@@ -855,6 +859,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     public static void registerContainerScreens() {
+        DesktopDebug.probe("client registerContainerScreens begin");
         MenuScreens.ScreenConstructor constructor = (menu, inventory, title) ->
             InventoryDesktopScreen.createContainerFallbackScreen(Minecraft.getInstance(), (AbstractContainerMenu) menu, inventory, title);
         registerContainerScreen(MenuType.GENERIC_9x1, constructor);
@@ -880,6 +885,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         registerContainerScreen(MenuType.SMOKER, constructor);
         registerContainerScreen(MenuType.CARTOGRAPHY_TABLE, constructor);
         registerContainerScreen(MenuType.STONECUTTER, constructor);
+        DesktopDebug.probe("client registerContainerScreens complete");
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -899,6 +905,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> screens = getMenuScreenConstructors();
         VANILLA_SCREEN_CONSTRUCTORS.putIfAbsent(menuType, screens.get(menuType));
         screens.put(menuType, constructor);
+        if (screenRegistrationProbeLogs < 32) {
+            screenRegistrationProbeLogs++;
+            DesktopDebug.probe(
+                "client container screen replaced menu={} hadVanilla={} constructor={}",
+                BuiltInRegistries.MENU.getKey(menuType),
+                VANILLA_SCREEN_CONSTRUCTORS.get(menuType) != null,
+                constructor.getClass().getName()
+            );
+        }
     }
 
     public static void registerExternalDesktopContainerScreen(MenuType<?> menuType, String owner) {
@@ -941,6 +956,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     ) {
         MenuScreens.ScreenConstructor vanillaConstructor = VANILLA_SCREEN_CONSTRUCTORS.get(menu.getType());
         if (vanillaConstructor != null) {
+            if (fallbackProbeLogs < 32) {
+                fallbackProbeLogs++;
+                DesktopDebug.probe(
+                    "client createContainerFallbackScreen delegating vanilla container={} menu={} title={} serverSessions={} activeScreen={} playerMenu={} playerContainer={}",
+                    menu.containerId,
+                    BuiltInRegistries.MENU.getKey(menu.getType()),
+                    title.getString(),
+                    DesktopContainerClient.canUseServerSessions(),
+                    minecraft.screen == null ? "null" : minecraft.screen.getClass().getName(),
+                    minecraft.player == null ? -1 : minecraft.player.inventoryMenu.containerId,
+                    minecraft.player == null || minecraft.player.containerMenu == null ? -1 : minecraft.player.containerMenu.containerId
+                );
+            }
             DesktopDebug.log(
                 "client vanilla screen delegated container={} title={} serverSessions={}",
                 menu.containerId,
@@ -961,6 +989,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     public static void openOrToggleInventory(Minecraft minecraft) {
         if (!canUseDesktopInput(minecraft)) {
+            probeDesktopInputBlocked(minecraft, "openOrToggleInventory");
             return;
         }
 
@@ -977,6 +1006,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     public static void openOrToggleCreative(Minecraft minecraft) {
         if (!canUseDesktopInput(minecraft) || !isCreativePlayer(minecraft)) {
+            probeDesktopInputBlocked(minecraft, "openOrToggleCreative");
             return;
         }
 
@@ -1042,10 +1072,32 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     public static void openOrAddSession(Minecraft minecraft, DesktopContainerSession session, boolean visible) {
         if (!SaltsInventoryRuntime.isEnabled() || minecraft.player == null) {
+            if (openSessionProbeLogs < 24) {
+                openSessionProbeLogs++;
+                DesktopDebug.probe(
+                    "client openOrAddSession skipped session={} visible={} runtime={} playerPresent={}",
+                    session.sessionId(),
+                    visible,
+                    SaltsInventoryRuntime.isEnabled(),
+                    minecraft.player != null
+                );
+            }
             return;
         }
 
         InventoryDesktopScreen screen = getOrCreate(minecraft);
+        if (openSessionProbeLogs < 24) {
+            openSessionProbeLogs++;
+            DesktopDebug.probe(
+                "client openOrAddSession desktop={} session={} title={} visible={} beforeWindows={} beforeSessions={}",
+                screen.desktopId,
+                session.sessionId(),
+                session.title().getString(),
+                visible,
+                screen.windows.size(),
+                screen.sessions.size()
+            );
+        }
         screen.addOrReplaceSession(session, visible);
         screen.showIfNeeded(minecraft);
     }
@@ -1111,6 +1163,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     ) {
         InventoryDesktopScreen screen = getOrCreate(minecraft);
         screen.addLegacyContainerWindow(menu, playerInventory, title);
+        DesktopDebug.probe(
+            "client addLegacyContainerWindow desktop={} container={} menu={} title={} windows={} sessions={}",
+            screen.desktopId,
+            menu.containerId,
+            BuiltInRegistries.MENU.getKey(menu.getType()),
+            title.getString(),
+            screen.windows.size(),
+            screen.sessions.size()
+        );
         DesktopDebug.log("client legacy fallback window desktop={} container={} title={}", screen.desktopId, menu.containerId, title.getString());
         return screen;
     }
@@ -1119,6 +1180,21 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return SaltsInventoryRuntime.isEnabled()
             && minecraft.player != null
             && (minecraft.screen == null || minecraft.screen instanceof InventoryDesktopScreen);
+    }
+
+    private static void probeDesktopInputBlocked(Minecraft minecraft, String action) {
+        if (inputProbeLogs >= 24) {
+            return;
+        }
+        inputProbeLogs++;
+        DesktopDebug.probe(
+            "client desktop input blocked action={} runtime={} playerPresent={} screen={} gameModePresent={}",
+            action,
+            SaltsInventoryRuntime.isEnabled(),
+            minecraft.player != null,
+            minecraft.screen == null ? "null" : minecraft.screen.getClass().getName(),
+            minecraft.gameMode != null
+        );
     }
 
     private static boolean isCreativePlayer(Minecraft minecraft) {

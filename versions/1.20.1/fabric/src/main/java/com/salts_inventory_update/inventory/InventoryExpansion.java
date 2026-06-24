@@ -1,6 +1,7 @@
 package com.salts_inventory_update.inventory;
 
 import java.util.List;
+import java.util.StringJoiner;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -18,6 +19,7 @@ import com.salts_inventory_update.mixin.accessor.AbstractContainerMenuAccessor;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopPackets.InventoryExpansionSyncPayload;
 import com.salts_inventory_update.SaltsInventoryRuntime;
+import com.salts_inventory_update.debug.DesktopDebug;
 
 public final class InventoryExpansion {
     public static final int VANILLA_MAIN_START = 9;
@@ -31,11 +33,41 @@ public final class InventoryExpansion {
     private static final String EXTRA_INVENTORY_KEY = "salts_inventory_update_extra_inventory";
     private static final int EXTRA_MENU_SLOT_X = 8;
     private static final int EXTRA_MENU_SLOT_Y = 142;
+    private static int accessProbeLogs;
+    private static int missingAccessWarnings;
 
     private InventoryExpansion() {
     }
 
     public static InventoryExpansionAccess access(net.minecraft.world.entity.player.Player player) {
+        if (player instanceof InventoryExpansionAccess access) {
+            if (accessProbeLogs < 4) {
+                accessProbeLogs++;
+                DesktopDebug.probe(
+                    "inventory expansion access ok player={} class={} slots={} extraSlots={} classLoader={}",
+                    player.getName().getString(),
+                    player.getClass().getName(),
+                    player.inventoryMenu == null ? -1 : player.inventoryMenu.slots.size(),
+                    access.salts_inventory_update$getExtraSlotCount(),
+                    player.getClass().getClassLoader()
+                );
+            }
+            return access;
+        }
+
+        if (missingAccessWarnings < 8) {
+            missingAccessWarnings++;
+            DesktopDebug.warn(
+                "inventory expansion access missing player={} class={} superclass={} interfaces={} slots={} runtimeEnabled={} classLoader={}",
+                player.getName().getString(),
+                player.getClass().getName(),
+                player.getClass().getSuperclass() == null ? "null" : player.getClass().getSuperclass().getName(),
+                interfaceNames(player.getClass()),
+                player.inventoryMenu == null ? -1 : player.inventoryMenu.slots.size(),
+                SaltsInventoryRuntime.isEnabled(),
+                player.getClass().getClassLoader()
+            );
+        }
         return (InventoryExpansionAccess) player;
     }
 
@@ -207,5 +239,16 @@ public final class InventoryExpansion {
             Codec.INT.fieldOf("Slot").forGetter(SavedExtraSlot::slot),
             ItemStack.CODEC.fieldOf("Item").forGetter(SavedExtraSlot::stack)
         ).apply(instance, SavedExtraSlot::new));
+    }
+
+    private static String interfaceNames(Class<?> type) {
+        StringJoiner joiner = new StringJoiner(",");
+        for (Class<?> current = type; current != null; current = current.getSuperclass()) {
+            for (Class<?> candidate : current.getInterfaces()) {
+                joiner.add(candidate.getName());
+            }
+        }
+        String value = joiner.toString();
+        return value.isEmpty() ? "<none>" : value;
     }
 }

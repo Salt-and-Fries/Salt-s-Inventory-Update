@@ -30,7 +30,9 @@ public final class DesktopDebug {
     }
 
     public static void probe(String message, Object... args) {
-        SaltsInventoryUpdate.LOGGER.info("[desktop-probe] " + message, args);
+        if (enabled()) {
+            SaltsInventoryUpdate.LOGGER.info("[desktop-probe] " + message, args);
+        }
     }
 
     public static void warn(String message, Object... args) {

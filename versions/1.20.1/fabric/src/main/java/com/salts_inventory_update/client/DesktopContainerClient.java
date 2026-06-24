@@ -36,11 +36,14 @@ import com.salts_inventory_update.network.DesktopPackets.InventorySlotPurchasePa
 
 public final class DesktopContainerClient {
     private static boolean readySent;
+    private static int channelProbeLogs;
+    private static int readyProbeLogs;
 
     private DesktopContainerClient() {
     }
 
     public static void initializeNetworking() {
+        DesktopDebug.probe("client desktop networking initialize start");
         register(DesktopOpenSessionPayload.TYPE, DesktopOpenSessionPayload::new, payload -> {
             if (!SaltsInventoryRuntime.isEnabled()) {
                 DesktopDebug.trace("client payload open ignored session={} reason=runtime-disabled", payload.sessionId());
@@ -120,9 +123,11 @@ public final class DesktopContainerClient {
                 }
             }
         });
+        DesktopDebug.probe("client desktop networking initialize complete");
     }
 
     private static <P extends DesktopPacket> void register(ResourceLocation id, Function<FriendlyByteBuf, P> decoder, Consumer<P> handler) {
+        DesktopDebug.probe("client desktop payload receiver register id={}", id);
         ClientPlayNetworking.registerGlobalReceiver(id, (client, listener, buf, sender) -> {
             P payload = decoder.apply(buf);
             client.execute(() -> handler.accept(payload));
@@ -139,6 +144,18 @@ public final class DesktopContainerClient {
         boolean remoteServer = minecraft.getCurrentServer() != null && minecraft.getSingleplayerServer() == null;
         boolean desktopAvailable = !remoteServer || canUseServerSessionsRaw();
         SaltsInventoryRuntime.setServerDesktopAvailable(desktopAvailable);
+        if (readyProbeLogs < 24) {
+            readyProbeLogs++;
+            DesktopDebug.probe(
+                "client ready tick probe player={} runtime={} remoteServer={} desktopAvailable={} readySent={} screen={}",
+                minecraft.player.getName().getString(),
+                SaltsInventoryRuntime.isEnabled(),
+                remoteServer,
+                desktopAvailable,
+                readySent,
+                minecraft.screen == null ? "null" : minecraft.screen.getClass().getName()
+            );
+        }
         if (!SaltsInventoryRuntime.isEnabled()) {
             if (readySent && desktopAvailable) {
                 send(new DesktopReadyPayload(false), "ready-disabled");
@@ -177,19 +194,55 @@ public final class DesktopContainerClient {
 
     private static boolean canUseServerSessionsRaw() {
         try {
-            return ClientPlayNetworking.canSend(DesktopReadyPayload.TYPE)
-                && ClientPlayNetworking.canSend(DesktopClickPayload.TYPE)
-                && ClientPlayNetworking.canSend(DesktopQuickMovePayload.TYPE)
-                && ClientPlayNetworking.canSend(DesktopButtonPayload.TYPE)
-                && ClientPlayNetworking.canSend(DesktopPlaceRecipePayload.TYPE)
-                && ClientPlayNetworking.canSend(DesktopRenamePayload.TYPE)
-                && ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE)
-                && ClientPlayNetworking.canSend(DesktopSessionPinPayload.TYPE)
-                && ClientPlayNetworking.canSend(DesktopSessionVisibilityPayload.TYPE)
-                && ClientPlayNetworking.canSend(DesktopCustomPayload.TYPE)
-                && ClientPlayNetworking.canSend(DesktopCarriedPayload.TYPE)
-                && ClientPlayNetworking.canSend(InventorySlotPurchasePayload.TYPE);
+            boolean ready = ClientPlayNetworking.canSend(DesktopReadyPayload.TYPE);
+            boolean click = ClientPlayNetworking.canSend(DesktopClickPayload.TYPE);
+            boolean quickMove = ClientPlayNetworking.canSend(DesktopQuickMovePayload.TYPE);
+            boolean button = ClientPlayNetworking.canSend(DesktopButtonPayload.TYPE);
+            boolean placeRecipe = ClientPlayNetworking.canSend(DesktopPlaceRecipePayload.TYPE);
+            boolean rename = ClientPlayNetworking.canSend(DesktopRenamePayload.TYPE);
+            boolean closeSession = ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE);
+            boolean pin = ClientPlayNetworking.canSend(DesktopSessionPinPayload.TYPE);
+            boolean visibility = ClientPlayNetworking.canSend(DesktopSessionVisibilityPayload.TYPE);
+            boolean custom = ClientPlayNetworking.canSend(DesktopCustomPayload.TYPE);
+            boolean carried = ClientPlayNetworking.canSend(DesktopCarriedPayload.TYPE);
+            boolean purchase = ClientPlayNetworking.canSend(InventorySlotPurchasePayload.TYPE);
+            boolean result = ready
+                && click
+                && quickMove
+                && button
+                && placeRecipe
+                && rename
+                && closeSession
+                && pin
+                && visibility
+                && custom
+                && carried
+                && purchase;
+            if (channelProbeLogs < 16) {
+                channelProbeLogs++;
+                DesktopDebug.probe(
+                    "client server session channel probe result={} ready={} click={} quickMove={} button={} placeRecipe={} rename={} close={} pin={} visibility={} custom={} carried={} purchase={}",
+                    result,
+                    ready,
+                    click,
+                    quickMove,
+                    button,
+                    placeRecipe,
+                    rename,
+                    closeSession,
+                    pin,
+                    visibility,
+                    custom,
+                    carried,
+                    purchase
+                );
+            }
+            return result;
         } catch (IllegalStateException | IllegalArgumentException ignored) {
+            if (channelProbeLogs < 16) {
+                channelProbeLogs++;
+                DesktopDebug.probe("client server session channel probe failed reason={}", ignored.toString());
+            }
             return false;
         }
     }

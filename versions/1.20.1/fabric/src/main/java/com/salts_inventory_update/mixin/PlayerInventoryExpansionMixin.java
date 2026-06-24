@@ -15,9 +15,13 @@ import net.minecraft.nbt.CompoundTag;
 import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.inventory.InventoryExpansionAccess;
 import com.salts_inventory_update.inventory.PlayerExtraInventory;
+import com.salts_inventory_update.debug.DesktopDebug;
 
 @Mixin(Player.class)
 public abstract class PlayerInventoryExpansionMixin implements InventoryExpansionAccess {
+    @Unique
+    private static int salts_inventory_update$probeLogs;
+
     @Unique
     private PlayerExtraInventory salts_inventory_update$extraInventory;
     @Unique
@@ -26,6 +30,18 @@ public abstract class PlayerInventoryExpansionMixin implements InventoryExpansio
     @Inject(method = "<init>", at = @At("RETURN"))
     private void salts_inventory_update$initializeExpansionInventory(Level level, BlockPos blockPos, float yRot, GameProfile gameProfile, CallbackInfo ci) {
         this.salts_inventory_update$extraInventory().resize(this.salts_inventory_update$extraSlotCount);
+        if (salts_inventory_update$probeLogs < 6) {
+            salts_inventory_update$probeLogs++;
+            Player player = (Player) (Object) this;
+            DesktopDebug.probe(
+                "mixin PlayerInventoryExpansionMixin applied player={} class={} extraSlots={} inventoryCreated={} level={}",
+                player.getName().getString(),
+                player.getClass().getName(),
+                this.salts_inventory_update$extraSlotCount,
+                this.salts_inventory_update$extraInventory != null,
+                level == null ? "null" : level.dimension().location()
+            );
+        }
     }
 
     @Inject(method = "readAdditionalSaveData", at = @At("RETURN"))

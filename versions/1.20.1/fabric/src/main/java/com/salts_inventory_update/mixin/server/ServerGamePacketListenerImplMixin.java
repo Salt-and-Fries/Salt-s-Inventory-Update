@@ -5,19 +5,33 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.server.DesktopContainerSessions;
 
 @Mixin(ServerGamePacketListenerImpl.class)
 public abstract class ServerGamePacketListenerImplMixin {
+    @Unique
+    private static int salts_inventory_update$useItemProbeLogs;
+
     @Shadow
     public ServerPlayer player;
 
     @Inject(method = "handleUseItemOn", at = @At("HEAD"))
     private void salts_inventory_update$captureDesktopUseTarget(ServerboundUseItemOnPacket packet, CallbackInfo ci) {
+        if (salts_inventory_update$useItemProbeLogs < 24) {
+            salts_inventory_update$useItemProbeLogs++;
+            DesktopDebug.probe(
+                "mixin ServerGamePacketListenerImpl.handleUseItemOn player={} hit={} hand={}",
+                this.player.getName().getString(),
+                packet.getHitResult().getBlockPos(),
+                packet.getHand()
+            );
+        }
         DesktopContainerSessions.captureUseTarget(this.player, packet.getHitResult());
     }
 

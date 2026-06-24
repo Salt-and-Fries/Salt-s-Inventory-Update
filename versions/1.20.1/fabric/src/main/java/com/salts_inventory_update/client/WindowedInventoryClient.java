@@ -19,6 +19,7 @@ import org.lwjgl.glfw.GLFW;
 import com.salts_inventory_update.SaltsInventoryUpdate;
 import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.compat.toms_storage.client.TomsStorageClientCompat;
+import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.mixin.client.MouseHandlerAccessor;
 
 public final class WindowedInventoryClient {
@@ -33,6 +34,12 @@ public final class WindowedInventoryClient {
     }
 
     public static void initialize() {
+        DesktopDebug.log(
+            "WindowedInventoryClient.initialize begin classLoader={} desktopDebug={} desktopTrace={}",
+            WindowedInventoryClient.class.getClassLoader(),
+            Boolean.getBoolean("salts_inventory_update.desktopDebug"),
+            Boolean.getBoolean("salts_inventory_update.desktopTrace")
+        );
         SaltsInventoryConfig.load();
         characterWindowKey = KeyBindingHelper.registerKeyBinding(
             new KeyMapping(
@@ -51,6 +58,7 @@ public final class WindowedInventoryClient {
         initializeFunctionalTests();
         ClientTickEvents.START_CLIENT_TICK.register(WindowedInventoryClient::syncDesktopMovementKeys);
         ClientTickEvents.END_CLIENT_TICK.register(WindowedInventoryClient::onClientTick);
+        DesktopDebug.log("WindowedInventoryClient.initialize complete");
     }
 
     public static KeyMapping characterWindowKey() {

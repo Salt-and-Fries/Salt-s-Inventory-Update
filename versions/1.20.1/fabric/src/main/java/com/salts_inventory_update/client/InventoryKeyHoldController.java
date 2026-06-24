@@ -19,12 +19,29 @@ public final class InventoryKeyHoldController {
     private static boolean holdingInventoryKey;
     private static boolean closedByHold;
     private static long holdStartedMs;
+    private static int keyActionProbeLogs;
 
     private InventoryKeyHoldController() {
     }
 
     public static boolean handleInventoryKeyAction(Minecraft minecraft, int action, KeyEvent event) {
-        if (!minecraft.options.keyInventory.matches(event.key(), event.scancode()) || !canHandleInventoryKey(minecraft)) {
+        boolean matchesInventory = minecraft.options.keyInventory.matches(event.key(), event.scancode());
+        boolean canHandle = matchesInventory && canHandleInventoryKey(minecraft);
+        if (matchesInventory && keyActionProbeLogs < 24) {
+            keyActionProbeLogs++;
+            DesktopDebug.probe(
+                "client inventory key action action={} key={} scancode={} canHandle={} runtime={} playerPresent={} gameModePresent={} screen={}",
+                action,
+                event.key(),
+                event.scancode(),
+                canHandle,
+                SaltsInventoryRuntime.isEnabled(),
+                minecraft.player != null,
+                minecraft.gameMode != null,
+                minecraft.screen == null ? "null" : minecraft.screen.getClass().getName()
+            );
+        }
+        if (!matchesInventory || !canHandle) {
             return false;
         }
 

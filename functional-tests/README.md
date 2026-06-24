@@ -209,12 +209,27 @@ versions/<version>/<loader>/src/main/resources/META-INF/mods.toml
 versions/<version>/<loader>/src/main/resources/META-INF/neoforge.mods.toml
 ```
 
+Forge also requires a manifest-level Mixin config for the 1.20.1 Forge dev/runtime path:
+
+```text
+versions/<version>/forge/src/main/resources/META-INF/MANIFEST.MF
+```
+
+The Forge 1.20.1 dev client also needs the Mixin config passed as a launch argument because its exploded classpath
+manifest is visible to the mod after startup but is not consumed by Mixin's early platform scan:
+
+```text
+--mixin.config salts_inventory_update.mixins.json
+```
+
 Forge/NeoForge metadata tests:
 
 | Test label pattern | Required text |
 | --- | --- |
 | `<version> <loader> mixin metadata block` | `[[mixins]]` |
 | `<version> <loader> mixin metadata config` | `config = "${mod_id}.mixins.json"` |
+| `<version> forge mixin manifest config` | `MixinConfigs: salts_inventory_update.mixins.json` |
+| `<version> forge dev run mixin launch arg` | `"--mixin.config", "salts_inventory_update.mixins.json"` |
 
 ## Gradle Compile Test
 

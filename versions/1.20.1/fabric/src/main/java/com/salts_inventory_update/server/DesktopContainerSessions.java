@@ -68,6 +68,7 @@ import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.compat.toms_storage.TomsStorageCompat;
 import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.inventory.InventoryExpansion;
+import com.salts_inventory_update.inventory.InventoryExpansionAccess;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopPackets.DesktopPacket;
 import com.salts_inventory_update.network.DesktopPackets.DesktopButtonPayload;
@@ -98,12 +99,15 @@ public final class DesktopContainerSessions {
     private static final int BEACON_SECONDARY_EFFECT_SHIFT = 16;
     private static final Map<UUID, PlayerSessions> PLAYERS = new LinkedHashMap<>();
     private static final Map<UUID, String> PENDING_USE_TARGETS = new LinkedHashMap<>();
+    private static int shouldCaptureProbeLogs;
+    private static int readyProbeLogs;
 
     private DesktopContainerSessions() {
     }
 
     public static void initialize() {
         DesktopDebug.log("server desktop session networking initialized");
+        DesktopDebug.probe("server desktop session networking initialize start");
         register(DesktopReadyPayload.TYPE, DesktopReadyPayload::new, (player, payload) -> setReady(player, payload.ready()));
         register(DesktopClickPayload.TYPE, DesktopClickPayload::new, DesktopContainerSessions::click);
         register(DesktopQuickMovePayload.TYPE, DesktopQuickMovePayload::new, DesktopContainerSessions::quickMove);
@@ -118,9 +122,11 @@ public final class DesktopContainerSessions {
         register(InventorySlotPurchasePayload.TYPE, InventorySlotPurchasePayload::new, (player, payload) -> InventoryExpansion.tryPurchase(player));
         ServerTickEvents.END_SERVER_TICK.register(DesktopContainerSessions::tick);
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> disconnect(handler.player));
+        DesktopDebug.probe("server desktop session networking initialize complete");
     }
 
     private static <P extends DesktopPacket> void register(ResourceLocation id, Function<FriendlyByteBuf, P> decoder, BiConsumer<ServerPlayer, P> handler) {
+        DesktopDebug.probe("server desktop payload receiver register id={}", id);
         ServerPlayNetworking.registerGlobalReceiver(id, (server, player, networkHandler, buf, sender) -> {
             P payload = decoder.apply(buf);
             server.execute(() -> handler.accept(player, payload));
@@ -129,16 +135,20 @@ public final class DesktopContainerSessions {
 
     public static boolean shouldCapture(ServerPlayer player) {
         if (!SaltsInventoryRuntime.isEnabled()) {
+            probeShouldCapture(player, false, false, "runtime-disabled");
             return false;
         }
 
         PlayerSessions sessions = PLAYERS.get(player.getUUID());
         if (sessions != null && sessions.ready) {
+            probeShouldCapture(player, true, true, "session-ready");
             return true;
         }
 
         try {
-            if (ServerPlayNetworking.canSend(player, DesktopOpenSessionPayload.TYPE)) {
+            boolean canSendOpen = ServerPlayNetworking.canSend(player, DesktopOpenSessionPayload.TYPE);
+            probeShouldCapture(player, false, canSendOpen, "can-send-open=" + canSendOpen);
+            if (canSendOpen) {
                 sessions(player).ready = true;
                 DesktopDebug.warn("server desktop capture enabled player={} reason=client-can-receive", player.getName().getString());
                 return true;
@@ -361,12 +371,46 @@ public final class DesktopContainerSessions {
         PlayerSessions sessions = sessions(player);
         sessions.ready = ready && SaltsInventoryRuntime.isEnabled();
         DesktopDebug.log("server ready player={} ready={} sessions={}", player.getName().getString(), ready, sessions.sessions.size());
+        if (readyProbeLogs < 24) {
+            readyProbeLogs++;
+            DesktopDebug.probe(
+                "server setReady probe player={} requestedReady={} storedReady={} runtime={} hasExpansionAccess={} playerClass={} menuSlots={} sessions={}",
+                player.getName().getString(),
+                ready,
+                sessions.ready,
+                SaltsInventoryRuntime.isEnabled(),
+                player instanceof InventoryExpansionAccess,
+                player.getClass().getName(),
+                player.inventoryMenu == null ? -1 : player.inventoryMenu.slots.size(),
+                sessions.sessions.size()
+            );
+        }
         if (!ready) {
             sessions.closeAll(player, false);
         } else {
             InventoryExpansion.appendMissingMenuSlots(player.inventoryMenu, player);
             InventoryExpansion.syncToClient(player);
         }
+    }
+
+    private static void probeShouldCapture(ServerPlayer player, boolean result, boolean canSendOpen, String reason) {
+        if (shouldCaptureProbeLogs >= 48 && !DesktopDebug.traceEnabled()) {
+            return;
+        }
+        shouldCaptureProbeLogs++;
+        PlayerSessions sessions = PLAYERS.get(player.getUUID());
+        DesktopDebug.probe(
+            "server shouldCapture player={} result={} reason={} runtime={} sessionsKnown={} sessionReady={} canSendOpen={} hasExpansionAccess={} playerClass={}",
+            player.getName().getString(),
+            result,
+            reason,
+            SaltsInventoryRuntime.isEnabled(),
+            sessions != null,
+            sessions != null && sessions.ready,
+            canSendOpen,
+            player instanceof InventoryExpansionAccess,
+            player.getClass().getName()
+        );
     }
 
     private static void disconnect(ServerPlayer player) {

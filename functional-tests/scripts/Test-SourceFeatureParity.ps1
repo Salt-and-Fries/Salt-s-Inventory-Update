@@ -172,6 +172,12 @@ foreach ($entry in $loaderMatrix) {
     } else {
         Assert-Contains -Path $metadata -Text '[[mixins]]' -Label "$version $loader mixin metadata block"
         Assert-Contains -Path $metadata -Text 'config = "${mod_id}.mixins.json"' -Label "$version $loader mixin metadata config"
+        if ($loader -eq 'forge') {
+            $manifest = Join-Path $RepoRoot "versions\$version\$loader\src\main\resources\META-INF\MANIFEST.MF"
+            Assert-Contains -Path $manifest -Text 'MixinConfigs: salts_inventory_update.mixins.json' -Label "$version $loader mixin manifest config"
+            $buildScript = Join-Path $RepoRoot "build.gradle.kts"
+            Assert-Contains -Path $buildScript -Text '"--mixin.config", "salts_inventory_update.mixins.json"' -Label "$version $loader dev run mixin launch arg"
+        }
     }
 }
 

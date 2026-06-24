@@ -1,6 +1,8 @@
 import org.gradle.api.GradleException
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.JavaExec
 
 plugins {
     id("dev.prism")
@@ -12,6 +14,12 @@ version = "0.1.0"
 val includeFunctionalTests = providers.gradleProperty("includeFunctionalTests")
     .map { it.equals("true", ignoreCase = true) }
     .orElse(false)
+val enableDesktopRunDiagnostics = providers.gradleProperty("saltsDesktopRunDiagnostics")
+    .map { it.equals("true", ignoreCase = true) }
+    .orElse(true)
+val enableDesktopRunTrace = providers.gradleProperty("saltsDesktopRunTrace")
+    .map { it.equals("true", ignoreCase = true) }
+    .orElse(true)
 
 fun SourceSet.addLoaderSourceDirs(minecraftVersion: String, loaderName: String) {
     val sourceDirs = listOf(
@@ -124,6 +132,40 @@ prism {
 
 subprojects {
     val minecraftVersion = parent?.name
+    tasks.withType<JavaExec>().configureEach {
+        if (name == "runClient") {
+            val runTask = this
+            runTask.doFirst {
+                if (minecraftVersion == "1.20.1" && project.name == "forge") {
+                    if (!runTask.args.contains("--mixin.config")) {
+                        runTask.args("--mixin.config", "salts_inventory_update.mixins.json")
+                    }
+                    logger.lifecycle("Salt's Inventory Update Forge 1.20.1 mixin config launch arg enabled")
+                }
+                if (enableDesktopRunDiagnostics.get()) {
+                    runTask.systemProperty("salts_inventory_update.desktopDebug", "true")
+                    if (enableDesktopRunTrace.get()) {
+                        runTask.systemProperty("salts_inventory_update.desktopTrace", "true")
+                    }
+                    logger.lifecycle(
+                        "Salt's Inventory Update desktop diagnostics enabled for ${runTask.path} " +
+                            "(disable with -PsaltsDesktopRunDiagnostics=false)"
+                    )
+                }
+            }
+        }
+    }
+
+    if (minecraftVersion != null && name == "forge") {
+        plugins.withId("java") {
+            tasks.named<Jar>("jar") {
+                manifest {
+                    attributes("MixinConfigs" to "salts_inventory_update.mixins.json")
+                }
+            }
+        }
+    }
+
     if (minecraftVersion != null && (name == "forge" || name == "neoforge")) {
         val loaderName = name
         afterEvaluate {
