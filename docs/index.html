@@ -12,12 +12,13 @@
       <p class="eyebrow">Salt's Inventory Update</p>
       <h1>Desktop Window API v2</h1>
       <p class="lead">
-        A practical guide for modding developers building custom desktop windows for Fabric 26.1.2 containers.
+        A practical guide for modding developers building custom desktop windows across Salt's supported Minecraft
+        versions and loaders.
       </p>
     </div>
     <div class="version-card">
-      <span>Target</span>
-      <strong>Fabric 26.1.2</strong>
+      <span>Targets</span>
+      <strong>Fabric, Forge, NeoForge</strong>
       <span>Status</span>
       <strong>API v2 draft</strong>
     </div>
@@ -26,6 +27,7 @@
   <main class="layout">
     <nav class="sidebar" aria-label="Documentation navigation">
       <a href="#overview">Overview</a>
+      <a href="#version-matrix">Version Matrix</a>
       <a href="#mental-model">Mental Model</a>
       <a href="#registration">Registration</a>
       <a href="#client-definition">Client Definition</a>
@@ -83,6 +85,81 @@
             </ul>
           </div>
         </div>
+      </section>
+
+      <section id="version-matrix" class="panel">
+        <h2>Version Matrix</h2>
+        <p>
+          The examples on this page use the 26.x API spelling. The desktop API concepts are shared across every
+          supported version, but a few Minecraft type names and typed payload helpers differ.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Loaders</th>
+              <th>Resource id type</th>
+              <th>Slot click type</th>
+              <th>Input event types</th>
+              <th>Typed payload helpers</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>26.1.2</code></td>
+              <td>Fabric, NeoForge</td>
+              <td><code>Identifier</code></td>
+              <td><code>ContainerInput</code></td>
+              <td><code>net.minecraft.client.input.*</code></td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td><code>26.2</code></td>
+              <td>Fabric, NeoForge</td>
+              <td><code>Identifier</code></td>
+              <td><code>ContainerInput</code></td>
+              <td><code>net.minecraft.client.input.*</code></td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td><code>1.21.11</code></td>
+              <td>Fabric, NeoForge</td>
+              <td><code>Identifier</code></td>
+              <td><code>ClickType</code></td>
+              <td><code>net.minecraft.client.input.*</code></td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td><code>1.21.1</code></td>
+              <td>Fabric, NeoForge</td>
+              <td><code>ResourceLocation</code></td>
+              <td><code>ClickType</code></td>
+              <td><code>com.salts_inventory_update.client.input.*</code></td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td><code>1.20.1</code></td>
+              <td>Fabric, Forge</td>
+              <td><code>ResourceLocation</code></td>
+              <td><code>ClickType</code></td>
+              <td><code>com.salts_inventory_update.client.input.*</code></td>
+              <td>Raw byte payloads only</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <strong>Loader note:</strong>
+          Fabric and NeoForge do not have separate Salt desktop API surfaces. Forge and NeoForge builds compile the same
+          per-version API sources as Fabric, then add a loader shim for entrypoints, events, commands, key bindings, and
+          networking.
+        </div>
+        <ul>
+          <li>On <code>1.20.1</code> and <code>1.21.1</code>, replace <code>Identifier</code> with <code>ResourceLocation</code>.</li>
+          <li>On <code>1.20.1</code>, <code>1.21.1</code>, and <code>1.21.11</code>, replace <code>ContainerInput</code> with <code>ClickType</code>.</li>
+          <li>On <code>1.20.1</code> and <code>1.21.1</code>, import input event types from <code>com.salts_inventory_update.client.input</code>.</li>
+          <li>On <code>1.20.1</code>, use raw <code>byte[]</code> payloads instead of typed codec helpers.</li>
+          <li>On <code>1.20.1</code> and <code>1.21.1</code>, <code>createRecipeBook</code> returns raw <code>RecipeBookComponent</code>.</li>
+        </ul>
       </section>
 
       <section id="mental-model" class="panel">
@@ -330,6 +407,13 @@
             </ul>
           </div>
         </div>
+        <div class="callout">
+          <strong>Version note:</strong>
+          <code>clickSlot</code> takes <code>ContainerInput</code> on <code>26.1.2</code> and <code>26.2</code>.
+          It takes <code>ClickType</code> on <code>1.20.1</code>, <code>1.21.1</code>, and <code>1.21.11</code>.
+          Typed <code>sendPayload(channel, payload, codec)</code> is available on every supported version except
+          <code>1.20.1</code>.
+        </div>
       </section>
 
       <section id="rendering" class="panel">
@@ -494,6 +578,11 @@ public boolean wantsTextInput(DesktopWindowContext&lt;MyMenu, State&gt; context)
           Payloads are session-scoped. This matters for multi-window support: two windows of the same menu type can be
           open at the same time, and payloads must go to the correct session.
         </p>
+        <div class="callout">
+          <strong>Version note:</strong>
+          Payload channels use <code>Identifier</code> on <code>26.1.2</code>, <code>26.2</code>, and
+          <code>1.21.11</code>. Use <code>ResourceLocation</code> on <code>1.21.1</code> and <code>1.20.1</code>.
+        </div>
         <h3>Raw byte payload</h3>
         <pre><code>SaltsInventoryDesktopApi.registerServerPayload(MyMenus.MY_MENU, MY_CHANNEL, context -&gt; {
     byte[] data = context.data();
@@ -501,6 +590,11 @@ public boolean wantsTextInput(DesktopWindowContext&lt;MyMenu, State&gt; context)
 });</code></pre>
 
         <h3>Typed payload</h3>
+        <p>
+          Typed payload helpers are available on <code>1.21.1</code>, <code>1.21.11</code>, <code>26.1.2</code>,
+          and <code>26.2</code>. On <code>1.20.1</code>, register a raw byte payload and encode or decode the bytes
+          yourself.
+        </p>
         <pre><code>public record ModePayload(int mode) {
     public static final StreamCodec&lt;RegistryFriendlyByteBuf, ModePayload&gt; CODEC =
         StreamCodec.composite(ByteBufCodecs.INT, ModePayload::mode, ModePayload::new);
@@ -518,6 +612,10 @@ SaltsInventoryDesktopApi.registerServerPayload(
 
         <h3>Client send</h3>
         <pre><code>context.sendPayload(MY_CHANNEL, new ModePayload(2), ModePayload.CODEC);</code></pre>
+        <p>
+          On <code>1.20.1</code>, send encoded bytes instead:
+        </p>
+        <pre><code>context.sendPayload(MY_CHANNEL, encodedBytes);</code></pre>
         <div class="callout">
           <strong>Limit:</strong>
           Keep custom payloads small. The API is designed around a 32 KiB cap.
@@ -631,6 +729,10 @@ public RecipeBookComponent&lt;?&gt; createRecipeBook(DesktopWindowContext&lt;MyM
     return MyClientReflect.createRecipeBook(context.menu());
 }</code></pre>
         <p>
+          On <code>1.20.1</code> and <code>1.21.1</code>, return raw <code>RecipeBookComponent</code> instead of
+          <code>RecipeBookComponent&lt;?&gt;</code>.
+        </p>
+        <p>
           Use <code>context.toggleRecipeBook()</code> from a custom button, and
           <code>context.setRecipeBookSearch(search)</code> when your UI wants to sync search text into the book.
         </p>
@@ -655,6 +757,10 @@ if (index &gt;= 0) {
     context.sendPayload(PULL_CHANNEL, new PullPayload(index), PullPayload.CODEC);
     return true;
 }</code></pre>
+        <p>
+          On <code>1.20.1</code>, encode the pull request yourself and call
+          <code>context.sendPayload(PULL_CHANNEL, bytes)</code>.
+        </p>
         <div class="callout warn">
           <strong>Do not fake slots:</strong>
           A virtual item is not a <code>Slot</code>. If there is no real menu slot, use a payload.

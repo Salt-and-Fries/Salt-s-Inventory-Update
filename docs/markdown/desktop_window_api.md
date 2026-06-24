@@ -1,8 +1,30 @@
 # Salt Desktop Window API v2
 
-Target: Fabric 26.1.2.
+Targets: Fabric 1.20.1, 1.21.1, 1.21.11, 26.1.2, and 26.2; Forge 1.20.1; NeoForge 1.21.1, 1.21.11, 26.1.2, and 26.2.
 
 Salt's Inventory Update can host mod containers inside its movable desktop windows. The desktop engine still owns sessions, carried stacks, hotbar interaction, placement, lock/pin/ghost pin, resizing, and multi-window behavior. Mods provide a window definition and, when needed, server-side opt-in/payload handlers.
+
+## Supported Versions And API Bands
+
+The examples in this document use the 26.x API spelling. Most API concepts are shared across every supported version, but a few Minecraft type names and typed payload helpers differ by version.
+
+| Version | Loaders | Resource id type | Slot click type | Input event types | Typed payload helpers |
+| --- | --- | --- | --- | --- | --- |
+| 26.1.2 | Fabric, NeoForge | `Identifier` | `ContainerInput` | `net.minecraft.client.input.*` | Yes |
+| 26.2 | Fabric, NeoForge | `Identifier` | `ContainerInput` | `net.minecraft.client.input.*` | Yes |
+| 1.21.11 | Fabric, NeoForge | `Identifier` | `ClickType` | `net.minecraft.client.input.*` | Yes |
+| 1.21.1 | Fabric, NeoForge | `ResourceLocation` | `ClickType` | `com.salts_inventory_update.client.input.*` | Yes |
+| 1.20.1 | Fabric, Forge | `ResourceLocation` | `ClickType` | `com.salts_inventory_update.client.input.*` | Raw byte payloads only |
+
+Loader differences do not create a separate Salt desktop API. The Forge and NeoForge builds compile the same per-version API sources as Fabric, then add a loader shim for entrypoints, events, key bindings, commands, and networking.
+
+When porting an example between API bands:
+
+- On `1.20.1` and `1.21.1`, replace `Identifier` with `ResourceLocation`.
+- On `1.20.1`, `1.21.1`, and `1.21.11`, replace `ContainerInput` with `ClickType`.
+- On `1.20.1` and `1.21.1`, import `CharacterEvent`, `KeyEvent`, and `MouseButtonEvent` from `com.salts_inventory_update.client.input`.
+- On `1.20.1`, use raw `byte[]` payloads; `DesktopPayloadCodecs`, typed client `sendPayload`, typed server `registerServerPayload`, and typed `sendToClient` are not available.
+- On `1.20.1` and `1.21.1`, `createRecipeBook` returns raw `RecipeBookComponent` instead of `RecipeBookComponent<?>`.
 
 ## Registration Model
 
@@ -116,11 +138,12 @@ public final class MyWindow implements DesktopWindowDefinition<MyMenu, MyWindow.
 - `shiftDown()`, `ctrlDown()`, `altDown()`, `mouseButtonDown(button)`
 - `sendMenuButton(buttonId)`
 - `sendRename(name)`
-- `clickSlot(menuSlotId, button, ContainerInput)`
+- `clickSlot(menuSlotId, button, ContainerInput)` on `26.1.2` and `26.2`
+- `clickSlot(menuSlotId, button, ClickType)` on `1.20.1`, `1.21.1`, and `1.21.11`
 - `quickMoveSlot(menuSlotId)`
 - `toggleRecipeBook()`, `setRecipeBookSearch(search)`
 - `sendPayload(channel, byte[])`
-- typed `sendPayload(channel, payload, codec)`
+- typed `sendPayload(channel, payload, codec)` on every version except `1.20.1`
 
 Do not manually mutate carried stacks for normal slots. Let Salt route slot clicks to the server session.
 
@@ -209,6 +232,8 @@ Hidden ghost sessions still tick and validate through the desktop session manage
 
 ## Payloads
 
+Payload channels use `Identifier` on `26.1.2`, `26.2`, and `1.21.11`; use `ResourceLocation` on `1.21.1` and `1.20.1`.
+
 Raw fallback:
 
 ```java
@@ -219,6 +244,8 @@ SaltsInventoryDesktopApi.registerServerPayload(MyMenus.MY_MENU, MY_CHANNEL, cont
 ```
 
 Typed payload:
+
+Typed payload helpers are available on `1.21.1`, `1.21.11`, `26.1.2`, and `26.2`. On `1.20.1`, register a raw byte payload and encode/decode the bytes yourself.
 
 ```java
 public record ModePayload(int mode) {
@@ -236,6 +263,12 @@ Client send:
 
 ```java
 context.sendPayload(MY_CHANNEL, new ModePayload(2), ModePayload.CODEC);
+```
+
+On `1.20.1`, send the encoded bytes instead:
+
+```java
+context.sendPayload(MY_CHANNEL, encodedBytes);
 ```
 
 Payload data is capped by Salt's networking layer at 32 KiB. Keep payloads small and session-scoped.
@@ -287,3 +320,13 @@ Use `ghosted()`/`unghosted()` for animation state or preview-specific effects. G
 ## Proof Cases
 
 Salt's furnace window uses the internal API definition for a simple animated vanilla menu. Tom's Simple Storage compat uses v2 client definitions and server window handlers for a larger terminal-style integration with virtual entries, search, controls, custom packets, and server snapshots.
+
+## Version-Specific Summary
+
+`26.1.2` and `26.2` have the same public Salt desktop API. Their implementation differs internally because Minecraft moved some client screen and HUD APIs in `26.2`, but mod integrations that depend only on `com.salts_inventory_update.api` do not need source changes between those two versions.
+
+`1.21.11` keeps the `Identifier` and `net.minecraft.client.input.*` style used by 26.x, but slot clicks use `ClickType` instead of `ContainerInput`.
+
+`1.21.1` uses Mojang-style `ResourceLocation`, the Salt compatibility input event package, raw `RecipeBookComponent`, and `ClickType`, while still supporting typed payload codecs.
+
+`1.20.1` uses the same broad shape as `1.21.1`, but without the typed payload convenience layer. Use raw byte payload registration and sends there.
