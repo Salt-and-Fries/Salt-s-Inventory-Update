@@ -21,7 +21,9 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.lwjgl.glfw.GLFW;
@@ -63,6 +65,14 @@ public final class NeoForgeClientPlatform {
         NeoForge.EVENT_BUS.addListener(ClientTickEvents::onEndClientTick);
         NeoForge.EVENT_BUS.addListener(ClientCommandRegistrationCallback.EVENT::onRegisterClientCommands);
         NeoForge.EVENT_BUS.addListener(NeoForgeClientPlatform::onMovementInputUpdate);
+        registerConfigScreen();
+    }
+
+    private static void registerConfigScreen() {
+        ModLoadingContext.get().registerExtensionPoint(
+            IConfigScreenFactory.class,
+            () -> (container, modListScreen) -> WindowedInventoryClient.createConfigScreen(modListScreen)
+        );
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {

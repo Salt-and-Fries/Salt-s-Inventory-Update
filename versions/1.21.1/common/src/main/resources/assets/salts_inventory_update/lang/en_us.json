@@ -1,6 +1,11 @@
 {
   "key.salts_inventory_update.character_window": "Character Window",
-  "modmenu.descriptionTranslation.salts_inventory_update": "Inventory quality-of-life updates for Minecraft.",
+  "modmenu.summaryTranslation.salts_inventory_update": "Desktop-style inventory upgrades with expandable storage, movable windows, pins, resizing, and API hooks.",
+  "modmenu.descriptionTranslation.salts_inventory_update": "Salt's Inventory Update upgrades Minecraft's inventory workflow with expandable player storage, desktop-style movable container windows, pin and ghost-pin controls, resize and snapping options, and API hooks for supported inventory screens. Configure it with /saltsinventory config or the mod-list config button.\n\nDiscord: https://discord.gg/kfdE9gGGxP\nAPI: https://salt-and-fries.github.io/Salt-s-Inventory-Update/\nSource: https://github.com/Salt-and-Fries/Salt-s-Inventory-Update\nDonate: https://www.paypal.com/donate/?business=ERE5F32WV4NWN&no_recurring=1&currency_code=USD",
+  "salts_inventory_update.modmenu.discord": "Discord",
+  "salts_inventory_update.modmenu.api": "API",
+  "salts_inventory_update.modmenu.sources": "Source",
+  "salts_inventory_update.modmenu.donate": "Donate",
   "itemGroup.salts_inventory_update.main": "Salt's Inventory Update",
   "config.salts_inventory_update.title": "Salt's Inventory Update Settings",
   "config.salts_inventory_update.option": "%s: %s",

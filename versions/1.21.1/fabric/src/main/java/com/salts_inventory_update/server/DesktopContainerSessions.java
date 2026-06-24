@@ -174,7 +174,7 @@ public final class DesktopContainerSessions {
             );
             if (canSendOpen) {
                 setReady(player, true);
-                DesktopDebug.warn("server desktop capture enabled player={} reason=client-can-receive", player.getName().getString());
+                DesktopDebug.log("server desktop capture enabled player={} reason=client-can-receive", player.getName().getString());
                 return true;
             }
         } catch (IllegalArgumentException | IllegalStateException exception) {

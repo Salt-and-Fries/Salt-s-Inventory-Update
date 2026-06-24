@@ -6,6 +6,10 @@ license = "${license}"
 modId = "${mod_id}"
 version = "${version}"
 displayName = "${mod_name}"
+displayURL = "https://salt-and-fries.github.io/Salt-s-Inventory-Update/"
+issueTrackerURL = "https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/issues"
+logoFile = "assets/salts_inventory_update/icon.png"
+authors = "Salt"
 description = "${description}"
 
 [[mixins]]

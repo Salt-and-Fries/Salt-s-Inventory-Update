@@ -60,17 +60,25 @@ public final class WindowedInventoryClient {
     }
 
     private static void registerClientCommands() {
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
-            ClientCommands.literal("salts_inventory")
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            dispatcher.register(ClientCommands.literal("salts_inventory")
                 .then(ClientCommands.literal("config").executes(context -> {
                     Minecraft minecraft = Minecraft.getInstance();
-                    minecraft.execute(() -> {
-                        SaltsInventoryConfig.reload();
-                        minecraft.gui.setScreen(new SaltsInventoryConfigScreen(minecraft.gui.screen()));
-                    });
+                    minecraft.execute(() -> minecraft.gui.setScreen(createConfigScreen(minecraft.gui.screen())));
                     return 1;
-                }))
-        ));
+                })));
+            dispatcher.register(ClientCommands.literal("saltsinventory")
+                .then(ClientCommands.literal("config").executes(context -> {
+                    Minecraft minecraft = Minecraft.getInstance();
+                    minecraft.execute(() -> minecraft.gui.setScreen(createConfigScreen(minecraft.gui.screen())));
+                    return 1;
+                })));
+        });
+    }
+
+    public static Screen createConfigScreen(Screen previousScreen) {
+        SaltsInventoryConfig.reload();
+        return new SaltsInventoryConfigScreen(previousScreen);
     }
 
     private static void initializeFunctionalTests() {

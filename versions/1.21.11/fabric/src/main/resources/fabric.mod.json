@@ -8,17 +8,37 @@
   "authors": [
     "Salt"
   ],
+  "icon": "assets/salts_inventory_update/icon.png",
+  "contact": {
+    "homepage": "https://salt-and-fries.github.io/Salt-s-Inventory-Update/",
+    "sources": "https://github.com/Salt-and-Fries/Salt-s-Inventory-Update",
+    "issues": "https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/issues",
+    "discord": "https://discord.gg/kfdE9gGGxP"
+  },
   "entrypoints": {
     "main": [
       "com.salts_inventory_update.SaltsInventoryUpdateFabric"
     ],
     "client": [
       "com.salts_inventory_update.SaltsInventoryUpdateFabricClient"
+    ],
+    "modmenu": [
+      "com.salts_inventory_update.compat.modmenu.SaltsInventoryModMenu"
     ]
   },
   "mixins": [
     "${mod_id}.mixins.json"
   ],
+  "custom": {
+    "modmenu": {
+      "links": {
+        "salts_inventory_update.modmenu.discord": "https://discord.gg/kfdE9gGGxP",
+        "salts_inventory_update.modmenu.api": "https://salt-and-fries.github.io/Salt-s-Inventory-Update/",
+        "salts_inventory_update.modmenu.sources": "https://github.com/Salt-and-Fries/Salt-s-Inventory-Update",
+        "salts_inventory_update.modmenu.donate": "https://www.paypal.com/donate/?business=ERE5F32WV4NWN&no_recurring=1&currency_code=USD"
+      }
+    }
+  },
   "depends": {
     "fabricloader": ">=${fabric_loader_version}",
     "minecraft": "${minecraft_version}",

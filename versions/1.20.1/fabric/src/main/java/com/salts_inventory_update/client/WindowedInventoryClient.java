@@ -70,14 +70,28 @@ public final class WindowedInventoryClient {
     }
 
     private static void registerClientCommands() {
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
-            ClientCommandManager.literal("salts_inventory")
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            dispatcher.register(ClientCommandManager.literal("salts_inventory")
                 .then(ClientCommandManager.literal("config").executes(context -> {
-                    Minecraft minecraft = Minecraft.getInstance();
-                    minecraft.execute(() -> pendingConfigScreenOpenTicks = 2);
+                    scheduleConfigScreenOpen();
                     return 1;
-                }))
-        ));
+                })));
+            dispatcher.register(ClientCommandManager.literal("saltsinventory")
+                .then(ClientCommandManager.literal("config").executes(context -> {
+                    scheduleConfigScreenOpen();
+                    return 1;
+                })));
+        });
+    }
+
+    public static void scheduleConfigScreenOpen() {
+        Minecraft minecraft = Minecraft.getInstance();
+        minecraft.execute(() -> pendingConfigScreenOpenTicks = 2);
+    }
+
+    public static Screen createConfigScreen(Screen previousScreen) {
+        SaltsInventoryConfig.reload();
+        return new SaltsInventoryConfigScreen(previousScreen);
     }
 
     private static void initializeFunctionalTests() {
@@ -174,9 +188,8 @@ public final class WindowedInventoryClient {
             return;
         }
 
-        SaltsInventoryConfig.reload();
         Screen previousScreen = minecraft.screen instanceof ChatScreen || minecraft.screen instanceof SaltsInventoryConfigScreen ? null : minecraft.screen;
-        minecraft.setScreen(new SaltsInventoryConfigScreen(previousScreen));
+        minecraft.setScreen(createConfigScreen(previousScreen));
     }
 
     public static void extractPassiveGhostWindows(GuiGraphicsExtractor graphics) {

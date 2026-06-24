@@ -33,7 +33,7 @@ import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 
-import com.salts_inventory_update.SaltsInventoryUpdate;
+import com.salts_inventory_update.debug.DesktopDebug;
 
 public final class GuiGraphicsExtractor {
     private static final Set<String> LOGGED_TEXTURE_LOOKUPS = ConcurrentHashMap.newKeySet();
@@ -357,18 +357,18 @@ public final class GuiGraphicsExtractor {
         }
 
         if (id.getPath().startsWith("textures/atlas/")) {
-            SaltsInventoryUpdate.LOGGER.info("[desktop-textures] {} runtime-atlas {}", kind, id);
+            DesktopDebug.log("texture {} runtime-atlas {}", kind, id);
             return;
         }
 
         boolean found = resourceExists(id);
         if (found) {
-            SaltsInventoryUpdate.LOGGER.info("[desktop-textures] {} found {}", kind, id);
+            DesktopDebug.log("texture {} found {}", kind, id);
             return;
         }
 
         if (isTexturePath(id)) {
-            SaltsInventoryUpdate.LOGGER.warn("[desktop-textures] {} MISSING {}", kind, id);
+            DesktopDebug.log("texture {} missing {}", kind, id);
             return;
         }
 
@@ -377,8 +377,8 @@ public final class GuiGraphicsExtractor {
             "textures/gui/sprites/" + id.getPath() + ".png"
         );
         boolean guiSpriteFound = resourceExists(guiSpriteTexture);
-        SaltsInventoryUpdate.LOGGER.warn(
-            "[desktop-textures] {} MISSING {}; gui-sprite candidate {} {}",
+        DesktopDebug.log(
+            "texture {} missing {}; gui-sprite candidate {} {}",
             kind,
             id,
             guiSpriteTexture,
@@ -391,7 +391,7 @@ public final class GuiGraphicsExtractor {
         ResourceLocation name = sprite.contents().name();
         String key = "atlas-sprite:" + atlas + ":" + name;
         if (LOGGED_TEXTURE_LOOKUPS.add(key)) {
-            SaltsInventoryUpdate.LOGGER.info("[desktop-textures] atlas-sprite found atlas={} sprite={}", atlas, name);
+            DesktopDebug.log("texture atlas-sprite found atlas={} sprite={}", atlas, name);
         }
     }
 
@@ -399,7 +399,7 @@ public final class GuiGraphicsExtractor {
         try {
             return Minecraft.getInstance().getResourceManager().getResource(id).isPresent();
         } catch (RuntimeException exception) {
-            SaltsInventoryUpdate.LOGGER.warn("[desktop-textures] lookup failed for {}", id, exception);
+            DesktopDebug.log("texture lookup failed for {} reason={}", id, exception.toString());
             return false;
         }
     }
@@ -417,8 +417,8 @@ public final class GuiGraphicsExtractor {
 
         String key = "legacy-sprite:" + id;
         if (LOGGED_TEXTURE_LOOKUPS.add(key)) {
-            SaltsInventoryUpdate.LOGGER.info(
-                "[desktop-textures] sprite legacy {} -> {} @ {},{} {}x{}",
+            DesktopDebug.log(
+                "texture sprite legacy {} -> {} @ {},{} {}x{}",
                 id,
                 sprite.texture,
                 sprite.u,

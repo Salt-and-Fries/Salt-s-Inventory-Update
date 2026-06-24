@@ -11,6 +11,14 @@ plugins {
 group = "com.salts_inventory_update"
 version = "0.1.0"
 
+val modMenuVersions = mapOf(
+    "1.20.1" to "7.2.2",
+    "1.21.1" to "11.0.4",
+    "1.21.11" to "17.0.0",
+    "26.1.2" to "19.0.0-alpha.1",
+    "26.2" to "20.0.0-beta.4"
+)
+
 val includeFunctionalTests = providers.gradleProperty("includeFunctionalTests")
     .map { it.equals("true", ignoreCase = true) }
     .orElse(false)
@@ -42,11 +50,19 @@ fun SourceSet.addFunctionalTestSourceDir() {
     }
 }
 
+fun SourceSet.addFabricModMenuSourceDir() {
+    val sourceDir = rootProject.file("versions/fabric-modmenu/src/main/java")
+    val currentDirs = java.srcDirs.map { it.canonicalFile }.toMutableSet()
+    if (currentDirs.add(sourceDir.canonicalFile)) {
+        java.srcDir(sourceDir)
+    }
+}
+
 prism {
     metadata {
         modId = "salts_inventory_update"
         name = "Salt's Inventory Update"
-        description = "Inventory quality-of-life updates for Minecraft."
+        description = "Salt's Inventory Update upgrades Minecraft inventories with expandable player storage and desktop-style movable container windows. Move, pin, ghost-pin, resize, and snap supported inventory screens, then tune the experience with /saltsinventory config or the mod-list config button. API hooks are available for add-ons and supported screens.\\n\\nDiscord: https://discord.gg/kfdE9gGGxP\\nAPI: https://salt-and-fries.github.io/Salt-s-Inventory-Update/\\nSource: https://github.com/Salt-and-Fries/Salt-s-Inventory-Update\\nDonate: https://www.paypal.com/donate/?business=ERE5F32WV4NWN&no_recurring=1&currency_code=USD"
         license = "MIT"
     }
 
@@ -132,6 +148,13 @@ prism {
 
 subprojects {
     val minecraftVersion = parent?.name
+    repositories {
+        maven {
+            name = "Terraformers"
+            url = uri("https://maven.terraformersmc.com/releases/")
+        }
+    }
+
     tasks.withType<JavaExec>().configureEach {
         if (name == "runClient") {
             val runTask = this
@@ -162,6 +185,30 @@ subprojects {
                 manifest {
                     attributes("MixinConfigs" to "salts_inventory_update.mixins.json")
                 }
+            }
+        }
+    }
+
+    if (minecraftVersion != null && name == "fabric") {
+        afterEvaluate {
+            extensions.findByType(SourceSetContainer::class.java)?.named("main") {
+                addFabricModMenuSourceDir()
+            }
+            modMenuVersions[minecraftVersion]?.let { modMenuVersion ->
+                val configurationName = if (minecraftVersion.startsWith("26.")) "compileOnly" else "modCompileOnly"
+                if (configurations.findByName(configurationName) != null) {
+                    dependencies.add(configurationName, "com.terraformersmc:modmenu:$modMenuVersion")
+                }
+            }
+        }
+        plugins.withId("java") {
+            extensions.findByType(SourceSetContainer::class.java)?.named("main") {
+                addFabricModMenuSourceDir()
+            }
+        }
+        plugins.withId("java-library") {
+            extensions.findByType(SourceSetContainer::class.java)?.named("main") {
+                addFabricModMenuSourceDir()
             }
         }
     }
@@ -207,6 +254,15 @@ subprojects {
 gradle.projectsEvaluated {
     subprojects {
         val minecraftVersion = parent?.name
+        if (minecraftVersion != null && name == "fabric") {
+            extensions.findByType(SourceSetContainer::class.java)?.named("main") {
+                addFabricModMenuSourceDir()
+            }
+            tasks.named<JavaCompile>("compileJava") {
+                source(rootProject.file("versions/fabric-modmenu/src/main/java"))
+            }
+        }
+
         if (minecraftVersion != null && (name == "forge" || name == "neoforge")) {
             val loaderName = name
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {

@@ -963,7 +963,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         InventoryDesktopScreen screen = getOrCreate(minecraft);
         DesktopDebug.log("client request E inventory desktop={} active={}", screen.desktopId, minecraft.screen == screen);
+        boolean openingInventory = !screen.hasStandaloneWindow(WindowKind.INVENTORY);
         screen.toggleWindow(WindowKind.INVENTORY);
+        if (openingInventory && screen.hasStandaloneWindow(WindowKind.INVENTORY)) {
+            minecraft.getTutorial().onOpenInventory();
+        }
         screen.showIfNeeded(minecraft);
     }
 
@@ -975,7 +979,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         InventoryDesktopScreen screen = getOrCreate(minecraft);
         DesktopDebug.log("client request E creative desktop={} active={}", screen.desktopId, minecraft.screen == screen);
         screen.removeStandaloneWindow(WindowKind.INVENTORY, "creative-inventory-key");
+        boolean openingCreative = !screen.hasStandaloneWindow(WindowKind.CREATIVE);
         screen.toggleWindow(WindowKind.CREATIVE);
+        if (openingCreative && screen.hasStandaloneWindow(WindowKind.CREATIVE)) {
+            minecraft.getTutorial().onOpenInventory();
+        }
         screen.showIfNeeded(minecraft);
     }
 
@@ -3019,6 +3027,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private boolean shouldPassShiftToMovement() {
         return !this.hasWindows() || this.isCameraControlActive();
+    }
+
+    private boolean hasStandaloneWindow(WindowKind kind) {
+        for (InventoryWindow window : this.windows) {
+            if (window.kind == kind && window.session == null && window.legacyMenu == null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void toggleWindow(WindowKind kind) {
