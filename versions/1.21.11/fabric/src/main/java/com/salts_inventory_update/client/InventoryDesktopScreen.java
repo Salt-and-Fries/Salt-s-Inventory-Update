@@ -735,6 +735,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int COLOR_TEXT = 0xFFE8EDF5;
     private static final int COLOR_MUTED_TEXT = 0xFFB3BDCC;
     private static final int COLOR_HOTBAR_HOVER = 0x44000000;
+    private static final int COLOR_DRAG_PREVIEW = 0x80FFFFFF;
     private static final int NORMAL_GUI_TINT = 0xFFFFFFFF;
     private static final int GHOST_ITEM_WASH = 0xC0D0D0D0;
     private static final int GHOST_BACKDROP = 0x40D0D0D0;
@@ -1371,7 +1372,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.renderDesktopHotbarAffordances(graphics, uiMouseX, uiMouseY);
         if (!this.cameraControl) {
             this.updateBundleHover(this.slotAt(mouseX, mouseY));
-            renderCarried(graphics, this.sharedCarried, mouseX, mouseY, this.minecraft);
+            DragCarriedPreview carriedPreview = this.dragCarriedPreview();
+            renderCarried(graphics, carriedPreview.stack(), mouseX, mouseY, this.minecraft, carriedPreview.countText());
             this.extractHoveredTooltip(graphics, mouseX, mouseY);
         } else {
             this.updateBundleHover(null);
@@ -2051,6 +2053,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
         }
 
+        if (!this.canAddDragDistributionSlot(this.dragDistribution, hit)) {
+            DesktopDebug.trace("client pending drag hover ignored desktop={} x={} y={} reason=carried-limit carried={} hit={}", this.desktopId, mouseX, mouseY, this.sharedCarried, this.describeSlotHit(hit));
+            return;
+        }
+
         this.dragDistribution.add(hit);
         DesktopDebug.trace("client pending drag add desktop={} size={} hit={}", this.desktopId, this.dragDistribution.size(), this.describeSlotHit(hit));
     }
@@ -2089,17 +2096,23 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         Slot slot = hit.slot();
-        if (!slot.isActive() || slot.isFake() || !slot.mayPlace(this.sharedCarried)) {
+        if (!slot.isActive()
+            || slot.isFake()
+            || !slot.mayPlace(this.sharedCarried)
+            || !hit.menu().canDragTo(slot)
+            || !AbstractContainerMenu.canItemQuickReplace(slot, this.sharedCarried, true)) {
             return false;
         }
 
-        ItemStack existing = slot.getItem();
-        if (existing.isEmpty()) {
+        return this.dragPlacementCapacity(hit, this.sharedCarried) > 0;
+    }
+
+    private boolean canAddDragDistributionSlot(DragDistribution drag, SlotHit hit) {
+        if (drag.contains(hit) || drag.quickCraftType() == AbstractContainerMenu.QUICKCRAFT_TYPE_CLONE) {
             return true;
         }
 
-        return ItemStack.isSameItemSameComponents(existing, this.sharedCarried)
-            && existing.getCount() < this.creativeSlotMaxStackSize(slot, this.sharedCarried);
+        return this.sharedCarried.getCount() > drag.size();
     }
 
     private void applyDragDistribution(DragDistribution drag) {
@@ -2209,7 +2222,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private int dragPlacementCapacity(SlotHit hit, ItemStack carried) {
         Slot slot = hit.slot();
-        if (!slot.isActive() || slot.isFake() || !slot.mayPlace(carried)) {
+        if (!slot.isActive()
+            || slot.isFake()
+            || !slot.mayPlace(carried)
+            || !hit.menu().canDragTo(slot)
+            || !AbstractContainerMenu.canItemQuickReplace(slot, carried, true)) {
             return 0;
         }
 
@@ -2222,6 +2239,101 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return 0;
         }
         return Math.max(0, max - existing.getCount());
+    }
+
+    private DragCarriedPreview dragCarriedPreview() {
+        DragDistribution drag = this.activeDragPreview();
+        if (drag == null) {
+            return new DragCarriedPreview(this.sharedCarried, null);
+        }
+
+        List<SlotHit> targets = this.previewDragTargets(drag);
+        if (targets.size() <= 1) {
+            return new DragCarriedPreview(this.sharedCarried, null);
+        }
+
+        int remaining = this.dragPreviewRemaining(drag, targets);
+        ItemStack stack = remaining <= 0 ? this.sharedCarried.copyWithCount(1) : this.sharedCarried.copyWithCount(remaining);
+        String countText = remaining <= 0 ? ChatFormatting.YELLOW + "0" : null;
+        return new DragCarriedPreview(stack, countText);
+    }
+
+    private @Nullable DragSlotPreview dragSlotPreview(Slot slot) {
+        DragDistribution drag = this.activeDragPreview();
+        if (drag == null) {
+            return null;
+        }
+
+        SlotHit hit = drag.hitFor(slot);
+        if (hit == null || !this.canDragDistributeTo(hit)) {
+            return null;
+        }
+
+        List<SlotHit> targets = this.previewDragTargets(drag);
+        if (targets.size() <= 1) {
+            return null;
+        }
+
+        return this.dragSlotPreview(hit, drag.quickCraftType(), this.dragPreviewSlots(targets));
+    }
+
+    private @Nullable DragDistribution activeDragPreview() {
+        if (this.dragDistribution == null || this.dragDistribution.size() <= 1 || this.sharedCarried.isEmpty()) {
+            return null;
+        }
+
+        return this.dragDistribution;
+    }
+
+    private List<SlotHit> previewDragTargets(DragDistribution drag) {
+        List<SlotHit> targets = new ArrayList<>();
+        for (SlotHit hit : drag.slots()) {
+            if (this.canDragDistributeTo(hit)) {
+                targets.add(hit);
+            }
+        }
+        return targets;
+    }
+
+    private Set<Slot> dragPreviewSlots(List<SlotHit> targets) {
+        Set<Slot> slots = new HashSet<>();
+        for (SlotHit hit : targets) {
+            slots.add(hit.slot());
+        }
+        return slots;
+    }
+
+    private int dragPreviewRemaining(DragDistribution drag, List<SlotHit> targets) {
+        if (drag.quickCraftType() == AbstractContainerMenu.QUICKCRAFT_TYPE_CLONE) {
+            return this.sharedCarried.getMaxStackSize();
+        }
+
+        int remaining = this.sharedCarried.getCount();
+        Set<Slot> targetSlots = this.dragPreviewSlots(targets);
+        for (SlotHit hit : targets) {
+            DragSlotPreview preview = this.dragSlotPreview(hit, drag.quickCraftType(), targetSlots);
+            if (preview == null) {
+                continue;
+            }
+
+            int existing = hit.slot().getItem().isEmpty() ? 0 : hit.slot().getItem().getCount();
+            remaining -= Math.max(0, preview.stack().getCount() - existing);
+        }
+        return Math.max(0, remaining);
+    }
+
+    private @Nullable DragSlotPreview dragSlotPreview(SlotHit hit, int quickCraftType, Set<Slot> targetSlots) {
+        ItemStack existing = hit.slot().getItem();
+        int existingCount = existing.isEmpty() ? 0 : existing.getCount();
+        int max = this.creativeSlotMaxStackSize(hit.slot(), this.sharedCarried);
+        int previewCount = AbstractContainerMenu.getQuickCraftPlaceCount(targetSlots, quickCraftType, this.sharedCarried) + existingCount;
+        String countText = null;
+        if (previewCount > max) {
+            previewCount = max;
+            countText = ChatFormatting.YELLOW.toString() + max;
+        }
+
+        return new DragSlotPreview(this.sharedCarried.copyWithCount(previewCount), countText);
     }
 
     private void slotClicked(SlotHit hit, int button, ClickType input) {
@@ -10030,11 +10142,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void renderSlot(GuiGraphicsExtractor graphics, Slot slot, int x, int y, int mouseX, int mouseY) {
         boolean hovered = contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE);
+        DragSlotPreview dragPreview = this.dragSlotPreview(slot);
         renderSlotBackground(graphics, x, y);
         if (hovered && slot.isHighlightable()) {
             renderSlotHighlightBack(graphics, x, y);
         }
-        if (slot.hasItem()) {
+        if (dragPreview != null) {
+            graphics.fill(x, y, x + SLOT_ITEM_SIZE, y + SLOT_ITEM_SIZE, COLOR_DRAG_PREVIEW);
+            this.renderItemStack(graphics, dragPreview.stack(), x, y, slot.index, dragPreview.countText());
+        } else if (slot.hasItem()) {
             this.renderItemStack(graphics, slot.getItem(), x, y, slot.index);
         } else if (slot.getNoItemIcon() != null) {
             this.blitSprite(graphics, slot.getNoItemIcon(), x, y, SLOT_ITEM_SIZE, SLOT_ITEM_SIZE);
@@ -10055,12 +10171,20 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void renderItemStack(GuiGraphicsExtractor graphics, ItemStack stack, int x, int y, int seed) {
+        this.renderItemStack(graphics, stack, x, y, seed, null);
+    }
+
+    private void renderItemStack(GuiGraphicsExtractor graphics, ItemStack stack, int x, int y, int seed, @Nullable String countText) {
         if (stack.isEmpty()) {
             return;
         }
 
         graphics.item(stack, x, y, seed);
-        graphics.itemDecorations(this.font, stack, x, y);
+        if (countText == null) {
+            graphics.itemDecorations(this.font, stack, x, y);
+        } else {
+            graphics.itemDecorations(this.font, stack, x, y, countText);
+        }
         this.renderGhostItemWash(graphics, x, y);
     }
 
@@ -10160,27 +10284,28 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int hotbarY = hotbarY();
         this.blitSprite(graphics, HOTBAR_OFFHAND_LEFT_SPRITE, offhandX - 3, hotbarY - 4, 29, 24);
         boolean offhandHovered = offhandSlot != null && contains(mouseX, mouseY, offhandX - 1, hotbarY - 1, SLOT_SIZE, SLOT_SIZE);
-        if (offhandHovered) {
-            graphics.fill(offhandX, hotbarY, offhandX + SLOT_ITEM_SIZE, hotbarY + SLOT_ITEM_SIZE, COLOR_HOTBAR_HOVER);
-        }
-        if (offhandSlot != null && offhandSlot.hasItem()) {
-            this.renderItemStack(graphics, offhandSlot.getItem(), offhandX, hotbarY, offhandSlot.index);
+        if (offhandSlot != null) {
+            this.renderHotbarOverlaySlot(graphics, offhandSlot, offhandX, hotbarY, offhandHovered, true);
         }
 
         for (Slot slot : this.hotbarSlots()) {
             int x = hotbarSlotX(slot.getContainerSlot());
-            if (contains(mouseX, mouseY, x - 1, hotbarY - 1, SLOT_SIZE, SLOT_SIZE)) {
-                this.renderHotbarHover(graphics, slot, x, hotbarY);
-                return;
-            }
+            boolean hovered = contains(mouseX, mouseY, x - 1, hotbarY - 1, SLOT_SIZE, SLOT_SIZE);
+            this.renderHotbarOverlaySlot(graphics, slot, x, hotbarY, hovered, false);
         }
 
         // Offhand hover is handled above so the item always renders over the frame.
     }
 
-    private void renderHotbarHover(GuiGraphicsExtractor graphics, Slot slot, int x, int y) {
-        graphics.fill(x, y, x + SLOT_ITEM_SIZE, y + SLOT_ITEM_SIZE, COLOR_HOTBAR_HOVER);
-        if (slot.hasItem()) {
+    private void renderHotbarOverlaySlot(GuiGraphicsExtractor graphics, Slot slot, int x, int y, boolean hovered, boolean renderExistingWhenIdle) {
+        DragSlotPreview dragPreview = this.dragSlotPreview(slot);
+        if (hovered) {
+            graphics.fill(x, y, x + SLOT_ITEM_SIZE, y + SLOT_ITEM_SIZE, COLOR_HOTBAR_HOVER);
+        }
+        if (dragPreview != null) {
+            graphics.fill(x, y, x + SLOT_ITEM_SIZE, y + SLOT_ITEM_SIZE, COLOR_DRAG_PREVIEW);
+            this.renderItemStack(graphics, dragPreview.stack(), x, y, slot.index, dragPreview.countText());
+        } else if ((hovered || renderExistingWhenIdle) && slot.hasItem()) {
             this.renderItemStack(graphics, slot.getItem(), x, y, slot.index);
         }
     }
@@ -10367,11 +10492,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         );
     }
 
-    private static void renderCarried(GuiGraphicsExtractor graphics, ItemStack carried, int mouseX, int mouseY, Minecraft minecraft) {
+    private static void renderCarried(GuiGraphicsExtractor graphics, ItemStack carried, int mouseX, int mouseY, Minecraft minecraft, @Nullable String countText) {
         if (!carried.isEmpty()) {
             graphics.nextStratum();
             graphics.item(carried, mouseX - 8, mouseY - 8);
-            graphics.itemDecorations(minecraft.font, carried, mouseX - 8, mouseY - 8);
+            if (countText == null) {
+                graphics.itemDecorations(minecraft.font, carried, mouseX - 8, mouseY - 8);
+            } else {
+                graphics.itemDecorations(minecraft.font, carried, mouseX - 8, mouseY - 8, countText);
+            }
         }
     }
 
@@ -10617,6 +10746,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private record PendingSlotClick(SlotHit hit, int button, int quickCraftType) {
     }
 
+    private record DragSlotPreview(ItemStack stack, @Nullable String countText) {
+    }
+
+    private record DragCarriedPreview(ItemStack stack, @Nullable String countText) {
+    }
+
     private record SlotKey(int sessionId, int slotId) {
         private static SlotKey of(SlotHit hit) {
             return new SlotKey(hit.sessionId(), hit.slotId());
@@ -10643,6 +10778,20 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         private void add(SlotHit hit) {
             this.slots.putIfAbsent(SlotKey.of(hit), hit);
+        }
+
+        private boolean contains(SlotHit hit) {
+            return this.slots.containsKey(SlotKey.of(hit));
+        }
+
+        private @Nullable SlotHit hitFor(Slot slot) {
+            for (SlotHit hit : this.slots.values()) {
+                if (hit.slot() == slot) {
+                    return hit;
+                }
+            }
+
+            return null;
         }
 
         private int size() {
@@ -11055,10 +11204,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
 
             boolean hovered = contains(this.mouseX, this.mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE);
+            DragSlotPreview dragPreview = InventoryDesktopScreen.this.dragSlotPreview(slot);
             if (hovered && slot.isHighlightable()) {
                 renderSlotHighlightBack(this.graphics(), x, y);
             }
-            if (slot.hasItem()) {
+            if (dragPreview != null) {
+                this.graphics().fill(x, y, x + SLOT_ITEM_SIZE, y + SLOT_ITEM_SIZE, COLOR_DRAG_PREVIEW);
+                InventoryDesktopScreen.this.renderItemStack(this.graphics(), dragPreview.stack(), x, y, slot.index, dragPreview.countText());
+            } else if (slot.hasItem()) {
                 InventoryDesktopScreen.this.renderItemStack(this.graphics(), slot.getItem(), x, y, slot.index);
             } else if (slot.getNoItemIcon() != null) {
                 InventoryDesktopScreen.this.blitSprite(this.graphics(), slot.getNoItemIcon(), x, y, SLOT_ITEM_SIZE, SLOT_ITEM_SIZE);
