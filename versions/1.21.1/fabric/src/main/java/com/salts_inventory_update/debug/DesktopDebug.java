@@ -1,6 +1,7 @@
 package com.salts_inventory_update.debug;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
+import com.salts_inventory_update.SaltsInventoryRuntime;
 
 public final class DesktopDebug {
     public static final boolean DEBUG = Boolean.getBoolean("salts_inventory_update.desktopDebug");
@@ -10,11 +11,11 @@ public final class DesktopDebug {
     }
 
     public static boolean enabled() {
-        return DEBUG || TRACE;
+        return DEBUG || TRACE || SaltsInventoryRuntime.detailedConsoleLogs();
     }
 
     public static boolean traceEnabled() {
-        return TRACE;
+        return TRACE || SaltsInventoryRuntime.detailedConsoleLogs();
     }
 
     public static void log(String message, Object... args) {
@@ -24,8 +25,14 @@ public final class DesktopDebug {
     }
 
     public static void trace(String message, Object... args) {
-        if (TRACE) {
+        if (traceEnabled()) {
             SaltsInventoryUpdate.LOGGER.info("[desktop-trace] " + message, args);
+        }
+    }
+
+    public static void detail(String message, Object... args) {
+        if (SaltsInventoryRuntime.detailedConsoleLogs()) {
+            SaltsInventoryUpdate.LOGGER.info("[desktop-detail] " + message, args);
         }
     }
 

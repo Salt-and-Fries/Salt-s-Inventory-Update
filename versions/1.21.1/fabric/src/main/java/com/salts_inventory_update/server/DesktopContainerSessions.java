@@ -32,17 +32,22 @@ import net.minecraft.world.entity.animal.horse.Llama;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.StackedContents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.AbstractFurnaceMenu;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.BeaconMenu;
+import net.minecraft.world.inventory.CartographyTableMenu;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.ContainerSynchronizer;
 import net.minecraft.world.inventory.CrafterMenu;
+import net.minecraft.world.inventory.GrindstoneMenu;
 import net.minecraft.world.inventory.HorseInventoryMenu;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.RecipeBookMenu;
+import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.inventory.StonecutterMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
@@ -94,6 +99,13 @@ public final class DesktopContainerSessions {
     private static final int DORMANT_GHOST_REOPEN_INTERVAL_TICKS = 10;
     private static final int CRAFTER_INPUT_SLOT_COUNT = 9;
     private static final int CRAFTER_SLOT_STATE_ENABLED_FLAG = 16;
+    private static final int FURNACE_RESULT_SLOT = 2;
+    private static final int ANVIL_RESULT_SLOT = 2;
+    private static final int CARTOGRAPHY_RESULT_SLOT = 2;
+    private static final int GRINDSTONE_RESULT_SLOT = 2;
+    private static final int MERCHANT_RESULT_SLOT = 2;
+    private static final int SMITHING_RESULT_SLOT = 3;
+    private static final int STONECUTTER_RESULT_SLOT = 1;
     private static final int BEACON_EFFECT_ID_MASK = 0xFFFF;
     private static final int BEACON_SECONDARY_EFFECT_SHIFT = 16;
     private static final Map<UUID, PlayerSessions> PLAYERS = new LinkedHashMap<>();
@@ -362,6 +374,12 @@ public final class DesktopContainerSessions {
 
     private static boolean isDesktopSupportedMenu(AbstractContainerMenu menu) {
         MenuType<?> type = menu.getType();
+        ResourceLocation key = BuiltInRegistries.MENU.getKey(type);
+        if (key != null && SaltsInventoryRuntime.isForcedContainerWindow(key.toString())) {
+            DesktopDebug.log("server capture force-enabled menu={}", key);
+            return true;
+        }
+
         if (isKnownVanillaDesktopMenu(type)) {
             return true;
         }
@@ -546,12 +564,13 @@ public final class DesktopContainerSessions {
             );
         }
 
-        if (isCraftingResultSource(source)) {
+        if (isVanillaResultSource(source, payload.sourceSlotIndex())) {
             DesktopDebug.trace(
-                "server quick move vanilla crafting result player={} sourceSession={} sourceSlot={}",
+                "server quick move vanilla result player={} sourceSession={} sourceSlot={} menu={}",
                 player.getName().getString(),
                 payload.sourceSessionId(),
-                payload.sourceSlotIndex()
+                payload.sourceSlotIndex(),
+                source.menu.getClass().getSimpleName()
             );
             if (!carriedBeforeQuickMove.isEmpty()) {
                 setSharedCarried(player, sessions, ItemStack.EMPTY);
@@ -674,8 +693,32 @@ public final class DesktopContainerSessions {
         return true;
     }
 
-    private static boolean isCraftingResultSource(SlotSource source) {
-        return source.menu instanceof RecipeBookMenu<?, ?> recipeMenu && source.menu.slots.indexOf(source.slot) == recipeMenu.getResultSlotIndex();
+    private static boolean isVanillaResultSource(SlotSource source, int slotIndex) {
+        if (source.menu instanceof RecipeBookMenu<?, ?> recipeMenu && source.menu.slots.indexOf(source.slot) == recipeMenu.getResultSlotIndex()) {
+            return true;
+        }
+        if (source.menu instanceof AbstractFurnaceMenu) {
+            return slotIndex == FURNACE_RESULT_SLOT;
+        }
+        if (source.menu instanceof AnvilMenu) {
+            return slotIndex == ANVIL_RESULT_SLOT;
+        }
+        if (source.menu instanceof CartographyTableMenu) {
+            return slotIndex == CARTOGRAPHY_RESULT_SLOT;
+        }
+        if (source.menu instanceof GrindstoneMenu) {
+            return slotIndex == GRINDSTONE_RESULT_SLOT;
+        }
+        if (source.menu instanceof MerchantMenu) {
+            return slotIndex == MERCHANT_RESULT_SLOT;
+        }
+        if (source.menu instanceof SmithingMenu) {
+            return slotIndex == SMITHING_RESULT_SLOT;
+        }
+        if (source.menu instanceof StonecutterMenu) {
+            return slotIndex == STONECUTTER_RESULT_SLOT;
+        }
+        return false;
     }
 
     private static void button(ServerPlayer player, DesktopButtonPayload payload) {

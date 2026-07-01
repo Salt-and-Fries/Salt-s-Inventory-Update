@@ -749,6 +749,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private static @Nullable InventoryDesktopScreen singleton;
     private static final Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> VANILLA_SCREEN_CONSTRUCTORS = new LinkedHashMap<>();
+    private static final Set<MenuType<?>> FORCED_CONTAINER_SCREENS = new HashSet<>();
     private static Field menuScreensField;
     private static boolean internalApiDefinitionsRegistered;
     private static int nextDesktopId = 1;
@@ -886,7 +887,67 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         registerContainerScreen(MenuType.SMOKER, constructor);
         registerContainerScreen(MenuType.CARTOGRAPHY_TABLE, constructor);
         registerContainerScreen(MenuType.STONECUTTER, constructor);
+        syncForcedContainerScreens();
         DesktopDebug.probe("client registerContainerScreens complete");
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static void syncForcedContainerScreens() {
+        Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> screens = getMenuScreenConstructors();
+        MenuScreens.ScreenConstructor constructor = (menu, inventory, title) ->
+            InventoryDesktopScreen.createContainerFallbackScreen(Minecraft.getInstance(), (AbstractContainerMenu) menu, inventory, title);
+
+        FORCED_CONTAINER_SCREENS.removeIf(menuType -> {
+            ResourceLocation key = BuiltInRegistries.MENU.getKey(menuType);
+            boolean stillForced = key != null && SaltsInventoryConfig.isForcedContainerWindow(key.toString());
+            if (!stillForced && !isBuiltInDesktopScreenMenu(menuType)) {
+                MenuScreens.ScreenConstructor<?, ?> original = VANILLA_SCREEN_CONSTRUCTORS.get(menuType);
+                if (original == null) {
+                    screens.remove(menuType);
+                } else {
+                    screens.put(menuType, original);
+                }
+            }
+            return !stillForced;
+        });
+
+        for (MenuType<?> menuType : BuiltInRegistries.MENU) {
+            ResourceLocation key = BuiltInRegistries.MENU.getKey(menuType);
+            if (key == null || !SaltsInventoryConfig.isForcedContainerWindow(key.toString())) {
+                continue;
+            }
+            VANILLA_SCREEN_CONSTRUCTORS.putIfAbsent(menuType, screens.get(menuType));
+            screens.put(menuType, constructor);
+            if (FORCED_CONTAINER_SCREENS.add(menuType)) {
+                DesktopDebug.log("client forced container screen registered menu={}", key);
+            }
+        }
+    }
+
+    private static boolean isBuiltInDesktopScreenMenu(MenuType<?> menuType) {
+        return menuType == MenuType.GENERIC_9x1
+            || menuType == MenuType.GENERIC_9x2
+            || menuType == MenuType.GENERIC_9x3
+            || menuType == MenuType.GENERIC_9x4
+            || menuType == MenuType.GENERIC_9x5
+            || menuType == MenuType.GENERIC_9x6
+            || menuType == MenuType.GENERIC_3x3
+            || menuType == MenuType.ANVIL
+            || menuType == MenuType.BEACON
+            || menuType == MenuType.BLAST_FURNACE
+            || menuType == MenuType.BREWING_STAND
+            || menuType == MenuType.CRAFTING
+            || menuType == MenuType.ENCHANTMENT
+            || menuType == MenuType.FURNACE
+            || menuType == MenuType.GRINDSTONE
+            || menuType == MenuType.HOPPER
+            || menuType == MenuType.LOOM
+            || menuType == MenuType.MERCHANT
+            || menuType == MenuType.SHULKER_BOX
+            || menuType == MenuType.SMITHING
+            || menuType == MenuType.SMOKER
+            || menuType == MenuType.CARTOGRAPHY_TABLE
+            || menuType == MenuType.STONECUTTER;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -972,6 +1033,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         Component title
     ) {
         MenuType<?> menuType = safeMenuType(menu);
+        ResourceLocation menuKey = menuType == null ? null : BuiltInRegistries.MENU.getKey(menuType);
+        if (menuKey != null && SaltsInventoryConfig.isForcedContainerWindow(menuKey.toString())) {
+            DesktopDebug.log(
+                "client forced desktop window container={} menu={} title={} serverSessions={}",
+                menu.containerId,
+                menuKey,
+                title.getString(),
+                DesktopContainerClient.canUseServerSessions()
+            );
+            return InventoryDesktopScreen.addLegacyContainerWindow(minecraft, menu, playerInventory, title);
+        }
+
         MenuScreens.ScreenConstructor vanillaConstructor = menuType == null ? null : VANILLA_SCREEN_CONSTRUCTORS.get(menuType);
         if (vanillaConstructor != null) {
             if (fallbackProbeLogs < 32) {
@@ -7304,6 +7377,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         AbstractContainerMenu menu = window.containerMenu();
         int minX = window.containerMinSlotX();
         int minY = window.containerMinSlotY();
+        DesktopDebug.detail(
+            "client render container desktop={} window={} menu={} slots={} api={} resizable={} minimized={} ghosted={} mouse={},{}",
+            this.desktopId,
+            window.debugName(),
+            safeMenuKey(menu),
+            slots.size(),
+            definitionName(window.apiDefinition),
+            this.isResizableStorageWindow(window),
+            window.minimized,
+            window.ghosted,
+            mouseX,
+            mouseY
+        );
 
         if (window.session != null && window.session.isMountSession()) {
             this.renderMountWindow(graphics, window, slots, menu, mouseX, mouseY);
@@ -7390,7 +7476,23 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         try {
+            DesktopDebug.detail(
+                "client api render start desktop={} window={} menu={} definition={} mouse={},{}",
+                this.desktopId,
+                window.debugName(),
+                safeMenuKey(window.containerMenu()),
+                definitionName(window.apiDefinition),
+                mouseX,
+                mouseY
+            );
             ((DesktopWindowDefinition) window.apiDefinition).render(this.apiContext(window, graphics, mouseX, mouseY));
+            DesktopDebug.detail(
+                "client api render end desktop={} window={} menu={} definition={}",
+                this.desktopId,
+                window.debugName(),
+                safeMenuKey(window.containerMenu()),
+                definitionName(window.apiDefinition)
+            );
             return true;
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api render failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
@@ -10190,6 +10292,20 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private void renderSlot(GuiGraphicsExtractor graphics, Slot slot, int x, int y, int mouseX, int mouseY) {
         boolean hovered = contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE);
         DragSlotPreview dragPreview = this.dragSlotPreview(slot);
+        if (hovered) {
+            DesktopDebug.detail(
+                "client render slot desktop={} slotIndex={} containerSlot={} x={} y={} active={} highlightable={} stack={} dragPreview={}",
+                this.desktopId,
+                slot.index,
+                slot.getContainerSlot(),
+                x,
+                y,
+                slot.isActive(),
+                slot.isHighlightable(),
+                slot.getItem(),
+                dragPreview == null ? "none" : dragPreview.stack()
+            );
+        }
         renderSlotBackground(graphics, x, y);
         if (hovered && slot.isHighlightable()) {
             renderSlotHighlightBack(graphics, x, y);
@@ -11248,6 +11364,20 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
             boolean hovered = contains(this.mouseX, this.mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE);
             DragSlotPreview dragPreview = InventoryDesktopScreen.this.dragSlotPreview(slot);
+            if (hovered) {
+                DesktopDebug.detail(
+                    "client api textureless slot render desktop={} window={} menu={} menuSlot={} containerSlot={} x={} y={} stack={} dragPreview={}",
+                    InventoryDesktopScreen.this.desktopId,
+                    this.window.debugName(),
+                    safeMenuKey(this.window.containerMenu()),
+                    menuSlotId,
+                    slot.getContainerSlot(),
+                    x,
+                    y,
+                    slot.getItem(),
+                    dragPreview == null ? "none" : dragPreview.stack()
+                );
+            }
             if (hovered && slot.isHighlightable()) {
                 renderSlotHighlightBack(this.graphics(), x, y);
             }

@@ -91,6 +91,7 @@ public final class WindowedInventoryClient {
 
     public static Screen createConfigScreen(Screen previousScreen) {
         SaltsInventoryConfig.reload();
+        InventoryDesktopScreen.syncForcedContainerScreens();
         return new SaltsInventoryConfigScreen(previousScreen);
     }
 

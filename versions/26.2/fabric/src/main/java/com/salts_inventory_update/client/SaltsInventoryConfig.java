@@ -5,6 +5,10 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.function.Consumer;
 
 import com.google.gson.Gson;
@@ -44,7 +48,7 @@ public final class SaltsInventoryConfig {
         }
 
         current = loaded == null ? new ConfigFile() : loaded.normalized();
-        SaltsInventoryRuntime.setConfiguredEnabled(current.enableMod);
+        applyRuntimeState(current);
         save();
         return current;
     }
@@ -58,7 +62,7 @@ public final class SaltsInventoryConfig {
         ConfigFile config = get();
         updater.accept(config);
         current = config.normalized();
-        SaltsInventoryRuntime.setConfiguredEnabled(current.enableMod);
+        applyRuntimeState(current);
         save();
     }
 
@@ -73,9 +77,30 @@ public final class SaltsInventoryConfig {
         }
     }
 
+    public static boolean isForcedContainerWindow(String menuId) {
+        return get().forcedContainerWindows.contains(menuId);
+    }
+
+    public static void setForcedContainerWindow(String menuId, boolean enabled) {
+        update(config -> {
+            if (enabled) {
+                config.forcedContainerWindows.add(menuId);
+            } else {
+                config.forcedContainerWindows.remove(menuId);
+            }
+        });
+    }
+
+    private static void applyRuntimeState(ConfigFile config) {
+        SaltsInventoryRuntime.setConfiguredEnabled(config.enableMod);
+        SaltsInventoryRuntime.setDetailedConsoleLogs(config.enableDetailedConsoleLogs);
+        SaltsInventoryRuntime.setForcedContainerWindowIds(config.forcedContainerWindows);
+    }
+
     public static final class ConfigFile {
         public boolean enableMod = true;
         public boolean expandableInventory = false;
+        public boolean enableDetailedConsoleLogs = false;
         public String windowOpeningStyle = WindowOpeningStyle.AROUND_INVENTORY.name();
         public boolean openUnlocked = false;
         public boolean allowResizing = false;
@@ -84,11 +109,13 @@ public final class SaltsInventoryConfig {
         public boolean enableGhostPins = false;
         public double ghostWindowOpacity = 0.5D;
         public double eHoldCloseAllSeconds = 0.5D;
+        public List<String> forcedContainerWindows = new ArrayList<>();
 
         private ConfigFile normalized() {
             this.windowOpeningStyle = WindowOpeningStyle.parse(this.windowOpeningStyle).name();
             this.ghostWindowOpacity = clamp(this.ghostWindowOpacity, 0.15D, 0.90D);
             this.eHoldCloseAllSeconds = clamp(roundToQuarter(this.eHoldCloseAllSeconds), 0.5D, 10.0D);
+            this.forcedContainerWindows = normalizeIds(this.forcedContainerWindows);
             return this;
         }
 
@@ -116,6 +143,7 @@ public final class SaltsInventoryConfig {
             ConfigFile defaults = new ConfigFile();
             this.enableMod = defaults.enableMod;
             this.expandableInventory = defaults.expandableInventory;
+            this.enableDetailedConsoleLogs = defaults.enableDetailedConsoleLogs;
             this.windowOpeningStyle = defaults.windowOpeningStyle;
             this.openUnlocked = defaults.openUnlocked;
             this.allowResizing = defaults.allowResizing;
@@ -124,6 +152,23 @@ public final class SaltsInventoryConfig {
             this.enableGhostPins = defaults.enableGhostPins;
             this.ghostWindowOpacity = defaults.ghostWindowOpacity;
             this.eHoldCloseAllSeconds = defaults.eHoldCloseAllSeconds;
+            this.forcedContainerWindows = new ArrayList<>(defaults.forcedContainerWindows);
+        }
+
+        private static List<String> normalizeIds(List<String> ids) {
+            if (ids == null || ids.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            LinkedHashSet<String> normalized = new LinkedHashSet<>();
+            for (String id : ids) {
+                if (id != null && !id.isBlank()) {
+                    normalized.add(id.trim());
+                }
+            }
+            ArrayList<String> sorted = new ArrayList<>(normalized);
+            Collections.sort(sorted);
+            return sorted;
         }
 
         private static double roundToQuarter(double value) {

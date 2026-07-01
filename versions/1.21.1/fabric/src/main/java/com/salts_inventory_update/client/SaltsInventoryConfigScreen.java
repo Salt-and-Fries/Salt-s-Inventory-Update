@@ -117,6 +117,20 @@ public final class SaltsInventoryConfigScreen extends Screen {
             value -> SaltsInventoryConfig.update(config -> config.eHoldCloseAllSeconds = value),
             value -> Component.translatable("config.salts_inventory_update.value.seconds", String.format(Locale.ROOT, "%.2f", value))
         );
+        this.addToggle(
+            "enable_detailed_console_logs",
+            () -> SaltsInventoryConfig.get().enableDetailedConsoleLogs,
+            value -> SaltsInventoryConfig.update(config -> config.enableDetailedConsoleLogs = value)
+        );
+        this.addButton(
+            "force_containers_as_windows",
+            Component.translatable("config.salts_inventory_update.open"),
+            () -> {
+                if (this.minecraft != null) {
+                    this.minecraft.setScreen(new ForceContainersConfigScreen(this));
+                }
+            }
+        );
 
         int footerWidth = Button.DEFAULT_WIDTH * 2 + FOOTER_BUTTON_GAP;
         int footerX = (this.width - footerWidth) / 2;
@@ -208,6 +222,7 @@ public final class SaltsInventoryConfigScreen extends Screen {
 
     private void resetToDefaults() {
         SaltsInventoryConfig.update(SaltsInventoryConfig.ConfigFile::resetToDefaults);
+        InventoryDesktopScreen.syncForcedContainerScreens();
         if (this.minecraft != null) {
             this.minecraft.setScreen(new SaltsInventoryConfigScreen(this.previousScreen));
         }
@@ -235,6 +250,12 @@ public final class SaltsInventoryConfigScreen extends Screen {
         ConfigSlider slider = new ConfigSlider(0, 0, CONTROL_WIDTH, CONTROL_HEIGHT, min, max, step, value, setter, message);
         this.rows.add(new OptionRow(id, slider));
         this.addRenderableWidget(slider);
+    }
+
+    private void addButton(String id, Component message, Runnable action) {
+        Button button = Button.builder(message, clicked -> action.run()).bounds(0, 0, CONTROL_WIDTH, CONTROL_HEIGHT).build();
+        this.rows.add(new OptionRow(id, button));
+        this.addRenderableWidget(button);
     }
 
     private void updateRowPositions() {
