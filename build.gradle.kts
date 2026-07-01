@@ -153,6 +153,14 @@ subprojects {
             name = "Terraformers"
             url = uri("https://maven.terraformersmc.com/releases/")
         }
+        maven {
+            name = "Jared's Maven"
+            url = uri("https://maven.blamejared.com/")
+        }
+        maven {
+            name = "ModMaven"
+            url = uri("https://modmaven.dev/")
+        }
     }
 
     tasks.withType<JavaExec>().configureEach {
@@ -210,6 +218,14 @@ subprojects {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
                 addFabricModMenuSourceDir()
             }
+        }
+    }
+
+    if (minecraftVersion == "26.2" && (name == "fabric" || name == "neoforge")) {
+        afterEvaluate {
+            val jeiLoader = if (name == "fabric") "fabric" else "neoforge"
+            dependencies.add("compileOnly", "mezz.jei:jei-26.2-$jeiLoader-api:30.3.0.24")
+            dependencies.add("runtimeOnly", "mezz.jei:jei-26.2-$jeiLoader:30.3.0.24")
         }
     }
 

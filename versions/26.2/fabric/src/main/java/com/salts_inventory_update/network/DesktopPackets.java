@@ -33,6 +33,9 @@ public final class DesktopPackets {
     public static final int PIN_MODE_UNPINNED = 0;
     public static final int PIN_MODE_PINNED = 1;
     public static final int PIN_MODE_GHOST_PINNED = 2;
+    private static final int JEI_TRANSFER_MAX_RECIPE_SLOTS = 128;
+    private static final int JEI_TRANSFER_MAX_REQUIREMENTS = 128;
+    private static final int JEI_TRANSFER_MAX_ALTERNATIVES = 128;
 
     private DesktopPackets() {
     }
@@ -43,6 +46,7 @@ public final class DesktopPackets {
         PayloadTypeRegistry.serverboundPlay().register(DesktopQuickMovePayload.TYPE, DesktopQuickMovePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopButtonPayload.TYPE, DesktopButtonPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopPlaceRecipePayload.TYPE, DesktopPlaceRecipePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopJeiTransferPayload.TYPE, DesktopJeiTransferPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopRenamePayload.TYPE, DesktopRenamePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopSessionPinPayload.TYPE, DesktopSessionPinPayload.CODEC);
@@ -84,6 +88,44 @@ public final class DesktopPackets {
 
     private static List<ItemStack> readItemList(RegistryFriendlyByteBuf buf) {
         int size = buf.readVarInt();
+        List<ItemStack> stacks = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            stacks.add(ItemStack.OPTIONAL_STREAM_CODEC.decode(buf));
+        }
+        return stacks;
+    }
+
+    private static void writeIntList(RegistryFriendlyByteBuf buf, List<Integer> values) {
+        buf.writeVarInt(values.size());
+        for (int value : values) {
+            buf.writeVarInt(value);
+        }
+    }
+
+    private static List<Integer> readIntList(RegistryFriendlyByteBuf buf, int maxSize) {
+        int size = buf.readVarInt();
+        if (size < 0 || size > maxSize) {
+            throw new IllegalArgumentException("Desktop int list is too large: " + size);
+        }
+        List<Integer> values = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            values.add(buf.readVarInt());
+        }
+        return values;
+    }
+
+    private static void writeLimitedItemList(RegistryFriendlyByteBuf buf, List<ItemStack> stacks) {
+        if (stacks.size() > JEI_TRANSFER_MAX_ALTERNATIVES) {
+            throw new IllegalArgumentException("Desktop JEI transfer alternatives are too large: " + stacks.size());
+        }
+        writeItemList(buf, stacks);
+    }
+
+    private static List<ItemStack> readLimitedItemList(RegistryFriendlyByteBuf buf) {
+        int size = buf.readVarInt();
+        if (size < 0 || size > JEI_TRANSFER_MAX_ALTERNATIVES) {
+            throw new IllegalArgumentException("Desktop JEI transfer alternatives are too large: " + size);
+        }
         List<ItemStack> stacks = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             stacks.add(ItemStack.OPTIONAL_STREAM_CODEC.decode(buf));
@@ -254,6 +296,77 @@ public final class DesktopPackets {
         public Type<? extends CustomPacketPayload> type() {
             return TYPE;
         }
+    }
+
+    public record DesktopJeiTransferRequirement(int inputIndex, int targetSlotId, List<ItemStack> alternatives) {
+        public DesktopJeiTransferRequirement {
+            alternatives = List.copyOf(alternatives);
+        }
+
+        private DesktopJeiTransferRequirement(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readVarInt(), readLimitedItemList(buf));
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.inputIndex);
+            buf.writeVarInt(this.targetSlotId);
+            writeLimitedItemList(buf, this.alternatives);
+        }
+    }
+
+    public record DesktopJeiTransferPayload(int targetSessionId, List<Integer> recipeSlotIds, List<DesktopJeiTransferRequirement> requirements, boolean maxTransfer) implements CustomPacketPayload {
+        public static final Type<DesktopJeiTransferPayload> TYPE = new Type<>(id("desktop_jei_transfer"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopJeiTransferPayload> CODEC = CustomPacketPayload.codec(
+            DesktopJeiTransferPayload::write,
+            DesktopJeiTransferPayload::new
+        );
+
+        public DesktopJeiTransferPayload {
+            recipeSlotIds = List.copyOf(recipeSlotIds);
+            requirements = List.copyOf(requirements);
+            if (recipeSlotIds.size() > JEI_TRANSFER_MAX_RECIPE_SLOTS) {
+                throw new IllegalArgumentException("Desktop JEI transfer recipe slots are too large: " + recipeSlotIds.size());
+            }
+            if (requirements.size() > JEI_TRANSFER_MAX_REQUIREMENTS) {
+                throw new IllegalArgumentException("Desktop JEI transfer requirements are too large: " + requirements.size());
+            }
+        }
+
+        private DesktopJeiTransferPayload(RegistryFriendlyByteBuf buf) {
+            this(
+                buf.readVarInt(),
+                readIntList(buf, JEI_TRANSFER_MAX_RECIPE_SLOTS),
+                readJeiTransferRequirements(buf),
+                buf.readBoolean()
+            );
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.targetSessionId);
+            writeIntList(buf, this.recipeSlotIds);
+            buf.writeVarInt(this.requirements.size());
+            for (DesktopJeiTransferRequirement requirement : this.requirements) {
+                requirement.write(buf);
+            }
+            buf.writeBoolean(this.maxTransfer);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    private static List<DesktopJeiTransferRequirement> readJeiTransferRequirements(RegistryFriendlyByteBuf buf) {
+        int size = buf.readVarInt();
+        if (size < 0 || size > JEI_TRANSFER_MAX_REQUIREMENTS) {
+            throw new IllegalArgumentException("Desktop JEI transfer requirements are too large: " + size);
+        }
+        List<DesktopJeiTransferRequirement> requirements = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            requirements.add(new DesktopJeiTransferRequirement(buf));
+        }
+        return requirements;
     }
 
     public record DesktopRenamePayload(int sessionId, String name) implements CustomPacketPayload {
