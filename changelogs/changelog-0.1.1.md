@@ -1,8 +1,8 @@
 # Salt's Inventory Update 0.1.1 Changelog
 
-Drag preview parity, result-slot shift-click fixes, and debugging controls.
+Drag preview parity, result-slot shift-click fixes, standalone inventory visual syncing, and debugging controls.
 
-This release improves desktop inventory dragging so Salt windows show vanilla-style placement previews while the mouse is still held down, fixes result-slot shift-click behavior for crafting-style containers such as the stonecutter, and adds new config tools for debugging and forcing containers into Salt desktop windows.
+This release improves desktop inventory dragging so Salt windows show vanilla-style placement previews while the mouse is still held down, fixes result-slot shift-click behavior for crafting-style containers such as the stonecutter, fixes stale standalone inventory visuals after desktop item moves, and adds new config tools for debugging and forcing containers into Salt desktop windows.
 
 ## Supported Minecraft Versions And Loaders
 
@@ -11,6 +11,7 @@ This release improves desktop inventory dragging so Salt windows show vanilla-st
 - Ported the same drag-preview behavior to Minecraft 1.21.11 on Fabric and NeoForge.
 - Ported the same drag-preview behavior to Minecraft 1.21.1 on Fabric and NeoForge.
 - Ported the same drag-preview behavior to Minecraft 1.20.1 on Fabric and Forge.
+- Ported the standalone player-inventory visual sync fix across every supported version and loader.
 - Kept loader behavior shared through the existing versioned Fabric desktop screen sources and Forge/NeoForge shims.
 
 ## Item Dragging
@@ -36,6 +37,14 @@ This release improves desktop inventory dragging so Salt windows show vanilla-st
 - Preserved the shared carried-stack restore behavior around result-slot quick moves so desktop sessions stay in sync after bulk crafting.
 - Kept normal non-result slot quick-move routing unchanged.
 
+## Standalone Inventory Visual Sync
+
+- Fixed standalone player inventory windows visually freezing after desktop item moves while the underlying inventory continued to work.
+- Added client handling for `PLAYER_MENU_SESSION` slot updates so player-inventory slot packets update the local player menu instead of being dropped as missing desktop sessions.
+- Added server-side player-menu slot snapshots during desktop broadcasts so standalone inventory slot visuals refresh after clicks, quick moves, recipe actions, and other desktop inventory operations.
+- Preserved carried-stack synchronization while making source and destination slot visuals match the server-confirmed player inventory state.
+- Kept the fix shared across Fabric, Forge, and NeoForge builds through the existing versioned desktop source and loader shim structure.
+
 ## Config And Diagnostics
 
 - Added an `Enable Detailed Console Logs` config option for pack testing and bug capture.
@@ -58,5 +67,6 @@ This release improves desktop inventory dragging so Salt windows show vanilla-st
 - Preserved existing cross-window and cross-session manual release-time fallback behavior.
 - Avoided per-hover server clicks, packet changes, server logic changes, and public API changes.
 - Adapted preview calculation to older Minecraft versions that use the set-based vanilla quick-craft placement helper.
+- Kept player-menu slot syncing scoped to desktop action broadcasts instead of adding per-frame inventory synchronization.
 - Kept all changes client-rendering/config/session-routing scoped, with no new public API surface.
 - Verified Fabric plus Forge/NeoForge compile coverage across the full supported version matrix.

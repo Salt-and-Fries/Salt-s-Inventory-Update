@@ -1269,6 +1269,21 @@ public final class DesktopContainerSessions {
         send(player, new DesktopCarriedPayload(sessions.carried.copy()));
     }
 
+    private static void syncPlayerMenu(ServerPlayer player) {
+        InventoryExpansion.appendMissingMenuSlots(player.inventoryMenu, player);
+        int stateId = player.inventoryMenu.getStateId();
+        for (int slotIndex = 0; slotIndex < player.inventoryMenu.slots.size(); slotIndex++) {
+            Slot slot = player.inventoryMenu.slots.get(slotIndex);
+            send(player, new DesktopSlotPayload(
+                DesktopPackets.PLAYER_MENU_SESSION,
+                slotIndex,
+                stateId,
+                slot.getItem().copy()
+            ));
+        }
+        DesktopDebug.trace("server sync player-menu player={} slots={}", player.getName().getString(), player.inventoryMenu.slots.size());
+    }
+
     private static void setSharedCarried(ServerPlayer player, PlayerSessions sessions, ItemStack stack) {
         ItemStack carried = stack.copy();
         sessions.carried = carried.copy();
@@ -1491,6 +1506,7 @@ public final class DesktopContainerSessions {
                 syncMerchantOffers(player, session);
                 session.dispatchTick(player, this);
             }
+            syncPlayerMenu(player);
             syncCarried(player, this);
         }
 

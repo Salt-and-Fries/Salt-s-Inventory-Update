@@ -1208,6 +1208,25 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     public void updateSessionSlot(int sessionId, int slotIndex, int stateId, ItemStack stack) {
+        if (sessionId == DesktopPackets.PLAYER_MENU_SESSION) {
+            LocalPlayer player = this.player();
+            if (player == null) {
+                DesktopDebug.trace("client player slot update dropped desktop={} slot={} reason=no-player", this.desktopId, slotIndex);
+                return;
+            }
+
+            InventoryExpansion.ensurePlayerMenuCanReadSlotCount(player, slotIndex + 1);
+            AbstractContainerMenu playerMenu = player.inventoryMenu;
+            if (slotIndex < 0 || slotIndex >= playerMenu.slots.size()) {
+                DesktopDebug.trace("client player slot update dropped desktop={} slot={} reason=out-of-range size={}", this.desktopId, slotIndex, playerMenu.slots.size());
+                return;
+            }
+
+            playerMenu.setItem(slotIndex, stateId, stack);
+            DesktopDebug.trace("client player slot update desktop={} slot={} stack={}", this.desktopId, slotIndex, stack);
+            return;
+        }
+
         DesktopContainerSession session = this.session(sessionId);
         if (session == null) {
             DesktopDebug.trace("client slot update dropped desktop={} session={} slot={}", this.desktopId, sessionId, slotIndex);
