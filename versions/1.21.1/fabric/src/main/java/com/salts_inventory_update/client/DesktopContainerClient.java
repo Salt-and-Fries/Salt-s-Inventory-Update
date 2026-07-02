@@ -17,6 +17,8 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayl
 import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopGhostRecipePayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferRequirement;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopPlaceRecipePayload;
@@ -238,6 +240,7 @@ public final class DesktopContainerClient {
                 && ClientPlayNetworking.canSend(DesktopQuickMovePayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopButtonPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopPlaceRecipePayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopJeiTransferPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopRenamePayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopSessionPinPayload.TYPE)
@@ -274,6 +277,11 @@ public final class DesktopContainerClient {
     public static boolean placeRecipe(int sessionId, ResourceLocation recipeId, boolean useMaxItems) {
         DesktopDebug.trace("client send recipe place session={} recipe={} useMax={}", sessionId, recipeId, useMaxItems);
         return send(new DesktopPlaceRecipePayload(sessionId, recipeId, useMaxItems), "recipe-place");
+    }
+
+    public static boolean transferJeiRecipe(int targetSessionId, java.util.List<Integer> recipeSlotIds, java.util.List<DesktopJeiTransferRequirement> requirements, boolean maxTransfer) {
+        DesktopDebug.trace("client send JEI transfer targetSession={} recipeSlots={} requirements={} max={}", targetSessionId, recipeSlotIds.size(), requirements.size(), maxTransfer);
+        return send(new DesktopJeiTransferPayload(targetSessionId, recipeSlotIds, requirements, maxTransfer), "jei-transfer");
     }
 
     public static boolean purchaseInventorySlot() {

@@ -124,6 +124,17 @@ import com.salts_inventory_update.api.client.desktop.DesktopWindowLookupContext;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowSetupContext;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowSize;
 import com.salts_inventory_update.api.desktop.SaltsInventoryDesktopApi;
+import com.salts_inventory_update.compat.jei.JeiDesktopAccess;
+import com.salts_inventory_update.compat.jei.JeiDesktopBridge;
+import com.salts_inventory_update.compat.jei.JeiDesktopEntry;
+import com.salts_inventory_update.compat.jei.JeiDesktopTab;
+import com.salts_inventory_update.compat.jei.JeiDesktopTabKind;
+import com.salts_inventory_update.compat.jei.JeiRecipeCategory;
+import com.salts_inventory_update.compat.jei.JeiRecipeEntry;
+import com.salts_inventory_update.compat.jei.JeiRecipeMode;
+import com.salts_inventory_update.compat.jei.JeiRecipeSortStage;
+import com.salts_inventory_update.compat.jei.JeiRecipeTransferPlan;
+import com.salts_inventory_update.compat.jei.JeiRecipeTransferSlot;
 import com.salts_inventory_update.compat.toms_storage.TomsStorageCompat;
 import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.mixin.client.MenuScreensAccessor;
@@ -131,10 +142,12 @@ import com.salts_inventory_update.mixin.client.RecipeBookComponentAccessor;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopGhostRecipePayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferRequirement;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public final class InventoryDesktopScreen extends Screen implements MenuAccess {
+    private static final boolean JEI_TRANSFER_DEBUG = Boolean.getBoolean("salts_inventory_update.jeiTransferDebug");
     private static final int TOP_BAR_HEIGHT = 16;
     static final int SLOT_SIZE = 18;
     private static final int SLOT_ITEM_SIZE = 16;
@@ -289,6 +302,76 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int CHARACTER_EFFECT_DURATION_Y = 17;
     private static final int CHARACTER_EFFECT_NAME_COLOR = 0xFFFFFFFF;
     private static final int CHARACTER_EFFECT_DURATION_COLOR = 0xFF7F7F7F;
+    private static final int JEI_WINDOW_WIDTH = 214;
+    private static final int JEI_WINDOW_HEIGHT = 198;
+    private static final int JEI_SEARCH_HEIGHT = 12;
+    private static final int JEI_SEARCH_GAP = 5;
+    private static final int JEI_GRID_COLUMNS = 10;
+    private static final int JEI_GRID_ROWS = 8;
+    private static final int JEI_GRID_Y = JEI_SEARCH_HEIGHT + JEI_SEARCH_GAP;
+    private static final int JEI_SCROLLBAR_GAP = 3;
+    private static final int JEI_SCROLLBAR_BACKGROUND_HEIGHT = JEI_GRID_ROWS * SLOT_SIZE;
+    private static final int JEI_SCROLLBAR_TRACK_HEIGHT = JEI_SCROLLBAR_BACKGROUND_HEIGHT - SCROLLBAR_INSET * 2 - SCROLLBAR_THUMB_HEIGHT;
+    private static final Component JEI_TITLE = Component.literal("JEI");
+    private static final int JEI_RECIPE_MIN_HEIGHT = 176;
+    private static final int JEI_RECIPE_BORDER_PADDING = 6;
+    private static final int JEI_RECIPE_MIN_PADDING = 4;
+    private static final int JEI_RECIPE_NAV_BAR_PADDING = 2;
+    private static final int JEI_RECIPE_HEADER_HEIGHT = 18;
+    private static final int JEI_RECIPE_TAB_SIZE = 24;
+    private static final int JEI_RECIPE_TAB_GAP = 0;
+    private static final int JEI_RECIPE_MAX_TABS_PER_PAGE = 7;
+    private static final int JEI_RECIPE_TAB_PAGE_BUTTON_SIZE = 18;
+    private static final int JEI_RECIPE_TAB_PAGE_BUTTON_GAP = 2;
+    private static final int JEI_RECIPE_FAVORITE_BUTTON_SIZE = 13;
+    private static final int JEI_RECIPE_FAVORITE_BUTTON_ICON_SIZE = 9;
+    private static final int JEI_RECIPE_FAVORITE_BUTTON_GAP = 1;
+    private static final int JEI_RECIPE_TRANSFER_BUTTON_ICON_SIZE = 9;
+    private static final int JEI_RECIPE_MISSING_SLOT_COLOR = 0x66FF0000;
+    private static final int JEI_RECIPE_OPTION_BUTTON_SIZE = 16;
+    private static final int JEI_RECIPE_OPTION_BUTTON_BORDER = 1;
+    private static final int JEI_RECIPE_OPTION_TAB_PADDING = 5;
+    private static final int JEI_RECIPE_OPTION_TAB_OVERLAP = 6;
+    private static final int JEI_RECIPE_OPTION_TAB_WIDTH = JEI_RECIPE_OPTION_BUTTON_BORDER * 2 + JEI_RECIPE_OPTION_TAB_PADDING * 2 + JEI_RECIPE_OPTION_BUTTON_SIZE;
+    private static final int JEI_RECIPE_OPTION_TAB_HEIGHT = JEI_RECIPE_OPTION_BUTTON_BORDER * 2 + JEI_RECIPE_OPTION_TAB_PADDING * 2 + JEI_RECIPE_OPTION_BUTTON_SIZE * 2;
+    private static final int JEI_DEFAULT_TAB_BUTTON_SIZE = 13;
+    private static final int JEI_DEFAULT_TAB_BUTTON_ICON_SIZE = 9;
+    private static final int JEI_DEFAULT_TAB_BUTTON_GAP = 4;
+    private static final int JEI_RECIPE_TOP_TAB_FRAME_OVERLAP = 5;
+    private static final int JEI_RECIPE_TOP_TAB_Y_OFFSET = -2;
+    private static final int JEI_RECIPE_LIST_TOP_PADDING = 6;
+    private static final int JEI_RECIPE_SCROLLBAR_GAP = 3;
+    private static final int JEI_RECIPE_BUTTON_SIZE = 13;
+    private static final int JEI_RECIPE_ARROW_WIDTH = 9;
+    private static final int JEI_RECIPE_ARROW_HEIGHT = 7;
+    private static final int JEI_RECIPE_STATION_TAB_SIZE = 28;
+    private static final int JEI_RECIPE_STATION_TAB_FRAME_OVERLAP = 6;
+    private static final int JEI_RECIPE_STATION_TAB_BORDER_LEFT = 8;
+    private static final int JEI_RECIPE_STATION_TAB_BORDER_RIGHT = 9;
+    private static final int JEI_RECIPE_STATION_TAB_BORDER_TOP = 8;
+    private static final int JEI_RECIPE_STATION_TAB_BORDER_BOTTOM = 8;
+    private static final int JEI_RECIPE_STATION_SLOT_BORDER = 4;
+    private static final int JEI_RECIPE_STATION_SLOT_SIZE = 18;
+    private static final int JEI_RECIPE_STATION_GAP = 1;
+    private static final int JEI_RECIPE_STATION_PADDING = 5;
+    private static final int JEI_RECIPE_SIDE_WIDTH = JEI_RECIPE_STATION_TAB_SIZE + 8;
+    private static final ResourceLocation JEI_TAB_SELECTED_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/tab_selected.png");
+    private static final ResourceLocation JEI_TAB_UNSELECTED_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/tab_unselected.png");
+    private static final ResourceLocation JEI_CATALYST_TAB_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/catalyst_tab.png");
+    private static final ResourceLocation JEI_CATALYST_SLOT_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/recipe_catalyst_slot_background.png");
+    private static final ResourceLocation JEI_RECIPE_OPTIONS_TAB_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/recipe_options_tab.png");
+    private static final ResourceLocation JEI_BUTTON_SPRITE = new ResourceLocation("widget/button");
+    private static final ResourceLocation JEI_BUTTON_HIGHLIGHTED_SPRITE = new ResourceLocation("widget/button_highlighted");
+    private static final ResourceLocation JEI_ARROW_NEXT_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/icons/arrow_next.png");
+    private static final ResourceLocation JEI_ARROW_PREVIOUS_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/icons/arrow_previous.png");
+    private static final ResourceLocation JEI_BOOKMARK_BUTTON_ENABLED_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/icons/bookmark_button_enabled.png");
+    private static final ResourceLocation JEI_BOOKMARK_BUTTON_DISABLED_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/icons/bookmark_button_disabled.png");
+    private static final ResourceLocation JEI_HISTORY_BUTTON_ENABLED_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/icons/history_button_enabled.png");
+    private static final ResourceLocation JEI_HISTORY_BUTTON_DISABLED_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/icons/history_button_disabled.png");
+    private static final ResourceLocation JEI_RECIPE_BOOKMARK_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/icons/recipe_bookmark.png");
+    private static final ResourceLocation JEI_BOOKMARKS_FIRST_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/icons/bookmarks_first.png");
+    private static final ResourceLocation JEI_CRAFTABLE_FIRST_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/icons/craftable_first.png");
+    private static final ResourceLocation JEI_RECIPE_TRANSFER_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/icons/recipe_transfer.png");
     private static final int MOUNT_SADDLE_SLOT = 0;
     private static final int MOUNT_BODY_SLOT = 1;
     private static final int MOUNT_STORAGE_START_SLOT = 2;
@@ -776,6 +859,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private int pressedStonecutterTicks;
     private @Nullable InventoryWindow editingAnvilWindow;
     private @Nullable InventoryWindow editingCreativeSearchWindow;
+    private @Nullable InventoryWindow editingJeiSearchWindow;
     private @Nullable InventoryWindow popupWindow;
     private @Nullable CreativeModeTab rememberedCreativeTab;
     private int rememberedCreativeScrollRow;
@@ -788,6 +872,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private int resizeStartWidth;
     private int resizeStartHeight;
     private @Nullable InventoryWindow scrollingCreativeWindow;
+    private @Nullable InventoryWindow scrollingJeiWindow;
+    private @Nullable InventoryWindow draggingJeiRecipeLayoutWindow;
+    private @Nullable JeiRecipeEntry draggingJeiRecipeLayoutEntry;
+    private @Nullable InventoryWindow lastFocusedJeiTransferTargetWindow;
+    private String lastJeiTransferDiagnosticKey = "";
+    private long lastJeiTransferDiagnosticAt;
     private @Nullable InventoryWindow scrollingStorageWindow;
     private @Nullable Slot dragStartSlot;
     private @Nullable PendingSlotClick pendingSlotClick;
@@ -1154,6 +1244,23 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         screen.showIfNeeded(minecraft);
     }
 
+    public static void openOrToggleJei(Minecraft minecraft) {
+        if (!canUseDesktopInput(minecraft)) {
+            return;
+        }
+
+        InventoryDesktopScreen screen = getOrCreate(minecraft);
+        JeiDesktopAccess access = JeiDesktopBridge.access();
+        if (!access.isAvailable()) {
+            DesktopDebug.trace("client request H JEI ignored desktop={} reason=unavailable", screen.desktopId);
+            return;
+        }
+
+        DesktopDebug.log("client request H JEI desktop={} active={}", screen.desktopId, minecraft.screen == screen);
+        screen.toggleWindow(WindowKind.JEI);
+        screen.showIfNeeded(minecraft);
+    }
+
     public static void openHotbarOnly(Minecraft minecraft) {
         if (!SaltsInventoryRuntime.isEnabled() || minecraft.player == null || minecraft.screen != null) {
             return;
@@ -1435,7 +1542,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.resizingWindow = null;
             this.editingAnvilWindow = null;
             this.editingCreativeSearchWindow = null;
+            this.editingJeiSearchWindow = null;
             this.scrollingCreativeWindow = null;
+            this.scrollingJeiWindow = null;
+            this.clearJeiRecipeLayoutDrag();
             this.scrollingStorageWindow = null;
             this.popupWindow = null;
             this.dragStartSlot = null;
@@ -1458,6 +1568,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     public boolean isTextInputActive() {
         return this.activeCreativeSearchWindow() != null
+            || this.activeJeiSearchWindow() != null
             || this.activeAnvilEditWindow() != null
             || this.apiWantsTextInput();
     }
@@ -1474,7 +1585,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.resizingWindow = null;
         this.editingAnvilWindow = null;
         this.editingCreativeSearchWindow = null;
+        this.editingJeiSearchWindow = null;
         this.scrollingCreativeWindow = null;
+        this.scrollingJeiWindow = null;
+        this.clearJeiRecipeLayoutDrag();
         this.scrollingStorageWindow = null;
         DesktopDebug.trace("client removed from active screen desktop={} windows={} sessions={}", this.desktopId, this.windows.size(), this.sessions.size());
         super.removed();
@@ -1702,6 +1816,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.canResizeWindow(window) && window.resizeGripAt(event.x(), event.y())) {
                 this.resizingWindow = window;
                 this.movingWindow = null;
+                this.scrollingJeiWindow = null;
+                this.clearJeiRecipeLayoutDrag();
                 this.scrollingStorageWindow = null;
                 this.popupWindow = null;
                 this.resizeStartMouseX = (int) event.x();
@@ -1714,9 +1830,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
             boolean creativeTitleWidgetClick = window.kind == WindowKind.CREATIVE
                 && (this.creativeSearchBoxContains(window, event.x(), event.y()) || this.creativeTabPageButtonAt(window, event.x(), event.y()) != null);
-            if (!window.locked && window.isTopBar(event.x(), event.y()) && !creativeTitleWidgetClick) {
+            boolean jeiTitleWidgetClick = window.kind == WindowKind.JEI && this.jeiDefaultTabButtonContains(window, event.x(), event.y());
+            if (!window.locked && window.isTopBar(event.x(), event.y()) && !creativeTitleWidgetClick && !jeiTitleWidgetClick) {
                 this.movingWindow = window;
                 this.resizingWindow = null;
+                this.scrollingJeiWindow = null;
+                this.clearJeiRecipeLayoutDrag();
                 this.popupWindow = null;
                 this.moveOffsetX = (int) event.x() - window.x;
                 this.moveOffsetY = (int) event.y() - window.y;
@@ -1736,10 +1855,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 return this.creativeMouseClicked(window, event, doubleClick);
             }
 
+            if (window.kind == WindowKind.JEI) {
+                return this.jeiMouseClicked(window, event, doubleClick);
+            }
+
             if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.storageScrollbarContains(window, event.x(), event.y())) {
                 this.scrollingStorageWindow = window;
                 this.movingWindow = null;
                 this.resizingWindow = null;
+                this.scrollingJeiWindow = null;
+                this.clearJeiRecipeLayoutDrag();
                 this.popupWindow = null;
                 this.updateStorageScrollFromMouse(window, event.y());
                 DesktopDebug.trace("client storage scrollbar drag start desktop={} window={} scroll={}", this.desktopId, window.debugName(), window.scrollRow);
@@ -1873,6 +1998,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
+        if (this.dragJeiRecipeLayout(event, dx, dy)) {
+            return true;
+        }
+
+        if (this.scrollingJeiWindow != null) {
+            this.updateJeiScrollFromMouse(this.scrollingJeiWindow, event.y());
+            return true;
+        }
+
         if (this.scrollingStorageWindow != null) {
             this.updateStorageScrollFromMouse(this.scrollingStorageWindow, event.y());
             return true;
@@ -1948,8 +2082,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.movingWindow = null;
         InventoryWindow resizedWindow = this.resizingWindow;
         this.resizingWindow = null;
+        boolean releasedJeiRecipeLayout = this.releaseJeiRecipeLayoutDrag(event);
         this.scrollingCreativeWindow = null;
+        this.scrollingJeiWindow = null;
+        this.clearJeiRecipeLayoutDrag();
         this.scrollingStorageWindow = null;
+        if (releasedJeiRecipeLayout) {
+            return true;
+        }
         if (movedWindow != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             this.saveWindowState(movedWindow);
             this.apiMoved(movedWindow);
@@ -3029,6 +3169,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
         }
 
+        if (window != null && !window.minimized && window.kind == WindowKind.JEI && this.jeiListScrollAreaContains(window, x, y)) {
+            if (this.scrollJeiWindow(window, scrollY)) {
+                return true;
+            }
+        }
+
+        if (window != null && !window.minimized && window.kind == WindowKind.JEI && window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+            if (this.scrollJeiRecipeWindow(window, x, y, scrollX, scrollY)) {
+                return true;
+            }
+        }
+
         if (window != null && !window.minimized && this.apiMouseScrolled(window, x, y, scrollX, scrollY)) {
             return true;
         }
@@ -3103,6 +3255,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
+        if (this.handleJeiSearchKey(event)) {
+            return true;
+        }
+
         if (this.handleCreativeDropKey(event)) {
             return true;
         }
@@ -3125,8 +3281,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
-        if (event.isEscape()) {
-            this.onClose();
+        if (WindowedInventoryClient.jeiWindowKey().matches(event.key(), event.scancode())) {
+            openOrToggleJei(this.minecraft);
+            return true;
+        }
+
+        if (this.handleJeiLookupKey(event)) {
             return true;
         }
 
@@ -3161,6 +3321,143 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         double mouseX = this.scaledMouseX();
         double mouseY = this.scaledMouseY();
         return this.slotAt(mouseX, mouseY);
+    }
+
+    private boolean handleJeiLookupKey(KeyEvent event) {
+        JeiDesktopAccess access = this.jeiAccess();
+        if (!access.isAvailable()) {
+            return false;
+        }
+
+        JeiRecipeMode mode;
+        if (access.matchesRecipeKey(event.key())) {
+            mode = JeiRecipeMode.RECIPES;
+        } else if (access.matchesUsesKey(event.key())) {
+            mode = JeiRecipeMode.USES;
+        } else {
+            return false;
+        }
+
+        JeiDesktopEntry entry = this.hoveredJeiLookupEntry(access);
+        if (entry == null) {
+            return false;
+        }
+
+        InventoryWindow window = this.showJeiWindowForLookup();
+        if (window == null) {
+            return false;
+        }
+
+        this.navigateToJeiRecipeView(window, entry, mode);
+        this.showIfNeeded(this.minecraft);
+        return true;
+    }
+
+    private @Nullable JeiDesktopEntry hoveredJeiLookupEntry(JeiDesktopAccess access) {
+        if (this.minecraft == null) {
+            return null;
+        }
+
+        double mouseX = this.scaledMouseX();
+        double mouseY = this.scaledMouseY();
+
+        JeiEntryHit jeiEntryHit = this.jeiEntryAt(mouseX, mouseY);
+        if (jeiEntryHit != null) {
+            return jeiEntryHit.entry();
+        }
+
+        JeiDesktopEntry recipeEntry = this.hoveredJeiRecipeEntry(access, mouseX, mouseY);
+        if (recipeEntry != null) {
+            return recipeEntry;
+        }
+
+        SlotHit slotHit = this.slotAt(mouseX, mouseY);
+        if (slotHit != null && slotHit.slot().hasItem()) {
+            return access.entryForItemStack(slotHit.slot().getItem());
+        }
+
+        MerchantOfferItemHit offerHit = this.merchantOfferItemAt(mouseX, mouseY);
+        if (offerHit != null && !offerHit.stack().isEmpty()) {
+            return access.entryForItemStack(offerHit.stack());
+        }
+
+        CreativeItemHit creativeItemHit = this.creativeItemAt(mouseX, mouseY);
+        if (creativeItemHit != null && !creativeItemHit.stack().isEmpty()) {
+            return access.entryForItemStack(creativeItemHit.stack());
+        }
+
+        return null;
+    }
+
+    private @Nullable JeiDesktopEntry hoveredJeiRecipeEntry(JeiDesktopAccess access, double mouseX, double mouseY) {
+        InventoryWindow window = this.windowAt(mouseX, mouseY);
+        if (window == null || window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+            return null;
+        }
+
+        JeiStationHit stationHit = this.jeiStationAt(window, mouseX, mouseY);
+        if (stationHit != null) {
+            return stationHit.station();
+        }
+
+        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        if (category == null) {
+            return null;
+        }
+
+        for (JeiRecipeLayoutPlacement placement : this.visibleJeiRecipePlacements(window, category)) {
+            if (!contains(mouseX, mouseY, placement.x(), placement.y(), Math.max(1, placement.recipe().width()), Math.max(1, placement.recipe().height()))) {
+                continue;
+            }
+            try {
+                return access.recipeIngredientAt(placement.recipe(), placement.x(), placement.y(), (int) mouseX, (int) mouseY);
+            } catch (RuntimeException exception) {
+                DesktopDebug.warn("client JEI recipe key lookup failed desktop={} window={} index={} reason={}", this.desktopId, window.debugName(), placement.index(), exception.toString());
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private @Nullable InventoryWindow showJeiWindowForLookup() {
+        JeiDesktopAccess access = this.jeiAccess();
+        if (!access.isAvailable()) {
+            return null;
+        }
+
+        for (int i = this.windows.size() - 1; i >= 0; i--) {
+            InventoryWindow window = this.windows.get(i);
+            if (window.kind == WindowKind.JEI && window.session == null && window.legacyMenu == null) {
+                if (window.ghosted) {
+                    this.promoteGhostWindow(window);
+                }
+                window.minimized = false;
+                this.hotbarOnly = false;
+                this.setFocusedWindow(window);
+                return window;
+            }
+        }
+
+        this.addWindow(WindowKind.JEI);
+        for (int i = this.windows.size() - 1; i >= 0; i--) {
+            InventoryWindow window = this.windows.get(i);
+            if (window.kind == WindowKind.JEI && window.session == null && window.legacyMenu == null) {
+                return window;
+            }
+        }
+        return null;
+    }
+
+    private boolean closeTopmostJeiRecipeView() {
+        for (int i = this.windows.size() - 1; i >= 0; i--) {
+            InventoryWindow window = this.windows.get(i);
+            if (window.kind == WindowKind.JEI && !window.minimized && !window.ghosted && window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+                this.leaveJeiRecipeView(window);
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean handleSlotKeyPressed(SlotHit hit, KeyEvent event) {
@@ -3358,6 +3655,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
+        InventoryWindow jeiWindow = this.activeJeiSearchWindow();
+        if (jeiWindow != null) {
+            if (!event.isAllowedChatCharacter()) {
+                return false;
+            }
+
+            String addition = event.codepointAsString();
+            if (!addition.isEmpty()) {
+                this.setJeiSearchText(jeiWindow, this.jeiAccess().filterText() + addition);
+            }
+            return true;
+        }
+
         InventoryWindow window = this.activeAnvilEditWindow();
         if (window == null || !event.isAllowedChatCharacter()) {
             return this.apiCharTyped(event);
@@ -3508,6 +3818,17 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 CHARACTER_WINDOW_HEIGHT
             );
             this.placeOrRestoreWindow(window, WindowPlacement.BOTTOM_LEFT);
+        } else if (kind == WindowKind.JEI) {
+            window = new InventoryWindow(
+                kind,
+                JEI_TITLE,
+                0,
+                0,
+                JEI_WINDOW_WIDTH,
+                JEI_WINDOW_HEIGHT
+            );
+            this.placeOrRestoreWindow(window, WindowPlacement.TOP_RIGHT);
+            this.initializeJeiWindow(window);
         } else {
             return;
         }
@@ -3640,6 +3961,22 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.sessions.add(session);
         this.clearSlotInteractionState("session-add");
         session.setCarried(this.sharedCarried);
+        if (session.specialKind() == DesktopPackets.SPECIAL_CAMEL || session.specialKind() == DesktopPackets.SPECIAL_LLAMA) {
+            DesktopDebug.warn(
+                "SIU_MOUNT_DIAG client_add_session_start desktop={} session={} special={} entityId={} columns={} visible={} source={} slots={} containerSlots={} content={}x{}",
+                this.desktopId,
+                session.sessionId(),
+                session.specialKind(),
+                session.entityId(),
+                session.columns(),
+                visible,
+                session.sourceKey(),
+                session.menu().slots.size(),
+                session.containerSlots().size(),
+                session.contentWidth(),
+                session.contentHeight()
+            );
+        }
 
         int defaultWindowWidth = session.isMountSession()
             ? this.mountWindowWidth(session, session.title())
@@ -3685,6 +4022,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             apiSize,
             apiDefinition
         );
+        if (session.specialKind() == DesktopPackets.SPECIAL_CAMEL || session.specialKind() == DesktopPackets.SPECIAL_LLAMA) {
+            DesktopDebug.warn(
+                "SIU_MOUNT_DIAG client_add_session_size desktop={} session={} special={} default={}x{} api={}x{} mountSession={}",
+                this.desktopId,
+                session.sessionId(),
+                session.specialKind(),
+                defaultWindowWidth,
+                defaultWindowHeight,
+                apiSize.width(),
+                apiSize.height(),
+                session.isMountSession()
+            );
+        }
         InventoryWindow window = new InventoryWindow(
             WindowKind.CONTAINER,
             session.title(),
@@ -3942,6 +4292,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void apiLoadLocalState(InventoryWindow window, CompoundTag tag) {
+        if (window.kind == WindowKind.JEI) {
+            window.jeiDefaultTabUid = tag.contains("jeiDefaultTab") ? tag.getString("jeiDefaultTab") : "";
+        }
         if (window.apiDefinition == null || window.containerMenu() == null) {
             return;
         }
@@ -3956,6 +4309,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private CompoundTag apiSaveLocalState(InventoryWindow window) {
         CompoundTag tag = new CompoundTag();
+        if (window.kind == WindowKind.JEI && !window.jeiDefaultTabUid.isEmpty()) {
+            tag.putString("jeiDefaultTab", window.jeiDefaultTabUid);
+        }
         if (window.apiDefinition == null || window.containerMenu() == null) {
             return tag;
         }
@@ -4017,7 +4373,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return switch (window.kind) {
             case INVENTORY -> this.inventoryVirtualSlotCount();
             case CONTAINER -> window.containerSlots().size();
-            case CHARACTER, CREATIVE -> 0;
+            case CHARACTER, CREATIVE, JEI -> 0;
         };
     }
 
@@ -4463,12 +4819,17 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.forceFixedWindowSize(window);
         this.clampInitialWindowSize(window);
         WindowPosition position = switch (placement) {
+            case TOP_LEFT -> this.topLeftWindowPosition(window.width, window.height);
+            case TOP_RIGHT -> this.topRightWindowPosition(window.width, window.height);
             case CENTER -> this.centeredWindowPosition(window.width, window.height);
             case BOTTOM_LEFT -> this.bottomLeftWindowPosition(window.width, window.height);
             case CONTAINER -> this.containerWindowPosition(window.width, window.height);
         };
         window.x = position.x();
         window.y = position.y();
+        if (window.kind == WindowKind.JEI) {
+            this.clampWindowIntoDesktop(window);
+        }
         DesktopDebug.trace("client window placed desktop={} window={} placement={} x={} y={} size={}x{}", this.desktopId, window.debugName(), placement, window.x, window.y, window.width, window.height);
     }
 
@@ -4504,6 +4865,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return switch (window.kind) {
             case INVENTORY, CREATIVE -> WindowPlacement.CENTER;
             case CHARACTER -> WindowPlacement.BOTTOM_LEFT;
+            case JEI -> WindowPlacement.TOP_RIGHT;
             case CONTAINER -> WindowPlacement.CONTAINER;
         };
     }
@@ -4518,6 +4880,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
             case CREATIVE -> DesktopWindowSize.of(CREATIVE_CONTENT_MARGIN * 2 + CREATIVE_CONTENT_WIDTH, TOP_BAR_HEIGHT + CREATIVE_CONTENT_MARGIN * 2 + CREATIVE_CONTENT_HEIGHT);
             case CHARACTER -> DesktopWindowSize.of(CHARACTER_WINDOW_WIDTH, CHARACTER_WINDOW_HEIGHT);
+            case JEI -> this.jeiTargetWindowSize(window);
             case CONTAINER -> this.defaultContainerWindowSize(window);
         };
     }
@@ -4574,7 +4937,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.forceFixedWindowSize(window);
 
         this.clampInitialWindowSize(window);
-        if (window.pinMode == PinMode.UNPINNED) {
+        if (window.pinMode == PinMode.UNPINNED && window.kind != WindowKind.JEI) {
             this.placeWindow(window, placement);
         } else {
             window.x = state.x;
@@ -4656,12 +5019,36 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private void clampWindowIntoDesktop(InventoryWindow window) {
         window.x = this.clampedWindowX(window.x, window.width);
         window.y = this.clampedWindowY(window.y, window.minimized ? TOP_BAR_HEIGHT : window.height);
+        WindowBounds bounds = this.visibleWindowBounds(window);
+        int minX = WINDOW_PLACEMENT_MARGIN;
+        int minY = WINDOW_PLACEMENT_MARGIN;
+        int maxRight = this.desktopWidth() - WINDOW_PLACEMENT_MARGIN;
+        int maxBottom = this.desktopHeight() - WINDOW_PLACEMENT_MARGIN;
+        if (bounds.x() < minX) {
+            window.x += minX - bounds.x();
+            bounds = this.visibleWindowBounds(window);
+        }
+        if (bounds.y() < minY) {
+            window.y += minY - bounds.y();
+            bounds = this.visibleWindowBounds(window);
+        }
+        if (bounds.right() > maxRight) {
+            window.x -= bounds.right() - maxRight;
+            bounds = this.visibleWindowBounds(window);
+        }
+        if (bounds.bottom() > maxBottom) {
+            window.y -= bounds.bottom() - maxBottom;
+        }
     }
 
     private void forceFixedWindowSize(InventoryWindow window) {
         if (window.kind == WindowKind.CHARACTER) {
             window.width = CHARACTER_WINDOW_WIDTH;
             window.height = CHARACTER_WINDOW_HEIGHT;
+        } else if (window.kind == WindowKind.JEI) {
+            DesktopWindowSize size = this.jeiTargetWindowSize(window);
+            window.width = size.width();
+            window.height = size.height();
         } else if (window.session != null && window.session.isMountSession()) {
             window.width = this.mountWindowWidth(window.session, window.title);
             window.height = mountWindowHeight();
@@ -4696,6 +5083,20 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return new WindowPosition(
             this.clampedWindowX((this.desktopWidth() - windowWidth) / 2, windowWidth),
             this.clampedWindowY((this.desktopHeight() - windowHeight) / 2, windowHeight)
+        );
+    }
+
+    private WindowPosition topLeftWindowPosition(int windowWidth, int windowHeight) {
+        return new WindowPosition(
+            this.clampedWindowX(8, windowWidth),
+            this.clampedWindowY(8, windowHeight)
+        );
+    }
+
+    private WindowPosition topRightWindowPosition(int windowWidth, int windowHeight) {
+        return new WindowPosition(
+            this.clampedWindowX(this.desktopWidth() - windowWidth - WINDOW_PLACEMENT_MARGIN, windowWidth),
+            this.clampedWindowY(WINDOW_PLACEMENT_MARGIN, windowHeight)
         );
     }
 
@@ -4970,6 +5371,40 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             right = Math.max(right, tabsRight);
             bottom = Math.max(bottom, creativeBottomTabsY(window) + CREATIVE_TAB_HEIGHT);
         }
+        if (window.kind == WindowKind.JEI && !window.minimized) {
+            y = Math.min(y, window.y - jeiRecipeTopTabProtrusion());
+
+            int topTabsWidth = window.jeiMode == JeiRecipeMode.INGREDIENTS ? 0 : jeiRecipeTopTabsWidth(window);
+            if (topTabsWidth > 0) {
+                int tabsX = jeiRecipeTopTabsX(window);
+                if (jeiRecipeHasCategoryTabPages(window)) {
+                    topTabsWidth = Math.max(topTabsWidth, window.width - JEI_RECIPE_BORDER_PADDING);
+                }
+                right = Math.max(right, tabsX + topTabsWidth);
+            }
+
+            if (window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+                JeiRecipeButtonRect historyButton = jeiRecipeHistoryButtonRect(window);
+                x = Math.min(x, historyButton.x());
+                y = Math.min(y, historyButton.y());
+                right = Math.max(right, historyButton.x() + historyButton.width());
+
+                JeiRecipeButtonRect optionButtons = jeiRecipeOptionButtonBackgroundRect(window);
+                x = Math.min(x, optionButtons.x());
+                y = Math.min(y, optionButtons.y());
+                bottom = Math.max(bottom, optionButtons.y() + optionButtons.height());
+            }
+
+            int stationTabsHeight = window.jeiMode == JeiRecipeMode.INGREDIENTS ? 0 : jeiRecipeStationTabsHeight(window);
+            if (stationTabsHeight > 0) {
+                int tabsX = jeiRecipeStationTabsX(window);
+                int tabsY = jeiRecipeStationTabsY(window);
+                x = Math.min(x, tabsX);
+                y = Math.min(y, tabsY);
+                right = Math.max(right, tabsX + JEI_RECIPE_STATION_TAB_SIZE);
+                bottom = Math.max(bottom, tabsY + stationTabsHeight);
+            }
+        }
         return WindowBounds.fromEdges(x, y, right, bottom);
     }
 
@@ -4997,8 +5432,17 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (this.editingCreativeSearchWindow == window) {
             this.editingCreativeSearchWindow = null;
         }
+        if (this.editingJeiSearchWindow == window) {
+            this.editingJeiSearchWindow = null;
+        }
         if (this.scrollingCreativeWindow == window) {
             this.scrollingCreativeWindow = null;
+        }
+        if (this.scrollingJeiWindow == window) {
+            this.scrollingJeiWindow = null;
+        }
+        if (this.draggingJeiRecipeLayoutWindow == window) {
+            this.clearJeiRecipeLayoutDrag();
         }
         if (this.scrollingStorageWindow == window) {
             this.scrollingStorageWindow = null;
@@ -5008,6 +5452,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.pressedControl = null;
             this.pressedControlInPopup = false;
         }
+    }
+
+    private void clearJeiRecipeLayoutDrag() {
+        this.draggingJeiRecipeLayoutWindow = null;
+        this.draggingJeiRecipeLayoutEntry = null;
     }
 
     private void clearSlotInteractionState(String reason) {
@@ -5079,10 +5528,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.popupWindow = null;
         this.editingAnvilWindow = null;
         this.editingCreativeSearchWindow = null;
+        this.editingJeiSearchWindow = null;
         this.pressedControlWindow = null;
         this.pressedControl = null;
         this.pressedControlInPopup = false;
         this.scrollingCreativeWindow = null;
+        this.scrollingJeiWindow = null;
+        this.clearJeiRecipeLayoutDrag();
         this.scrollingStorageWindow = null;
         this.clearSlotInteractionState("close-all");
         this.usingWorld = false;
@@ -5108,7 +5560,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.popupWindow = null;
         this.editingAnvilWindow = null;
         this.editingCreativeSearchWindow = null;
+        this.editingJeiSearchWindow = null;
         this.scrollingCreativeWindow = null;
+        this.scrollingJeiWindow = null;
+        this.clearJeiRecipeLayoutDrag();
         this.scrollingStorageWindow = null;
         this.rememberedCreativeTab = null;
         this.rememberedCreativeScrollRow = 0;
@@ -5335,6 +5790,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 this.apiFocusChanged(window, newFocused);
             }
         }
+        if (this.isJeiTransferTargetCandidateWindow(focusedWindow)) {
+            this.lastFocusedJeiTransferTargetWindow = focusedWindow;
+        }
         DesktopDebug.trace("client focus desktop={} window={}", this.desktopId, focusedWindow == null ? "none" : focusedWindow.debugName());
     }
 
@@ -5396,6 +5854,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             if (selectedCreativeTab != null && !ghosted) {
                 this.renderCreativeTabs(graphics, window, selectedCreativeTab, false);
             }
+            if (this.shouldRenderJeiIngredientTabs(window, ghosted)) {
+                JeiDesktopAccess access = this.jeiAccess();
+                this.renderJeiIngredientTabs(graphics, window, access, mouseX, mouseY, false);
+            }
+            if (this.shouldRenderJeiRecipeTabs(window, ghosted)) {
+                JeiDesktopAccess access = this.jeiAccess();
+                this.ensureJeiRecipeView(window);
+                this.renderJeiRecipeCategoryTabs(graphics, window, access, mouseX, mouseY, false);
+            }
 
             if (ghosted) {
                 this.renderGhostBackdrop(graphics, window, visibleHeight);
@@ -5403,6 +5870,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 renderNineSlice(graphics, WINDOW_TEXTURE, window.x, window.y, window.width, visibleHeight);
             }
             graphics.text(this.font, titleLayout.displayTitle(), window.x + TITLE_LEFT_PADDING, window.y + 5, this.uiColor(COLOR_WINDOW_TITLE), false);
+            if (this.shouldRenderJeiIngredientTabs(window, ghosted)) {
+                this.renderJeiDefaultTabButton(graphics, window, mouseX, mouseY);
+            }
             if (selectedCreativeTab != null && !ghosted) {
                 this.renderCreativeTabPageButtons(graphics, window, titleLayout, mouseX, mouseY);
             }
@@ -5422,6 +5892,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 case CONTAINER -> this.renderContainerWindow(graphics, window, mouseX, mouseY);
                 case CHARACTER -> this.renderCharacterWindow(graphics, window, mouseX, mouseY);
                 case CREATIVE -> this.renderCreativeWindow(graphics, window, mouseX, mouseY);
+                case JEI -> this.renderJeiWindow(graphics, window, mouseX, mouseY);
             }
 
             if (!ghosted) {
@@ -7389,6 +7860,2058 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             text = text.substring(1);
         }
         return text;
+    }
+
+    private JeiDesktopAccess jeiAccess() {
+        return JeiDesktopBridge.access();
+    }
+
+    private void initializeJeiWindow(InventoryWindow window) {
+        this.refreshJeiSelection(window, this.jeiAccess().tabs());
+        this.clampJeiScroll(window);
+        this.clearJeiRecipeView(window);
+    }
+
+    private boolean shouldRenderJeiIngredientTabs(InventoryWindow window, boolean ghosted) {
+        return !ghosted
+            && window.kind == WindowKind.JEI
+            && !window.minimized
+            && window.jeiMode == JeiRecipeMode.INGREDIENTS
+            && this.jeiAccess().isAvailable();
+    }
+
+    private boolean shouldRenderJeiRecipeTabs(InventoryWindow window, boolean ghosted) {
+        return !ghosted
+            && window.kind == WindowKind.JEI
+            && !window.minimized
+            && window.jeiMode != JeiRecipeMode.INGREDIENTS
+            && this.jeiAccess().isAvailable();
+    }
+
+    private void renderJeiWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        JeiDesktopAccess access = this.jeiAccess();
+        if (!access.isAvailable()) {
+            graphics.text(this.font, "JEI is not available", window.contentX(), window.contentY(), this.uiColor(COLOR_MUTED_TEXT), false);
+            return;
+        }
+
+        if (window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+            this.renderJeiRecipeWindow(graphics, window, access, mouseX, mouseY);
+            return;
+        }
+
+        List<JeiDesktopTab> tabs = access.tabs();
+        this.refreshJeiSelection(window, tabs);
+        this.renderJeiIngredientTabs(graphics, window, access, mouseX, mouseY, true);
+        this.renderJeiSearchBox(graphics, window, access);
+
+        JeiDesktopTab selectedTab = this.selectedJeiTab(window, tabs);
+        if (selectedTab == null) {
+            graphics.text(this.font, "No JEI tabs", window.contentX(), this.jeiGridY(window), this.uiColor(COLOR_MUTED_TEXT), false);
+            return;
+        }
+
+        List<JeiDesktopEntry> entries = access.filteredEntries(selectedTab);
+        JeiGridLayout layout = this.jeiGridLayout(entries.size());
+        window.jeiScrollRow = clamp(window.jeiScrollRow, 0, layout.maxScrollRow());
+        int firstIndex = window.jeiScrollRow * JEI_GRID_COLUMNS;
+        int gridX = this.jeiGridX(window);
+        int gridY = this.jeiGridY(window);
+        for (int row = 0; row < JEI_GRID_ROWS; row++) {
+            for (int column = 0; column < JEI_GRID_COLUMNS; column++) {
+                int index = firstIndex + row * JEI_GRID_COLUMNS + column;
+                int x = gridX + column * SLOT_SIZE;
+                int y = gridY + row * SLOT_SIZE;
+                JeiDesktopEntry entry = index >= 0 && index < entries.size() ? entries.get(index) : null;
+                this.renderJeiEntrySlot(graphics, access, entry, x, y, mouseX, mouseY);
+            }
+        }
+
+        if (entries.isEmpty()) {
+            graphics.text(this.font, "No results", gridX + 4, gridY + 4, this.uiColor(COLOR_MUTED_TEXT), false);
+        }
+        this.renderJeiScrollbar(graphics, window, layout);
+    }
+
+    private void renderJeiDefaultTabButton(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        JeiRecipeButtonRect rect = this.jeiDefaultTabButtonRect(window);
+        boolean selectedDefault = !window.jeiDefaultTabUid.isEmpty() && window.jeiDefaultTabUid.equals(window.jeiSelectedTabUid);
+        this.renderJeiIconButton(graphics, rect, mouseX, mouseY, JEI_RECIPE_BOOKMARK_TEXTURE, selectedDefault, JEI_DEFAULT_TAB_BUTTON_ICON_SIZE);
+    }
+
+    private void renderJeiSearchBox(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access) {
+        int x = this.jeiSearchX(window);
+        int y = this.jeiSearchY(window);
+        int width = this.jeiSearchWidth(window);
+        blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x, y, 0, 0, 1, JEI_SEARCH_HEIGHT, 1, JEI_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
+        blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x + 1, y, 1, 0, width - 2, JEI_SEARCH_HEIGHT, 1, JEI_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
+        blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x + width - 1, y, 2, 0, 1, JEI_SEARCH_HEIGHT, 1, JEI_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
+
+        String query = access.filterText();
+        boolean editing = this.editingJeiSearchWindow == window;
+        boolean placeholder = query.isEmpty() && !editing;
+        String text = this.jeiSearchVisibleText(placeholder ? "Search" : query, width - 8);
+        int textColor = placeholder ? COLOR_MUTED_TEXT : editing ? 0xFFFFFFFF : 0xFFE8E8E8;
+        graphics.text(this.font, text, x + 4, y + 2, this.uiColor(textColor), false);
+        if (editing && (System.currentTimeMillis() / 300L) % 2L == 0L) {
+            int cursorX = x + 4 + this.font.width(this.jeiSearchVisibleText(query, width - 8));
+            graphics.fill(cursorX, y + 2, cursorX + 1, y + 10, this.uiColor(0xFFFFFFFF));
+        }
+    }
+
+    private void renderJeiIngredientTabs(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, int mouseX, int mouseY, boolean selectedOnly) {
+        List<JeiDesktopTab> tabs = access.tabs();
+        if (tabs.isEmpty()) {
+            return;
+        }
+
+        this.refreshJeiSelection(window, tabs);
+        int visible = this.jeiVisibleIngredientTabCount(window, tabs);
+        int x = jeiRecipeTopTabsX(window);
+        int y = jeiRecipeTopTabsY(window);
+        String selectedUid = window.jeiSelectedTabUid;
+        for (int i = 0; i < visible; i++) {
+            JeiDesktopTab tab = tabs.get(i);
+            boolean selected = tab.uid().equals(selectedUid);
+            if (selected != selectedOnly) {
+                x += JEI_RECIPE_TAB_SIZE + JEI_RECIPE_TAB_GAP;
+                continue;
+            }
+            boolean hovered = contains(mouseX, mouseY, x, y, JEI_RECIPE_TAB_SIZE, JEI_RECIPE_TAB_SIZE);
+            blitRegion(
+                graphics,
+                selected ? JEI_TAB_SELECTED_TEXTURE : JEI_TAB_UNSELECTED_TEXTURE,
+                x,
+                y,
+                0,
+                0,
+                JEI_RECIPE_TAB_SIZE,
+                JEI_RECIPE_TAB_SIZE,
+                JEI_RECIPE_TAB_SIZE,
+                JEI_RECIPE_TAB_SIZE,
+                JEI_RECIPE_TAB_SIZE,
+                JEI_RECIPE_TAB_SIZE
+            );
+            JeiDesktopEntry icon = tab.icon();
+            if (tab.kind() == JeiDesktopTabKind.FAVORITES) {
+                this.renderJeiTabIconTexture(graphics, JEI_BOOKMARK_BUTTON_ENABLED_TEXTURE, x + 4, y + 4);
+            } else if (tab.kind() == JeiDesktopTabKind.RECENT) {
+                this.renderJeiTabIconTexture(graphics, JEI_HISTORY_BUTTON_ENABLED_TEXTURE, x + 4, y + 4);
+            } else if (icon != null) {
+                try {
+                    access.renderTabIcon(graphics, tab, x + 4, y + 4);
+                } catch (RuntimeException exception) {
+                    DesktopDebug.warn("client JEI ingredient tab render failed desktop={} tab={} reason={}", this.desktopId, tab.uid(), exception.toString());
+                }
+            } else {
+                String label = this.fitText(tab.title().getString(), JEI_RECIPE_TAB_SIZE - 6);
+                graphics.centeredText(this.font, label, x + JEI_RECIPE_TAB_SIZE / 2, y + 8, this.uiColor(COLOR_MUTED_TEXT));
+            }
+            if (hovered && !selected) {
+                graphics.fill(x + 2, y + 2, x + JEI_RECIPE_TAB_SIZE - 2, y + JEI_RECIPE_TAB_SIZE - 2, this.uiColor(0x22FFFFFF));
+            }
+            x += JEI_RECIPE_TAB_SIZE + JEI_RECIPE_TAB_GAP;
+        }
+    }
+
+    private void renderJeiEntrySlot(GuiGraphicsExtractor graphics, JeiDesktopAccess access, @Nullable JeiDesktopEntry entry, int x, int y, int mouseX, int mouseY) {
+        boolean hovered = contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE);
+        renderSlotBackground(graphics, x, y);
+        if (hovered && entry != null) {
+            renderSlotHighlightBack(graphics, x, y);
+        }
+        if (entry != null) {
+            try {
+                access.render(graphics, entry, x, y);
+            } catch (RuntimeException exception) {
+                DesktopDebug.warn("client JEI ingredient render failed desktop={} reason={}", this.desktopId, exception.toString());
+            }
+        }
+        if (hovered && entry != null) {
+            renderSlotHighlightFront(graphics, x, y);
+        }
+    }
+
+    private void renderJeiScrollbar(GuiGraphicsExtractor graphics, InventoryWindow window, JeiGridLayout layout) {
+        int x = this.jeiScrollbarX(window);
+        int y = this.jeiScrollbarY(window);
+        this.renderCreativeScrollbarBackground(graphics, x, y, JEI_SCROLLBAR_BACKGROUND_HEIGHT);
+        ResourceLocation sprite = layout.scrollable() ? CREATIVE_SCROLLER_SPRITE : CREATIVE_SCROLLER_DISABLED_SPRITE;
+        int offset = layout.maxScrollRow() == 0 ? 0 : Math.round((float) window.jeiScrollRow / (float) layout.maxScrollRow() * JEI_SCROLLBAR_TRACK_HEIGHT);
+        this.blitSprite(graphics, sprite, x + SCROLLBAR_INSET, y + SCROLLBAR_INSET + offset, SCROLLBAR_THUMB_WIDTH, SCROLLBAR_THUMB_HEIGHT);
+    }
+
+    private void renderJeiRecipeScrollbar(GuiGraphicsExtractor graphics, InventoryWindow window, JeiRecipeCategory category) {
+        int maxScroll = this.jeiRecipeMaxScrollIndex(window, category);
+        if (maxScroll <= 0) {
+            return;
+        }
+
+        int x = this.jeiRecipeScrollbarX(window);
+        int y = this.jeiRecipeScrollbarY(window);
+        int height = this.jeiRecipeScrollbarHeight(window);
+        this.renderCreativeScrollbarBackground(graphics, x, y, height);
+        int offset = Math.round((float) this.jeiRecipeFirstIndex(window, category) / (float) maxScroll * this.jeiRecipeScrollbarTrackHeight(window));
+        this.blitSprite(graphics, CREATIVE_SCROLLER_SPRITE, x + SCROLLBAR_INSET, y + SCROLLBAR_INSET + offset, SCROLLBAR_THUMB_WIDTH, SCROLLBAR_THUMB_HEIGHT);
+    }
+
+    private void renderJeiRecipeWindow(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, int mouseX, int mouseY) {
+        this.ensureJeiRecipeView(window);
+        int panelX = this.jeiRecipePanelX(window);
+        int panelY = this.jeiRecipePanelY(window);
+
+        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        this.renderJeiRecipeHeader(graphics, window, category, mouseX, mouseY);
+        this.renderJeiRecipeCategoryTabs(graphics, window, access, mouseX, mouseY, true);
+        this.renderJeiRecipeHistoryButton(graphics, window, mouseX, mouseY);
+
+        if (window.jeiFocusEntry == null || category == null) {
+            graphics.text(this.font, "No recipes found", panelX + JEI_RECIPE_BORDER_PADDING, panelY + JEI_RECIPE_HEADER_HEIGHT + 12, this.uiColor(COLOR_MUTED_TEXT), false);
+            return;
+        }
+
+        this.renderJeiRecipeStations(graphics, window, access, mouseX, mouseY);
+        List<JeiRecipeLayoutPlacement> placements = this.visibleJeiRecipePlacements(window, category);
+        if (placements.isEmpty()) {
+            graphics.text(this.font, "No recipes found", this.jeiRecipeLayoutAreaX(window), this.jeiRecipeLayoutAreaY(window), this.uiColor(COLOR_MUTED_TEXT), false);
+            return;
+        }
+
+        JeiRecipeLayoutPlacement hovered = null;
+        for (JeiRecipeLayoutPlacement placement : placements) {
+            try {
+                access.tickRecipe(placement.recipe());
+                access.renderRecipe(graphics, placement.recipe(), placement.x(), placement.y(), mouseX, mouseY);
+                if (contains(mouseX, mouseY, placement.x(), placement.y(), Math.max(1, placement.recipe().width()), Math.max(1, placement.recipe().height()))) {
+                    hovered = placement;
+                }
+            } catch (RuntimeException exception) {
+                DesktopDebug.warn("client JEI recipe render failed desktop={} window={} index={} reason={}", this.desktopId, window.debugName(), placement.index(), exception.toString());
+                graphics.text(this.font, "Recipe render failed", placement.x(), placement.y(), this.uiColor(COLOR_MUTED_TEXT), false);
+            }
+        }
+
+        this.renderJeiRecipeScrollbar(graphics, window, category);
+        this.renderJeiRecipeOptionButtons(graphics, window, access, mouseX, mouseY);
+        this.renderJeiRecipeTransferButtons(graphics, window, access, placements, mouseX, mouseY);
+        this.renderJeiRecipeBookmarkButtons(graphics, window, access, placements, mouseX, mouseY);
+        JeiRecipeTransferButtonHit transferHit = this.jeiRecipeTransferButtonAt(window, placements, mouseX, mouseY);
+        if (transferHit != null && !transferHit.availability().missingInputIndexes().isEmpty()) {
+            try {
+                access.renderRecipeSlotHighlights(
+                    graphics,
+                    transferHit.placement().recipe(),
+                    transferHit.placement().x(),
+                    transferHit.placement().y(),
+                    transferHit.availability().missingInputIndexes(),
+                    JEI_RECIPE_MISSING_SLOT_COLOR
+                );
+            } catch (RuntimeException exception) {
+                DesktopDebug.warn("client JEI recipe transfer highlight failed desktop={} window={} index={} reason={}", this.desktopId, window.debugName(), transferHit.placement().index(), exception.toString());
+            }
+        }
+        if (hovered != null) {
+            try {
+                access.renderRecipeOverlays(graphics, hovered.recipe(), hovered.x(), hovered.y(), mouseX, mouseY);
+            } catch (RuntimeException exception) {
+                DesktopDebug.warn("client JEI recipe overlay failed desktop={} window={} index={} reason={}", this.desktopId, window.debugName(), hovered.index(), exception.toString());
+            }
+        }
+    }
+
+    private void renderJeiRecipeCategoryTabs(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, int mouseX, int mouseY, boolean selectedOnly) {
+        int tabsPerPage = this.jeiRecipeTabsPerPage(window);
+        if (tabsPerPage <= 0 || window.jeiRecipeCategories.isEmpty()) {
+            return;
+        }
+
+        int maxPage = this.jeiRecipeMaxCategoryTabPage(window);
+        window.jeiCategoryTabPage = clamp(window.jeiCategoryTabPage, 0, maxPage);
+        int start = window.jeiCategoryTabPage * tabsPerPage;
+        int end = Math.min(window.jeiRecipeCategories.size(), start + tabsPerPage);
+        int x = this.jeiRecipeTabsX(window);
+        int y = this.jeiRecipeTabsY(window);
+        for (int i = start; i < end; i++) {
+            JeiRecipeCategory category = window.jeiRecipeCategories.get(i);
+            boolean selected = category.uid().equals(window.jeiSelectedRecipeCategoryUid);
+            if (selected != selectedOnly) {
+                x += JEI_RECIPE_TAB_SIZE + JEI_RECIPE_TAB_GAP;
+                continue;
+            }
+            boolean hovered = contains(mouseX, mouseY, x, y, JEI_RECIPE_TAB_SIZE, JEI_RECIPE_TAB_SIZE);
+            blitRegion(
+                graphics,
+                selected ? JEI_TAB_SELECTED_TEXTURE : JEI_TAB_UNSELECTED_TEXTURE,
+                x,
+                y,
+                0,
+                0,
+                JEI_RECIPE_TAB_SIZE,
+                JEI_RECIPE_TAB_SIZE,
+                JEI_RECIPE_TAB_SIZE,
+                JEI_RECIPE_TAB_SIZE,
+                JEI_RECIPE_TAB_SIZE,
+                JEI_RECIPE_TAB_SIZE
+            );
+            try {
+                access.renderRecipeCategoryIcon(graphics, category, x + 4, y + 4);
+            } catch (RuntimeException exception) {
+                DesktopDebug.warn("client JEI recipe tab render failed desktop={} category={} reason={}", this.desktopId, category.uid(), exception.toString());
+            }
+            if (hovered && !selected) {
+                graphics.fill(x + 2, y + 2, x + JEI_RECIPE_TAB_SIZE - 2, y + JEI_RECIPE_TAB_SIZE - 2, this.uiColor(0x22FFFFFF));
+            }
+            x += JEI_RECIPE_TAB_SIZE + JEI_RECIPE_TAB_GAP;
+        }
+        if (selectedOnly) {
+            this.renderJeiRecipeCategoryTabPageButtons(graphics, window, mouseX, mouseY);
+        }
+    }
+
+    private void renderJeiRecipeCategoryTabPageButtons(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        if (!this.hasJeiRecipeCategoryTabPages(window)) {
+            return;
+        }
+
+        this.renderJeiRecipeButton(graphics, this.jeiPreviousCategoryTabPageButtonRect(window), mouseX, mouseY, JEI_ARROW_PREVIOUS_TEXTURE);
+        this.renderJeiRecipeButton(graphics, this.jeiNextCategoryTabPageButtonRect(window), mouseX, mouseY, JEI_ARROW_NEXT_TEXTURE);
+    }
+
+    private void renderJeiRecipeHistoryButton(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        this.renderJeiRecipeButton(graphics, jeiRecipeHistoryButtonRect(window), mouseX, mouseY, this.isShiftHeld() ? JEI_ARROW_NEXT_TEXTURE : JEI_ARROW_PREVIOUS_TEXTURE);
+    }
+
+    private void renderJeiRecipeOptionButtons(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, int mouseX, int mouseY) {
+        JeiRecipeButtonRect background = jeiRecipeOptionButtonBackgroundRect(window);
+        renderJeiNineSlice(
+            graphics,
+            JEI_RECIPE_OPTIONS_TAB_TEXTURE,
+            background.x(),
+            background.y(),
+            background.width(),
+            background.height(),
+            JEI_RECIPE_OPTION_TAB_WIDTH,
+            JEI_RECIPE_OPTION_TAB_WIDTH,
+            JEI_RECIPE_STATION_TAB_BORDER_LEFT,
+            JEI_RECIPE_STATION_TAB_BORDER_RIGHT,
+            JEI_RECIPE_STATION_TAB_BORDER_TOP,
+            JEI_RECIPE_STATION_TAB_BORDER_BOTTOM
+        );
+        this.renderJeiIconButton(
+            graphics,
+            this.jeiRecipeOptionButtonRect(window, JeiRecipeOptionButton.BOOKMARKED),
+            mouseX,
+            mouseY,
+            JEI_BOOKMARKS_FIRST_TEXTURE,
+            access.isRecipeSortStageEnabled(JeiRecipeSortStage.BOOKMARKED)
+        );
+        this.renderJeiIconButton(
+            graphics,
+            this.jeiRecipeOptionButtonRect(window, JeiRecipeOptionButton.CRAFTABLE),
+            mouseX,
+            mouseY,
+            JEI_CRAFTABLE_FIRST_TEXTURE,
+            access.isRecipeSortStageEnabled(JeiRecipeSortStage.CRAFTABLE)
+        );
+    }
+
+    private void renderJeiRecipeHeader(GuiGraphicsExtractor graphics, InventoryWindow window, @Nullable JeiRecipeCategory category, int mouseX, int mouseY) {
+        Component title = category == null ? Component.literal(window.jeiMode == JeiRecipeMode.USES ? "Uses" : "Recipes") : category.title();
+        this.renderJeiRecipeNavigationRow(
+            graphics,
+            title.getString(),
+            this.jeiPreviousCategoryButtonRect(window),
+            this.jeiNextCategoryButtonRect(window),
+            mouseX,
+            mouseY
+        );
+    }
+
+    private void renderJeiRecipeNavigationRow(GuiGraphicsExtractor graphics, String text, JeiRecipeButtonRect previous, JeiRecipeButtonRect next, int mouseX, int mouseY) {
+        graphics.fill(previous.x() + previous.width(), previous.y(), next.x(), next.y() + next.height(), this.uiColor(0x30000000));
+        int centerX = (previous.x() + next.x() + next.width()) / 2;
+        int textY = previous.y() + Math.max(0, (previous.height() - this.font.lineHeight) / 2);
+        graphics.centeredText(this.font, this.fitText(text, Math.max(0, next.x() - previous.x() - previous.width() - 6)), centerX, textY, this.uiColor(0xFFFFFFFF));
+        this.renderJeiRecipeButton(graphics, previous, mouseX, mouseY, JEI_ARROW_PREVIOUS_TEXTURE);
+        this.renderJeiRecipeButton(graphics, next, mouseX, mouseY, JEI_ARROW_NEXT_TEXTURE);
+    }
+
+    private void renderJeiRecipeButton(GuiGraphicsExtractor graphics, JeiRecipeButtonRect rect, int mouseX, int mouseY, ResourceLocation arrowTexture) {
+        boolean hovered = contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height());
+        this.blitSprite(graphics, hovered ? JEI_BUTTON_HIGHLIGHTED_SPRITE : JEI_BUTTON_SPRITE, rect.x(), rect.y(), rect.width(), rect.height());
+        int arrowX = rect.x() + (rect.width() - JEI_RECIPE_ARROW_WIDTH) / 2;
+        int arrowY = rect.y() + (rect.height() - JEI_RECIPE_ARROW_HEIGHT) / 2;
+        blitRegion(
+            graphics,
+            arrowTexture,
+            arrowX,
+            arrowY,
+            0,
+            0,
+            JEI_RECIPE_ARROW_WIDTH,
+            JEI_RECIPE_ARROW_HEIGHT,
+            JEI_RECIPE_ARROW_WIDTH,
+            JEI_RECIPE_ARROW_HEIGHT,
+            JEI_RECIPE_ARROW_WIDTH,
+            JEI_RECIPE_ARROW_HEIGHT
+        );
+    }
+
+    private void renderJeiRecipeTransferButtons(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, List<JeiRecipeLayoutPlacement> placements, int mouseX, int mouseY) {
+        for (JeiRecipeLayoutPlacement placement : placements) {
+            JeiRecipeTransferTarget target = this.jeiRecipeTransferTargetFor(access, placement.recipe());
+            if (target == null) {
+                continue;
+            }
+
+            JeiRecipeTransferAvailability availability = this.jeiRecipeTransferAvailability(target);
+            JeiRecipeButtonRect rect = this.jeiRecipeTransferButtonRect(placement, target.plan());
+            this.renderJeiIconButton(
+                graphics,
+                rect,
+                mouseX,
+                mouseY,
+                JEI_RECIPE_TRANSFER_TEXTURE,
+                false,
+                JEI_RECIPE_TRANSFER_BUTTON_ICON_SIZE
+            );
+            if (!availability.craftable()) {
+                graphics.fill(rect.x(), rect.y(), rect.x() + rect.width(), rect.y() + rect.height(), this.uiColor(0x44FF0000));
+            }
+        }
+    }
+
+    private void renderJeiRecipeBookmarkButtons(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, List<JeiRecipeLayoutPlacement> placements, int mouseX, int mouseY) {
+        for (JeiRecipeLayoutPlacement placement : placements) {
+            if (!access.canBookmarkRecipe(placement.recipe())) {
+                continue;
+            }
+            this.renderJeiIconButton(
+                graphics,
+                this.jeiRecipeBookmarkButtonRect(placement),
+                mouseX,
+                mouseY,
+                JEI_RECIPE_BOOKMARK_TEXTURE,
+                access.isRecipeBookmarked(placement.recipe()),
+                JEI_RECIPE_FAVORITE_BUTTON_ICON_SIZE
+            );
+        }
+    }
+
+    private void renderJeiIconButton(GuiGraphicsExtractor graphics, JeiRecipeButtonRect rect, int mouseX, int mouseY, ResourceLocation iconTexture, boolean pressed) {
+        this.renderJeiIconButton(graphics, rect, mouseX, mouseY, iconTexture, pressed, 16);
+    }
+
+    private void renderJeiIconButton(GuiGraphicsExtractor graphics, JeiRecipeButtonRect rect, int mouseX, int mouseY, ResourceLocation iconTexture, boolean pressed, int iconSize) {
+        boolean hovered = contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height());
+        this.blitSprite(graphics, hovered ? JEI_BUTTON_HIGHLIGHTED_SPRITE : JEI_BUTTON_SPRITE, rect.x(), rect.y(), rect.width(), rect.height());
+        int iconX = rect.x() + (rect.width() - iconSize) / 2;
+        int iconY = rect.y() + (rect.height() - iconSize) / 2;
+        blitRegion(graphics, iconTexture, iconX, iconY, 0, 0, iconSize, iconSize, 16, 16, 16, 16);
+        if (pressed) {
+            graphics.fill(rect.x(), rect.y(), rect.x() + rect.width(), rect.y() + rect.height(), this.uiColor(0x1100FF00));
+        }
+    }
+
+    private void renderJeiTabIconTexture(GuiGraphicsExtractor graphics, ResourceLocation texture, int x, int y) {
+        blitRegion(graphics, texture, x, y, 0, 0, 16, 16, 16, 16, 16, 16);
+    }
+
+    private String jeiRecipeButtonTooltip(JeiRecipeButton button) {
+        if (button != JeiRecipeButton.HISTORY) {
+            return button.tooltip();
+        }
+        if (this.isControlHeld()) {
+            return "Back to item list";
+        }
+        return this.isShiftHeld() ? "Forward" : "Back";
+    }
+
+    private void renderJeiRecipeStations(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, int mouseX, int mouseY) {
+        int visible = this.jeiVisibleStationCount(window);
+        if (visible <= 0 || window.jeiStations.isEmpty()) {
+            return;
+        }
+
+        window.jeiStationScroll = clamp(window.jeiStationScroll, 0, this.jeiMaxStationScroll(window));
+        int x = this.jeiStationTabsX(window);
+        int y = this.jeiStationTabsY(window);
+        int end = Math.min(window.jeiStations.size(), window.jeiStationScroll + visible);
+        int height = jeiRecipeStationTabsHeight(window);
+        renderJeiNineSlice(
+            graphics,
+            JEI_CATALYST_TAB_TEXTURE,
+            x,
+            y,
+            JEI_RECIPE_STATION_TAB_SIZE,
+            height,
+            JEI_RECIPE_STATION_TAB_SIZE,
+            JEI_RECIPE_STATION_TAB_SIZE,
+            JEI_RECIPE_STATION_TAB_BORDER_LEFT,
+            JEI_RECIPE_STATION_TAB_BORDER_RIGHT,
+            JEI_RECIPE_STATION_TAB_BORDER_TOP,
+            JEI_RECIPE_STATION_TAB_BORDER_BOTTOM
+        );
+        for (int i = window.jeiStationScroll; i < end; i++) {
+            JeiDesktopEntry station = window.jeiStations.get(i);
+            int slotY = this.jeiStationSlotY(window, i - window.jeiStationScroll);
+            renderJeiNineSlice(
+                graphics,
+                JEI_CATALYST_SLOT_TEXTURE,
+                x + JEI_RECIPE_STATION_PADDING,
+                slotY,
+                JEI_RECIPE_STATION_SLOT_SIZE,
+                JEI_RECIPE_STATION_SLOT_SIZE,
+                JEI_RECIPE_STATION_SLOT_SIZE,
+                JEI_RECIPE_STATION_SLOT_SIZE,
+                JEI_RECIPE_STATION_SLOT_BORDER
+            );
+            try {
+                access.render(graphics, station, x + JEI_RECIPE_STATION_PADDING + 1, slotY + 1);
+            } catch (RuntimeException exception) {
+                DesktopDebug.warn("client JEI station render failed desktop={} reason={}", this.desktopId, exception.toString());
+            }
+            if (contains(mouseX, mouseY, x + JEI_RECIPE_STATION_PADDING, slotY, JEI_RECIPE_STATION_SLOT_SIZE, JEI_RECIPE_STATION_SLOT_SIZE)) {
+                graphics.fill(x + JEI_RECIPE_STATION_PADDING, slotY, x + JEI_RECIPE_STATION_PADDING + JEI_RECIPE_STATION_SLOT_SIZE, slotY + JEI_RECIPE_STATION_SLOT_SIZE, this.uiColor(0x22FFFFFF));
+            }
+        }
+    }
+
+    private @Nullable JeiDesktopTab selectedJeiTab(InventoryWindow window, List<JeiDesktopTab> tabs) {
+        this.refreshJeiSelection(window, tabs);
+        for (JeiDesktopTab tab : tabs) {
+            if (tab.uid().equals(window.jeiSelectedTabUid)) {
+                return tab;
+            }
+        }
+        return null;
+    }
+
+    private void refreshJeiSelection(InventoryWindow window, List<JeiDesktopTab> tabs) {
+        if (tabs.isEmpty()) {
+            window.jeiSelectedTabUid = "";
+            window.jeiScrollRow = 0;
+            return;
+        }
+
+        for (JeiDesktopTab tab : tabs) {
+            if (tab.uid().equals(window.jeiSelectedTabUid)) {
+                return;
+            }
+        }
+        window.jeiSelectedTabUid = this.defaultJeiTab(window, tabs).uid();
+        window.jeiScrollRow = 0;
+    }
+
+    private JeiDesktopTab defaultJeiTab(InventoryWindow window, List<JeiDesktopTab> tabs) {
+        if (!window.jeiDefaultTabUid.isEmpty()) {
+            for (JeiDesktopTab tab : tabs) {
+                if (tab.uid().equals(window.jeiDefaultTabUid)) {
+                    return tab;
+                }
+            }
+        }
+        for (JeiDesktopTab tab : tabs) {
+            if (tab.kind() == JeiDesktopTabKind.INGREDIENTS) {
+                return tab;
+            }
+        }
+        return tabs.get(0);
+    }
+
+    private void toggleJeiDefaultTab(InventoryWindow window) {
+        if (window.jeiSelectedTabUid.isEmpty()) {
+            return;
+        }
+        window.jeiDefaultTabUid = window.jeiSelectedTabUid.equals(window.jeiDefaultTabUid) ? "" : window.jeiSelectedTabUid;
+        this.saveWindowState(window);
+    }
+
+    private int jeiVisibleIngredientTabCount(InventoryWindow window, List<JeiDesktopTab> tabs) {
+        if (tabs.isEmpty()) {
+            return 0;
+        }
+        return Math.min(tabs.size(), jeiRecipeTopTabsPerPage(window));
+    }
+
+    private void clearJeiRecipeView(InventoryWindow window) {
+        if (this.draggingJeiRecipeLayoutWindow == window) {
+            this.clearJeiRecipeLayoutDrag();
+        }
+        window.jeiMode = JeiRecipeMode.INGREDIENTS;
+        window.jeiFocusEntry = null;
+        window.jeiSelectedRecipeCategoryUid = "";
+        window.jeiRecipePage = 0;
+        window.jeiCategoryTabPage = 0;
+        window.jeiStationScroll = 0;
+        window.jeiRecipeCategories = List.of();
+        window.jeiRecipeEntries = List.of();
+        window.jeiStations = List.of();
+        window.jeiBackHistory.clear();
+        window.jeiForwardHistory.clear();
+    }
+
+    private void leaveJeiRecipeView(InventoryWindow window) {
+        if (window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+            return;
+        }
+        this.clearJeiRecipeView(window);
+        this.applyJeiWindowSize(window);
+        DesktopDebug.trace("client JEI recipe back desktop={} window={}", this.desktopId, window.debugName());
+    }
+
+    private void enterJeiRecipeView(InventoryWindow window, JeiDesktopEntry entry, JeiRecipeMode mode) {
+        if (mode == JeiRecipeMode.INGREDIENTS) {
+            this.leaveJeiRecipeView(window);
+            return;
+        }
+
+        window.jeiMode = mode;
+        window.jeiFocusEntry = entry;
+        window.jeiSelectedRecipeCategoryUid = "";
+        window.jeiRecipePage = 0;
+        window.jeiCategoryTabPage = 0;
+        window.jeiStationScroll = 0;
+        if (this.draggingJeiRecipeLayoutWindow == window) {
+            this.clearJeiRecipeLayoutDrag();
+        }
+        this.rebuildJeiRecipeView(window);
+        DesktopDebug.trace("client JEI recipe mode desktop={} window={} mode={} categories={} recipes={}", this.desktopId, window.debugName(), mode, window.jeiRecipeCategories.size(), window.jeiRecipeEntries.size());
+    }
+
+    private void navigateToJeiRecipeView(InventoryWindow window, JeiDesktopEntry entry, JeiRecipeMode mode) {
+        if (mode == JeiRecipeMode.INGREDIENTS) {
+            this.leaveJeiRecipeView(window);
+            return;
+        }
+
+        JeiRecipeHistoryEntry current = this.currentJeiRecipeHistoryEntry(window);
+        if (current != null) {
+            window.jeiBackHistory.add(current);
+        }
+        window.jeiForwardHistory.clear();
+        this.jeiAccess().addLookupHistory(entry);
+        this.enterJeiRecipeView(window, entry, mode);
+    }
+
+    private void activateJeiRecipeHistoryButton(InventoryWindow window) {
+        if (this.isControlHeld()) {
+            this.leaveJeiRecipeView(window);
+        } else if (this.isShiftHeld()) {
+            this.navigateJeiRecipeHistoryForward(window);
+        } else {
+            this.navigateJeiRecipeHistoryBack(window);
+        }
+    }
+
+    private void navigateJeiRecipeHistoryBack(InventoryWindow window) {
+        JeiRecipeHistoryEntry current = this.currentJeiRecipeHistoryEntry(window);
+        JeiRecipeHistoryEntry previous = popLast(window.jeiBackHistory);
+        if (previous == null) {
+            this.leaveJeiRecipeView(window);
+            return;
+        }
+
+        if (current != null) {
+            window.jeiForwardHistory.add(current);
+        }
+        this.enterJeiRecipeView(window, previous.entry(), previous.mode());
+    }
+
+    private void navigateJeiRecipeHistoryForward(InventoryWindow window) {
+        JeiRecipeHistoryEntry current = this.currentJeiRecipeHistoryEntry(window);
+        JeiRecipeHistoryEntry next = popLast(window.jeiForwardHistory);
+        if (next == null) {
+            return;
+        }
+
+        if (current != null) {
+            window.jeiBackHistory.add(current);
+        }
+        this.enterJeiRecipeView(window, next.entry(), next.mode());
+    }
+
+    private @Nullable JeiRecipeHistoryEntry currentJeiRecipeHistoryEntry(InventoryWindow window) {
+        return window.jeiMode == JeiRecipeMode.INGREDIENTS || window.jeiFocusEntry == null ? null : new JeiRecipeHistoryEntry(window.jeiFocusEntry, window.jeiMode);
+    }
+
+    private static @Nullable JeiRecipeHistoryEntry popLast(List<JeiRecipeHistoryEntry> entries) {
+        return entries.isEmpty() ? null : entries.remove(entries.size() - 1);
+    }
+
+    private void ensureJeiRecipeView(InventoryWindow window) {
+        if (window.jeiMode == JeiRecipeMode.INGREDIENTS || window.jeiFocusEntry == null) {
+            return;
+        }
+        if (window.jeiRecipeCategories.isEmpty() && window.jeiRecipeEntries.isEmpty()) {
+            this.rebuildJeiRecipeView(window);
+        } else {
+            this.refreshJeiRecipeCategorySelection(window);
+            this.clampJeiRecipePage(window);
+            window.jeiStationScroll = clamp(window.jeiStationScroll, 0, this.jeiMaxStationScroll(window));
+        }
+    }
+
+    private void rebuildJeiRecipeView(InventoryWindow window) {
+        JeiDesktopAccess access = this.jeiAccess();
+        if (!access.isAvailable() || window.jeiFocusEntry == null || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+            this.clearJeiRecipeView(window);
+            this.applyJeiWindowSize(window);
+            return;
+        }
+
+        window.jeiRecipeCategories = access.recipeCategories(window.jeiFocusEntry, window.jeiMode);
+        this.refreshJeiRecipeCategorySelection(window);
+        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        if (category == null) {
+            window.jeiRecipeEntries = List.of();
+            window.jeiStations = List.of();
+        } else {
+            window.jeiRecipeEntries = access.recipes(window.jeiFocusEntry, window.jeiMode, category);
+            window.jeiStations = access.craftingStations(category);
+        }
+        this.applyJeiWindowSize(window);
+        this.clampJeiRecipePage(window);
+        window.jeiStationScroll = clamp(window.jeiStationScroll, 0, this.jeiMaxStationScroll(window));
+    }
+
+    private @Nullable JeiRecipeCategory selectedJeiRecipeCategory(InventoryWindow window) {
+        this.refreshJeiRecipeCategorySelection(window);
+        for (JeiRecipeCategory category : window.jeiRecipeCategories) {
+            if (category.uid().equals(window.jeiSelectedRecipeCategoryUid)) {
+                return category;
+            }
+        }
+        return null;
+    }
+
+    private void refreshJeiRecipeCategorySelection(InventoryWindow window) {
+        if (window.jeiRecipeCategories.isEmpty()) {
+            window.jeiSelectedRecipeCategoryUid = "";
+            window.jeiCategoryTabPage = 0;
+            return;
+        }
+
+        for (int i = 0; i < window.jeiRecipeCategories.size(); i++) {
+            JeiRecipeCategory category = window.jeiRecipeCategories.get(i);
+            if (category.uid().equals(window.jeiSelectedRecipeCategoryUid)) {
+                this.ensureJeiSelectedCategoryTabVisible(window, i);
+                return;
+            }
+        }
+
+        window.jeiSelectedRecipeCategoryUid = window.jeiRecipeCategories.get(0).uid();
+        window.jeiCategoryTabPage = 0;
+    }
+
+    private void selectJeiRecipeCategory(InventoryWindow window, JeiRecipeCategory category) {
+        if (category.uid().equals(window.jeiSelectedRecipeCategoryUid)) {
+            return;
+        }
+        window.jeiSelectedRecipeCategoryUid = category.uid();
+        window.jeiRecipePage = 0;
+        window.jeiStationScroll = 0;
+        this.ensureJeiSelectedCategoryTabVisible(window, window.jeiRecipeCategories.indexOf(category));
+        this.rebuildJeiRecipeView(window);
+    }
+
+    private void changeJeiRecipeCategory(InventoryWindow window, int direction) {
+        if (window.jeiRecipeCategories.isEmpty()) {
+            return;
+        }
+        int index = this.selectedJeiRecipeCategoryIndex(window);
+        int next = clamp(index + direction, 0, window.jeiRecipeCategories.size() - 1);
+        this.selectJeiRecipeCategory(window, window.jeiRecipeCategories.get(next));
+    }
+
+    private void changeJeiRecipeCategoryTabPage(InventoryWindow window, int direction) {
+        int tabsPerPage = this.jeiRecipeTabsPerPage(window);
+        if (tabsPerPage <= 0 || window.jeiRecipeCategories.isEmpty()) {
+            return;
+        }
+
+        int nextPage = clamp(window.jeiCategoryTabPage + direction, 0, this.jeiRecipeMaxCategoryTabPage(window));
+        if (nextPage == window.jeiCategoryTabPage) {
+            return;
+        }
+
+        int categoryIndex = clamp(nextPage * tabsPerPage, 0, window.jeiRecipeCategories.size() - 1);
+        window.jeiCategoryTabPage = nextPage;
+        this.selectJeiRecipeCategory(window, window.jeiRecipeCategories.get(categoryIndex));
+    }
+
+    private int selectedJeiRecipeCategoryIndex(InventoryWindow window) {
+        for (int i = 0; i < window.jeiRecipeCategories.size(); i++) {
+            if (window.jeiRecipeCategories.get(i).uid().equals(window.jeiSelectedRecipeCategoryUid)) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    private void ensureJeiSelectedCategoryTabVisible(InventoryWindow window, int categoryIndex) {
+        int tabsPerPage = this.jeiRecipeTabsPerPage(window);
+        if (tabsPerPage <= 0 || categoryIndex < 0) {
+            window.jeiCategoryTabPage = 0;
+            return;
+        }
+        window.jeiCategoryTabPage = clamp(categoryIndex / tabsPerPage, 0, this.jeiRecipeMaxCategoryTabPage(window));
+    }
+
+    private void applyJeiWindowSize(InventoryWindow window) {
+        DesktopWindowSize size = this.jeiTargetWindowSize(window);
+        window.width = size.width();
+        window.height = size.height();
+        this.clampWindowIntoDesktop(window);
+    }
+
+    private DesktopWindowSize jeiTargetWindowSize(InventoryWindow window) {
+        if (window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+            return DesktopWindowSize.of(JEI_WINDOW_WIDTH, JEI_WINDOW_HEIGHT);
+        }
+
+        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        int maxWidth = Math.max(JEI_WINDOW_WIDTH, this.desktopWidth() - WINDOW_PLACEMENT_MARGIN * 2);
+        int topTabProtrusion = jeiRecipeTopTabProtrusion();
+        int maxHeight = Math.max(JEI_RECIPE_MIN_HEIGHT, this.desktopHeight() - WINDOW_PLACEMENT_MARGIN * 2 - topTabProtrusion);
+        int desiredWidth = JEI_WINDOW_WIDTH;
+        int desiredHeight = JEI_RECIPE_MIN_HEIGHT;
+        if (category != null) {
+            int visibleRecipes = this.jeiTargetRecipePreviewCount(window, category, maxHeight);
+            int layoutAreaHeight = this.jeiRecipeLayoutAreaHeightFor(window, category, visibleRecipes);
+            int panelHeight = JEI_RECIPE_HEADER_HEIGHT + JEI_RECIPE_NAV_BAR_PADDING + JEI_RECIPE_LIST_TOP_PADDING + JEI_RECIPE_BORDER_PADDING + layoutAreaHeight;
+            desiredHeight = TOP_BAR_HEIGHT + WINDOW_CONTENT_PADDING * 2 + panelHeight;
+        }
+        return DesktopWindowSize.of(clamp(desiredWidth, Math.min(JEI_WINDOW_WIDTH, maxWidth), maxWidth), clamp(desiredHeight, Math.min(JEI_RECIPE_MIN_HEIGHT, maxHeight), maxHeight));
+    }
+
+    private int jeiTargetRecipePreviewCount(InventoryWindow window, JeiRecipeCategory category, int maxWindowHeight) {
+        int recipeCount = Math.max(1, window.jeiRecipeEntries.size());
+        int panelHeight = maxWindowHeight - TOP_BAR_HEIGHT - WINDOW_CONTENT_PADDING * 2;
+        int availableLayoutHeight = Math.max(1, panelHeight - JEI_RECIPE_HEADER_HEIGHT - JEI_RECIPE_NAV_BAR_PADDING - JEI_RECIPE_LIST_TOP_PADDING - JEI_RECIPE_BORDER_PADDING);
+        int recipeHeight = this.jeiRecipeLayoutHeight(window, category);
+        int maxVisible = availableLayoutHeight <= recipeHeight + JEI_RECIPE_MIN_PADDING * 2
+            ? 1
+            : Math.max(1, (availableLayoutHeight - JEI_RECIPE_MIN_PADDING) / (recipeHeight + JEI_RECIPE_MIN_PADDING));
+        return clamp(recipeCount, 1, maxVisible);
+    }
+
+    private int jeiRecipeLayoutAreaHeightFor(@Nullable InventoryWindow window, JeiRecipeCategory category, int recipeCount) {
+        int visible = Math.max(1, recipeCount);
+        return visible * this.jeiRecipeLayoutHeight(window, category) + (visible + 1) * JEI_RECIPE_MIN_PADDING;
+    }
+
+    private int jeiRecipeLayoutHeight(@Nullable InventoryWindow window, @Nullable JeiRecipeCategory category) {
+        int fallback = category == null ? 1 : Math.max(1, category.height());
+        if (window == null || window.jeiRecipeEntries.isEmpty()) {
+            return fallback;
+        }
+        int height = fallback;
+        for (JeiRecipeEntry entry : window.jeiRecipeEntries) {
+            height = Math.max(height, Math.max(1, entry.height()));
+        }
+        return height;
+    }
+
+    private void clampJeiRecipePage(InventoryWindow window) {
+        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        window.jeiRecipePage = this.jeiRecipeFirstIndex(window, category);
+    }
+
+    private int jeiVisibleRecipeCount(InventoryWindow window, @Nullable JeiRecipeCategory category) {
+        if (category == null) {
+            return 1;
+        }
+        int recipeHeight = this.jeiRecipeLayoutHeight(window, category);
+        int availableHeight = Math.max(recipeHeight, this.jeiRecipeLayoutAreaHeight(window));
+        int visible = availableHeight <= recipeHeight + JEI_RECIPE_MIN_PADDING * 2
+            ? 1
+            : Math.max(1, (availableHeight - JEI_RECIPE_MIN_PADDING) / (recipeHeight + JEI_RECIPE_MIN_PADDING));
+        return clamp(Math.max(1, window.jeiRecipeEntries.size()), 1, visible);
+    }
+
+    private int jeiRecipeFirstIndex(InventoryWindow window, @Nullable JeiRecipeCategory category) {
+        return clamp(window.jeiRecipePage, 0, this.jeiRecipeMaxScrollIndex(window, category));
+    }
+
+    private int jeiRecipeMaxScrollIndex(InventoryWindow window, @Nullable JeiRecipeCategory category) {
+        if (window.jeiRecipeEntries.isEmpty()) {
+            return 0;
+        }
+        int visible = this.jeiVisibleRecipeCount(window, category);
+        return Math.max(0, window.jeiRecipeEntries.size() - Math.max(1, visible));
+    }
+
+    private List<JeiRecipeLayoutPlacement> visibleJeiRecipePlacements(InventoryWindow window, JeiRecipeCategory category) {
+        if (window.jeiRecipeEntries.isEmpty()) {
+            return List.of();
+        }
+
+        int pageSize = this.jeiVisibleRecipeCount(window, category);
+        int first = this.jeiRecipeFirstIndex(window, category);
+        window.jeiRecipePage = first;
+        int end = Math.min(window.jeiRecipeEntries.size(), first + pageSize);
+        int visible = Math.max(1, end - first);
+        int recipeHeight = this.jeiRecipeLayoutHeight(window, category);
+        int availableHeight = Math.max(recipeHeight, this.jeiRecipeLayoutAreaHeight(window));
+        int remainingHeight = Math.max(0, availableHeight - visible * recipeHeight);
+        int spacing = Math.max(JEI_RECIPE_MIN_PADDING, remainingHeight / (visible + 1));
+        int y = this.jeiRecipeLayoutAreaY(window) + spacing;
+        List<JeiRecipeLayoutPlacement> placements = new ArrayList<>(visible);
+        for (int i = first; i < end; i++) {
+            JeiRecipeEntry recipe = window.jeiRecipeEntries.get(i);
+            int layoutX = this.jeiRecipeLayoutAreaX(window) + Math.max(0, (this.jeiRecipeLayoutAreaWidth(window) - Math.max(1, recipe.width())) / 2);
+            int layoutY = y + Math.max(0, (recipeHeight - Math.max(1, recipe.height())) / 2);
+            placements.add(new JeiRecipeLayoutPlacement(recipe, layoutX, layoutY, i));
+            y += recipeHeight + spacing;
+        }
+        return placements;
+    }
+
+    private @Nullable JeiRecipeLayoutPlacement jeiRecipeLayoutPlacementAt(InventoryWindow window, double mouseX, double mouseY) {
+        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        if (category == null) {
+            return null;
+        }
+        for (JeiRecipeLayoutPlacement placement : this.visibleJeiRecipePlacements(window, category)) {
+            if (contains(mouseX, mouseY, placement.x(), placement.y(), Math.max(1, placement.recipe().width()), Math.max(1, placement.recipe().height()))) {
+                return placement;
+            }
+        }
+        return null;
+    }
+
+    private @Nullable JeiRecipeLayoutPlacement jeiRecipeLayoutPlacementFor(InventoryWindow window, JeiRecipeEntry recipe) {
+        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        if (category == null) {
+            return null;
+        }
+        for (JeiRecipeLayoutPlacement placement : this.visibleJeiRecipePlacements(window, category)) {
+            if (placement.recipe() == recipe || placement.recipe().uid().equals(recipe.uid())) {
+                return placement;
+            }
+        }
+        return null;
+    }
+
+    private @Nullable JeiRecipeLayoutPlacement jeiRecipeBookmarkButtonAt(InventoryWindow window, double mouseX, double mouseY) {
+        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        if (category == null) {
+            return null;
+        }
+        JeiDesktopAccess access = this.jeiAccess();
+        for (JeiRecipeLayoutPlacement placement : this.visibleJeiRecipePlacements(window, category)) {
+            if (!access.canBookmarkRecipe(placement.recipe())) {
+                continue;
+            }
+            JeiRecipeButtonRect rect = this.jeiRecipeBookmarkButtonRect(placement);
+            if (contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height())) {
+                return placement;
+            }
+        }
+        return null;
+    }
+
+    private @Nullable JeiRecipeTransferButtonHit jeiRecipeTransferButtonAt(InventoryWindow window, double mouseX, double mouseY) {
+        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        if (category == null) {
+            return null;
+        }
+        return this.jeiRecipeTransferButtonAt(window, this.visibleJeiRecipePlacements(window, category), mouseX, mouseY);
+    }
+
+    private @Nullable JeiRecipeTransferButtonHit jeiRecipeTransferButtonAt(InventoryWindow window, List<JeiRecipeLayoutPlacement> placements, double mouseX, double mouseY) {
+        JeiDesktopAccess access = this.jeiAccess();
+        for (JeiRecipeLayoutPlacement placement : placements) {
+            JeiRecipeTransferTarget target = this.jeiRecipeTransferTargetFor(access, placement.recipe());
+            if (target == null) {
+                continue;
+            }
+            JeiRecipeButtonRect rect = this.jeiRecipeTransferButtonRect(placement, target.plan());
+            if (contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height())) {
+                return new JeiRecipeTransferButtonHit(placement, target, this.jeiRecipeTransferAvailability(target));
+            }
+        }
+        return null;
+    }
+
+    private @Nullable JeiRecipeTransferTarget jeiRecipeTransferTargetFor(JeiDesktopAccess access, JeiRecipeEntry recipe) {
+        InventoryWindow remembered = this.lastFocusedJeiTransferTargetWindow;
+        if (this.windows.contains(remembered)) {
+            JeiRecipeTransferTarget target = this.jeiRecipeTransferTargetFor(access, recipe, remembered);
+            if (target != null) {
+                return target;
+            }
+        }
+
+        for (int i = this.windows.size() - 1; i >= 0; i--) {
+            InventoryWindow candidate = this.windows.get(i);
+            if (candidate == remembered) {
+                continue;
+            }
+            JeiRecipeTransferTarget target = this.jeiRecipeTransferTargetFor(access, recipe, candidate);
+            if (target != null) {
+                return target;
+            }
+        }
+        this.logJeiTransferDiagnostic(
+            "no-target|" + recipe.uid() + "|" + this.jeiTransferWindowsSummary(),
+            "client no transfer target desktop={} recipe={} windows={} remembered={}",
+            this.desktopId,
+            recipe.uid(),
+            this.jeiTransferWindowsSummary(),
+            remembered == null ? "none" : this.jeiTransferWindowSummary(remembered)
+        );
+        return null;
+    }
+
+    private @Nullable JeiRecipeTransferTarget jeiRecipeTransferTargetFor(JeiDesktopAccess access, JeiRecipeEntry recipe, @Nullable InventoryWindow candidate) {
+        if (!this.isJeiTransferTargetCandidateWindow(candidate)) {
+            return null;
+        }
+
+        AbstractContainerMenu menu = this.jeiTransferTargetMenu(candidate);
+        if (menu == null) {
+            this.logJeiTransferDiagnostic(
+                "null-menu|" + recipe.uid() + "|" + this.jeiTransferWindowSummary(candidate),
+                "client transfer candidate skipped reason=null-menu desktop={} recipe={} candidate={}",
+                this.desktopId,
+                recipe.uid(),
+                this.jeiTransferWindowSummary(candidate)
+            );
+            return null;
+        }
+
+        try {
+            JeiRecipeTransferPlan plan = access.recipeTransferPlan(recipe, menu);
+            if (plan == null) {
+                this.logJeiTransferDiagnostic(
+                    "plan-null|" + recipe.uid() + "|" + this.jeiTransferWindowSummary(candidate),
+                    "client transfer candidate skipped reason=plan-null desktop={} recipe={} candidate={} menu={}",
+                    this.desktopId,
+                    recipe.uid(),
+                    this.jeiTransferWindowSummary(candidate),
+                    safeMenuKey(menu)
+                );
+                return null;
+            }
+            this.logJeiTransferDiagnostic(
+                "target-ok|" + recipe.uid() + "|" + this.jeiTransferWindowSummary(candidate) + "|" + plan.requirements().size(),
+                "client transfer target OK desktop={} recipe={} candidate={} session={} menu={} recipeSlots={} requirements={} button={}x{}+{},{}",
+                this.desktopId,
+                recipe.uid(),
+                this.jeiTransferWindowSummary(candidate),
+                this.jeiTransferTargetSessionId(candidate),
+                safeMenuKey(menu),
+                plan.recipeSlotIds(),
+                plan.requirements().size(),
+                plan.button().width(),
+                plan.button().height(),
+                plan.button().x(),
+                plan.button().y()
+            );
+            return new JeiRecipeTransferTarget(this.jeiTransferTargetSessionId(candidate), menu, plan);
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client JEI transfer target lookup failed desktop={} window={} reason={}", this.desktopId, candidate.debugName(), exception.toString());
+            return null;
+        }
+    }
+
+    private boolean isJeiTransferTargetCandidateWindow(@Nullable InventoryWindow window) {
+        if (window == null || window.ghosted || window.kind == WindowKind.JEI) {
+            return false;
+        }
+        if (window.kind == WindowKind.CHARACTER) {
+            return true;
+        }
+        return window.kind == WindowKind.CONTAINER && window.session != null;
+    }
+
+    private void logJeiTransferDiagnostic(String key, String message, Object... args) {
+        if (!JEI_TRANSFER_DEBUG) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        if (key.equals(this.lastJeiTransferDiagnosticKey) && now - this.lastJeiTransferDiagnosticAt < 2_000L) {
+            return;
+        }
+        this.lastJeiTransferDiagnosticKey = key;
+        this.lastJeiTransferDiagnosticAt = now;
+        DesktopDebug.warn("JEI_TRANSFER_DIAG " + message, args);
+    }
+
+    private String jeiTransferWindowsSummary() {
+        if (this.windows.isEmpty()) {
+            return "[]";
+        }
+
+        StringBuilder summary = new StringBuilder("[");
+        for (int i = 0; i < this.windows.size(); i++) {
+            if (i > 0) {
+                summary.append(", ");
+            }
+            summary.append(this.jeiTransferWindowSummary(this.windows.get(i)));
+        }
+        summary.append(']');
+        return summary.toString();
+    }
+
+    private String jeiTransferWindowSummary(@Nullable InventoryWindow window) {
+        if (window == null) {
+            return "none";
+        }
+
+        AbstractContainerMenu menu = window.containerMenu();
+        return window.debugName()
+            + "{kind="
+            + window.kind
+            + ",focused="
+            + window.focused
+            + ",ghosted="
+            + window.ghosted
+            + ",minimized="
+            + window.minimized
+            + ",session="
+            + (window.session == null ? "none" : window.session.sessionId())
+            + ",legacy="
+            + (window.legacyMenu != null)
+            + ",menu="
+            + safeMenuKey(menu)
+            + ",menuClass="
+            + (menu == null ? "none" : menu.getClass().getName())
+            + ",slots="
+            + (menu == null ? 0 : menu.slots.size())
+            + "}";
+    }
+
+    private @Nullable AbstractContainerMenu jeiTransferTargetMenu(InventoryWindow window) {
+        if (window.kind == WindowKind.CHARACTER) {
+            return this.playerMenu();
+        }
+        return window.containerMenu();
+    }
+
+    private int jeiTransferTargetSessionId(InventoryWindow window) {
+        return window.kind == WindowKind.CHARACTER ? DesktopPackets.PLAYER_MENU_SESSION : window.sessionId();
+    }
+
+    private JeiRecipeTransferAvailability jeiRecipeTransferAvailability(JeiRecipeTransferTarget target) {
+        List<ItemStack> available = this.jeiTransferAvailableStacks(target);
+        if (this.canSatisfyJeiTransferRequirements(available, target.plan().requirements(), 0)) {
+            return new JeiRecipeTransferAvailability(true, List.of());
+        }
+
+        List<Integer> missing = new ArrayList<>();
+        for (JeiRecipeTransferSlot requirement : target.plan().requirements()) {
+            if (!this.consumeAnyJeiTransferAlternative(available, requirement.alternatives())) {
+                missing.add(requirement.inputIndex());
+            }
+        }
+        return new JeiRecipeTransferAvailability(missing.isEmpty(), missing);
+    }
+
+    private boolean canSatisfyJeiTransferRequirements(List<ItemStack> available, List<JeiRecipeTransferSlot> requirements, int index) {
+        if (index >= requirements.size()) {
+            return true;
+        }
+
+        JeiRecipeTransferSlot requirement = requirements.get(index);
+        for (ItemStack alternative : requirement.alternatives()) {
+            List<ItemStack> candidate = available.stream()
+                .map(ItemStack::copy)
+                .toList();
+            if (this.consumeJeiTransferIngredient(candidate, alternative) && this.canSatisfyJeiTransferRequirements(candidate, requirements, index + 1)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean consumeAnyJeiTransferAlternative(List<ItemStack> available, List<ItemStack> alternatives) {
+        for (ItemStack alternative : alternatives) {
+            List<ItemStack> candidate = available.stream()
+                .map(ItemStack::copy)
+                .toList();
+            if (this.consumeJeiTransferIngredient(candidate, alternative)) {
+                available.clear();
+                available.addAll(candidate);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean consumeJeiTransferIngredient(List<ItemStack> available, ItemStack ingredient) {
+        int remaining = Math.max(1, ingredient.getCount());
+        for (ItemStack stack : available) {
+            if (!ItemStack.isSameItemSameTags(stack, ingredient)) {
+                continue;
+            }
+            int consumed = Math.min(stack.getCount(), remaining);
+            stack.shrink(consumed);
+            remaining -= consumed;
+            if (remaining <= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<ItemStack> jeiTransferAvailableStacks(JeiRecipeTransferTarget target) {
+        List<ItemStack> stacks = new ArrayList<>();
+        Set<JeiTransferSourceKey> seen = new HashSet<>();
+        Set<Integer> targetRecipeSlots = new HashSet<>(target.plan().recipeSlotIds());
+        AbstractContainerMenu playerMenu = this.playerMenu();
+
+        for (Slot slot : playerMenu.slots) {
+            this.addJeiTransferAvailableStack(stacks, seen, slot, DesktopPackets.PLAYER_MENU_SESSION, target.sessionId(), targetRecipeSlots);
+        }
+        for (InventoryWindow window : this.windows) {
+            if (window.session == null || window.ghosted) {
+                continue;
+            }
+            AbstractContainerMenu menu = window.containerMenu();
+            if (menu == null) {
+                continue;
+            }
+            int sessionId = window.sessionId();
+            for (Slot slot : menu.slots) {
+                this.addJeiTransferAvailableStack(stacks, seen, slot, sessionId, target.sessionId(), targetRecipeSlots);
+            }
+        }
+
+        for (int slotId : target.plan().recipeSlotIds()) {
+            if (slotId >= 0 && slotId < target.menu().slots.size()) {
+                Slot slot = target.menu().slots.get(slotId);
+                if (slot.hasItem()) {
+                    stacks.add(slot.getItem().copy());
+                }
+            }
+        }
+        return stacks;
+    }
+
+    private void addJeiTransferAvailableStack(List<ItemStack> stacks, Set<JeiTransferSourceKey> seen, Slot slot, int sourceSessionId, int targetSessionId, Set<Integer> targetRecipeSlots) {
+        if (!this.isJeiTransferSourceSlot(slot)) {
+            return;
+        }
+        if (sourceSessionId == targetSessionId && targetRecipeSlots.contains(slot.index)) {
+            return;
+        }
+        JeiTransferSourceKey key = new JeiTransferSourceKey(slot.container, slot.getContainerSlot());
+        if (seen.add(key)) {
+            stacks.add(slot.getItem().copy());
+        }
+    }
+
+    private boolean isJeiTransferSourceSlot(Slot slot) {
+        LocalPlayer player = this.player();
+        if (player == null || !slot.isActive() || !slot.hasItem() || !slot.mayPickup(player)) {
+            return false;
+        }
+        if (slot.container == player.getInventory()) {
+            int containerSlot = slot.getContainerSlot();
+            return containerSlot >= 0 && containerSlot < Inventory.INVENTORY_SIZE;
+        }
+        return slot.mayPlace(slot.getItem());
+    }
+
+    private void sendJeiRecipeTransfer(JeiRecipeTransferTarget target, boolean maxTransfer) {
+        List<DesktopJeiTransferRequirement> requirements = target.plan().requirements()
+            .stream()
+            .map(requirement -> new DesktopJeiTransferRequirement(requirement.inputIndex(), requirement.targetSlotId(), requirement.alternatives()))
+            .toList();
+        DesktopContainerClient.transferJeiRecipe(target.sessionId(), target.plan().recipeSlotIds(), requirements, maxTransfer);
+    }
+
+    private boolean jeiMouseClicked(InventoryWindow window, MouseButtonEvent event, boolean doubleClick) {
+        JeiDesktopAccess access = this.jeiAccess();
+        if (!access.isAvailable()) {
+            return true;
+        }
+
+        if (window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+            return this.jeiRecipeMouseClicked(window, event, doubleClick);
+        }
+
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.jeiDefaultTabButtonContains(window, event.x(), event.y())) {
+            this.toggleJeiDefaultTab(window);
+            return true;
+        }
+
+        if (this.jeiSearchBoxContains(window, event.x(), event.y()) && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            this.editingJeiSearchWindow = window;
+            return true;
+        }
+        if (this.editingJeiSearchWindow == window && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            this.editingJeiSearchWindow = null;
+        }
+
+        JeiTabHit tabHit = this.jeiTabAt(window, event.x(), event.y());
+        if (tabHit != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            window.jeiSelectedTabUid = tabHit.tab().uid();
+            window.jeiScrollRow = 0;
+            DesktopDebug.trace("client JEI tab desktop={} window={} tab={}", this.desktopId, window.debugName(), tabHit.tab().uid());
+            return true;
+        }
+
+        if (this.jeiScrollbarContains(window, event.x(), event.y()) && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            this.scrollingJeiWindow = window;
+            this.movingWindow = null;
+            this.resizingWindow = null;
+            this.clearJeiRecipeLayoutDrag();
+            this.popupWindow = null;
+            this.updateJeiScrollFromMouse(window, event.y());
+            DesktopDebug.trace("client JEI scrollbar drag start desktop={} window={} scroll={}", this.desktopId, window.debugName(), window.jeiScrollRow);
+            return true;
+        }
+
+        JeiEntryHit entryHit = this.jeiEntryAt(window, event.x(), event.y());
+        if (entryHit != null) {
+            if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                this.navigateToJeiRecipeView(window, entryHit.entry(), JeiRecipeMode.RECIPES);
+            } else if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+                this.navigateToJeiRecipeView(window, entryHit.entry(), JeiRecipeMode.USES);
+            }
+            return true;
+        }
+
+        return true;
+    }
+
+    private boolean jeiRecipeMouseClicked(InventoryWindow window, MouseButtonEvent event, boolean doubleClick) {
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            if (this.jeiRecipeScrollbarContains(window, event.x(), event.y())) {
+                this.scrollingJeiWindow = window;
+                this.movingWindow = null;
+                this.resizingWindow = null;
+                this.clearJeiRecipeLayoutDrag();
+                this.popupWindow = null;
+                this.updateJeiScrollFromMouse(window, event.y());
+                DesktopDebug.trace("client JEI recipe scrollbar drag start desktop={} window={} scroll={}", this.desktopId, window.debugName(), window.jeiRecipePage);
+                return true;
+            }
+
+            JeiRecipeOptionButton optionButton = this.jeiRecipeOptionButtonAt(window, event.x(), event.y());
+            if (optionButton != null) {
+                JeiDesktopAccess access = this.jeiAccess();
+                access.toggleRecipeSortStage(optionButton.stage());
+                this.rebuildJeiRecipeView(window);
+                return true;
+            }
+
+            JeiRecipeTransferButtonHit transferHit = this.jeiRecipeTransferButtonAt(window, event.x(), event.y());
+            if (transferHit != null) {
+                if (transferHit.availability().craftable()) {
+                    this.sendJeiRecipeTransfer(transferHit.target(), this.isShiftHeld());
+                }
+                return true;
+            }
+
+            JeiRecipeLayoutPlacement bookmarkedPlacement = this.jeiRecipeBookmarkButtonAt(window, event.x(), event.y());
+            if (bookmarkedPlacement != null) {
+                this.jeiAccess().toggleRecipeBookmark(bookmarkedPlacement.recipe());
+                this.rebuildJeiRecipeView(window);
+                return true;
+            }
+
+            JeiRecipeButton button = this.jeiRecipeButtonAt(window, event.x(), event.y());
+            if (button != null) {
+                switch (button) {
+                    case HISTORY -> this.activateJeiRecipeHistoryButton(window);
+                    case PREVIOUS_CATEGORY -> this.changeJeiRecipeCategory(window, -1);
+                    case NEXT_CATEGORY -> this.changeJeiRecipeCategory(window, 1);
+                    case PREVIOUS_CATEGORY_TAB_PAGE -> this.changeJeiRecipeCategoryTabPage(window, -1);
+                    case NEXT_CATEGORY_TAB_PAGE -> this.changeJeiRecipeCategoryTabPage(window, 1);
+                }
+                return true;
+            }
+
+            JeiRecipeCategoryHit categoryHit = this.jeiRecipeCategoryAt(window, event.x(), event.y());
+            if (categoryHit != null) {
+                this.selectJeiRecipeCategory(window, categoryHit.category());
+                return true;
+            }
+        }
+
+        if (this.handleJeiRecipeLayoutMouseClicked(window, event, doubleClick)) {
+            return true;
+        }
+
+        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        if (category != null && (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
+            for (JeiRecipeLayoutPlacement placement : this.visibleJeiRecipePlacements(window, category)) {
+                if (!contains(event.x(), event.y(), placement.x(), placement.y(), Math.max(1, placement.recipe().width()), Math.max(1, placement.recipe().height()))) {
+                    continue;
+                }
+                try {
+                    JeiDesktopEntry hovered = this.jeiAccess().recipeIngredientAt(placement.recipe(), placement.x(), placement.y(), (int) event.x(), (int) event.y());
+                    if (hovered != null) {
+                        this.navigateToJeiRecipeView(window, hovered, event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT ? JeiRecipeMode.RECIPES : JeiRecipeMode.USES);
+                        return true;
+                    }
+                } catch (RuntimeException exception) {
+                    DesktopDebug.warn("client JEI recipe click failed desktop={} window={} index={} reason={}", this.desktopId, window.debugName(), placement.index(), exception.toString());
+                }
+            }
+        }
+
+        JeiStationHit stationHit = this.jeiStationAt(window, event.x(), event.y());
+        if (stationHit != null) {
+            if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                this.navigateToJeiRecipeView(window, stationHit.station(), JeiRecipeMode.RECIPES);
+            } else if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+                this.navigateToJeiRecipeView(window, stationHit.station(), JeiRecipeMode.USES);
+            }
+            return true;
+        }
+
+        return true;
+    }
+
+    private @Nullable InventoryWindow activeJeiSearchWindow() {
+        InventoryWindow window = this.editingJeiSearchWindow;
+        if (window == null || !this.windows.contains(window) || window.minimized || window.kind != WindowKind.JEI || window.jeiMode != JeiRecipeMode.INGREDIENTS || !this.jeiAccess().isAvailable()) {
+            this.editingJeiSearchWindow = null;
+            return null;
+        }
+        return window;
+    }
+
+    private boolean handleJeiSearchKey(KeyEvent event) {
+        InventoryWindow window = this.activeJeiSearchWindow();
+        if (window == null) {
+            return false;
+        }
+
+        JeiDesktopAccess access = this.jeiAccess();
+        String text = access.filterText();
+        int key = event.key();
+        if (key == GLFW.GLFW_KEY_BACKSPACE) {
+            if (!text.isEmpty()) {
+                int cut = text.offsetByCodePoints(text.length(), -1);
+                this.setJeiSearchText(window, text.substring(0, cut));
+            }
+            return true;
+        }
+        if (key == GLFW.GLFW_KEY_DELETE) {
+            this.setJeiSearchText(window, "");
+            return true;
+        }
+        if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+            this.editingJeiSearchWindow = null;
+            return true;
+        }
+        if (event.isEscape()) {
+            if (!text.isEmpty()) {
+                this.setJeiSearchText(window, "");
+            } else {
+                this.editingJeiSearchWindow = null;
+            }
+            return true;
+        }
+
+        return true;
+    }
+
+    private void setJeiSearchText(InventoryWindow window, String text) {
+        this.jeiAccess().setFilterText(text);
+        window.jeiScrollRow = 0;
+    }
+
+    private boolean scrollJeiWindow(InventoryWindow window, double scrollY) {
+        if (scrollY == 0.0D) {
+            return false;
+        }
+
+        List<JeiDesktopEntry> entries = this.jeiVisibleEntries(window);
+        JeiGridLayout layout = this.jeiGridLayout(entries.size());
+        if (!layout.scrollable()) {
+            return false;
+        }
+
+        int oldScroll = window.jeiScrollRow;
+        window.jeiScrollRow = clamp(window.jeiScrollRow + (scrollY < 0.0 ? 1 : -1), 0, layout.maxScrollRow());
+        DesktopDebug.trace("client JEI scroll desktop={} window={} old={} new={} max={}", this.desktopId, window.debugName(), oldScroll, window.jeiScrollRow, layout.maxScrollRow());
+        return true;
+    }
+
+    private boolean scrollJeiRecipeWindow(InventoryWindow window, double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (scrollY == 0.0D) {
+            return false;
+        }
+
+        int maxStationScroll = this.jeiMaxStationScroll(window);
+        if (maxStationScroll > 0 && this.jeiStationAreaContains(window, mouseX, mouseY)) {
+            int oldScroll = window.jeiStationScroll;
+            window.jeiStationScroll = clamp(window.jeiStationScroll + (scrollY < 0.0 ? 1 : -1), 0, maxStationScroll);
+            DesktopDebug.trace("client JEI station scroll desktop={} window={} old={} new={} max={}", this.desktopId, window.debugName(), oldScroll, window.jeiStationScroll, maxStationScroll);
+            return true;
+        }
+
+        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        if (category != null && this.jeiRecipeScrollAreaContains(window, mouseX, mouseY)) {
+            if (this.handleJeiRecipeLayoutMouseScrolled(window, mouseX, mouseY, scrollX, scrollY)) {
+                return true;
+            }
+            this.scrollJeiRecipeList(window, category, scrollY < 0.0 ? 1 : -1);
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean handleJeiRecipeLayoutMouseScrolled(InventoryWindow window, double mouseX, double mouseY, double scrollX, double scrollY) {
+        JeiRecipeLayoutPlacement placement = this.jeiRecipeLayoutPlacementAt(window, mouseX, mouseY);
+        if (placement == null) {
+            return false;
+        }
+
+        try {
+            return this.jeiAccess().handleRecipeMouseScrolled(placement.recipe(), placement.x(), placement.y(), mouseX, mouseY, scrollX, scrollY);
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client JEI recipe layout scroll failed desktop={} window={} index={} reason={}", this.desktopId, window.debugName(), placement.index(), exception.toString());
+            return false;
+        }
+    }
+
+    private boolean handleJeiRecipeLayoutMouseClicked(InventoryWindow window, MouseButtonEvent event, boolean doubleClick) {
+        JeiRecipeLayoutPlacement placement = this.jeiRecipeLayoutPlacementAt(window, event.x(), event.y());
+        if (placement == null) {
+            return false;
+        }
+
+        try {
+            if (this.jeiAccess().handleRecipeMouseClicked(placement.recipe(), placement.x(), placement.y(), event, doubleClick)) {
+                this.draggingJeiRecipeLayoutWindow = window;
+                this.draggingJeiRecipeLayoutEntry = placement.recipe();
+                this.scrollingJeiWindow = null;
+                return true;
+            }
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client JEI recipe layout click failed desktop={} window={} index={} reason={}", this.desktopId, window.debugName(), placement.index(), exception.toString());
+        }
+        return false;
+    }
+
+    private boolean dragJeiRecipeLayout(MouseButtonEvent event, double dx, double dy) {
+        InventoryWindow window = this.draggingJeiRecipeLayoutWindow;
+        JeiRecipeEntry entry = this.draggingJeiRecipeLayoutEntry;
+        if (window == null || entry == null || !this.windows.contains(window) || window.minimized || window.kind != WindowKind.JEI || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+            this.clearJeiRecipeLayoutDrag();
+            return false;
+        }
+
+        JeiRecipeLayoutPlacement placement = this.jeiRecipeLayoutPlacementFor(window, entry);
+        if (placement == null) {
+            this.clearJeiRecipeLayoutDrag();
+            return false;
+        }
+
+        try {
+            return this.jeiAccess().handleRecipeMouseDragged(placement.recipe(), placement.x(), placement.y(), event, dx, dy);
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client JEI recipe layout drag failed desktop={} window={} index={} reason={}", this.desktopId, window.debugName(), placement.index(), exception.toString());
+            this.clearJeiRecipeLayoutDrag();
+            return false;
+        }
+    }
+
+    private boolean releaseJeiRecipeLayoutDrag(MouseButtonEvent event) {
+        InventoryWindow window = this.draggingJeiRecipeLayoutWindow;
+        JeiRecipeEntry entry = this.draggingJeiRecipeLayoutEntry;
+        if (window == null || entry == null) {
+            return false;
+        }
+
+        JeiRecipeLayoutPlacement placement = this.jeiRecipeLayoutPlacementFor(window, entry);
+        if (placement == null) {
+            return true;
+        }
+
+        try {
+            this.jeiAccess().handleRecipeMouseReleased(placement.recipe(), placement.x(), placement.y(), event);
+        } catch (RuntimeException exception) {
+            DesktopDebug.warn("client JEI recipe layout release failed desktop={} window={} index={} reason={}", this.desktopId, window.debugName(), placement.index(), exception.toString());
+        }
+        return true;
+    }
+
+    private void updateJeiScrollFromMouse(InventoryWindow window, double mouseY) {
+        if (window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+            this.updateJeiRecipeScrollFromMouse(window, mouseY);
+            return;
+        }
+
+        List<JeiDesktopEntry> entries = this.jeiVisibleEntries(window);
+        JeiGridLayout layout = this.jeiGridLayout(entries.size());
+        if (!layout.scrollable()) {
+            window.jeiScrollRow = 0;
+            return;
+        }
+
+        int trackTop = this.jeiScrollbarY(window);
+        double amount = (mouseY - trackTop - SCROLLBAR_INSET - SCROLLBAR_THUMB_HEIGHT / 2.0D) / Math.max(1.0D, JEI_SCROLLBAR_TRACK_HEIGHT);
+        window.jeiScrollRow = clamp(Math.round((float) amount * layout.maxScrollRow()), 0, layout.maxScrollRow());
+    }
+
+    private boolean scrollJeiRecipeList(InventoryWindow window, JeiRecipeCategory category, int direction) {
+        int maxScroll = this.jeiRecipeMaxScrollIndex(window, category);
+        int oldScroll = window.jeiRecipePage;
+        window.jeiRecipePage = clamp(window.jeiRecipePage + direction, 0, maxScroll);
+        DesktopDebug.trace("client JEI recipe scroll desktop={} window={} old={} new={} max={}", this.desktopId, window.debugName(), oldScroll, window.jeiRecipePage, maxScroll);
+        return oldScroll != window.jeiRecipePage;
+    }
+
+    private void updateJeiRecipeScrollFromMouse(InventoryWindow window, double mouseY) {
+        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        int maxScroll = this.jeiRecipeMaxScrollIndex(window, category);
+        if (maxScroll <= 0) {
+            window.jeiRecipePage = 0;
+            return;
+        }
+
+        int trackTop = this.jeiRecipeScrollbarY(window);
+        double amount = (mouseY - trackTop - SCROLLBAR_INSET - SCROLLBAR_THUMB_HEIGHT / 2.0D) / Math.max(1.0D, this.jeiRecipeScrollbarTrackHeight(window));
+        window.jeiRecipePage = clamp(Math.round((float) amount * maxScroll), 0, maxScroll);
+    }
+
+    private void clampJeiScroll(InventoryWindow window) {
+        if (window.kind != WindowKind.JEI) {
+            return;
+        }
+        JeiGridLayout layout = this.jeiGridLayout(this.jeiVisibleEntries(window).size());
+        window.jeiScrollRow = clamp(window.jeiScrollRow, 0, layout.maxScrollRow());
+    }
+
+    private List<JeiDesktopEntry> jeiVisibleEntries(InventoryWindow window) {
+        JeiDesktopAccess access = this.jeiAccess();
+        if (!access.isAvailable() || window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+            return List.of();
+        }
+
+        List<JeiDesktopTab> tabs = access.tabs();
+        JeiDesktopTab selectedTab = this.selectedJeiTab(window, tabs);
+        return selectedTab == null ? List.of() : access.filteredEntries(selectedTab);
+    }
+
+    private JeiGridLayout jeiGridLayout(int itemCount) {
+        int totalRows = rowsForSlots(itemCount, JEI_GRID_COLUMNS);
+        return new JeiGridLayout(totalRows, Math.max(0, totalRows - JEI_GRID_ROWS), totalRows > JEI_GRID_ROWS);
+    }
+
+    private @Nullable JeiEntryHit jeiEntryAt(double mouseX, double mouseY) {
+        InventoryWindow window = this.windowAt(mouseX, mouseY);
+        return window == null ? null : this.jeiEntryAt(window, mouseX, mouseY);
+    }
+
+    private @Nullable JeiEntryHit jeiEntryAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != JeiRecipeMode.INGREDIENTS || !this.jeiGridContains(window, mouseX, mouseY)) {
+            return null;
+        }
+
+        int gridX = this.jeiGridX(window);
+        int gridY = this.jeiGridY(window);
+        int column = ((int) mouseX - gridX + 1) / SLOT_SIZE;
+        int row = ((int) mouseY - gridY + 1) / SLOT_SIZE;
+        if (column < 0 || column >= JEI_GRID_COLUMNS || row < 0 || row >= JEI_GRID_ROWS) {
+            return null;
+        }
+
+        List<JeiDesktopEntry> entries = this.jeiVisibleEntries(window);
+        window.jeiScrollRow = clamp(window.jeiScrollRow, 0, this.jeiGridLayout(entries.size()).maxScrollRow());
+        int index = window.jeiScrollRow * JEI_GRID_COLUMNS + row * JEI_GRID_COLUMNS + column;
+        if (index < 0 || index >= entries.size()) {
+            return null;
+        }
+
+        return new JeiEntryHit(window, entries.get(index), gridX + column * SLOT_SIZE, gridY + row * SLOT_SIZE, index);
+    }
+
+    private @Nullable JeiTabHit jeiTabAt(double mouseX, double mouseY) {
+        InventoryWindow window = this.windowAt(mouseX, mouseY);
+        return window == null ? null : this.jeiTabAt(window, mouseX, mouseY);
+    }
+
+    private @Nullable JeiTabHit jeiTabAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != JeiRecipeMode.INGREDIENTS || !this.jeiAccess().isAvailable()) {
+            return null;
+        }
+
+        List<JeiDesktopTab> tabs = this.jeiAccess().tabs();
+        int visible = this.jeiVisibleIngredientTabCount(window, tabs);
+        int x = jeiRecipeTopTabsX(window);
+        int y = jeiRecipeTopTabsY(window);
+        for (int i = 0; i < visible; i++) {
+            JeiDesktopTab tab = tabs.get(i);
+            if (contains(mouseX, mouseY, x, y, JEI_RECIPE_TAB_SIZE, JEI_RECIPE_TAB_SIZE)) {
+                return new JeiTabHit(window, tab, x, y, JEI_RECIPE_TAB_SIZE);
+            }
+            x += JEI_RECIPE_TAB_SIZE + JEI_RECIPE_TAB_GAP;
+        }
+        return null;
+    }
+
+    private boolean jeiGridContains(InventoryWindow window, double mouseX, double mouseY) {
+        return window.kind == WindowKind.JEI
+            && window.jeiMode == JeiRecipeMode.INGREDIENTS
+            && contains(mouseX, mouseY, this.jeiGridX(window) - 1, this.jeiGridY(window) - 1, JEI_GRID_COLUMNS * SLOT_SIZE, JEI_GRID_ROWS * SLOT_SIZE);
+    }
+
+    private boolean jeiListScrollAreaContains(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+            return false;
+        }
+        int x = this.jeiGridX(window) - 1;
+        int y = this.jeiGridY(window) - 1;
+        int right = this.jeiScrollbarX(window) + SCROLLBAR_WIDTH;
+        return contains(mouseX, mouseY, x, y, Math.max(1, right - x), JEI_SCROLLBAR_BACKGROUND_HEIGHT);
+    }
+
+    private boolean jeiSearchBoxContains(InventoryWindow window, double mouseX, double mouseY) {
+        return window.kind == WindowKind.JEI
+            && !window.minimized
+            && window.jeiMode == JeiRecipeMode.INGREDIENTS
+            && contains(mouseX, mouseY, this.jeiSearchX(window), this.jeiSearchY(window), this.jeiSearchWidth(window), JEI_SEARCH_HEIGHT);
+    }
+
+    private boolean jeiDefaultTabButtonContains(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+            return false;
+        }
+        JeiRecipeButtonRect rect = this.jeiDefaultTabButtonRect(window);
+        return contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height());
+    }
+
+    private @Nullable JeiRecipeOptionButton jeiRecipeOptionButtonAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+            return null;
+        }
+        for (JeiRecipeOptionButton button : JeiRecipeOptionButton.values()) {
+            JeiRecipeButtonRect rect = this.jeiRecipeOptionButtonRect(window, button);
+            if (contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height())) {
+                return button;
+            }
+        }
+        return null;
+    }
+
+    private boolean jeiScrollbarContains(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+            return false;
+        }
+
+        JeiGridLayout layout = this.jeiGridLayout(this.jeiVisibleEntries(window).size());
+        return layout.scrollable()
+            && contains(mouseX, mouseY, this.jeiScrollbarX(window) - 2, this.jeiScrollbarY(window) - 2, SCROLLBAR_WIDTH + 4, JEI_SCROLLBAR_BACKGROUND_HEIGHT + 4);
+    }
+
+    private boolean jeiRecipeScrollAreaContains(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+            return false;
+        }
+
+        int x = this.jeiRecipeLayoutAreaX(window);
+        int y = this.jeiRecipeLayoutAreaY(window);
+        int width = this.jeiRecipePanelWidth(window) - JEI_RECIPE_BORDER_PADDING * 2;
+        return contains(mouseX, mouseY, x, y, Math.max(1, width), this.jeiRecipeLayoutAreaHeight(window));
+    }
+
+    private boolean jeiRecipeScrollbarContains(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+            return false;
+        }
+
+        return this.jeiRecipeMaxScrollIndex(window, this.selectedJeiRecipeCategory(window)) > 0
+            && contains(mouseX, mouseY, this.jeiRecipeScrollbarX(window) - 2, this.jeiRecipeScrollbarY(window) - 2, SCROLLBAR_WIDTH + 4, this.jeiRecipeScrollbarHeight(window) + 4);
+    }
+
+    private @Nullable JeiRecipeButton jeiRecipeButtonAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+            return null;
+        }
+        for (JeiRecipeButton button : JeiRecipeButton.values()) {
+            if ((button == JeiRecipeButton.PREVIOUS_CATEGORY_TAB_PAGE || button == JeiRecipeButton.NEXT_CATEGORY_TAB_PAGE) && !this.hasJeiRecipeCategoryTabPages(window)) {
+                continue;
+            }
+            JeiRecipeButtonRect rect = this.jeiRecipeButtonRect(window, button);
+            if (contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height())) {
+                return button;
+            }
+        }
+        return null;
+    }
+
+    private JeiRecipeButtonRect jeiRecipeButtonRect(InventoryWindow window, JeiRecipeButton button) {
+        return switch (button) {
+            case HISTORY -> jeiRecipeHistoryButtonRect(window);
+            case PREVIOUS_CATEGORY -> this.jeiPreviousCategoryButtonRect(window);
+            case NEXT_CATEGORY -> this.jeiNextCategoryButtonRect(window);
+            case PREVIOUS_CATEGORY_TAB_PAGE -> this.jeiPreviousCategoryTabPageButtonRect(window);
+            case NEXT_CATEGORY_TAB_PAGE -> this.jeiNextCategoryTabPageButtonRect(window);
+        };
+    }
+
+    private JeiRecipeButtonRect jeiPreviousCategoryButtonRect(InventoryWindow window) {
+        return new JeiRecipeButtonRect(this.jeiRecipePanelX(window) + JEI_RECIPE_BORDER_PADDING, this.jeiRecipePanelY(window) + 4, JEI_RECIPE_BUTTON_SIZE, JEI_RECIPE_BUTTON_SIZE);
+    }
+
+    private JeiRecipeButtonRect jeiNextCategoryButtonRect(InventoryWindow window) {
+        return new JeiRecipeButtonRect(this.jeiRecipePanelX(window) + this.jeiRecipePanelWidth(window) - JEI_RECIPE_BORDER_PADDING - JEI_RECIPE_BUTTON_SIZE, this.jeiRecipePanelY(window) + 4, JEI_RECIPE_BUTTON_SIZE, JEI_RECIPE_BUTTON_SIZE);
+    }
+
+    private JeiRecipeButtonRect jeiPreviousCategoryTabPageButtonRect(InventoryWindow window) {
+        int x = window.x + window.width - JEI_RECIPE_TAB_PAGE_BUTTON_SIZE * 2 - JEI_RECIPE_TAB_PAGE_BUTTON_GAP;
+        int y = jeiRecipeTopTabsY(window) + (JEI_RECIPE_TAB_SIZE - JEI_RECIPE_TAB_PAGE_BUTTON_SIZE) / 2;
+        return new JeiRecipeButtonRect(x, y, JEI_RECIPE_TAB_PAGE_BUTTON_SIZE, JEI_RECIPE_TAB_PAGE_BUTTON_SIZE);
+    }
+
+    private JeiRecipeButtonRect jeiNextCategoryTabPageButtonRect(InventoryWindow window) {
+        JeiRecipeButtonRect previous = this.jeiPreviousCategoryTabPageButtonRect(window);
+        return new JeiRecipeButtonRect(previous.x() + previous.width() + JEI_RECIPE_TAB_PAGE_BUTTON_GAP, previous.y(), JEI_RECIPE_TAB_PAGE_BUTTON_SIZE, JEI_RECIPE_TAB_PAGE_BUTTON_SIZE);
+    }
+
+    private JeiRecipeButtonRect jeiRecipeBookmarkButtonRect(JeiRecipeLayoutPlacement placement) {
+        JeiRecipeButtonRect transferRect = this.jeiRecipeSideButtonRect(placement, 0);
+        int x = transferRect.x();
+        int y = transferRect.y() - JEI_RECIPE_FAVORITE_BUTTON_SIZE - JEI_RECIPE_FAVORITE_BUTTON_GAP;
+        return new JeiRecipeButtonRect(x, y, JEI_RECIPE_FAVORITE_BUTTON_SIZE, JEI_RECIPE_FAVORITE_BUTTON_SIZE);
+    }
+
+    private JeiRecipeButtonRect jeiRecipeTransferButtonRect(JeiRecipeLayoutPlacement placement, JeiRecipeTransferPlan plan) {
+        return this.jeiRecipeSideButtonRect(placement, 0);
+    }
+
+    private JeiRecipeButtonRect jeiRecipeSideButtonRect(JeiRecipeLayoutPlacement placement, int indexFromBottom) {
+        int x = placement.x() + Math.max(1, placement.recipe().width()) + JEI_RECIPE_FAVORITE_BUTTON_GAP - 3;
+        int y = placement.y()
+            + Math.max(1, placement.recipe().height())
+            - JEI_RECIPE_FAVORITE_BUTTON_SIZE
+            - 4
+            - indexFromBottom * (JEI_RECIPE_FAVORITE_BUTTON_SIZE + JEI_RECIPE_FAVORITE_BUTTON_GAP);
+        return new JeiRecipeButtonRect(x, y, JEI_RECIPE_FAVORITE_BUTTON_SIZE, JEI_RECIPE_FAVORITE_BUTTON_SIZE);
+    }
+
+    private static JeiRecipeButtonRect jeiRecipeHistoryButtonRect(InventoryWindow window) {
+        int x = jeiRecipeStationTabsX(window) + (JEI_RECIPE_STATION_TAB_SIZE - JEI_RECIPE_TAB_PAGE_BUTTON_SIZE) / 2 + 3;
+        int y = jeiRecipeTopTabsY(window) + (JEI_RECIPE_TAB_SIZE - JEI_RECIPE_TAB_PAGE_BUTTON_SIZE) / 2 - 1;
+        return new JeiRecipeButtonRect(x, y, JEI_RECIPE_TAB_PAGE_BUTTON_SIZE, JEI_RECIPE_TAB_PAGE_BUTTON_SIZE);
+    }
+
+    private JeiRecipeButtonRect jeiDefaultTabButtonRect(InventoryWindow window) {
+        int x = window.x + TITLE_LEFT_PADDING + this.font.width(JEI_TITLE) + JEI_DEFAULT_TAB_BUTTON_GAP;
+        int y = window.y + 4;
+        return new JeiRecipeButtonRect(x, y, JEI_DEFAULT_TAB_BUTTON_SIZE, JEI_DEFAULT_TAB_BUTTON_SIZE);
+    }
+
+    private static JeiRecipeButtonRect jeiRecipeOptionButtonBackgroundRect(InventoryWindow window) {
+        int width = JEI_RECIPE_OPTION_TAB_WIDTH;
+        int height = JEI_RECIPE_OPTION_TAB_HEIGHT;
+        int x = window.x - width + JEI_RECIPE_OPTION_TAB_OVERLAP;
+        int y = window.y + window.height - height;
+        return new JeiRecipeButtonRect(x, y, width, height);
+    }
+
+    private JeiRecipeButtonRect jeiRecipeOptionButtonRect(InventoryWindow window, JeiRecipeOptionButton button) {
+        JeiRecipeButtonRect background = jeiRecipeOptionButtonBackgroundRect(window);
+        int x = background.x() + JEI_RECIPE_OPTION_TAB_PADDING + JEI_RECIPE_OPTION_BUTTON_BORDER;
+        int y = background.y() + JEI_RECIPE_OPTION_TAB_PADDING + JEI_RECIPE_OPTION_BUTTON_BORDER + button.ordinal() * JEI_RECIPE_OPTION_BUTTON_SIZE;
+        return new JeiRecipeButtonRect(x, y, JEI_RECIPE_OPTION_BUTTON_SIZE, JEI_RECIPE_OPTION_BUTTON_SIZE);
+    }
+
+    private @Nullable JeiRecipeCategoryHit jeiRecipeCategoryAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+            return null;
+        }
+
+        int tabsPerPage = this.jeiRecipeTabsPerPage(window);
+        if (tabsPerPage <= 0) {
+            return null;
+        }
+        int start = window.jeiCategoryTabPage * tabsPerPage;
+        int end = Math.min(window.jeiRecipeCategories.size(), start + tabsPerPage);
+        int x = this.jeiRecipeTabsX(window);
+        int y = this.jeiRecipeTabsY(window);
+        for (int i = start; i < end; i++) {
+            if (contains(mouseX, mouseY, x, y, JEI_RECIPE_TAB_SIZE, JEI_RECIPE_TAB_SIZE)) {
+                return new JeiRecipeCategoryHit(window.jeiRecipeCategories.get(i), x, y);
+            }
+            x += JEI_RECIPE_TAB_SIZE + JEI_RECIPE_TAB_GAP;
+        }
+        return null;
+    }
+
+    private @Nullable JeiStationHit jeiStationAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+            return null;
+        }
+
+        int visible = this.jeiVisibleStationCount(window);
+        int end = Math.min(window.jeiStations.size(), window.jeiStationScroll + visible);
+        int x = this.jeiStationTabsX(window);
+        for (int i = window.jeiStationScroll; i < end; i++) {
+            int slotY = this.jeiStationSlotY(window, i - window.jeiStationScroll);
+            if (contains(mouseX, mouseY, x + JEI_RECIPE_STATION_PADDING, slotY, JEI_RECIPE_STATION_SLOT_SIZE, JEI_RECIPE_STATION_SLOT_SIZE)) {
+                return new JeiStationHit(window.jeiStations.get(i), x, slotY);
+            }
+        }
+        return null;
+    }
+
+    private boolean jeiStationAreaContains(InventoryWindow window, double mouseX, double mouseY) {
+        return contains(
+            mouseX,
+            mouseY,
+            this.jeiStationTabsX(window),
+            this.jeiStationTabsY(window),
+            JEI_RECIPE_STATION_TAB_SIZE,
+            jeiRecipeStationTabsHeight(window)
+        );
+    }
+
+    private int jeiRecipePanelX(InventoryWindow window) {
+        return window.contentX();
+    }
+
+    private int jeiRecipePanelY(InventoryWindow window) {
+        return window.contentY();
+    }
+
+    private int jeiRecipePanelWidth(InventoryWindow window) {
+        return window.width - WINDOW_CONTENT_PADDING * 2;
+    }
+
+    private int jeiRecipePanelHeight(InventoryWindow window) {
+        return window.height - TOP_BAR_HEIGHT - WINDOW_CONTENT_PADDING * 2;
+    }
+
+    private int jeiRecipeTabsX(InventoryWindow window) {
+        return jeiRecipeTopTabsX(window);
+    }
+
+    private int jeiRecipeTabsY(InventoryWindow window) {
+        return jeiRecipeTopTabsY(window);
+    }
+
+    private int jeiRecipeTabsPerPage(InventoryWindow window) {
+        return jeiRecipeTopTabsPerPage(window);
+    }
+
+    private int jeiRecipeMaxCategoryTabPage(InventoryWindow window) {
+        int tabsPerPage = this.jeiRecipeTabsPerPage(window);
+        return Math.max(0, rowsForSlots(window.jeiRecipeCategories.size(), tabsPerPage) - 1);
+    }
+
+    private boolean hasJeiRecipeCategoryTabPages(InventoryWindow window) {
+        return jeiRecipeHasCategoryTabPages(window);
+    }
+
+    private int jeiStationTabsX(InventoryWindow window) {
+        return jeiRecipeStationTabsX(window);
+    }
+
+    private int jeiStationTabsY(InventoryWindow window) {
+        return jeiRecipeStationTabsY(window);
+    }
+
+    private int jeiStationSlotY(InventoryWindow window, int visibleIndex) {
+        return this.jeiStationTabsY(window) + JEI_RECIPE_STATION_PADDING + visibleIndex * (JEI_RECIPE_STATION_SLOT_SIZE + JEI_RECIPE_STATION_GAP);
+    }
+
+    private int jeiVisibleStationCount(InventoryWindow window) {
+        return jeiRecipeVisibleStationCount(window);
+    }
+
+    private int jeiMaxStationScroll(InventoryWindow window) {
+        return Math.max(0, window.jeiStations.size() - this.jeiVisibleStationCount(window));
+    }
+
+    private int jeiRecipeLayoutAreaX(InventoryWindow window) {
+        return this.jeiRecipePanelX(window) + JEI_RECIPE_BORDER_PADDING;
+    }
+
+    private int jeiRecipeLayoutAreaY(InventoryWindow window) {
+        return this.jeiRecipePanelY(window) + JEI_RECIPE_HEADER_HEIGHT + JEI_RECIPE_NAV_BAR_PADDING + JEI_RECIPE_LIST_TOP_PADDING;
+    }
+
+    private int jeiRecipeLayoutAreaWidth(InventoryWindow window) {
+        int scrollbarReserve = this.jeiRecipeMaxScrollIndex(window, this.selectedJeiRecipeCategory(window)) > 0 ? SCROLLBAR_WIDTH + JEI_RECIPE_SCROLLBAR_GAP : 0;
+        return Math.max(1, this.jeiRecipePanelWidth(window) - JEI_RECIPE_BORDER_PADDING * 2 - scrollbarReserve);
+    }
+
+    private int jeiRecipeLayoutAreaHeight(InventoryWindow window) {
+        return Math.max(1, this.jeiRecipePanelHeight(window) - JEI_RECIPE_HEADER_HEIGHT - JEI_RECIPE_BORDER_PADDING - JEI_RECIPE_NAV_BAR_PADDING - JEI_RECIPE_LIST_TOP_PADDING);
+    }
+
+    private int jeiRecipeScrollbarX(InventoryWindow window) {
+        return this.jeiRecipePanelX(window) + this.jeiRecipePanelWidth(window) - JEI_RECIPE_BORDER_PADDING - SCROLLBAR_WIDTH;
+    }
+
+    private int jeiRecipeScrollbarY(InventoryWindow window) {
+        return this.jeiRecipeLayoutAreaY(window);
+    }
+
+    private int jeiRecipeScrollbarHeight(InventoryWindow window) {
+        return this.jeiRecipeLayoutAreaHeight(window);
+    }
+
+    private int jeiRecipeScrollbarTrackHeight(InventoryWindow window) {
+        return Math.max(1, this.jeiRecipeScrollbarHeight(window) - SCROLLBAR_INSET * 2 - SCROLLBAR_THUMB_HEIGHT);
+    }
+
+    private int jeiSearchX(InventoryWindow window) {
+        return window.contentX();
+    }
+
+    private int jeiSearchY(InventoryWindow window) {
+        return window.contentY();
+    }
+
+    private int jeiSearchWidth(InventoryWindow window) {
+        return window.width - WINDOW_CONTENT_PADDING * 2;
+    }
+
+    private int jeiGridX(InventoryWindow window) {
+        return window.contentX();
+    }
+
+    private int jeiGridY(InventoryWindow window) {
+        return window.contentY() + JEI_GRID_Y;
+    }
+
+    private int jeiScrollbarX(InventoryWindow window) {
+        return this.jeiGridX(window) + JEI_GRID_COLUMNS * SLOT_SIZE + JEI_SCROLLBAR_GAP;
+    }
+
+    private int jeiScrollbarY(InventoryWindow window) {
+        return this.jeiGridY(window) - 1;
+    }
+
+    private String jeiSearchVisibleText(String text, int maxWidth) {
+        if (this.font.width(text) <= maxWidth) {
+            return text;
+        }
+
+        while (!text.isEmpty() && this.font.width(text) > maxWidth) {
+            text = text.substring(1);
+        }
+        return text;
+    }
+
+    private String fitText(String text, int maxWidth) {
+        if (maxWidth <= 0) {
+            return "";
+        }
+        if (this.font.width(text) <= maxWidth) {
+            return text;
+        }
+
+        String suffix = "...";
+        while (!text.isEmpty() && this.font.width(text + suffix) > maxWidth) {
+            text = text.substring(0, text.length() - 1);
+        }
+        return text.isEmpty() ? "" : text + suffix;
     }
 
     private void renderContainerWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
@@ -10443,6 +12966,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return;
         }
 
+        JeiEntryHit jeiEntryHit = this.jeiEntryAt(mouseX, mouseY);
+        if (jeiEntryHit != null && this.sharedCarried.isEmpty()) {
+            try {
+                List<Component> tooltip = this.jeiAccess().tooltip(jeiEntryHit.entry());
+                if (!tooltip.isEmpty()) {
+                    graphics.setComponentTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
+                    return;
+                }
+            } catch (RuntimeException exception) {
+                DesktopDebug.warn("client JEI tooltip failed desktop={} reason={}", this.desktopId, exception.toString());
+            }
+        }
+
         SlotHit hit = this.slotAt(mouseX, mouseY);
         if (hit != null && hit.slot().hasItem() && this.sharedCarried.isEmpty()) {
             graphics.setTooltipForNextFrame(this.font, hit.slot().getItem(), mouseX, mouseY);
@@ -10465,6 +13001,67 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (creativeTabHit != null && this.sharedCarried.isEmpty()) {
             graphics.setTooltipForNextFrame(this.font, creativeTabHit.tab().getDisplayName(), mouseX, mouseY);
             return;
+        }
+
+        JeiTabHit jeiTabHit = this.jeiTabAt(mouseX, mouseY);
+        if (jeiTabHit != null && this.sharedCarried.isEmpty()) {
+            graphics.setTooltipForNextFrame(this.font, jeiTabHit.tab().title(), mouseX, mouseY);
+            return;
+        }
+
+        InventoryWindow jeiWindow = hoveredWindow != null && hoveredWindow.kind == WindowKind.JEI ? hoveredWindow : null;
+        if (jeiWindow != null && jeiWindow.jeiMode == JeiRecipeMode.INGREDIENTS && this.sharedCarried.isEmpty()) {
+            if (this.jeiDefaultTabButtonContains(jeiWindow, mouseX, mouseY)) {
+                boolean selectedDefault = !jeiWindow.jeiDefaultTabUid.isEmpty() && jeiWindow.jeiDefaultTabUid.equals(jeiWindow.jeiSelectedTabUid);
+                graphics.setTooltipForNextFrame(this.font, Component.literal(selectedDefault ? "Clear default JEI tab" : "Set as default JEI tab"), mouseX, mouseY);
+                return;
+            }
+        }
+        if (jeiWindow != null && jeiWindow.jeiMode != JeiRecipeMode.INGREDIENTS && this.sharedCarried.isEmpty()) {
+            JeiRecipeOptionButton optionButton = this.jeiRecipeOptionButtonAt(jeiWindow, mouseX, mouseY);
+            if (optionButton != null) {
+                boolean enabled = this.jeiAccess().isRecipeSortStageEnabled(optionButton.stage());
+                graphics.setTooltipForNextFrame(this.font, Component.translatable(optionButton.tooltipKey(enabled)), mouseX, mouseY);
+                return;
+            }
+            JeiRecipeCategoryHit categoryHit = this.jeiRecipeCategoryAt(jeiWindow, mouseX, mouseY);
+            if (categoryHit != null) {
+                graphics.setTooltipForNextFrame(this.font, categoryHit.category().title(), mouseX, mouseY);
+                return;
+            }
+            JeiStationHit stationHit = this.jeiStationAt(jeiWindow, mouseX, mouseY);
+            if (stationHit != null) {
+                try {
+                    List<Component> tooltip = this.jeiAccess().tooltip(stationHit.station());
+                    if (!tooltip.isEmpty()) {
+                        graphics.setComponentTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
+                        return;
+                    }
+                } catch (RuntimeException exception) {
+                    DesktopDebug.warn("client JEI station tooltip failed desktop={} reason={}", this.desktopId, exception.toString());
+                }
+            }
+            JeiRecipeButton button = this.jeiRecipeButtonAt(jeiWindow, mouseX, mouseY);
+            if (button != null) {
+                graphics.setTooltipForNextFrame(this.font, Component.literal(this.jeiRecipeButtonTooltip(button)), mouseX, mouseY);
+                return;
+            }
+            JeiRecipeTransferButtonHit transferHit = this.jeiRecipeTransferButtonAt(jeiWindow, mouseX, mouseY);
+            if (transferHit != null) {
+                List<Component> tooltip = new ArrayList<>();
+                tooltip.add(Component.translatable("jei.tooltip.transfer"));
+                if (!transferHit.availability().craftable()) {
+                    tooltip.add(Component.translatable("jei.tooltip.error.recipe.transfer.missing").withStyle(ChatFormatting.RED));
+                }
+                graphics.setComponentTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
+                return;
+            }
+            JeiRecipeLayoutPlacement bookmarkedPlacement = this.jeiRecipeBookmarkButtonAt(jeiWindow, mouseX, mouseY);
+            if (bookmarkedPlacement != null) {
+                Component tooltip = Component.translatable(this.jeiAccess().isRecipeBookmarked(bookmarkedPlacement.recipe()) ? "jei.tooltip.bookmarks.recipe.remove" : "jei.tooltip.bookmarks.recipe.add");
+                graphics.setTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
+                return;
+            }
         }
 
         InventoryWindow window = this.windowAt(mouseX, mouseY);
@@ -10581,6 +13178,55 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
         if (centerWidth > 0 && centerHeight > 0) {
             blitRegion(graphics, texture, x + edge, y + edge, 5, 5, centerWidth, centerHeight, 1, 1, WINDOW_TEXTURE_SIZE, WINDOW_TEXTURE_SIZE);
+        }
+    }
+
+    private static void renderJeiNineSlice(GuiGraphicsExtractor graphics, ResourceLocation texture, int x, int y, int width, int height, int textureWidth, int textureHeight, int border) {
+        renderJeiNineSlice(graphics, texture, x, y, width, height, textureWidth, textureHeight, border, border, border, border);
+    }
+
+    private static void renderJeiNineSlice(
+        GuiGraphicsExtractor graphics,
+        ResourceLocation texture,
+        int x,
+        int y,
+        int width,
+        int height,
+        int textureWidth,
+        int textureHeight,
+        int left,
+        int right,
+        int top,
+        int bottom
+    ) {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+
+        left = Math.min(left, width / 2);
+        right = Math.min(right, width - left);
+        top = Math.min(top, height / 2);
+        bottom = Math.min(bottom, height - top);
+        int centerWidth = Math.max(0, width - left - right);
+        int centerHeight = Math.max(0, height - top - bottom);
+        int sourceCenterWidth = Math.max(1, textureWidth - left - right);
+        int sourceCenterHeight = Math.max(1, textureHeight - top - bottom);
+
+        blitRegion(graphics, texture, x, y, 0, 0, left, top, left, top, textureWidth, textureHeight);
+        blitRegion(graphics, texture, x + left + centerWidth, y, textureWidth - right, 0, right, top, right, top, textureWidth, textureHeight);
+        blitRegion(graphics, texture, x, y + top + centerHeight, 0, textureHeight - bottom, left, bottom, left, bottom, textureWidth, textureHeight);
+        blitRegion(graphics, texture, x + left + centerWidth, y + top + centerHeight, textureWidth - right, textureHeight - bottom, right, bottom, right, bottom, textureWidth, textureHeight);
+
+        if (centerWidth > 0) {
+            blitRegion(graphics, texture, x + left, y, left, 0, centerWidth, top, sourceCenterWidth, top, textureWidth, textureHeight);
+            blitRegion(graphics, texture, x + left, y + top + centerHeight, left, textureHeight - bottom, centerWidth, bottom, sourceCenterWidth, bottom, textureWidth, textureHeight);
+        }
+        if (centerHeight > 0) {
+            blitRegion(graphics, texture, x, y + top, 0, top, left, centerHeight, left, sourceCenterHeight, textureWidth, textureHeight);
+            blitRegion(graphics, texture, x + left + centerWidth, y + top, textureWidth - right, top, right, centerHeight, right, sourceCenterHeight, textureWidth, textureHeight);
+        }
+        if (centerWidth > 0 && centerHeight > 0) {
+            blitRegion(graphics, texture, x + left, y + top, left, top, centerWidth, centerHeight, sourceCenterWidth, sourceCenterHeight, textureWidth, textureHeight);
         }
     }
 
@@ -10745,6 +13391,61 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return window.x + CREATIVE_CONTENT_MARGIN;
     }
 
+    private static int jeiRecipeTopTabsX(InventoryWindow window) {
+        return window.x + JEI_RECIPE_BORDER_PADDING;
+    }
+
+    private static int jeiRecipeTopTabsY(InventoryWindow window) {
+        return window.y - JEI_RECIPE_TAB_SIZE + JEI_RECIPE_TOP_TAB_FRAME_OVERLAP + JEI_RECIPE_TOP_TAB_Y_OFFSET;
+    }
+
+    private static int jeiRecipeTopTabProtrusion() {
+        return JEI_RECIPE_TAB_SIZE - JEI_RECIPE_TOP_TAB_FRAME_OVERLAP - JEI_RECIPE_TOP_TAB_Y_OFFSET;
+    }
+
+    private static int jeiRecipeTopTabsPerPage(InventoryWindow window) {
+        int available = Math.max(JEI_RECIPE_TAB_SIZE, window.width - JEI_RECIPE_BORDER_PADDING * 2);
+        int fit = (available + JEI_RECIPE_TAB_GAP) / (JEI_RECIPE_TAB_SIZE + JEI_RECIPE_TAB_GAP);
+        return clamp(fit, 1, JEI_RECIPE_MAX_TABS_PER_PAGE);
+    }
+
+    private static int jeiRecipeVisibleTopTabCount(InventoryWindow window) {
+        if (window.jeiRecipeCategories.isEmpty()) {
+            return 0;
+        }
+
+        int tabsPerPage = jeiRecipeTopTabsPerPage(window);
+        int start = clamp(window.jeiCategoryTabPage, 0, Math.max(0, rowsForSlots(window.jeiRecipeCategories.size(), tabsPerPage) - 1)) * tabsPerPage;
+        return Math.max(0, Math.min(window.jeiRecipeCategories.size() - start, tabsPerPage));
+    }
+
+    private static int jeiRecipeTopTabsWidth(InventoryWindow window) {
+        int visible = jeiRecipeVisibleTopTabCount(window);
+        return visible <= 0 ? 0 : visible * JEI_RECIPE_TAB_SIZE + (visible - 1) * JEI_RECIPE_TAB_GAP;
+    }
+
+    private static boolean jeiRecipeHasCategoryTabPages(InventoryWindow window) {
+        return window.jeiRecipeCategories.size() > jeiRecipeTopTabsPerPage(window);
+    }
+
+    private static int jeiRecipeStationTabsX(InventoryWindow window) {
+        return window.x - JEI_RECIPE_STATION_TAB_SIZE + JEI_RECIPE_STATION_TAB_FRAME_OVERLAP;
+    }
+
+    private static int jeiRecipeStationTabsY(InventoryWindow window) {
+        return window.y;
+    }
+
+    private static int jeiRecipeVisibleStationCount(InventoryWindow window) {
+        int available = window.y + window.height - WINDOW_CONTENT_PADDING - jeiRecipeStationTabsY(window);
+        return Math.max(0, (available - JEI_RECIPE_STATION_PADDING * 2 + JEI_RECIPE_STATION_GAP) / (JEI_RECIPE_STATION_SLOT_SIZE + JEI_RECIPE_STATION_GAP));
+    }
+
+    private static int jeiRecipeStationTabsHeight(InventoryWindow window) {
+        int visible = Math.min(window.jeiStations.size(), jeiRecipeVisibleStationCount(window));
+        return visible <= 0 ? 0 : JEI_RECIPE_STATION_PADDING * 2 + visible * JEI_RECIPE_STATION_SLOT_SIZE + (visible - 1) * JEI_RECIPE_STATION_GAP;
+    }
+
     private static int creativeTopTabsY(InventoryWindow window) {
         return window.y - CREATIVE_TAB_HEIGHT + CREATIVE_TAB_FRAME_OVERLAP + CREATIVE_TOP_TAB_Y_OFFSET;
     }
@@ -10880,10 +13581,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         INVENTORY,
         CONTAINER,
         CHARACTER,
-        CREATIVE
+        CREATIVE,
+        JEI
     }
 
     private enum WindowPlacement {
+        TOP_LEFT,
+        TOP_RIGHT,
         CENTER,
         BOTTOM_LEFT,
         CONTAINER
@@ -10901,6 +13605,47 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         WindowControl(String label) {
             this.label = label;
+        }
+    }
+
+    private enum JeiRecipeButton {
+        HISTORY("Back"),
+        PREVIOUS_CATEGORY("Previous category"),
+        NEXT_CATEGORY("Next category"),
+        PREVIOUS_CATEGORY_TAB_PAGE("Previous tab page"),
+        NEXT_CATEGORY_TAB_PAGE("Next tab page");
+
+        private final String tooltip;
+
+        JeiRecipeButton(String tooltip) {
+            this.tooltip = tooltip;
+        }
+
+        private String tooltip() {
+            return this.tooltip;
+        }
+    }
+
+    private enum JeiRecipeOptionButton {
+        BOOKMARKED(JeiRecipeSortStage.BOOKMARKED, "jei.tooltip.recipe.sort.bookmarks.first.disabled", "jei.tooltip.recipe.sort.bookmarks.first.enabled"),
+        CRAFTABLE(JeiRecipeSortStage.CRAFTABLE, "jei.tooltip.recipe.sort.craftable.first.disabled", "jei.tooltip.recipe.sort.craftable.first.enabled");
+
+        private final JeiRecipeSortStage stage;
+        private final String disabledTooltipKey;
+        private final String enabledTooltipKey;
+
+        JeiRecipeOptionButton(JeiRecipeSortStage stage, String disabledTooltipKey, String enabledTooltipKey) {
+            this.stage = stage;
+            this.disabledTooltipKey = disabledTooltipKey;
+            this.enabledTooltipKey = enabledTooltipKey;
+        }
+
+        private JeiRecipeSortStage stage() {
+            return this.stage;
+        }
+
+        private String tooltipKey(boolean enabled) {
+            return enabled ? this.enabledTooltipKey : this.disabledTooltipKey;
         }
     }
 
@@ -10993,6 +13738,42 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private record CreativeTabHit(InventoryWindow window, CreativeModeTab tab, CreativeTabRect rect) {
     }
 
+    private record JeiEntryHit(InventoryWindow window, JeiDesktopEntry entry, int x, int y, int index) {
+    }
+
+    private record JeiTabHit(InventoryWindow window, JeiDesktopTab tab, int x, int y, int width) {
+    }
+
+    private record JeiRecipeCategoryHit(JeiRecipeCategory category, int x, int y) {
+    }
+
+    private record JeiRecipeLayoutPlacement(JeiRecipeEntry recipe, int x, int y, int index) {
+    }
+
+    private record JeiRecipeTransferTarget(int sessionId, AbstractContainerMenu menu, JeiRecipeTransferPlan plan) {
+    }
+
+    private record JeiRecipeTransferAvailability(boolean craftable, List<Integer> missingInputIndexes) {
+        private JeiRecipeTransferAvailability {
+            missingInputIndexes = List.copyOf(missingInputIndexes);
+        }
+    }
+
+    private record JeiRecipeTransferButtonHit(JeiRecipeLayoutPlacement placement, JeiRecipeTransferTarget target, JeiRecipeTransferAvailability availability) {
+    }
+
+    private record JeiTransferSourceKey(Object container, int containerSlot) {
+    }
+
+    private record JeiStationHit(JeiDesktopEntry station, int x, int y) {
+    }
+
+    private record JeiRecipeButtonRect(int x, int y, int width, int height) {
+    }
+
+    private record JeiRecipeHistoryEntry(JeiDesktopEntry entry, JeiRecipeMode mode) {
+    }
+
     private record CreativeTabRect(int x, int y, int width, int height, int column, boolean topRow) {
     }
 
@@ -11009,6 +13790,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private record CreativeGridLayout(int totalRows, int maxScrollRow, boolean scrollable) {
+    }
+
+    private record JeiGridLayout(int totalRows, int maxScrollRow, boolean scrollable) {
     }
 
     private record InventoryIncreaseButtonRect(int x, int y) {
@@ -11841,6 +14625,20 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private int creativeTabPage;
         private int creativeScrollRow;
         private String creativeSearch = "";
+        private String jeiSelectedTabUid = "";
+        private String jeiDefaultTabUid = "";
+        private int jeiScrollRow;
+        private JeiRecipeMode jeiMode = JeiRecipeMode.INGREDIENTS;
+        private @Nullable JeiDesktopEntry jeiFocusEntry;
+        private String jeiSelectedRecipeCategoryUid = "";
+        private int jeiRecipePage;
+        private int jeiCategoryTabPage;
+        private int jeiStationScroll;
+        private List<JeiRecipeCategory> jeiRecipeCategories = List.of();
+        private List<JeiRecipeEntry> jeiRecipeEntries = List.of();
+        private List<JeiDesktopEntry> jeiStations = List.of();
+        private final List<JeiRecipeHistoryEntry> jeiBackHistory = new ArrayList<>();
+        private final List<JeiRecipeHistoryEntry> jeiForwardHistory = new ArrayList<>();
         private String anvilName = "";
         private String anvilLastInputName = "";
         private boolean anvilNameDirty;
@@ -11905,6 +14703,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     case INVENTORY -> "local:inventory";
                     case CREATIVE -> "local:creative";
                     case CHARACTER -> "local:character";
+                    case JEI -> "local:jei";
                     case CONTAINER -> null;
                 };
             }
@@ -11929,7 +14728,38 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
 
             if (this.kind != WindowKind.CREATIVE || this.minimized) {
-                return false;
+                if (this.kind != WindowKind.JEI || this.minimized) {
+                    return false;
+                }
+
+                int topTabsWidth = this.jeiMode == JeiRecipeMode.INGREDIENTS
+                    ? this.width - JEI_RECIPE_BORDER_PADDING * 2
+                    : InventoryDesktopScreen.jeiRecipeTopTabsWidth(this);
+                if (this.jeiMode != JeiRecipeMode.INGREDIENTS && InventoryDesktopScreen.jeiRecipeHasCategoryTabPages(this)) {
+                    topTabsWidth = Math.max(topTabsWidth, this.width - JEI_RECIPE_BORDER_PADDING);
+                }
+                if (topTabsWidth > 0
+                    && InventoryDesktopScreen.contains(mouseX, mouseY, InventoryDesktopScreen.jeiRecipeTopTabsX(this), InventoryDesktopScreen.jeiRecipeTopTabsY(this), topTabsWidth, JEI_RECIPE_TAB_SIZE)) {
+                    return true;
+                }
+
+                if (this.jeiMode == JeiRecipeMode.INGREDIENTS) {
+                    return false;
+                }
+
+                JeiRecipeButtonRect historyButton = InventoryDesktopScreen.jeiRecipeHistoryButtonRect(this);
+                if (InventoryDesktopScreen.contains(mouseX, mouseY, historyButton.x(), historyButton.y(), historyButton.width(), historyButton.height())) {
+                    return true;
+                }
+
+                JeiRecipeButtonRect optionButtons = InventoryDesktopScreen.jeiRecipeOptionButtonBackgroundRect(this);
+                if (InventoryDesktopScreen.contains(mouseX, mouseY, optionButtons.x(), optionButtons.y(), optionButtons.width(), optionButtons.height())) {
+                    return true;
+                }
+
+                int stationTabsHeight = InventoryDesktopScreen.jeiRecipeStationTabsHeight(this);
+                return stationTabsHeight > 0
+                    && InventoryDesktopScreen.contains(mouseX, mouseY, InventoryDesktopScreen.jeiRecipeStationTabsX(this), InventoryDesktopScreen.jeiRecipeStationTabsY(this), JEI_RECIPE_STATION_TAB_SIZE, stationTabsHeight);
             }
 
             int tabsX = InventoryDesktopScreen.creativeContentX(this) + CREATIVE_TAB_X_OFFSET;

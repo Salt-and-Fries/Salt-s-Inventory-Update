@@ -24,6 +24,7 @@ import com.salts_inventory_update.mixin.client.MouseHandlerAccessor;
 
 public final class WindowedInventoryClient {
     private static KeyMapping characterWindowKey;
+    private static KeyMapping jeiWindowKey;
     private static boolean customMouseGrab;
     private static Field mouseGrabbedField;
     private static Field mouseXposField;
@@ -49,6 +50,14 @@ public final class WindowedInventoryClient {
                 KeyMapping.CATEGORY_INVENTORY
             )
         );
+        jeiWindowKey = KeyBindingHelper.registerKeyBinding(
+            new KeyMapping(
+                "key.salts_inventory_update.jei_window",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_H,
+                KeyMapping.CATEGORY_INVENTORY
+            )
+        );
 
         InventoryDesktopScreen.registerInternalApiDefinitions();
         TomsStorageClientCompat.initialize();
@@ -63,6 +72,10 @@ public final class WindowedInventoryClient {
 
     public static KeyMapping characterWindowKey() {
         return characterWindowKey;
+    }
+
+    public static KeyMapping jeiWindowKey() {
+        return jeiWindowKey;
     }
 
     public static ResourceLocation id(String path) {
@@ -156,6 +169,11 @@ public final class WindowedInventoryClient {
         while (characterWindowKey.consumeClick()) {
             if (!desktopTextInput) {
                 InventoryDesktopScreen.openOrToggleCharacter(minecraft);
+            }
+        }
+        while (jeiWindowKey.consumeClick()) {
+            if (!desktopTextInput) {
+                InventoryDesktopScreen.openOrToggleJei(minecraft);
             }
         }
 

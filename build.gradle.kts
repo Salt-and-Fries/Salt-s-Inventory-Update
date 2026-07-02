@@ -221,11 +221,34 @@ subprojects {
         }
     }
 
-    if (minecraftVersion == "26.2" && (name == "fabric" || name == "neoforge")) {
+    val jeiVersions = mapOf(
+        "26.2" to "30.3.0.24",
+        "26.1.2" to "29.5.0.28",
+        "1.21.11" to "27.4.0.22",
+        "1.21.1" to "19.25.1.332",
+        "1.20.1" to "15.20.0.127"
+    )
+    if (minecraftVersion != null && (name == "fabric" || name == "neoforge" || name == "forge")) {
         afterEvaluate {
-            val jeiLoader = if (name == "fabric") "fabric" else "neoforge"
-            dependencies.add("compileOnly", "mezz.jei:jei-26.2-$jeiLoader-api:30.3.0.24")
-            dependencies.add("runtimeOnly", "mezz.jei:jei-26.2-$jeiLoader:30.3.0.24")
+            jeiVersions[minecraftVersion]?.let { jeiVersion ->
+                val jeiLoader = when (name) {
+                    "forge" -> "forge"
+                    "neoforge" -> "neoforge"
+                    else -> "fabric"
+                }
+                val apiConfiguration = if (name == "fabric" && !minecraftVersion.startsWith("26.") && configurations.findByName("modCompileOnly") != null) {
+                    "modCompileOnly"
+                } else {
+                    "compileOnly"
+                }
+                val runtimeConfiguration = if (name == "fabric" && !minecraftVersion.startsWith("26.") && configurations.findByName("modRuntimeOnly") != null) {
+                    "modRuntimeOnly"
+                } else {
+                    "runtimeOnly"
+                }
+                dependencies.add(apiConfiguration, "mezz.jei:jei-$minecraftVersion-$jeiLoader-api:$jeiVersion")
+                dependencies.add(runtimeConfiguration, "mezz.jei:jei-$minecraftVersion-$jeiLoader:$jeiVersion")
+            }
         }
     }
 

@@ -2,12 +2,15 @@ package com.salts_inventory_update.server;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.UUID;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -84,6 +87,8 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopGhostRecipePayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferRequirement;
 import com.salts_inventory_update.network.DesktopPackets.DesktopPlaceRecipePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopQuickMovePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopReadyPayload;
@@ -130,6 +135,9 @@ public final class DesktopContainerSessions {
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopPlaceRecipePayload.TYPE, (payload, context) ->
             context.server().execute(() -> placeRecipe(context.player(), payload))
+        );
+        ServerPlayNetworking.registerGlobalReceiver(DesktopJeiTransferPayload.TYPE, (payload, context) ->
+            context.server().execute(() -> transferJeiRecipe(context.player(), payload))
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopRenamePayload.TYPE, (payload, context) ->
             context.server().execute(() -> rename(context.player(), payload))
@@ -872,6 +880,400 @@ public final class DesktopContainerSessions {
         syncCraftingResultSlot(player, session);
         player.inventoryMenu.broadcastChanges();
         sessions.broadcastAll(player);
+    }
+
+    private static void transferJeiRecipe(ServerPlayer player, DesktopJeiTransferPayload payload) {
+        PlayerSessions sessions = PLAYERS.get(player.getUUID());
+        if (sessions == null || !sessions.ready) {
+            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=not-ready", player.getName().getString(), payload.targetSessionId());
+            return;
+        }
+        if (player.isSpectator()) {
+            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=spectator", player.getName().getString(), payload.targetSessionId());
+            return;
+        }
+        if (!sessions.carried.isEmpty()) {
+            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=carried carried={}", player.getName().getString(), payload.targetSessionId(), sessions.carried);
+            syncCarried(player, sessions);
+            return;
+        }
+
+        JeiTransferTarget target = resolveJeiTransferTarget(player, sessions, payload.targetSessionId());
+        if (target == null) {
+            return;
+        }
+
+        List<Slot> recipeSlots = resolveJeiTransferRecipeSlots(target.menu(), payload.recipeSlotIds());
+        if (recipeSlots == null || recipeSlots.isEmpty()) {
+            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=bad-recipe-slots", player.getName().getString(), payload.targetSessionId());
+            return;
+        }
+
+        Map<Integer, Slot> recipeSlotsById = new HashMap<>();
+        Set<Slot> recipeSlotSet = new HashSet<>();
+        for (Slot slot : recipeSlots) {
+            recipeSlotsById.put(slot.index, slot);
+            recipeSlotSet.add(slot);
+        }
+
+        List<JeiTransferRequirement> requirements = resolveJeiTransferRequirements(payload.requirements(), recipeSlotsById);
+        if (requirements == null || requirements.isEmpty()) {
+            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=bad-requirements", player.getName().getString(), payload.targetSessionId());
+            return;
+        }
+
+        List<Slot> sourceSlots = jeiTransferSourceSlots(player, sessions, payload.targetSessionId(), recipeSlotSet);
+        JeiTransferSimulation simulation = simulateJeiTransfer(player, recipeSlots, requirements, sourceSlots, payload.maxTransfer());
+        if (simulation == null) {
+            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=simulation-failed", player.getName().getString(), payload.targetSessionId());
+            return;
+        }
+
+        applyJeiTransferSimulation(simulation);
+        target.menu().broadcastChanges();
+        if (target.session() != null) {
+            syncCraftingResultSlot(player, target.session());
+        } else {
+            player.inventoryMenu.broadcastChanges();
+        }
+        sessions.broadcastAll(player);
+        syncCarried(player, sessions);
+        DesktopDebug.trace(
+            "server JEI transfer player={} targetSession={} recipeSlots={} requirements={} sources={} max={}",
+            player.getName().getString(),
+            payload.targetSessionId(),
+            recipeSlots.size(),
+            requirements.size(),
+            sourceSlots.size(),
+            payload.maxTransfer()
+        );
+    }
+
+    private static @Nullable JeiTransferTarget resolveJeiTransferTarget(ServerPlayer player, PlayerSessions sessions, int targetSessionId) {
+        if (targetSessionId == DesktopPackets.PLAYER_MENU_SESSION) {
+            return new JeiTransferTarget(targetSessionId, player.inventoryMenu, null);
+        }
+
+        Session session = sessions.sessions.get(targetSessionId);
+        if (session == null) {
+            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=missing-session", player.getName().getString(), targetSessionId);
+            return null;
+        }
+        if (!session.visibleToClient) {
+            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=hidden", player.getName().getString(), targetSessionId);
+            return null;
+        }
+        if (!session.menu.stillValid(player)) {
+            DesktopDebug.log("server JEI transfer invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
+            sessions.close(player, session.sessionId, true);
+            return null;
+        }
+        return new JeiTransferTarget(targetSessionId, session.menu, session);
+    }
+
+    private static @Nullable List<Slot> resolveJeiTransferRecipeSlots(AbstractContainerMenu menu, List<Integer> slotIds) {
+        if (slotIds.isEmpty()) {
+            return null;
+        }
+        List<Slot> slots = new ArrayList<>(slotIds.size());
+        Set<Integer> seen = new HashSet<>();
+        for (int slotId : slotIds) {
+            if (!seen.add(slotId) || slotId < 0 || slotId >= menu.slots.size()) {
+                return null;
+            }
+            Slot slot = menu.slots.get(slotId);
+            if (!slot.isActive() || slot.isFake()) {
+                return null;
+            }
+            slots.add(slot);
+        }
+        return slots;
+    }
+
+    private static @Nullable List<JeiTransferRequirement> resolveJeiTransferRequirements(List<DesktopJeiTransferRequirement> payloadRequirements, Map<Integer, Slot> recipeSlotsById) {
+        List<JeiTransferRequirement> requirements = new ArrayList<>(payloadRequirements.size());
+        Set<Integer> targetSlots = new HashSet<>();
+        for (DesktopJeiTransferRequirement payloadRequirement : payloadRequirements) {
+            Slot targetSlot = recipeSlotsById.get(payloadRequirement.targetSlotId());
+            if (targetSlot == null || !targetSlots.add(payloadRequirement.targetSlotId())) {
+                return null;
+            }
+            List<ItemStack> alternatives = new ArrayList<>();
+            for (ItemStack alternative : payloadRequirement.alternatives()) {
+                if (!alternative.isEmpty()) {
+                    alternatives.add(alternative.copyWithCount(Math.max(1, alternative.getCount())));
+                }
+            }
+            if (alternatives.isEmpty()) {
+                return null;
+            }
+            requirements.add(new JeiTransferRequirement(payloadRequirement.inputIndex(), targetSlot, alternatives));
+        }
+        return requirements;
+    }
+
+    private static List<Slot> jeiTransferSourceSlots(ServerPlayer player, PlayerSessions sessions, int targetSessionId, Set<Slot> targetRecipeSlots) {
+        Map<JeiTransferSourceKey, Slot> slots = new LinkedHashMap<>();
+        for (Slot slot : player.inventoryMenu.slots) {
+            addJeiTransferSourceSlot(player, slots, slot, DesktopPackets.PLAYER_MENU_SESSION, targetSessionId, targetRecipeSlots);
+        }
+        for (Session session : sessions.sessions.values()) {
+            if (!session.visibleToClient || !session.menu.stillValid(player)) {
+                continue;
+            }
+            for (Slot slot : session.menu.slots) {
+                addJeiTransferSourceSlot(player, slots, slot, session.sessionId, targetSessionId, targetRecipeSlots);
+            }
+        }
+        return new ArrayList<>(slots.values());
+    }
+
+    private static void addJeiTransferSourceSlot(ServerPlayer player, Map<JeiTransferSourceKey, Slot> slots, Slot slot, int sourceSessionId, int targetSessionId, Set<Slot> targetRecipeSlots) {
+        if (sourceSessionId == targetSessionId && targetRecipeSlots.contains(slot)) {
+            return;
+        }
+        if (!isJeiTransferSourceSlot(player, slot)) {
+            return;
+        }
+        slots.putIfAbsent(new JeiTransferSourceKey(slot.container, slot.getContainerSlot()), slot);
+    }
+
+    private static boolean isJeiTransferSourceSlot(ServerPlayer player, Slot slot) {
+        if (!slot.isActive() || slot.isFake() || !slot.hasItem() || !slot.mayPickup(player)) {
+            return false;
+        }
+        if (slot.container == player.getInventory()) {
+            int containerSlot = slot.getContainerSlot();
+            return containerSlot >= 0 && containerSlot < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE;
+        }
+        return slot.mayPlace(slot.getItem());
+    }
+
+    private static @Nullable JeiTransferSimulation simulateJeiTransfer(ServerPlayer player, List<Slot> recipeSlots, List<JeiTransferRequirement> requirements, List<Slot> sourceSlots, boolean maxTransfer) {
+        Map<Slot, ItemStack> sourceStacks = new LinkedHashMap<>();
+        for (Slot sourceSlot : sourceSlots) {
+            sourceStacks.put(sourceSlot, sourceSlot.getItem().copy());
+        }
+
+        Map<Slot, ItemStack> targetStacks = compatibleJeiTransferTargetStacks(player, recipeSlots, requirements);
+        if (targetStacks == null) {
+            for (Slot recipeSlot : recipeSlots) {
+                ItemStack stack = recipeSlot.getItem();
+                if (stack.isEmpty()) {
+                    continue;
+                }
+                if (!recipeSlot.mayPickup(player)) {
+                    return null;
+                }
+                ItemStack moving = stack.copy();
+                if (!insertJeiTransferStack(sourceSlots, sourceStacks, moving)) {
+                    return null;
+                }
+            }
+
+            targetStacks = new LinkedHashMap<>();
+            for (Slot recipeSlot : recipeSlots) {
+                targetStacks.put(recipeSlot, ItemStack.EMPTY);
+            }
+        }
+
+        JeiTransferMatch match = matchJeiTransferRequirements(sourceStacks, requirements, 0, targetStacks);
+        if (match == null) {
+            return null;
+        }
+
+        if (maxTransfer) {
+            while (true) {
+                JeiTransferMatch next = matchJeiTransferRequirements(match.sourceStacks(), requirements, 0, match.targetStacks());
+                if (next == null) {
+                    break;
+                }
+                match = next;
+            }
+        }
+
+        return new JeiTransferSimulation(match.sourceStacks(), match.targetStacks());
+    }
+
+    private static @Nullable Map<Slot, ItemStack> compatibleJeiTransferTargetStacks(ServerPlayer player, List<Slot> recipeSlots, List<JeiTransferRequirement> requirements) {
+        Map<Slot, JeiTransferRequirement> requirementsBySlot = new HashMap<>();
+        for (JeiTransferRequirement requirement : requirements) {
+            requirementsBySlot.put(requirement.targetSlot(), requirement);
+        }
+
+        Map<Slot, ItemStack> targetStacks = new LinkedHashMap<>();
+        for (Slot recipeSlot : recipeSlots) {
+            ItemStack stack = recipeSlot.getItem();
+            JeiTransferRequirement requirement = requirementsBySlot.get(recipeSlot);
+            if (requirement == null) {
+                if (!stack.isEmpty()) {
+                    return null;
+                }
+                targetStacks.put(recipeSlot, ItemStack.EMPTY);
+                continue;
+            }
+
+            if (stack.isEmpty()) {
+                targetStacks.put(recipeSlot, ItemStack.EMPTY);
+                continue;
+            }
+            if (!recipeSlot.mayPickup(player) || !recipeSlot.mayPlace(stack) || !matchesJeiTransferAlternative(stack, requirement.alternatives())) {
+                return null;
+            }
+
+            int limit = Math.min(stack.getMaxStackSize(), recipeSlot.getMaxStackSize(stack));
+            if (stack.getCount() > limit) {
+                return null;
+            }
+            targetStacks.put(recipeSlot, stack.copy());
+        }
+        return targetStacks;
+    }
+
+    private static boolean matchesJeiTransferAlternative(ItemStack stack, List<ItemStack> alternatives) {
+        for (ItemStack alternative : alternatives) {
+            if (ItemStack.isSameItemSameComponents(stack, alternative)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean insertJeiTransferStack(List<Slot> sourceSlots, Map<Slot, ItemStack> sourceStacks, ItemStack moving) {
+        if (moving.isEmpty()) {
+            return true;
+        }
+
+        if (moving.isStackable()) {
+            for (Slot slot : sourceSlots) {
+                if (moving.isEmpty()) {
+                    return true;
+                }
+                ItemStack existing = sourceStacks.getOrDefault(slot, ItemStack.EMPTY);
+                if (existing.isEmpty() || !ItemStack.isSameItemSameComponents(existing, moving) || !slot.mayPlace(moving)) {
+                    continue;
+                }
+                int limit = Math.min(existing.getMaxStackSize(), slot.getMaxStackSize(existing));
+                int moved = Math.min(moving.getCount(), Math.max(0, limit - existing.getCount()));
+                if (moved <= 0) {
+                    continue;
+                }
+                existing.grow(moved);
+                moving.shrink(moved);
+            }
+        }
+
+        for (Slot slot : sourceSlots) {
+            if (moving.isEmpty()) {
+                return true;
+            }
+            ItemStack existing = sourceStacks.getOrDefault(slot, ItemStack.EMPTY);
+            if (!existing.isEmpty() || !slot.mayPlace(moving)) {
+                continue;
+            }
+            int moved = Math.min(moving.getCount(), Math.min(moving.getMaxStackSize(), slot.getMaxStackSize(moving)));
+            if (moved <= 0) {
+                continue;
+            }
+            sourceStacks.put(slot, moving.copyWithCount(moved));
+            moving.shrink(moved);
+        }
+        return moving.isEmpty();
+    }
+
+    private static @Nullable JeiTransferMatch matchJeiTransferRequirements(Map<Slot, ItemStack> sourceStacks, List<JeiTransferRequirement> requirements, int index, Map<Slot, ItemStack> targetStacks) {
+        if (index >= requirements.size()) {
+            return new JeiTransferMatch(sourceStacks, targetStacks);
+        }
+
+        JeiTransferRequirement requirement = requirements.get(index);
+        for (ItemStack alternative : requirement.alternatives()) {
+            Map<Slot, ItemStack> candidateSources = copyJeiTransferStacks(sourceStacks);
+            ItemStack selected = consumeJeiTransferAlternative(candidateSources, alternative);
+            if (selected.isEmpty()
+                || !requirement.targetSlot().mayPlace(selected)
+                || selected.getCount() > requirement.targetSlot().getMaxStackSize(selected)) {
+                continue;
+            }
+
+            Map<Slot, ItemStack> candidateTargets = addJeiTransferTargetStack(targetStacks, requirement.targetSlot(), selected);
+            if (candidateTargets == null) {
+                continue;
+            }
+            JeiTransferMatch match = matchJeiTransferRequirements(candidateSources, requirements, index + 1, candidateTargets);
+            if (match != null) {
+                return match;
+            }
+        }
+        return null;
+    }
+
+    private static @Nullable Map<Slot, ItemStack> addJeiTransferTargetStack(Map<Slot, ItemStack> targetStacks, Slot targetSlot, ItemStack selected) {
+        if (selected.isEmpty() || !targetSlot.mayPlace(selected)) {
+            return null;
+        }
+
+        int limit = Math.min(selected.getMaxStackSize(), targetSlot.getMaxStackSize(selected));
+        if (selected.getCount() > limit) {
+            return null;
+        }
+
+        Map<Slot, ItemStack> candidateTargets = copyJeiTransferStacks(targetStacks);
+        ItemStack existing = candidateTargets.getOrDefault(targetSlot, ItemStack.EMPTY);
+        if (existing.isEmpty()) {
+            candidateTargets.put(targetSlot, selected.copy());
+            return candidateTargets;
+        }
+        if (!ItemStack.isSameItemSameComponents(existing, selected) || existing.getCount() + selected.getCount() > limit) {
+            return null;
+        }
+
+        existing.grow(selected.getCount());
+        return candidateTargets;
+    }
+
+    private static ItemStack consumeJeiTransferAlternative(Map<Slot, ItemStack> sourceStacks, ItemStack alternative) {
+        int remaining = Math.max(1, alternative.getCount());
+        for (Map.Entry<Slot, ItemStack> entry : sourceStacks.entrySet()) {
+            ItemStack stack = entry.getValue();
+            if (stack.isEmpty() || !ItemStack.isSameItemSameComponents(stack, alternative)) {
+                continue;
+            }
+            int consumed = Math.min(stack.getCount(), remaining);
+            stack.shrink(consumed);
+            remaining -= consumed;
+            if (remaining <= 0) {
+                return alternative.copyWithCount(Math.max(1, alternative.getCount()));
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    private static Map<Slot, ItemStack> copyJeiTransferStacks(Map<Slot, ItemStack> stacks) {
+        Map<Slot, ItemStack> copy = new LinkedHashMap<>();
+        for (Map.Entry<Slot, ItemStack> entry : stacks.entrySet()) {
+            copy.put(entry.getKey(), entry.getValue().copy());
+        }
+        return copy;
+    }
+
+    private static void applyJeiTransferSimulation(JeiTransferSimulation simulation) {
+        for (Map.Entry<Slot, ItemStack> entry : simulation.sourceStacks().entrySet()) {
+            setJeiTransferSlotStack(entry.getKey(), entry.getValue());
+        }
+        for (Map.Entry<Slot, ItemStack> entry : simulation.targetStacks().entrySet()) {
+            setJeiTransferSlotStack(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private static void setJeiTransferSlotStack(Slot slot, ItemStack stack) {
+        ItemStack current = slot.getItem();
+        if (ItemStack.matches(current, stack)) {
+            return;
+        }
+        ItemStack before = current.copy();
+        slot.setByPlayer(stack.copy(), before);
+        slot.setChanged();
     }
 
     private static boolean canCraftRecipe(RecipeBookMenu recipeBookMenu, ServerPlayer player, RecipeHolder<?> recipe) {
@@ -1702,6 +2104,21 @@ public final class DesktopContainerSessions {
     }
 
     private record SlotSource(int sessionId, AbstractContainerMenu menu, net.minecraft.world.inventory.Slot slot, @Nullable Session session) {
+    }
+
+    private record JeiTransferTarget(int sessionId, AbstractContainerMenu menu, @Nullable Session session) {
+    }
+
+    private record JeiTransferRequirement(int inputIndex, Slot targetSlot, List<ItemStack> alternatives) {
+    }
+
+    private record JeiTransferSimulation(Map<Slot, ItemStack> sourceStacks, Map<Slot, ItemStack> targetStacks) {
+    }
+
+    private record JeiTransferMatch(Map<Slot, ItemStack> sourceStacks, Map<Slot, ItemStack> targetStacks) {
+    }
+
+    private record JeiTransferSourceKey(Container container, int containerSlot) {
     }
 
     private record DormantGhostSource(String sourceKey) {

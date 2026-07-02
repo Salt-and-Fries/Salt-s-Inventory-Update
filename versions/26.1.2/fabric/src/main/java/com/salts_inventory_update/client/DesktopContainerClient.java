@@ -18,6 +18,8 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayl
 import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopGhostRecipePayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferRequirement;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopPlaceRecipePayload;
@@ -43,8 +45,46 @@ public final class DesktopContainerClient {
                 DesktopDebug.trace("client payload open ignored session={} reason=runtime-disabled", payload.sessionId());
                 return;
             }
+            boolean diagnostic = isCamelOrLlamaSpecial(payload.specialKind());
+            if (diagnostic) {
+                mountDiag(
+                    "client_payload_open_start session={} special={} entityId={} columns={} visible={} title={} source={} items={} data={} playerPresent={} levelPresent={}",
+                    payload.sessionId(),
+                    payload.specialKind(),
+                    payload.entityId(),
+                    payload.columns(),
+                    payload.visible(),
+                    payload.title().getString(),
+                    payload.sourceKey(),
+                    payload.items().size(),
+                    payload.data().length,
+                    context.client().player != null,
+                    context.client().level != null
+                );
+            }
             DesktopDebug.log("client payload open session={} title={} type={} special={}", payload.sessionId(), payload.title().getString(), payload.menuTypeId(), payload.specialKind());
-            InventoryDesktopScreen.openOrAddSession(context.client(), DesktopContainerSession.create(context.client(), payload), payload.visible());
+            try {
+                DesktopContainerSession session = DesktopContainerSession.create(context.client(), payload);
+                if (diagnostic) {
+                    mountDiag(
+                        "client_payload_open_created session={} special={} menu={} slots={} containerSlots={}",
+                        payload.sessionId(),
+                        payload.specialKind(),
+                        session.menu().getClass().getName(),
+                        session.menu().slots.size(),
+                        session.containerSlots().size()
+                    );
+                }
+                InventoryDesktopScreen.openOrAddSession(context.client(), session, payload.visible());
+                if (diagnostic) {
+                    mountDiag("client_payload_open_added session={} special={}", payload.sessionId(), payload.specialKind());
+                }
+            } catch (RuntimeException exception) {
+                if (diagnostic) {
+                    mountDiag("client_payload_open_failed session={} special={} reason={}", payload.sessionId(), payload.specialKind(), exception.toString());
+                }
+                throw exception;
+            }
         });
         ClientPlayNetworking.registerGlobalReceiver(DesktopSlotPayload.TYPE, (payload, context) -> {
             InventoryDesktopScreen screen = InventoryDesktopScreen.current(context.client());
@@ -169,6 +209,7 @@ public final class DesktopContainerClient {
                 && ClientPlayNetworking.canSend(DesktopQuickMovePayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopButtonPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopPlaceRecipePayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopJeiTransferPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopRenamePayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopSessionPinPayload.TYPE)
@@ -205,6 +246,11 @@ public final class DesktopContainerClient {
     public static boolean placeRecipe(int sessionId, RecipeDisplayId recipeId, boolean useMaxItems) {
         DesktopDebug.trace("client send recipe place session={} recipe={} useMax={}", sessionId, recipeId, useMaxItems);
         return send(new DesktopPlaceRecipePayload(sessionId, recipeId, useMaxItems), "recipe-place");
+    }
+
+    public static boolean transferJeiRecipe(int targetSessionId, java.util.List<Integer> recipeSlotIds, java.util.List<DesktopJeiTransferRequirement> requirements, boolean maxTransfer) {
+        DesktopDebug.trace("client send JEI transfer targetSession={} recipeSlots={} requirements={} max={}", targetSessionId, recipeSlotIds.size(), requirements.size(), maxTransfer);
+        return send(new DesktopJeiTransferPayload(targetSessionId, recipeSlotIds, requirements, maxTransfer), "jei-transfer");
     }
 
     public static boolean purchaseInventorySlot() {
@@ -262,5 +308,13 @@ public final class DesktopContainerClient {
             DesktopDebug.warn("client desktop packet failed label={} type={} reason={}", label, payload.type().id(), exception.toString());
             return false;
         }
+    }
+
+    private static boolean isCamelOrLlamaSpecial(int specialKind) {
+        return specialKind == DesktopPackets.SPECIAL_CAMEL || specialKind == DesktopPackets.SPECIAL_LLAMA;
+    }
+
+    private static void mountDiag(String message, Object... args) {
+        DesktopDebug.warn("SIU_MOUNT_DIAG " + message, args);
     }
 }

@@ -24,6 +24,9 @@
     ],
     "modmenu": [
       "com.salts_inventory_update.compat.modmenu.SaltsInventoryModMenu"
+    ],
+    "jei_mod_plugin": [
+      "com.salts_inventory_update.compat.jei.SaltsJeiPlugin"
     ]
   },
   "mixins": [
@@ -43,5 +46,8 @@
     "fabricloader": ">=${fabric_loader_version}",
     "minecraft": "${minecraft_version}",
     "java": ">=${java_version}"
+  },
+  "suggests": {
+    "jei": "*"
   }
 }
