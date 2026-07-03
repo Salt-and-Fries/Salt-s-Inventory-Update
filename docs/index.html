@@ -3,506 +3,510 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Salt Desktop Window API v2</title>
+  <title>Salt Desktop API Interactive Guide</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <div>
+  <a class="skip-link" href="#guide-content">Skip to guide</a>
+
+  <header class="hero">
+    <div class="hero-copy">
       <p class="eyebrow">Salt's Inventory Update</p>
-      <h1>Desktop Window API v2</h1>
+      <h1>Desktop API Interactive Guide</h1>
       <p class="lead">
-        A practical guide for modding developers building custom desktop windows across Salt's supported Minecraft
-        versions and loaders.
+        A chaptered guide for modders adapting Minecraft container menus to Salt's movable desktop windows.
       </p>
+      <div class="hero-actions" aria-label="Guide actions">
+        <a class="button primary" href="#chapter-start">Start</a>
+        <a class="button" href="markdown/desktop_window_api.md">Markdown Reference</a>
+        <a class="button" href="markdown/api_todo.md">API ToDo</a>
+      </div>
     </div>
-    <div class="version-card">
-      <span>Targets</span>
-      <strong>Fabric, Forge, NeoForge</strong>
-      <span>Status</span>
-      <strong>API v2 draft</strong>
+    <div class="system-map" aria-label="Salt desktop integration model">
+      <div class="map-layer map-salt">
+        <strong>Salt Desktop</strong>
+        <span>frame, focus, placement, carried stack</span>
+      </div>
+      <div class="map-layer map-session">
+        <strong>Server Session</strong>
+        <span>menu, slots, data, payloads</span>
+      </div>
+      <div class="map-layer map-mod">
+        <strong>Mod Definition</strong>
+        <span>rendering, widgets, custom input</span>
+      </div>
     </div>
   </header>
 
-  <main class="layout">
-    <nav class="sidebar" aria-label="Documentation navigation">
-      <a href="#overview">Overview</a>
-      <a href="#version-matrix">Version Matrix</a>
-      <a href="#mental-model">Mental Model</a>
-      <a href="#registration">Registration</a>
-      <a href="#compatibility-limits">Compatibility Limits</a>
-      <a href="#rework-checklist">Rework Checklist</a>
-      <a href="#client-definition">Client Definition</a>
-      <a href="#contexts">Contexts</a>
-      <a href="#rendering">Rendering</a>
-      <a href="#cropped-backgrounds">Cropped Backgrounds</a>
-      <a href="#slots">Slots</a>
-      <a href="#input">Input</a>
-      <a href="#widgets">Widgets</a>
-      <a href="#server">Server Support</a>
-      <a href="#payloads">Payloads</a>
-      <a href="#resizing">Resizing</a>
-      <a href="#state">State</a>
-      <a href="#ghosting">Lock, Pin, Ghost</a>
-      <a href="#recipes">Recipe Book</a>
-      <a href="#virtual-items">Virtual Items</a>
-      <a href="#fallbacks">Fallbacks</a>
-      <a href="#examples">Examples</a>
-      <a href="#tom">Tom's Storage Case</a>
-      <a href="#checklist">Checklist</a>
-    </nav>
+  <div class="guide-shell">
+    <aside class="nav-panel" aria-label="Guide navigation">
+      <div class="search-box">
+        <label for="guide-search">Search guide</label>
+        <input id="guide-search" type="search" placeholder="slot id, payload, furnace..." autocomplete="off">
+        <p id="search-status" class="search-status" aria-live="polite"></p>
+      </div>
+      <nav id="chapter-nav" class="chapter-nav"></nav>
+    </aside>
 
-    <article class="content">
-      <section id="overview" class="panel">
-        <h2>Overview</h2>
-        <p>
-          The Desktop Window API lets another mod register a custom Salt desktop window for one of its container menu
-          types. Salt keeps ownership of the desktop engine: window placement, moving, locking, pinning, ghost previews,
-          resize handles, carried stack synchronization, hotbar interaction, shift-click routing, and multi-window server
-          sessions. Mods only describe the inside of a window and any server-side behavior that their menu needs.
-        </p>
-        <p>
-          Future API feature requests and larger helper ideas are tracked in
-          <a href="markdown/api_todo.md">API ToDo</a>.
-        </p>
-        <div class="callout good">
-          <strong>Design goal:</strong>
-          Let mod authors build accurate UI windows without reimplementing Salt's desktop session system or Minecraft's
-          slot click protocol.
+    <main id="guide-content" class="guide-content">
+      <section class="chapter" id="chapter-start" data-title="Start Here" data-api="AbstractContainerMenu,DesktopWindowDefinition,DesktopServerWindowHandler,DesktopRenderContext,DesktopInputContext">
+        <div class="chapter-heading">
+          <p class="chapter-kicker">Chapter 1</p>
+          <h2>Start Here</h2>
+          <p>
+            Salt turns full-screen Minecraft inventory screens into desktop windows. Your mod does not create a new
+            screen. It registers a window definition for the menu that Salt already captures or that your server handler
+            opts into.
+          </p>
+          <div class="api-parts"></div>
         </div>
-        <div class="grid two">
-          <div class="mini">
-            <h3>Client responsibilities</h3>
-            <ul>
-              <li>Choose title and dimensions.</li>
-              <li>Render custom widgets, sprites, text, slots, and virtual entries.</li>
-              <li>Return slot hits for real menu slots.</li>
-              <li>Handle custom clicks, text input, scrollbars, tabs, and tooltips.</li>
-              <li>Send custom session-scoped payloads when vanilla slot routing is not enough.</li>
-            </ul>
-          </div>
-          <div class="mini">
-            <h3>Server responsibilities</h3>
-            <ul>
-              <li>Opt the menu into Salt desktop capture.</li>
-              <li>Keep any custom session state ticking.</li>
-              <li>Validate and handle custom payloads.</li>
-              <li>Broadcast menu changes and custom snapshots.</li>
-              <li>Clean up when sessions close or ghost previews expire.</li>
-            </ul>
-          </div>
-        </div>
-      </section>
 
-      <section id="version-matrix" class="panel">
-        <h2>Version Matrix</h2>
-        <p>
-          The examples on this page use the 26.x API spelling. The desktop API concepts are shared across every
-          supported version, but a few Minecraft type names and typed payload helpers differ.
-        </p>
-        <table>
-          <thead>
-            <tr>
-              <th>Version</th>
-              <th>Loaders</th>
-              <th>Resource id type</th>
-              <th>Slot click type</th>
-              <th>Input event types</th>
-              <th>Typed payload helpers</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>26.1.2</code></td>
-              <td>Fabric, NeoForge</td>
-              <td><code>Identifier</code></td>
-              <td><code>ContainerInput</code></td>
-              <td><code>net.minecraft.client.input.*</code></td>
-              <td>Yes</td>
-            </tr>
-            <tr>
-              <td><code>26.2</code></td>
-              <td>Fabric, NeoForge</td>
-              <td><code>Identifier</code></td>
-              <td><code>ContainerInput</code></td>
-              <td><code>net.minecraft.client.input.*</code></td>
-              <td>Yes</td>
-            </tr>
-            <tr>
-              <td><code>1.21.11</code></td>
-              <td>Fabric, NeoForge</td>
-              <td><code>Identifier</code></td>
-              <td><code>ClickType</code></td>
-              <td><code>net.minecraft.client.input.*</code></td>
-              <td>Yes</td>
-            </tr>
-            <tr>
-              <td><code>1.21.1</code></td>
-              <td>Fabric, NeoForge</td>
-              <td><code>ResourceLocation</code></td>
-              <td><code>ClickType</code></td>
-              <td><code>com.salts_inventory_update.client.input.*</code></td>
-              <td>Yes</td>
-            </tr>
-            <tr>
-              <td><code>1.20.1</code></td>
-              <td>Fabric, Forge</td>
-              <td><code>ResourceLocation</code></td>
-              <td><code>ClickType</code></td>
-              <td><code>com.salts_inventory_update.client.input.*</code></td>
-              <td>Raw byte payloads only</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="callout">
-          <strong>Loader note:</strong>
-          Fabric and NeoForge do not have separate Salt desktop API surfaces. Forge and NeoForge builds compile the same
-          per-version API sources as Fabric, then add a loader shim for entrypoints, events, commands, key bindings, and
-          networking.
-        </div>
-        <ul>
-          <li>On <code>1.20.1</code> and <code>1.21.1</code>, replace <code>Identifier</code> with <code>ResourceLocation</code>.</li>
-          <li>On <code>1.20.1</code>, <code>1.21.1</code>, and <code>1.21.11</code>, replace <code>ContainerInput</code> with <code>ClickType</code>.</li>
-          <li>On <code>1.20.1</code> and <code>1.21.1</code>, import input event types from <code>com.salts_inventory_update.client.input</code>.</li>
-          <li>On <code>1.20.1</code>, use raw <code>byte[]</code> payloads instead of typed codec helpers.</li>
-          <li>On <code>1.20.1</code> and <code>1.21.1</code>, <code>createRecipeBook</code> returns raw <code>RecipeBookComponent</code>.</li>
-        </ul>
-      </section>
-
-      <section id="mental-model" class="panel">
-        <h2>Mental Model</h2>
-        <p>
-          A Salt desktop window has three layers. The outer desktop layer is owned by Salt. The menu layer is the normal
-          Minecraft <code>AbstractContainerMenu</code>. The mod layer is the custom UI definition that renders and
-          routes input for the menu.
-        </p>
-        <div class="diagram">
-          <div class="box desktop">
-            <strong>Salt Desktop Engine</strong>
-            <span>window frame, focus, carried stack, lock, pin, ghost, placement</span>
-            <div class="box session">
-              <strong>Server Session</strong>
-              <span>live menu, slot sync, data sync, custom payloads</span>
-              <div class="box mod">
-                <strong>Mod Window Definition</strong>
-                <span>rendering, custom widgets, virtual item grid, text input</span>
-              </div>
+        <section class="guide-section" id="start-mental-model">
+          <h3>Mental Model</h3>
+          <div class="split">
+            <div>
+              <p>
+                Salt owns the desktop shell: window frame, focus, movement, pinning, ghost previews, carried stack sync,
+                hotbar and offhand handling, and normal slot click routing.
+              </p>
+              <p>
+                Your integration owns the inside of one window: its title, content size, widgets, real slot positions,
+                fake item entries, custom input, tooltips, and any session-scoped payloads.
+              </p>
+            </div>
+            <div class="definition-list" aria-label="Ownership summary">
+              <div><strong>Salt handles</strong><span>desktop lifecycle, placement, item click protocol</span></div>
+              <div><strong>Menu handles</strong><span>server inventory state, slot validation, data slots</span></div>
+              <div><strong>Your code handles</strong><span>layout, custom controls, payloads, optional state</span></div>
             </div>
           </div>
-        </div>
-        <p>
-          Do not create a new screen for your container. Register a definition. Salt will call your definition when the
-          matching menu is opened inside the desktop.
-        </p>
+        </section>
+
+        <section class="guide-section" id="start-decision-path">
+          <h3>Decision Path</h3>
+          <ol class="steps">
+            <li><strong>Does the feature use a real server menu?</strong> If not, keep it outside Salt or build a custom session model first.</li>
+            <li><strong>Are the displayed items real slots?</strong> Use Salt slot routing for real slots and virtual entries for fake items.</li>
+            <li><strong>Does the screen send custom packets?</strong> Convert screen-global packets to Salt session payloads.</li>
+            <li><strong>Does the texture include player inventory?</strong> Crop the machine area and do not draw duplicated player inventory.</li>
+          </ol>
+        </section>
+
+        <section class="guide-section" id="start-what-to-build">
+          <h3>What You Usually Build</h3>
+          <pre><code class="language-java">public final class MyCompat {
+    public static void initClient() {
+        SaltsInventoryDesktopApi.registerClientWindow(MyMenus.MY_MENU, new MyWindow());
+    }
+
+    public static void initServer() {
+        SaltsInventoryDesktopApi.registerServerWindow(MyMenus.MY_MENU, new MyServerWindow());
+    }
+}</code></pre>
+          <p>
+            A simple storage menu might only need real slot positions. A furnace-like machine usually also needs a
+            cropped background, progress textures, and a recipe-book button. A terminal often needs virtual entries and
+            custom payloads.
+          </p>
+        </section>
       </section>
 
-      <section id="registration" class="panel">
-        <h2>Registration</h2>
-        <p>
-          Client and server registration are separate. This is intentional: a client-only definition can describe how a
-          menu should look, while server registration decides whether that menu is safe for Salt to capture as a live
-          desktop session.
-        </p>
+      <section class="chapter" id="chapter-triage" data-title="Compatibility Triage" data-api="AbstractContainerMenu,Slot,DesktopVirtualItem,DesktopPayloadCodecs,DesktopServerPayloadHandler">
+        <div class="chapter-heading">
+          <p class="chapter-kicker">Chapter 2</p>
+          <h2>Compatibility Triage</h2>
+          <p>
+            Triage decides whether a menu can become a Salt desktop window now, needs rework, or should stay on its
+            original screen until the API grows.
+          </p>
+          <div class="api-parts"></div>
+        </div>
 
-        <h3>Client registration</h3>
-        <pre><code>SaltsInventoryDesktopApi.registerClientWindow(MyMenus.MY_MENU, new MyWindowDefinition());</code></pre>
+        <section class="guide-section" id="triage-showstoppers">
+          <h3>Showstoppers</h3>
+          <div class="check-grid">
+            <label><input type="checkbox"> Important state only exists in the client <code>Screen</code>.</label>
+            <label><input type="checkbox"> Fake item entries are treated like real <code>Slot</code>s.</label>
+            <label><input type="checkbox"> Packets assume there is one active screen.</label>
+            <label><input type="checkbox"> Buttons mutate server state without a menu button or Salt payload.</label>
+            <label><input type="checkbox"> Renderer hardcodes player inventory and machine UI together.</label>
+            <label><input type="checkbox"> Custom drag or quick-move behavior bypasses vanilla menu clicks.</label>
+          </div>
+          <p>
+            If any box applies, write the compat layer around that behavior first. Unknown modded menus should keep
+            opening their original screens until the integration is explicit.
+          </p>
+        </section>
 
-        <h3>Replace an existing definition</h3>
-        <pre><code>SaltsInventoryDesktopApi.replaceClientWindow(MyMenus.MY_MENU, new MyBetterWindowDefinition());</code></pre>
+        <section class="guide-section" id="triage-patterns">
+          <h3>Pick A Pattern</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Menu shape</th>
+                <th>Use</th>
+                <th>Avoid</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Plain slot grid</td>
+                <td><code>renderSlot</code>, <code>slotAt</code>, fixed or storage-grid resize</td>
+                <td>Drawing a duplicate player inventory</td>
+              </tr>
+              <tr>
+                <td>Machine or furnace-like</td>
+                <td>Cropped background, <code>texturelessSlot</code>, progress textures</td>
+                <td>Copying the whole vanilla screen texture</td>
+              </tr>
+              <tr>
+                <td>Terminal with fake entries</td>
+                <td><code>DesktopVirtualItem</code>, custom payloads, search widgets</td>
+                <td>Returning <code>DesktopSlotHit</code> for non-slots</td>
+              </tr>
+              <tr>
+                <td>Screen with custom controls</td>
+                <td>Widget helpers, menu buttons, typed payloads</td>
+                <td>Global packets that do not name the Salt session</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
 
-        <h3>Predicate registration</h3>
-        <p>
-          Use predicates when one direct <code>MenuType</code> is not enough. A predicate can inspect the lookup context
-          and decide whether to create a definition.
-        </p>
-        <pre><code>SaltsInventoryDesktopApi.registerClientWindowPredicate(
+        <section class="guide-section" id="triage-rework">
+          <h3>Rework Checklist</h3>
+          <ol class="steps">
+            <li>Extract the machine/container UI from the old <code>Screen</code> renderer.</li>
+            <li>Move client-only UI state into the desktop state object or synced data.</li>
+            <li>Replace screen-global packets with Salt payloads for session-specific actions.</li>
+            <li>Return real menu slot ids from <code>slotAt</code>.</li>
+            <li>Test normal click, shift-click, drag distribution, double-click, carried stacks, ghost pin, and reopen.</li>
+          </ol>
+        </section>
+      </section>
+
+      <section class="chapter" id="chapter-registration" data-title="Registration" data-api="SaltsInventoryDesktopApi,DesktopWindowDefinitionFactory,DesktopWindowMatcher,DesktopWindowLookupContext,DesktopServerWindowHandler">
+        <div class="chapter-heading">
+          <p class="chapter-kicker">Chapter 3</p>
+          <h2>Registration</h2>
+          <p>
+            Client registration describes how a menu looks. Server registration decides whether Salt may capture that
+            menu as a live desktop session.
+          </p>
+          <div class="api-parts"></div>
+        </div>
+
+        <section class="guide-section" id="registration-basic">
+          <h3>Basic Registration</h3>
+          <pre><code class="language-java">public static void initClient() {
+    MenuType&lt;MyMenu&gt; menu = findMenu("other_mod:my_menu");
+    if (menu != null) {
+        SaltsInventoryDesktopApi.registerClientWindow(menu, new MyWindow());
+    }
+}
+
+public static void initServer() {
+    MenuType&lt;MyMenu&gt; menu = findMenu("other_mod:my_menu");
+    if (menu != null) {
+        SaltsInventoryDesktopApi.registerServerWindow(menu, new MyServerWindow());
+    }
+}</code></pre>
+          <p>
+            Register both sides for a captured modded menu. A client-only definition can exist, but it does not make an
+            unknown server menu desktop-managed by itself.
+          </p>
+        </section>
+
+        <section class="guide-section" id="registration-predicates">
+          <h3>Predicate Registration</h3>
+          <pre><code class="language-java">SaltsInventoryDesktopApi.registerClientWindowPredicate(
     Identifier.fromNamespaceAndPath("my_mod", "dynamic_storage"),
     100,
     context -&gt; context.sourceKey().startsWith("block:"),
-    context -&gt; new MyDynamicStorageWindow()
+    context -&gt; new DynamicStorageWindow()
 );</code></pre>
+          <p>
+            Use predicates when one <code>MenuType</code> has multiple layouts or when the source key decides which
+            desktop window should be used.
+          </p>
+        </section>
 
-        <h3>Server opt-in</h3>
-        <pre><code>SaltsInventoryDesktopApi.registerServerWindow(MyMenus.MY_MENU, new MyServerWindowHandler());</code></pre>
+        <section class="guide-section" id="registration-optional-compat">
+          <h3>Optional Compat</h3>
+          <pre><code class="language-java">private static @Nullable MenuType&lt;?&gt; findMenu(String id) {
+    Identifier key = Identifier.tryParse(id);
+    return key == null ? null : BuiltInRegistries.MENU.getOptional(key).orElse(null);
+}</code></pre>
+          <p>
+            Keep optional mod references guarded. Prefer registry ids, optional entrypoints, or small reflection helpers
+            over hard class references in always-loaded code.
+          </p>
+        </section>
+      </section>
 
-        <div class="callout warn">
-          <strong>Important fallback rule:</strong>
-          Unknown modded menus are not captured. If a modded menu has no Salt server registration, Salt lets the original
-          mod screen open normally.
+      <section class="chapter" id="chapter-client-window" data-title="Client Window" data-api="DesktopWindowDefinition,DesktopWindowSetupContext,DesktopWindowContext,DesktopRenderContext,DesktopResizePolicy,CompoundTag">
+        <div class="chapter-heading">
+          <p class="chapter-kicker">Chapter 4</p>
+          <h2>Client Window</h2>
+          <p>
+            The client definition is the render and input adapter. It should describe the content area, not re-create
+            Minecraft's full screen.
+          </p>
+          <div class="api-parts"></div>
         </div>
-      </section>
 
-      <section id="compatibility-limits" class="panel">
-        <h2>Compatibility Limits</h2>
-        <p>
-          Salt can host normal <code>AbstractContainerMenu</code>-backed screens well, but some menus need extra
-          integration before they are safe desktop windows. Treat these as showstoppers unless the integration handles
-          them explicitly.
-        </p>
-        <ul>
-          <li>The screen keeps important state only on the client <code>Screen</code> instead of in the menu, synced data slots, or Salt payloads.</li>
-          <li>The UI shows fake item entries that are not real <code>Slot</code>s, but expects normal slot clicks to work.</li>
-          <li>Custom packets assume there is one currently open screen instead of a specific Salt desktop session.</li>
-          <li>Buttons, text fields, tabs, scroll positions, or selected recipes mutate server state without a session-scoped packet or menu button.</li>
-          <li>The original renderer hardcodes player inventory, hotbar, or vanilla screen coordinates into the same draw path as the machine UI.</li>
-          <li>The menu has custom drag, quick-move, double-click, or carried-stack behavior that bypasses vanilla menu click handling.</li>
-          <li>The container is client-only or not backed by a live server menu that Salt can validate.</li>
-        </ul>
-        <div class="callout warn">
-          <strong>Default answer:</strong>
-          Leave the menu on its original screen until the compat layer has a client window definition and any required
-          server handler or payloads.
-        </div>
-      </section>
+        <section class="guide-section" id="client-lifecycle">
+          <h3>Lifecycle Hooks</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Hook</th>
+                <th>Use for</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>createState</code></td><td>Search text, selected tab, scroll row, animation state.</td></tr>
+              <tr><td><code>title</code></td><td>Window title based on the menu or local state.</td></tr>
+              <tr><td><code>defaultSize</code></td><td>Full Salt window size, including title bar and padding.</td></tr>
+              <tr><td><code>render</code></td><td>Slots, textures, text, widgets, virtual items.</td></tr>
+              <tr><td><code>slotAt</code></td><td>Real menu slot hitboxes only.</td></tr>
+              <tr><td><code>saveLocalState</code></td><td>Local UI state that should survive reopen.</td></tr>
+            </tbody>
+          </table>
+        </section>
 
-      <section id="rework-checklist" class="panel">
-        <h2>Existing Menu Rework Checklist</h2>
-        <p>
-          When adapting an existing GUI to Salt, split the original screen into the parts Salt owns and the parts your
-          integration owns.
-        </p>
-        <ul>
-          <li>Do not render the player inventory or hotbar inside the Salt window.</li>
-          <li>Map every real item slot to the correct menu slot id.</li>
-          <li>Use <code>containerSlot(...)</code>, <code>containerSlotHit(...)</code>, and <code>menuSlotId(...)</code> when container slot indexes are easier to reason about.</li>
-          <li>Use <code>renderSlot(...)</code> or <code>slot(...)</code> when Salt should draw the slot background and item.</li>
-          <li>Use <code>texturelessSlot(...)</code> when your cropped background already contains the slot art.</li>
-          <li>Move screen-only UI state into the desktop state object, synced menu data, or session-scoped payloads.</li>
-          <li>Replace custom screen packets with Salt payload handlers when the action belongs to a specific desktop session.</li>
-          <li>Recreate non-slot controls such as buttons, text fields, progress bars, tabs, and scrollbars through render, input hooks, widgets, menu buttons, or payloads.</li>
-          <li>Keep optional mod compatibility guarded by registry lookups, reflection, or optional compat entrypoints.</li>
-          <li>Test normal click, shift-click, drag distribution, double-click collection, carried-stack sync, recipe book behavior, ghost pin, close/reopen, and any custom payload actions.</li>
-        </ul>
-      </section>
+        <section class="guide-section" id="client-minimal-window">
+          <h3>Minimal Slot Window</h3>
+          <pre><code class="language-java">public final class MyWindow implements DesktopWindowDefinition&lt;MyMenu, MyWindow.State&gt; {
+    public static final class State {
+        int scroll;
+    }
 
-      <section id="client-definition" class="panel">
-        <h2>Client Definition Lifecycle</h2>
-        <p>
-          Implement <code>DesktopWindowDefinition&lt;T, S&gt;</code>. <code>T</code> is your menu class.
-          <code>S</code> is your per-window client state class.
-        </p>
-        <table>
-          <thead>
-            <tr>
-              <th>Hook</th>
-              <th>When Salt calls it</th>
-              <th>Common use</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>createState(setup)</code></td>
-              <td>Once when the window object is created.</td>
-              <td>Create selected tab, search state, scroll rows, animation counters.</td>
-            </tr>
-            <tr>
-              <td><code>title(context)</code></td>
-              <td>When drawing title bar text.</td>
-              <td>Override a verbose vanilla title with a cleaner one.</td>
-            </tr>
-            <tr>
-              <td><code>defaultSize(setup)</code></td>
-              <td>Before initial placement.</td>
-              <td>Choose a fixed functional size or default grid size.</td>
-            </tr>
-            <tr>
-              <td><code>minSize(context)</code></td>
-              <td>During resize clamp.</td>
-              <td>Prevent crushing buttons, search bars, slots, or labels.</td>
-            </tr>
-            <tr>
-              <td><code>resizePolicy(context)</code></td>
-              <td>When deciding if resize is allowed.</td>
-              <td>Return fixed or storage-grid style.</td>
-            </tr>
-            <tr>
-              <td><code>snapSize(context)</code></td>
-              <td>When a resize drag ends.</td>
-              <td>Snap to whole slot columns and rows.</td>
-            </tr>
-            <tr>
-              <td><code>opened(context)</code></td>
-              <td>After the window is added to the desktop.</td>
-              <td>Play local open animation, initialize UI caches.</td>
-            </tr>
-            <tr>
-              <td><code>closed(context)</code></td>
-              <td>Before the window is removed for real.</td>
-              <td>Release client-only resources.</td>
-            </tr>
-            <tr>
-              <td><code>moved(context)</code></td>
-              <td>After a move drag commits.</td>
-              <td>Re-anchor attached popups or local overlays.</td>
-            </tr>
-            <tr>
-              <td><code>resized(context)</code></td>
-              <td>After a resize commits and snaps.</td>
-              <td>Recalculate cached grid dimensions.</td>
-            </tr>
-            <tr>
-              <td><code>focusChanged(context, focused)</code></td>
-              <td>Whenever Salt focus changes.</td>
-              <td>Pause typing, close dropdowns, change highlight state.</td>
-            </tr>
-            <tr>
-              <td><code>ghosted(context)</code></td>
-              <td>When a ghost-pinned live window demotes to preview.</td>
-              <td>Close controls, stop text editing.</td>
-            </tr>
-            <tr>
-              <td><code>unghosted(context)</code></td>
-              <td>When a preview promotes back to interactive.</td>
-              <td>Resume animations or restore UI state.</td>
-            </tr>
-            <tr>
-              <td><code>tick(context)</code></td>
-              <td>Every client tick while window exists.</td>
-              <td>Animate, poll reflected values, update local state.</td>
-            </tr>
-            <tr>
-              <td><code>render(context)</code></td>
-              <td>Every frame.</td>
-              <td>Draw the content area.</td>
-            </tr>
-            <tr>
-              <td><code>slotAt(context, mouseX, mouseY)</code></td>
-              <td>When Salt needs to route a slot click.</td>
-              <td>Return real menu slot hitboxes.</td>
-            </tr>
-            <tr>
-              <td><code>mouseClicked</code>, <code>mouseReleased</code>, <code>mouseDragged</code></td>
-              <td>For custom non-slot interactions.</td>
-              <td>Tabs, buttons, virtual item entries, scroll thumbs.</td>
-            </tr>
-            <tr>
-              <td><code>mouseScrolled</code></td>
-              <td>Before Salt falls back to hotbar scrolling.</td>
-              <td>Consume wheel input for hovered scrollable UI.</td>
-            </tr>
-            <tr>
-              <td><code>keyPressed</code>, <code>charTyped</code></td>
-              <td>For keyboard input while desktop is active.</td>
-              <td>Text boxes, hotkeys, search fields.</td>
-            </tr>
-            <tr>
-              <td><code>wantsTextInput(context)</code></td>
-              <td>During movement/key routing.</td>
-              <td>Suppress WASD and inventory hotkeys while typing.</td>
-            </tr>
-            <tr>
-              <td><code>appendTooltip(context, mouseX, mouseY)</code></td>
-              <td>When Salt asks the top window for tooltips.</td>
-              <td>Custom button descriptions and virtual item tooltips.</td>
-            </tr>
-            <tr>
-              <td><code>customPayload(context, channel, data)</code></td>
-              <td>When server sends a session-scoped payload.</td>
-              <td>Apply snapshots, progress updates, custom state.</td>
-            </tr>
-            <tr>
-              <td><code>loadLocalState</code>, <code>saveLocalState</code></td>
-              <td>When Salt loads/saves window geometry state.</td>
-              <td>Persist selected tab, sort mode, search mode, collapsed panels.</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+    @Override
+    public State createState(DesktopWindowSetupContext&lt;MyMenu&gt; context) {
+        return new State();
+    }
 
-      <section id="contexts" class="panel">
-        <h2>Context Objects</h2>
-        <p>
-          Contexts are intentionally safer than exposing Salt's internal window classes. They give mods what they need
-          without tying them to the internal engine.
-        </p>
-        <div class="grid three">
-          <div class="mini">
-            <h3>DesktopWindowContext</h3>
-            <ul>
-              <li><code>minecraft()</code>, <code>menu()</code></li>
-              <li><code>originalTitle()</code></li>
-              <li><code>sessionId()</code>, <code>sourceKey()</code></li>
-              <li><code>state()</code></li>
-              <li><code>windowX/Y/Width/Height()</code></li>
-              <li><code>contentX/Y/Width/Height()</code></li>
-              <li><code>focused()</code>, <code>minimized()</code>, <code>ghosted()</code></li>
-              <li><code>carriedStack()</code></li>
-              <li><code>fontWidth()</code>, <code>trimToWidth()</code></li>
-            </ul>
+    @Override
+    public DesktopWindowSize defaultSize(DesktopWindowSetupContext&lt;MyMenu&gt; context) {
+        return DesktopWindowSize.of(8 + 9 * 18 + 8, 16 + 8 + 3 * 18 + 8);
+    }
+
+    @Override
+    public void render(DesktopRenderContext&lt;MyMenu, State&gt; context) {
+        int x = context.contentX();
+        int y = context.contentY();
+        for (int i = 0; i &lt; 27; i++) {
+            context.renderSlot(i, x + i % 9 * 18, y + i / 9 * 18);
+        }
+    }
+}</code></pre>
+        </section>
+
+        <section class="guide-section" id="client-size-map">
+          <h3>Window Size vs Content Size</h3>
+          <div class="size-map" aria-label="Window and content size diagram">
+            <span class="size-title">title bar</span>
+            <span class="size-pad">padding</span>
+            <span class="size-content">contentX/Y, contentWidth/Height</span>
+            <span class="size-pad">padding</span>
           </div>
-          <div class="mini">
-            <h3>DesktopRenderContext</h3>
-            <ul>
-              <li><code>fill</code>, <code>text</code>, <code>scaledText</code></li>
-              <li><code>sprite</code>, <code>texture</code></li>
-              <li><code>windowNineSlice</code>, <code>onePixelNineSlice</code></li>
-              <li><code>item</code>, <code>virtualItem</code></li>
-              <li><code>slot</code>, <code>renderSlot</code>, <code>texturelessSlot</code></li>
-              <li><code>slotBackground</code>, <code>slotHighlight</code></li>
-              <li><code>entityPreview</code></li>
-              <li><code>tooltip</code></li>
-            </ul>
-          </div>
-          <div class="mini">
-            <h3>DesktopInputContext</h3>
-            <ul>
-              <li><code>shiftDown()</code>, <code>ctrlDown()</code>, <code>altDown()</code></li>
-              <li><code>mouseButtonDown(button)</code></li>
-              <li><code>sendMenuButton(buttonId)</code></li>
-              <li><code>sendRename(name)</code></li>
-              <li><code>clickSlot(...)</code>, <code>quickMoveSlot(...)</code></li>
-              <li><code>toggleRecipeBook()</code></li>
-              <li><code>setRecipeBookSearch(search)</code></li>
-              <li><code>sendPayload(...)</code></li>
-            </ul>
-          </div>
-        </div>
-        <div class="callout">
-          <strong>Version note:</strong>
-          <code>clickSlot</code> takes <code>ContainerInput</code> on <code>26.1.2</code> and <code>26.2</code>.
-          It takes <code>ClickType</code> on <code>1.20.1</code>, <code>1.21.1</code>, and <code>1.21.11</code>.
-          Typed <code>sendPayload(channel, payload, codec)</code> is available on every supported version except
-          <code>1.20.1</code>.
-        </div>
+          <p>
+            Start drawing at <code>context.contentX()</code> and <code>context.contentY()</code>. Return a
+            <code>defaultSize</code> large enough for title bar, padding, and content. In current examples that is
+            usually <code>8 + contentWidth + 8</code> wide and <code>16 + 8 + contentHeight + 8</code> tall.
+          </p>
+        </section>
       </section>
 
-      <section id="rendering" class="panel">
-        <h2>Rendering</h2>
-        <p>
-          Your render hook draws inside Salt's framed window. Coordinates are absolute screen coordinates, not relative
-          coordinates. Start from <code>context.contentX()</code> and <code>context.contentY()</code>.
-        </p>
-        <pre><code>@Override
-public void render(DesktopRenderContext&lt;MyMenu, State&gt; context) {
+      <section class="chapter" id="chapter-slots-input" data-title="Slots And Input" data-api="DesktopSlotHit,DesktopSlotContext,DesktopInputContext,Slot,DesktopTextBoxState,DesktopWidgets,DesktopVirtualItem">
+        <div class="chapter-heading">
+          <p class="chapter-kicker">Chapter 5</p>
+          <h2>Slots And Input</h2>
+          <p>
+            Normal item movement should flow through Salt's slot routing. Custom UI controls should consume input only
+            when they actually handled it.
+          </p>
+          <div class="api-parts"></div>
+        </div>
+
+        <section class="guide-section" id="slots-real">
+          <h3>Real Slot Routing</h3>
+          <pre><code class="language-java">@Override
+public DesktopSlotHit slotAt(DesktopSlotContext&lt;MyMenu, State&gt; context, double mouseX, double mouseY) {
     int x = context.contentX();
     int y = context.contentY();
 
-    context.text("Mode", x, y, 0xFF202020, false);
-    context.sprite(MY_ICON, x + 48, y - 2, 16, 16);
-    context.slotBackground(x, y + 18);
-    context.renderSlot(0, x, y + 18);
+    DesktopSlotHit input = context.hitSlot(0, x + 56, y + 17, mouseX, mouseY);
+    if (input != null) return input;
+
+    return context.hitSlot(1, x + 116, y + 35, mouseX, mouseY);
 }</code></pre>
-        <div class="callout">
-          <strong>Tip:</strong>
-          Avoid rendering a duplicate player inventory or hotbar inside your container. Salt already provides independent
-          inventory and hotbar interaction.
-        </div>
+          <p>
+            Return the index into <code>menu.slots</code>, not visual order. If you think in container slot indexes, use
+            <code>containerSlot(...)</code>, <code>containerSlotHit(...)</code>, and <code>menuSlotId(...)</code>.
+          </p>
+        </section>
+
+        <section class="guide-section" id="slots-rendering">
+          <h3>Slot Rendering Choices</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Helper</th>
+                <th>Use when</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>renderSlot(id, x, y)</code></td><td>Salt should draw slot background, item, hover, and drag preview.</td></tr>
+              <tr><td><code>slot(slot, x, y)</code></td><td>You already resolved the <code>Slot</code> object.</td></tr>
+              <tr><td><code>texturelessSlot(id, x, y)</code></td><td>Your background already contains slot art.</td></tr>
+              <tr><td><code>slotBackground(x, y)</code></td><td>You want Salt's slot art but need custom item rendering order.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="guide-section" id="slots-text-input">
+          <h3>Text Input</h3>
+          <pre><code class="language-java">public static final class State {
+    final DesktopTextBoxState search = new DesktopTextBoxState();
+}
+
+@Override
+public void render(DesktopRenderContext&lt;MyMenu, State&gt; context) {
+    DesktopWidgets.renderTextBox(context, context.state().search, context.contentX(), context.contentY(), 120);
+}
+
+@Override
+public boolean mouseClicked(DesktopInputContext&lt;MyMenu, State&gt; context, MouseButtonEvent event, boolean doubleClick) {
+    return DesktopWidgets.clickTextBox(context.state().search, event, context.contentX(), context.contentY(), 120);
+}
+
+@Override
+public boolean wantsTextInput(DesktopWindowContext&lt;MyMenu, State&gt; context) {
+    return DesktopWidgets.wantsTextInput(context.state().search);
+}</code></pre>
+          <p>
+            Always implement <code>wantsTextInput</code> for focused text boxes. That tells Salt to suppress movement
+            and normal UI hotkeys while the player is typing.
+          </p>
+        </section>
+
+        <section class="guide-section" id="slots-virtual">
+          <h3>Virtual Items</h3>
+          <pre><code class="language-java">List&lt;DesktopVirtualItem&gt; visible = entries.stream()
+    .map(entry -&gt; new DesktopVirtualItem(entry.stack(), entry.count()))
+    .toList();
+
+DesktopWidgets.renderVirtualItemGrid(context, visible, firstIndex, gridX, gridY, columns, rows);
+
+int index = DesktopWidgets.virtualItemIndexAt(
+    event.x(), event.y(), gridX, gridY, columns, rows, firstIndex, visible.size()
+);
+if (index &gt;= 0) {
+    context.sendPayload(PULL_CHANNEL, new PullPayload(index), PullPayload.CODEC);
+    return true;
+}</code></pre>
+          <p>
+            Virtual entries are not slots. Do not return <code>DesktopSlotHit</code> for them.
+          </p>
+        </section>
       </section>
 
-      <section id="cropped-backgrounds" class="panel">
-        <h2>Cropped Backgrounds</h2>
-        <p>
-          Many normal container textures include the machine UI at the top and the 4x9 player inventory at the bottom.
-          In a Salt desktop window, draw only the machine region and omit the duplicated player inventory.
-        </p>
-        <p>
-          Use <code>DesktopRenderContext.texture(...)</code> to draw a source rectangle from the original PNG. If that
-          cropped region already includes slot backgrounds, use <code>texturelessSlot(...)</code> so Salt renders only
-          the item, hover highlight, drag preview, and no-item icon on top of your texture.
-          <code>defaultSize(...)</code> is the full Salt window size, so include the title bar and content padding around
-          the cropped region.
-        </p>
-        <pre><code>private static final Identifier MY_SCREEN_TEXTURE =
+      <section class="chapter" id="chapter-server-payloads" data-title="Server And Payloads" data-api="DesktopServerWindowHandler,DesktopServerSessionContext,DesktopServerApi,DesktopPayloadCodecs,StreamCodec,RegistryFriendlyByteBuf">
+        <div class="chapter-heading">
+          <p class="chapter-kicker">Chapter 6</p>
+          <h2>Server And Payloads</h2>
+          <p>
+            Server handlers opt menus into capture and keep custom session behavior synchronized. Payloads are for
+            custom actions that vanilla slot clicks and menu buttons cannot express.
+          </p>
+          <div class="api-parts"></div>
+        </div>
+
+        <section class="guide-section" id="server-handler">
+          <h3>Server Handler</h3>
+          <pre><code class="language-java">public final class MyServerWindow implements DesktopServerWindowHandler&lt;MyMenu, MyServerWindow.State&gt; {
+    public static final class State {
+        long lastHash;
+    }
+
+    @Override
+    public State createState(DesktopServerSessionContext&lt;MyMenu, State&gt; context) {
+        return new State();
+    }
+
+    @Override
+    public void tick(DesktopServerSessionContext&lt;MyMenu, State&gt; context) {
+        context.broadcastChanges();
+    }
+}</code></pre>
+          <p>
+            Hidden ghost sessions still tick and validate through the desktop session manager. <code>closed</code> means
+            the live session is really ending, not just becoming a ghost preview.
+          </p>
+        </section>
+
+        <section class="guide-section" id="payloads-typed-raw">
+          <h3>Typed And Raw Payloads</h3>
+          <div class="version-tabs" data-tabs>
+            <div class="tab-list" role="tablist" aria-label="Payload examples">
+              <button type="button" data-target="typed-payload">26.x and 1.21.x typed</button>
+              <button type="button" data-target="raw-payload">1.20.1 raw</button>
+            </div>
+            <div class="tab-panel" data-panel="typed-payload">
+              <pre><code class="language-java">public record ModePayload(int mode) {
+    public static final StreamCodec&lt;RegistryFriendlyByteBuf, ModePayload&gt; CODEC =
+        StreamCodec.composite(ByteBufCodecs.INT, ModePayload::mode, ModePayload::new);
+}
+
+SaltsInventoryDesktopApi.registerServerPayload(MyMenus.MY_MENU, MY_CHANNEL, ModePayload.CODEC, (context, payload) -&gt; {
+    context.menu().setMode(payload.mode());
+    context.broadcastChanges();
+});
+
+context.sendPayload(MY_CHANNEL, new ModePayload(2), ModePayload.CODEC);</code></pre>
+            </div>
+            <div class="tab-panel" data-panel="raw-payload">
+              <pre><code class="language-java">SaltsInventoryDesktopApi.registerServerPayload(MyMenus.MY_MENU, MY_CHANNEL, context -&gt; {
+    byte[] data = context.data();
+    int mode = decodeMode(data);
+    context.menu().setMode(mode);
+    context.broadcastChanges();
+});
+
+context.sendPayload(MY_CHANNEL, encodeMode(2));</code></pre>
+            </div>
+          </div>
+          <p>
+            Keep payloads small and session-scoped. Salt's networking layer is designed around a 32 KiB cap.
+          </p>
+        </section>
+
+        <section class="guide-section" id="payloads-when">
+          <h3>When To Use Payloads</h3>
+          <ul>
+            <li>Use normal slot clicks for real inventory slots.</li>
+            <li>Use <code>sendMenuButton</code> for vanilla-style menu buttons.</li>
+            <li>Use payloads for selected tabs, terminal actions, custom sort modes, fake entries, and special server commands.</li>
+          </ul>
+        </section>
+      </section>
+
+      <section class="chapter" id="chapter-ui-patterns" data-title="UI Patterns" data-api="DesktopRenderContext,DesktopWidgets,RecipeBookComponent,DesktopResizePolicy,DesktopWindowSize">
+        <div class="chapter-heading">
+          <p class="chapter-kicker">Chapter 7</p>
+          <h2>UI Patterns</h2>
+          <p>
+            These examples cover common layouts: cropped machine textures, recipe-book buttons, resizing, and desktop
+            window behavior that Salt inherits automatically.
+          </p>
+          <div class="api-parts"></div>
+        </div>
+
+        <section class="guide-section" id="patterns-cropped-background">
+          <h3>Cropped Furnace-Like Background</h3>
+          <pre><code class="language-java">private static final Identifier MY_SCREEN_TEXTURE =
     Identifier.fromNamespaceAndPath("my_mod", "textures/gui/my_machine.png");
 private static final int TEXTURE_WIDTH = 256;
 private static final int TEXTURE_HEIGHT = 256;
@@ -519,496 +523,198 @@ public void render(DesktopRenderContext&lt;MyMenu, State&gt; context) {
     int x = context.contentX();
     int y = context.contentY();
 
-    context.texture(
-        MY_SCREEN_TEXTURE,
-        x,
-        y,
-        0,
-        0,
-        MACHINE_WIDTH,
-        MACHINE_HEIGHT,
-        MACHINE_WIDTH,
-        MACHINE_HEIGHT,
-        TEXTURE_WIDTH,
-        TEXTURE_HEIGHT
-    );
+    context.texture(MY_SCREEN_TEXTURE, x, y, 0, 0,
+        MACHINE_WIDTH, MACHINE_HEIGHT,
+        MACHINE_WIDTH, MACHINE_HEIGHT,
+        TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
     context.texturelessSlot(0, x + 56, y + 17);
     context.texturelessSlot(1, x + 56, y + 53);
     context.texturelessSlot(2, x + 116, y + 35);
+}</code></pre>
+          <p>
+            Use <code>texturelessSlot</code> only when your cropped texture already has slot backgrounds. Otherwise use
+            <code>renderSlot</code> or draw <code>slotBackground</code> first.
+          </p>
+        </section>
+
+        <section class="guide-section" id="patterns-recipe-book">
+          <h3>Recipe Book</h3>
+          <pre><code class="language-java">@Override
+public RecipeBookComponent&lt;?&gt; createRecipeBook(DesktopWindowContext&lt;MyMenu, State&gt; context) {
+    return MyClientReflect.createRecipeBook(context.menu());
 }
 
 @Override
-public DesktopSlotHit slotAt(DesktopSlotContext&lt;MyMenu, State&gt; context, double mouseX, double mouseY) {
-    int x = context.contentX();
-    int y = context.contentY();
-
-    DesktopSlotHit input = context.hitSlot(0, x + 56, y + 17, mouseX, mouseY);
-    if (input != null) return input;
-
-    DesktopSlotHit fuel = context.hitSlot(1, x + 56, y + 53, mouseX, mouseY);
-    return fuel != null ? fuel : context.hitSlot(2, x + 116, y + 35, mouseX, mouseY);
-}</code></pre>
-        <div class="callout">
-          <strong>Slot art:</strong>
-          If the cropped texture does not include slot backgrounds, use <code>renderSlot(...)</code> or
-          <code>slotBackground(...)</code> plus <code>texturelessSlot(...)</code> instead.
-        </div>
-      </section>
-
-      <section id="slots" class="panel">
-        <h2>Real Slot Routing</h2>
-        <p>
-          For normal item slots, render the slot and return a <code>DesktopSlotHit</code> from <code>slotAt</code>. Salt
-          will handle pickup, place, split stacks, quick craft drag, double click collection, shift-click, carried stack
-          sync, and server validation.
-        </p>
-        <pre><code>@Override
-public DesktopSlotHit slotAt(DesktopSlotContext&lt;MyMenu, State&gt; context, double mouseX, double mouseY) {
-    int x = context.contentX();
-    int y = context.contentY();
-    return context.hitSlot(5, x + 32, y + 16, mouseX, mouseY);
-}</code></pre>
-        <div class="callout warn">
-          <strong>Common mistake:</strong>
-          Use menu slot ids, not visual slot order. <code>slotAt</code> must return the index into
-          <code>menu.slots</code>.
-        </div>
-      </section>
-
-      <section id="input" class="panel">
-        <h2>Input</h2>
-        <p>
-          Salt asks custom handlers first for non-slot interactions. Return <code>true</code> only when your UI consumed
-          the input. Returning <code>false</code> allows Salt to continue with normal slot handling, hotbar scrolling, or
-          world pass-through behavior.
-        </p>
-        <pre><code>@Override
 public boolean mouseClicked(DesktopInputContext&lt;MyMenu, State&gt; context, MouseButtonEvent event, boolean doubleClick) {
-    if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT &amp;&amp; MY_BUTTON.contains(event.x(), event.y())) {
-        context.sendMenuButton(3);
+    if (recipeButton.contains(event.x(), event.y())) {
+        context.toggleRecipeBook();
         return true;
     }
     return false;
 }</code></pre>
-        <p>
-          Text input should also implement <code>wantsTextInput</code>. That is the signal Salt uses to suppress movement
-          keys while the player is typing.
-        </p>
-      </section>
+          <p>
+            On <code>1.20.1</code> and <code>1.21.1</code>, return raw <code>RecipeBookComponent</code> instead of
+            <code>RecipeBookComponent&lt;?&gt;</code>.
+          </p>
+        </section>
 
-      <section id="widgets" class="panel">
-        <h2>Widget Helpers</h2>
-        <p>
-          The widget helpers are optional. They exist to remove repetitive UI code from mod windows without forcing a
-          complete framework.
-        </p>
-        <table>
-          <thead>
-            <tr>
-              <th>Helper</th>
-              <th>Use</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>DesktopTextBoxState</code></td>
-              <td>Stores text and focus for a simple search/text box.</td>
-            </tr>
-            <tr>
-              <td><code>DesktopWidgets.renderTextBox</code></td>
-              <td>Draws Salt's dynamic 3-slice search bar texture.</td>
-            </tr>
-            <tr>
-              <td><code>clickTextBox</code>, <code>keyPressedTextBox</code>, <code>charTypedTextBox</code></td>
-              <td>Basic focus, backspace, delete, escape, enter, and text entry.</td>
-            </tr>
-            <tr>
-              <td><code>renderIconButton</code>, <code>renderTextButton</code></td>
-              <td>Small generic buttons for config style controls.</td>
-            </tr>
-            <tr>
-              <td><code>renderScrollbar</code></td>
-              <td>Salt creative-style scrollbar background and thumb.</td>
-            </tr>
-            <tr>
-              <td><code>renderDropdown</code></td>
-              <td>Simple popup menu with labels on the left and state buttons on the right.</td>
-            </tr>
-            <tr>
-              <td><code>renderVirtualItemGrid</code>, <code>virtualItemIndexAt</code></td>
-              <td>Terminal-style item grids that are not backed by normal slots.</td>
-            </tr>
-          </tbody>
-        </table>
-        <pre><code>public static final class State {
-    final DesktopTextBoxState search = new DesktopTextBoxState();
-}
-
-@Override
-public void render(DesktopRenderContext&lt;MyMenu, State&gt; context) {
-    DesktopWidgets.renderTextBox(context, context.state().search, context.contentX(), context.contentY(), 120);
-}
-
-@Override
-public boolean wantsTextInput(DesktopWindowContext&lt;MyMenu, State&gt; context) {
-    return DesktopWidgets.wantsTextInput(context.state().search);
-}</code></pre>
-      </section>
-
-      <section id="server" class="panel">
-        <h2>Server Support</h2>
-        <p>
-          The server handler is the opt-in that lets Salt capture a menu as a desktop session. If your menu has no server
-          handler and is not a vanilla Salt-supported menu, Salt will not capture it.
-        </p>
-        <pre><code>public final class MyServerWindow implements DesktopServerWindowHandler&lt;MyMenu, MyServerWindow.State&gt; {
-    public static final class State {
-        long lastSnapshotHash = Long.MIN_VALUE;
-    }
-
-    @Override
-    public State createState(DesktopServerSessionContext&lt;MyMenu, State&gt; context) {
-        return new State();
-    }
-
-    @Override
-    public void tick(DesktopServerSessionContext&lt;MyMenu, State&gt; context) {
-        context.menu().broadcastChanges();
-    }
-
-    @Override
-    public void closed(DesktopServerSessionContext&lt;MyMenu, State&gt; context) {
-        // The live session is ending here.
-    }
-}</code></pre>
-        <p>
-          Hidden ghost-pinned sessions still tick while valid. Use <code>context.visible()</code> and
-          <code>context.ghostPinned()</code> if your server logic needs to distinguish interactive windows from ghost
-          previews.
-        </p>
-      </section>
-
-      <section id="payloads" class="panel">
-        <h2>Custom Payloads</h2>
-        <p>
-          Payloads are session-scoped. This matters for multi-window support: two windows of the same menu type can be
-          open at the same time, and payloads must go to the correct session.
-        </p>
-        <div class="callout">
-          <strong>Version note:</strong>
-          Payload channels use <code>Identifier</code> on <code>26.1.2</code>, <code>26.2</code>, and
-          <code>1.21.11</code>. Use <code>ResourceLocation</code> on <code>1.21.1</code> and <code>1.20.1</code>.
-        </div>
-        <h3>Raw byte payload</h3>
-        <pre><code>SaltsInventoryDesktopApi.registerServerPayload(MyMenus.MY_MENU, MY_CHANNEL, context -&gt; {
-    byte[] data = context.data();
-    context.broadcastChanges();
-});</code></pre>
-
-        <h3>Typed payload</h3>
-        <p>
-          Typed payload helpers are available on <code>1.21.1</code>, <code>1.21.11</code>, <code>26.1.2</code>,
-          and <code>26.2</code>. On <code>1.20.1</code>, register a raw byte payload and encode or decode the bytes
-          yourself.
-        </p>
-        <pre><code>public record ModePayload(int mode) {
-    public static final StreamCodec&lt;RegistryFriendlyByteBuf, ModePayload&gt; CODEC =
-        StreamCodec.composite(ByteBufCodecs.INT, ModePayload::mode, ModePayload::new);
-}
-
-SaltsInventoryDesktopApi.registerServerPayload(
-    MyMenus.MY_MENU,
-    MY_CHANNEL,
-    ModePayload.CODEC,
-    (context, payload) -&gt; {
-        context.menu().setMode(payload.mode());
-        context.broadcastChanges();
-    }
-);</code></pre>
-
-        <h3>Client send</h3>
-        <pre><code>context.sendPayload(MY_CHANNEL, new ModePayload(2), ModePayload.CODEC);</code></pre>
-        <p>
-          On <code>1.20.1</code>, send encoded bytes instead:
-        </p>
-        <pre><code>context.sendPayload(MY_CHANNEL, encodedBytes);</code></pre>
-        <div class="callout">
-          <strong>Limit:</strong>
-          Keep custom payloads small. The API is designed around a 32 KiB cap.
-        </div>
-      </section>
-
-      <section id="resizing" class="panel">
-        <h2>Resizing And Snap Sizes</h2>
-        <p>
-          Salt supports fixed windows and storage-grid style resizable windows. A resizable custom window should define
-          a minimum size and a snap size so it does not keep awkward leftover space.
-        </p>
-        <pre><code>@Override
+        <section class="guide-section" id="patterns-resizing">
+          <h3>Resize And Snap</h3>
+          <pre><code class="language-java">@Override
 public DesktopResizePolicy resizePolicy(DesktopWindowContext&lt;MyMenu, State&gt; context) {
     return DesktopResizePolicy.STORAGE_GRID;
 }
 
 @Override
-public DesktopWindowSize minSize(DesktopWindowContext&lt;MyMenu, State&gt; context) {
-    return DesktopWindowSize.of(8 + 3 * 18 + 8, 16 + 8 + 2 * 18 + 8);
-}
-
-@Override
 public DesktopWindowSize snapSize(DesktopWindowContext&lt;MyMenu, State&gt; context) {
-    int columns = Math.max(3, (context.contentWidth() - 14) / 18);
-    int rows = Math.max(2, context.contentHeight() / 18);
-    return DesktopWindowSize.of(8 + columns * 18 + 14 + 8, 16 + 8 + rows * 18 + 8);
+    int columns = Math.max(1, context.contentWidth() / 18);
+    int rows = Math.max(1, context.contentHeight() / 18);
+    return DesktopWindowSize.of(8 + columns * 18 + 8, 16 + 8 + rows * 18 + 8);
 }</code></pre>
-        <p>
-          Salt still respects the user's global config. If resizing is disabled globally or the window is locked, resize
-          grips are disabled even when the definition returns a resizable policy.
-        </p>
+          <p>
+            Use fixed windows for functional machine UIs. Use storage-grid resizing only when the window can add or
+            remove visible rows or columns cleanly.
+          </p>
+        </section>
+
+        <section class="guide-section" id="patterns-inherited">
+          <h3>Inherited Desktop Behavior</h3>
+          <div class="pill-row">
+            <span>lock</span>
+            <span>pin</span>
+            <span>ghost pin</span>
+            <span>placement</span>
+            <span>carried stack</span>
+            <span>hotbar</span>
+            <span>shift-click</span>
+            <span>tooltips</span>
+          </div>
+          <p>
+            Do not rebuild these features in your definition. Add hooks such as <code>ghosted()</code> only for local
+            visual state or preview-specific effects.
+          </p>
+        </section>
       </section>
 
-      <section id="state" class="panel">
-        <h2>State And Persistence</h2>
-        <p>
-          There are three kinds of state to think about.
-        </p>
-        <table>
-          <thead>
-            <tr>
-              <th>State type</th>
-              <th>Owner</th>
-              <th>Examples</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Menu state</td>
-              <td>Minecraft server menu</td>
-              <td>Slots, progress data, selected trade, furnace burn time.</td>
-            </tr>
-            <tr>
-              <td>Client window state</td>
-              <td>Your <code>S</code> object</td>
-              <td>Scroll row, selected tab, search focus, animation frame.</td>
-            </tr>
-            <tr>
-              <td>Persistent local state</td>
-              <td>Salt window state store</td>
-              <td>Saved selected tab, search mode, collapsed panels.</td>
-            </tr>
-          </tbody>
-        </table>
-        <pre><code>@Override
-public void saveLocalState(DesktopWindowContext&lt;MyMenu, State&gt; context, CompoundTag tag) {
-    tag.putInt("tab", context.state().selectedTab);
-}
-
-@Override
-public void loadLocalState(DesktopWindowContext&lt;MyMenu, State&gt; context, CompoundTag tag) {
-    context.state().selectedTab = tag.getIntOr("tab", 0);
-}</code></pre>
-      </section>
-
-      <section id="ghosting" class="panel">
-        <h2>Lock, Pin, And Ghost Pin</h2>
-        <p>
-          Mod windows inherit Salt's window controls. Definitions do not need to implement lock, pin, movement, close,
-          focus, minimize, or ghost preview behavior.
-        </p>
-        <div class="grid three">
-          <div class="mini">
-            <h3>Locked</h3>
-            <p>Window cannot be moved or resized. Slot and custom UI interactions still work.</p>
-          </div>
-          <div class="mini">
-            <h3>Pinned</h3>
-            <p>Window reopens at its saved position and size instead of using automatic placement.</p>
-          </div>
-          <div class="mini">
-            <h3>Ghost pinned</h3>
-            <p>Closing demotes the live session into a translucent preview while valid and nearby.</p>
-          </div>
+      <section class="chapter" id="chapter-troubleshooting" data-title="Troubleshooting" data-api="DesktopDebug,DesktopSlotHit,DesktopServerWindowHandler,DesktopPayloadCodecs">
+        <div class="chapter-heading">
+          <p class="chapter-kicker">Chapter 8</p>
+          <h2>Troubleshooting</h2>
+          <p>
+            Most integration failures come from missing server support, wrong slot ids, global packets, or rendering the
+            old screen unchanged.
+          </p>
+          <div class="api-parts"></div>
         </div>
-        <p>
-          Ghost previews should be treated as read-mostly UI. Salt blocks normal item movement while ghosted. Your custom
-          input handlers should also avoid mutating server state when <code>context.ghosted()</code> is true.
-        </p>
+
+        <section class="guide-section" id="troubleshooting-common">
+          <h3>Common Failure Modes</h3>
+          <div class="accordion-set">
+            <details>
+              <summary>Window does not open in Salt</summary>
+              <p>
+                Confirm the menu type was found, the client definition registered, and the server handler or payload
+                handler registered for unknown modded menus. Unknown menus fall back to their original screen.
+              </p>
+            </details>
+            <details>
+              <summary>Clicking a slot moves the wrong item</summary>
+              <p>
+                Check that <code>slotAt</code> returns the menu slot id. Container slot indexes and visual slot order are
+                not always the same thing.
+              </p>
+            </details>
+            <details>
+              <summary>Payload never reaches the server</summary>
+              <p>
+                Verify the payload channel id, codec/raw encoding, server registration, and that the action belongs to
+                the same menu type as the captured session.
+              </p>
+            </details>
+            <details>
+              <summary>Player inventory appears twice</summary>
+              <p>
+                Crop the machine portion of the texture and remove player inventory slots from the custom render path.
+                Salt already handles player inventory and hotbar interaction.
+              </p>
+            </details>
+            <details>
+              <summary>Typing also moves the player</summary>
+              <p>
+                Implement <code>wantsTextInput</code> and return true while a text box is focused.
+              </p>
+            </details>
+          </div>
+        </section>
+
+        <section class="guide-section" id="troubleshooting-debug-checklist">
+          <h3>Debug Checklist</h3>
+          <ol class="steps">
+            <li>Log the menu registry id and slot count when registering.</li>
+            <li>Render temporary labels for menu slot ids while aligning hitboxes.</li>
+            <li>Test one slot click before adding custom widgets.</li>
+            <li>Test one payload before adding complex state syncing.</li>
+            <li>Compare behavior with the original screen for shift-click and result slots.</li>
+          </ol>
+        </section>
       </section>
 
-      <section id="recipes" class="panel">
-        <h2>Recipe Book</h2>
-        <p>
-          If your menu supports Minecraft's recipe book, return a component from <code>createRecipeBook</code>. Salt
-          hosts it as an attached object rather than a separate desktop window.
-        </p>
-        <pre><code>@Override
-public RecipeBookComponent&lt;?&gt; createRecipeBook(DesktopWindowContext&lt;MyMenu, State&gt; context) {
-    return MyClientReflect.createRecipeBook(context.menu());
-}</code></pre>
-        <p>
-          On <code>1.20.1</code> and <code>1.21.1</code>, return raw <code>RecipeBookComponent</code> instead of
-          <code>RecipeBookComponent&lt;?&gt;</code>.
-        </p>
-        <p>
-          Use <code>context.toggleRecipeBook()</code> from a custom button, and
-          <code>context.setRecipeBookSearch(search)</code> when your UI wants to sync search text into the book.
-        </p>
-      </section>
-
-      <section id="virtual-items" class="panel">
-        <h2>Virtual Item Entries</h2>
-        <p>
-          Some terminal menus display stored items that are not actual slots. These should not return
-          <code>DesktopSlotHit</code>. Render them as virtual items and send custom payloads for actions.
-        </p>
-        <pre><code>List&lt;DesktopVirtualItem&gt; visible = entries.stream()
-    .map(entry -&gt; new DesktopVirtualItem(entry.stack(), entry.count()))
-    .toList();
-
-DesktopWidgets.renderVirtualItemGrid(context, visible, firstIndex, gridX, gridY, columns, rows);
-
-int index = DesktopWidgets.virtualItemIndexAt(
-    event.x(), event.y(), gridX, gridY, columns, rows, firstIndex, visible.size()
-);
-if (index &gt;= 0) {
-    context.sendPayload(PULL_CHANNEL, new PullPayload(index), PullPayload.CODEC);
-    return true;
-}</code></pre>
-        <p>
-          On <code>1.20.1</code>, encode the pull request yourself and call
-          <code>context.sendPayload(PULL_CHANNEL, bytes)</code>.
-        </p>
-        <div class="callout warn">
-          <strong>Do not fake slots:</strong>
-          A virtual item is not a <code>Slot</code>. If there is no real menu slot, use a payload.
+      <section class="chapter" id="chapter-reference" data-title="Reference" data-api="DesktopWindowContext,DesktopRenderContext,DesktopInputContext,DesktopWidgets,SaltsInventoryDesktopApi">
+        <div class="chapter-heading">
+          <p class="chapter-kicker">Chapter 9</p>
+          <h2>Reference</h2>
+          <p>
+            Keep this chapter nearby once the integration works. It summarizes the API surface and version differences.
+          </p>
+          <div class="api-parts"></div>
         </div>
+
+        <section class="guide-section" id="reference-contexts">
+          <h3>Context Quick Reference</h3>
+          <div class="reference-grid">
+            <div>
+              <h4>DesktopWindowContext</h4>
+              <p><code>menu</code>, <code>sessionId</code>, <code>state</code>, <code>contentX/Y</code>, <code>containerSlot</code>, <code>menuSlotId</code></p>
+            </div>
+            <div>
+              <h4>DesktopRenderContext</h4>
+              <p><code>fill</code>, <code>text</code>, <code>texture</code>, <code>sprite</code>, <code>slot</code>, <code>texturelessSlot</code>, <code>virtualItem</code></p>
+            </div>
+            <div>
+              <h4>DesktopInputContext</h4>
+              <p><code>sendMenuButton</code>, <code>clickSlot</code>, <code>quickMoveSlot</code>, <code>sendPayload</code>, <code>toggleRecipeBook</code></p>
+            </div>
+            <div>
+              <h4>DesktopWidgets</h4>
+              <p>Text boxes, icon buttons, text buttons, scrollbars, dropdowns, virtual item grids.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="guide-section" id="reference-version-summary">
+          <h3>Version Summary</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Band</th>
+                <th>Important differences</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>26.1.2 and 26.2</td><td><code>Identifier</code>, <code>ContainerInput</code>, typed payload helpers.</td></tr>
+              <tr><td>1.21.11</td><td><code>Identifier</code>, <code>ClickType</code>, typed payload helpers.</td></tr>
+              <tr><td>1.21.1</td><td><code>ResourceLocation</code>, Salt compatibility input package, raw <code>RecipeBookComponent</code>.</td></tr>
+              <tr><td>1.20.1</td><td><code>ResourceLocation</code>, raw byte payloads only.</td></tr>
+            </tbody>
+          </table>
+        </section>
       </section>
 
-      <section id="fallbacks" class="panel">
-        <h2>Fallbacks And Compatibility</h2>
-        <p>
-          Salt's fallback behavior is conservative. If another mod is installed and has a menu Salt does not know how to
-          manage, the original screen should open normally. This avoids broken slot-only windows for complex mod UIs.
-        </p>
-        <ul>
-          <li>Register client definitions only when the other mod is present.</li>
-          <li>Lookup menu types by registry id instead of hard class references in always-loaded code.</li>
-          <li>Register server support only when the menu is safe for Salt's multi-window session model.</li>
-          <li>Use reflection or guarded compat classes if the dependency is optional.</li>
-          <li>Log clearly when a compat target is missing or has changed.</li>
-        </ul>
-      </section>
+      <p id="no-results" class="no-results" hidden>No matching chapters or sections.</p>
+    </main>
+  </div>
 
-      <section id="examples" class="panel">
-        <h2>Complete Minimal Example</h2>
-        <pre><code>public final class ExampleCompat {
-    public static void clientInit() {
-        MenuType&lt;ExampleMenu&gt; menu = ExampleMenus.EXAMPLE;
-        SaltsInventoryDesktopApi.registerClientWindow(menu, new ExampleWindow());
-    }
-
-    public static void serverInit() {
-        MenuType&lt;ExampleMenu&gt; menu = ExampleMenus.EXAMPLE;
-        SaltsInventoryDesktopApi.registerServerWindow(menu, new ExampleServerWindow());
-    }
-
-    private static final class ExampleWindow implements DesktopWindowDefinition&lt;ExampleMenu, State&gt; {
-        private static final class State {
-            final DesktopTextBoxState search = new DesktopTextBoxState();
-        }
-
-        @Override
-        public State createState(DesktopWindowSetupContext&lt;ExampleMenu&gt; context) {
-            return new State();
-        }
-
-        @Override
-        public Component title(DesktopWindowContext&lt;ExampleMenu, State&gt; context) {
-            return Component.literal("Example");
-        }
-
-        @Override
-        public DesktopWindowSize defaultSize(DesktopWindowSetupContext&lt;ExampleMenu&gt; context) {
-            return DesktopWindowSize.of(190, 112);
-        }
-
-        @Override
-        public void render(DesktopRenderContext&lt;ExampleMenu, State&gt; context) {
-            int x = context.contentX();
-            int y = context.contentY();
-            DesktopWidgets.renderTextBox(context, context.state().search, x, y, 120);
-            context.renderSlot(0, x, y + 20);
-            context.renderSlot(1, x + 18, y + 20);
-        }
-
-        @Override
-        public DesktopSlotHit slotAt(DesktopSlotContext&lt;ExampleMenu, State&gt; context, double mouseX, double mouseY) {
-            int x = context.contentX();
-            int y = context.contentY() + 20;
-            DesktopSlotHit first = context.hitSlot(0, x, y, mouseX, mouseY);
-            return first != null ? first : context.hitSlot(1, x + 18, y, mouseX, mouseY);
-        }
-
-        @Override
-        public boolean mouseClicked(DesktopInputContext&lt;ExampleMenu, State&gt; context, MouseButtonEvent event, boolean doubleClick) {
-            return DesktopWidgets.clickTextBox(context.state().search, event, context.contentX(), context.contentY(), 120);
-        }
-
-        @Override
-        public boolean keyPressed(DesktopInputContext&lt;ExampleMenu, State&gt; context, KeyEvent event) {
-            return DesktopWidgets.keyPressedTextBox(context.state().search, event);
-        }
-
-        @Override
-        public boolean charTyped(DesktopInputContext&lt;ExampleMenu, State&gt; context, CharacterEvent event) {
-            return DesktopWidgets.charTypedTextBox(context.state().search, event);
-        }
-
-        @Override
-        public boolean wantsTextInput(DesktopWindowContext&lt;ExampleMenu, State&gt; context) {
-            return DesktopWidgets.wantsTextInput(context.state().search);
-        }
-    }
-
-    private static final class ExampleServerWindow implements DesktopServerWindowHandler&lt;ExampleMenu, Object&gt; {
-    }
-}</code></pre>
-      </section>
-
-      <section id="tom" class="panel">
-        <h2>Proof Case: Tom's Simple Storage</h2>
-        <p>
-          Tom's Simple Storage is the current benchmark compat target for the API. Its terminal windows use virtual item
-          entries, search settings, custom controls, custom payloads, server-side snapshots, and normal Salt slot behavior
-          for crafting slots.
-        </p>
-        <ul>
-          <li>Client definitions are registered with <code>replaceClientWindow</code>.</li>
-          <li>Server support is registered with <code>registerServerWindow</code>.</li>
-          <li>Tom snapshots are sent from <code>DesktopServerWindowHandler.tick</code>.</li>
-          <li>Terminal entries use custom payloads because they are not real slots.</li>
-          <li>Crafting grid and output slots fall through to Salt's normal slot click handling.</li>
-        </ul>
-      </section>
-
-      <section id="checklist" class="panel">
-        <h2>Mod Checklist</h2>
-        <ol>
-          <li>Guard optional compat with a mod-loaded check.</li>
-          <li>Find the target <code>MenuType</code> by registry id.</li>
-          <li>Register a client window definition.</li>
-          <li>Register a server window handler if the menu should be desktop-managed.</li>
-          <li>Crop out duplicated player inventory or hotbar art from reused screen textures.</li>
-          <li>Render real slots with <code>renderSlot</code>, <code>slot</code>, or <code>texturelessSlot</code> and return <code>DesktopSlotHit</code>.</li>
-          <li>Render virtual entries separately and send payloads for them.</li>
-          <li>Move screen-only state into desktop state, menu data, or session-scoped payloads.</li>
-          <li>Use <code>wantsTextInput</code> for focused text boxes.</li>
-          <li>Make resize minimums protect all important UI elements.</li>
-          <li>Use <code>snapSize</code> if resizing should align to slot grids.</li>
-          <li>Test with multiple windows open, ghost pin, lock, Alt pass-through, shift-click, and carried stacks.</li>
-        </ol>
-      </section>
-    </article>
-  </main>
+  <script src="app.js"></script>
 </body>
 </html>
