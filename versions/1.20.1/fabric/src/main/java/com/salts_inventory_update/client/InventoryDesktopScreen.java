@@ -326,7 +326,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int JEI_RECIPE_FAVORITE_BUTTON_SIZE = 13;
     private static final int JEI_RECIPE_FAVORITE_BUTTON_ICON_SIZE = 9;
     private static final int JEI_RECIPE_FAVORITE_BUTTON_GAP = 1;
-    private static final int JEI_RECIPE_TRANSFER_BUTTON_ICON_SIZE = 9;
+    private static final int JEI_RECIPE_TRANSFER_BUTTON_ICON_SIZE = 7;
     private static final int JEI_RECIPE_MISSING_SLOT_COLOR = 0x66FF0000;
     private static final int JEI_RECIPE_OPTION_BUTTON_SIZE = 16;
     private static final int JEI_RECIPE_OPTION_BUTTON_BORDER = 1;
@@ -343,7 +343,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int JEI_RECIPE_SCROLLBAR_GAP = 3;
     private static final int JEI_RECIPE_BUTTON_SIZE = 13;
     private static final int JEI_RECIPE_ARROW_WIDTH = 9;
-    private static final int JEI_RECIPE_ARROW_HEIGHT = 7;
+    private static final int JEI_RECIPE_ARROW_HEIGHT = 9;
+    private static final int JEI_BUTTON_TEXTURE_SIZE = 20;
     private static final int JEI_RECIPE_STATION_TAB_SIZE = 28;
     private static final int JEI_RECIPE_STATION_TAB_FRAME_OVERLAP = 6;
     private static final int JEI_RECIPE_STATION_TAB_BORDER_LEFT = 8;
@@ -360,8 +361,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final ResourceLocation JEI_CATALYST_TAB_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/catalyst_tab.png");
     private static final ResourceLocation JEI_CATALYST_SLOT_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/recipe_catalyst_slot_background.png");
     private static final ResourceLocation JEI_RECIPE_OPTIONS_TAB_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/recipe_options_tab.png");
-    private static final ResourceLocation JEI_BUTTON_SPRITE = new ResourceLocation("widget/button");
-    private static final ResourceLocation JEI_BUTTON_HIGHLIGHTED_SPRITE = new ResourceLocation("widget/button_highlighted");
+    private static final ResourceLocation JEI_BUTTON_ENABLED_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/button_enabled.png");
+    private static final ResourceLocation JEI_BUTTON_HIGHLIGHT_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/button_highlight.png");
+    private static final ResourceLocation JEI_BUTTON_PRESSED_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/button_pressed.png");
+    private static final ResourceLocation JEI_BUTTON_PRESSED_HIGHLIGHT_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/button_pressed_highlight.png");
     private static final ResourceLocation JEI_ARROW_NEXT_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/icons/arrow_next.png");
     private static final ResourceLocation JEI_ARROW_PREVIOUS_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/icons/arrow_previous.png");
     private static final ResourceLocation JEI_BOOKMARK_BUTTON_ENABLED_TEXTURE = new ResourceLocation("jei", "textures/jei/atlas/gui/icons/bookmark_button_enabled.png");
@@ -3235,6 +3238,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     public boolean keyPressed(KeyEvent event) {
+        if (event.isEscape()) {
+            this.closeAllWindowsAndHide();
+            return true;
+        }
+
         if (this.handleRecipeBookKey(event)) {
             return true;
         }
@@ -8237,8 +8245,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void renderJeiRecipeButton(GuiGraphicsExtractor graphics, JeiRecipeButtonRect rect, int mouseX, int mouseY, ResourceLocation arrowTexture) {
-        boolean hovered = contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height());
-        this.blitSprite(graphics, hovered ? JEI_BUTTON_HIGHLIGHTED_SPRITE : JEI_BUTTON_SPRITE, rect.x(), rect.y(), rect.width(), rect.height());
+        this.renderJeiButtonBackground(graphics, rect, mouseX, mouseY, false);
         int arrowX = rect.x() + (rect.width() - JEI_RECIPE_ARROW_WIDTH) / 2;
         int arrowY = rect.y() + (rect.height() - JEI_RECIPE_ARROW_HEIGHT) / 2;
         blitRegion(
@@ -8303,14 +8310,34 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void renderJeiIconButton(GuiGraphicsExtractor graphics, JeiRecipeButtonRect rect, int mouseX, int mouseY, ResourceLocation iconTexture, boolean pressed, int iconSize) {
-        boolean hovered = contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height());
-        this.blitSprite(graphics, hovered ? JEI_BUTTON_HIGHLIGHTED_SPRITE : JEI_BUTTON_SPRITE, rect.x(), rect.y(), rect.width(), rect.height());
+        this.renderJeiButtonBackground(graphics, rect, mouseX, mouseY, pressed);
         int iconX = rect.x() + (rect.width() - iconSize) / 2;
         int iconY = rect.y() + (rect.height() - iconSize) / 2;
-        blitRegion(graphics, iconTexture, iconX, iconY, 0, 0, iconSize, iconSize, 16, 16, 16, 16);
+        blitRegion(graphics, iconTexture, iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize, iconSize, iconSize);
         if (pressed) {
             graphics.fill(rect.x(), rect.y(), rect.x() + rect.width(), rect.y() + rect.height(), this.uiColor(0x1100FF00));
         }
+    }
+
+    private void renderJeiButtonBackground(GuiGraphicsExtractor graphics, JeiRecipeButtonRect rect, int mouseX, int mouseY, boolean pressed) {
+        boolean hovered = contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height());
+        ResourceLocation texture = pressed
+            ? (hovered ? JEI_BUTTON_PRESSED_HIGHLIGHT_TEXTURE : JEI_BUTTON_PRESSED_TEXTURE)
+            : (hovered ? JEI_BUTTON_HIGHLIGHT_TEXTURE : JEI_BUTTON_ENABLED_TEXTURE);
+        blitRegion(
+            graphics,
+            texture,
+            rect.x(),
+            rect.y(),
+            0,
+            0,
+            rect.width(),
+            rect.height(),
+            JEI_BUTTON_TEXTURE_SIZE,
+            JEI_BUTTON_TEXTURE_SIZE,
+            JEI_BUTTON_TEXTURE_SIZE,
+            JEI_BUTTON_TEXTURE_SIZE
+        );
     }
 
     private void renderJeiTabIconTexture(GuiGraphicsExtractor graphics, ResourceLocation texture, int x, int y) {
@@ -9235,10 +9262,6 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
         }
 
-        if (this.handleJeiRecipeLayoutMouseClicked(window, event, doubleClick)) {
-            return true;
-        }
-
         JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
         if (category != null && (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
             for (JeiRecipeLayoutPlacement placement : this.visibleJeiRecipePlacements(window, category)) {
@@ -9255,6 +9278,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     DesktopDebug.warn("client JEI recipe click failed desktop={} window={} index={} reason={}", this.desktopId, window.debugName(), placement.index(), exception.toString());
                 }
             }
+        }
+
+        if (this.handleJeiRecipeLayoutMouseClicked(window, event, doubleClick)) {
+            return true;
         }
 
         JeiStationHit stationHit = this.jeiStationAt(window, event.x(), event.y());

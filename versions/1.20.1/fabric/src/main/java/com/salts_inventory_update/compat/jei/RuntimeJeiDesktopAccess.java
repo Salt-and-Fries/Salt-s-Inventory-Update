@@ -10,6 +10,7 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -56,8 +57,10 @@ import org.jspecify.annotations.Nullable;
 final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     private static final String FAVORITES_TAB_UID = "salts_inventory_update:jei_favorites";
     private static final String RECENT_TAB_UID = "salts_inventory_update:jei_recent";
+    private static final int RECENT_HISTORY_LIMIT = 64;
     private static final boolean JEI_TRANSFER_DEBUG = Boolean.getBoolean("salts_inventory_update.jeiTransferDebug");
     private final IJeiRuntime runtime;
+    private final List<JeiDesktopEntry> recentEntries = new ArrayList<>();
     private String lastTransferDebugKey = "";
     private long lastTransferDebugAt;
 
@@ -103,7 +106,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
             return this.elementEntries(this.bookmarkList());
         }
         if (tab != null && tab.kind() == JeiDesktopTabKind.RECENT) {
-            return this.elementEntries(this.lookupHistory());
+            return this.recentEntries();
         }
         IIngredientType<?> type = this.type(tab);
         if (type == null) {
@@ -150,6 +153,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
 
     @Override
     public void addLookupHistory(JeiDesktopEntry entry) {
+        this.addRecentEntry(entry);
         Object lookupHistory = this.lookupHistory();
         Object bookmark = this.createIngredientBookmark(entry);
         if (lookupHistory != null && bookmark != null) {
@@ -650,6 +654,41 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
             entries.add(new JeiDesktopEntry(uid, type, ingredient));
         }
         return entries;
+    }
+
+    private List<JeiDesktopEntry> recentEntries() {
+        List<JeiDesktopEntry> entries = new ArrayList<>(this.elementEntries(this.lookupHistory()));
+        for (JeiDesktopEntry recentEntry : this.recentEntries) {
+            if (entries.stream().noneMatch(entry -> this.sameRecentEntry(entry, recentEntry))) {
+                entries.add(recentEntry);
+            }
+        }
+        return entries;
+    }
+
+    private void addRecentEntry(JeiDesktopEntry entry) {
+        if (entry == null || entry.type() == null || entry.ingredient() == null) {
+            return;
+        }
+
+        this.recentEntries.removeIf(existing -> this.sameRecentEntry(existing, entry));
+        this.recentEntries.add(0, entry);
+        while (this.recentEntries.size() > RECENT_HISTORY_LIMIT) {
+            this.recentEntries.remove(this.recentEntries.size() - 1);
+        }
+    }
+
+    private boolean sameRecentEntry(JeiDesktopEntry left, JeiDesktopEntry right) {
+        if (left == null || right == null || !Objects.equals(left.typeUid(), right.typeUid())) {
+            return false;
+        }
+
+        Object leftBookmark = this.createIngredientBookmark(left);
+        Object rightBookmark = this.createIngredientBookmark(right);
+        if (leftBookmark != null && rightBookmark != null) {
+            return leftBookmark.equals(rightBookmark);
+        }
+        return Objects.equals(left.ingredient(), right.ingredient());
     }
 
     private List<JeiDesktopEntry> elementEntries(Object source) {

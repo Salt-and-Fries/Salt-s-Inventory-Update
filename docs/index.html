@@ -30,9 +30,12 @@
       <a href="#version-matrix">Version Matrix</a>
       <a href="#mental-model">Mental Model</a>
       <a href="#registration">Registration</a>
+      <a href="#compatibility-limits">Compatibility Limits</a>
+      <a href="#rework-checklist">Rework Checklist</a>
       <a href="#client-definition">Client Definition</a>
       <a href="#contexts">Contexts</a>
       <a href="#rendering">Rendering</a>
+      <a href="#cropped-backgrounds">Cropped Backgrounds</a>
       <a href="#slots">Slots</a>
       <a href="#input">Input</a>
       <a href="#widgets">Widgets</a>
@@ -57,6 +60,10 @@
           types. Salt keeps ownership of the desktop engine: window placement, moving, locking, pinning, ghost previews,
           resize handles, carried stack synchronization, hotbar interaction, shift-click routing, and multi-window server
           sessions. Mods only describe the inside of a window and any server-side behavior that their menu needs.
+        </p>
+        <p>
+          Future API feature requests and larger helper ideas are tracked in
+          <a href="markdown/api_todo.md">API ToDo</a>.
         </p>
         <div class="callout good">
           <strong>Design goal:</strong>
@@ -223,6 +230,49 @@
           Unknown modded menus are not captured. If a modded menu has no Salt server registration, Salt lets the original
           mod screen open normally.
         </div>
+      </section>
+
+      <section id="compatibility-limits" class="panel">
+        <h2>Compatibility Limits</h2>
+        <p>
+          Salt can host normal <code>AbstractContainerMenu</code>-backed screens well, but some menus need extra
+          integration before they are safe desktop windows. Treat these as showstoppers unless the integration handles
+          them explicitly.
+        </p>
+        <ul>
+          <li>The screen keeps important state only on the client <code>Screen</code> instead of in the menu, synced data slots, or Salt payloads.</li>
+          <li>The UI shows fake item entries that are not real <code>Slot</code>s, but expects normal slot clicks to work.</li>
+          <li>Custom packets assume there is one currently open screen instead of a specific Salt desktop session.</li>
+          <li>Buttons, text fields, tabs, scroll positions, or selected recipes mutate server state without a session-scoped packet or menu button.</li>
+          <li>The original renderer hardcodes player inventory, hotbar, or vanilla screen coordinates into the same draw path as the machine UI.</li>
+          <li>The menu has custom drag, quick-move, double-click, or carried-stack behavior that bypasses vanilla menu click handling.</li>
+          <li>The container is client-only or not backed by a live server menu that Salt can validate.</li>
+        </ul>
+        <div class="callout warn">
+          <strong>Default answer:</strong>
+          Leave the menu on its original screen until the compat layer has a client window definition and any required
+          server handler or payloads.
+        </div>
+      </section>
+
+      <section id="rework-checklist" class="panel">
+        <h2>Existing Menu Rework Checklist</h2>
+        <p>
+          When adapting an existing GUI to Salt, split the original screen into the parts Salt owns and the parts your
+          integration owns.
+        </p>
+        <ul>
+          <li>Do not render the player inventory or hotbar inside the Salt window.</li>
+          <li>Map every real item slot to the correct menu slot id.</li>
+          <li>Use <code>containerSlot(...)</code>, <code>containerSlotHit(...)</code>, and <code>menuSlotId(...)</code> when container slot indexes are easier to reason about.</li>
+          <li>Use <code>renderSlot(...)</code> or <code>slot(...)</code> when Salt should draw the slot background and item.</li>
+          <li>Use <code>texturelessSlot(...)</code> when your cropped background already contains the slot art.</li>
+          <li>Move screen-only UI state into the desktop state object, synced menu data, or session-scoped payloads.</li>
+          <li>Replace custom screen packets with Salt payload handlers when the action belongs to a specific desktop session.</li>
+          <li>Recreate non-slot controls such as buttons, text fields, progress bars, tabs, and scrollbars through render, input hooks, widgets, menu buttons, or payloads.</li>
+          <li>Keep optional mod compatibility guarded by registry lookups, reflection, or optional compat entrypoints.</li>
+          <li>Test normal click, shift-click, drag distribution, double-click collection, carried-stack sync, recipe book behavior, ghost pin, close/reopen, and any custom payload actions.</li>
+        </ul>
       </section>
 
       <section id="client-definition" class="panel">
@@ -436,6 +486,73 @@ public void render(DesktopRenderContext&lt;MyMenu, State&gt; context) {
           <strong>Tip:</strong>
           Avoid rendering a duplicate player inventory or hotbar inside your container. Salt already provides independent
           inventory and hotbar interaction.
+        </div>
+      </section>
+
+      <section id="cropped-backgrounds" class="panel">
+        <h2>Cropped Backgrounds</h2>
+        <p>
+          Many normal container textures include the machine UI at the top and the 4x9 player inventory at the bottom.
+          In a Salt desktop window, draw only the machine region and omit the duplicated player inventory.
+        </p>
+        <p>
+          Use <code>DesktopRenderContext.texture(...)</code> to draw a source rectangle from the original PNG. If that
+          cropped region already includes slot backgrounds, use <code>texturelessSlot(...)</code> so Salt renders only
+          the item, hover highlight, drag preview, and no-item icon on top of your texture.
+          <code>defaultSize(...)</code> is the full Salt window size, so include the title bar and content padding around
+          the cropped region.
+        </p>
+        <pre><code>private static final Identifier MY_SCREEN_TEXTURE =
+    Identifier.fromNamespaceAndPath("my_mod", "textures/gui/my_machine.png");
+private static final int TEXTURE_WIDTH = 256;
+private static final int TEXTURE_HEIGHT = 256;
+private static final int MACHINE_WIDTH = 176;
+private static final int MACHINE_HEIGHT = 84;
+
+@Override
+public DesktopWindowSize defaultSize(DesktopWindowSetupContext&lt;MyMenu&gt; context) {
+    return DesktopWindowSize.of(8 + MACHINE_WIDTH + 8, 16 + 8 + MACHINE_HEIGHT + 8);
+}
+
+@Override
+public void render(DesktopRenderContext&lt;MyMenu, State&gt; context) {
+    int x = context.contentX();
+    int y = context.contentY();
+
+    context.texture(
+        MY_SCREEN_TEXTURE,
+        x,
+        y,
+        0,
+        0,
+        MACHINE_WIDTH,
+        MACHINE_HEIGHT,
+        MACHINE_WIDTH,
+        MACHINE_HEIGHT,
+        TEXTURE_WIDTH,
+        TEXTURE_HEIGHT
+    );
+
+    context.texturelessSlot(0, x + 56, y + 17);
+    context.texturelessSlot(1, x + 56, y + 53);
+    context.texturelessSlot(2, x + 116, y + 35);
+}
+
+@Override
+public DesktopSlotHit slotAt(DesktopSlotContext&lt;MyMenu, State&gt; context, double mouseX, double mouseY) {
+    int x = context.contentX();
+    int y = context.contentY();
+
+    DesktopSlotHit input = context.hitSlot(0, x + 56, y + 17, mouseX, mouseY);
+    if (input != null) return input;
+
+    DesktopSlotHit fuel = context.hitSlot(1, x + 56, y + 53, mouseX, mouseY);
+    return fuel != null ? fuel : context.hitSlot(2, x + 116, y + 35, mouseX, mouseY);
+}</code></pre>
+        <div class="callout">
+          <strong>Slot art:</strong>
+          If the cropped texture does not include slot backgrounds, use <code>renderSlot(...)</code> or
+          <code>slotBackground(...)</code> plus <code>texturelessSlot(...)</code> instead.
         </div>
       </section>
 
@@ -881,8 +998,10 @@ if (index &gt;= 0) {
           <li>Find the target <code>MenuType</code> by registry id.</li>
           <li>Register a client window definition.</li>
           <li>Register a server window handler if the menu should be desktop-managed.</li>
-          <li>Render real slots with <code>renderSlot</code> and return <code>DesktopSlotHit</code>.</li>
+          <li>Crop out duplicated player inventory or hotbar art from reused screen textures.</li>
+          <li>Render real slots with <code>renderSlot</code>, <code>slot</code>, or <code>texturelessSlot</code> and return <code>DesktopSlotHit</code>.</li>
           <li>Render virtual entries separately and send payloads for them.</li>
+          <li>Move screen-only state into desktop state, menu data, or session-scoped payloads.</li>
           <li>Use <code>wantsTextInput</code> for focused text boxes.</li>
           <li>Make resize minimums protect all important UI elements.</li>
           <li>Use <code>snapSize</code> if resizing should align to slot grids.</li>

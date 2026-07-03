@@ -47,4 +47,6 @@ This keeps version API differences contained while still letting you share most 
 .\gradlew.bat build
 ```
 
+After a full `.\gradlew.bat build`, the final uploadable Fabric/Forge/NeoForge jars are collected in `build/upload-jars`.
+
 For publishing, uncomment the `publishing` block in [build.gradle.kts](build.gradle.kts), add the CurseForge and Modrinth project IDs, then set `CURSEFORGE_TOKEN` and `MODRINTH_TOKEN` in your environment.

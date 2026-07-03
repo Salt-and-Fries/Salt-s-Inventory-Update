@@ -4,6 +4,8 @@ Targets: Fabric 1.20.1, 1.21.1, 1.21.11, 26.1.2, and 26.2; Forge 1.20.1; NeoForg
 
 Salt's Inventory Update can host mod containers inside its movable desktop windows. The desktop engine still owns sessions, carried stacks, hotbar interaction, placement, lock/pin/ghost pin, resizing, and multi-window behavior. Mods provide a window definition and, when needed, server-side opt-in/payload handlers.
 
+Future API feature requests and larger helper ideas are tracked in [API ToDo](api_todo.md).
+
 ## Supported Versions And API Bands
 
 The examples in this document use the 26.x API spelling. Most API concepts are shared across every supported version, but a few Minecraft type names and typed payload helpers differ by version.
@@ -51,6 +53,35 @@ public final class MyCompat {
 Use `replaceClientWindow(...)` when intentionally replacing an existing definition. Use `registerClientWindowPredicate(...)` for dynamic matching when a direct `MenuType` is not enough.
 
 Important fallback rule: unknown modded containers keep opening their normal vanilla/mod screen. A menu becomes Salt desktop-managed only when it is a vanilla Salt-supported menu or it registers server window support. Registering a server payload handler also implies server desktop support.
+
+## Compatibility Limits And Showstoppers
+
+Salt can host normal `AbstractContainerMenu`-backed screens well, but some menus need extra integration before they are safe desktop windows.
+
+Treat these as showstoppers unless the integration handles them explicitly:
+
+- The screen keeps important state only on the client `Screen` instead of in the menu, synced data slots, or Salt payloads.
+- The UI shows fake item entries that are not real `Slot`s, but expects normal slot clicks to work.
+- Custom packets assume there is one currently open screen instead of a specific Salt desktop session.
+- Buttons, text fields, tabs, scroll positions, or selected recipes mutate server state without a session-scoped packet or menu button.
+- The original renderer hardcodes player inventory, hotbar, or vanilla screen coordinates into the same draw path as the machine UI.
+- The menu has custom drag, quick-move, double-click, or carried-stack behavior that bypasses vanilla menu click handling.
+- The container is client-only or not backed by a live server menu that Salt can validate.
+
+When one of these applies, leave the menu on its original screen until the compat layer has a client window definition and any required server handler or payloads.
+
+## Existing Menu Rework Checklist
+
+When adapting an existing GUI to Salt, split the original screen into the parts Salt owns and the parts your integration owns.
+
+- Do not render the player inventory or hotbar inside the Salt window. Salt already provides independent player inventory, hotbar, and offhand interaction.
+- Map every real item slot to the correct menu slot id. Use `containerSlot(...)`, `containerSlotHit(...)`, and `menuSlotId(...)` when the menu's container slot indexes are easier to reason about.
+- Use `renderSlot(...)` or `slot(...)` when Salt should draw the slot background and item. Use `texturelessSlot(...)` when your cropped background already contains the slot art.
+- Move screen-only UI state into the desktop state object, synced menu data, or session-scoped payloads.
+- Replace custom screen packets with Salt payload handlers when the action belongs to a specific desktop session.
+- Recreate non-slot controls such as buttons, text fields, progress bars, tabs, and scrollbars through `render`, input hooks, widgets, menu buttons, or payloads.
+- Keep optional mod compatibility guarded by registry lookups, reflection, or optional compat entrypoints.
+- Test normal click, shift-click, drag distribution, double-click collection, carried-stack sync, recipe book behavior, ghost pin, close/reopen, and any custom payload actions.
 
 ## Client Window Definition
 
@@ -111,6 +142,64 @@ public final class MyWindow implements DesktopWindowDefinition<MyMenu, MyWindow.
     }
 }
 ```
+
+## Cropped Backgrounds
+
+Many normal container textures include the machine UI at the top and the 4x9 player inventory at the bottom. In a Salt desktop window, draw only the machine region and omit the duplicated player inventory.
+
+Use `DesktopRenderContext.texture(...)` to draw a source rectangle from the original PNG. If that cropped region already includes slot backgrounds, use `texturelessSlot(...)` so Salt renders only the item, hover highlight, drag preview, and no-item icon on top of your texture. `defaultSize(...)` is the full Salt window size, so include the title bar and content padding around the cropped region.
+
+```java
+private static final Identifier MY_SCREEN_TEXTURE =
+    Identifier.fromNamespaceAndPath("my_mod", "textures/gui/my_machine.png");
+private static final int TEXTURE_WIDTH = 256;
+private static final int TEXTURE_HEIGHT = 256;
+private static final int MACHINE_WIDTH = 176;
+private static final int MACHINE_HEIGHT = 84;
+
+@Override
+public DesktopWindowSize defaultSize(DesktopWindowSetupContext<MyMenu> context) {
+    return DesktopWindowSize.of(8 + MACHINE_WIDTH + 8, 16 + 8 + MACHINE_HEIGHT + 8);
+}
+
+@Override
+public void render(DesktopRenderContext<MyMenu, State> context) {
+    int x = context.contentX();
+    int y = context.contentY();
+
+    context.texture(
+        MY_SCREEN_TEXTURE,
+        x,
+        y,
+        0,
+        0,
+        MACHINE_WIDTH,
+        MACHINE_HEIGHT,
+        MACHINE_WIDTH,
+        MACHINE_HEIGHT,
+        TEXTURE_WIDTH,
+        TEXTURE_HEIGHT
+    );
+
+    context.texturelessSlot(0, x + 56, y + 17);
+    context.texturelessSlot(1, x + 56, y + 53);
+    context.texturelessSlot(2, x + 116, y + 35);
+}
+
+@Override
+public DesktopSlotHit slotAt(DesktopSlotContext<MyMenu, State> context, double mouseX, double mouseY) {
+    int x = context.contentX();
+    int y = context.contentY();
+
+    DesktopSlotHit input = context.hitSlot(0, x + 56, y + 17, mouseX, mouseY);
+    if (input != null) return input;
+
+    DesktopSlotHit fuel = context.hitSlot(1, x + 56, y + 53, mouseX, mouseY);
+    return fuel != null ? fuel : context.hitSlot(2, x + 116, y + 35, mouseX, mouseY);
+}
+```
+
+If the cropped texture does not include slot backgrounds, use `renderSlot(...)` or `slotBackground(...)` plus `texturelessSlot(...)` instead.
 
 ## Context Helpers
 
@@ -316,6 +405,7 @@ Use `ghosted()`/`unghosted()` for animation state or preview-specific effects. G
 - Registering only a client definition for a server menu and expecting it to be captured.
 - Forgetting `wantsTextInput` for search fields, which lets WASD move the player while typing.
 - Rendering player inventory/hotbar duplicates inside a desktop container window.
+- Drawing a full vanilla/mod screen texture instead of cropping out the player inventory area.
 
 ## Proof Cases
 

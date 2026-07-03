@@ -1,15 +1,21 @@
 import org.gradle.api.GradleException
+import org.gradle.api.Named
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition
+import org.gradle.api.attributes.Attribute
+import org.gradle.api.attributes.Usage
+import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.JavaExec
+import org.gradle.api.tasks.Sync
 
 plugins {
     id("dev.prism")
 }
 
 group = "com.salts_inventory_update"
-version = "0.1.0"
+version = "0.1.1"
 
 val modMenuVersions = mapOf(
     "1.20.1" to "7.2.2",
@@ -62,7 +68,7 @@ prism {
     metadata {
         modId = "salts_inventory_update"
         name = "Salt's Inventory Update"
-        description = "Salt's Inventory Update upgrades Minecraft inventories with expandable player storage and desktop-style movable container windows. Move, pin, ghost-pin, resize, and snap supported inventory screens, then tune the experience with /saltsinventory config or the mod-list config button. API hooks are available for add-ons and supported screens.\\n\\nDiscord: https://discord.gg/kfdE9gGGxP\\nAPI: https://salt-and-fries.github.io/Salt-s-Inventory-Update/\\nSource: https://github.com/Salt-and-Fries/Salt-s-Inventory-Update\\nDonate: https://www.paypal.com/donate/?business=ERE5F32WV4NWN&no_recurring=1&currency_code=USD"
+        description = "Salt's Inventory Update upgrades Minecraft inventories with expandable player storage and desktop-style movable container windows. Move, pin, ghost-pin, resize, and snap supported inventory screens, and optionally browse JEI in a Salt desktop window with ingredient search, recipe and uses views, bookmarks, history, and Move Items transfers when Just Enough Items is installed. Tune the experience with /saltsinventory config or the mod-list config button. API hooks are available for add-ons and supported screens.\\n\\nDiscord: https://discord.gg/kfdE9gGGxP\\nAPI: https://salt-and-fries.github.io/Salt-s-Inventory-Update/\\nSource: https://github.com/Salt-and-Fries/Salt-s-Inventory-Update\\nDonate: https://www.paypal.com/donate/?business=ERE5F32WV4NWN&no_recurring=1&currency_code=USD"
         license = "MIT"
     }
 
@@ -188,6 +194,24 @@ subprojects {
     }
 
     if (minecraftVersion != null && name == "forge") {
+        afterEvaluate {
+            if (minecraftVersion == "1.20.1") {
+                dependencies.add("annotationProcessor", "org.spongepowered:mixin:0.8.5:processor")
+                val mainSourceSet = extensions.findByType(SourceSetContainer::class.java)?.named("main")?.get()
+                val mixinExtension = extensions.findByName("mixin")
+                if (mainSourceSet != null && mixinExtension != null) {
+                    mixinExtension.javaClass
+                        .getMethod("config", String::class.java)
+                        .invoke(mixinExtension, "salts_inventory_update.mixins.json")
+                    mixinExtension.javaClass
+                        .getMethod("add", SourceSet::class.java, String::class.java)
+                        .invoke(mixinExtension, mainSourceSet, "salts_inventory_update.refmap.json")
+                    logger.lifecycle("Salt's Inventory Update Forge 1.20.1 mixin refmap generation enabled")
+                } else {
+                    logger.warn("Salt's Inventory Update Forge 1.20.1 mixin refmap generation could not be enabled")
+                }
+            }
+        }
         plugins.withId("java") {
             tasks.named<Jar>("jar") {
                 manifest {
@@ -241,13 +265,33 @@ subprojects {
                 } else {
                     "compileOnly"
                 }
-                val runtimeConfiguration = if (name == "fabric" && !minecraftVersion.startsWith("26.") && configurations.findByName("modRuntimeOnly") != null) {
-                    "modRuntimeOnly"
-                } else {
-                    "runtimeOnly"
-                }
                 dependencies.add(apiConfiguration, "mezz.jei:jei-$minecraftVersion-$jeiLoader-api:$jeiVersion")
-                dependencies.add(runtimeConfiguration, "mezz.jei:jei-$minecraftVersion-$jeiLoader:$jeiVersion")
+                if (name == "forge" && minecraftVersion == "1.20.1") {
+                    @Suppress("UNCHECKED_CAST")
+                    val mappingsType = Class.forName("net.neoforged.moddevgradle.legacyforge.internal.MinecraftMappings") as Class<Named>
+                    val mappingsAttribute = Attribute.of("net.neoforged.moddevgradle.legacy.minecraft_mappings.v2", mappingsType)
+                    val namedMappings = objects.named(mappingsType, "named")
+                    val jeiForgeRuntimeNamed = configurations.maybeCreate("jeiForgeRuntimeNamed").apply {
+                        isCanBeConsumed = false
+                        isCanBeResolved = true
+                        attributes {
+                            attribute(mappingsAttribute, namedMappings)
+                            attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
+                            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
+                        }
+                    }
+                    dependencies.add(jeiForgeRuntimeNamed.name, "mezz.jei:jei-$minecraftVersion-$jeiLoader:$jeiVersion")
+                    tasks.named<JavaExec>("runClient") {
+                        classpath += files(jeiForgeRuntimeNamed)
+                    }
+                } else {
+                    val runtimeConfiguration = if (name == "fabric" && !minecraftVersion.startsWith("26.") && configurations.findByName("modRuntimeOnly") != null) {
+                        "modRuntimeOnly"
+                    } else {
+                        "runtimeOnly"
+                    }
+                    dependencies.add(runtimeConfiguration, "mezz.jei:jei-$minecraftVersion-$jeiLoader:$jeiVersion")
+                }
             }
         }
     }
@@ -342,5 +386,42 @@ gradle.projectsEvaluated {
         dependsOn(subprojects
             .filter { it.parent?.name != null && (it.name == "fabric" || it.name == "forge" || it.name == "neoforge") }
             .map { it.tasks.named("compileJava") })
+    }
+
+    val uploadableLoaderProjects = subprojects
+        .filter { it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
+    val allProjectBuildTasks = subprojects.mapNotNull { subproject ->
+        subproject.tasks.findByName("build")?.let { subproject.tasks.named("build") }
+    }
+    val loaderAssembleTasks = uploadableLoaderProjects.map { it.tasks.named("assemble") }
+    val modVersion = version.toString()
+
+    val collectModJars = tasks.register<Sync>("collectModJars") {
+        group = "build"
+        description = "Collects final uploadable mod jars into build/upload-jars."
+        dependsOn(loaderAssembleTasks)
+        mustRunAfter(allProjectBuildTasks)
+
+        into(layout.buildDirectory.dir("upload-jars"))
+        duplicatesStrategy = DuplicatesStrategy.FAIL
+
+        uploadableLoaderProjects.forEach { loaderProject ->
+            from(loaderProject.layout.buildDirectory.dir("libs")) {
+                include("*-$modVersion.jar")
+            }
+        }
+
+        doLast {
+            logger.lifecycle("Collected uploadable mod jars in ${destinationDir}")
+        }
+    }
+
+    val rootBuild = tasks.findByName("build")?.let { tasks.named("build") } ?: tasks.register("build") {
+        group = "build"
+        description = "Assembles and tests every project, then collects uploadable mod jars."
+    }
+    rootBuild.configure {
+        dependsOn(allProjectBuildTasks)
+        dependsOn(collectModJars)
     }
 }

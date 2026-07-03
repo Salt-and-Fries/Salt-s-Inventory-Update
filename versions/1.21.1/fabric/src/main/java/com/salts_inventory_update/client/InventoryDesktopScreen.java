@@ -3135,6 +3135,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     public boolean keyPressed(KeyEvent event) {
+        if (event.isEscape()) {
+            this.closeAllWindowsAndHide();
+            return true;
+        }
+
         if (this.handleRecipeBookKey(event)) {
             return true;
         }
@@ -9147,10 +9152,6 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
         }
 
-        if (this.handleJeiRecipeLayoutMouseClicked(window, event, doubleClick)) {
-            return true;
-        }
-
         JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
         if (category != null && (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
             for (JeiRecipeLayoutPlacement placement : this.visibleJeiRecipePlacements(window, category)) {
@@ -9167,6 +9168,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     DesktopDebug.warn("client JEI recipe click failed desktop={} window={} index={} reason={}", this.desktopId, window.debugName(), placement.index(), exception.toString());
                 }
             }
+        }
+
+        if (this.handleJeiRecipeLayoutMouseClicked(window, event, doubleClick)) {
+            return true;
         }
 
         JeiStationHit stationHit = this.jeiStationAt(window, event.x(), event.y());

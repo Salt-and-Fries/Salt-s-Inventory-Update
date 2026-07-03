@@ -1,11 +1,9 @@
 package com.salts_inventory_update.mixin.client;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.Options;
 import net.minecraft.client.gui.screens.Screen;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -22,29 +20,24 @@ public abstract class MinecraftMixin {
     @Unique
     private static int salts_inventory_update$handleKeybindProbeLogs;
 
-    @Shadow
-    public Options options;
-
-    @Shadow
-    public @Nullable Screen screen;
-
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$guardSingletonDesktopScreen(@Nullable Screen screen, CallbackInfo ci) {
+        Minecraft minecraft = (Minecraft) (Object) this;
         if (salts_inventory_update$setScreenProbeLogs < 32) {
             salts_inventory_update$setScreenProbeLogs++;
             DesktopDebug.probe(
                 "mixin Minecraft.setScreen incoming={} current={} runtime={}",
                 screen == null ? "null" : screen.getClass().getName(),
-                this.screen == null ? "null" : this.screen.getClass().getName(),
+                minecraft.screen == null ? "null" : minecraft.screen.getClass().getName(),
                 SaltsInventoryRuntime.isEnabled()
             );
         }
-        if (InventoryDesktopScreen.replaceVanillaCreativeScreen((Minecraft) (Object) this, screen)) {
+        if (InventoryDesktopScreen.replaceVanillaCreativeScreen(minecraft, screen)) {
             ci.cancel();
             return;
         }
 
-        if (screen instanceof InventoryDesktopScreen incoming && this.screen == incoming) {
+        if (screen instanceof InventoryDesktopScreen incoming && minecraft.screen == incoming) {
             ci.cancel();
         }
     }
@@ -55,8 +48,9 @@ public abstract class MinecraftMixin {
             return;
         }
 
+        Minecraft minecraft = (Minecraft) (Object) this;
         int consumed = 0;
-        while (this.options.keyInventory.consumeClick()) {
+        while (minecraft.options.keyInventory.consumeClick()) {
             consumed++;
             DesktopDebug.trace("client consumed legacy inventory key click; release/hold controller owns E");
         }
@@ -65,7 +59,7 @@ public abstract class MinecraftMixin {
             DesktopDebug.probe(
                 "mixin Minecraft.handleKeybinds runtime={} screen={} consumedInventoryClicks={}",
                 SaltsInventoryRuntime.isEnabled(),
-                this.screen == null ? "null" : this.screen.getClass().getName(),
+                minecraft.screen == null ? "null" : minecraft.screen.getClass().getName(),
                 consumed
             );
         }
