@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.ScrollWheelHandler;
 import net.minecraft.client.gui.Gui;
@@ -824,6 +825,22 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int GHOST_BACKDROP = 0x40D0D0D0;
     private static int currentGuiTint = NORMAL_GUI_TINT;
     private static final Component TITLE = Component.literal("Salt's Inventory Desktop");
+    private static final Component INSTRUCTIONS_TITLE = Component.literal("Salt's Inventory Help");
+    private static final int INSTRUCTIONS_WINDOW_WIDTH = 300;
+    private static final int INSTRUCTIONS_WINDOW_HEIGHT = 190;
+    private static final int INSTRUCTIONS_ICON_SIZE = 18;
+    private static final int INSTRUCTIONS_INNER_PADDING = 8;
+    private static final int INSTRUCTIONS_SECTION_GAP = 8;
+    private static final int INSTRUCTIONS_BODY_LINE_HEIGHT = 10;
+    private static final int INSTRUCTIONS_MANUAL_LINE_GAP = 2;
+    private static final int INSTRUCTIONS_BIND_GAP = 5;
+    private static final int INSTRUCTIONS_BIND_BOX_HEIGHT = 14;
+    private static final int INSTRUCTIONS_NAV_BUTTON_WIDTH = 56;
+    private static final int INSTRUCTIONS_NAV_BUTTON_HEIGHT = 20;
+    private static final Identifier INSTRUCTIONS_BUTTON_SPRITE = Identifier.withDefaultNamespace("widget/button");
+    private static final Identifier INSTRUCTIONS_BUTTON_HIGHLIGHTED_SPRITE = Identifier.withDefaultNamespace("widget/button_highlighted");
+    private static final Identifier INSTRUCTIONS_BUTTON_DISABLED_SPRITE = Identifier.withDefaultNamespace("widget/button_disabled");
+    private static final String JEI_MOD_ID = "jei";
     private static final int WINDOW_PLACEMENT_MARGIN = 8;
     private static final int WINDOW_PLACEMENT_GAP = 8;
     private static final int WINDOW_CASCADE_OFFSET = 14;
@@ -1224,6 +1241,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         DesktopDebug.log("client request H JEI desktop={} active={}", screen.desktopId, minecraft.screen == screen);
         screen.toggleWindow(WindowKind.JEI);
         screen.showIfNeeded(minecraft);
+    }
+
+    public static boolean openInstructions(Minecraft minecraft) {
+        if (!canUseDesktopInput(minecraft)) {
+            return false;
+        }
+
+        InventoryDesktopScreen screen = getOrCreate(minecraft);
+        DesktopDebug.log("client request help instructions desktop={} active={}", screen.desktopId, minecraft.screen == screen);
+        screen.showWindow(WindowKind.INSTRUCTIONS);
+        screen.showIfNeeded(minecraft);
+        return screen.hasStandaloneWindow(WindowKind.INSTRUCTIONS);
     }
 
     public static void openHotbarOnly(Minecraft minecraft) {
@@ -1749,6 +1778,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
             if (window.kind == WindowKind.JEI) {
                 return this.jeiMouseClicked(window, event, doubleClick);
+            }
+
+            if (window.kind == WindowKind.INSTRUCTIONS) {
+                return this.instructionsMouseClicked(window, event);
             }
 
             if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.storageScrollbarContains(window, event.x(), event.y())) {
@@ -3635,6 +3668,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             );
             this.placeOrRestoreWindow(window, WindowPlacement.TOP_RIGHT);
             this.initializeJeiWindow(window);
+        } else if (kind == WindowKind.INSTRUCTIONS) {
+            window = new InventoryWindow(
+                kind,
+                INSTRUCTIONS_TITLE,
+                0,
+                0,
+                INSTRUCTIONS_WINDOW_WIDTH,
+                INSTRUCTIONS_WINDOW_HEIGHT
+            );
+            this.placeOrRestoreWindow(window, WindowPlacement.CENTER);
         } else {
             return;
         }
@@ -4179,7 +4222,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return switch (window.kind) {
             case INVENTORY -> this.inventoryVirtualSlotCount();
             case CONTAINER -> window.containerSlots().size();
-            case CHARACTER, CREATIVE, JEI -> 0;
+            case CHARACTER, CREATIVE, JEI, INSTRUCTIONS -> 0;
         };
     }
 
@@ -4676,7 +4719,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private WindowPlacement defaultPlacement(InventoryWindow window) {
         return switch (window.kind) {
-            case INVENTORY, CREATIVE -> WindowPlacement.CENTER;
+            case INVENTORY, CREATIVE, INSTRUCTIONS -> WindowPlacement.CENTER;
             case CHARACTER -> WindowPlacement.BOTTOM_LEFT;
             case JEI -> WindowPlacement.TOP_RIGHT;
             case CONTAINER -> WindowPlacement.CONTAINER;
@@ -4694,6 +4737,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             case CREATIVE -> DesktopWindowSize.of(CREATIVE_CONTENT_MARGIN * 2 + CREATIVE_CONTENT_WIDTH, TOP_BAR_HEIGHT + CREATIVE_CONTENT_MARGIN * 2 + CREATIVE_CONTENT_HEIGHT);
             case CHARACTER -> DesktopWindowSize.of(CHARACTER_WINDOW_WIDTH, CHARACTER_WINDOW_HEIGHT);
             case JEI -> this.jeiTargetWindowSize(window);
+            case INSTRUCTIONS -> DesktopWindowSize.of(INSTRUCTIONS_WINDOW_WIDTH, this.instructionsWindowHeight());
             case CONTAINER -> this.defaultContainerWindowSize(window);
         };
     }
@@ -4862,6 +4906,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             DesktopWindowSize size = this.jeiTargetWindowSize(window);
             window.width = size.width();
             window.height = size.height();
+        } else if (window.kind == WindowKind.INSTRUCTIONS) {
+            window.width = INSTRUCTIONS_WINDOW_WIDTH;
+            window.height = this.instructionsWindowHeight();
         } else if (window.session != null && window.session.isMountSession()) {
             window.width = this.mountWindowWidth(window.session, window.title);
             window.height = mountWindowHeight();
@@ -5706,6 +5753,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 case CHARACTER -> this.renderCharacterWindow(graphics, window, mouseX, mouseY);
                 case CREATIVE -> this.renderCreativeWindow(graphics, window, mouseX, mouseY);
                 case JEI -> this.renderJeiWindow(graphics, window, mouseX, mouseY);
+                case INSTRUCTIONS -> this.renderInstructionsWindow(graphics, window, mouseX, mouseY);
             }
 
             if (!ghosted) {
@@ -7714,6 +7762,308 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             && !window.minimized
             && window.jeiMode != JeiRecipeMode.INGREDIENTS
             && this.jeiAccess().isAvailable();
+    }
+
+    private void renderInstructionsWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        List<InstructionsPage> pages = this.instructionsPages();
+        window.instructionsPage = clamp(window.instructionsPage, 0, Math.max(0, pages.size() - 1));
+        InstructionsPage page = pages.get(window.instructionsPage);
+        boolean jeiInstalled = this.isJeiInstalled();
+        int desiredHeight = this.instructionsWindowHeight();
+        if (window.height != desiredHeight) {
+            window.height = desiredHeight;
+            this.clampWindowIntoDesktop(window);
+        }
+        int panelX = window.contentX();
+        int panelY = window.contentY();
+        int panelWidth = window.width - WINDOW_CONTENT_PADDING * 2;
+        int panelHeight = window.height - TOP_BAR_HEIGHT - WINDOW_CONTENT_PADDING * 2;
+        renderOnePixelNineSlice(graphics, MODEL_DISPLAY_TEXTURE, panelX, panelY, panelWidth, panelHeight);
+
+        int iconX = panelX + INSTRUCTIONS_INNER_PADDING;
+        int iconY = panelY + INSTRUCTIONS_INNER_PADDING;
+        this.renderInstructionsIcon(graphics, page, iconX, iconY);
+
+        int textX = iconX + INSTRUCTIONS_ICON_SIZE + 10;
+        int textY = iconY;
+        graphics.text(this.font, page.title(), textX, textY, this.uiColor(COLOR_TEXT), false);
+        graphics.fill(textX, textY + 13, panelX + panelWidth - INSTRUCTIONS_INNER_PADDING, textY + 14, this.uiColor(0xFF3F4652));
+
+        int lineY = textY + 22;
+        int contentX = panelX + INSTRUCTIONS_INNER_PADDING;
+        int contentWidth = panelWidth - INSTRUCTIONS_INNER_PADDING * 2;
+        int navY = this.instructionsPreviousButtonRect(window).y();
+        for (InstructionsSection section : page.sections(jeiInstalled)) {
+            int sectionHeight = this.instructionsSectionHeight(section, contentWidth);
+            if (lineY + sectionHeight > navY - INSTRUCTIONS_SECTION_GAP) {
+                break;
+            }
+            this.renderInstructionsSection(graphics, section, contentX, lineY, contentWidth);
+            lineY += sectionHeight + INSTRUCTIONS_SECTION_GAP;
+        }
+
+        if (pages.size() > 1) {
+            this.renderInstructionsNavButton(graphics, this.instructionsPreviousButtonRect(window), mouseX, mouseY, window.instructionsPage > 0);
+            this.renderInstructionsNavButton(graphics, this.instructionsNextButtonRect(window), mouseX, mouseY, window.instructionsPage < pages.size() - 1);
+            int indicatorY = panelY + panelHeight - INSTRUCTIONS_INNER_PADDING - INSTRUCTIONS_NAV_BUTTON_HEIGHT + 4;
+            graphics.centeredText(this.font, (window.instructionsPage + 1) + " / " + pages.size(), panelX + panelWidth / 2, indicatorY, this.uiColor(COLOR_MUTED_TEXT));
+        }
+    }
+
+    private boolean instructionsMouseClicked(InventoryWindow window, MouseButtonEvent event) {
+        if (event.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            return true;
+        }
+
+        List<InstructionsPage> pages = this.instructionsPages();
+        window.instructionsPage = clamp(window.instructionsPage, 0, Math.max(0, pages.size() - 1));
+        InstructionsNavButtonRect button = this.instructionsNavButtonAt(window, event.x(), event.y());
+        if (button == null) {
+            return true;
+        }
+
+        int nextPage = window.instructionsPage + button.direction();
+        if (nextPage >= 0 && nextPage < pages.size()) {
+            window.instructionsPage = nextPage;
+        }
+        return true;
+    }
+
+    private List<InstructionsPage> instructionsPages() {
+        List<InstructionsPage> pages = new ArrayList<>();
+        pages.add(InstructionsPage.DESKTOP);
+        pages.add(InstructionsPage.CONTROLS);
+        pages.add(InstructionsPage.WINDOWS);
+        pages.add(InstructionsPage.INVENTORY);
+        if (this.isJeiInstalled()) {
+            pages.add(InstructionsPage.JEI);
+        }
+        if (TomsStorageCompat.loaded()) {
+            pages.add(InstructionsPage.TOMS_STORAGE);
+        }
+        return pages;
+    }
+
+    private boolean isJeiInstalled() {
+        return FabricLoader.getInstance().isModLoaded(JEI_MOD_ID);
+    }
+
+    private int instructionsWindowHeight() {
+        boolean jeiInstalled = this.isJeiInstalled();
+        int contentWidth = INSTRUCTIONS_WINDOW_WIDTH - WINDOW_CONTENT_PADDING * 2 - INSTRUCTIONS_INNER_PADDING * 2;
+        int maxSectionHeight = 0;
+        for (InstructionsPage page : this.instructionsPages()) {
+            int pageHeight = 0;
+            for (InstructionsSection section : page.sections(jeiInstalled)) {
+                pageHeight += this.instructionsSectionHeight(section, contentWidth) + INSTRUCTIONS_SECTION_GAP;
+            }
+            maxSectionHeight = Math.max(maxSectionHeight, pageHeight);
+        }
+
+        int panelHeight = INSTRUCTIONS_INNER_PADDING + 22 + maxSectionHeight + INSTRUCTIONS_NAV_BUTTON_HEIGHT + INSTRUCTIONS_INNER_PADDING;
+        int desiredHeight = TOP_BAR_HEIGHT + WINDOW_CONTENT_PADDING * 2 + panelHeight;
+        int maxHeight = Math.max(INSTRUCTIONS_WINDOW_HEIGHT, this.desktopHeight() - WINDOW_PLACEMENT_MARGIN * 2);
+        return clamp(desiredHeight, INSTRUCTIONS_WINDOW_HEIGHT, maxHeight);
+    }
+
+    private int instructionsSectionHeight(InstructionsSection section, int width) {
+        int height = 12;
+        for (InstructionsLine line : section.lines()) {
+            height += this.instructionsLineHeight(line, width);
+        }
+        return height;
+    }
+
+    private int instructionsLineHeight(InstructionsLine line, int width) {
+        if (line.binds().isEmpty()) {
+            if (line.control() != null) {
+                int textWidth = Math.max(0, width - 4 - CONTROL_SIZE - INSTRUCTIONS_BIND_GAP - 2);
+                int textHeight = Math.max(1, this.wrapInstructionsText(line.text(), textWidth).size()) * INSTRUCTIONS_BODY_LINE_HEIGHT + 2;
+                return Math.max(CONTROL_SIZE + 3, textHeight) + INSTRUCTIONS_MANUAL_LINE_GAP;
+            }
+            return Math.max(1, this.wrapInstructionsText(line.text(), width - 4).size()) * INSTRUCTIONS_BODY_LINE_HEIGHT + INSTRUCTIONS_MANUAL_LINE_GAP;
+        }
+
+        int bindWidth = 4;
+        for (String bind : line.binds()) {
+            bindWidth += this.instructionsBindBoxWidth(bind) + INSTRUCTIONS_BIND_GAP;
+        }
+        int textWidth = Math.max(0, width - bindWidth - 2);
+        int textHeight = Math.max(1, this.wrapInstructionsText(line.text(), textWidth).size()) * INSTRUCTIONS_BODY_LINE_HEIGHT + 3;
+        return Math.max(INSTRUCTIONS_BIND_BOX_HEIGHT + 1, textHeight + 1) + INSTRUCTIONS_MANUAL_LINE_GAP;
+    }
+
+    private void renderInstructionsSection(GuiGraphicsExtractor graphics, InstructionsSection section, int x, int y, int width) {
+        graphics.text(this.font, section.title(), x, y, this.uiColor(COLOR_TEXT), false);
+        graphics.fill(x + this.font.width(section.title()) + 5, y + 5, x + width, y + 6, this.uiColor(0xFF323946));
+        int lineY = y + 12;
+        for (InstructionsLine line : section.lines()) {
+            if (line.control() != null) {
+                int iconX = x + 4;
+                this.renderInstructionsControlIcon(graphics, line.control(), iconX, lineY + 1);
+                int textX = iconX + CONTROL_SIZE + INSTRUCTIONS_BIND_GAP + 2;
+                int availableTextWidth = Math.max(0, x + width - textX);
+                int textY = lineY + 2;
+                for (String wrapped : this.wrapInstructionsText(line.text(), availableTextWidth)) {
+                    graphics.text(this.font, wrapped, textX, textY, this.uiColor(COLOR_MUTED_TEXT), false);
+                    textY += INSTRUCTIONS_BODY_LINE_HEIGHT;
+                }
+                lineY += this.instructionsLineHeight(line, width);
+                continue;
+            }
+
+            if (line.binds().isEmpty()) {
+                for (String wrapped : this.wrapInstructionsText(line.text(), width - 4)) {
+                    graphics.text(this.font, wrapped, x + 4, lineY, this.uiColor(COLOR_MUTED_TEXT), false);
+                    lineY += INSTRUCTIONS_BODY_LINE_HEIGHT;
+                }
+                lineY += INSTRUCTIONS_MANUAL_LINE_GAP;
+                continue;
+            }
+
+            int bindX = x + 4;
+            for (String bind : line.binds()) {
+                int bindWidth = this.instructionsBindBoxWidth(bind);
+                this.renderInstructionsBindBox(graphics, bind, bindX, lineY);
+                bindX += bindWidth + INSTRUCTIONS_BIND_GAP;
+            }
+            int textX = bindX + 2;
+            int availableTextWidth = Math.max(0, x + width - textX);
+            int textY = lineY + 3;
+            for (String wrapped : this.wrapInstructionsText(line.text(), availableTextWidth)) {
+                graphics.text(this.font, wrapped, textX, textY, this.uiColor(COLOR_MUTED_TEXT), false);
+                textY += INSTRUCTIONS_BODY_LINE_HEIGHT;
+            }
+            lineY += this.instructionsLineHeight(line, width);
+        }
+    }
+
+    private void renderInstructionsControlIcon(GuiGraphicsExtractor graphics, WindowControl control, int x, int y) {
+        blitRegion(
+            graphics,
+            WINDOW_CONTROLS_TEXTURE,
+            x,
+            y,
+            this.instructionsControlTextureColumn(control) * CONTROL_SIZE,
+            0,
+            CONTROL_SIZE,
+            CONTROL_SIZE,
+            CONTROL_SIZE,
+            CONTROL_SIZE,
+            CONTROL_TEXTURE_WIDTH,
+            CONTROL_TEXTURE_HEIGHT
+        );
+    }
+
+    private int instructionsControlTextureColumn(WindowControl control) {
+        return switch (control) {
+            case FOCUS -> 0;
+            case MINIMIZE -> 1;
+            case CLOSE -> 2;
+            case ELLIPSIS -> 3;
+            case LOCK -> 5;
+            case PIN -> 6;
+        };
+    }
+
+    private List<String> wrapInstructionsText(String text, int maxWidth) {
+        if (text == null || text.isEmpty()) {
+            return List.of("");
+        }
+        if (maxWidth <= 0) {
+            return List.of(text);
+        }
+
+        List<String> lines = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        for (String word : text.split(" ")) {
+            if (word.isEmpty()) {
+                continue;
+            }
+
+            String candidate = current.isEmpty() ? word : current + " " + word;
+            if (this.font.width(candidate) <= maxWidth) {
+                current.setLength(0);
+                current.append(candidate);
+                continue;
+            }
+
+            if (!current.isEmpty()) {
+                lines.add(current.toString());
+                current.setLength(0);
+            }
+
+            if (this.font.width(word) <= maxWidth) {
+                current.append(word);
+                continue;
+            }
+
+            String remaining = word;
+            while (!remaining.isEmpty()) {
+                String piece = this.font.plainSubstrByWidth(remaining, maxWidth);
+                if (piece.isEmpty()) {
+                    piece = remaining.substring(0, 1);
+                }
+                lines.add(piece);
+                remaining = remaining.substring(piece.length());
+            }
+        }
+
+        if (!current.isEmpty()) {
+            lines.add(current.toString());
+        }
+        return lines.isEmpty() ? List.of("") : lines;
+    }
+
+    private int instructionsBindBoxWidth(String bind) {
+        return Math.max(18, this.font.width(bind) + 10);
+    }
+
+    private void renderInstructionsBindBox(GuiGraphicsExtractor graphics, String bind, int x, int y) {
+        int width = this.instructionsBindBoxWidth(bind);
+        renderOnePixelNineSlice(graphics, MODEL_DISPLAY_TEXTURE, x, y, width, INSTRUCTIONS_BIND_BOX_HEIGHT);
+        graphics.centeredText(this.font, bind, x + width / 2, y + 3, this.uiColor(COLOR_TEXT));
+    }
+
+    private void renderInstructionsIcon(GuiGraphicsExtractor graphics, InstructionsPage page, int x, int y) {
+        renderSlotBackground(graphics, x, y);
+        switch (page) {
+            case DESKTOP -> renderNineSlice(graphics, WINDOW_TEXTURE, x + 3, y + 3, 12, 12);
+            case CONTROLS -> blitRegion(graphics, WINDOW_CONTROLS_TEXTURE, x + 3, y + 3, 0, 0, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_TEXTURE_WIDTH, CONTROL_TEXTURE_HEIGHT);
+            case WINDOWS -> blitRegion(graphics, WINDOW_CONTROLS_TEXTURE, x + 3, y + 3, 6 * CONTROL_SIZE, 0, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_TEXTURE_WIDTH, CONTROL_TEXTURE_HEIGHT);
+            case INVENTORY -> blitRegion(graphics, SLOT_TEXTURE, x, y, 0, 0, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE, SLOT_TEXTURE_WIDTH, SLOT_TEXTURE_HEIGHT);
+            case JEI -> graphics.centeredText(this.font, "J", x + INSTRUCTIONS_ICON_SIZE / 2, y + 5, this.uiColor(COLOR_TEXT));
+            case TOMS_STORAGE -> graphics.centeredText(this.font, "T", x + INSTRUCTIONS_ICON_SIZE / 2, y + 5, this.uiColor(COLOR_TEXT));
+        }
+    }
+
+    private void renderInstructionsNavButton(GuiGraphicsExtractor graphics, InstructionsNavButtonRect rect, int mouseX, int mouseY, boolean enabled) {
+        boolean hovered = enabled && contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height());
+        Identifier sprite = enabled ? hovered ? INSTRUCTIONS_BUTTON_HIGHLIGHTED_SPRITE : INSTRUCTIONS_BUTTON_SPRITE : INSTRUCTIONS_BUTTON_DISABLED_SPRITE;
+        this.blitSprite(graphics, sprite, rect.x(), rect.y(), rect.width(), rect.height());
+        graphics.centeredText(this.font, rect.direction() < 0 ? "Back" : "Next", rect.x() + rect.width() / 2, rect.y() + 6, this.uiColor(enabled ? COLOR_TEXT : COLOR_MUTED_TEXT));
+    }
+
+    private @Nullable InstructionsNavButtonRect instructionsNavButtonAt(InventoryWindow window, double mouseX, double mouseY) {
+        InstructionsNavButtonRect previous = this.instructionsPreviousButtonRect(window);
+        if (contains(mouseX, mouseY, previous.x(), previous.y(), previous.width(), previous.height())) {
+            return previous;
+        }
+
+        InstructionsNavButtonRect next = this.instructionsNextButtonRect(window);
+        return contains(mouseX, mouseY, next.x(), next.y(), next.width(), next.height()) ? next : null;
+    }
+
+    private InstructionsNavButtonRect instructionsPreviousButtonRect(InventoryWindow window) {
+        int x = window.contentX() + INSTRUCTIONS_INNER_PADDING;
+        int y = window.contentY() + window.height - TOP_BAR_HEIGHT - WINDOW_CONTENT_PADDING * 2 - INSTRUCTIONS_INNER_PADDING - INSTRUCTIONS_NAV_BUTTON_HEIGHT;
+        return new InstructionsNavButtonRect(x, y, INSTRUCTIONS_NAV_BUTTON_WIDTH, INSTRUCTIONS_NAV_BUTTON_HEIGHT, -1);
+    }
+
+    private InstructionsNavButtonRect instructionsNextButtonRect(InventoryWindow window) {
+        int x = window.contentX() + window.width - WINDOW_CONTENT_PADDING * 2 - INSTRUCTIONS_INNER_PADDING - INSTRUCTIONS_NAV_BUTTON_WIDTH;
+        int y = window.contentY() + window.height - TOP_BAR_HEIGHT - WINDOW_CONTENT_PADDING * 2 - INSTRUCTIONS_INNER_PADDING - INSTRUCTIONS_NAV_BUTTON_HEIGHT;
+        return new InstructionsNavButtonRect(x, y, INSTRUCTIONS_NAV_BUTTON_WIDTH, INSTRUCTIONS_NAV_BUTTON_HEIGHT, 1);
     }
 
     private void renderJeiWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
@@ -13506,7 +13856,178 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         CONTAINER,
         CHARACTER,
         CREATIVE,
-        JEI
+        JEI,
+        INSTRUCTIONS
+    }
+
+    private enum InstructionsPage {
+        DESKTOP(
+            "Salt Desktop",
+            List.of(
+                InstructionsSection.text(
+                    "Welcome",
+                    "Welcome to the new and improved inventory experience!",
+                    "If you do not want to read this now, simply close this window."
+                ),
+                InstructionsSection.text(
+                    "What Changed",
+                    "Your inventory and opened containers now appear as windows.",
+                    "You can keep multiple windows open and move items between them for easier inventory management."
+                ),
+                InstructionsSection.text(
+                    "Open Again",
+                    "Use /saltsinventory help to open this window again at any time."
+                )
+            )
+        ),
+        CONTROLS(
+            "Main Controls",
+            List.of(
+                InstructionsSection.binds(
+                    "Open Windows",
+                    InstructionsLine.bind("E", "Open/Close Inventory"),
+                    InstructionsLine.bind("C", "Open/Close Armor and Crafting"),
+                    InstructionsLine.bind("H", "Open/Close JEI Window")
+                ),
+                InstructionsSection.binds(
+                    "Desktop Control",
+                    InstructionsLine.bind("Hold E", "Close all Salt windows"),
+                    InstructionsLine.bind("Alt", "Give the mouse back to camera control"),
+                    InstructionsLine.bind("Esc", "Close the Salt desktop")
+                )
+            )
+        ),
+        WINDOWS(
+            "Window Controls",
+            List.of(
+                InstructionsSection.text(
+                    "Move And Arrange",
+                    "Unlock a window to drag it around the screen and place it wherever feels best.",
+                    "If resizing is enabled in settings, supported windows can be resized by dragging their bottom-right corner."
+                ),
+                InstructionsSection.binds(
+                    "Title Buttons",
+                    InstructionsLine.control(WindowControl.FOCUS, "Focus: Shift-clicked items move directly into the focused window when possible."),
+                    InstructionsLine.control(WindowControl.PIN, "Pin: Saves this window's position for the next time it opens. Click to pin or unpin."),
+                    InstructionsLine.control(WindowControl.LOCK, "Lock: Prevents the window from being moved or resized. Click to lock or unlock."),
+                    InstructionsLine.control(WindowControl.MINIMIZE, "Minimize: Collapses the window into a title bar to keep your screen less cluttered."),
+                    InstructionsLine.control(WindowControl.CLOSE, "Close: Closes the window.")
+                )
+            )
+        ),
+        INVENTORY(
+            "Inventory Tools",
+            List.of(
+                InstructionsSection.text(
+                    "Hotbar",
+                    "Move items in and out of your hotbar by dragging them directly over the real hotbar at the bottom of the screen.",
+                    "The hotbar works like normal inventory slots while the Salt desktop is open, including the offhand slot."
+                ),
+                InstructionsSection.text(
+                    "Expandable Inventory",
+                    "If enabled in settings, you can spend XP levels to purchase extra inventory slots.",
+                    "Purchased slots stay with your player and behave like normal inventory storage."
+                )
+            )
+        ),
+        JEI(
+            "JEI Window",
+            List.of(
+                InstructionsSection.binds(
+                    "Open And Search",
+                    InstructionsLine.bind("H", "Open JEI as a Salt window"),
+                    InstructionsLine.text("Search ingredients, recipes, uses, favorites, and recent items.")
+                ),
+                InstructionsSection.binds(
+                    "Recipe Flow",
+                    InstructionsLine.binds(List.of("R", "U"), "Hover lookups for recipes and uses"),
+                    InstructionsLine.text("Move Items works with compatible Salt crafting windows.")
+                )
+            )
+        ),
+        TOMS_STORAGE(
+            "Tom's Simple Storage",
+            List.of(
+                InstructionsSection.text(
+                    "Terminals",
+                    "Storage and crafting terminals open as Salt windows.",
+                    "Terminal search, sorting, and recipes stay inside the window."
+                ),
+                InstructionsSection.text(
+                    "Supported Screens",
+                    "Filters, inventory links, level emitters, and filing cabinets",
+                    "use Salt layouts when Tom's Simple Storage is installed."
+                )
+            )
+        );
+
+        private final String title;
+        private final List<InstructionsSection> sections;
+        private static final List<InstructionsSection> CONTROLS_WITHOUT_JEI_SECTIONS = List.of(
+            InstructionsSection.binds(
+                "Open Windows",
+                InstructionsLine.bind("E", "Open/Close Inventory"),
+                InstructionsLine.bind("C", "Open/Close Armor and Crafting")
+            ),
+            InstructionsSection.binds(
+                "Desktop Control",
+                InstructionsLine.bind("Hold E", "Close all Salt windows"),
+                InstructionsLine.bind("Alt", "Give the mouse back to camera control"),
+                InstructionsLine.bind("Esc", "Close the Salt desktop")
+            )
+        );
+
+        InstructionsPage(String title, List<InstructionsSection> sections) {
+            this.title = title;
+            this.sections = sections;
+        }
+
+        private String title() {
+            return this.title;
+        }
+
+        private List<InstructionsSection> sections() {
+            return this.sections;
+        }
+
+        private List<InstructionsSection> sections(boolean jeiInstalled) {
+            if (this == CONTROLS && !jeiInstalled) {
+                return CONTROLS_WITHOUT_JEI_SECTIONS;
+            }
+            return this.sections();
+        }
+    }
+
+    private record InstructionsSection(String title, List<InstructionsLine> lines) {
+        private static InstructionsSection text(String title, String... lines) {
+            List<InstructionsLine> instructionLines = new ArrayList<>();
+            for (String line : lines) {
+                instructionLines.add(InstructionsLine.text(line));
+            }
+            return new InstructionsSection(title, instructionLines);
+        }
+
+        private static InstructionsSection binds(String title, InstructionsLine... lines) {
+            return new InstructionsSection(title, List.of(lines));
+        }
+    }
+
+    private record InstructionsLine(List<String> binds, @Nullable WindowControl control, String text) {
+        private static InstructionsLine text(String text) {
+            return new InstructionsLine(List.of(), null, text);
+        }
+
+        private static InstructionsLine bind(String bind, String text) {
+            return new InstructionsLine(List.of(bind), null, text);
+        }
+
+        private static InstructionsLine binds(List<String> binds, String text) {
+            return new InstructionsLine(binds, null, text);
+        }
+
+        private static InstructionsLine control(WindowControl control, String text) {
+            return new InstructionsLine(List.of(), control, text);
+        }
     }
 
     private enum WindowPlacement {
@@ -13693,6 +14214,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private record JeiRecipeButtonRect(int x, int y, int width, int height) {
+    }
+
+    private record InstructionsNavButtonRect(int x, int y, int width, int height, int direction) {
     }
 
     private record JeiRecipeHistoryEntry(JeiDesktopEntry entry, JeiRecipeMode mode) {
@@ -14561,6 +15085,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private String jeiSelectedTabUid = "";
         private String jeiDefaultTabUid = "";
         private int jeiScrollRow;
+        private int instructionsPage;
         private JeiRecipeMode jeiMode = JeiRecipeMode.INGREDIENTS;
         private @Nullable JeiDesktopEntry jeiFocusEntry;
         private String jeiSelectedRecipeCategoryUid = "";
@@ -14637,6 +15162,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     case CREATIVE -> "local:creative";
                     case CHARACTER -> "local:character";
                     case JEI -> "local:jei";
+                    case INSTRUCTIONS -> "local:instructions";
                     case CONTAINER -> null;
                 };
             }

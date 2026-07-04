@@ -34,6 +34,9 @@ val enableDesktopRunDiagnostics = providers.gradleProperty("saltsDesktopRunDiagn
 val enableDesktopRunTrace = providers.gradleProperty("saltsDesktopRunTrace")
     .map { it.equals("true", ignoreCase = true) }
     .orElse(true)
+val includeJeiRuntime = providers.gradleProperty("includeJeiRuntime")
+    .map { !it.equals("false", ignoreCase = true) }
+    .orElse(true)
 
 fun SourceSet.addLoaderSourceDirs(minecraftVersion: String, loaderName: String) {
     val sourceDirs = listOf(
@@ -76,7 +79,6 @@ prism {
     // Fill in project IDs before uncommenting.
     /*
     publishing {
-        changelogFile = "CHANGELOG.md"
         type = BETA
 
         curseforge {
@@ -266,6 +268,9 @@ subprojects {
                     "compileOnly"
                 }
                 dependencies.add(apiConfiguration, "mezz.jei:jei-$minecraftVersion-$jeiLoader-api:$jeiVersion")
+                if (!includeJeiRuntime.get()) {
+                    return@let
+                }
                 if (name == "forge" && minecraftVersion == "1.20.1") {
                     @Suppress("UNCHECKED_CAST")
                     val mappingsType = Class.forName("net.neoforged.moddevgradle.legacyforge.internal.MinecraftMappings") as Class<Named>

@@ -27,6 +27,7 @@ public final class WindowedInventoryClient {
     private static Field mouseGrabbedField;
     private static Field mouseXposField;
     private static Field mouseYposField;
+    private static int pendingInstructionsWindowOpenTicks;
 
     private WindowedInventoryClient() {
     }
@@ -74,19 +75,22 @@ public final class WindowedInventoryClient {
 
     private static void registerClientCommands() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommands.literal("salts_inventory")
-                .then(ClientCommands.literal("config").executes(context -> {
-                    Minecraft minecraft = Minecraft.getInstance();
-                    minecraft.execute(() -> minecraft.gui.setScreen(createConfigScreen(minecraft.gui.screen())));
-                    return 1;
-                })));
             dispatcher.register(ClientCommands.literal("saltsinventory")
                 .then(ClientCommands.literal("config").executes(context -> {
                     Minecraft minecraft = Minecraft.getInstance();
                     minecraft.execute(() -> minecraft.gui.setScreen(createConfigScreen(minecraft.gui.screen())));
                     return 1;
+                }))
+                .then(ClientCommands.literal("help").executes(context -> {
+                    scheduleInstructionsWindowOpen();
+                    return 1;
                 })));
         });
+    }
+
+    public static void scheduleInstructionsWindowOpen() {
+        Minecraft minecraft = Minecraft.getInstance();
+        minecraft.execute(() -> pendingInstructionsWindowOpenTicks = 2);
     }
 
     public static Screen createConfigScreen(Screen previousScreen) {
@@ -150,6 +154,9 @@ public final class WindowedInventoryClient {
             return;
         }
 
+        openPendingInstructionsWindow(minecraft);
+        maybeOpenFirstRunInstructions(minecraft);
+
         Screen screen = minecraft.gui.screen();
         boolean desktopTextInput = screen instanceof InventoryDesktopScreen inventoryScreen && inventoryScreen.isTextInputActive();
         while (characterWindowKey.consumeClick()) {
@@ -181,6 +188,38 @@ public final class WindowedInventoryClient {
                 InventoryDesktopScreen.openHotbarOnly(minecraft);
             }
         }
+    }
+
+    private static void openPendingInstructionsWindow(Minecraft minecraft) {
+        if (pendingInstructionsWindowOpenTicks <= 0) {
+            return;
+        }
+
+        pendingInstructionsWindowOpenTicks--;
+        if (pendingInstructionsWindowOpenTicks > 0) {
+            return;
+        }
+
+        if (!openInstructionsWindow(minecraft)) {
+            pendingInstructionsWindowOpenTicks = 1;
+        }
+    }
+
+    private static void maybeOpenFirstRunInstructions(Minecraft minecraft) {
+        if (!SaltsInventoryConfig.get().hasSeenInstructionsWindow) {
+            openInstructionsWindow(minecraft);
+        }
+    }
+
+    private static boolean openInstructionsWindow(Minecraft minecraft) {
+        if (!InventoryDesktopScreen.openInstructions(minecraft)) {
+            return false;
+        }
+
+        if (!SaltsInventoryConfig.get().hasSeenInstructionsWindow) {
+            SaltsInventoryConfig.update(config -> config.hasSeenInstructionsWindow = true);
+        }
+        return true;
     }
 
     public static void extractPassiveGhostWindows(GuiGraphicsExtractor graphics) {

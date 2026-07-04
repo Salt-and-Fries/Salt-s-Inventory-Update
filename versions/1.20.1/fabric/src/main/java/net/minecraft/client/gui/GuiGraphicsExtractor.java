@@ -442,6 +442,9 @@ public final class GuiGraphicsExtractor {
         ResourceLocation brewing = new ResourceLocation("minecraft", "textures/gui/container/brewing_stand.png");
         ResourceLocation creativeTabs = new ResourceLocation("minecraft", "textures/gui/container/creative_inventory/tabs.png");
 
+        add(sprites, "widget/button", widgets, 0, 66, 200, 20);
+        add(sprites, "widget/button_highlighted", widgets, 0, 86, 200, 20);
+        add(sprites, "widget/button_disabled", widgets, 0, 46, 200, 20);
         add(sprites, "hud/hotbar_offhand_left", widgets, 24, 22, 29, 24);
         add(sprites, "hud/hotbar_offhand_right", widgets, 53, 22, 29, 24);
 

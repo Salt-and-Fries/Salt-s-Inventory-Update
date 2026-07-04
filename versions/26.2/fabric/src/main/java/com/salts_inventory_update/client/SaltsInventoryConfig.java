@@ -107,6 +107,7 @@ public final class SaltsInventoryConfig {
         public boolean enableWindowSnapping = true;
         public boolean resetLockedWindows = true;
         public boolean enableGhostPins = false;
+        public boolean hasSeenInstructionsWindow = false;
         public double ghostWindowOpacity = 0.5D;
         public double eHoldCloseAllSeconds = 0.5D;
         public List<String> forcedContainerWindows = new ArrayList<>();
@@ -150,6 +151,7 @@ public final class SaltsInventoryConfig {
             this.enableWindowSnapping = defaults.enableWindowSnapping;
             this.resetLockedWindows = defaults.resetLockedWindows;
             this.enableGhostPins = defaults.enableGhostPins;
+            this.hasSeenInstructionsWindow = defaults.hasSeenInstructionsWindow;
             this.ghostWindowOpacity = defaults.ghostWindowOpacity;
             this.eHoldCloseAllSeconds = defaults.eHoldCloseAllSeconds;
             this.forcedContainerWindows = new ArrayList<>(defaults.forcedContainerWindows);
