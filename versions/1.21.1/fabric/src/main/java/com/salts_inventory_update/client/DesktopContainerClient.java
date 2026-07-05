@@ -1,6 +1,7 @@
 package com.salts_inventory_update.client;
 
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import com.salts_inventory_update.platform.fabric.api.client.networking.v1.ClientPlayNetworking;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.ClickType;
@@ -20,6 +21,7 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopGhostRecipePaylo
 import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferRequirement;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopOpenLinkedSourcesPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopPlaceRecipePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopQuickMovePayload;
@@ -317,6 +319,14 @@ public final class DesktopContainerClient {
     public static void setSessionVisible(int sessionId, boolean visible) {
         DesktopDebug.trace("client send visibility session={} visible={}", sessionId, visible);
         send(new DesktopSessionVisibilityPayload(sessionId, visible), "visibility");
+    }
+
+    public static void openLinkedSources(java.util.List<String> sourceKeys) {
+        if (sourceKeys.isEmpty()) {
+            return;
+        }
+        DesktopDebug.trace("client send linked sources count={} sources={}", sourceKeys.size(), sourceKeys);
+        send(new DesktopOpenLinkedSourcesPayload(List.copyOf(sourceKeys)), "open-linked-sources");
     }
 
     private static int pinModeToPacket(PinMode pinMode) {

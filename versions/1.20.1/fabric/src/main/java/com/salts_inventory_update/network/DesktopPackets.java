@@ -30,6 +30,8 @@ public final class DesktopPackets {
     private static final int JEI_TRANSFER_MAX_RECIPE_SLOTS = 128;
     private static final int JEI_TRANSFER_MAX_REQUIREMENTS = 128;
     private static final int JEI_TRANSFER_MAX_ALTERNATIVES = 128;
+    private static final int LINKED_SOURCE_MAX_KEYS = 64;
+    private static final int LINKED_SOURCE_MAX_KEY_LENGTH = 512;
 
     private DesktopPackets() {
     }
@@ -86,6 +88,28 @@ public final class DesktopPackets {
         List<Integer> values = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             values.add(buf.readVarInt());
+        }
+        return values;
+    }
+
+    private static void writeLimitedStringList(FriendlyByteBuf buf, List<String> values, int maxSize, int maxLength) {
+        if (values.size() > maxSize) {
+            throw new IllegalArgumentException("Desktop string list is too large: " + values.size());
+        }
+        buf.writeVarInt(values.size());
+        for (String value : values) {
+            buf.writeUtf(value, maxLength);
+        }
+    }
+
+    private static List<String> readLimitedStringList(FriendlyByteBuf buf, int maxSize, int maxLength) {
+        int size = buf.readVarInt();
+        if (size < 0 || size > maxSize) {
+            throw new IllegalArgumentException("Desktop string list is too large: " + size);
+        }
+        List<String> values = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            values.add(buf.readUtf(maxLength));
         }
         return values;
     }
@@ -424,6 +448,24 @@ public final class DesktopPackets {
         public void write(FriendlyByteBuf buf) {
             buf.writeVarInt(this.sessionId);
             buf.writeBoolean(this.visible);
+        }
+    }
+
+    public record DesktopOpenLinkedSourcesPayload(List<String> sourceKeys) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_open_linked_sources");
+
+        public DesktopOpenLinkedSourcesPayload(FriendlyByteBuf buf) {
+            this(readLimitedStringList(buf, LINKED_SOURCE_MAX_KEYS, LINKED_SOURCE_MAX_KEY_LENGTH));
+        }
+
+        @Override
+        public ResourceLocation id() {
+            return TYPE;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buf) {
+            writeLimitedStringList(buf, this.sourceKeys, LINKED_SOURCE_MAX_KEYS, LINKED_SOURCE_MAX_KEY_LENGTH);
         }
     }
 

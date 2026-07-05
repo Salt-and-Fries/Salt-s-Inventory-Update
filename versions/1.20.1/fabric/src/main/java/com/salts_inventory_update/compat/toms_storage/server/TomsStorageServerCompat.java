@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.RegistryAccess;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import com.salts_inventory_update.platform.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;

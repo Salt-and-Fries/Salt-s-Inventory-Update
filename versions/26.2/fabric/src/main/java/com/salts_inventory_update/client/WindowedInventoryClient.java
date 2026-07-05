@@ -2,10 +2,10 @@ package com.salts_inventory_update.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import java.lang.reflect.Field;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import com.salts_inventory_update.platform.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import com.salts_inventory_update.platform.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import com.salts_inventory_update.platform.fabric.api.client.command.v2.ClientCommands;
+import com.salts_inventory_update.platform.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;

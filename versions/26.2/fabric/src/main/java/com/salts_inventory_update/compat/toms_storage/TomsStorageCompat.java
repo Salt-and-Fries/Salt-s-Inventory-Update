@@ -2,7 +2,7 @@ package com.salts_inventory_update.compat.toms_storage;
 
 import org.jspecify.annotations.Nullable;
 
-import net.fabricmc.loader.api.FabricLoader;
+import com.salts_inventory_update.platform.loader.api.FabricLoader;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.MenuType;

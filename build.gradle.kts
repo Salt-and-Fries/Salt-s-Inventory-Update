@@ -9,6 +9,7 @@ import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.Sync
+import java.util.zip.ZipFile
 
 plugins {
     id("dev.prism")
@@ -38,6 +39,20 @@ val includeJeiRuntime = providers.gradleProperty("includeJeiRuntime")
     .map { !it.equals("false", ignoreCase = true) }
     .orElse(true)
 
+val nonFabricSharedSourceExcludes = listOf(
+    "**/SaltsInventoryUpdateFabric.java",
+    "**/SaltsInventoryUpdateFabricClient.java"
+)
+
+fun fabricPlatformSourceDir(minecraftVersion: String) =
+    rootProject.file(
+        if (minecraftVersion == "1.20.1") {
+            "versions/fabric-platform-legacy/src/main/java"
+        } else {
+            "versions/fabric-platform-modern/src/main/java"
+        }
+    )
+
 fun SourceSet.addLoaderSourceDirs(minecraftVersion: String, loaderName: String) {
     val sourceDirs = listOf(
         rootProject.file("versions/$minecraftVersion/fabric/src/main/java"),
@@ -49,6 +64,7 @@ fun SourceSet.addLoaderSourceDirs(minecraftVersion: String, loaderName: String) 
             java.srcDir(sourceDir)
         }
     }
+    java.exclude(nonFabricSharedSourceExcludes)
 }
 
 fun SourceSet.addFunctionalTestSourceDir() {
@@ -61,6 +77,14 @@ fun SourceSet.addFunctionalTestSourceDir() {
 
 fun SourceSet.addFabricModMenuSourceDir() {
     val sourceDir = rootProject.file("versions/fabric-modmenu/src/main/java")
+    val currentDirs = java.srcDirs.map { it.canonicalFile }.toMutableSet()
+    if (currentDirs.add(sourceDir.canonicalFile)) {
+        java.srcDir(sourceDir)
+    }
+}
+
+fun SourceSet.addFabricPlatformSourceDir(minecraftVersion: String) {
+    val sourceDir = fabricPlatformSourceDir(minecraftVersion)
     val currentDirs = java.srcDirs.map { it.canonicalFile }.toMutableSet()
     if (currentDirs.add(sourceDir.canonicalFile)) {
         java.srcDir(sourceDir)
@@ -227,6 +251,7 @@ subprojects {
         afterEvaluate {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
                 addFabricModMenuSourceDir()
+                addFabricPlatformSourceDir(minecraftVersion)
             }
             modMenuVersions[minecraftVersion]?.let { modMenuVersion ->
                 val configurationName = if (minecraftVersion.startsWith("26.")) "compileOnly" else "modCompileOnly"
@@ -238,11 +263,13 @@ subprojects {
         plugins.withId("java") {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
                 addFabricModMenuSourceDir()
+                addFabricPlatformSourceDir(minecraftVersion)
             }
         }
         plugins.withId("java-library") {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
                 addFabricModMenuSourceDir()
+                addFabricPlatformSourceDir(minecraftVersion)
             }
         }
     }
@@ -345,9 +372,11 @@ gradle.projectsEvaluated {
         if (minecraftVersion != null && name == "fabric") {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
                 addFabricModMenuSourceDir()
+                addFabricPlatformSourceDir(minecraftVersion)
             }
             tasks.named<JavaCompile>("compileJava") {
                 source(rootProject.file("versions/fabric-modmenu/src/main/java"))
+                source(fabricPlatformSourceDir(minecraftVersion))
             }
         }
 
@@ -361,6 +390,7 @@ gradle.projectsEvaluated {
                     rootProject.file("versions/$minecraftVersion/fabric/src/main/java"),
                     rootProject.file("versions/$loaderName-shim/src/main/java")
                 )
+                exclude(nonFabricSharedSourceExcludes)
                 val currentSourceFiles = source.files.map { it.canonicalFile }.toMutableSet()
                 sourceDirs.forEach { sourceDir ->
                     if (currentSourceFiles.add(sourceDir.canonicalFile)) {
@@ -421,6 +451,47 @@ gradle.projectsEvaluated {
         }
     }
 
+    val verifyNonFabricModJars = tasks.register("verifyNonFabricModJars") {
+        group = "verification"
+        description = "Fails if Forge or NeoForge upload jars contain Fabric packages or Fabric entrypoint classes."
+        val nonFabricProjects = uploadableLoaderProjects.filter { it.name == "forge" || it.name == "neoforge" }
+        dependsOn(nonFabricProjects.map { it.tasks.named("assemble") })
+
+        doLast {
+            val forbiddenEntries = listOf("fabric.mod.json")
+            val forbiddenNameFragments = listOf(
+                "SaltsInventoryUpdateFabric.class",
+                "SaltsInventoryUpdateFabricClient.class"
+            )
+            nonFabricProjects.forEach { loaderProject ->
+                val jars = loaderProject.layout.buildDirectory.dir("libs").get().asFileTree
+                    .matching {
+                        include("*-$modVersion.jar")
+                        exclude("*-sources.jar")
+                    }
+                    .files
+                jars.forEach { jarFile ->
+                    ZipFile(jarFile).use { zip ->
+                        val forbidden = zip.entries().asSequence()
+                            .map { it.name }
+                            .filter { entry ->
+                                entry.startsWith("net/fabricmc/") ||
+                                    entry in forbiddenEntries ||
+                                    forbiddenNameFragments.any(entry::contains)
+                            }
+                            .toList()
+                        if (forbidden.isNotEmpty()) {
+                            throw GradleException(
+                                "Non-Fabric jar ${jarFile.name} contains forbidden Fabric entries: " +
+                                    forbidden.take(20).joinToString(", ")
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     val rootBuild = tasks.findByName("build")?.let { tasks.named("build") } ?: tasks.register("build") {
         group = "build"
         description = "Assembles and tests every project, then collects uploadable mod jars."
@@ -428,5 +499,6 @@ gradle.projectsEvaluated {
     rootBuild.configure {
         dependsOn(allProjectBuildTasks)
         dependsOn(collectModJars)
+        dependsOn(verifyNonFabricModJars)
     }
 }

@@ -1,6 +1,6 @@
 package com.salts_inventory_update.compat.toms_storage.client;
 
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+import com.salts_inventory_update.platform.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.inventory.MenuType;
 

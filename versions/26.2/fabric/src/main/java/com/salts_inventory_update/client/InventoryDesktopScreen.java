@@ -8,12 +8,13 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import net.fabricmc.loader.api.FabricLoader;
+import com.salts_inventory_update.platform.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.ScrollWheelHandler;
 import net.minecraft.client.gui.Hud;
@@ -819,6 +820,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int COLOR_MUTED_TEXT = 0xFFB3BDCC;
     private static final int COLOR_HOTBAR_HOVER = 0x44000000;
     private static final int COLOR_DRAG_PREVIEW = 0x80FFFFFF;
+    private static final int LINK_MODE_ORIGIN_FILL = 0x3355FF77;
+    private static final int LINK_MODE_ORIGIN_OUTLINE = 0xFF55FF77;
+    private static final int LINK_MODE_LINKED_FILL = 0x3355FF77;
+    private static final int LINK_MODE_TARGET_FILL = 0x3355A8FF;
     private static final int NORMAL_GUI_TINT = 0xFFFFFFFF;
     private static final int GHOST_ITEM_WASH = 0xC0D0D0D0;
     private static final int GHOST_BACKDROP = 0x40D0D0D0;
@@ -843,9 +848,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int WINDOW_PLACEMENT_MARGIN = 8;
     private static final int WINDOW_PLACEMENT_GAP = 8;
     private static final int WINDOW_CASCADE_OFFSET = 14;
-    private static final List<WindowControl> FULL_TITLE_CONTROLS = List.of(WindowControl.FOCUS, WindowControl.PIN, WindowControl.LOCK, WindowControl.MINIMIZE, WindowControl.CLOSE);
+    private static final List<WindowControl> FULL_TITLE_CONTROLS = List.of(WindowControl.FOCUS, WindowControl.PIN, WindowControl.LOCK, WindowControl.LINK, WindowControl.CLOSE);
+    private static final List<WindowControl> FULL_TITLE_CONTROLS_WITH_MINIMIZE = List.of(WindowControl.FOCUS, WindowControl.PIN, WindowControl.LOCK, WindowControl.LINK, WindowControl.MINIMIZE, WindowControl.CLOSE);
     private static final List<WindowControl> COMPACT_TITLE_CONTROLS = List.of(WindowControl.ELLIPSIS, WindowControl.CLOSE);
-    private static final List<WindowControl> POPUP_CONTROLS = List.of(WindowControl.FOCUS, WindowControl.PIN, WindowControl.LOCK, WindowControl.MINIMIZE);
+    private static final List<WindowControl> POPUP_CONTROLS = List.of(WindowControl.FOCUS, WindowControl.PIN, WindowControl.LOCK, WindowControl.LINK);
+    private static final List<WindowControl> POPUP_CONTROLS_WITH_MINIMIZE = List.of(WindowControl.FOCUS, WindowControl.PIN, WindowControl.LOCK, WindowControl.LINK, WindowControl.MINIMIZE);
 
     private static @Nullable InventoryDesktopScreen singleton;
     private static final Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> VANILLA_SCREEN_CONSTRUCTORS = new LinkedHashMap<>();
@@ -869,6 +876,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable InventoryWindow editingCreativeSearchWindow;
     private @Nullable InventoryWindow editingJeiSearchWindow;
     private @Nullable InventoryWindow popupWindow;
+    private @Nullable String linkOriginKey;
+    private boolean syncingLinkedWindows;
     private @Nullable CreativeModeTab rememberedCreativeTab;
     private int rememberedCreativeScrollRow;
     private String rememberedCreativeSearch = "";
@@ -1163,6 +1172,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         InventoryDesktopScreen screen = getOrCreate(minecraft);
         DesktopDebug.log("client request E inventory desktop={} active={}", screen.desktopId, minecraft.gui.screen() == screen);
+        if (screen.restorePersistentWindowsForStandalone(WindowKind.INVENTORY)) {
+            minecraft.getTutorial().onOpenInventory();
+            screen.showIfNeeded(minecraft);
+            return;
+        }
         boolean openingInventory = !screen.hasStandaloneWindow(WindowKind.INVENTORY);
         screen.toggleWindow(WindowKind.INVENTORY);
         if (openingInventory && screen.hasStandaloneWindow(WindowKind.INVENTORY)) {
@@ -1178,6 +1192,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         InventoryDesktopScreen screen = getOrCreate(minecraft);
         DesktopDebug.log("client request E creative desktop={} active={}", screen.desktopId, minecraft.gui.screen() == screen);
+        if (screen.restorePersistentWindowsForStandalone(WindowKind.CREATIVE)) {
+            minecraft.getTutorial().onOpenInventory();
+            screen.showIfNeeded(minecraft);
+            return;
+        }
         screen.removeStandaloneWindow(WindowKind.INVENTORY, "creative-inventory-key");
         boolean openingCreative = !screen.hasStandaloneWindow(WindowKind.CREATIVE);
         screen.toggleWindow(WindowKind.CREATIVE);
@@ -1198,11 +1217,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         if (minecraft.gui.screen() instanceof InventoryDesktopScreen) {
             InventoryDesktopScreen screen = getOrCreate(minecraft);
+            screen.restorePersistentWindows();
             screen.removeStandaloneWindow(WindowKind.INVENTORY, "creative-screen-replace");
             screen.showWindow(WindowKind.CREATIVE);
             screen.showIfNeeded(minecraft);
         } else if (minecraft.gui.screen() == null) {
             InventoryDesktopScreen screen = getOrCreate(minecraft);
+            screen.restorePersistentWindows();
             screen.removeStandaloneWindow(WindowKind.INVENTORY, "creative-screen-replace");
             screen.showWindow(WindowKind.CREATIVE);
             screen.showIfNeeded(minecraft);
@@ -1221,6 +1242,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         InventoryDesktopScreen screen = getOrCreate(minecraft);
         DesktopDebug.log("client request C character desktop={} active={}", screen.desktopId, minecraft.gui.screen() == screen);
+        if (screen.restorePersistentWindowsForStandalone(WindowKind.CHARACTER)) {
+            screen.showIfNeeded(minecraft);
+            return;
+        }
         screen.toggleWindow(WindowKind.CHARACTER);
         screen.showIfNeeded(minecraft);
     }
@@ -1238,6 +1263,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         DesktopDebug.log("client request H JEI desktop={} active={}", screen.desktopId, minecraft.gui.screen() == screen);
+        if (screen.restorePersistentWindowsForStandalone(WindowKind.JEI)) {
+            screen.showIfNeeded(minecraft);
+            return;
+        }
         screen.toggleWindow(WindowKind.JEI);
         screen.showIfNeeded(minecraft);
     }
@@ -1249,6 +1278,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         InventoryDesktopScreen screen = getOrCreate(minecraft);
         DesktopDebug.log("client request help instructions desktop={} active={}", screen.desktopId, minecraft.gui.screen() == screen);
+        screen.restorePersistentWindows();
         screen.showWindow(WindowKind.INSTRUCTIONS);
         screen.showIfNeeded(minecraft);
         return screen.hasStandaloneWindow(WindowKind.INSTRUCTIONS);
@@ -1275,6 +1305,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         InventoryDesktopScreen screen = getOrCreate(minecraft);
+        screen.restorePersistentWindows();
         screen.addOrReplaceSession(session, visible);
         screen.showIfNeeded(minecraft);
     }
@@ -1319,7 +1350,22 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return;
         }
 
-        screen.closeAllWindowsAndHide();
+        screen.clearOrCloseAllWindowsAndHide("hold-e");
+    }
+
+    public static void permanentlyCloseAllOpenWindows(Minecraft minecraft) {
+        InventoryDesktopScreen screen = current(minecraft);
+        if (screen == null) {
+            return;
+        }
+
+        screen.closeAllWindowsAndHide(true);
+    }
+
+    public static void unminimizeAllWindows() {
+        if (singleton != null) {
+            singleton.unminimizeWindows();
+        }
     }
 
     public static InventoryDesktopScreen addLegacyContainerWindow(
@@ -1329,6 +1375,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         Component title
     ) {
         InventoryDesktopScreen screen = getOrCreate(minecraft);
+        screen.restorePersistentWindows();
         screen.addLegacyContainerWindow(menu, playerInventory, title);
         DesktopDebug.log("client legacy fallback window desktop={} container={} title={}", screen.desktopId, menu.containerId, title.getString());
         return screen;
@@ -1410,6 +1457,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         boolean removedWindow = false;
         for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.session != null && window.session.sessionId() == sessionId) {
+                this.closeLinkedWindows(window, "session-remove", false);
+                this.exitLinkMode("session-remove");
                 this.saveWindowState(window, false);
                 this.clearPopupStateFor(window);
                 this.windows.remove(window);
@@ -1428,7 +1477,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         if (visible) {
-            this.promoteGhostWindow(window);
+            if (window.persistentHidden) {
+                this.promotePersistentWindow(window);
+                this.setFocusedWindow(window);
+            } else {
+                this.promoteGhostWindow(window);
+            }
+        } else if (window.persistentHidden) {
+            window.focused = false;
         } else if (window.pinMode == PinMode.GHOST_PINNED) {
             this.demoteGhostWindow(window, false);
         } else {
@@ -1585,7 +1641,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return;
         }
 
-        this.closeAllWindowsAndHide();
+        this.clearOrCloseAllWindowsAndHide("screen-close");
     }
 
     @Override
@@ -1598,8 +1654,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int uiMouseX = this.cameraControl ? Integer.MIN_VALUE : mouseX;
         int uiMouseY = this.cameraControl ? Integer.MIN_VALUE : mouseY;
         for (InventoryWindow window : this.windows) {
+            if (window.persistentHidden) {
+                continue;
+            }
             this.renderAttachedRecipeBook(graphics, window, uiMouseX, uiMouseY, tickProgress);
             this.renderWindow(graphics, window, uiMouseX, uiMouseY);
+            this.renderLinkModeHighlight(graphics, window);
         }
 
         this.renderControlPopup(graphics, uiMouseX, uiMouseY);
@@ -1636,7 +1696,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void extractGhostRenderState(GuiGraphicsExtractor graphics) {
         for (InventoryWindow window : this.windows) {
-            if (window.ghosted) {
+            if (window.ghosted && !window.persistentHidden) {
                 this.renderWindow(graphics, window, Integer.MIN_VALUE, Integer.MIN_VALUE);
             }
         }
@@ -1644,6 +1704,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void tickWindowAnimations() {
         for (InventoryWindow window : this.windows) {
+            if (window.persistentHidden) {
+                continue;
+            }
             if (window.minimized) {
                 continue;
             }
@@ -1696,19 +1759,36 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
-        InventoryWindow recipeBookWindow = this.recipeBookWindowAt(event.x(), event.y());
         InventoryWindow window = this.windowAt(event.x(), event.y());
-        if (recipeBookWindow != null && (window == null || window == recipeBookWindow)) {
-            this.bringToFront(recipeBookWindow);
-            this.recipeBookMouseClicked(recipeBookWindow, event, doubleClick);
-            return true;
-        }
-
         WindowControl titleControl = window == null ? null : this.titleBarControlAt(window, event.x(), event.y());
         if (this.popupWindow != null
             && !this.popupContains(event.x(), event.y())
             && !(window == this.popupWindow && titleControl == WindowControl.ELLIPSIS)) {
             this.popupWindow = null;
+        }
+
+        if (this.isLinkModeActive()) {
+            if (window != null) {
+                this.bringToFront(window);
+                WindowControl control = titleControl;
+                if (control != null) {
+                    if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                        this.pressedControlWindow = window;
+                        this.pressedControl = control;
+                        this.pressedControlInPopup = false;
+                        DesktopDebug.trace("client control press desktop={} window={} control={}", this.desktopId, window.debugName(), control);
+                    }
+                    return true;
+                }
+            }
+            return this.handleLinkModeWindowClick(window, event);
+        }
+
+        InventoryWindow recipeBookWindow = this.recipeBookWindowAt(event.x(), event.y());
+        if (recipeBookWindow != null && (window == null || window == recipeBookWindow)) {
+            this.bringToFront(recipeBookWindow);
+            this.recipeBookMouseClicked(recipeBookWindow, event, doubleClick);
+            return true;
         }
 
         if (window != null) {
@@ -1895,6 +1975,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
+        if (this.isLinkModeActive()) {
+            return true;
+        }
+
         InventoryWindow recipeBookWindow = this.recipeBookWindowAt(event.x(), event.y());
         InventoryWindow hoveredWindow = this.windowAt(event.x(), event.y());
         if (recipeBookWindow != null && (hoveredWindow == null || hoveredWindow == recipeBookWindow)) {
@@ -1988,10 +2072,21 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 ? this.popupControlAt(window, event.x(), event.y())
                 : window == null ? null : this.titleBarControlAt(window, event.x(), event.y());
             if (this.windows.contains(window) && releasedControl == control) {
-                this.activateControl(window, control);
+                this.activateControl(window, control, inPopup);
             } else if (window != null) {
                 DesktopDebug.trace("client control release canceled desktop={} window={} control={}", this.desktopId, window.debugName(), control);
             }
+            return true;
+        }
+
+        if (this.isLinkModeActive()) {
+            this.movingWindow = null;
+            this.resizingWindow = null;
+            this.scrollingCreativeWindow = null;
+            this.scrollingJeiWindow = null;
+            this.clearJeiRecipeLayoutDrag();
+            this.scrollingStorageWindow = null;
+            this.clearSlotInteractionState("link-release");
             return true;
         }
 
@@ -2815,10 +2910,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private boolean hasVisibleInventoryWindow() {
         for (InventoryWindow window : this.windows) {
-            if (window.kind == WindowKind.INVENTORY && !window.minimized && !window.ghosted) {
+            if (window.kind == WindowKind.INVENTORY && !window.minimized && !window.ghosted && !window.persistentHidden) {
                 return true;
             }
-            if (window.kind == WindowKind.CREATIVE && !window.minimized && !window.ghosted) {
+            if (window.kind == WindowKind.CREATIVE && !window.minimized && !window.ghosted && !window.persistentHidden) {
                 CreativeModeTab selectedTab = this.selectedCreativeTab(window);
                 if (selectedTab != null && this.isCreativeInventoryTab(selectedTab)) {
                     return true;
@@ -3033,6 +3128,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return this.scrollHotbar(scrollY);
         }
 
+        if (this.isLinkModeActive()) {
+            return true;
+        }
+
         SlotHit hoveredSlot = this.slotAt(x, y);
         if (hoveredSlot != null && this.handleBundleScroll(hoveredSlot, scrollX, scrollY)) {
             return true;
@@ -3108,7 +3207,26 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     @Override
     public boolean keyPressed(KeyEvent event) {
         if (event.isEscape()) {
-            this.closeAllWindowsAndHide();
+            if (SaltsInventoryConfig.get().persistentWindows
+                && InventoryKeyHoldController.handleInventoryKeyAction(this.minecraft, GLFW.GLFW_PRESS, event)) {
+                return true;
+            }
+            this.clearOrCloseAllWindowsAndHide("escape");
+            return true;
+        }
+
+        if (this.isLinkModeActive()) {
+            if (this.minecraft.options.keyInventory.matches(event)) {
+                return InventoryKeyHoldController.handleInventoryKeyAction(this.minecraft, GLFW.GLFW_PRESS, event);
+            }
+            if (WindowedInventoryClient.characterWindowKey().matches(event)) {
+                openOrToggleCharacter(this.minecraft);
+                return true;
+            }
+            if (WindowedInventoryClient.jeiWindowKey().matches(event)) {
+                openOrToggleJei(this.minecraft);
+                return true;
+            }
             return true;
         }
 
@@ -3153,8 +3271,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         if (WindowedInventoryClient.characterWindowKey().matches(event)) {
-            this.toggleWindow(WindowKind.CHARACTER);
-            this.showIfNeeded(this.minecraft);
+            openOrToggleCharacter(this.minecraft);
             return true;
         }
 
@@ -3480,7 +3597,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable InventoryWindow topmostCreativeWindow() {
         for (int i = this.windows.size() - 1; i >= 0; i--) {
             InventoryWindow window = this.windows.get(i);
-            if (window.kind == WindowKind.CREATIVE && !window.minimized && !window.ghosted) {
+            if (window.kind == WindowKind.CREATIVE && !window.minimized && !window.ghosted && !window.persistentHidden) {
                 return window;
             }
         }
@@ -3509,6 +3626,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @Override
     public boolean charTyped(CharacterEvent event) {
+        if (this.isLinkModeActive()) {
+            return true;
+        }
+
         if (this.handleRecipeBookChar(event)) {
             return true;
         }
@@ -3558,6 +3679,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @Override
     public boolean keyReleased(KeyEvent event) {
+        if (this.isLinkModeActive()) {
+            if (this.minecraft.options.keyInventory.matches(event)) {
+                return InventoryKeyHoldController.handleInventoryKeyAction(this.minecraft, GLFW.GLFW_RELEASE, event);
+            }
+            return true;
+        }
+
         if (this.handleRecipeBookKeyRelease(event)) {
             return true;
         }
@@ -3605,7 +3733,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         for (int i = 0; i < this.windows.size(); i++) {
             InventoryWindow window = this.windows.get(i);
             if (window.kind == kind && window.session == null && window.legacyMenu == null) {
-                if (window.ghosted) {
+                if (window.persistentHidden) {
+                    this.promotePersistentWindow(window);
+                    this.setFocusedWindow(window);
+                } else if (window.ghosted) {
                     this.promoteGhostWindow(window);
                 } else {
                     this.closeWindow(window, "toggle");
@@ -3634,7 +3765,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private void showWindow(WindowKind kind) {
         for (InventoryWindow window : this.windows) {
             if (window.kind == kind && window.session == null && window.legacyMenu == null) {
-                this.promoteGhostWindow(window);
+                if (window.persistentHidden) {
+                    this.promotePersistentWindow(window);
+                    this.setFocusedWindow(window);
+                } else {
+                    this.promoteGhostWindow(window);
+                }
                 this.hotbarOnly = false;
                 return;
             }
@@ -3715,6 +3851,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.windows.add(window);
         this.apiOpened(window);
         this.setFocusedWindow(window);
+        this.handleWindowOpened(window, "local-add");
         DesktopDebug.log("client window add desktop={} kind={} title={} windows={}", this.desktopId, kind, window.title.getString(), this.windows.size());
         this.promoteGhostWindowsForDesktopOpen(window);
     }
@@ -3777,12 +3914,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             minY
         );
         this.initializeApiWindow(window, apiDefinition, apiSetup);
+        this.openInventoryWindowForContainerIfConfigured();
         this.placeOrRestoreWindow(window, WindowPlacement.CONTAINER);
         this.windows.add(window);
         this.apiOpened(window);
         this.setFocusedWindow(window);
         this.hotbarOnly = false;
         this.setSharedCarried(menu.getCarried());
+        this.handleWindowOpened(window, "legacy-add");
         this.promoteGhostWindowsForDesktopOpen(window);
     }
 
@@ -3931,6 +4070,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             window.focused = false;
             window.minimized = false;
         }
+        if (!window.ghosted) {
+            this.openInventoryWindowForContainerIfConfigured();
+        }
         this.windows.add(window);
         this.apiOpened(window);
         if (window.ghosted) {
@@ -3942,6 +4084,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 DesktopContainerClient.setSessionVisible(session.sessionId(), true);
             }
             this.promoteGhostWindowsForDesktopOpen(window);
+            this.handleWindowOpened(window, "session-add");
         }
         DesktopDebug.log(
             "client session window add desktop={} session={} title={} visible={} ghosted={} replacedSession={} replacedWindow={} replacedSource={} windows={} sessions={}",
@@ -3956,6 +4099,17 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.windows.size(),
             this.sessions.size()
         );
+    }
+
+    private void openInventoryWindowForContainerIfConfigured() {
+        if (SaltsInventoryConfig.get().openInventoryWhenContainersAreOpened) {
+            if (isCreativePlayer(this.minecraftInstance())) {
+                this.removeStandaloneWindow(WindowKind.INVENTORY, "container-open-creative");
+                this.showWindow(WindowKind.CREATIVE);
+            } else {
+                this.showWindow(WindowKind.INVENTORY);
+            }
+        }
     }
 
     private DesktopWindowDefinition<?, ?> apiDefinitionFor(
@@ -4650,7 +4804,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private int fullTitleBarWidth(Component title) {
-        return TITLE_LEFT_PADDING + this.font.width(title) + TITLE_TO_CONTROLS_GAP + controlsWidth(FULL_TITLE_CONTROLS);
+        return TITLE_LEFT_PADDING + this.font.width(title) + TITLE_TO_CONTROLS_GAP + controlsWidth(this.fullTitleControls());
     }
 
     private int minimumTitleBarWidth(Component title) {
@@ -4667,6 +4821,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private static int controlsWidth(List<WindowControl> controls) {
         return controls.size() * CONTROL_SIZE + controls.size() * CONTROL_GAP + CONTROL_RIGHT_EXTRA_INSET;
+    }
+
+    private List<WindowControl> fullTitleControls() {
+        return SaltsInventoryConfig.get().minimizableWindows ? FULL_TITLE_CONTROLS_WITH_MINIMIZE : FULL_TITLE_CONTROLS;
+    }
+
+    private List<WindowControl> popupControls() {
+        return SaltsInventoryConfig.get().minimizableWindows ? POPUP_CONTROLS_WITH_MINIMIZE : POPUP_CONTROLS;
     }
 
     private static int rowsForSlots(int slotCount, int columns) {
@@ -5107,34 +5269,90 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private WindowBounds inventoryPlacementAnchor() {
+        WindowKind inventoryKind = this.activeInventoryPlacementKind();
         for (InventoryWindow window : this.windows) {
-            if (window.kind == WindowKind.INVENTORY && !window.ghosted) {
+            if (window.kind == inventoryKind && !window.ghosted && !window.persistentHidden) {
                 return this.visibleWindowBounds(window);
             }
+        }
+
+        DesktopWindowSize defaultSize = this.defaultInventoryPlacementAnchorSize(inventoryKind);
+        DesktopWindowStateStore.WindowState state = DesktopWindowStateStore
+            .load(this.minecraft == null ? Minecraft.getInstance() : this.minecraft, this.inventoryPlacementStateKey(inventoryKind))
+            .orElse(null);
+        if (state != null && state.pinMode() != PinMode.UNPINNED) {
+            int width = inventoryKind == WindowKind.CREATIVE ? defaultSize.width() : state.width > 0 ? state.width : defaultSize.width();
+            int height = inventoryKind == WindowKind.CREATIVE ? defaultSize.height() : state.height > 0 ? state.height : defaultSize.height();
+            WindowPosition position = this.clampedInventoryPlacementAnchorPosition(inventoryKind, state.x, state.y, width, height);
+            return this.inventoryPlacementAnchorBounds(inventoryKind, position.x(), position.y(), width, height);
+        }
+
+        WindowPosition position = this.centeredWindowPosition(defaultSize.width(), defaultSize.height());
+        return this.inventoryPlacementAnchorBounds(inventoryKind, position.x(), position.y(), defaultSize.width(), defaultSize.height());
+    }
+
+    private WindowKind activeInventoryPlacementKind() {
+        return isCreativePlayer(this.minecraftInstance()) ? WindowKind.CREATIVE : WindowKind.INVENTORY;
+    }
+
+    private DesktopWindowSize defaultInventoryPlacementAnchorSize(WindowKind inventoryKind) {
+        if (inventoryKind == WindowKind.CREATIVE) {
+            return DesktopWindowSize.of(
+                CREATIVE_CONTENT_MARGIN * 2 + CREATIVE_CONTENT_WIDTH,
+                TOP_BAR_HEIGHT + CREATIVE_CONTENT_MARGIN * 2 + CREATIVE_CONTENT_HEIGHT
+            );
         }
 
         int inventorySlotCount = this.inventoryVirtualSlotCount();
         int totalRows = rowsForSlots(inventorySlotCount, INVENTORY_DEFAULT_COLUMNS);
         int visibleRows = Math.max(INVENTORY_DEFAULT_VISIBLE_ROWS, Math.min(INVENTORY_MAX_AUTO_VISIBLE_ROWS, Math.max(1, totalRows)));
         boolean scrollbar = totalRows > visibleRows;
-        int inventoryWidth = Math.max(this.minimumTitleBarWidth(Component.literal("Inventory")), storageWindowWidth(INVENTORY_DEFAULT_COLUMNS, scrollbar));
-        int inventoryHeight = storageWindowHeight(visibleRows);
-        DesktopWindowStateStore.WindowState state = DesktopWindowStateStore
-            .load(this.minecraft == null ? Minecraft.getInstance() : this.minecraft, "local:inventory")
-            .orElse(null);
-        if (state != null && state.pinMode() != PinMode.UNPINNED) {
-            int width = state.width > 0 ? state.width : inventoryWidth;
-            int height = state.height > 0 ? state.height : inventoryHeight;
-            return new WindowBounds(
-                this.clampedWindowX(state.x, width),
-                this.clampedWindowY(state.y, height),
-                width,
-                height
-            );
+        return DesktopWindowSize.of(
+            Math.max(this.minimumTitleBarWidth(Component.literal("Inventory")), storageWindowWidth(INVENTORY_DEFAULT_COLUMNS, scrollbar)),
+            storageWindowHeight(visibleRows)
+        );
+    }
+
+    private String inventoryPlacementStateKey(WindowKind inventoryKind) {
+        return inventoryKind == WindowKind.CREATIVE ? "local:creative" : "local:inventory";
+    }
+
+    private WindowPosition clampedInventoryPlacementAnchorPosition(WindowKind inventoryKind, int preferredX, int preferredY, int width, int height) {
+        int x = this.clampedWindowX(preferredX, width);
+        int y = this.clampedWindowY(preferredY, height);
+        WindowBounds bounds = this.inventoryPlacementAnchorBounds(inventoryKind, x, y, width, height);
+        int minX = WINDOW_PLACEMENT_MARGIN;
+        int minY = WINDOW_PLACEMENT_MARGIN;
+        int maxRight = this.desktopWidth() - WINDOW_PLACEMENT_MARGIN;
+        int maxBottom = this.desktopHeight() - WINDOW_PLACEMENT_MARGIN;
+        if (bounds.x() < minX) {
+            x += minX - bounds.x();
+            bounds = this.inventoryPlacementAnchorBounds(inventoryKind, x, y, width, height);
+        }
+        if (bounds.y() < minY) {
+            y += minY - bounds.y();
+            bounds = this.inventoryPlacementAnchorBounds(inventoryKind, x, y, width, height);
+        }
+        if (bounds.right() > maxRight) {
+            x -= bounds.right() - maxRight;
+            bounds = this.inventoryPlacementAnchorBounds(inventoryKind, x, y, width, height);
+        }
+        if (bounds.bottom() > maxBottom) {
+            y -= bounds.bottom() - maxBottom;
+        }
+        return new WindowPosition(x, y);
+    }
+
+    private WindowBounds inventoryPlacementAnchorBounds(WindowKind inventoryKind, int x, int y, int width, int height) {
+        if (inventoryKind != WindowKind.CREATIVE) {
+            return new WindowBounds(x, y, width, height);
         }
 
-        WindowPosition position = this.centeredWindowPosition(inventoryWidth, inventoryHeight);
-        return new WindowBounds(position.x(), position.y(), inventoryWidth, inventoryHeight);
+        int left = Math.min(x, x + CREATIVE_CONTENT_MARGIN + CREATIVE_TAB_X_OFFSET);
+        int top = Math.min(y, y - CREATIVE_TAB_HEIGHT + CREATIVE_TAB_FRAME_OVERLAP + CREATIVE_TOP_TAB_Y_OFFSET);
+        int right = Math.max(x + width, x + CREATIVE_CONTENT_MARGIN + CREATIVE_TAB_X_OFFSET + CREATIVE_TAB_WIDTH * CREATIVE_TABS_PER_ROW);
+        int bottom = Math.max(y + height, y + height - CREATIVE_TAB_FRAME_OVERLAP + CREATIVE_BOTTOM_TAB_Y_OFFSET + CREATIVE_TAB_HEIGHT);
+        return WindowBounds.fromEdges(left, top, right, bottom);
     }
 
     private @Nullable WindowPosition findNearestFreeWindowPosition(int windowWidth, int windowHeight, WindowBounds anchor) {
@@ -5395,7 +5613,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private boolean hasInteractiveWindows() {
         for (InventoryWindow window : this.windows) {
-            if (!window.ghosted) {
+            if (!window.ghosted && !window.persistentHidden) {
                 return true;
             }
         }
@@ -5403,16 +5621,378 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean hasOnlyGhostWindows() {
-        return !this.windows.isEmpty() && !this.hasInteractiveWindows();
+        boolean hasGhostWindow = false;
+        for (InventoryWindow window : this.windows) {
+            if (window.ghosted && !window.persistentHidden) {
+                hasGhostWindow = true;
+            }
+        }
+        return hasGhostWindow && !this.hasInteractiveWindows();
+    }
+
+    private Minecraft minecraftInstance() {
+        return this.minecraft == null ? Minecraft.getInstance() : this.minecraft;
+    }
+
+    private boolean isLinkModeActive() {
+        return this.linkOriginKey != null;
+    }
+
+    private @Nullable String linkKey(InventoryWindow window) {
+        String key = window.stateKey();
+        return key == null || key.isBlank() ? null : key;
+    }
+
+    private @Nullable InventoryWindow windowForStateKey(String key) {
+        for (InventoryWindow window : this.windows) {
+            String windowKey = this.linkKey(window);
+            if (key.equals(windowKey)) {
+                return window;
+            }
+        }
+        return null;
+    }
+
+    private boolean isLinkOrigin(InventoryWindow window) {
+        String key = this.linkKey(window);
+        return key != null && key.equals(this.linkOriginKey);
+    }
+
+    private boolean isLinkedToLinkOrigin(InventoryWindow window) {
+        if (this.linkOriginKey == null) {
+            return false;
+        }
+        String key = this.linkKey(window);
+        return key != null
+            && !key.equals(this.linkOriginKey)
+            && DesktopWindowStateStore.linkedWindowKeys(this.minecraftInstance(), this.linkOriginKey).contains(key);
+    }
+
+    private void beginLinkMode(InventoryWindow window) {
+        String key = this.linkKey(window);
+        if (key == null) {
+            DesktopDebug.trace("client link mode ignored desktop={} window={} reason=no-key", this.desktopId, window.debugName());
+            return;
+        }
+
+        this.clearLinkInteractionState();
+        this.linkOriginKey = key;
+        this.popupWindow = null;
+        DesktopDebug.log("client link mode begin desktop={} origin={} window={}", this.desktopId, key, window.debugName());
+    }
+
+    private void exitLinkMode(String reason) {
+        if (this.linkOriginKey == null) {
+            return;
+        }
+
+        DesktopDebug.log("client link mode end desktop={} origin={} reason={}", this.desktopId, this.linkOriginKey, reason);
+        this.linkOriginKey = null;
+    }
+
+    private void clearLinkInteractionState() {
+        this.movingWindow = null;
+        this.resizingWindow = null;
+        this.editingAnvilWindow = null;
+        this.editingCreativeSearchWindow = null;
+        this.editingJeiSearchWindow = null;
+        this.scrollingCreativeWindow = null;
+        this.scrollingJeiWindow = null;
+        this.clearJeiRecipeLayoutDrag();
+        this.scrollingStorageWindow = null;
+        this.clearSlotInteractionState("link-mode");
+    }
+
+    private boolean handleLinkModeWindowClick(@Nullable InventoryWindow window, MouseButtonEvent event) {
+        if (!this.isLinkModeActive()) {
+            return false;
+        }
+        if (event.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            return true;
+        }
+        if (window == null) {
+            return true;
+        }
+
+        String originKey = this.linkOriginKey;
+        String targetKey = this.linkKey(window);
+        if (originKey == null || targetKey == null) {
+            return true;
+        }
+
+        if (targetKey.equals(originKey)) {
+            DesktopWindowStateStore.unlinkWindowKey(this.minecraftInstance(), originKey);
+            this.exitLinkMode("unlink-origin");
+            DesktopDebug.log("client window unlink desktop={} origin={} window={}", this.desktopId, originKey, window.debugName());
+            return true;
+        }
+
+        Set<String> linked = DesktopWindowStateStore.linkedWindowKeys(this.minecraftInstance(), originKey);
+        if (linked.contains(targetKey)) {
+            DesktopWindowStateStore.unlinkWindowKeyFromGroup(this.minecraftInstance(), originKey, targetKey);
+            DesktopDebug.log("client window unlink target desktop={} origin={} target={} window={}", this.desktopId, originKey, targetKey, window.debugName());
+        } else {
+            DesktopWindowStateStore.linkWindowKeys(this.minecraftInstance(), originKey, targetKey);
+            DesktopDebug.log("client window link desktop={} origin={} target={} window={}", this.desktopId, originKey, targetKey, window.debugName());
+        }
+        return true;
+    }
+
+    private void handleWindowOpened(InventoryWindow window, String reason) {
+        if (!this.windows.contains(window) || window.persistentHidden || window.ghosted) {
+            return;
+        }
+
+        this.exitLinkMode("window-open");
+        this.openLinkedWindows(window, reason);
+    }
+
+    private void openLinkedWindows(InventoryWindow origin, String reason) {
+        if (this.syncingLinkedWindows) {
+            return;
+        }
+
+        String originKey = this.linkKey(origin);
+        if (originKey == null) {
+            return;
+        }
+
+        Set<String> linkedKeys = DesktopWindowStateStore.linkedWindowKeys(this.minecraftInstance(), originKey);
+        if (linkedKeys.isEmpty()) {
+            return;
+        }
+
+        this.syncingLinkedWindows = true;
+        try {
+            Set<String> sourceKeys = new LinkedHashSet<>();
+            for (String linkedKey : linkedKeys) {
+                if (linkedKey.equals(originKey)) {
+                    continue;
+                }
+
+                InventoryWindow linkedWindow = this.windowForStateKey(linkedKey);
+                if (linkedWindow != null) {
+                    this.openExistingLinkedWindow(linkedWindow);
+                    continue;
+                }
+
+                if (this.openLocalLinkedWindow(linkedKey)) {
+                    continue;
+                }
+
+                String sourceKey = rawSourceKey(linkedKey);
+                if (sourceKey != null && isBlockBackedLinkedSourceKey(sourceKey)) {
+                    sourceKeys.add(sourceKey);
+                }
+            }
+
+            if (!sourceKeys.isEmpty()) {
+                DesktopDebug.log("client linked source request desktop={} origin={} reason={} sources={}", this.desktopId, originKey, reason, sourceKeys);
+                DesktopContainerClient.openLinkedSources(List.copyOf(sourceKeys));
+            }
+        } finally {
+            this.syncingLinkedWindows = false;
+        }
+    }
+
+    private void openExistingLinkedWindow(InventoryWindow window) {
+        if (window.persistentHidden) {
+            if (window.session != null) {
+                DesktopContainerClient.setSessionVisible(window.session.sessionId(), true);
+            } else {
+                this.promotePersistentWindow(window);
+                this.setFocusedWindow(window);
+            }
+        } else if (window.ghosted) {
+            this.promoteGhostWindow(window);
+        }
+    }
+
+    private boolean openLocalLinkedWindow(String linkedKey) {
+        WindowKind kind = localWindowKindForKey(linkedKey);
+        if (kind == null) {
+            return false;
+        }
+        if (kind == WindowKind.CREATIVE && !isCreativePlayer(this.minecraftInstance())) {
+            return true;
+        }
+        if (kind == WindowKind.INVENTORY && isCreativePlayer(this.minecraftInstance())) {
+            return true;
+        }
+        this.showWindow(kind);
+        return true;
+    }
+
+    private void closeLinkedWindows(InventoryWindow origin, String reason, boolean forcePermanent) {
+        if (this.syncingLinkedWindows) {
+            return;
+        }
+
+        String originKey = this.linkKey(origin);
+        if (originKey == null) {
+            return;
+        }
+
+        Set<String> linkedKeys = DesktopWindowStateStore.linkedWindowKeys(this.minecraftInstance(), originKey);
+        if (linkedKeys.isEmpty()) {
+            return;
+        }
+
+        this.syncingLinkedWindows = true;
+        try {
+            for (InventoryWindow window : List.copyOf(this.windows)) {
+                if (window == origin) {
+                    continue;
+                }
+                String linkedKey = this.linkKey(window);
+                if (linkedKey != null && linkedKeys.contains(linkedKey)) {
+                    this.closeWindow(window, "linked-" + reason, forcePermanent);
+                }
+            }
+        } finally {
+            this.syncingLinkedWindows = false;
+        }
+    }
+
+    private static @Nullable WindowKind localWindowKindForKey(String key) {
+        return switch (key) {
+            case "local:inventory" -> WindowKind.INVENTORY;
+            case "local:creative" -> WindowKind.CREATIVE;
+            case "local:character" -> WindowKind.CHARACTER;
+            case "local:jei" -> WindowKind.JEI;
+            case "local:instructions" -> WindowKind.INSTRUCTIONS;
+            default -> null;
+        };
+    }
+
+    private static @Nullable String rawSourceKey(String linkedKey) {
+        return linkedKey.startsWith("source:") ? linkedKey.substring("source:".length()) : null;
+    }
+
+    private static boolean isBlockBackedLinkedSourceKey(String sourceKey) {
+        return sourceKey.startsWith("block:") || sourceKey.startsWith("chest:");
+    }
+
+    private void clearOrCloseAllWindowsAndHide(String reason) {
+        if (SaltsInventoryConfig.get().persistentWindows) {
+            this.clearScreenPersistently(reason);
+        } else {
+            this.closeAllWindowsAndHide(false);
+        }
     }
 
     private void closeAllWindowsAndHide() {
+        this.closeAllWindowsAndHide(false);
+    }
+
+    private void closeAllWindowsAndHide(boolean forcePermanent) {
         DesktopDebug.log("client close all desktop={} windows={} sessions={}", this.desktopId, this.windows.size(), this.sessions.size());
         this.updateBundleHover(null);
         for (InventoryWindow window : List.copyOf(this.windows)) {
-            this.closeWindow(window, "close-all");
+            this.closeWindow(window, "close-all", forcePermanent);
+        }
+        this.clearTransientInteractionState("close-all");
+        this.hotbarOnly = false;
+        this.usingWorld = false;
+        this.closeIfEmpty();
+    }
+
+    private void clearScreenPersistently(String reason) {
+        DesktopDebug.log("client persistent clear desktop={} reason={} windows={} sessions={}", this.desktopId, reason, this.windows.size(), this.sessions.size());
+        this.updateBundleHover(null);
+        for (InventoryWindow window : List.copyOf(this.windows)) {
+            if (window.persistentHidden || window.ghosted) {
+                continue;
+            }
+            if (window.legacyMenu != null) {
+                this.closeWindow(window, "persistent-clear-legacy", true);
+            } else {
+                this.hideWindowPersistently(window, reason);
+            }
+        }
+        this.clearTransientInteractionState("persistent-clear");
+        this.hotbarOnly = false;
+        this.usingWorld = false;
+        this.closeIfEmpty();
+    }
+
+    private void hideWindowPersistently(InventoryWindow window, String reason) {
+        this.rememberCreativeWindow(window);
+        this.saveWindowState(window, false);
+        this.clearPopupStateFor(window);
+        window.persistentHidden = true;
+        window.focused = false;
+        window.ghosted = false;
+        if (window.session != null) {
+            DesktopContainerClient.setSessionVisible(window.session.sessionId(), false);
+        }
+        DesktopDebug.log("client window persistent hide desktop={} window={} reason={}", this.desktopId, window.debugName(), reason);
+    }
+
+    private boolean restorePersistentWindowsForStandalone(WindowKind requestedKind) {
+        boolean requestedWasHidden = this.hasPersistentHiddenStandaloneWindow(requestedKind);
+        this.restorePersistentWindows();
+        return requestedWasHidden;
+    }
+
+    private boolean hasPersistentHiddenStandaloneWindow(WindowKind kind) {
+        for (InventoryWindow window : this.windows) {
+            if (window.kind == kind && window.session == null && window.legacyMenu == null && window.persistentHidden) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void restorePersistentWindows() {
+        if (!this.hasPersistentHiddenWindows()) {
+            return;
+        }
+
+        DesktopDebug.log("client persistent restore desktop={} windows={} sessions={}", this.desktopId, this.windows.size(), this.sessions.size());
+        InventoryWindow focusedWindow = null;
+        for (InventoryWindow window : List.copyOf(this.windows)) {
+            if (!window.persistentHidden) {
+                continue;
+            }
+            if (window.session != null) {
+                DesktopContainerClient.setSessionVisible(window.session.sessionId(), true);
+                continue;
+            }
+
+            this.promotePersistentWindow(window);
+            focusedWindow = window;
+        }
+        if (focusedWindow != null) {
+            this.setFocusedWindow(focusedWindow);
         }
         this.hotbarOnly = false;
+    }
+
+    private boolean hasPersistentHiddenWindows() {
+        for (InventoryWindow window : this.windows) {
+            if (window.persistentHidden) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void promotePersistentWindow(InventoryWindow window) {
+        window.persistentHidden = false;
+        window.ghosted = false;
+        if (!SaltsInventoryConfig.get().minimizableWindows) {
+            window.minimized = false;
+        }
+        this.bringToFront(window);
+        this.hotbarOnly = false;
+        this.saveWindowState(window);
+        DesktopDebug.log("client window persistent restore desktop={} window={}", this.desktopId, window.debugName());
+        this.handleWindowOpened(window, "persistent-restore");
+    }
+
+    private void clearTransientInteractionState(String reason) {
+        this.exitLinkMode(reason);
         this.movingWindow = null;
         this.resizingWindow = null;
         this.popupWindow = null;
@@ -5426,13 +6006,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.scrollingJeiWindow = null;
         this.clearJeiRecipeLayoutDrag();
         this.scrollingStorageWindow = null;
-        this.clearSlotInteractionState("close-all");
-        this.usingWorld = false;
-        this.closeIfEmpty();
+        this.clearSlotInteractionState(reason);
+        DesktopDebug.trace("client transient state cleared desktop={} reason={}", this.desktopId, reason);
     }
 
     private void clearForOwnerChange(String reason) {
         DesktopDebug.log("client clear desktop={} reason={} windows={} sessions={}", this.desktopId, reason, this.windows.size(), this.sessions.size());
+        this.exitLinkMode(reason);
         for (InventoryWindow window : this.windows) {
             this.rememberCreativeWindow(window);
             this.saveWindowState(window);
@@ -5466,21 +6046,32 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void activateControl(InventoryWindow window, WindowControl control) {
+        this.activateControl(window, control, false);
+    }
+
+    private void activateControl(InventoryWindow window, WindowControl control, boolean fromPopup) {
         DesktopDebug.log("client control desktop={} window={} control={}", this.desktopId, window.debugName(), control);
         switch (control) {
             case CLOSE -> {
                 this.closeWindow(window, "control-close");
             }
             case MINIMIZE -> {
+                if (!SaltsInventoryConfig.get().minimizableWindows) {
+                    window.minimized = false;
+                    if (!fromPopup && this.popupWindow == window) {
+                        this.popupWindow = null;
+                    }
+                    return;
+                }
                 window.minimized = !window.minimized;
-                if (this.popupWindow == window) {
+                if (!fromPopup && this.popupWindow == window) {
                     this.popupWindow = null;
                 }
                 this.saveWindowState(window);
             }
             case FOCUS -> {
                 this.setFocusedWindow(window.focused ? null : window);
-                if (this.popupWindow == window) {
+                if (!fromPopup && this.popupWindow == window) {
                     this.popupWindow = null;
                 }
             }
@@ -5491,7 +6082,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 } else {
                     this.saveWindowState(window);
                 }
-                if (this.popupWindow == window) {
+                if (!fromPopup && this.popupWindow == window) {
                     this.popupWindow = null;
                 }
             }
@@ -5502,7 +6093,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 if (window.locked) {
                     this.resizingWindow = null;
                 }
-                if (this.popupWindow == window) {
+                if (!fromPopup && this.popupWindow == window) {
                     this.popupWindow = null;
                 }
                 if (locking && SaltsInventoryConfig.get().resetLockedWindows) {
@@ -5510,7 +6101,32 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 }
                 this.saveWindowState(window);
             }
+            case LINK -> {
+                String key = this.linkKey(window);
+                if (key == null) {
+                    return;
+                }
+                if (key.equals(this.linkOriginKey)) {
+                    this.exitLinkMode("link-control");
+                } else {
+                    this.beginLinkMode(window);
+                }
+            }
             case ELLIPSIS -> this.popupWindow = this.popupWindow == window ? null : window;
+        }
+    }
+
+    private void unminimizeWindows() {
+        boolean changed = false;
+        for (InventoryWindow window : this.windows) {
+            if (window.minimized) {
+                window.minimized = false;
+                changed = true;
+            }
+        }
+        if (changed) {
+            this.popupWindow = null;
+            DesktopDebug.trace("client windows unminimized desktop={} reason=config-disabled", this.desktopId);
         }
     }
 
@@ -5582,6 +6198,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void closeWindow(InventoryWindow window, String reason) {
+        this.closeWindow(window, reason, false);
+    }
+
+    private void closeWindow(InventoryWindow window, String reason, boolean forcePermanent) {
+        if (!this.windows.contains(window)) {
+            return;
+        }
+
+        this.closeLinkedWindows(window, reason, forcePermanent);
+        this.exitLinkMode("window-close");
         this.updateBundleHover(null);
         this.clearSlotInteractionState("window-close");
         this.rememberCreativeWindow(window);
@@ -5594,7 +6220,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.movingWindow = this.movingWindow == window ? null : this.movingWindow;
         this.resizingWindow = this.resizingWindow == window ? null : this.resizingWindow;
 
-        if (window.pinMode == PinMode.GHOST_PINNED && SaltsInventoryConfig.get().enableGhostPins) {
+        if (!forcePermanent && window.pinMode == PinMode.GHOST_PINNED && SaltsInventoryConfig.get().enableGhostPins) {
             this.demoteGhostWindow(window, true);
             DesktopDebug.log("client window ghost desktop={} window={} reason={}", this.desktopId, window.debugName(), reason);
             this.closeIfEmpty();
@@ -5609,6 +6235,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         this.apiClosed(window);
+        window.persistentHidden = false;
         this.windows.remove(window);
         DesktopDebug.log("client window remove desktop={} window={} reason={}", this.desktopId, window.debugName(), reason);
         this.closeIfEmpty();
@@ -5642,6 +6269,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
         this.saveWindowState(window);
         DesktopDebug.log("client window promote desktop={} window={} wasGhosted={}", this.desktopId, window.debugName(), wasGhosted);
+        this.handleWindowOpened(window, "ghost-promote");
     }
 
     private void promoteGhostWindowsForDesktopOpen(InventoryWindow openedWindow) {
@@ -5674,7 +6302,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private void setFocusedWindow(@Nullable InventoryWindow focusedWindow) {
         for (InventoryWindow window : this.windows) {
             boolean oldFocused = window.focused;
-            boolean newFocused = !window.ghosted && window == focusedWindow;
+            boolean newFocused = !window.ghosted && !window.persistentHidden && window == focusedWindow;
             window.focused = newFocused;
             if (oldFocused != newFocused) {
                 this.apiFocusChanged(window, newFocused);
@@ -5698,7 +6326,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable InventoryWindow windowAt(double mouseX, double mouseY) {
         for (int i = this.windows.size() - 1; i >= 0; i--) {
             InventoryWindow window = this.windows.get(i);
-            if (window.contains(mouseX, mouseY)) {
+            if (!window.persistentHidden && window.contains(mouseX, mouseY)) {
                 return window;
             }
         }
@@ -5709,7 +6337,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable SlotHit slotAt(double mouseX, double mouseY) {
         for (int i = this.windows.size() - 1; i >= 0; i--) {
             InventoryWindow window = this.windows.get(i);
-            if (!window.minimized) {
+            if (!window.persistentHidden && !window.minimized) {
                 SlotHit hit = window.slotAt(this, mouseX, mouseY);
                 if (hit != null) {
                     return hit;
@@ -5729,6 +6357,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void renderWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        if (window.persistentHidden) {
+            return;
+        }
+
         int visibleHeight = window.minimized ? TOP_BAR_HEIGHT : window.height;
         TitleBarLayout titleLayout = this.titleBarLayout(window);
         CreativeModeTab selectedCreativeTab = window.kind == WindowKind.CREATIVE && !window.minimized ? this.selectedCreativeTab(window) : null;
@@ -5798,6 +6430,22 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    private void renderLinkModeHighlight(GuiGraphicsExtractor graphics, InventoryWindow window) {
+        if (!this.isLinkModeActive() || window.persistentHidden || this.linkKey(window) == null) {
+            return;
+        }
+
+        int visibleHeight = window.minimized ? TOP_BAR_HEIGHT : window.height;
+        if (this.isLinkOrigin(window)) {
+            graphics.fill(window.x, window.y, window.x + window.width, window.y + visibleHeight, LINK_MODE_ORIGIN_FILL);
+            graphics.outline(window.x - 1, window.y - 1, window.width + 2, visibleHeight + 2, LINK_MODE_ORIGIN_OUTLINE);
+        } else if (this.isLinkedToLinkOrigin(window)) {
+            graphics.fill(window.x, window.y, window.x + window.width, window.y + visibleHeight, LINK_MODE_LINKED_FILL);
+        } else {
+            graphics.fill(window.x, window.y, window.x + window.width, window.y + visibleHeight, LINK_MODE_TARGET_FILL);
+        }
+    }
+
     private void renderAttachedRecipeBook(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY, float tickProgress) {
         RecipeBookComponent<?> recipeBook = this.visibleRecipeBook(window);
         if (recipeBook == null) {
@@ -5809,7 +6457,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable RecipeBookComponent<?> visibleRecipeBook(InventoryWindow window) {
-        if (window.minimized || window.ghosted || window.recipeBook == null || !window.recipeBook.isVisible()) {
+        if (window.persistentHidden || window.minimized || window.ghosted || window.recipeBook == null || !window.recipeBook.isVisible()) {
             return null;
         }
 
@@ -5952,6 +6600,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable InventoryWindow recipeBookWindowAt(double mouseX, double mouseY) {
         for (int i = this.windows.size() - 1; i >= 0; i--) {
             InventoryWindow window = this.windows.get(i);
+            if (window.persistentHidden) {
+                continue;
+            }
             RecipeBookComponent<?> recipeBook = this.visibleRecipeBook(window);
             if (recipeBook == null) {
                 continue;
@@ -6133,6 +6784,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         boolean hovered = contains(mouseX, mouseY, x, y, CONTROL_SIZE, CONTROL_SIZE);
         boolean pressed = this.pressedControlWindow == window && this.pressedControl == control && hovered;
         boolean toggled = this.isControlActive(window, control);
+        if (control == WindowControl.LINK) {
+            this.renderLinkControlIcon(graphics, x, y, hovered, pressed, toggled);
+            return;
+        }
         int textureRow = pressed || toggled && control != WindowControl.LOCK ? 2 : hovered ? 1 : 0;
         blitRegion(
             graphics,
@@ -6150,12 +6805,29 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         );
     }
 
+    private void renderLinkControlIcon(GuiGraphicsExtractor graphics, int x, int y, boolean hovered, boolean pressed, boolean toggled) {
+        int background = pressed || toggled ? 0xFF2E5A3A : hovered ? 0xFF343A44 : 0xFF252A31;
+        int outline = toggled ? LINK_MODE_ORIGIN_OUTLINE : hovered ? 0xFF7B8798 : 0xFF4B5361;
+        int glyph = toggled ? 0xFFFFFFFF : 0xFFE8E8E8;
+        graphics.fill(x, y, x + CONTROL_SIZE, y + CONTROL_SIZE, this.uiColor(background));
+        graphics.outline(x, y, CONTROL_SIZE, CONTROL_SIZE, this.uiColor(outline));
+        this.renderLinkGlyph(graphics, x, y, glyph);
+    }
+
+    private void renderLinkGlyph(GuiGraphicsExtractor graphics, int x, int y, int color) {
+        int uiColor = this.uiColor(color);
+        graphics.outline(x + 2, y + 3, 5, 4, uiColor);
+        graphics.outline(x + 4, y + 4, 5, 4, uiColor);
+        graphics.fill(x + 5, y + 5, x + 7, y + 6, uiColor);
+    }
+
     private int controlTextureColumn(InventoryWindow window, WindowControl control) {
         return switch (control) {
             case FOCUS -> 0;
             case MINIMIZE -> 1;
             case CLOSE -> 2;
             case ELLIPSIS -> 3;
+            case LINK -> 3;
             case LOCK -> window.locked ? 5 : 4;
             case PIN -> switch (window.pinMode) {
                 case UNPINNED -> 6;
@@ -6167,7 +6839,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private TitleBarLayout titleBarLayout(InventoryWindow window) {
         Component titleBarTitle = this.titleBarTitle(window);
-        List<WindowControl> controls = this.fullTitleBarWidth(titleBarTitle) <= window.width ? FULL_TITLE_CONTROLS : COMPACT_TITLE_CONTROLS;
+        List<WindowControl> fullControls = this.fullTitleControls();
+        List<WindowControl> controls = this.fullTitleBarWidth(titleBarTitle) <= window.width ? fullControls : COMPACT_TITLE_CONTROLS;
         int availableTitleWidth = Math.max(0, window.width - TITLE_LEFT_PADDING - TITLE_TO_CONTROLS_GAP - controlsWidth(controls));
         String title = this.truncatedTitle(titleBarTitle.getString(), availableTitleWidth);
         return new TitleBarLayout(title, this.controlRects(window, controls), controls == COMPACT_TITLE_CONTROLS);
@@ -6676,7 +7349,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return null;
         }
 
-        int width = CONTROL_POPUP_PADDING * 2 + POPUP_CONTROLS.size() * CONTROL_SIZE + (POPUP_CONTROLS.size() - 1) * CONTROL_GAP;
+        List<WindowControl> controls = this.popupControls();
+        int width = CONTROL_POPUP_PADDING * 2 + controls.size() * CONTROL_SIZE + Math.max(0, controls.size() - 1) * CONTROL_GAP;
         int height = CONTROL_POPUP_PADDING * 2 + CONTROL_SIZE;
         int x = clamp(ellipsis.x() + CONTROL_SIZE - width, 0, Math.max(0, this.desktopWidth() - width));
         int y = ellipsis.y() + CONTROL_SIZE + 2;
@@ -6691,7 +7365,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         List<ControlRect> rects = new ArrayList<>();
         int x = popupRect.x() + CONTROL_POPUP_PADDING;
         int y = popupRect.y() + CONTROL_POPUP_PADDING;
-        for (WindowControl control : POPUP_CONTROLS) {
+        for (WindowControl control : this.popupControls()) {
             rects.add(new ControlRect(control, x, y));
             x += CONTROL_SIZE + CONTROL_GAP;
         }
@@ -6704,6 +7378,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             case FOCUS -> window.focused;
             case MINIMIZE -> window.minimized;
             case ELLIPSIS -> this.popupWindow == window;
+            case LINK -> this.isLinkOrigin(window);
             case PIN -> false;
             case LOCK -> false;
             case CLOSE -> false;
@@ -7676,7 +8351,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private @Nullable InventoryWindow activeCreativeSearchWindow() {
         InventoryWindow window = this.editingCreativeSearchWindow;
-        if (window == null || !this.windows.contains(window) || window.minimized || window.kind != WindowKind.CREATIVE) {
+        if (window == null || !this.windows.contains(window) || window.persistentHidden || window.minimized || window.kind != WindowKind.CREATIVE) {
             this.editingCreativeSearchWindow = null;
             return null;
         }
@@ -7969,6 +8644,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void renderInstructionsControlIcon(GuiGraphicsExtractor graphics, WindowControl control, int x, int y) {
+        if (control == WindowControl.LINK) {
+            this.renderLinkControlIcon(graphics, x, y, false, false, false);
+            return;
+        }
+
         blitRegion(
             graphics,
             WINDOW_CONTROLS_TEXTURE,
@@ -7991,6 +8671,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             case MINIMIZE -> 1;
             case CLOSE -> 2;
             case ELLIPSIS -> 3;
+            case LINK -> 3;
             case LOCK -> 5;
             case PIN -> 6;
         };
@@ -9126,7 +9807,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean isJeiTransferTargetCandidateWindow(@Nullable InventoryWindow window) {
-        if (window == null || window.ghosted || window.kind == WindowKind.JEI) {
+        if (window == null || window.persistentHidden || window.ghosted || window.kind == WindowKind.JEI) {
             return false;
         }
         if (window.kind == WindowKind.CHARACTER) {
@@ -9480,7 +10161,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private @Nullable InventoryWindow activeJeiSearchWindow() {
         InventoryWindow window = this.editingJeiSearchWindow;
-        if (window == null || !this.windows.contains(window) || window.minimized || window.kind != WindowKind.JEI || window.jeiMode != JeiRecipeMode.INGREDIENTS || !this.jeiAccess().isAvailable()) {
+        if (window == null || !this.windows.contains(window) || window.persistentHidden || window.minimized || window.kind != WindowKind.JEI || window.jeiMode != JeiRecipeMode.INGREDIENTS || !this.jeiAccess().isAvailable()) {
             this.editingJeiSearchWindow = null;
             return null;
         }
@@ -10793,7 +11474,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private @Nullable InventoryWindow activeAnvilEditWindow() {
         InventoryWindow window = this.editingAnvilWindow;
-        if (window == null || !this.windows.contains(window) || window.minimized || !(window.containerMenu() instanceof AnvilMenu anvilMenu)) {
+        if (window == null || !this.windows.contains(window) || window.persistentHidden || window.minimized || !(window.containerMenu() instanceof AnvilMenu anvilMenu)) {
             this.editingAnvilWindow = null;
             return null;
         }
@@ -13410,7 +14091,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private @Nullable InventoryWindow focusedWindow() {
         for (InventoryWindow window : this.windows) {
-            if (window.focused) {
+            if (window.focused && !window.persistentHidden) {
                 return window;
             }
         }
@@ -13940,6 +14621,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     InstructionsLine.control(WindowControl.FOCUS, "Focus: Shift-clicked items move directly into the focused window when possible."),
                     InstructionsLine.control(WindowControl.PIN, "Pin: Saves this window's position for the next time it opens. Click to pin or unpin."),
                     InstructionsLine.control(WindowControl.LOCK, "Lock: Prevents the window from being moved or resized. Click to lock or unlock."),
+                    InstructionsLine.control(WindowControl.LINK, "Link: Select another highlighted window to make linked windows open and close together."),
                     InstructionsLine.control(WindowControl.MINIMIZE, "Minimize: Collapses the window into a title bar to keep your screen less cluttered."),
                     InstructionsLine.control(WindowControl.CLOSE, "Close: Closes the window.")
                 )
@@ -14074,7 +14756,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         MINIMIZE("_"),
         CLOSE("x"),
         ELLIPSIS("..."),
-        LOCK("L");
+        LOCK("L"),
+        LINK("link");
 
         private final String label;
 
@@ -15103,6 +15786,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private boolean locked = !SaltsInventoryConfig.get().openUnlocked;
         private PinMode pinMode = PinMode.UNPINNED;
         private boolean ghosted;
+        private boolean persistentHidden;
         private int scrollRow;
         private int merchantScroll;
         private int merchantSelectedTrade;

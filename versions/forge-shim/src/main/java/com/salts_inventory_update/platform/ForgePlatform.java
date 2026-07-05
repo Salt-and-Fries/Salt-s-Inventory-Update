@@ -2,10 +2,10 @@ package com.salts_inventory_update.platform;
 
 import java.lang.reflect.InvocationTargetException;
 
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.networking.v1.ForgeNetworking;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import com.salts_inventory_update.platform.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import com.salts_inventory_update.platform.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import com.salts_inventory_update.platform.fabric.api.networking.v1.ForgeNetworking;
+import com.salts_inventory_update.platform.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.IEventBus;

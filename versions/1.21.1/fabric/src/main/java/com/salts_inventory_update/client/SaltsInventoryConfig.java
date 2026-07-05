@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.fabricmc.loader.api.FabricLoader;
+import com.salts_inventory_update.platform.loader.api.FabricLoader;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
 import com.salts_inventory_update.SaltsInventoryRuntime;
@@ -107,6 +107,9 @@ public final class SaltsInventoryConfig {
         public boolean enableWindowSnapping = true;
         public boolean resetLockedWindows = true;
         public boolean enableGhostPins = false;
+        public boolean openInventoryWhenContainersAreOpened = false;
+        public boolean persistentWindows = false;
+        public boolean minimizableWindows = false;
         public boolean hasSeenInstructionsWindow = false;
         public double ghostWindowOpacity = 0.5D;
         public double eHoldCloseAllSeconds = 0.5D;
@@ -151,6 +154,9 @@ public final class SaltsInventoryConfig {
             this.enableWindowSnapping = defaults.enableWindowSnapping;
             this.resetLockedWindows = defaults.resetLockedWindows;
             this.enableGhostPins = defaults.enableGhostPins;
+            this.openInventoryWhenContainersAreOpened = defaults.openInventoryWhenContainersAreOpened;
+            this.persistentWindows = defaults.persistentWindows;
+            this.minimizableWindows = defaults.minimizableWindows;
             this.hasSeenInstructionsWindow = defaults.hasSeenInstructionsWindow;
             this.ghostWindowOpacity = defaults.ghostWindowOpacity;
             this.eHoldCloseAllSeconds = defaults.eHoldCloseAllSeconds;

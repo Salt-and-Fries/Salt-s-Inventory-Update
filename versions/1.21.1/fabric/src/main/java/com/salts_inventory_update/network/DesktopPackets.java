@@ -3,7 +3,7 @@ package com.salts_inventory_update.network;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import com.salts_inventory_update.platform.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -33,6 +33,8 @@ public final class DesktopPackets {
     private static final int JEI_TRANSFER_MAX_RECIPE_SLOTS = 128;
     private static final int JEI_TRANSFER_MAX_REQUIREMENTS = 128;
     private static final int JEI_TRANSFER_MAX_ALTERNATIVES = 128;
+    private static final int LINKED_SOURCE_MAX_KEYS = 64;
+    private static final int LINKED_SOURCE_MAX_KEY_LENGTH = 512;
 
     private DesktopPackets() {
     }
@@ -48,6 +50,7 @@ public final class DesktopPackets {
         PayloadTypeRegistry.playC2S().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(DesktopSessionPinPayload.TYPE, DesktopSessionPinPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DesktopOpenLinkedSourcesPayload.TYPE, DesktopOpenLinkedSourcesPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(DesktopCustomPayload.TYPE, DesktopCustomPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(DesktopCarriedPayload.TYPE, DesktopCarriedPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(InventorySlotPurchasePayload.TYPE, InventorySlotPurchasePayload.CODEC);
@@ -107,6 +110,28 @@ public final class DesktopPackets {
         List<Integer> values = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             values.add(buf.readVarInt());
+        }
+        return values;
+    }
+
+    private static void writeLimitedStringList(RegistryFriendlyByteBuf buf, List<String> values, int maxSize, int maxLength) {
+        if (values.size() > maxSize) {
+            throw new IllegalArgumentException("Desktop string list is too large: " + values.size());
+        }
+        buf.writeVarInt(values.size());
+        for (String value : values) {
+            buf.writeUtf(value, maxLength);
+        }
+    }
+
+    private static List<String> readLimitedStringList(RegistryFriendlyByteBuf buf, int maxSize, int maxLength) {
+        int size = buf.readVarInt();
+        if (size < 0 || size > maxSize) {
+            throw new IllegalArgumentException("Desktop string list is too large: " + size);
+        }
+        List<String> values = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            values.add(buf.readUtf(maxLength));
         }
         return values;
     }
@@ -484,6 +509,27 @@ public final class DesktopPackets {
         private void write(RegistryFriendlyByteBuf buf) {
             buf.writeVarInt(this.sessionId);
             buf.writeBoolean(this.visible);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopOpenLinkedSourcesPayload(List<String> sourceKeys) implements CustomPacketPayload {
+        public static final Type<DesktopOpenLinkedSourcesPayload> TYPE = new Type<>(id("desktop_open_linked_sources"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopOpenLinkedSourcesPayload> CODEC = CustomPacketPayload.codec(
+            DesktopOpenLinkedSourcesPayload::write,
+            DesktopOpenLinkedSourcesPayload::new
+        );
+
+        private DesktopOpenLinkedSourcesPayload(RegistryFriendlyByteBuf buf) {
+            this(readLimitedStringList(buf, LINKED_SOURCE_MAX_KEYS, LINKED_SOURCE_MAX_KEY_LENGTH));
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            writeLimitedStringList(buf, this.sourceKeys, LINKED_SOURCE_MAX_KEYS, LINKED_SOURCE_MAX_KEY_LENGTH);
         }
 
         @Override

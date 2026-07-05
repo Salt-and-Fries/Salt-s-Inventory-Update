@@ -5,10 +5,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import com.salts_inventory_update.platform.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import com.salts_inventory_update.platform.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import com.salts_inventory_update.platform.fabric.api.networking.v1.PayloadTypeRegistry;
+import com.salts_inventory_update.platform.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 

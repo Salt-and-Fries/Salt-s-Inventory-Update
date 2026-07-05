@@ -15,9 +15,9 @@ import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import com.salts_inventory_update.platform.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import com.salts_inventory_update.platform.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import com.salts_inventory_update.platform.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -88,6 +88,7 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayl
 import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopOpenLinkedSourcesPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopGhostRecipePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferPayload;
@@ -137,6 +138,7 @@ public final class DesktopContainerSessions {
         register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload::new, (player, payload) -> closeSession(player, payload.sessionId(), true));
         register(DesktopSessionPinPayload.TYPE, DesktopSessionPinPayload::new, DesktopContainerSessions::setSessionPin);
         register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload::new, DesktopContainerSessions::setSessionVisibility);
+        register(DesktopOpenLinkedSourcesPayload.TYPE, DesktopOpenLinkedSourcesPayload::new, DesktopContainerSessions::openLinkedSources);
         register(DesktopCustomPayload.TYPE, DesktopCustomPayload::new, DesktopContainerSessions::customPayload);
         register(DesktopCarriedPayload.TYPE, DesktopCarriedPayload::new, DesktopContainerSessions::carried);
         register(InventorySlotPurchasePayload.TYPE, InventorySlotPurchasePayload::new, (player, payload) -> InventoryExpansion.tryPurchase(player));
@@ -1770,6 +1772,38 @@ public final class DesktopContainerSessions {
         sessions.setVisible(player, session, payload.visible(), true);
     }
 
+    private static void openLinkedSources(ServerPlayer player, DesktopOpenLinkedSourcesPayload payload) {
+        PlayerSessions sessions = PLAYERS.get(player.getUUID());
+        if (sessions == null || !sessions.ready) {
+            DesktopDebug.trace("server linked open dropped player={} reason=not-ready", player.getName().getString());
+            return;
+        }
+
+        for (String sourceKey : payload.sourceKeys()) {
+            if (sourceKey == null || sourceKey.isBlank() || !isBlockBackedSourceKey(sourceKey)) {
+                DesktopDebug.trace("server linked open skipped player={} source={} reason=unsupported-source", player.getName().getString(), sourceKey);
+                continue;
+            }
+
+            Session existing = sessions.sessionForSourceKey(sourceKey);
+            if (existing != null) {
+                if (!existing.visibleToClient) {
+                    sessions.setVisible(player, existing, true, true);
+                }
+                continue;
+            }
+
+            MenuProvider provider = providerForDormantGhost(player, sourceKey);
+            if (provider == null) {
+                DesktopDebug.trace("server linked open skipped player={} source={} reason=unavailable", player.getName().getString(), sourceKey);
+                continue;
+            }
+
+            DesktopDebug.log("server linked open player={} source={} title={}", player.getName().getString(), sourceKey, provider.getDisplayName().getString());
+            openMenuSession(player, provider, sourceKey, false, false, true);
+        }
+    }
+
     private static int nextSessionId(ServerPlayer player) {
         PlayerSessions sessions = sessions(player);
         int next = sessions.nextSessionId++;
@@ -1946,12 +1980,16 @@ public final class DesktopContainerSessions {
         }
 
         private boolean hasSessionForSourceKey(String sourceKey) {
+            return this.sessionForSourceKey(sourceKey) != null;
+        }
+
+        private @Nullable Session sessionForSourceKey(String sourceKey) {
             for (Session session : this.sessions.values()) {
                 if (sourceKey.equals(session.sourceKey)) {
-                    return true;
+                    return session;
                 }
             }
-            return false;
+            return null;
         }
     }
 

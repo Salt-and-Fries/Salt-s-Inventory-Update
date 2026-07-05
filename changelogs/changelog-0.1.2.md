@@ -1,8 +1,10 @@
 # Salt's Inventory Update 0.1.2 Changelog
 
-First-time help window, in-game controls guide, conditional compatibility pages, command cleanup, and cross-version help UI support.
+First-time help window, in-game controls guide, persistent and linked window behavior, new desktop window config options, container/inventory placement fixes, command cleanup, Forge/NeoForge Sinytra Connector compatibility fixes, and cross-version support.
 
 This release adds a built-in Salt's Inventory Help window that introduces the desktop inventory workflow the first time a player opens a world with the mod installed. The same guide can be opened again with `/saltsinventory help`, includes formatted pages for controls and supported integrations, and is available across every supported Minecraft version and loader.
+
+This release also fixes the Forge and NeoForge jar layout so the non-Fabric builds no longer ship Fabric API compatibility classes under `net.fabricmc`, preventing Java module/package export conflicts in modpacks that use Sinytra Connector or other mods that expose Fabric API packages.
 
 ## Supported Minecraft Versions And Loaders
 
@@ -11,8 +13,33 @@ This release adds a built-in Salt's Inventory Help window that introduces the de
 - Ported the help window feature to Minecraft 1.21.11 on Fabric and NeoForge.
 - Ported the help window feature to Minecraft 1.21.1 on Fabric and NeoForge.
 - Ported the help window feature to Minecraft 1.20.1 on Fabric and Forge.
+- Ported persistent windows, linked windows, minimizable-window config, and automatic inventory-on-container-open behavior to every supported Minecraft version and loader.
+- Added the Forge/NeoForge packaging compatibility fix across every supported non-Fabric build.
 - Kept loader behavior shared through the existing versioned Fabric desktop screen sources and Forge/NeoForge shims.
 - Verified compile coverage across the full supported version and loader matrix.
+
+## Desktop Window Behavior
+
+- Added a `Persistent windows` config option that saves visible windows when the screen is cleared, then restores them the next time a Salt window opens.
+- Changed held `E` behavior while persistent windows are enabled to show `Clear Screen` and hide windows persistently instead of permanently closing them.
+- Added held `Esc` support using the same hold duration as held `E`; when completed, it truly closes all windows and suppresses the follow-up pause action until Escape is released and pressed again.
+- Added a `Minimizable windows` config option, disabled by default, that controls whether minimize buttons appear on windows.
+- Added an `Open inventory when containers are opened` config option, including creative-mode support so opening a container opens the creative inventory window instead of the survival inventory window.
+- Updated container placement so closed or pinned inventory and creative inventory windows still reserve their saved placement, preventing newly opened containers from overlapping the inventory when it is reopened.
+- Changed window ellipsis menus so using buttons inside the popup does not immediately close the popup.
+- Added a Link title-bar button and link-selection mode. Linked windows open and close together bidirectionally, while linked container windows still respect nearby and line-of-sight checks before reopening.
+- Added link-mode visual states: the origin window is green with an outline, linked windows are green without an outline, and selectable unlinked windows receive a blue highlight without an outline.
+
+## Forge And NeoForge Compatibility Hotfix
+
+- Removed mod-provided `net.fabricmc` compatibility classes from Forge and NeoForge upload jars.
+- Moved Forge and NeoForge Fabric-style compatibility shims into Salt-owned packages under `com.salts_inventory_update.platform.fabric.api`.
+- Moved the shared loader helper into the Salt-owned `com.salts_inventory_update.platform.loader.api` package.
+- Updated shared imports across every supported Minecraft version so common desktop, networking, config, inventory expansion, Tom's Simple Storage compatibility, and session code use Salt-owned platform wrappers instead of direct `net.fabricmc` wrapper packages.
+- Added Fabric-only platform wrapper source sets for legacy Minecraft 1.20.1 and modern Minecraft versions so Fabric builds continue to call the real Fabric API and Fabric Loader from the shared wrapper imports.
+- Excluded Fabric entrypoint classes from Forge and NeoForge compilation so non-Fabric jars do not contain Fabric entrypoints.
+- Fixed the class/package conflict pattern that could crash before the FML loading screen with Sinytra Connector, including duplicate exports for packages such as `net.fabricmc.fabric.api.client.networking.v1`.
+- Kept this as a packaging and platform-layer compatibility fix; the Fabric runtime behavior and gameplay behavior are unchanged by the hotfix.
 
 ## First-Time Help Window
 
@@ -72,6 +99,15 @@ This release adds a built-in Salt's Inventory Help window that introduces the de
 - Added an `includeJeiRuntime` Gradle property so client runs can be launched without JEI while still compiling against the JEI API.
 - Added support for running `runClient` without JEI using `-PincludeJeiRuntime=false`.
 - Used the JEI-free runtime path to verify that conditional JEI help content is hidden when JEI is absent.
+
+## Build And Jar Verification
+
+- Added a `verifyNonFabricModJars` Gradle task that fails if Forge or NeoForge upload jars contain `net/fabricmc` entries, `fabric.mod.json`, or Fabric entrypoint classes.
+- Wired the root `build` task to run `verifyNonFabricModJars` automatically.
+- Verified `compileJava`, `verifyNonFabricModJars`, and the full `build` task after the compatibility fix.
+- Scanned the generated Forge and NeoForge upload jars and confirmed they contain no `net/fabricmc` entries and no Fabric entrypoint classes.
+- Smoke-tested NeoForge `runClient` on Minecraft 1.21.1, 1.21.11, 26.1.2, and 26.2 by launching the client, opening an existing world, closing the first-time help window, and opening the inventory.
+- Confirmed the NeoForge smoke-test logs contained no crash, exception, fatal error, build failure, or error markers, and that each tested client shut down normally.
 
 ## Compatibility And Safety
 

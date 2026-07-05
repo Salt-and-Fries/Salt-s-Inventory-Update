@@ -5,6 +5,7 @@ import net.minecraft.client.gui.Font;
 import com.salts_inventory_update.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import com.salts_inventory_update.SaltsInventoryRuntime;
@@ -16,25 +17,31 @@ public final class InventoryKeyHoldController {
     private static final int TEXT_COLOR = 0xFFFFFFFF;
     private static final int PROGRESS_COLOR = 0xFFFFD84A;
 
-    private static boolean holdingInventoryKey;
+    private static @Nullable HoldAction holdAction;
     private static boolean closedByHold;
+    private static boolean suppressEscapeUntilRelease;
     private static long holdStartedMs;
 
     private InventoryKeyHoldController() {
     }
 
     public static boolean handleInventoryKeyAction(Minecraft minecraft, int action, KeyEvent event) {
-        if (!minecraft.options.keyInventory.matches(event) || !canHandleInventoryKey(minecraft)) {
+        if (consumeSuppressedEscapeAction(action, event)) {
+            return true;
+        }
+
+        HoldAction requestedAction = holdAction(minecraft, event);
+        if (requestedAction == null || !canHandleHoldAction(minecraft, requestedAction)) {
             return false;
         }
 
         if (action == GLFW.GLFW_PRESS) {
-            beginHold();
+            beginHold(requestedAction);
             return true;
         }
 
         if (action == GLFW.GLFW_REPEAT) {
-            return holdingInventoryKey;
+            return holdAction == requestedAction;
         }
 
         if (action == GLFW.GLFW_RELEASE) {
@@ -46,24 +53,34 @@ public final class InventoryKeyHoldController {
     }
 
     public static void tick(Minecraft minecraft) {
-        if (!holdingInventoryKey) {
+        if (holdAction == null) {
             return;
         }
 
-        if (!canHandleInventoryKey(minecraft)) {
-            reset();
+        if (!canHandleHoldAction(minecraft, holdAction)) {
+            resetHoldState();
             return;
         }
 
         if (!closedByHold && elapsedMs() >= closeAllMs()) {
             closedByHold = true;
-            DesktopDebug.log("client E hold close-all elapsedMs={}", elapsedMs());
-            InventoryDesktopScreen.closeAllOpenWindows(minecraft);
+            DesktopDebug.log("client {} hold elapsedMs={}", holdAction.debugName(), elapsedMs());
+            if (holdAction == HoldAction.ESCAPE) {
+                suppressEscapeUntilRelease = true;
+                InventoryDesktopScreen.permanentlyCloseAllOpenWindows(minecraft);
+            } else {
+                InventoryDesktopScreen.closeAllOpenWindows(minecraft);
+            }
         }
     }
 
     public static void reset() {
-        holdingInventoryKey = false;
+        resetHoldState();
+        suppressEscapeUntilRelease = false;
+    }
+
+    private static void resetHoldState() {
+        holdAction = null;
         closedByHold = false;
         holdStartedMs = 0L;
     }
@@ -71,12 +88,12 @@ public final class InventoryKeyHoldController {
     public static void extractOverlay(Minecraft minecraft, GuiGraphicsExtractor graphics) {
         long overlayDelayMs = overlayDelayMs();
         long closeAllMs = closeAllMs();
-        if (!holdingInventoryKey || closedByHold || elapsedMs() < overlayDelayMs || !canHandleInventoryKey(minecraft)) {
+        if (holdAction == null || closedByHold || elapsedMs() < overlayDelayMs || !canHandleHoldAction(minecraft, holdAction)) {
             return;
         }
 
         Font font = minecraft.font;
-        String label = "Closing All";
+        String label = holdAction == HoldAction.INVENTORY && SaltsInventoryConfig.get().persistentWindows ? "Clear Screen" : "Closing All";
         int textWidth = font.width(label);
         int width = Math.max(104, textWidth + 24);
         int height = 24;
@@ -92,29 +109,44 @@ public final class InventoryKeyHoldController {
         drawWrappingProgress(graphics, x, y, width, height, progress);
     }
 
-    private static void beginHold() {
-        if (holdingInventoryKey) {
+    private static void beginHold(HoldAction action) {
+        if (holdAction != null) {
             return;
         }
 
-        holdingInventoryKey = true;
+        holdAction = action;
         closedByHold = false;
         holdStartedMs = System.currentTimeMillis();
-        DesktopDebug.trace("client E hold begin");
+        DesktopDebug.trace("client {} hold begin", action.debugName());
+    }
+
+    private static boolean consumeSuppressedEscapeAction(int action, KeyEvent event) {
+        if (!suppressEscapeUntilRelease || !event.isEscape()) {
+            return false;
+        }
+
+        if (action == GLFW.GLFW_RELEASE) {
+            DesktopDebug.trace("client Esc hold suppression released");
+            reset();
+        }
+        return true;
     }
 
     private static void finishHold(Minecraft minecraft) {
-        if (!holdingInventoryKey) {
+        HoldAction action = holdAction;
+        if (action == null) {
             return;
         }
 
         long elapsed = elapsedMs();
         boolean shouldToggle = !closedByHold && elapsed < closeAllMs();
-        DesktopDebug.trace("client E hold finish elapsedMs={} toggle={}", elapsed, shouldToggle);
+        DesktopDebug.trace("client {} hold finish elapsedMs={} activate={}", action.debugName(), elapsed, shouldToggle);
         reset();
 
-        if (shouldToggle) {
+        if (shouldToggle && action == HoldAction.INVENTORY) {
             openInventoryFromRelease(minecraft);
+        } else if (shouldToggle) {
+            InventoryDesktopScreen.closeAllOpenWindows(minecraft);
         }
     }
 
@@ -130,7 +162,7 @@ public final class InventoryKeyHoldController {
         }
     }
 
-    private static boolean canHandleInventoryKey(Minecraft minecraft) {
+    private static boolean canHandleHoldAction(Minecraft minecraft, HoldAction action) {
         if (!SaltsInventoryRuntime.isEnabled()) {
             return false;
         }
@@ -144,7 +176,21 @@ public final class InventoryKeyHoldController {
             return false;
         }
 
+        if (action == HoldAction.ESCAPE) {
+            return SaltsInventoryConfig.get().persistentWindows && screen instanceof InventoryDesktopScreen;
+        }
+
         return screen == null || screen instanceof InventoryDesktopScreen;
+    }
+
+    private static @Nullable HoldAction holdAction(Minecraft minecraft, KeyEvent event) {
+        if (minecraft.options.keyInventory.matches(event)) {
+            return HoldAction.INVENTORY;
+        }
+        if (event.isEscape()) {
+            return HoldAction.ESCAPE;
+        }
+        return null;
     }
 
     private static long elapsedMs() {
@@ -207,6 +253,21 @@ public final class InventoryKeyHoldController {
         int drawn = Math.min(length, remaining);
         if (drawn > 0) {
             graphics.fill(x, y, x + drawn, y + thickness, PROGRESS_COLOR);
+        }
+    }
+
+    private enum HoldAction {
+        INVENTORY("E"),
+        ESCAPE("Esc");
+
+        private final String debugName;
+
+        HoldAction(String debugName) {
+            this.debugName = debugName;
+        }
+
+        private String debugName() {
+            return this.debugName;
         }
     }
 }

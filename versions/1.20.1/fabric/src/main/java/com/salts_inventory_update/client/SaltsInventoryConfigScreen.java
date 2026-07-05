@@ -99,6 +99,26 @@ public final class SaltsInventoryConfigScreen extends Screen {
             () -> SaltsInventoryConfig.get().enableGhostPins,
             value -> SaltsInventoryConfig.update(config -> config.enableGhostPins = value)
         );
+        this.addToggle(
+            "persistent_windows",
+            () -> SaltsInventoryConfig.get().persistentWindows,
+            value -> SaltsInventoryConfig.update(config -> config.persistentWindows = value)
+        );
+        this.addToggle(
+            "minimizable_windows",
+            () -> SaltsInventoryConfig.get().minimizableWindows,
+            value -> {
+                SaltsInventoryConfig.update(config -> config.minimizableWindows = value);
+                if (!value) {
+                    InventoryDesktopScreen.unminimizeAllWindows();
+                }
+            }
+        );
+        this.addToggle(
+            "open_inventory_when_containers_are_opened",
+            () -> SaltsInventoryConfig.get().openInventoryWhenContainersAreOpened,
+            value -> SaltsInventoryConfig.update(config -> config.openInventoryWhenContainersAreOpened = value)
+        );
         this.addSlider(
             "ghost_window_opacity",
             0.15D,
