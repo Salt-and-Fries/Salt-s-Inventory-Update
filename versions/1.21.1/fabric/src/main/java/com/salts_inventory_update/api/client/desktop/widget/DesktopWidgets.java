@@ -7,6 +7,7 @@ import org.lwjgl.glfw.GLFW;
 import com.salts_inventory_update.client.input.CharacterEvent;
 import com.salts_inventory_update.client.input.KeyEvent;
 import com.salts_inventory_update.client.input.MouseButtonEvent;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -27,27 +28,53 @@ public final class DesktopWidgets {
 
     private static final int SEARCH_TEXTURE_WIDTH = 3;
     private static final int SEARCH_TEXTURE_HEIGHT = 12;
+    private static final int TEXT_SELECTION_COLOR = 0xAA2D5FBB;
 
     private DesktopWidgets() {
     }
 
     public static void renderTextBox(DesktopRenderContext<?, ?> context, DesktopTextBoxState state, int x, int y, int width) {
-        renderTextBox(context, state.text(), state.focused(), x, y, width);
+        int clampedWidth = renderTextBoxBackground(context, x, y, width);
+        int textWidth = Math.max(0, clampedWidth - 8);
+        TextBoxVisibleRange visible = visibleRange(context, state, textWidth);
+        String text = state.text();
+
+        if (state.focused() && state.hasSelection()) {
+            int selectionStart = Math.max(state.selectionStart(), visible.start());
+            int selectionEnd = Math.min(state.selectionEnd(), visible.end());
+            if (selectionStart < selectionEnd) {
+                int selectionX = x + 4 + context.fontWidth(text.substring(visible.start(), selectionStart));
+                int selectionWidth = Math.max(1, context.fontWidth(text.substring(selectionStart, selectionEnd)));
+                context.fill(selectionX, y + 2, selectionX + selectionWidth, y + 10, TEXT_SELECTION_COLOR);
+            }
+        }
+
+        context.text(visible.text(), x + 4, y + 2, 0xFFFFFFFF, false);
+        if (state.focused() && (System.currentTimeMillis() / 300L) % 2L == 0L) {
+            int cursor = Math.max(visible.start(), Math.min(state.cursor(), visible.end()));
+            int cursorX = x + 4 + context.fontWidth(text.substring(visible.start(), cursor));
+            context.fill(cursorX, y + 2, cursorX + 1, y + 10, 0xFFFFFFFF);
+        }
     }
 
     public static void renderTextBox(DesktopRenderContext<?, ?> context, String text, boolean focused, int x, int y, int width) {
-        int clampedWidth = Math.max(2, width);
-        context.texture(SEARCH_BAR_TEXTURE, x, y, 0, 0, 1, SEARCH_BAR_HEIGHT, 1, SEARCH_BAR_HEIGHT, SEARCH_TEXTURE_WIDTH, SEARCH_TEXTURE_HEIGHT);
-        if (clampedWidth > 2) {
-            context.texture(SEARCH_BAR_TEXTURE, x + 1, y, 1, 0, clampedWidth - 2, SEARCH_BAR_HEIGHT, 1, SEARCH_BAR_HEIGHT, SEARCH_TEXTURE_WIDTH, SEARCH_TEXTURE_HEIGHT);
-        }
-        context.texture(SEARCH_BAR_TEXTURE, x + clampedWidth - 1, y, 2, 0, 1, SEARCH_BAR_HEIGHT, 1, SEARCH_BAR_HEIGHT, SEARCH_TEXTURE_WIDTH, SEARCH_TEXTURE_HEIGHT);
+        int clampedWidth = renderTextBoxBackground(context, x, y, width);
         String visible = context.trimToWidth(text, Math.max(0, clampedWidth - 8));
         context.text(visible, x + 4, y + 2, 0xFFFFFFFF, false);
         if (focused && (System.currentTimeMillis() / 300L) % 2L == 0L) {
             int cursorX = x + 4 + context.fontWidth(visible);
             context.fill(cursorX, y + 2, cursorX + 1, y + 10, 0xFFFFFFFF);
         }
+    }
+
+    private static int renderTextBoxBackground(DesktopRenderContext<?, ?> context, int x, int y, int width) {
+        int clampedWidth = Math.max(2, width);
+        context.texture(SEARCH_BAR_TEXTURE, x, y, 0, 0, 1, SEARCH_BAR_HEIGHT, 1, SEARCH_BAR_HEIGHT, SEARCH_TEXTURE_WIDTH, SEARCH_TEXTURE_HEIGHT);
+        if (clampedWidth > 2) {
+            context.texture(SEARCH_BAR_TEXTURE, x + 1, y, 1, 0, clampedWidth - 2, SEARCH_BAR_HEIGHT, 1, SEARCH_BAR_HEIGHT, SEARCH_TEXTURE_WIDTH, SEARCH_TEXTURE_HEIGHT);
+        }
+        context.texture(SEARCH_BAR_TEXTURE, x + clampedWidth - 1, y, 2, 0, 1, SEARCH_BAR_HEIGHT, 1, SEARCH_BAR_HEIGHT, SEARCH_TEXTURE_WIDTH, SEARCH_TEXTURE_HEIGHT);
+        return clampedWidth;
     }
 
     public static boolean clickTextBox(DesktopTextBoxState state, MouseButtonEvent event, int x, int y, int width) {
@@ -57,36 +84,110 @@ public final class DesktopWidgets {
 
         boolean focused = contains(event.x(), event.y(), x, y, width, SEARCH_BAR_HEIGHT);
         state.focused(focused);
+        if (focused) {
+            state.moveToEnd(false);
+        }
         return focused;
     }
 
     public static boolean keyPressedTextBox(DesktopTextBoxState state, KeyEvent event) {
+        return editTextBoxKey(state, event).consumed();
+    }
+
+    public static boolean keyPressedTextBox(DesktopTextBoxState state, KeyEvent event, int maxLength) {
+        return editTextBoxKey(state, event, maxLength).consumed();
+    }
+
+    public static TextEditResult editTextBoxKey(DesktopTextBoxState state, KeyEvent event) {
+        return editTextBoxKey(state, event, Integer.MAX_VALUE);
+    }
+
+    public static TextEditResult editTextBoxKey(DesktopTextBoxState state, KeyEvent event, int maxLength) {
         if (!state.focused()) {
-            return false;
+            return TextEditResult.unconsumed();
+        }
+
+        String before = state.text();
+        if (event.hasControlDown() && !event.hasAltDown()) {
+            if (event.key() == GLFW.GLFW_KEY_A) {
+                state.selectAll();
+                return TextEditResult.consumed(false);
+            }
+            if (event.key() == GLFW.GLFW_KEY_C) {
+                setClipboard(state.selectedText());
+                return TextEditResult.consumed(false);
+            }
+            if (event.key() == GLFW.GLFW_KEY_X) {
+                setClipboard(state.selectedText());
+                boolean changed = state.deleteSelection();
+                return TextEditResult.consumed(changed);
+            }
+            if (event.key() == GLFW.GLFW_KEY_V) {
+                boolean changed = state.insert(getClipboard(), maxLength);
+                return TextEditResult.consumed(changed);
+            }
         }
 
         if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) {
             state.focused(false);
-            return true;
+            return TextEditResult.consumed(!before.equals(state.text()));
         }
-        if (event.key() == GLFW.GLFW_KEY_BACKSPACE && !state.text().isEmpty()) {
-            state.text(state.text().substring(0, state.text().length() - 1));
-            return true;
+        if (event.key() == GLFW.GLFW_KEY_LEFT) {
+            if (event.hasControlDown()) {
+                state.moveByWords(-1, event.hasShiftDown());
+            } else {
+                state.moveByCodePoints(-1, event.hasShiftDown());
+            }
+            return TextEditResult.consumed(false);
+        }
+        if (event.key() == GLFW.GLFW_KEY_RIGHT) {
+            if (event.hasControlDown()) {
+                state.moveByWords(1, event.hasShiftDown());
+            } else {
+                state.moveByCodePoints(1, event.hasShiftDown());
+            }
+            return TextEditResult.consumed(false);
+        }
+        if (event.key() == GLFW.GLFW_KEY_HOME) {
+            state.moveToStart(event.hasShiftDown());
+            return TextEditResult.consumed(false);
+        }
+        if (event.key() == GLFW.GLFW_KEY_END) {
+            state.moveToEnd(event.hasShiftDown());
+            return TextEditResult.consumed(false);
+        }
+        if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
+            boolean changed = event.hasControlDown() ? state.deletePreviousWord() : state.deletePrevious();
+            return TextEditResult.consumed(changed);
         }
         if (event.key() == GLFW.GLFW_KEY_DELETE) {
-            state.text("");
-            return true;
+            boolean changed = event.hasControlDown() ? state.deleteNextWord() : state.deleteNext();
+            return TextEditResult.consumed(changed);
         }
-        return true;
+        if (event.key() == GLFW.GLFW_KEY_UP || event.key() == GLFW.GLFW_KEY_DOWN) {
+            return TextEditResult.consumed(false);
+        }
+        return TextEditResult.consumed(false);
     }
 
     public static boolean charTypedTextBox(DesktopTextBoxState state, CharacterEvent event) {
+        return editTextBoxChar(state, event).consumed();
+    }
+
+    public static boolean charTypedTextBox(DesktopTextBoxState state, CharacterEvent event, int maxLength) {
+        return editTextBoxChar(state, event, maxLength).consumed();
+    }
+
+    public static TextEditResult editTextBoxChar(DesktopTextBoxState state, CharacterEvent event) {
+        return editTextBoxChar(state, event, Integer.MAX_VALUE);
+    }
+
+    public static TextEditResult editTextBoxChar(DesktopTextBoxState state, CharacterEvent event, int maxLength) {
         if (!state.focused() || !event.isAllowedChatCharacter()) {
-            return false;
+            return TextEditResult.unconsumed();
         }
 
-        state.text(state.text() + event.codepointAsString());
-        return true;
+        return TextEditResult.consumed(state.insert(event.codepointAsString(), maxLength));
     }
 
     public static void renderIconButton(DesktopRenderContext<?, ?> context, ResourceLocation icon, int x, int y, int size, boolean active, boolean hovered) {
@@ -194,5 +295,84 @@ public final class DesktopWidgets {
 
     public static void unfocus(DesktopTextBoxState state) {
         state.focused(false);
+    }
+
+    private static TextBoxVisibleRange visibleRange(DesktopRenderContext<?, ?> context, DesktopTextBoxState state, int maxWidth) {
+        String text = state.text();
+        if (text.isEmpty() || maxWidth <= 0) {
+            state.viewStart(state.cursor());
+            return new TextBoxVisibleRange(state.cursor(), state.cursor(), "");
+        }
+
+        int cursor = state.cursor();
+        int start = Math.min(state.viewStart(), text.length());
+        if (start > cursor) {
+            start = cursor;
+        }
+        start = clampToCodePointBoundary(text, start);
+
+        while (start < cursor && context.fontWidth(text.substring(start, cursor)) > maxWidth) {
+            start = nextCodePointIndex(text, start);
+        }
+        while (start > 0) {
+            int previous = previousCodePointIndex(text, start);
+            if (context.fontWidth(text.substring(previous, cursor)) > maxWidth) {
+                break;
+            }
+            start = previous;
+        }
+
+        int end = start;
+        while (end < text.length()) {
+            int next = nextCodePointIndex(text, end);
+            if (context.fontWidth(text.substring(start, next)) > maxWidth) {
+                break;
+            }
+            end = next;
+        }
+
+        state.viewStart(start);
+        return new TextBoxVisibleRange(start, end, text.substring(start, end));
+    }
+
+    private static String getClipboard() {
+        Minecraft minecraft = Minecraft.getInstance();
+        return minecraft == null ? "" : DesktopTextBoxState.filterText(minecraft.keyboardHandler.getClipboard());
+    }
+
+    private static void setClipboard(String text) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft != null) {
+            minecraft.keyboardHandler.setClipboard(text == null ? "" : text);
+        }
+    }
+
+    private static int previousCodePointIndex(String text, int index) {
+        return index <= 0 ? 0 : text.offsetByCodePoints(index, -1);
+    }
+
+    private static int nextCodePointIndex(String text, int index) {
+        return index >= text.length() ? text.length() : text.offsetByCodePoints(index, 1);
+    }
+
+    private static int clampToCodePointBoundary(String text, int index) {
+        int clamped = Math.max(0, Math.min(index, text.length()));
+        if (clamped > 0 && clamped < text.length() && Character.isLowSurrogate(text.charAt(clamped))) {
+            return clamped - 1;
+        }
+        return clamped;
+    }
+
+    public record TextEditResult(boolean consumed, boolean changed) {
+        private static TextEditResult consumed(boolean changed) {
+            return new TextEditResult(true, changed);
+        }
+
+        private static TextEditResult unconsumed() {
+            return new TextEditResult(false, false);
+        }
+    }
+
+    private record TextBoxVisibleRange(int start, int end, String text) {
     }
 }

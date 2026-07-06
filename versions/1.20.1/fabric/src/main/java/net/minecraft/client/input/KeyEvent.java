@@ -5,15 +5,15 @@ import org.lwjgl.glfw.GLFW;
 
 public record KeyEvent(int key, int scancode, int modifiers) {
     public boolean hasShiftDown() {
-        return Screen.hasShiftDown();
+        return (this.modifiers & GLFW.GLFW_MOD_SHIFT) != 0 || Screen.hasShiftDown();
     }
 
     public boolean hasControlDown() {
-        return Screen.hasControlDown();
+        return (this.modifiers & GLFW.GLFW_MOD_CONTROL) != 0 || Screen.hasControlDown();
     }
 
     public boolean hasAltDown() {
-        return Screen.hasAltDown();
+        return (this.modifiers & GLFW.GLFW_MOD_ALT) != 0 || Screen.hasAltDown();
     }
 
     public boolean isEscape() {

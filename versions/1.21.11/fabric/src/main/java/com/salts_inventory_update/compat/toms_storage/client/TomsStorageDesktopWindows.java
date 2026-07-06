@@ -39,6 +39,7 @@ import com.salts_inventory_update.api.client.desktop.DesktopWindowContext;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowDefinition;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowSetupContext;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowSize;
+import com.salts_inventory_update.api.client.desktop.widget.DesktopTextBoxState;
 import com.salts_inventory_update.api.client.desktop.widget.DesktopWidgets;
 import com.salts_inventory_update.compat.toms_storage.TomsStorageCompat;
 import com.salts_inventory_update.compat.toms_storage.TomsStoragePayloads;
@@ -262,14 +263,19 @@ public final class TomsStorageDesktopWindows {
             int searchWidth = this.terminalSearchWidth(context);
             if (hitSearch(context, state, event.x(), event.y(), searchX, y, searchWidth)) {
                 state.searchFocused = true;
+                state.searchBox.text(state.search);
+                state.searchBox.focused(true);
+                state.searchBox.moveToEnd(false);
                 state.searchPopupOpen = false;
                 if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
                     state.search = "";
+                    state.searchBox.text("");
                     sendTerminalSettings(context, state);
                 }
                 return true;
             }
             state.searchFocused = false;
+            state.searchBox.focused(false);
 
             if (handleTerminalControlClick(context, state, event, this.terminalControlsX(context), y)) {
                 return true;
@@ -415,23 +421,22 @@ public final class TomsStorageDesktopWindows {
             if (!state.searchFocused) {
                 return false;
             }
-            if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_ENTER) {
+
+            state.searchBox.text(state.search);
+            state.searchBox.focused(true);
+            if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) {
                 state.searchFocused = false;
+                state.searchBox.focused(false);
                 return true;
             }
-            if (event.key() == GLFW.GLFW_KEY_BACKSPACE && !state.search.isEmpty()) {
-                state.search = state.search.substring(0, state.search.length() - 1);
+
+            DesktopWidgets.TextEditResult result = DesktopWidgets.editTextBoxKey(state.searchBox, event);
+            if (result.changed()) {
+                state.search = state.searchBox.text();
                 state.scrollRow = 0;
                 sendTerminalSettings(context, state);
-                return true;
             }
-            if (event.key() == GLFW.GLFW_KEY_DELETE) {
-                state.search = "";
-                state.scrollRow = 0;
-                sendTerminalSettings(context, state);
-                return true;
-            }
-            return true;
+            return result.consumed();
         }
 
         @Override
@@ -442,13 +447,19 @@ public final class TomsStorageDesktopWindows {
         @Override
         public boolean charTyped(DesktopInputContext<AbstractContainerMenu, TerminalState> context, CharacterEvent event) {
             TerminalState state = context.state();
-            if (!state.searchFocused || !event.isAllowedChatCharacter()) {
+            if (!state.searchFocused) {
                 return false;
             }
-            state.search += event.codepointAsString();
-            state.scrollRow = 0;
-            sendTerminalSettings(context, state);
-            return true;
+
+            state.searchBox.text(state.search);
+            state.searchBox.focused(true);
+            DesktopWidgets.TextEditResult result = DesktopWidgets.editTextBoxChar(state.searchBox, event);
+            if (result.changed()) {
+                state.search = state.searchBox.text();
+                state.scrollRow = 0;
+                sendTerminalSettings(context, state);
+            }
+            return result.consumed();
         }
 
         @Override
@@ -916,7 +927,9 @@ public final class TomsStorageDesktopWindows {
             int x = context.contentX() + PAD;
             int y = context.contentY() + PAD;
             context.text(Component.literal("Beacon " + TomsStorageReflect.intField(context.menu(), "beaconLvl", 0)), x, y, 0x404040, false);
-            renderTextBox(context, state.name, x, y + 14, 106, state.nameFocused);
+            state.nameBox.text(state.name);
+            state.nameBox.focused(state.nameFocused);
+            DesktopWidgets.renderTextBox(context, state.nameBox, x, y + 14, 106);
             renderCycleButton(context, x + 110, y + 13, TomsStorageCompat.id("icons/add"), false);
             renderCycleButton(context, x + 128, y + 13, TomsStorageCompat.id("icons/deny"), false);
             renderCycleButton(context, x + 146, y + 13, TomsStorageCompat.id(state.publicChannel ? "icons/allow" : "icons/deny"), state.publicChannel);
@@ -941,9 +954,13 @@ public final class TomsStorageDesktopWindows {
             int y = context.contentY() + PAD;
             if (contains(event.x(), event.y(), x, y + 14, 106, 13)) {
                 state.nameFocused = true;
+                state.nameBox.text(state.name);
+                state.nameBox.focused(true);
+                state.nameBox.moveToEnd(false);
                 return true;
             }
             state.nameFocused = false;
+            state.nameBox.focused(false);
             if (buttonHit(event, x + 110, y + 13, BUTTON, BUTTON)) {
                 CompoundTag tag = new CompoundTag();
                 tag.putString("d", state.name.isBlank() ? "Channel" : state.name);
@@ -1002,26 +1019,41 @@ public final class TomsStorageDesktopWindows {
             if (!state.nameFocused) {
                 return false;
             }
-            if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_ENTER) {
+
+            state.nameBox.text(state.name);
+            state.nameBox.focused(true);
+            if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) {
                 state.nameFocused = false;
+                state.nameBox.focused(false);
                 return true;
             }
-            if (event.key() == GLFW.GLFW_KEY_BACKSPACE && !state.name.isEmpty()) {
-                state.name = state.name.substring(0, state.name.length() - 1);
-                return true;
+
+            DesktopWidgets.TextEditResult result = DesktopWidgets.editTextBoxKey(state.nameBox, event, 50);
+            if (result.changed()) {
+                state.name = state.nameBox.text();
             }
-            return true;
+            return result.consumed();
+        }
+
+        @Override
+        public boolean wantsTextInput(DesktopWindowContext<AbstractContainerMenu, InventoryLinkState> context) {
+            return context.state().nameFocused;
         }
 
         @Override
         public boolean charTyped(DesktopInputContext<AbstractContainerMenu, InventoryLinkState> context, CharacterEvent event) {
-            if (!context.state().nameFocused || !event.isAllowedChatCharacter()) {
+            InventoryLinkState state = context.state();
+            if (!state.nameFocused) {
                 return false;
             }
-            if (context.state().name.length() < 50) {
-                context.state().name += event.codepointAsString();
+
+            state.nameBox.text(state.name);
+            state.nameBox.focused(true);
+            DesktopWidgets.TextEditResult result = DesktopWidgets.editTextBoxChar(state.nameBox, event, 50);
+            if (result.changed()) {
+                state.name = state.nameBox.text();
             }
-            return true;
+            return result.consumed();
         }
 
         @Override
@@ -1221,6 +1253,7 @@ public final class TomsStorageDesktopWindows {
     public static final class TerminalState {
         private final List<TerminalEntry> entries = new ArrayList<>();
         private String search = "";
+        private final DesktopTextBoxState searchBox = new DesktopTextBoxState();
         private int scrollRow;
         private int sorting;
         private int modes;
@@ -1243,6 +1276,7 @@ public final class TomsStorageDesktopWindows {
         private final List<LinkChannel> channels = new ArrayList<>();
         private UUID selected;
         private String name = "";
+        private final DesktopTextBoxState nameBox = new DesktopTextBoxState();
         private boolean publicChannel;
         private boolean nameFocused;
         private int scroll;
@@ -1546,7 +1580,9 @@ public final class TomsStorageDesktopWindows {
     }
 
     private static void renderSearch(DesktopRenderContext<?, ?> context, TerminalState state, int x, int y, int width) {
-        renderTextBox(context, state.search, x, y, width, state.searchFocused);
+        state.searchBox.text(state.search);
+        state.searchBox.focused(state.searchFocused);
+        DesktopWidgets.renderTextBox(context, state.searchBox, x, y, width);
     }
 
     private static boolean hitSearch(DesktopInputContext<?, ?> context, TerminalState state, double mouseX, double mouseY, int x, int y, int width) {

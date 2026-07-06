@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.network.chat.Component;
@@ -18,12 +17,14 @@ import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.SaltsInventoryUpdate;
 import com.salts_inventory_update.VersionInfo;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowLookupContext;
+import com.salts_inventory_update.api.client.desktop.widget.DesktopTextBoxState;
 import com.salts_inventory_update.api.desktop.SaltsInventoryDesktopApi;
 import com.salts_inventory_update.client.SaltsInventoryConfig;
 import com.salts_inventory_update.client.WindowOpeningStyle;
 import com.salts_inventory_update.client.WindowedInventoryClient;
 import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.network.DesktopPackets;
+import com.salts_inventory_update.platform.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 
 public final class FunctionalTestHarness {
     private static final int START_DELAY_TICKS = 5;
@@ -67,6 +68,7 @@ public final class FunctionalTestHarness {
             runTest("desktop-menu-screens", recorder, FunctionalTestHarness::testDesktopMenuScreens);
             runTest("desktop-api-definitions", recorder, FunctionalTestHarness::testDesktopApiDefinitions);
             runTest("desktop-packets", recorder, FunctionalTestHarness::testDesktopPackets);
+            runTest("desktop-text-editing", recorder, FunctionalTestHarness::testDesktopTextEditing);
             runTest("inventory-expansion", recorder, FunctionalTestHarness::testInventoryExpansion);
         } finally {
             SaltsInventoryRuntime.setConfiguredEnabled(configuredEnabled);
@@ -159,6 +161,37 @@ public final class FunctionalTestHarness {
                 && DesktopPackets.SPECIAL_CAMEL > DesktopPackets.SPECIAL_HORSE
                 && DesktopPackets.SPECIAL_LLAMA > DesktopPackets.SPECIAL_CAMEL
         );
+    }
+
+    private static void testDesktopTextEditing(ResultRecorder recorder) {
+        DesktopTextBoxState state = new DesktopTextBoxState();
+        state.text("abcd");
+        state.moveToEnd(false);
+        state.moveByCodePoints(-2, false);
+        recorder.check("text.cursor_left", state.cursor() == 2);
+        state.moveByCodePoints(1, true);
+        recorder.check("text.shift_select", "c".equals(state.selectedText()));
+        recorder.check("text.replace_selection", state.insert("XY", 10) && "abXYd".equals(state.text()) && state.cursor() == 4);
+
+        state.selectAll();
+        recorder.check("text.select_all", "abXYd".equals(state.selectedText()));
+        recorder.check("text.max_length", state.insert("123456", 4) && "1234".equals(state.text()));
+
+        state.text("a\uD83D\uDE00b");
+        state.moveToEnd(false);
+        recorder.check("text.delete_previous_ascii", state.deletePrevious() && "a\uD83D\uDE00".equals(state.text()));
+        recorder.check("text.delete_previous_unicode", state.deletePrevious() && "a".equals(state.text()));
+
+        state.text("one two");
+        state.moveToEnd(false);
+        recorder.check("text.delete_previous_word", state.deletePreviousWord() && "one ".equals(state.text()));
+
+        state.text("ab");
+        state.cursor(1);
+        recorder.check("text.paste_filters_control_chars", state.insert("c\n" + Character.toString((char) 127) + "d", 10) && "acdb".equals(state.text()));
+
+        state.selectAll();
+        recorder.check("text.cut_like_delete_selection", state.deleteSelection() && state.text().isEmpty());
     }
 
     private static void testInventoryExpansion(ResultRecorder recorder) {

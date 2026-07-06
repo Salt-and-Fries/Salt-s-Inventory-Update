@@ -136,6 +136,8 @@ import com.salts_inventory_update.api.client.desktop.DesktopWindowDefinition;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowLookupContext;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowSetupContext;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowSize;
+import com.salts_inventory_update.api.client.desktop.widget.DesktopTextBoxState;
+import com.salts_inventory_update.api.client.desktop.widget.DesktopWidgets;
 import com.salts_inventory_update.api.desktop.DesktopPayloadCodecs;
 import com.salts_inventory_update.api.desktop.SaltsInventoryDesktopApi;
 import com.salts_inventory_update.compat.jei.JeiDesktopAccess;
@@ -3547,6 +3549,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.selectCreativeTab(window, searchTab);
         window.creativeScrollRow = 0;
         this.editingCreativeSearchWindow = window;
+        window.creativeSearchBox.text(window.creativeSearch);
+        window.creativeSearchBox.focused(true);
+        window.creativeSearchBox.moveToEnd(false);
         this.rememberCreativeWindow(window);
         return true;
     }
@@ -3603,45 +3608,47 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         InventoryWindow creativeWindow = this.activeCreativeSearchWindow();
         if (creativeWindow != null) {
-            if (!event.isAllowedChatCharacter()) {
-                return false;
-            }
-
-            String addition = event.codepointAsString();
-            if (!addition.isEmpty()) {
-                creativeWindow.creativeSearch = creativeWindow.creativeSearch + addition;
+            DesktopTextBoxState searchBox = creativeWindow.creativeSearchBox;
+            searchBox.text(creativeWindow.creativeSearch);
+            searchBox.focused(true);
+            DesktopWidgets.TextEditResult result = DesktopWidgets.editTextBoxChar(searchBox, event);
+            if (result.changed()) {
+                creativeWindow.creativeSearch = searchBox.text();
                 creativeWindow.creativeScrollRow = 0;
                 this.rememberCreativeWindow(creativeWindow);
             }
-            return true;
+            return result.consumed();
         }
 
         InventoryWindow jeiWindow = this.activeJeiSearchWindow();
         if (jeiWindow != null) {
-            if (!event.isAllowedChatCharacter()) {
-                return false;
+            DesktopTextBoxState searchBox = jeiWindow.jeiSearchBox;
+            searchBox.text(this.jeiAccess().filterText());
+            searchBox.focused(true);
+            DesktopWidgets.TextEditResult result = DesktopWidgets.editTextBoxChar(searchBox, event);
+            if (result.changed()) {
+                this.setJeiSearchText(jeiWindow, searchBox.text());
             }
-
-            String addition = event.codepointAsString();
-            if (!addition.isEmpty()) {
-                this.setJeiSearchText(jeiWindow, this.jeiAccess().filterText() + addition);
-            }
-            return true;
+            return result.consumed();
         }
 
         InventoryWindow window = this.activeAnvilEditWindow();
-        if (window == null || !event.isAllowedChatCharacter()) {
+        if (window == null) {
             return this.apiCharTyped(event);
         }
-
-        String addition = event.codepointAsString();
-        if (addition.isEmpty() || window.anvilName.length() + addition.length() > ANVIL_MAX_NAME_LENGTH) {
+        if (!event.isAllowedChatCharacter()) {
             return true;
         }
 
-        window.anvilName = window.anvilName + addition;
-        this.submitAnvilName(window);
-        return true;
+        DesktopTextBoxState nameBox = window.anvilNameBox;
+        nameBox.text(window.anvilName);
+        nameBox.focused(true);
+        DesktopWidgets.TextEditResult result = DesktopWidgets.editTextBoxChar(nameBox, event, ANVIL_MAX_NAME_LENGTH);
+        if (result.changed()) {
+            window.anvilName = nameBox.text();
+            this.submitAnvilName(window);
+        }
+        return result.consumed();
     }
 
     @Override
@@ -7569,13 +7576,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x + 1, y, 1, 0, width - 2, CREATIVE_SEARCH_HEIGHT, 1, CREATIVE_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
         blitRegion(graphics, CREATIVE_SEARCH_BAR_TEXTURE, x + width - 1, y, 2, 0, 1, CREATIVE_SEARCH_HEIGHT, 1, CREATIVE_SEARCH_HEIGHT, CREATIVE_SEARCH_TEXTURE_WIDTH, CREATIVE_SEARCH_TEXTURE_HEIGHT);
 
-        String text = this.creativeSearchVisibleText(window, width - 8);
-        int textColor = this.editingCreativeSearchWindow == window ? 0xFFFFFFFF : 0xFFE8E8E8;
-        graphics.text(this.font, text, x + 4, y + 2, this.uiColor(textColor), false);
-        if (this.editingCreativeSearchWindow == window && (System.currentTimeMillis() / 300L) % 2L == 0L) {
-            int cursorX = x + 4 + this.font.width(text);
-            graphics.fill(cursorX, y + 2, cursorX + 1, y + 10, this.uiColor(textColor));
-        }
+        DesktopTextBoxState searchBox = window.creativeSearchBox;
+        searchBox.text(window.creativeSearch);
+        searchBox.focused(this.editingCreativeSearchWindow == window);
+        int textColor = searchBox.focused() ? 0xFFFFFFFF : 0xFFE8E8E8;
+        this.renderInlineTextBoxText(graphics, searchBox, x + 4, y + 2, width - 8, textColor);
     }
 
     private @Nullable CreativeSearchRect creativeSearchRect(InventoryWindow window) {
@@ -7984,6 +7989,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.selectCreativeTab(window, tabHit.tab());
             window.creativeScrollRow = 0;
             this.editingCreativeSearchWindow = this.isCreativeSearchTab(tabHit.tab()) ? window : null;
+            if (this.editingCreativeSearchWindow == window) {
+                window.creativeSearchBox.text(window.creativeSearch);
+                window.creativeSearchBox.focused(true);
+                window.creativeSearchBox.moveToEnd(false);
+            } else {
+                window.creativeSearchBox.focused(false);
+            }
             this.rememberCreativeWindow(window);
             DesktopDebug.trace("client creative tab desktop={} window={} tab={}", this.desktopId, window.debugName(), tabHit.tab().getDisplayName().getString());
             return true;
@@ -7997,9 +8009,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (this.isCreativeSearchTab(selectedTab)) {
             if (this.creativeSearchBoxContains(window, event.x(), event.y()) && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
                 this.editingCreativeSearchWindow = window;
+                window.creativeSearchBox.text(window.creativeSearch);
+                window.creativeSearchBox.focused(true);
+                window.creativeSearchBox.moveToEnd(false);
                 return true;
             }
             if (this.editingCreativeSearchWindow == window && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                window.creativeSearchBox.focused(false);
                 this.editingCreativeSearchWindow = null;
             }
         }
@@ -8334,38 +8350,35 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return false;
         }
 
+        DesktopTextBoxState searchBox = window.creativeSearchBox;
+        searchBox.text(window.creativeSearch);
+        searchBox.focused(true);
         int key = event.key();
-        if (key == GLFW.GLFW_KEY_BACKSPACE) {
-            if (!window.creativeSearch.isEmpty()) {
-                int cut = window.creativeSearch.offsetByCodePoints(window.creativeSearch.length(), -1);
-                window.creativeSearch = window.creativeSearch.substring(0, cut);
-                window.creativeScrollRow = 0;
-                this.rememberCreativeWindow(window);
-            }
-            return true;
-        }
-        if (key == GLFW.GLFW_KEY_DELETE) {
-            window.creativeSearch = "";
-            window.creativeScrollRow = 0;
-            this.rememberCreativeWindow(window);
-            return true;
-        }
         if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+            searchBox.focused(false);
             this.editingCreativeSearchWindow = null;
             return true;
         }
         if (event.isEscape()) {
             if (!window.creativeSearch.isEmpty()) {
                 window.creativeSearch = "";
+                searchBox.text("");
                 window.creativeScrollRow = 0;
                 this.rememberCreativeWindow(window);
             } else {
+                searchBox.focused(false);
                 this.editingCreativeSearchWindow = null;
             }
             return true;
         }
 
-        return true;
+        DesktopWidgets.TextEditResult result = DesktopWidgets.editTextBoxKey(searchBox, event);
+        if (result.changed()) {
+            window.creativeSearch = searchBox.text();
+            window.creativeScrollRow = 0;
+            this.rememberCreativeWindow(window);
+        }
+        return result.consumed();
     }
 
     private boolean handleCreativeDropKey(KeyEvent event) {
@@ -8394,16 +8407,82 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 || InputConstants.isKeyDown(this.minecraft.getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL));
     }
 
-    private String creativeSearchVisibleText(InventoryWindow window, int maxWidth) {
-        String text = window.creativeSearch;
-        if (this.font.width(text) <= maxWidth) {
-            return text;
+    private void renderInlineTextBoxText(GuiGraphicsExtractor graphics, DesktopTextBoxState state, int x, int y, int maxWidth, int color) {
+        TextBoxVisibleRange visible = this.textBoxVisibleRange(state, maxWidth);
+        String text = state.text();
+        if (state.focused() && state.hasSelection()) {
+            int selectionStart = Math.max(state.selectionStart(), visible.start());
+            int selectionEnd = Math.min(state.selectionEnd(), visible.end());
+            if (selectionStart < selectionEnd) {
+                int selectionX = x + this.font.width(text.substring(visible.start(), selectionStart));
+                int selectionWidth = Math.max(1, this.font.width(text.substring(selectionStart, selectionEnd)));
+                graphics.fill(selectionX, y, selectionX + selectionWidth, y + 9, this.uiColor(0xAA2D5FBB));
+            }
         }
 
-        while (!text.isEmpty() && this.font.width(text) > maxWidth) {
-            text = text.substring(1);
+        graphics.text(this.font, visible.text(), x, y, this.uiColor(color), false);
+        if (state.focused() && (System.currentTimeMillis() / 300L) % 2L == 0L) {
+            int cursor = Math.max(visible.start(), Math.min(state.cursor(), visible.end()));
+            int cursorX = x + this.font.width(text.substring(visible.start(), cursor));
+            graphics.fill(cursorX, y - 1, cursorX + 1, y + 9, this.uiColor(color));
         }
-        return text;
+    }
+
+    private TextBoxVisibleRange textBoxVisibleRange(DesktopTextBoxState state, int maxWidth) {
+        String text = state.text();
+        if (text.isEmpty() || maxWidth <= 0) {
+            state.viewStart(state.cursor());
+            return new TextBoxVisibleRange(state.cursor(), state.cursor(), "");
+        }
+
+        int cursor = state.cursor();
+        int start = Math.min(state.viewStart(), text.length());
+        if (start > cursor) {
+            start = cursor;
+        }
+        start = clampTextIndex(text, start);
+
+        while (start < cursor && this.font.width(text.substring(start, cursor)) > maxWidth) {
+            start = nextTextIndex(text, start);
+        }
+        while (start > 0) {
+            int previous = previousTextIndex(text, start);
+            if (this.font.width(text.substring(previous, cursor)) > maxWidth) {
+                break;
+            }
+            start = previous;
+        }
+
+        int end = start;
+        while (end < text.length()) {
+            int next = nextTextIndex(text, end);
+            if (this.font.width(text.substring(start, next)) > maxWidth) {
+                break;
+            }
+            end = next;
+        }
+
+        state.viewStart(start);
+        return new TextBoxVisibleRange(start, end, text.substring(start, end));
+    }
+
+    private static int previousTextIndex(String text, int index) {
+        return index <= 0 ? 0 : text.offsetByCodePoints(index, -1);
+    }
+
+    private static int nextTextIndex(String text, int index) {
+        return index >= text.length() ? text.length() : text.offsetByCodePoints(index, 1);
+    }
+
+    private static int clampTextIndex(String text, int index) {
+        int clamped = Math.max(0, Math.min(index, text.length()));
+        if (clamped > 0 && clamped < text.length() && Character.isLowSurrogate(text.charAt(clamped))) {
+            return clamped - 1;
+        }
+        return clamped;
+    }
+
+    private record TextBoxVisibleRange(int start, int end, String text) {
     }
 
     private JeiDesktopAccess jeiAccess() {
@@ -8802,13 +8881,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         String query = access.filterText();
         boolean editing = this.editingJeiSearchWindow == window;
         boolean placeholder = query.isEmpty() && !editing;
-        String text = this.jeiSearchVisibleText(placeholder ? "Search" : query, width - 8);
-        int textColor = placeholder ? COLOR_MUTED_TEXT : editing ? 0xFFFFFFFF : 0xFFE8E8E8;
-        graphics.text(this.font, text, x + 4, y + 2, this.uiColor(textColor), false);
-        if (editing && (System.currentTimeMillis() / 300L) % 2L == 0L) {
-            int cursorX = x + 4 + this.font.width(this.jeiSearchVisibleText(query, width - 8));
-            graphics.fill(cursorX, y + 2, cursorX + 1, y + 10, this.uiColor(0xFFFFFFFF));
+        if (placeholder) {
+            graphics.text(this.font, this.fitText("Search", width - 8), x + 4, y + 2, this.uiColor(COLOR_MUTED_TEXT), false);
+            return;
         }
+
+        DesktopTextBoxState searchBox = window.jeiSearchBox;
+        searchBox.text(query);
+        searchBox.focused(editing);
+        this.renderInlineTextBoxText(graphics, searchBox, x + 4, y + 2, width - 8, editing ? 0xFFFFFFFF : 0xFFE8E8E8);
     }
 
     private void renderJeiIngredientTabs(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, int mouseX, int mouseY, boolean selectedOnly) {
@@ -9994,9 +10075,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         if (this.jeiSearchBoxContains(window, event.x(), event.y()) && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             this.editingJeiSearchWindow = window;
+            window.jeiSearchBox.text(this.jeiAccess().filterText());
+            window.jeiSearchBox.focused(true);
+            window.jeiSearchBox.moveToEnd(false);
             return true;
         }
         if (this.editingJeiSearchWindow == window && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            window.jeiSearchBox.focused(false);
             this.editingJeiSearchWindow = null;
         }
 
@@ -10139,32 +10224,31 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         JeiDesktopAccess access = this.jeiAccess();
         String text = access.filterText();
+        DesktopTextBoxState searchBox = window.jeiSearchBox;
+        searchBox.text(text);
+        searchBox.focused(true);
         int key = event.key();
-        if (key == GLFW.GLFW_KEY_BACKSPACE) {
-            if (!text.isEmpty()) {
-                int cut = text.offsetByCodePoints(text.length(), -1);
-                this.setJeiSearchText(window, text.substring(0, cut));
-            }
-            return true;
-        }
-        if (key == GLFW.GLFW_KEY_DELETE) {
-            this.setJeiSearchText(window, "");
-            return true;
-        }
         if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+            searchBox.focused(false);
             this.editingJeiSearchWindow = null;
             return true;
         }
         if (event.isEscape()) {
             if (!text.isEmpty()) {
                 this.setJeiSearchText(window, "");
+                searchBox.text("");
             } else {
+                searchBox.focused(false);
                 this.editingJeiSearchWindow = null;
             }
             return true;
         }
 
-        return true;
+        DesktopWidgets.TextEditResult result = DesktopWidgets.editTextBoxKey(searchBox, event);
+        if (result.changed()) {
+            this.setJeiSearchText(window, searchBox.text());
+        }
+        return result.consumed();
     }
 
     private void setJeiSearchText(InventoryWindow window, String text) {
@@ -11356,15 +11440,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return;
         }
 
-        int textColor = this.editingAnvilWindow == window ? 0xFFFFFFFF : 0xFFE8E8E8;
-        String text = anvilVisibleText(window.anvilName, ANVIL_TEXT_FIELD_WIDTH - 8, this.font);
-        int textX = contentX + ANVIL_TEXT_X;
-        int textY = contentY + ANVIL_TEXT_Y;
-        graphics.text(this.font, text, textX, textY, this.uiColor(textColor), false);
-        if (this.editingAnvilWindow == window && (System.currentTimeMillis() / 300L) % 2L == 0L) {
-            int cursorX = textX + this.font.width(text) + 1;
-            graphics.fill(cursorX, textY - 1, cursorX + 1, textY + 10, this.uiColor(0xFFFFFFFF));
-        }
+        DesktopTextBoxState nameBox = window.anvilNameBox;
+        nameBox.text(window.anvilName);
+        nameBox.focused(this.editingAnvilWindow == window);
+        int textColor = nameBox.focused() ? 0xFFFFFFFF : 0xFFE8E8E8;
+        this.renderInlineTextBoxText(graphics, nameBox, contentX + ANVIL_TEXT_X, contentY + ANVIL_TEXT_Y, ANVIL_TEXT_FIELD_WIDTH - 8, textColor);
     }
 
     private void renderAnvilCost(GuiGraphicsExtractor graphics, AnvilMenu menu, List<Slot> slots, int contentX, int contentY) {
@@ -11431,6 +11511,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         this.editingAnvilWindow = window;
+        window.anvilNameBox.text(window.anvilName);
+        window.anvilNameBox.focused(true);
+        window.anvilNameBox.moveToEnd(false);
         window.anvilNameDirty = true;
         DesktopDebug.trace("client anvil focus desktop={} window={} name={}", this.desktopId, window.debugName(), window.anvilName);
     }
@@ -11456,32 +11539,27 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return false;
         }
 
+        DesktopTextBoxState nameBox = window.anvilNameBox;
+        nameBox.text(window.anvilName);
+        nameBox.focused(true);
         int key = event.key();
-        if (key == GLFW.GLFW_KEY_BACKSPACE) {
-            if (!window.anvilName.isEmpty()) {
-                int cut = window.anvilName.offsetByCodePoints(window.anvilName.length(), -1);
-                window.anvilName = window.anvilName.substring(0, cut);
-                this.submitAnvilName(window);
-            }
-            return true;
-        }
-        if (key == GLFW.GLFW_KEY_DELETE) {
-            if (!window.anvilName.isEmpty()) {
-                window.anvilName = "";
-                this.submitAnvilName(window);
-            }
-            return true;
-        }
         if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+            nameBox.focused(false);
             this.editingAnvilWindow = null;
             return true;
         }
         if (event.isEscape()) {
+            nameBox.focused(false);
             this.editingAnvilWindow = null;
             return true;
         }
 
-        return true;
+        DesktopWidgets.TextEditResult result = DesktopWidgets.editTextBoxKey(nameBox, event, ANVIL_MAX_NAME_LENGTH);
+        if (result.changed()) {
+            window.anvilName = nameBox.text();
+            this.submitAnvilName(window);
+        }
+        return result.consumed();
     }
 
     private void syncAnvilNameFromInput(InventoryWindow window, AnvilMenu menu) {
@@ -15758,8 +15836,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private int creativeTabPage;
         private int creativeScrollRow;
         private String creativeSearch = "";
+        private final DesktopTextBoxState creativeSearchBox = new DesktopTextBoxState();
         private String jeiSelectedTabUid = "";
         private String jeiDefaultTabUid = "";
+        private final DesktopTextBoxState jeiSearchBox = new DesktopTextBoxState();
         private int jeiScrollRow;
         private int instructionsPage;
         private JeiRecipeMode jeiMode = JeiRecipeMode.INGREDIENTS;
@@ -15774,6 +15854,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private final List<JeiRecipeHistoryEntry> jeiBackHistory = new ArrayList<>();
         private final List<JeiRecipeHistoryEntry> jeiForwardHistory = new ArrayList<>();
         private String anvilName = "";
+        private final DesktopTextBoxState anvilNameBox = new DesktopTextBoxState();
         private String anvilLastInputName = "";
         private boolean anvilNameDirty;
         private @Nullable Holder<MobEffect> beaconPrimary;
