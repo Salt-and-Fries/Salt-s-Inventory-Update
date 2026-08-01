@@ -24,7 +24,7 @@ The result is less repeated UI, more usable screen space, and a more natural wor
 
 When the Salt desktop is active, the real hotbar becomes interactive. You can move items into, out of, and around the hotbar directly, and the offhand slot is also available beside it.
 
-You can also hold `Alt` with no inventory windows open to interact with the hotbar using the mouse.
+You can also hold the `Change Mouse Focus` key (`Alt` by default) with no inventory windows open to interact with the hotbar using the mouse.
 
 ![Hovering over an item in the Hotbar](https://cdn.modrinth.com/data/cached_images/af42081e77bc109e89813cb53fe41765d0b72fda.png)
 
@@ -44,7 +44,7 @@ Extra slots save with the player, sync in multiplayer, and behave like real inve
 
 ## Move While Managing Inventory
 
-The inventory desktop is designed to feel less like a full pause screen. You can keep windows open while still moving around, and hold `Alt` to give the mouse back to camera control when needed.
+The inventory desktop is designed to feel less like a full pause screen. You can keep windows open while still moving around, and hold the configurable `Change Mouse Focus` key (`Alt` by default) to give the mouse back to camera control when needed.
 
 This is especially useful when sorting loot, working around storage rooms, or managing items while staying aware of the world.
 

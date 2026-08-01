@@ -45,6 +45,27 @@ function Assert-Contains {
     }
 }
 
+function Assert-Count {
+    param(
+        [string] $Path,
+        [string] $Text,
+        [int] $Expected,
+        [string] $Label
+    )
+
+    if (-not (Assert-File -Path $Path -Label $Label)) {
+        return
+    }
+
+    $content = Get-Content -LiteralPath $Path -Raw
+    $count = ([regex]::Matches($content, [regex]::Escape($Text))).Count
+    if ($count -ne $Expected) {
+        Add-Failure "$Label expected $Expected occurrence(s) of '$Text' but found $count in $Path"
+    } else {
+        Write-Host "PASS $Label" -ForegroundColor Green
+    }
+}
+
 $versions = @(
     '1.20.1',
     '1.21.1',
@@ -123,6 +144,7 @@ foreach ($version in $versions) {
     $packets = Join-Path $fabricRoot 'network\DesktopPackets.java'
     $windowedClient = Join-Path $fabricRoot 'client\WindowedInventoryClient.java'
     $config = Join-Path $fabricRoot 'client\SaltsInventoryConfig.java'
+    $language = Join-Path $RepoRoot "versions\$version\common\src\main\resources\assets\salts_inventory_update\lang\en_us.json"
 
     $menus = [System.Collections.Generic.List[string]]::new()
     $baseMenus | ForEach-Object { $menus.Add($_) }
@@ -142,7 +164,17 @@ foreach ($version in $versions) {
     Assert-Contains -Path $packets -Text 'PIN_MODE_GHOST_PINNED' -Label "$version packet pin modes"
     Assert-Contains -Path $packets -Text 'QUICK_TARGET_HOTBAR' -Label "$version quick move target"
     Assert-Contains -Path $windowedClient -Text 'GLFW_KEY_C' -Label "$version character keybind"
-    Assert-Contains -Path $windowedClient -Text '"salts_inventory"' -Label "$version client command root"
+    Assert-Contains -Path $windowedClient -Text '"key.salts_inventory_update.mouse_focus"' -Label "$version mouse focus keybind registration"
+    Assert-Contains -Path $windowedClient -Text 'GLFW_KEY_LEFT_ALT' -Label "$version mouse focus default key"
+    Assert-Contains -Path $windowedClient -Text 'getBoundKeyOf(mouseFocusKey)' -Label "$version configurable mouse focus polling"
+    Assert-Contains -Path $windowedClient -Text 'isKeyModifierActive(mouseFocusKey)' -Label "$version mouse focus modifier polling"
+    Assert-Contains -Path $windowedClient -Text 'mouseFocusKey.isDefault() && isAltDown(minecraft)' -Label "$version default right Alt compatibility"
+    Assert-Contains -Path $windowedClient -Text 'screen == null && isMouseFocusKeyDown(minecraft)' -Label "$version hotbar-only custom focus key"
+    Assert-Contains -Path $windowedClient -Text 'isHotbarOnly() && !mouseFocusDown' -Label "$version hotbar-only custom focus release"
+    Assert-Count -Path $client -Text 'InstructionsLine.mouseFocus(' -Expected 2 -Label "$version dynamic mouse focus help variants"
+    Assert-Contains -Path $client -Text 'WindowedInventoryClient.mouseFocusKeyName()' -Label "$version live mouse focus help label"
+    Assert-Contains -Path $language -Text '"key.salts_inventory_update.mouse_focus"' -Label "$version mouse focus translation"
+    Assert-Contains -Path $windowedClient -Text '"saltsinventory"' -Label "$version client command root"
     Assert-Contains -Path $windowedClient -Text '"config"' -Label "$version config command"
     Assert-Contains -Path $windowedClient -Text 'FunctionalTestHarness' -Label "$version functional hook"
     Assert-Contains -Path $config -Text 'enableMod' -Label "$version config enableMod"

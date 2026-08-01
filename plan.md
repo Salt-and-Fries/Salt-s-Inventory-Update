@@ -65,7 +65,7 @@ Hotbar behavior:
 - Inventory windows should interact directly with the real hotbar slots.
 - The player inventory window should not render a separate hotbar row.
 
-When no containers are open, holding `Alt` should activate mouse control on the screen so the player can interact with hotbar items.
+When no containers are open, holding the configurable mouse-focus key (`Alt` by default) should activate mouse control on the screen so the player can interact with hotbar items.
 
 ## Player Inventory Rework
 
@@ -116,9 +116,9 @@ When any inventory container or inventory window is open:
 Mouse and camera behavior:
 
 - With a container or inventory window open, the mouse controls the UI by default.
-- Holding `Alt` while a container or inventory window is open gives mouse control back to the player camera while keeping the UI elements open.
-- Releasing `Alt` returns mouse control to the inventory UI.
-- Holding `Alt` with no containers open activates screen mouse control so the player can move hotbar items.
+- Holding the configurable mouse-focus key (`Alt` by default) while a container or inventory window is open gives mouse control back to the player camera while keeping the UI elements open.
+- Releasing the mouse-focus key returns mouse control to the inventory UI.
+- Holding the mouse-focus key with no containers open activates screen mouse control so the player can move hotbar items.
 
 ## Resizing Rules
 
@@ -165,7 +165,7 @@ Recommended first implementation order:
 5. Make the real hotbar an interactive inventory object instead of rendering a duplicate inventory hotbar row.
 6. Add item dragging between windows and hotbar slots.
 7. Add focused-window quick-move behavior.
-8. Add darkened inventory background, `WASD` movement support, and `Alt` mouse/camera control switching.
+8. Add darkened inventory background, `WASD` movement support, and configurable mouse/camera control switching that defaults to `Alt`.
 9. Rework the player inventory into a `6x3` scrollable view.
 10. Add the `C` key character/status/crafting window.
 11. Add resize support for whitelisted containers.
@@ -181,5 +181,5 @@ These decisions can be finalized before implementation:
 - Whether window positions and sizes should persist between sessions.
 - How focused-window quick-move should behave when the focused container is full.
 - How expanded player inventory slots are unlocked or added over time.
-- Whether hotbar mouse control with no open containers should require holding `Alt` or support a toggle option later.
+- Whether hotbar mouse control with no open containers should require holding the configurable mouse-focus key or support a toggle option later.
 - Whether players should be able to interact with inventory windows while continuing to attack, use items, or only move with `WASD`.

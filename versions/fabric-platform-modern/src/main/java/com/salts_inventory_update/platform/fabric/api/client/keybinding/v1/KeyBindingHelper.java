@@ -19,6 +19,10 @@ public final class KeyBindingHelper {
         return invokeBoundKey("net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper", keyMapping);
     }
 
+    public static boolean isKeyModifierActive(KeyMapping keyMapping) {
+        return true;
+    }
+
     private static void invokeRegister(String className, String methodName, KeyMapping keyMapping) {
         try {
             Class<?> helper = Class.forName(className);

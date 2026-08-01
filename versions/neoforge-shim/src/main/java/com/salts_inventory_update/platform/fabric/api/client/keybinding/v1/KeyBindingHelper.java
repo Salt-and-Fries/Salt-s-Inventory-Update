@@ -23,6 +23,10 @@ public final class KeyBindingHelper {
         return keyMapping.getKey();
     }
 
+    public static boolean isKeyModifierActive(KeyMapping keyMapping) {
+        return keyMapping.getKeyModifier().isActive(keyMapping.getKeyConflictContext());
+    }
+
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         for (KeyMapping keyMapping : KEY_MAPPINGS) {
             event.register(keyMapping);

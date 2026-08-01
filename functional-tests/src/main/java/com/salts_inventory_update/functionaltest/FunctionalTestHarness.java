@@ -8,10 +8,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.MenuType;
+import org.lwjgl.glfw.GLFW;
 
 import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.SaltsInventoryUpdate;
@@ -95,6 +97,13 @@ public final class FunctionalTestHarness {
         recorder.check("runtime.server_desktop_available", SaltsInventoryRuntime.isServerDesktopAvailable());
         recorder.check("runtime.enabled", SaltsInventoryRuntime.isEnabled());
         recorder.check("keybind.character_window_registered", WindowedInventoryClient.characterWindowKey() != null);
+        recorder.check("keybind.mouse_focus_registered", WindowedInventoryClient.mouseFocusKey() != null);
+        recorder.check(
+            "keybind.mouse_focus_default_alt",
+            WindowedInventoryClient.mouseFocusKey() != null
+                && WindowedInventoryClient.mouseFocusKey().getDefaultKey().getType() == InputConstants.Type.KEYSYM
+                && WindowedInventoryClient.mouseFocusKey().getDefaultKey().getValue() == GLFW.GLFW_KEY_LEFT_ALT
+        );
     }
 
     private static void testConfigNormalization(ResultRecorder recorder) {

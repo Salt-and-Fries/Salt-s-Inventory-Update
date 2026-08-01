@@ -15,4 +15,8 @@ public final class KeyBindingHelper {
     public static InputConstants.Key getBoundKeyOf(KeyMapping keyMapping) {
         return net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.getBoundKeyOf(keyMapping);
     }
+
+    public static boolean isKeyModifierActive(KeyMapping keyMapping) {
+        return true;
+    }
 }

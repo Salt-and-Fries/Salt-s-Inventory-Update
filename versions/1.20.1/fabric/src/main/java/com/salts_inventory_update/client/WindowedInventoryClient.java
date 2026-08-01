@@ -25,6 +25,7 @@ import com.salts_inventory_update.mixin.client.MouseHandlerAccessor;
 public final class WindowedInventoryClient {
     private static KeyMapping characterWindowKey;
     private static KeyMapping jeiWindowKey;
+    private static KeyMapping mouseFocusKey;
     private static boolean customMouseGrab;
     private static Field mouseGrabbedField;
     private static Field mouseXposField;
@@ -59,6 +60,14 @@ public final class WindowedInventoryClient {
                 KeyMapping.CATEGORY_INVENTORY
             )
         );
+        mouseFocusKey = KeyBindingHelper.registerKeyBinding(
+            new KeyMapping(
+                "key.salts_inventory_update.mouse_focus",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_LEFT_ALT,
+                KeyMapping.CATEGORY_INVENTORY
+            )
+        );
 
         InventoryDesktopScreen.registerInternalApiDefinitions();
         TomsStorageClientCompat.initialize();
@@ -77,6 +86,14 @@ public final class WindowedInventoryClient {
 
     public static KeyMapping jeiWindowKey() {
         return jeiWindowKey;
+    }
+
+    public static KeyMapping mouseFocusKey() {
+        return mouseFocusKey;
+    }
+
+    public static String mouseFocusKeyName() {
+        return mouseFocusKey == null ? "Left Alt" : mouseFocusKey.getTranslatedKeyMessage().getString();
     }
 
     public static ResourceLocation id(String path) {
@@ -148,6 +165,29 @@ public final class WindowedInventoryClient {
             || InputConstants.isKeyDown(minecraft.getWindow().getWindow(), GLFW.GLFW_KEY_RIGHT_ALT);
     }
 
+    public static boolean isMouseFocusKeyDown(Minecraft minecraft) {
+        if (mouseFocusKey == null) {
+            return false;
+        }
+        if (!KeyBindingHelper.isKeyModifierActive(mouseFocusKey)) {
+            return false;
+        }
+        if (mouseFocusKey.isDefault() && isAltDown(minecraft)) {
+            return true;
+        }
+        InputConstants.Key key = KeyBindingHelper.getBoundKeyOf(mouseFocusKey);
+        if (key.getValue() == InputConstants.UNKNOWN.getValue()) {
+            return false;
+        }
+        if (key.getType() == InputConstants.Type.KEYSYM) {
+            return InputConstants.isKeyDown(minecraft.getWindow().getWindow(), key.getValue());
+        }
+        if (key.getType() == InputConstants.Type.MOUSE) {
+            return GLFW.glfwGetMouseButton(minecraft.getWindow().getWindow(), key.getValue()) == GLFW.GLFW_PRESS;
+        }
+        return false;
+    }
+
     private static void onClientTick(Minecraft minecraft) {
         DesktopContainerClient.tick(minecraft);
         openPendingConfigScreen(minecraft);
@@ -186,20 +226,20 @@ public final class WindowedInventoryClient {
         }
 
         if (screen instanceof InventoryDesktopScreen inventoryScreen) {
-            boolean altDown = isAltDown(minecraft);
+            boolean mouseFocusDown = isMouseFocusKeyDown(minecraft);
             boolean hasWindows = inventoryScreen.hasWindows();
             boolean desktopActive = hasWindows || inventoryScreen.isHotbarOnly();
-            inventoryScreen.setCameraControl(altDown && hasWindows);
+            inventoryScreen.setCameraControl(mouseFocusDown && hasWindows);
             syncMovementKeys(minecraft, desktopActive && !inventoryScreen.isTextInputActive(), !hasWindows || inventoryScreen.isCameraControlActive());
             setCameraMouseGrab(minecraft, inventoryScreen.isCameraControlActive());
 
-            if (inventoryScreen.isHotbarOnly() && !altDown && inventoryScreen.canCloseHotbarOnly()) {
+            if (inventoryScreen.isHotbarOnly() && !mouseFocusDown && inventoryScreen.canCloseHotbarOnly()) {
                 inventoryScreen.onClose();
             }
         } else {
             setCameraMouseGrab(minecraft, false);
             InventoryDesktopScreen.tickPassiveGhostWindows(minecraft);
-            if (screen == null && isAltDown(minecraft)) {
+            if (screen == null && isMouseFocusKeyDown(minecraft)) {
                 InventoryDesktopScreen.openHotbarOnly(minecraft);
             }
         }

@@ -8806,7 +8806,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private int instructionsLineHeight(InstructionsLine line, int width) {
-        if (line.binds().isEmpty()) {
+        List<String> binds = line.resolvedBinds();
+        if (binds.isEmpty()) {
             if (line.control() != null) {
                 int textWidth = Math.max(0, width - 4 - CONTROL_SIZE - INSTRUCTIONS_BIND_GAP - 2);
                 int textHeight = Math.max(1, this.wrapInstructionsText(line.text(), textWidth).size()) * INSTRUCTIONS_BODY_LINE_HEIGHT + 2;
@@ -8816,7 +8817,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         int bindWidth = 4;
-        for (String bind : line.binds()) {
+        for (String bind : binds) {
             bindWidth += this.instructionsBindBoxWidth(bind) + INSTRUCTIONS_BIND_GAP;
         }
         int textWidth = Math.max(0, width - bindWidth - 2);
@@ -8829,6 +8830,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         graphics.fill(x + this.font.width(section.title()) + 5, y + 5, x + width, y + 6, this.uiColor(0xFF323946));
         int lineY = y + 12;
         for (InstructionsLine line : section.lines()) {
+            List<String> binds = line.resolvedBinds();
             if (line.control() != null) {
                 int iconX = x + 4;
                 this.renderInstructionsControlIcon(graphics, line.control(), iconX, lineY + 1);
@@ -8843,7 +8845,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 continue;
             }
 
-            if (line.binds().isEmpty()) {
+            if (binds.isEmpty()) {
                 for (String wrapped : this.wrapInstructionsText(line.text(), width - 4)) {
                     graphics.text(this.font, wrapped, x + 4, lineY, this.uiColor(COLOR_MUTED_TEXT), false);
                     lineY += INSTRUCTIONS_BODY_LINE_HEIGHT;
@@ -8853,7 +8855,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
 
             int bindX = x + 4;
-            for (String bind : line.binds()) {
+            for (String bind : binds) {
                 int bindWidth = this.instructionsBindBoxWidth(bind);
                 this.renderInstructionsBindBox(graphics, bind, bindX, lineY);
                 bindX += bindWidth + INSTRUCTIONS_BIND_GAP;
@@ -14751,7 +14753,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 InstructionsSection.binds(
                     "Desktop Control",
                     InstructionsLine.bind("Hold E", "Close all Salt windows"),
-                    InstructionsLine.bind("Alt", "Give the mouse back to camera control"),
+                    InstructionsLine.mouseFocus("Give the mouse to camera control, or use the hotbar with no windows open"),
                     InstructionsLine.bind("Esc", "Close the Salt desktop")
                 )
             )
@@ -14832,7 +14834,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             InstructionsSection.binds(
                 "Desktop Control",
                 InstructionsLine.bind("Hold E", "Close all Salt windows"),
-                InstructionsLine.bind("Alt", "Give the mouse back to camera control"),
+                InstructionsLine.mouseFocus("Give the mouse to camera control, or use the hotbar with no windows open"),
                 InstructionsLine.bind("Esc", "Close the Salt desktop")
             )
         );
@@ -14873,6 +14875,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private record InstructionsLine(List<String> binds, @Nullable WindowControl control, String text) {
+        private static final String MOUSE_FOCUS_BIND = "\u0000mouse_focus";
+
         private static InstructionsLine text(String text) {
             return new InstructionsLine(List.of(), null, text);
         }
@@ -14885,8 +14889,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return new InstructionsLine(binds, null, text);
         }
 
+        private static InstructionsLine mouseFocus(String text) {
+            return bind(MOUSE_FOCUS_BIND, text);
+        }
+
         private static InstructionsLine control(WindowControl control, String text) {
             return new InstructionsLine(List.of(), control, text);
+        }
+
+        private List<String> resolvedBinds() {
+            return this.binds.size() == 1 && MOUSE_FOCUS_BIND.equals(this.binds.get(0))
+                ? List.of(WindowedInventoryClient.mouseFocusKeyName())
+                : this.binds;
         }
     }
 

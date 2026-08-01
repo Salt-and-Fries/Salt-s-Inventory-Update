@@ -126,10 +126,12 @@ Payload tests:
 
 ### Client Entry Coverage
 
-For each version, the script verifies client-facing entry points in:
+For each version, the script verifies client-facing entry points, help content, and translations in:
 
 ```text
 versions/<version>/fabric/src/main/java/com/salts_inventory_update/client/WindowedInventoryClient.java
+versions/<version>/fabric/src/main/java/com/salts_inventory_update/client/InventoryDesktopScreen.java
+versions/<version>/common/src/main/resources/assets/salts_inventory_update/lang/en_us.json
 ```
 
 Tests:
@@ -137,7 +139,17 @@ Tests:
 | Test label pattern | Required text |
 | --- | --- |
 | `<version> character keybind` | `GLFW_KEY_C` |
-| `<version> client command root` | `"salts_inventory"` |
+| `<version> mouse focus keybind registration` | `"key.salts_inventory_update.mouse_focus"` |
+| `<version> mouse focus default key` | `GLFW_KEY_LEFT_ALT` |
+| `<version> configurable mouse focus polling` | `getBoundKeyOf(mouseFocusKey)` |
+| `<version> mouse focus modifier polling` | `isKeyModifierActive(mouseFocusKey)` |
+| `<version> default right Alt compatibility` | `mouseFocusKey.isDefault() && isAltDown(minecraft)` |
+| `<version> hotbar-only custom focus key` | `screen == null && isMouseFocusKeyDown(minecraft)` |
+| `<version> hotbar-only custom focus release` | `isHotbarOnly() && !mouseFocusDown` |
+| `<version> dynamic mouse focus help variants` | Exactly two `InstructionsLine.mouseFocus(` calls |
+| `<version> live mouse focus help label` | `WindowedInventoryClient.mouseFocusKeyName()` |
+| `<version> mouse focus translation` | `"key.salts_inventory_update.mouse_focus"` |
+| `<version> client command root` | `"saltsinventory"` |
 | `<version> config command` | `"config"` |
 | `<version> functional hook` | `FunctionalTestHarness` |
 
@@ -294,6 +306,8 @@ SIU_FUNCTIONAL_TEST_SUMMARY status=PASS passed=<count> failed=0 mc=<version> loa
 | `runtime.server_desktop_available` | The server desktop availability flag can be true. |
 | `runtime.enabled` | The combined runtime enabled state is true when both runtime flags are true. |
 | `keybind.character_window_registered` | The character-window keybind was registered by `WindowedInventoryClient`. |
+| `keybind.mouse_focus_registered` | The configurable mouse-focus keybind was registered by `WindowedInventoryClient`. |
+| `keybind.mouse_focus_default_alt` | The mouse-focus keybind defaults to Left Alt without rejecting a player's saved remapping. |
 
 ### Runtime Suite: `config-normalization`
 
