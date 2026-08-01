@@ -36,8 +36,11 @@ val enableDesktopRunTrace = providers.gradleProperty("saltsDesktopRunTrace")
     .map { it.equals("true", ignoreCase = true) }
     .orElse(true)
 val includeJeiRuntime = providers.gradleProperty("includeJeiRuntime")
-    .map { !it.equals("false", ignoreCase = true) }
-    .orElse(true)
+    .map { it.equals("true", ignoreCase = true) }
+    .orElse(false)
+val includeReiRuntime = providers.gradleProperty("includeReiRuntime")
+    .map { it.equals("true", ignoreCase = true) }
+    .orElse(false)
 
 val nonFabricSharedSourceExcludes = listOf(
     "**/SaltsInventoryUpdateFabric.java",
@@ -95,7 +98,7 @@ prism {
     metadata {
         modId = "salts_inventory_update"
         name = "Salt's Inventory Update"
-        description = "Salt's Inventory Update upgrades Minecraft inventories with expandable player storage and desktop-style movable container windows. Move, pin, ghost-pin, resize, and snap supported inventory screens, and optionally browse JEI in a Salt desktop window with ingredient search, recipe and uses views, bookmarks, history, and Move Items transfers when Just Enough Items is installed. Tune the experience with /saltsinventory config or the mod-list config button. API hooks are available for add-ons and supported screens.\\n\\nDiscord: https://discord.gg/kfdE9gGGxP\\nAPI: https://salt-and-fries.github.io/Salt-s-Inventory-Update/\\nSource: https://github.com/Salt-and-Fries/Salt-s-Inventory-Update\\nDonate: https://www.paypal.com/donate/?business=ERE5F32WV4NWN&no_recurring=1&currency_code=USD"
+        description = "Salt's Inventory Update upgrades Minecraft inventories with expandable player storage and desktop-style movable container windows. Move, pin, ghost-pin, resize, and snap supported inventory screens, and optionally browse supported recipe browsers in a Salt desktop window with ingredient search, recipe and uses views, bookmarks, history, and Move Items transfers where available. Tune the experience with /saltsinventory config or the mod-list config button. API hooks are available for add-ons and supported screens.\\n\\nDiscord: https://discord.gg/kfdE9gGGxP\\nAPI: https://salt-and-fries.github.io/Salt-s-Inventory-Update/\\nSource: https://github.com/Salt-and-Fries/Salt-s-Inventory-Update\\nDonate: https://www.paypal.com/donate/?business=ERE5F32WV4NWN&no_recurring=1&currency_code=USD"
         license = "MIT"
     }
 
@@ -192,6 +195,10 @@ subprojects {
         maven {
             name = "ModMaven"
             url = uri("https://modmaven.dev/")
+        }
+        maven {
+            name = "Shedaniel"
+            url = uri("https://maven.shedaniel.me/")
         }
     }
 
@@ -323,6 +330,49 @@ subprojects {
                         "runtimeOnly"
                     }
                     dependencies.add(runtimeConfiguration, "mezz.jei:jei-$minecraftVersion-$jeiLoader:$jeiVersion")
+                }
+            }
+        }
+    }
+
+    val reiVersions = mapOf(
+        "26.2" to "26.2.820"
+    )
+    val reiBasicMathVersions = mapOf(
+        "26.2" to "0.6.1"
+    )
+    val reiClothConfigVersions = mapOf(
+        "26.2" to "26.2.155"
+    )
+    val reiArchitecturyVersions = mapOf(
+        "26.2" to "21.0.2"
+    )
+    if (minecraftVersion != null && name == "fabric") {
+        afterEvaluate {
+            reiVersions[minecraftVersion]?.let { reiVersion ->
+                val apiConfiguration = if (!minecraftVersion.startsWith("26.") && configurations.findByName("modCompileOnly") != null) {
+                    "modCompileOnly"
+                } else {
+                    "compileOnly"
+                }
+                dependencies.add(apiConfiguration, "me.shedaniel:RoughlyEnoughItems-api-fabric:$reiVersion")
+                dependencies.add(apiConfiguration, "me.shedaniel:RoughlyEnoughItems-default-plugin-fabric:$reiVersion")
+                reiBasicMathVersions[minecraftVersion]?.let { basicMathVersion ->
+                    dependencies.add(apiConfiguration, "me.shedaniel.cloth:basic-math:$basicMathVersion")
+                }
+                reiClothConfigVersions[minecraftVersion]?.let { clothConfigVersion ->
+                    dependencies.add(apiConfiguration, "me.shedaniel.cloth:cloth-config-fabric:$clothConfigVersion")
+                }
+                reiArchitecturyVersions[minecraftVersion]?.let { architecturyVersion ->
+                    dependencies.add(apiConfiguration, "dev.architectury:architectury-fabric:$architecturyVersion")
+                }
+                if (includeReiRuntime.get()) {
+                    val runtimeConfiguration = if (!minecraftVersion.startsWith("26.") && configurations.findByName("modRuntimeOnly") != null) {
+                        "modRuntimeOnly"
+                    } else {
+                        "runtimeOnly"
+                    }
+                    dependencies.add(runtimeConfiguration, "me.shedaniel:RoughlyEnoughItems-fabric:$reiVersion")
                 }
             }
         }
