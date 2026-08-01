@@ -100,6 +100,7 @@ public final class SaltsInventoryConfig {
     public static final class ConfigFile {
         public boolean enableMod = true;
         public boolean expandableInventory = false;
+        public boolean returnHotbarToInventory = false;
         public boolean enableDetailedConsoleLogs = false;
         public String windowOpeningStyle = WindowOpeningStyle.AROUND_INVENTORY.name();
         public boolean openUnlocked = false;
@@ -147,6 +148,7 @@ public final class SaltsInventoryConfig {
             ConfigFile defaults = new ConfigFile();
             this.enableMod = defaults.enableMod;
             this.expandableInventory = defaults.expandableInventory;
+            this.returnHotbarToInventory = defaults.returnHotbarToInventory;
             this.enableDetailedConsoleLogs = defaults.enableDetailedConsoleLogs;
             this.windowOpeningStyle = defaults.windowOpeningStyle;
             this.openUnlocked = defaults.openUnlocked;

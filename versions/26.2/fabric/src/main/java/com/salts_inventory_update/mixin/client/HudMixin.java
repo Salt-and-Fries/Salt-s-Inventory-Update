@@ -12,6 +12,13 @@ import com.salts_inventory_update.client.WindowedInventoryClient;
 
 @Mixin(Hud.class)
 public abstract class HudMixin {
+    @Inject(method = "extractItemHotbar", at = @At("HEAD"), cancellable = true)
+    private void salts_inventory_update$hideHotbarForDesktop(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+        if (WindowedInventoryClient.shouldHideHotbar()) {
+            ci.cancel();
+        }
+    }
+
     @Inject(method = "extractCrosshair", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$hideCrosshairForDesktop(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         if (WindowedInventoryClient.shouldHideCrosshair()) {

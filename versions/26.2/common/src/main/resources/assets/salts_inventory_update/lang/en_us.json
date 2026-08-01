@@ -16,6 +16,8 @@
   "config.salts_inventory_update.enable_mod.description": "Turns Salt's Inventory Update gameplay features on or off. When off, vanilla inventory and container screens are used and Salt desktop networking stays inactive.",
   "config.salts_inventory_update.expandable_inventory": "Expandable Inventory",
   "config.salts_inventory_update.expandable_inventory.description": "Shows the add-slot button in the player inventory and creative inventory tab. Turning this off hides the button without deleting existing expanded inventory contents.",
+  "config.salts_inventory_update.return_hotbar_to_inventory": "Return Hotbar to Inventory",
+  "config.salts_inventory_update.return_hotbar_to_inventory.description": "Places the hotbar below the player inventory and creative windows and the offhand slot in the character window. The normal HUD hotbar is hidden while any Salt window is open.",
   "config.salts_inventory_update.window_opening_style": "Window Opening Style",
   "config.salts_inventory_update.window_opening_style.description": "Controls where newly opened container windows appear before you move or pin them.",
   "config.salts_inventory_update.window_opening_style.top_outside": "Top Outside",

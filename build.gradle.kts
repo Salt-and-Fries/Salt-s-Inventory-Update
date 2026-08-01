@@ -44,7 +44,8 @@ val includeReiRuntime = providers.gradleProperty("includeReiRuntime")
 
 val nonFabricSharedSourceExcludes = listOf(
     "**/SaltsInventoryUpdateFabric.java",
-    "**/SaltsInventoryUpdateFabricClient.java"
+    "**/SaltsInventoryUpdateFabricClient.java",
+    "**/compat/rei/**"
 )
 
 fun fabricPlatformSourceDir(minecraftVersion: String) =

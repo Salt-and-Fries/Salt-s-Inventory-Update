@@ -68,6 +68,15 @@ public final class SaltsInventoryConfigScreen extends Screen {
             () -> SaltsInventoryConfig.get().expandableInventory,
             value -> SaltsInventoryConfig.update(config -> config.expandableInventory = value)
         );
+        this.addToggle(
+            "return_hotbar_to_inventory",
+            () -> SaltsInventoryConfig.get().returnHotbarToInventory,
+            value -> {
+                boolean returnHotbarWasEnabled = SaltsInventoryConfig.get().returnHotbarToInventory;
+                SaltsInventoryConfig.update(config -> config.returnHotbarToInventory = value);
+                this.refreshInventoryWindowLayout(returnHotbarWasEnabled);
+            }
+        );
         this.addCycle(
             "window_opening_style",
             () -> Component.translatable("config.salts_inventory_update.window_opening_style." + SaltsInventoryConfig.get().windowOpeningStyle().name().toLowerCase(Locale.ROOT)),
@@ -223,11 +232,23 @@ public final class SaltsInventoryConfigScreen extends Screen {
     }
 
     private void resetToDefaults() {
+        boolean returnHotbarWasEnabled = SaltsInventoryConfig.get().returnHotbarToInventory;
         SaltsInventoryConfig.update(SaltsInventoryConfig.ConfigFile::resetToDefaults);
+        this.refreshInventoryWindowLayout(returnHotbarWasEnabled);
         InventoryDesktopScreen.unminimizeAllWindows();
         InventoryDesktopScreen.syncForcedContainerScreens();
         if (this.minecraft != null) {
             this.minecraft.gui.setScreen(new SaltsInventoryConfigScreen(this.previousScreen));
+        }
+    }
+
+    private void refreshInventoryWindowLayout(boolean returnHotbarWasEnabled) {
+        InventoryDesktopScreen desktopScreen = this.minecraft == null ? null : InventoryDesktopScreen.current(this.minecraft);
+        if (desktopScreen == null && this.previousScreen instanceof InventoryDesktopScreen previousDesktop) {
+            desktopScreen = previousDesktop;
+        }
+        if (desktopScreen != null) {
+            desktopScreen.refreshInventoryWindowLayout(returnHotbarWasEnabled);
         }
     }
 

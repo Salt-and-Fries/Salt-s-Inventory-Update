@@ -285,6 +285,15 @@ public final class WindowedInventoryClient {
             && !screen.isCameraControlActive();
     }
 
+    public static boolean shouldHideHotbar() {
+        if (!SaltsInventoryRuntime.isEnabled() || !SaltsInventoryConfig.get().returnHotbarToInventory) {
+            return false;
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        return minecraft.gui.screen() instanceof InventoryDesktopScreen screen && screen.hasWindows();
+    }
+
     private static void syncDesktopMovementKeys(Minecraft minecraft) {
         if (!SaltsInventoryRuntime.isEnabled()) {
             return;

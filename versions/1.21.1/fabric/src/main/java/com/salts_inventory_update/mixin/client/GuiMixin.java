@@ -13,6 +13,13 @@ import com.salts_inventory_update.client.WindowedInventoryClient;
 
 @Mixin(Gui.class)
 public abstract class GuiMixin {
+    @Inject(method = "renderItemHotbar", at = @At("HEAD"), cancellable = true)
+    private void salts_inventory_update$hideHotbarForDesktop(GuiGraphics graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+        if (WindowedInventoryClient.shouldHideHotbar()) {
+            ci.cancel();
+        }
+    }
+
     @Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$hideCrosshairForDesktop(GuiGraphics graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         if (WindowedInventoryClient.shouldHideCrosshair()) {
