@@ -10,6 +10,9 @@ $resultsDir = Join-Path $RepoRoot 'functional-tests\results'
 New-Item -ItemType Directory -Force -Path $resultsDir | Out-Null
 
 & (Join-Path $PSScriptRoot 'Test-SourceFeatureParity.ps1') -RepoRoot $RepoRoot
+if ($LASTEXITCODE -ne 0) {
+    throw "Test-SourceFeatureParity.ps1 failed with exit code $LASTEXITCODE"
+}
 
 function Invoke-FunctionalClientRun {
     param(

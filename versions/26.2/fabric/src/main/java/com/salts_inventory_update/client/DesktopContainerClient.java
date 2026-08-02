@@ -1,12 +1,19 @@
 package com.salts_inventory_update.client;
 
 import com.salts_inventory_update.platform.fabric.api.client.networking.v1.ClientPlayNetworking;
-import java.util.List;
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.display.RecipeDisplayId;
+import org.jspecify.annotations.Nullable;
 
 import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.debug.DesktopDebug;
@@ -20,13 +27,17 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopGhostRecipePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferPayload;
-import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferRequirement;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenLinkedSourcesPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopPlaceRecipePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopQuickMovePayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopHelloPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopReadyPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopHelloAckPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopModePayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopPlayerSessionPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopLinkPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopRenamePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionClosedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionPinPayload;
@@ -34,19 +45,71 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopSessionVisibilit
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotPayload;
 import com.salts_inventory_update.network.DesktopPackets.InventoryExpansionSyncPayload;
 import com.salts_inventory_update.network.DesktopPackets.InventorySlotPurchasePayload;
+import com.salts_inventory_update.protocol.DesktopConnectionState;
+import com.salts_inventory_update.protocol.DesktopProtocol;
 
 public final class DesktopContainerClient {
-    private static boolean readySent;
+    private static final int MODE_RESEND_INTERVAL_TICKS = 100;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final DesktopConnectionState CONNECTION = new DesktopConnectionState();
+    private static final Map<Integer, Long> SESSION_TOKENS = new HashMap<>();
+    private static @Nullable Object connectionIdentity;
+    private static boolean helloSent;
+    private static boolean incompatibilityShown;
+    private static boolean requestedUiEnabled;
+    private static long playerSessionToken;
+    private static long modeSequence;
+    private static int modeResendTicks;
+    private static java.util.List<String> requestedForcedMenuIds = java.util.List.of();
 
     private DesktopContainerClient() {
     }
 
     public static void initializeNetworking() {
-        ClientPlayNetworking.registerGlobalReceiver(DesktopOpenSessionPayload.TYPE, (payload, context) -> {
-            if (!SaltsInventoryRuntime.isEnabled()) {
-                DesktopDebug.trace("client payload open ignored session={} reason=runtime-disabled", payload.sessionId());
+        ClientPlayNetworking.registerGlobalReceiver(DesktopHelloAckPayload.TYPE, (payload, context) -> {
+            if (payload.playerSessionToken() == 0L || !CONNECTION.acknowledge(
+                payload.protocolVersion(),
+                payload.clientNonce(),
+                payload.connectionNonce(),
+                payload.capabilities(),
+                payload.uiEnabled()
+            )) {
+                rejectIncompatible(context.client(), "The server returned an invalid desktop protocol handshake.");
                 return;
             }
+            playerSessionToken = payload.playerSessionToken();
+            requestedUiEnabled = payload.uiEnabled();
+            modeSequence = -1L;
+            modeResendTicks = 0;
+            SaltsInventoryRuntime.setServerDesktopAvailable(true);
+            if (context.client().player != null) {
+                InventoryExpansion.appendMissingMenuSlots(context.client().player.inventoryMenu, context.client().player);
+            }
+            DesktopDebug.log("client desktop handshake accepted protocol={} capabilities={} ui={}", payload.protocolVersion(), payload.capabilities(), payload.uiEnabled());
+        });
+        ClientPlayNetworking.registerGlobalReceiver(DesktopPlayerSessionPayload.TYPE, (payload, context) -> {
+            if (payload.playerSessionToken() != 0L
+                && CONNECTION.authorizes(payload.connectionNonce(), DesktopProtocol.CAP_INVENTORY_TOPOLOGY, false)) {
+                playerSessionToken = payload.playerSessionToken();
+                SESSION_TOKENS.clear();
+            }
+        });
+        ClientPlayNetworking.registerGlobalReceiver(DesktopOpenSessionPayload.TYPE, (payload, context) -> {
+            if (!CONNECTION.authorizes(CONNECTION.connectionNonce(), DesktopProtocol.CAP_CUSTOM_WINDOWS, true)
+                || payload.sessionToken() == 0L) {
+                DesktopDebug.trace("client payload open ignored session={} reason=inactive-or-invalid", payload.sessionId());
+                return;
+            }
+            Long previousToken = SESSION_TOKENS.get(payload.sessionId());
+            if (previousToken != null && previousToken.longValue() != payload.sessionToken()) {
+                rejectIncompatible(context.client(), "The server reused an active desktop session identifier.");
+                return;
+            }
+            if (previousToken == null && SESSION_TOKENS.size() >= DesktopProtocol.MAX_DESKTOP_SESSIONS) {
+                rejectIncompatible(context.client(), "The server exceeded the desktop session limit.");
+                return;
+            }
+            SESSION_TOKENS.put(payload.sessionId(), payload.sessionToken());
             boolean diagnostic = isCamelOrLlamaSpecial(payload.specialKind());
             if (diagnostic) {
                 mountDiag(
@@ -82,10 +145,13 @@ public final class DesktopContainerClient {
                     mountDiag("client_payload_open_added session={} special={}", payload.sessionId(), payload.specialKind());
                 }
             } catch (RuntimeException exception) {
+                if (previousToken == null) {
+                    SESSION_TOKENS.remove(payload.sessionId());
+                }
                 if (diagnostic) {
                     mountDiag("client_payload_open_failed session={} special={} reason={}", payload.sessionId(), payload.specialKind(), exception.toString());
                 }
-                throw exception;
+                rejectIncompatible(context.client(), "The server sent an invalid desktop session snapshot.");
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(DesktopSlotPayload.TYPE, (payload, context) -> {
@@ -101,6 +167,10 @@ public final class DesktopContainerClient {
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(DesktopCarriedPayload.TYPE, (payload, context) -> {
+            if (!CONNECTION.authorizes(payload.connectionNonce(), 0L, false)
+                || payload.playerSessionToken() != playerSessionToken) {
+                return;
+            }
             DesktopDebug.trace("client payload carried stack={}", payload.carried());
             InventoryDesktopScreen screen = InventoryDesktopScreen.current(context.client());
             if (screen != null) {
@@ -110,12 +180,16 @@ public final class DesktopContainerClient {
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(DesktopSessionClosedPayload.TYPE, (payload, context) -> {
+            SESSION_TOKENS.remove(payload.sessionId());
             InventoryDesktopScreen screen = InventoryDesktopScreen.current(context.client());
             if (screen != null) {
                 screen.removeSession(payload.sessionId());
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(DesktopSessionVisibilityPayload.TYPE, (payload, context) -> {
+            if (!validInboundSession(payload.connectionNonce(), payload.sessionId(), payload.sessionToken())) {
+                return;
+            }
             InventoryDesktopScreen screen = InventoryDesktopScreen.current(context.client());
             if (screen != null) {
                 screen.setSessionVisible(payload.sessionId(), payload.visible());
@@ -128,6 +202,9 @@ public final class DesktopContainerClient {
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(DesktopCustomPayload.TYPE, (payload, context) -> {
+            if (!validInboundSession(payload.connectionNonce(), payload.sessionId(), payload.sessionToken())) {
+                return;
+            }
             InventoryDesktopScreen screen = InventoryDesktopScreen.current(context.client());
             if (screen != null) {
                 screen.applyCustomPayload(payload);
@@ -140,8 +217,8 @@ public final class DesktopContainerClient {
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(InventoryExpansionSyncPayload.TYPE, (payload, context) -> {
-            if (!SaltsInventoryRuntime.isEnabled()) {
-                DesktopDebug.trace("client payload inventory expansion ignored reason=runtime-disabled");
+            if (!isTopologyNegotiated()) {
+                DesktopDebug.trace("client payload inventory expansion ignored reason=topology-unnegotiated");
                 return;
             }
             DesktopDebug.trace("client payload inventory expansion slots={} stacks={}", payload.slotCount(), payload.items().size());
@@ -159,54 +236,93 @@ public final class DesktopContainerClient {
     }
 
     public static void tick(Minecraft minecraft) {
+        Object currentConnection = minecraft.getConnection();
         if (minecraft.player == null || minecraft.level == null) {
-            readySent = false;
+            if (currentConnection == null) {
+                resetConnection();
+                connectionIdentity = null;
+            }
             SaltsInventoryRuntime.setServerDesktopAvailable(true);
             return;
         }
 
+        if (connectionIdentity != currentConnection) {
+            resetConnection();
+            connectionIdentity = currentConnection;
+        }
+
         boolean remoteServer = minecraft.getCurrentServer() != null && minecraft.getSingleplayerServer() == null;
-        boolean desktopAvailable = !remoteServer || canUseServerSessionsRaw();
-        SaltsInventoryRuntime.setServerDesktopAvailable(desktopAvailable);
-        if (!SaltsInventoryRuntime.isEnabled()) {
-            if (readySent && desktopAvailable) {
-                send(new DesktopReadyPayload(false), "ready-disabled");
+        boolean helloChannel = canSendType(DesktopHelloPayload.TYPE);
+        boolean legacyReadyChannel = canSendType(DesktopReadyPayload.TYPE);
+        boolean saltChannel = helloChannel || legacyReadyChannel || canSendType(DesktopClickPayload.TYPE);
+        if (!helloChannel) {
+            SaltsInventoryRuntime.setServerDesktopAvailable(!remoteServer);
+            if (remoteServer && saltChannel) {
+                rejectIncompatible(
+                    minecraft,
+                    legacyReadyChannel
+                        ? "Salt's Inventory Update 0.1.1 is incompatible. Update the mod on both client and server (protocol 2 required)."
+                        : "Salt's Inventory Update versions do not match. Update the mod on both client and server."
+                );
             }
-            readySent = false;
             return;
         }
 
-        if (!readySent) {
-            if (send(new DesktopReadyPayload(true), "ready")) {
-                DesktopDebug.log("client desktop ready send");
-                readySent = true;
+        if (!helloSent) {
+            long clientNonce = nextToken();
+            CONNECTION.begin(clientNonce, minecraft.level.getGameTime());
+            requestedUiEnabled = SaltsInventoryRuntime.isConfiguredEnabled();
+            requestedForcedMenuIds = forcedMenuIds();
+            helloSent = send(
+                new DesktopHelloPayload(DesktopProtocol.VERSION, clientNonce, DesktopProtocol.KNOWN_CAPABILITIES, requestedUiEnabled, requestedForcedMenuIds),
+                "hello"
+            );
+            if (helloSent) {
+                DesktopDebug.log("client desktop hello sent protocol={} capabilities={} ui={}", DesktopProtocol.VERSION, DesktopProtocol.KNOWN_CAPABILITIES, requestedUiEnabled);
             }
+        }
+
+        if (CONNECTION.expireIfNecessary(minecraft.level.getGameTime(), true)) {
+            rejectIncompatible(minecraft, "The server did not complete the Salt's Inventory Update handshake. Update the mod on both sides.");
+        }
+
+        boolean negotiated = CONNECTION.isNegotiated();
+        SaltsInventoryRuntime.setServerDesktopAvailable(!remoteServer || negotiated);
+        if (!negotiated) {
+            return;
+        }
+
+        boolean desiredUi = SaltsInventoryRuntime.isConfiguredEnabled();
+        java.util.List<String> desiredForcedMenuIds = forcedMenuIds();
+        boolean periodicResend = ++modeResendTicks >= MODE_RESEND_INTERVAL_TICKS;
+        if (desiredUi != requestedUiEnabled || !desiredForcedMenuIds.equals(requestedForcedMenuIds) || periodicResend) {
+            long nextSequence = ++modeSequence;
+            long nonce = CONNECTION.connectionNonce();
+            if (send(new DesktopModePayload(nonce, nextSequence, desiredUi, desiredForcedMenuIds), "mode")) {
+                CONNECTION.updateMode(nonce, nextSequence, desiredUi);
+                requestedUiEnabled = desiredUi;
+                requestedForcedMenuIds = desiredForcedMenuIds;
+                modeResendTicks = 0;
+            }
+        }
+        if (!desiredUi && minecraft.gui.screen() instanceof InventoryDesktopScreen) {
+            minecraft.gui.setScreen(null);
         }
     }
 
     public static boolean canSendDesktopPackets() {
-        if (!SaltsInventoryRuntime.isEnabled()) {
-            return false;
-        }
-
-        try {
-            return ClientPlayNetworking.canSend(DesktopClickPayload.TYPE);
-        } catch (IllegalStateException | IllegalArgumentException ignored) {
-            return false;
-        }
+        return isGameplayActive() && canSendType(DesktopClickPayload.TYPE);
     }
 
     public static boolean canUseServerSessions() {
-        if (!SaltsInventoryRuntime.isEnabled()) {
-            return false;
-        }
-
-        return canUseServerSessionsRaw();
+        return CONNECTION.authorizes(CONNECTION.connectionNonce(), DesktopProtocol.CAP_CUSTOM_WINDOWS, true)
+            && canUseServerSessionsRaw();
     }
 
     private static boolean canUseServerSessionsRaw() {
         try {
-            return ClientPlayNetworking.canSend(DesktopReadyPayload.TYPE)
+            return ClientPlayNetworking.canSend(DesktopHelloPayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopModePayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopClickPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopQuickMovePayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopButtonPayload.TYPE)
@@ -216,6 +332,8 @@ public final class DesktopContainerClient {
                 && ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopSessionPinPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopSessionVisibilityPayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopOpenLinkedSourcesPayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopLinkPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopCustomPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopCarriedPayload.TYPE)
                 && ClientPlayNetworking.canSend(InventorySlotPurchasePayload.TYPE);
@@ -224,12 +342,34 @@ public final class DesktopContainerClient {
         }
     }
 
+    public static boolean isGameplayActive() {
+        return SaltsInventoryRuntime.isConfiguredEnabled()
+            && CONNECTION.authorizes(CONNECTION.connectionNonce(), 0L, true);
+    }
+
+    public static boolean isTopologyNegotiated() {
+        return CONNECTION.authorizes(
+            CONNECTION.connectionNonce(),
+            DesktopProtocol.CAP_INVENTORY_TOPOLOGY,
+            false
+        );
+    }
+
     public static boolean clickSlot(int debugId, int sessionId, int slotIndex, int button, ContainerInput input, ItemStack clientCarried) {
+        SessionAuth auth = sessionAuth(sessionId);
+        if (auth == null) {
+            return false;
+        }
         DesktopDebug.trace("client send click id={} session={} slot={} button={} input={} clientCarried={}", debugId, sessionId, slotIndex, button, input, clientCarried);
-        return send(new DesktopClickPayload(debugId, sessionId, slotIndex, button, input.name(), clientCarried.copy()), "click");
+        return send(new DesktopClickPayload(CONNECTION.connectionNonce(), sessionId, auth.token(), auth.stateId(), debugId, slotIndex, button, input.name(), clientCarried.copy()), "click");
     }
 
     public static boolean quickMoveSlot(int sourceSessionId, int sourceSlotIndex, int targetKind, int targetSessionId) {
+        SessionAuth source = sessionAuth(sourceSessionId);
+        SessionAuth target = sessionAuth(targetKind == DesktopPackets.QUICK_TARGET_SESSION ? targetSessionId : DesktopPackets.PLAYER_MENU_SESSION);
+        if (source == null || target == null) {
+            return false;
+        }
         DesktopDebug.trace(
             "client send quick move sourceSession={} sourceSlot={} targetKind={} targetSession={}",
             sourceSessionId,
@@ -237,65 +377,135 @@ public final class DesktopContainerClient {
             targetKind,
             targetSessionId
         );
-        return send(new DesktopQuickMovePayload(sourceSessionId, sourceSlotIndex, targetKind, targetSessionId), "quick-move");
+        return send(new DesktopQuickMovePayload(
+            CONNECTION.connectionNonce(), sourceSessionId, source.token(), source.stateId(), sourceSlotIndex,
+            targetKind, targetSessionId, target.token(), target.stateId()
+        ), "quick-move");
     }
 
     public static boolean clickButton(int sessionId, int buttonId) {
+        SessionAuth auth = sessionAuth(sessionId);
+        if (auth == null) {
+            return false;
+        }
         DesktopDebug.trace("client send button session={} button={}", sessionId, buttonId);
-        return send(new DesktopButtonPayload(sessionId, buttonId), "button");
+        return send(new DesktopButtonPayload(CONNECTION.connectionNonce(), sessionId, auth.token(), auth.stateId(), buttonId), "button");
     }
 
     public static boolean placeRecipe(int sessionId, RecipeDisplayId recipeId, boolean useMaxItems) {
+        SessionAuth auth = sessionAuth(sessionId);
+        if (auth == null) {
+            return false;
+        }
         DesktopDebug.trace("client send recipe place session={} recipe={} useMax={}", sessionId, recipeId, useMaxItems);
-        return send(new DesktopPlaceRecipePayload(sessionId, recipeId, useMaxItems), "recipe-place");
+        return send(new DesktopPlaceRecipePayload(CONNECTION.connectionNonce(), sessionId, auth.token(), auth.stateId(), recipeId, useMaxItems), "recipe-place");
     }
 
-    public static boolean transferJeiRecipe(int targetSessionId, java.util.List<Integer> recipeSlotIds, java.util.List<DesktopJeiTransferRequirement> requirements, boolean maxTransfer) {
-        DesktopDebug.trace("client send JEI transfer targetSession={} recipeSlots={} requirements={} max={}", targetSessionId, recipeSlotIds.size(), requirements.size(), maxTransfer);
-        return send(new DesktopJeiTransferPayload(targetSessionId, recipeSlotIds, requirements, maxTransfer), "jei-transfer");
+    public static boolean transferJeiRecipe(int targetSessionId, Identifier recipeId, boolean maxTransfer) {
+        SessionAuth auth = sessionAuth(targetSessionId);
+        if (auth == null || !CONNECTION.authorizes(CONNECTION.connectionNonce(), DesktopProtocol.CAP_RECIPE_TRANSFER, true)) {
+            return false;
+        }
+        DesktopDebug.trace("client send JEI transfer targetSession={} recipe={} max={}", targetSessionId, recipeId, maxTransfer);
+        return send(new DesktopJeiTransferPayload(CONNECTION.connectionNonce(), targetSessionId, auth.token(), auth.stateId(), recipeId, maxTransfer), "jei-transfer");
     }
 
     public static boolean purchaseInventorySlot() {
+        SessionAuth auth = sessionAuth(DesktopPackets.PLAYER_MENU_SESSION);
+        if (auth == null) {
+            return false;
+        }
         DesktopDebug.trace("client send inventory slot purchase");
-        return send(new InventorySlotPurchasePayload(), "inventory-slot-purchase");
+        return send(new InventorySlotPurchasePayload(CONNECTION.connectionNonce(), auth.token(), auth.stateId()), "inventory-slot-purchase");
     }
 
     public static boolean renameAnvil(int sessionId, String name) {
+        SessionAuth auth = sessionAuth(sessionId);
+        if (auth == null) {
+            return false;
+        }
         DesktopDebug.trace("client send rename session={} name={}", sessionId, name);
-        return send(new DesktopRenamePayload(sessionId, name), "rename");
+        return send(new DesktopRenamePayload(CONNECTION.connectionNonce(), sessionId, auth.token(), auth.stateId(), name), "rename");
     }
 
     public static boolean sendCustomPayload(int sessionId, Identifier channel, byte[] data) {
+        SessionAuth auth = sessionAuth(sessionId);
+        if (auth == null) {
+            return false;
+        }
         DesktopDebug.trace("client send custom session={} channel={} bytes={}", sessionId, channel, data.length);
-        return send(new DesktopCustomPayload(sessionId, channel, data), "custom");
+        return send(new DesktopCustomPayload(CONNECTION.connectionNonce(), sessionId, auth.token(), auth.stateId(), channel, data), "custom");
     }
 
     public static boolean syncCarried(ItemStack carried) {
+        SessionAuth auth = sessionAuth(DesktopPackets.PLAYER_MENU_SESSION);
+        if (auth == null) {
+            return false;
+        }
         DesktopDebug.trace("client send carried stack={}", carried);
-        return send(new DesktopCarriedPayload(carried.copy()), "carried");
+        return send(new DesktopCarriedPayload(CONNECTION.connectionNonce(), auth.token(), auth.stateId(), carried.copy()), "carried");
     }
 
     public static void closeSession(int sessionId) {
+        SessionAuth auth = sessionAuth(sessionId);
+        if (auth == null) {
+            return;
+        }
         DesktopDebug.log("client send close session={}", sessionId);
-        send(new DesktopCloseSessionPayload(sessionId), "close");
+        send(new DesktopCloseSessionPayload(CONNECTION.connectionNonce(), sessionId, auth.token()), "close");
     }
 
     public static void setSessionPinMode(int sessionId, PinMode pinMode) {
+        SessionAuth auth = sessionAuth(sessionId);
+        if (auth == null) {
+            return;
+        }
         DesktopDebug.trace("client send pin session={} pin={}", sessionId, pinMode);
-        send(new DesktopSessionPinPayload(sessionId, pinModeToPacket(pinMode)), "pin");
+        send(new DesktopSessionPinPayload(CONNECTION.connectionNonce(), sessionId, auth.token(), pinModeToPacket(pinMode)), "pin");
     }
 
     public static void setSessionVisible(int sessionId, boolean visible) {
-        DesktopDebug.trace("client send visibility session={} visible={}", sessionId, visible);
-        send(new DesktopSessionVisibilityPayload(sessionId, visible), "visibility");
-    }
-
-    public static void openLinkedSources(java.util.List<String> sourceKeys) {
-        if (sourceKeys.isEmpty()) {
+        SessionAuth auth = sessionAuth(sessionId);
+        if (auth == null) {
             return;
         }
-        DesktopDebug.trace("client send linked sources count={} sources={}", sourceKeys.size(), sourceKeys);
-        send(new DesktopOpenLinkedSourcesPayload(List.copyOf(sourceKeys)), "open-linked-sources");
+        DesktopDebug.trace("client send visibility session={} visible={}", sessionId, visible);
+        send(new DesktopSessionVisibilityPayload(CONNECTION.connectionNonce(), sessionId, auth.token(), visible), "visibility");
+    }
+
+    public static void openLinkedSources(int originSessionId) {
+        SessionAuth auth = sessionAuth(originSessionId);
+        if (auth == null) {
+            return;
+        }
+        DesktopDebug.trace("client send linked sources origin={}", originSessionId);
+        send(new DesktopOpenLinkedSourcesPayload(CONNECTION.connectionNonce(), originSessionId, auth.token()), "open-linked-sources");
+    }
+
+    public static void linkSessions(int firstSessionId, int secondSessionId) {
+        SessionAuth first = sessionAuth(firstSessionId);
+        SessionAuth second = sessionAuth(secondSessionId);
+        if (first == null || second == null) {
+            return;
+        }
+        send(new DesktopLinkPayload(CONNECTION.connectionNonce(), firstSessionId, first.token(), secondSessionId, second.token(), DesktopLinkPayload.ACTION_LINK), "link");
+    }
+
+    public static void detachSession(int sessionId) {
+        SessionAuth auth = sessionAuth(sessionId);
+        if (auth == null) {
+            return;
+        }
+        send(new DesktopLinkPayload(CONNECTION.connectionNonce(), sessionId, auth.token(), sessionId, auth.token(), DesktopLinkPayload.ACTION_DETACH), "detach");
+    }
+
+    public static void unlinkSessions(int firstSessionId, int secondSessionId) {
+        SessionAuth first = sessionAuth(firstSessionId);
+        SessionAuth second = sessionAuth(secondSessionId);
+        if (first == null || second == null) {
+            return;
+        }
+        send(new DesktopLinkPayload(CONNECTION.connectionNonce(), firstSessionId, first.token(), secondSessionId, second.token(), DesktopLinkPayload.ACTION_DETACH), "unlink");
     }
 
     private static int pinModeToPacket(PinMode pinMode) {
@@ -307,10 +517,6 @@ public final class DesktopContainerClient {
     }
 
     private static boolean send(net.minecraft.network.protocol.common.custom.CustomPacketPayload payload, String label) {
-        if (!SaltsInventoryRuntime.isEnabled() && !(payload instanceof DesktopReadyPayload)) {
-            DesktopDebug.trace("client desktop packet skipped label={} type={} reason=runtime-disabled", label, payload.type().id());
-            return false;
-        }
         try {
             ClientPlayNetworking.send(payload);
             return true;
@@ -320,11 +526,109 @@ public final class DesktopContainerClient {
         }
     }
 
+    private static @Nullable SessionAuth sessionAuth(int sessionId) {
+        if (!isGameplayActive()) {
+            return null;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null) {
+            return null;
+        }
+        if (sessionId == DesktopPackets.PLAYER_MENU_SESSION) {
+            return playerSessionToken == 0L
+                ? null
+                : new SessionAuth(playerSessionToken, minecraft.player.inventoryMenu.getStateId());
+        }
+        DesktopContainerSession session = InventoryDesktopScreen.sessionForNetworking(minecraft, sessionId);
+        Long token = SESSION_TOKENS.get(sessionId);
+        if (session == null || token == null || token == 0L || token != session.sessionToken()) {
+            return null;
+        }
+        return new SessionAuth(token, session.menu().getStateId());
+    }
+
+    private static boolean validInboundSession(long connectionNonce, int sessionId, long token) {
+        if (!CONNECTION.authorizes(connectionNonce, 0L, false)) {
+            return false;
+        }
+        if (sessionId == DesktopPackets.PLAYER_MENU_SESSION) {
+            return token != 0L && token == playerSessionToken;
+        }
+        return token != 0L && token == SESSION_TOKENS.getOrDefault(sessionId, 0L);
+    }
+
+    private static boolean canSendType(CustomPacketPayload.Type<?> type) {
+        try {
+            return ClientPlayNetworking.canSend(type);
+        } catch (IllegalStateException | IllegalArgumentException ignored) {
+            return false;
+        }
+    }
+
+    private static long nextToken() {
+        long token;
+        do {
+            token = SECURE_RANDOM.nextLong();
+        } while (token == 0L);
+        return token;
+    }
+
+    private static void resetConnection() {
+        CONNECTION.reset();
+        SESSION_TOKENS.clear();
+        helloSent = false;
+        incompatibilityShown = false;
+        requestedUiEnabled = false;
+        requestedForcedMenuIds = java.util.List.of();
+        playerSessionToken = 0L;
+        modeSequence = -1L;
+        modeResendTicks = 0;
+    }
+
+    private static void rejectIncompatible(Minecraft minecraft, String reason) {
+        if (incompatibilityShown) {
+            return;
+        }
+        incompatibilityShown = true;
+        CONNECTION.markIncompatible();
+        SaltsInventoryRuntime.setServerDesktopAvailable(false);
+        Component message = Component.literal(reason);
+        if (minecraft.player != null) {
+            minecraft.player.connection.getConnection().disconnect(message);
+        }
+        DesktopDebug.warn("client desktop protocol rejected reason={}", reason);
+    }
+
+    private static java.util.List<String> forcedMenuIds() {
+        LinkedHashSet<String> normalized = new LinkedHashSet<>();
+        for (String raw : SaltsInventoryConfig.get().forcedContainerWindows) {
+            if (raw == null || raw.isBlank() || normalized.size() >= DesktopProtocol.MAX_FORCED_MENU_IDS) {
+                continue;
+            }
+            String value = raw.trim();
+            if (value.length() > DesktopProtocol.MAX_IDENTIFIER_LENGTH) {
+                continue;
+            }
+            try {
+                Identifier.parse(value);
+                normalized.add(value);
+            } catch (RuntimeException ignored) {
+                // Invalid local entries remain local configuration errors and are not sent.
+            }
+        }
+        ArrayList<String> result = new ArrayList<>(normalized);
+        result.sort(String::compareTo);
+        return java.util.List.copyOf(result);
+    }
+
     private static boolean isCamelOrLlamaSpecial(int specialKind) {
         return specialKind == DesktopPackets.SPECIAL_CAMEL || specialKind == DesktopPackets.SPECIAL_LLAMA;
     }
 
     private static void mountDiag(String message, Object... args) {
-        DesktopDebug.warn("SIU_MOUNT_DIAG " + message, args);
+        DesktopDebug.detail("SIU_MOUNT_DIAG " + message, args);
+    }
+
+    private record SessionAuth(long token, int stateId) {
     }
 }

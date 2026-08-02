@@ -1,4 +1,6 @@
 package com.salts_inventory_update.compat.recipebrowser;
 
-public record RecipeBrowserRecipe(String uid, String categoryUid, int width, int height, Object recipe, Object layout) {
+import org.jspecify.annotations.Nullable;
+
+public record RecipeBrowserRecipe(String uid, String categoryUid, @Nullable String recipeId, int width, int height, Object recipe, Object layout) {
 }

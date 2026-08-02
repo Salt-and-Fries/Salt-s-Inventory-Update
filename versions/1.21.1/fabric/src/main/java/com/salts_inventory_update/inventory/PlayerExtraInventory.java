@@ -8,6 +8,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.StackedContents;
 import net.minecraft.world.item.ItemStack;
 
 public final class PlayerExtraInventory implements Container {
@@ -17,6 +18,10 @@ public final class PlayerExtraInventory implements Container {
 
     public PlayerExtraInventory(Player owner) {
         this.owner = owner;
+    }
+
+    public Player owner() {
+        return this.owner;
     }
 
     public void resize(int size) {
@@ -57,6 +62,36 @@ public final class PlayerExtraInventory implements Container {
         return snapshot;
     }
 
+    public void tick() {
+        int logicalSlotBase = this.owner.getInventory().getContainerSize();
+        for (int i = 0; i < this.items.size(); i++) {
+            ItemStack stack = this.items.get(i);
+            if (!stack.isEmpty()) {
+                stack.inventoryTick(this.owner.level(), this.owner, logicalSlotBase + i, false);
+            }
+        }
+    }
+
+    public void fillStackedContents(StackedContents contents) {
+        for (ItemStack stack : this.items) {
+            contents.accountSimpleStack(stack);
+        }
+    }
+
+    public int findSlotMatchingUnusedItem(ItemStack template) {
+        for (int i = 0; i < this.items.size(); i++) {
+            ItemStack stack = this.items.get(i);
+            if (!stack.isEmpty()
+                && ItemStack.isSameItemSameComponents(template, stack)
+                && !stack.isDamaged()
+                && !stack.isEnchanted()
+                && !stack.has(net.minecraft.core.component.DataComponents.CUSTOM_NAME)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public boolean insert(ItemStack stack) {
         if (stack.isEmpty()) {
             return false;
@@ -92,9 +127,9 @@ public final class PlayerExtraInventory implements Container {
     public int clearOrCountMatchingItems(Predicate<ItemStack> predicate, int maxCount, boolean simulate) {
         int count = 0;
         for (ItemStack stack : this.items) {
-            int remaining = maxCount == 0 ? 0 : maxCount - count;
+            int remaining = maxCount < 0 ? -1 : maxCount == 0 ? 0 : maxCount - count;
             count += ContainerHelper.clearOrCountMatchingItems(stack, predicate, remaining, simulate);
-            if (maxCount != 0 && count >= maxCount) {
+            if (maxCount > 0 && count >= maxCount) {
                 break;
             }
         }

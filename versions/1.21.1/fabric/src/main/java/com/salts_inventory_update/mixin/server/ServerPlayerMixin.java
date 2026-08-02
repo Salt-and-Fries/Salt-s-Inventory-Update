@@ -5,6 +5,7 @@ import java.util.OptionalInt;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.item.trading.MerchantOffers;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,6 +18,11 @@ import com.salts_inventory_update.server.DesktopContainerSessions;
 
 @Mixin(ServerPlayer.class)
 public abstract class ServerPlayerMixin {
+    @Inject(method = "die", at = @At("HEAD"))
+    private void salts_inventory_update$closeDesktopSessionsBeforeDeath(DamageSource source, CallbackInfo ci) {
+        DesktopContainerSessions.beforePlayerReplacement((ServerPlayer) (Object) this);
+    }
+
     @Inject(method = "openMenu", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$openDesktopMenu(MenuProvider provider, CallbackInfoReturnable<OptionalInt> cir) {
         ServerPlayer player = (ServerPlayer) (Object) this;

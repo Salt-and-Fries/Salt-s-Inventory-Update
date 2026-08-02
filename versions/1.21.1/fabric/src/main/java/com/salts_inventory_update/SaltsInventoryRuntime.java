@@ -8,6 +8,7 @@ import java.util.Set;
 public final class SaltsInventoryRuntime {
     private static boolean configuredEnabled = true;
     private static boolean serverDesktopAvailable = true;
+    private static long serverDesktopCapabilities;
     private static boolean detailedConsoleLogs = false;
     private static Set<String> forcedContainerWindowIds = Set.of();
 
@@ -50,6 +51,14 @@ public final class SaltsInventoryRuntime {
 
     public static boolean isServerDesktopAvailable() {
         return serverDesktopAvailable;
+    }
+
+    public static void setServerDesktopCapabilities(long capabilities) {
+        serverDesktopCapabilities = capabilities;
+    }
+
+    public static boolean hasServerDesktopCapability(long capability) {
+        return (serverDesktopCapabilities & capability) == capability;
     }
 
     public static boolean isEnabled() {

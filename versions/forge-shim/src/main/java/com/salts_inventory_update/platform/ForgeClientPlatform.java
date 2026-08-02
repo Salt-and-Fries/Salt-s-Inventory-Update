@@ -1,8 +1,5 @@
 package com.salts_inventory_update.platform;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-
 import com.mojang.blaze3d.platform.InputConstants;
 import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.client.InventoryDesktopScreen;
@@ -12,6 +9,7 @@ import com.salts_inventory_update.debug.DesktopDebug;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
+import net.minecraft.client.player.Input;
 import net.minecraft.client.gui.screens.Screen;
 import com.salts_inventory_update.platform.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import com.salts_inventory_update.platform.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -29,8 +27,6 @@ public final class ForgeClientPlatform {
     private static final int MOVEMENT_LOG_INTERVAL = 20;
 
     private static boolean initialized;
-    private static boolean movementInputWarningLogged;
-    private static Method windowHandleMethod;
     private static int movementInputEvents;
     private static int movementInputPatches;
     private static int movementInputSkips;
@@ -77,7 +73,7 @@ public final class ForgeClientPlatform {
         syncDesktopMovementInput(Minecraft.getInstance(), event.getInput());
     }
 
-    private static void syncDesktopMovementInput(Minecraft minecraft, Object movementInput) {
+    private static void syncDesktopMovementInput(Minecraft minecraft, Input movementInput) {
         if (!SaltsInventoryRuntime.isEnabled()) {
             traceMovementSkip("runtime-disabled", movementInput, null);
             return;
@@ -105,7 +101,7 @@ public final class ForgeClientPlatform {
         applyMovementInput(minecraft, desktop, movementInput, enabled, allowShift);
     }
 
-    private static void applyMovementInput(Minecraft minecraft, InventoryDesktopScreen desktop, Object movementInput, boolean enabled, boolean allowShift) {
+    private static void applyMovementInput(Minecraft minecraft, InventoryDesktopScreen desktop, Input movementInput, boolean enabled, boolean allowShift) {
         Options options = minecraft.options;
         boolean forward = isDown(minecraft, options.keyUp, enabled);
         boolean backward = isDown(minecraft, options.keyDown, enabled);
@@ -117,31 +113,15 @@ public final class ForgeClientPlatform {
         float forwardImpulse = forward == backward ? 0.0F : (forward ? 1.0F : -1.0F);
         float leftImpulse = left == right ? 0.0F : (left ? 1.0F : -1.0F);
 
-        try {
-            setField(movementInput, "up", forward);
-            setField(movementInput, "down", backward);
-            setField(movementInput, "left", left);
-            setField(movementInput, "right", right);
-            setField(movementInput, "jumping", jump);
-            setField(movementInput, "shiftKeyDown", shift);
-            setField(movementInput, "forwardImpulse", forwardImpulse);
-            setField(movementInput, "leftImpulse", leftImpulse);
-            logMovementPatch(desktop, movementInput, enabled, allowShift, forward, backward, left, right, jump, shift, sprint, leftImpulse, forwardImpulse);
-        } catch (ReflectiveOperationException | RuntimeException exception) {
-            if (!movementInputWarningLogged) {
-                movementInputWarningLogged = true;
-                WindowedInventoryClient.syncMovementKeys(minecraft, false);
-                DesktopDebug.warn(
-                    "Forge movement input sync failed input={} screen={} enabled={} allowShift={} reason={}",
-                    className(movementInput),
-                    className(desktop),
-                    enabled,
-                    allowShift,
-                    exception.toString()
-                );
-                com.salts_inventory_update.SaltsInventoryUpdate.LOGGER.warn("Forge movement input sync failed", exception);
-            }
-        }
+        movementInput.up = forward;
+        movementInput.down = backward;
+        movementInput.left = left;
+        movementInput.right = right;
+        movementInput.jumping = jump;
+        movementInput.shiftKeyDown = shift;
+        movementInput.forwardImpulse = forwardImpulse;
+        movementInput.leftImpulse = leftImpulse;
+        logMovementPatch(desktop, movementInput, enabled, allowShift, forward, backward, left, right, jump, shift, sprint, leftImpulse, forwardImpulse);
     }
 
     private static boolean isDown(Minecraft minecraft, KeyMapping keyMapping, boolean enabled) {
@@ -154,7 +134,7 @@ public final class ForgeClientPlatform {
         try {
             InputConstants.Key key = KeyBindingHelper.getBoundKeyOf(keyMapping);
             if (key.getType() == InputConstants.Type.KEYSYM && key.getValue() != InputConstants.UNKNOWN.getValue()) {
-                down = GLFW.glfwGetKey(windowHandle(minecraft), key.getValue()) != GLFW.GLFW_RELEASE;
+                down = GLFW.glfwGetKey(minecraft.getWindow().getWindow(), key.getValue()) != GLFW.GLFW_RELEASE;
             }
         } catch (RuntimeException ignored) {
             DesktopDebug.trace("Forge movement raw key lookup failed mapping={} reason={}", keyMapping.getName(), ignored.toString());
@@ -163,63 +143,9 @@ public final class ForgeClientPlatform {
         return down;
     }
 
-    private static long windowHandle(Minecraft minecraft) {
-        try {
-            Object window = minecraft.getWindow();
-            Object value = windowHandleMethod(window.getClass()).invoke(window);
-            if (value instanceof Number number) {
-                return number.longValue();
-            }
-        } catch (ReflectiveOperationException | RuntimeException exception) {
-            DesktopDebug.trace("Forge movement window handle lookup failed reason={}", exception.toString());
-        }
-        return 0L;
-    }
-
-    private static Method windowHandleMethod(Class<?> type) throws NoSuchMethodException {
-        if (windowHandleMethod == null) {
-            try {
-                windowHandleMethod = type.getMethod("handle");
-            } catch (NoSuchMethodException ignored) {
-                windowHandleMethod = type.getMethod("getWindow");
-            }
-        }
-        return windowHandleMethod;
-    }
-
-    private static void setField(Object target, String name, boolean value) throws ReflectiveOperationException {
-        Field field = requireField(target.getClass(), name);
-        field.setBoolean(target, value);
-    }
-
-    private static void setField(Object target, String name, float value) throws ReflectiveOperationException {
-        Field field = requireField(target.getClass(), name);
-        field.setFloat(target, value);
-    }
-
-    private static Field requireField(Class<?> type, String name) throws NoSuchFieldException {
-        Field field = findField(type, name);
-        if (field == null) {
-            throw new NoSuchFieldException(type.getName() + "." + name);
-        }
-        return field;
-    }
-
-    private static Field findField(Class<?> type, String name) {
-        for (Class<?> current = type; current != null; current = current.getSuperclass()) {
-            try {
-                Field field = current.getDeclaredField(name);
-                field.setAccessible(true);
-                return field;
-            } catch (NoSuchFieldException ignored) {
-            }
-        }
-        return null;
-    }
-
     private static void logMovementPatch(
         InventoryDesktopScreen desktop,
-        Object movementInput,
+        Input movementInput,
         boolean enabled,
         boolean allowShift,
         boolean forward,

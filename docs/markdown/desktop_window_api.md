@@ -303,7 +303,11 @@ public final class MyServerWindow implements DesktopServerWindowHandler<MyMenu, 
 
     @Override
     public void tick(DesktopServerSessionContext<MyMenu, State> context) {
-        context.broadcastChanges();
+        long hash = context.menu().contentHash();
+        if (hash != context.state().lastHash) {
+            context.state().lastHash = hash;
+            context.broadcastChanges();
+        }
     }
 }
 ```
@@ -316,8 +320,13 @@ Server hooks:
 - `closed`
 - `visibilityChanged`
 - `pinChanged`
+- `validateTransfer`
 
 Hidden ghost sessions still tick and validate through the desktop session manager. `closed` means the live session is actually ending, not just becoming a ghost preview.
+
+`broadcastChanges()` requests a synchronization flush. Requests made inside a callback are coalesced and flushed after the outermost callback returns; they never recursively invoke `tick`. A live session receives at most one public `tick` callback per server tick.
+
+Custom menus opt into recipe-browser Move Items support by overriding `validateTransfer`. Salt passes a recipe resolved by the server, and the handler returns `DesktopTransferDecision.unsupported()`, `denied(reason)`, or a bounded `allowed(requirements, destinationSlots, maximumCrafts)` decision. Do not reuse ingredient lists or slot IDs received from a client. The default implementation is `unsupported`, preserving binary compatibility and keeping the Move Items control disabled until server validation exists.
 
 ## Payloads
 

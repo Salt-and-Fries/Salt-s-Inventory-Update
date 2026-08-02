@@ -1115,12 +1115,23 @@ if (index &gt;= 0) {
 
     @Override
     public void tick(DesktopServerSessionContext&lt;MyMenu, State&gt; context) {
-        context.broadcastChanges();
+        long hash = context.menu().contentHash();
+        if (hash != context.state().lastHash) {
+            context.state().lastHash = hash;
+            context.broadcastChanges();
+        }
     }
 }</code></pre>
           <p>
             Hidden ghost sessions still tick and validate through the desktop session manager. <code>closed</code> means
             the live session is really ending, not just becoming a ghost preview.
+          </p>
+          <p>
+            <code>broadcastChanges()</code> requests a coalesced synchronization flush after the outermost callback; it
+            never recursively invokes <code>tick</code>. Custom menus override <code>validateTransfer</code> to opt into
+            recipe-browser Move Items using a server-resolved recipe and a bounded <code>DesktopTransferDecision</code>.
+            The binary-compatible default is unsupported, so the transfer control remains disabled until a server
+            validator is present.
           </p>
         </section>
 

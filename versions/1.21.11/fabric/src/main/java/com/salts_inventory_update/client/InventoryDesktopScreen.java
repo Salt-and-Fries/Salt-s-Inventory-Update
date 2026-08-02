@@ -159,7 +159,6 @@ import com.salts_inventory_update.mixin.client.RecipeBookComponentAccessor;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopGhostRecipePayload;
-import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferRequirement;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -1482,21 +1481,40 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     public void removeSession(int sessionId) {
-        this.clearSlotInteractionState("session-remove");
-        boolean removedSession = this.sessions.removeIf(session -> session.sessionId() == sessionId);
         boolean removedWindow = false;
         for (InventoryWindow window : List.copyOf(this.windows)) {
-                this.closeLinkedWindows(window, "session-remove", false);
-                this.exitLinkMode("session-remove");
             if (window.session != null && window.session.sessionId() == sessionId) {
-                this.saveWindowState(window, false);
-                this.clearPopupStateFor(window);
-                this.windows.remove(window);
+                this.removeServerClosedWindow(window);
                 removedWindow = true;
             }
         }
+        boolean removedSession = this.sessions.removeIf(session -> session.sessionId() == sessionId);
         DesktopDebug.log("client session closed desktop={} session={} removedSession={} removedWindow={}", this.desktopId, sessionId, removedSession, removedWindow);
         this.closeIfEmpty();
+    }
+
+    private void removeServerClosedWindow(InventoryWindow window) {
+        if (!this.windows.contains(window)) {
+            return;
+        }
+        this.closeLinkedWindows(window, "session-remove", false);
+        this.exitLinkMode("session-remove");
+        this.updateBundleHover(null);
+        this.clearSlotInteractionState("session-remove");
+        this.rememberCreativeWindow(window);
+        this.saveWindowState(window, false);
+        this.clearPopupStateFor(window);
+        this.editingAnvilWindow = this.editingAnvilWindow == window ? null : this.editingAnvilWindow;
+        this.editingCreativeSearchWindow = this.editingCreativeSearchWindow == window ? null : this.editingCreativeSearchWindow;
+        this.scrollingCreativeWindow = this.scrollingCreativeWindow == window ? null : this.scrollingCreativeWindow;
+        this.scrollingStorageWindow = this.scrollingStorageWindow == window ? null : this.scrollingStorageWindow;
+        this.draggingRecipeBrowserViewWindow = this.draggingRecipeBrowserViewWindow == window ? null : this.draggingRecipeBrowserViewWindow;
+        this.movingWindow = this.movingWindow == window ? null : this.movingWindow;
+        this.resizingWindow = this.resizingWindow == window ? null : this.resizingWindow;
+        this.closeRecipeBrowserView(window);
+        this.apiClosed(window);
+        window.persistentHidden = false;
+        this.windows.remove(window);
     }
 
     public void setSessionVisible(int sessionId, boolean visible) {
@@ -5871,21 +5889,29 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (originKey == null || targetKey == null) {
             return true;
         }
+        InventoryWindow originWindow = this.windowForStateKey(originKey);
 
         if (targetKey.equals(originKey)) {
             DesktopWindowStateStore.unlinkWindowKey(this.minecraftInstance(), originKey);
+            if (originWindow != null && originWindow.session != null) {
+                DesktopContainerClient.clearSessionLinks(originWindow.session.sessionId());
+            }
             this.exitLinkMode("unlink-origin");
             DesktopDebug.log("client window unlink desktop={} origin={} window={}", this.desktopId, originKey, window.debugName());
             return true;
         }
 
         Set<String> linked = DesktopWindowStateStore.linkedWindowKeys(this.minecraftInstance(), originKey);
-        if (linked.contains(targetKey)) {
+        boolean wasLinked = linked.contains(targetKey);
+        if (wasLinked) {
             DesktopWindowStateStore.unlinkWindowKeyFromGroup(this.minecraftInstance(), originKey, targetKey);
             DesktopDebug.log("client window unlink target desktop={} origin={} target={} window={}", this.desktopId, originKey, targetKey, window.debugName());
         } else {
             DesktopWindowStateStore.linkWindowKeys(this.minecraftInstance(), originKey, targetKey);
             DesktopDebug.log("client window link desktop={} origin={} target={} window={}", this.desktopId, originKey, targetKey, window.debugName());
+        }
+        if (originWindow != null && originWindow.session != null && window.session != null) {
+            DesktopContainerClient.setSessionsLinked(originWindow.session.sessionId(), window.session.sessionId(), !wasLinked);
         }
         return true;
     }
@@ -5940,7 +5966,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
             if (!sourceKeys.isEmpty()) {
                 DesktopDebug.log("client linked source request desktop={} origin={} reason={} sources={}", this.desktopId, originKey, reason, sourceKeys);
-                DesktopContainerClient.openLinkedSources(List.copyOf(sourceKeys));
+                DesktopContainerClient.openLinkedSources(
+                    origin.session == null ? DesktopPackets.PLAYER_MENU_SESSION : origin.session.sessionId()
+                );
             }
         } finally {
             this.syncingLinkedWindows = false;
@@ -10200,7 +10228,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 plan.button().x(),
                 plan.button().y()
             );
-            return new JeiRecipeTransferTarget(this.jeiTransferTargetSessionId(candidate), menu, plan);
+            return new JeiRecipeTransferTarget(this.jeiTransferTargetSessionId(candidate), menu, recipe, plan);
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client JEI transfer target lookup failed desktop={} window={} reason={}", this.desktopId, candidate.debugName(), exception.toString());
             return null;
@@ -10214,7 +10242,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (window.kind == WindowKind.CHARACTER) {
             return true;
         }
-        return window.kind == WindowKind.CONTAINER && window.session != null;
+        return window.kind == WindowKind.CONTAINER && window.session != null && window.session.transferSupported();
     }
 
     private void logJeiTransferDiagnostic(String key, String message, Object... args) {
@@ -10554,11 +10582,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void sendJeiRecipeTransfer(JeiRecipeTransferTarget target, boolean maxTransfer) {
-        List<DesktopJeiTransferRequirement> requirements = target.plan().requirements()
-            .stream()
-            .map(requirement -> new DesktopJeiTransferRequirement(requirement.inputIndex(), requirement.targetSlotId(), requirement.alternatives()))
-            .toList();
-        DesktopContainerClient.transferJeiRecipe(target.sessionId(), target.plan().recipeSlotIds(), requirements, maxTransfer);
+        Identifier recipeId = Identifier.tryParse(target.recipe().recipeId());
+        if (recipeId == null) {
+            DesktopDebug.trace("client JEI transfer dropped recipe={} reason=missing-server-recipe-id", target.recipe().uid());
+            return;
+        }
+        DesktopContainerClient.transferJeiRecipe(target.sessionId(), recipeId, maxTransfer);
     }
 
     private boolean jeiMouseClicked(InventoryWindow window, MouseButtonEvent event, boolean doubleClick) {
@@ -15593,7 +15622,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private record JeiRecipeLayoutPlacement(RecipeBrowserRecipe recipe, int x, int y, int index) {
     }
 
-    private record JeiRecipeTransferTarget(int sessionId, AbstractContainerMenu menu, RecipeBrowserTransferPlan plan) {
+    private record JeiRecipeTransferTarget(int sessionId, AbstractContainerMenu menu, RecipeBrowserRecipe recipe, RecipeBrowserTransferPlan plan) {
     }
 
     private record JeiRecipeTransferAvailability(boolean craftable, List<Integer> missingInputIndexes) {

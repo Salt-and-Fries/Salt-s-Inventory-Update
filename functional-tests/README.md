@@ -104,16 +104,20 @@ Payload tests:
 | --- | --- |
 | `<version> packet InventorySlotPurchasePayload` | `InventorySlotPurchasePayload` |
 | `<version> packet InventoryExpansionSyncPayload` | `InventoryExpansionSyncPayload` |
-| `<version> packet DesktopReadyPayload` | `DesktopReadyPayload` |
+| `<version> packet DesktopHelloPayload` | `DesktopHelloPayload` |
+| `<version> packet DesktopHelloAckPayload` | `DesktopHelloAckPayload` |
+| `<version> packet DesktopModePayload` | `DesktopModePayload` |
 | `<version> packet DesktopClickPayload` | `DesktopClickPayload` |
 | `<version> packet DesktopQuickMovePayload` | `DesktopQuickMovePayload` |
 | `<version> packet DesktopButtonPayload` | `DesktopButtonPayload` |
 | `<version> packet DesktopPlaceRecipePayload` | `DesktopPlaceRecipePayload` |
+| `<version> packet DesktopJeiTransferPayload` | `DesktopJeiTransferPayload` |
 | `<version> packet DesktopRenamePayload` | `DesktopRenamePayload` |
 | `<version> packet DesktopCustomPayload` | `DesktopCustomPayload` |
 | `<version> packet DesktopCloseSessionPayload` | `DesktopCloseSessionPayload` |
 | `<version> packet DesktopSessionPinPayload` | `DesktopSessionPinPayload` |
 | `<version> packet DesktopSessionVisibilityPayload` | `DesktopSessionVisibilityPayload` |
+| `<version> packet DesktopOpenLinkedSourcesPayload` | `DesktopOpenLinkedSourcesPayload` |
 | `<version> packet DesktopOpenSessionPayload` | `DesktopOpenSessionPayload` |
 | `<version> packet DesktopSlotPayload` | `DesktopSlotPayload` |
 | `<version> packet DesktopDataPayload` | `DesktopDataPayload` |
@@ -123,6 +127,8 @@ Payload tests:
 | `<version> packet DesktopMerchantOffersPayload` | `DesktopMerchantOffersPayload` |
 | `<version> packet pin modes` | `PIN_MODE_GHOST_PINNED` |
 | `<version> quick move target` | `QUICK_TARGET_HOTBAR` |
+
+The same pass also enforces the protocol-v2 safety contract: legacy-peer detection, authenticated mutations, server-resolved recipe transfers, server-owned bounded link graphs, secure nonces, rate limits, protected/no-load source access, periodic mode convergence, aggregate session caps, atomic bounded state persistence, bounded Tom's Storage decoding, dormant-slot interaction gates, and death/respawn teardown ordering.
 
 ### Client Entry Coverage
 
@@ -227,12 +233,8 @@ Forge also requires a manifest-level Mixin config for the 1.20.1 Forge dev/runti
 versions/<version>/forge/src/main/resources/META-INF/MANIFEST.MF
 ```
 
-The Forge 1.20.1 dev client also needs the Mixin config passed as a launch argument because its exploded classpath
-manifest is visible to the mod after startup but is not consumed by Mixin's early platform scan:
-
-```text
---mixin.config salts_inventory_update.mixins.json
-```
+Forge ModDev supplies the Mixin config to development runs. The root build must not append a second
+`--mixin.config` argument; parity checks enforce one effective loader-supplied configuration.
 
 Forge/NeoForge metadata tests:
 
@@ -241,7 +243,6 @@ Forge/NeoForge metadata tests:
 | `<version> <loader> mixin metadata block` | `[[mixins]]` |
 | `<version> <loader> mixin metadata config` | `config = "${mod_id}.mixins.json"` |
 | `<version> forge mixin manifest config` | `MixinConfigs: salts_inventory_update.mixins.json` |
-| `<version> forge dev run mixin launch arg` | `"--mixin.config", "salts_inventory_update.mixins.json"` |
 
 ## Gradle Compile Test
 

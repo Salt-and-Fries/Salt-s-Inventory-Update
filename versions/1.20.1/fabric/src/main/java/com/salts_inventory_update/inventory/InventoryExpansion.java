@@ -1,7 +1,10 @@
 package com.salts_inventory_update.inventory;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.StringJoiner;
+import java.util.WeakHashMap;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -20,6 +23,7 @@ import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopPackets.InventoryExpansionSyncPayload;
 import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.debug.DesktopDebug;
+import com.salts_inventory_update.protocol.DesktopProtocol;
 
 public final class InventoryExpansion {
     public static final int VANILLA_MAIN_START = 9;
@@ -27,12 +31,18 @@ public final class InventoryExpansion {
     public static final int HOTBAR_START = 0;
     public static final int HOTBAR_END = 9;
     public static final int VANILLA_PLAYER_MENU_SLOTS = 46;
-    public static final int HARD_MAX_EXTRA_SLOTS = 4096;
+    public static final int HARD_MAX_EXTRA_SLOTS = DesktopProtocol.MAX_EXPANSION_SLOTS;
 
     private static final String EXTRA_SLOT_COUNT_KEY = "salts_inventory_update_extra_slot_count";
     private static final String EXTRA_INVENTORY_KEY = "salts_inventory_update_extra_inventory";
     private static final int EXTRA_MENU_SLOT_X = 8;
     private static final int EXTRA_MENU_SLOT_Y = 142;
+    private static final Set<net.minecraft.world.entity.player.Player> TOPOLOGY_ENABLED = Collections.synchronizedSet(
+        Collections.newSetFromMap(new WeakHashMap<>())
+    );
+    private static final Set<net.minecraft.world.entity.player.Player> GAMEPLAY_ENABLED = Collections.synchronizedSet(
+        Collections.newSetFromMap(new WeakHashMap<>())
+    );
     private static int accessProbeLogs;
     private static int missingAccessWarnings;
 
@@ -85,14 +95,17 @@ public final class InventoryExpansion {
     }
 
     public static boolean isExtraSlot(Slot slot) {
-        return SaltsInventoryRuntime.isEnabled() && slot instanceof InventoryExpansionSlot;
+        return slot instanceof InventoryExpansionSlot;
     }
 
     public static boolean isMainInventorySlot(net.minecraft.world.entity.player.Player player, Slot slot) {
-        return slot.container == player.getInventory()
+        boolean vanillaMain = slot.container == player.getInventory()
             && slot.getContainerSlot() >= VANILLA_MAIN_START
-            && slot.getContainerSlot() < VANILLA_MAIN_END
-            || isExtraSlot(slot);
+            && slot.getContainerSlot() < VANILLA_MAIN_END;
+        boolean negotiatedExtra = isGameplayEnabled(player)
+            && slot instanceof InventoryExpansionSlot
+            && slot.container == access(player).salts_inventory_update$getExtraInventory();
+        return vanillaMain || negotiatedExtra;
     }
 
     public static int storageOrder(Slot slot) {
@@ -103,7 +116,7 @@ public final class InventoryExpansion {
     }
 
     public static void appendMissingMenuSlots(InventoryMenu menu, net.minecraft.world.entity.player.Player player) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
+        if (!isTopologyEnabled(player)) {
             return;
         }
 
@@ -123,7 +136,7 @@ public final class InventoryExpansion {
     }
 
     public static boolean insertIntoExtra(net.minecraft.world.entity.player.Player player, ItemStack stack) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
+        if (!isGameplayEnabled(player)) {
             return false;
         }
 
@@ -131,7 +144,7 @@ public final class InventoryExpansion {
     }
 
     public static void ensurePlayerMenuCanReadSlotCount(net.minecraft.world.entity.player.Player player, int packetSlotCount) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
+        if (!isTopologyEnabled(player)) {
             return;
         }
 
@@ -191,10 +204,13 @@ public final class InventoryExpansion {
         net.minecraft.world.entity.player.Player source,
         boolean copyContents
     ) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
-            return;
+        boolean topologyEnabled = isTopologyEnabled(source);
+        boolean gameplayEnabled = isGameplayEnabled(source);
+        if (target != source) {
+            setTopologyEnabled(source, false);
         }
-
+        setTopologyEnabled(target, topologyEnabled);
+        setGameplayEnabled(target, gameplayEnabled);
         InventoryExpansionAccess sourceAccess = access(source);
         InventoryExpansionAccess targetAccess = access(target);
         targetAccess.salts_inventory_update$setExtraSlotCount(sourceAccess.salts_inventory_update$getExtraSlotCount());
@@ -202,8 +218,21 @@ public final class InventoryExpansion {
         appendMissingMenuSlots(target.inventoryMenu, target);
     }
 
+    public static void replaceFrom(
+        net.minecraft.world.entity.player.Player target,
+        net.minecraft.world.entity.player.Player source
+    ) {
+        setTopologyEnabled(target, isTopologyEnabled(source));
+        setGameplayEnabled(target, isGameplayEnabled(source));
+        InventoryExpansionAccess sourceAccess = access(source);
+        InventoryExpansionAccess targetAccess = access(target);
+        targetAccess.salts_inventory_update$setExtraSlotCount(sourceAccess.salts_inventory_update$getExtraSlotCount());
+        targetAccess.salts_inventory_update$getExtraInventory().copyFrom(sourceAccess.salts_inventory_update$getExtraInventory(), true);
+        appendMissingMenuSlots(target.inventoryMenu, target);
+    }
+
     public static void syncToClient(ServerPlayer player) {
-        if (SaltsInventoryRuntime.isEnabled() && ServerPlayNetworking.canSend(player, InventoryExpansionSyncPayload.TYPE)) {
+        if (isTopologyEnabled(player) && ServerPlayNetworking.canSend(player, InventoryExpansionSyncPayload.TYPE)) {
             InventoryExpansionAccess access = access(player);
             InventoryExpansionSyncPayload payload = new InventoryExpansionSyncPayload(
                 access.salts_inventory_update$getExtraSlotCount(),
@@ -214,7 +243,7 @@ public final class InventoryExpansion {
     }
 
     public static boolean tryPurchase(ServerPlayer player) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
+        if (!isGameplayEnabled(player)) {
             return false;
         }
 
@@ -232,6 +261,32 @@ public final class InventoryExpansion {
         syncToClient(player);
         player.inventoryMenu.broadcastFullState();
         return true;
+    }
+
+    public static void setTopologyEnabled(net.minecraft.world.entity.player.Player player, boolean enabled) {
+        if (enabled) {
+            TOPOLOGY_ENABLED.add(player);
+        } else {
+            TOPOLOGY_ENABLED.remove(player);
+            GAMEPLAY_ENABLED.remove(player);
+        }
+    }
+
+    public static boolean isTopologyEnabled(net.minecraft.world.entity.player.Player player) {
+        return TOPOLOGY_ENABLED.contains(player);
+    }
+
+    public static void setGameplayEnabled(net.minecraft.world.entity.player.Player player, boolean enabled) {
+        if (enabled) {
+            TOPOLOGY_ENABLED.add(player);
+            GAMEPLAY_ENABLED.add(player);
+        } else {
+            GAMEPLAY_ENABLED.remove(player);
+        }
+    }
+
+    public static boolean isGameplayEnabled(net.minecraft.world.entity.player.Player player) {
+        return GAMEPLAY_ENABLED.contains(player);
     }
 
     public record SavedExtraSlot(int slot, ItemStack stack) {

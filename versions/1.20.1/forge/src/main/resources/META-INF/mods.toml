@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "${forge_loader_version_range}"
+loaderVersion = "[47,48)"
 license = "${license}"
 
 [[mods]]
@@ -18,14 +18,14 @@ config = "${mod_id}.mixins.json"
 [[dependencies.${mod_id}]]
 modId = "forge"
 mandatory = true
-versionRange = "[${forge_version},)"
+versionRange = "[47.4.0,48)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.${mod_id}]]
 modId = "minecraft"
 mandatory = true
-versionRange = "[${minecraft_version},)"
+versionRange = "[${minecraft_version}]"
 ordering = "NONE"
 side = "BOTH"
 

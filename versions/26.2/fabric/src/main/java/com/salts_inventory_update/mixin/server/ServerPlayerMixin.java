@@ -93,6 +93,6 @@ public abstract class ServerPlayerMixin {
     }
 
     private static void mountDiag(String message, Object... args) {
-        DesktopDebug.warn("SIU_MOUNT_DIAG " + message, args);
+        DesktopDebug.detail("SIU_MOUNT_DIAG " + message, args);
     }
 }

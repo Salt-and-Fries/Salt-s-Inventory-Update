@@ -8,6 +8,7 @@
     "InventoryExpansionInventoryMixin",
     "InventoryMenuMixin",
     "PlayerInventoryExpansionMixin",
+    "ServerPlaceRecipeInventoryExpansionMixin",
     "server.ChestOpenersCounterMixin",
     "server.ServerPlayerInventoryExpansionMixin",
     "server.ServerPlayerMixin",

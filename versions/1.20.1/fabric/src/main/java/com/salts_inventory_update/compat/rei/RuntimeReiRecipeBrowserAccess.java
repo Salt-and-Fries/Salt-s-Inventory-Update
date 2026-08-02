@@ -258,6 +258,7 @@ final class RuntimeReiRecipeBrowserAccess implements RecipeBrowserAccess {
             recipes.add(new RecipeBrowserRecipe(
                 this.recipeUid(spec, display, index++),
                 display.getCategoryIdentifier().getIdentifier().toString(),
+                display.getDisplayLocation().map(Object::toString).orElse(null),
                 Math.max(1, displayCategory.getDisplayWidth(display)),
                 Math.max(1, displayCategory.getDisplayHeight()),
                 display,

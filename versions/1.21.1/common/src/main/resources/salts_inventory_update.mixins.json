@@ -8,6 +8,7 @@
     "InventoryExpansionInventoryMixin",
     "InventoryMenuMixin",
     "PlayerInventoryExpansionMixin",
+    "ServerPlaceRecipeInventoryExpansionMixin",
     "server.ChestOpenersCounterMixin",
     "server.ServerPlayerInventoryExpansionMixin",
     "server.ServerPlayerMixin",
@@ -16,6 +17,7 @@
   "client": [
     "client.ClientPacketListenerInventoryExpansionMixin",
     "client.GameRendererMixin",
+    "client.GuiGraphicsAccessor",
     "client.GuiMixin",
     "client.KeyboardHandlerMixin",
     "client.MinecraftMixin",

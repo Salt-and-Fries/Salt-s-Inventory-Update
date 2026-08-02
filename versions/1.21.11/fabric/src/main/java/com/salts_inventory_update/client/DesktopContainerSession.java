@@ -27,12 +27,14 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPaylo
 
 public final class DesktopContainerSession {
     private final int sessionId;
+    private final long sessionNonce;
     private final AbstractContainerMenu menu;
     private final Component title;
     private final String sourceKey;
     private final int specialKind;
     private final int entityId;
     private final int columns;
+    private final boolean transferSupported;
     private final List<Slot> containerSlots;
     private final int minSlotX;
     private final int minSlotY;
@@ -41,6 +43,7 @@ public final class DesktopContainerSession {
 
     private DesktopContainerSession(
         int sessionId,
+        long sessionNonce,
         AbstractContainerMenu menu,
         Inventory playerInventory,
         Component title,
@@ -48,14 +51,17 @@ public final class DesktopContainerSession {
         int specialKind,
         int entityId,
         int columns
+        , boolean transferSupported
     ) {
         this.sessionId = sessionId;
+        this.sessionNonce = sessionNonce;
         this.menu = menu;
         this.title = title;
         this.sourceKey = sourceKey;
         this.specialKind = specialKind;
         this.entityId = entityId;
         this.columns = columns;
+        this.transferSupported = transferSupported;
         this.containerSlots = findContainerSlots(menu, playerInventory);
         this.minSlotX = minSlotX(this.containerSlots);
         this.minSlotY = minSlotY(this.containerSlots);
@@ -71,13 +77,17 @@ public final class DesktopContainerSession {
 
         AbstractContainerMenu menu = createMenu(minecraft, payload, player);
         List<ItemStack> items = payload.items();
-        if (items.size() > menu.slots.size()) {
-            items = items.subList(0, menu.slots.size());
+        if (items.size() != menu.slots.size()) {
+            throw new IllegalArgumentException(
+                "Desktop session slot count mismatch: session=" + payload.sessionId()
+                    + ", expected=" + menu.slots.size() + ", received=" + items.size()
+            );
         }
         menu.initializeContents(payload.stateId(), items, payload.carried());
-        for (int i = 0; i < payload.data().length; i++) {
+        int[] data = payload.data();
+        for (int i = 0; i < data.length; i++) {
             try {
-                menu.setData(i, payload.data()[i]);
+                menu.setData(i, data[i]);
             } catch (IndexOutOfBoundsException ignored) {
                 break;
             }
@@ -85,13 +95,15 @@ public final class DesktopContainerSession {
 
         return new DesktopContainerSession(
             payload.sessionId(),
+            payload.sessionNonce(),
             menu,
             player.getInventory(),
             payload.title(),
             payload.sourceKey(),
             payload.specialKind(),
             payload.entityId(),
-            payload.columns()
+            payload.columns(),
+            payload.transferSupported()
         );
     }
 
@@ -136,6 +148,14 @@ public final class DesktopContainerSession {
 
     public int sessionId() {
         return this.sessionId;
+    }
+
+    public long sessionNonce() {
+        return this.sessionNonce;
+    }
+
+    public boolean transferSupported() {
+        return this.transferSupported;
     }
 
     public AbstractContainerMenu menu() {

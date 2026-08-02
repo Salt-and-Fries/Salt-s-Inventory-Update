@@ -1,9 +1,6 @@
 package com.salts_inventory_update.client;
 
 import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +15,8 @@ import com.salts_inventory_update.platform.loader.api.FabricLoader;
 import com.salts_inventory_update.SaltsInventoryUpdate;
 import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.debug.DesktopDebug;
+import com.salts_inventory_update.persistence.AtomicUtf8File;
+import com.salts_inventory_update.protocol.DesktopProtocol;
 
 public final class SaltsInventoryConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -30,21 +29,20 @@ public final class SaltsInventoryConfig {
     private SaltsInventoryConfig() {
     }
 
-    public static ConfigFile get() {
+    public static synchronized ConfigFile get() {
         if (current == null) {
             load();
         }
         return current;
     }
 
-    public static ConfigFile load() {
+    public static synchronized ConfigFile load() {
         ConfigFile loaded = null;
-        if (Files.isRegularFile(CONFIG_PATH)) {
-            try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
-                loaded = GSON.fromJson(reader, ConfigFile.class);
-            } catch (IOException | RuntimeException exception) {
-                DesktopDebug.warn("client config load failed path={} reason={}", CONFIG_PATH, exception.toString());
-            }
+        try {
+            String contents = AtomicUtf8File.read(CONFIG_PATH, DesktopProtocol.MAX_ENVELOPE_BYTES, SaltsInventoryConfig::isValidConfigJson).orElse(null);
+            loaded = contents == null ? null : GSON.fromJson(contents, ConfigFile.class);
+        } catch (IOException | RuntimeException | StackOverflowError exception) {
+            DesktopDebug.warn("client config load failed path={} reason={}", CONFIG_PATH, exception.toString());
         }
 
         current = loaded == null ? new ConfigFile() : loaded.normalized();
@@ -53,12 +51,12 @@ public final class SaltsInventoryConfig {
         return current;
     }
 
-    public static ConfigFile reload() {
+    public static synchronized ConfigFile reload() {
         current = null;
         return load();
     }
 
-    public static void update(Consumer<ConfigFile> updater) {
+    public static synchronized void update(Consumer<ConfigFile> updater) {
         ConfigFile config = get();
         updater.accept(config);
         current = config.normalized();
@@ -66,19 +64,28 @@ public final class SaltsInventoryConfig {
         save();
     }
 
-    public static void save() {
+    public static synchronized void save() {
         try {
-            Files.createDirectories(CONFIG_PATH.getParent());
-            try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
-                GSON.toJson(get().normalized(), writer);
-            }
-        } catch (IOException | RuntimeException exception) {
+            AtomicUtf8File.write(CONFIG_PATH, GSON.toJson(get().normalized()), DesktopProtocol.MAX_ENVELOPE_BYTES, SaltsInventoryConfig::isValidConfigJson);
+        } catch (IOException | RuntimeException | StackOverflowError exception) {
             DesktopDebug.warn("client config save failed path={} reason={}", CONFIG_PATH, exception.toString());
+        }
+    }
+
+    private static boolean isValidConfigJson(String contents) {
+        try {
+            return GSON.fromJson(contents, ConfigFile.class) != null;
+        } catch (RuntimeException | StackOverflowError ignored) {
+            return false;
         }
     }
 
     public static boolean isForcedContainerWindow(String menuId) {
         return get().forcedContainerWindows.contains(menuId);
+    }
+
+    public static synchronized List<String> forcedContainerWindowIds() {
+        return List.copyOf(get().forcedContainerWindows);
     }
 
     public static void setForcedContainerWindow(String menuId, boolean enabled) {
@@ -172,8 +179,12 @@ public final class SaltsInventoryConfig {
 
             LinkedHashSet<String> normalized = new LinkedHashSet<>();
             for (String id : ids) {
-                if (id != null && !id.isBlank()) {
-                    normalized.add(id.trim());
+                if (id == null || normalized.size() >= DesktopProtocol.MAX_FORCED_MENU_IDS) {
+                    continue;
+                }
+                String trimmed = id.trim();
+                if (!trimmed.isBlank() && trimmed.length() <= DesktopProtocol.MAX_IDENTIFIER_LENGTH) {
+                    normalized.add(trimmed);
                 }
             }
             ArrayList<String> sorted = new ArrayList<>(normalized);

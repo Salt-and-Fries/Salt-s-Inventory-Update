@@ -6,12 +6,24 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.gamerules.GameRules;
 
 import com.salts_inventory_update.inventory.InventoryExpansion;
+import com.salts_inventory_update.server.DesktopContainerSessions;
 
 @Mixin(ServerPlayer.class)
 public abstract class ServerPlayerInventoryExpansionMixin {
+    @Inject(method = "die", at = @At("HEAD"))
+    private void salts_inventory_update$closeDesktopMenusBeforeDeath(DamageSource source, CallbackInfo ci) {
+        DesktopContainerSessions.preparePlayerStateTransfer((ServerPlayer) (Object) this);
+    }
+
+    @Inject(method = "restoreFrom", at = @At("HEAD"))
+    private void salts_inventory_update$closeOldDesktopMenusBeforeRestore(ServerPlayer oldPlayer, boolean keepEverything, CallbackInfo ci) {
+        DesktopContainerSessions.preparePlayerStateTransfer(oldPlayer);
+    }
+
     @Inject(method = "restoreFrom", at = @At("RETURN"))
     private void salts_inventory_update$restoreExpansionInventory(ServerPlayer oldPlayer, boolean keepEverything, CallbackInfo ci) {
         ServerPlayer player = (ServerPlayer) (Object) this;

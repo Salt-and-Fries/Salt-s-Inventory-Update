@@ -13,9 +13,18 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffers;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
+import com.salts_inventory_update.protocol.DesktopProtocol;
 
 public final class DesktopPackets {
-    private static final int CUSTOM_PAYLOAD_MAX_BYTES = 32 * 1024;
+    public static final int NETWORK_PROTOCOL_VERSION = DesktopProtocol.VERSION;
+    public static final ResourceLocation LEGACY_READY_TYPE = new ResourceLocation(SaltsInventoryUpdate.MOD_ID, "desktop_ready");
+    private static final int CUSTOM_PAYLOAD_MAX_BYTES = DesktopProtocol.MAX_CUSTOM_DATA_BYTES;
+    private static final int ITEM_LIST_MAX_SIZE = DesktopProtocol.MAX_OPEN_SESSION_ITEMS;
+    private static final int DATA_LIST_MAX_SIZE = DesktopProtocol.MAX_MENU_DATA_VALUES;
+    private static final int MENU_SOURCE_KEY_MAX_LENGTH = DesktopProtocol.MAX_SOURCE_TEXT_LENGTH;
+    private static final int CLICK_INPUT_MAX_LENGTH = 32;
+    private static final int IDENTIFIER_MAX_LENGTH = 128;
+    private static final int HORSE_MENU_MAX_COLUMNS = DesktopProtocol.MAX_MOUNT_COLUMNS;
     public static final int PLAYER_MENU_SESSION = 0;
     public static final int SPECIAL_GENERIC = 0;
     public static final int SPECIAL_HORSE = 1;
@@ -27,11 +36,6 @@ public final class DesktopPackets {
     public static final int PIN_MODE_UNPINNED = 0;
     public static final int PIN_MODE_PINNED = 1;
     public static final int PIN_MODE_GHOST_PINNED = 2;
-    private static final int JEI_TRANSFER_MAX_RECIPE_SLOTS = 128;
-    private static final int JEI_TRANSFER_MAX_REQUIREMENTS = 128;
-    private static final int JEI_TRANSFER_MAX_ALTERNATIVES = 128;
-    private static final int LINKED_SOURCE_MAX_KEYS = 64;
-    private static final int LINKED_SOURCE_MAX_KEY_LENGTH = 512;
 
     private DesktopPackets() {
     }
@@ -40,7 +44,7 @@ public final class DesktopPackets {
     }
 
     public static ResourceLocation id(String path) {
-        return new ResourceLocation(SaltsInventoryUpdate.MOD_ID, path);
+        return new ResourceLocation(SaltsInventoryUpdate.MOD_ID, "v" + NETWORK_PROTOCOL_VERSION + "/" + path);
     }
 
     public static int menuTypeId(MenuType<?> menuType) {
@@ -53,11 +57,19 @@ public final class DesktopPackets {
 
     public static FriendlyByteBuf toBuffer(DesktopPacket packet) {
         FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-        packet.write(buf);
-        return buf;
+        try {
+            packet.write(buf);
+            return buf;
+        } catch (RuntimeException | Error exception) {
+            buf.release();
+            throw exception;
+        }
     }
 
     private static void writeItemList(FriendlyByteBuf buf, List<ItemStack> stacks) {
+        if (stacks.size() > ITEM_LIST_MAX_SIZE) {
+            throw new IllegalArgumentException("Desktop item list is too large: " + stacks.size());
+        }
         buf.writeVarInt(stacks.size());
         for (ItemStack stack : stacks) {
             buf.writeItem(stack);
@@ -66,30 +78,14 @@ public final class DesktopPackets {
 
     private static List<ItemStack> readItemList(FriendlyByteBuf buf) {
         int size = buf.readVarInt();
+        if (size < 0 || size > ITEM_LIST_MAX_SIZE) {
+            throw new IllegalArgumentException("Desktop item list is too large: " + size);
+        }
         List<ItemStack> stacks = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             stacks.add(buf.readItem());
         }
         return stacks;
-    }
-
-    private static void writeIntList(FriendlyByteBuf buf, List<Integer> values) {
-        buf.writeVarInt(values.size());
-        for (int value : values) {
-            buf.writeVarInt(value);
-        }
-    }
-
-    private static List<Integer> readIntList(FriendlyByteBuf buf, int maxSize) {
-        int size = buf.readVarInt();
-        if (size < 0 || size > maxSize) {
-            throw new IllegalArgumentException("Desktop int list is too large: " + size);
-        }
-        List<Integer> values = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            values.add(buf.readVarInt());
-        }
-        return values;
     }
 
     private static void writeLimitedStringList(FriendlyByteBuf buf, List<String> values, int maxSize, int maxLength) {
@@ -112,25 +108,6 @@ public final class DesktopPackets {
             values.add(buf.readUtf(maxLength));
         }
         return values;
-    }
-
-    private static void writeLimitedItemList(FriendlyByteBuf buf, List<ItemStack> stacks) {
-        if (stacks.size() > JEI_TRANSFER_MAX_ALTERNATIVES) {
-            throw new IllegalArgumentException("Desktop JEI transfer alternatives are too large: " + stacks.size());
-        }
-        writeItemList(buf, stacks);
-    }
-
-    private static List<ItemStack> readLimitedItemList(FriendlyByteBuf buf) {
-        int size = buf.readVarInt();
-        if (size < 0 || size > JEI_TRANSFER_MAX_ALTERNATIVES) {
-            throw new IllegalArgumentException("Desktop JEI transfer alternatives are too large: " + size);
-        }
-        List<ItemStack> stacks = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            stacks.add(buf.readItem());
-        }
-        return stacks;
     }
 
     public interface DesktopPacket {
@@ -163,6 +140,14 @@ public final class DesktopPackets {
             this(buf.readVarInt(), readItemList(buf));
         }
 
+        public InventoryExpansionSyncPayload {
+            DesktopProtocol.requireCount("inventory expansion slots", slotCount, DesktopProtocol.MAX_EXPANSION_SLOTS);
+            items = List.copyOf(items);
+            if (items.size() != slotCount) {
+                throw new IllegalArgumentException("Desktop inventory expansion size mismatch: slots=" + slotCount + ", items=" + items.size());
+            }
+        }
+
         @Override
         public ResourceLocation id() {
             return TYPE;
@@ -175,11 +160,31 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopReadyPayload(boolean ready) implements DesktopPacket {
-        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_ready");
+    public record DesktopHelloPayload(
+        int protocolVersion,
+        long clientNonce,
+        long capabilities,
+        boolean uiEnabled,
+        List<String> forcedMenuIds
+    ) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_hello");
 
-        public DesktopReadyPayload(FriendlyByteBuf buf) {
-            this(buf.readBoolean());
+        public DesktopHelloPayload(FriendlyByteBuf buf) {
+            this(
+                buf.readVarInt(),
+                buf.readLong(),
+                buf.readLong(),
+                buf.readBoolean(),
+                readLimitedStringList(
+                    buf,
+                    DesktopProtocol.MAX_FORCED_MENU_IDS,
+                    DesktopProtocol.MAX_IDENTIFIER_LENGTH
+                )
+            );
+        }
+
+        public DesktopHelloPayload {
+            forcedMenuIds = List.copyOf(forcedMenuIds);
         }
 
         @Override
@@ -189,7 +194,164 @@ public final class DesktopPackets {
 
         @Override
         public void write(FriendlyByteBuf buf) {
-            buf.writeBoolean(this.ready);
+            buf.writeVarInt(this.protocolVersion);
+            buf.writeLong(this.clientNonce);
+            buf.writeLong(this.capabilities);
+            buf.writeBoolean(this.uiEnabled);
+            writeLimitedStringList(
+                buf,
+                this.forcedMenuIds,
+                DesktopProtocol.MAX_FORCED_MENU_IDS,
+                DesktopProtocol.MAX_IDENTIFIER_LENGTH
+            );
+        }
+    }
+
+    public record DesktopHelloAckPayload(
+        int protocolVersion,
+        long echoedClientNonce,
+        long connectionNonce,
+        long capabilities,
+        long playerMenuToken,
+        boolean uiEnabled,
+        boolean accepted
+    ) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_hello_ack");
+
+        public DesktopHelloAckPayload(FriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readLong(), buf.readLong(), buf.readLong(), buf.readLong(), buf.readBoolean(), buf.readBoolean());
+        }
+
+        @Override
+        public ResourceLocation id() {
+            return TYPE;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buf) {
+            buf.writeVarInt(this.protocolVersion);
+            buf.writeLong(this.echoedClientNonce);
+            buf.writeLong(this.connectionNonce);
+            buf.writeLong(this.capabilities);
+            buf.writeLong(this.playerMenuToken);
+            buf.writeBoolean(this.uiEnabled);
+            buf.writeBoolean(this.accepted);
+        }
+    }
+
+    public record DesktopModePayload(
+        long connectionNonce,
+        long sequence,
+        boolean uiEnabled,
+        List<String> forcedMenuIds
+    ) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_mode");
+
+        public DesktopModePayload(FriendlyByteBuf buf) {
+            this(
+                buf.readLong(),
+                buf.readVarLong(),
+                buf.readBoolean(),
+                readLimitedStringList(
+                    buf,
+                    DesktopProtocol.MAX_FORCED_MENU_IDS,
+                    DesktopProtocol.MAX_IDENTIFIER_LENGTH
+                )
+            );
+        }
+
+        public DesktopModePayload {
+            forcedMenuIds = List.copyOf(forcedMenuIds);
+        }
+
+        @Override
+        public ResourceLocation id() {
+            return TYPE;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buf) {
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.sequence);
+            buf.writeBoolean(this.uiEnabled);
+            writeLimitedStringList(
+                buf,
+                this.forcedMenuIds,
+                DesktopProtocol.MAX_FORCED_MENU_IDS,
+                DesktopProtocol.MAX_IDENTIFIER_LENGTH
+            );
+        }
+    }
+
+    public record DesktopAuthenticatedPayload(
+        long connectionNonce,
+        long primarySessionToken,
+        long secondarySessionToken,
+        int primaryStateId,
+        int secondaryStateId,
+        ResourceLocation innerType,
+        byte[] data
+    ) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_authenticated");
+
+        public DesktopAuthenticatedPayload(FriendlyByteBuf buf) {
+            this(
+                buf.readLong(),
+                buf.readLong(),
+                buf.readLong(),
+                buf.readVarInt(),
+                buf.readVarInt(),
+                new ResourceLocation(buf.readUtf(128)),
+                buf.readByteArray(DesktopProtocol.MAX_ENVELOPE_BYTES)
+            );
+        }
+
+        public DesktopAuthenticatedPayload {
+            if (data.length > DesktopProtocol.MAX_ENVELOPE_BYTES) {
+                throw new IllegalArgumentException("Authenticated desktop payload is too large: " + data.length);
+            }
+            data = data.clone();
+        }
+
+        @Override
+        public byte[] data() {
+            return this.data.clone();
+        }
+
+        @Override
+        public ResourceLocation id() {
+            return TYPE;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buf) {
+            buf.writeLong(this.connectionNonce);
+            buf.writeLong(this.primarySessionToken);
+            buf.writeLong(this.secondarySessionToken);
+            buf.writeVarInt(this.primaryStateId);
+            buf.writeVarInt(this.secondaryStateId);
+            buf.writeUtf(this.innerType.toString(), 128);
+            buf.writeByteArray(this.data);
+        }
+    }
+
+    public record DesktopSessionAuthorizationPayload(int sessionId, long sessionToken, long sourceGrantToken) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_session_authorization");
+
+        public DesktopSessionAuthorizationPayload(FriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readLong(), buf.readLong());
+        }
+
+        @Override
+        public ResourceLocation id() {
+            return TYPE;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+            buf.writeLong(this.sessionToken);
+            buf.writeLong(this.sourceGrantToken);
         }
     }
 
@@ -197,7 +359,7 @@ public final class DesktopPackets {
         public static final ResourceLocation TYPE = DesktopPackets.id("desktop_click");
 
         public DesktopClickPayload(FriendlyByteBuf buf) {
-            this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(), buf.readItem());
+            this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(CLICK_INPUT_MAX_LENGTH), buf.readItem());
         }
 
         @Override
@@ -211,7 +373,7 @@ public final class DesktopPackets {
             buf.writeVarInt(this.sessionId);
             buf.writeVarInt(this.slotIndex);
             buf.writeVarInt(this.button);
-            buf.writeUtf(this.inputName);
+            buf.writeUtf(this.inputName, CLICK_INPUT_MAX_LENGTH);
             buf.writeItem(this.clientCarried);
         }
     }
@@ -260,7 +422,7 @@ public final class DesktopPackets {
         public static final ResourceLocation TYPE = DesktopPackets.id("desktop_place_recipe");
 
         public DesktopPlaceRecipePayload(FriendlyByteBuf buf) {
-            this(buf.readVarInt(), buf.readResourceLocation(), buf.readBoolean());
+            this(buf.readVarInt(), new ResourceLocation(buf.readUtf(IDENTIFIER_MAX_LENGTH)), buf.readBoolean());
         }
 
         @Override
@@ -295,41 +457,19 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopJeiTransferRequirement(int inputIndex, int targetSlotId, List<ItemStack> alternatives) {
-        public DesktopJeiTransferRequirement {
-            alternatives = List.copyOf(alternatives);
-        }
-
-        private DesktopJeiTransferRequirement(FriendlyByteBuf buf) {
-            this(buf.readVarInt(), buf.readVarInt(), readLimitedItemList(buf));
-        }
-
-        private void write(FriendlyByteBuf buf) {
-            buf.writeVarInt(this.inputIndex);
-            buf.writeVarInt(this.targetSlotId);
-            writeLimitedItemList(buf, this.alternatives);
-        }
-    }
-
-    public record DesktopJeiTransferPayload(int targetSessionId, List<Integer> recipeSlotIds, List<DesktopJeiTransferRequirement> requirements, boolean maxTransfer) implements DesktopPacket {
+    public record DesktopJeiTransferPayload(int targetSessionId, ResourceLocation recipeId, boolean maxTransfer) implements DesktopPacket {
         public static final ResourceLocation TYPE = DesktopPackets.id("desktop_jei_transfer");
 
         public DesktopJeiTransferPayload {
-            recipeSlotIds = List.copyOf(recipeSlotIds);
-            requirements = List.copyOf(requirements);
-            if (recipeSlotIds.size() > JEI_TRANSFER_MAX_RECIPE_SLOTS) {
-                throw new IllegalArgumentException("Desktop JEI transfer recipe slots are too large: " + recipeSlotIds.size());
-            }
-            if (requirements.size() > JEI_TRANSFER_MAX_REQUIREMENTS) {
-                throw new IllegalArgumentException("Desktop JEI transfer requirements are too large: " + requirements.size());
+            if (recipeId == null) {
+                throw new IllegalArgumentException("Desktop JEI transfer recipe id is required");
             }
         }
 
         public DesktopJeiTransferPayload(FriendlyByteBuf buf) {
             this(
                 buf.readVarInt(),
-                readIntList(buf, JEI_TRANSFER_MAX_RECIPE_SLOTS),
-                readJeiTransferRequirements(buf),
+                new ResourceLocation(buf.readUtf(IDENTIFIER_MAX_LENGTH)),
                 buf.readBoolean()
             );
         }
@@ -342,25 +482,9 @@ public final class DesktopPackets {
         @Override
         public void write(FriendlyByteBuf buf) {
             buf.writeVarInt(this.targetSessionId);
-            writeIntList(buf, this.recipeSlotIds);
-            buf.writeVarInt(this.requirements.size());
-            for (DesktopJeiTransferRequirement requirement : this.requirements) {
-                requirement.write(buf);
-            }
+            buf.writeResourceLocation(this.recipeId);
             buf.writeBoolean(this.maxTransfer);
         }
-    }
-
-    private static List<DesktopJeiTransferRequirement> readJeiTransferRequirements(FriendlyByteBuf buf) {
-        int size = buf.readVarInt();
-        if (size < 0 || size > JEI_TRANSFER_MAX_REQUIREMENTS) {
-            throw new IllegalArgumentException("Desktop JEI transfer requirements are too large: " + size);
-        }
-        List<DesktopJeiTransferRequirement> requirements = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            requirements.add(new DesktopJeiTransferRequirement(buf));
-        }
-        return requirements;
     }
 
     public record DesktopCustomPayload(int sessionId, ResourceLocation channel, byte[] data) implements DesktopPacket {
@@ -380,6 +504,10 @@ public final class DesktopPackets {
         @Override
         public byte[] data() {
             return this.data.clone();
+        }
+
+        public int dataLength() {
+            return this.data.length;
         }
 
         @Override
@@ -451,11 +579,25 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopOpenLinkedSourcesPayload(List<String> sourceKeys) implements DesktopPacket {
-        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_open_linked_sources");
+    public record DesktopSourceLinkPayload(
+        int firstSessionId,
+        long firstSourceGrantToken,
+        int secondSessionId,
+        long secondSourceGrantToken,
+        boolean linked
+    ) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_source_link");
 
-        public DesktopOpenLinkedSourcesPayload(FriendlyByteBuf buf) {
-            this(readLimitedStringList(buf, LINKED_SOURCE_MAX_KEYS, LINKED_SOURCE_MAX_KEY_LENGTH));
+        public DesktopSourceLinkPayload(FriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readLong(), buf.readVarInt(), buf.readLong(), buf.readBoolean());
+        }
+
+        public DesktopSourceLinkPayload {
+            if (firstSessionId <= 0 || secondSessionId <= 0 || firstSessionId == secondSessionId
+                || firstSourceGrantToken == 0L || secondSourceGrantToken == 0L
+                || firstSourceGrantToken == secondSourceGrantToken) {
+                throw new IllegalArgumentException("Desktop source-link grants are invalid");
+            }
         }
 
         @Override
@@ -465,7 +607,35 @@ public final class DesktopPackets {
 
         @Override
         public void write(FriendlyByteBuf buf) {
-            writeLimitedStringList(buf, this.sourceKeys, LINKED_SOURCE_MAX_KEYS, LINKED_SOURCE_MAX_KEY_LENGTH);
+            buf.writeVarInt(this.firstSessionId);
+            buf.writeLong(this.firstSourceGrantToken);
+            buf.writeVarInt(this.secondSessionId);
+            buf.writeLong(this.secondSourceGrantToken);
+            buf.writeBoolean(this.linked);
+        }
+    }
+
+    public record DesktopOpenLinkedSourcesPayload(long originSourceGrantToken) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_open_linked_sources");
+
+        public DesktopOpenLinkedSourcesPayload(FriendlyByteBuf buf) {
+            this(buf.readLong());
+        }
+
+        public DesktopOpenLinkedSourcesPayload {
+            if (originSourceGrantToken == 0L) {
+                throw new IllegalArgumentException("Desktop linked-source origin grant is invalid");
+            }
+        }
+
+        @Override
+        public ResourceLocation id() {
+            return TYPE;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buf) {
+            buf.writeLong(this.originSourceGrantToken);
         }
     }
 
@@ -477,6 +647,7 @@ public final class DesktopPackets {
         int columns,
         int stateId,
         boolean visible,
+        boolean transferSupported,
         String sourceKey,
         Component title,
         List<ItemStack> items,
@@ -494,12 +665,32 @@ public final class DesktopPackets {
                 buf.readVarInt(),
                 buf.readVarInt(),
                 buf.readBoolean(),
-                buf.readUtf(),
+                buf.readBoolean(),
+                buf.readUtf(MENU_SOURCE_KEY_MAX_LENGTH),
                 buf.readComponent(),
                 readItemList(buf),
                 buf.readItem(),
-                buf.readVarIntArray()
+                buf.readVarIntArray(DATA_LIST_MAX_SIZE)
             );
+        }
+
+        public DesktopOpenSessionPayload {
+            if (sessionId <= 0 || columns < 0 || columns > HORSE_MENU_MAX_COLUMNS) {
+                throw new IllegalArgumentException("Desktop session header is invalid: session=" + sessionId + ", columns=" + columns);
+            }
+            if (sourceKey.length() > MENU_SOURCE_KEY_MAX_LENGTH) {
+                throw new IllegalArgumentException("Desktop source key is too long: " + sourceKey.length());
+            }
+            items = List.copyOf(items);
+            data = data.clone();
+            if (items.size() > ITEM_LIST_MAX_SIZE || data.length > DATA_LIST_MAX_SIZE) {
+                throw new IllegalArgumentException("Desktop session state is too large: items=" + items.size() + ", data=" + data.length);
+            }
+        }
+
+        @Override
+        public int[] data() {
+            return this.data.clone();
         }
 
         @Override
@@ -516,7 +707,8 @@ public final class DesktopPackets {
             buf.writeVarInt(this.columns);
             buf.writeVarInt(this.stateId);
             buf.writeBoolean(this.visible);
-            buf.writeUtf(this.sourceKey);
+            buf.writeBoolean(this.transferSupported);
+            buf.writeUtf(this.sourceKey, MENU_SOURCE_KEY_MAX_LENGTH);
             buf.writeComponent(this.title);
             writeItemList(buf, this.items);
             buf.writeItem(this.carried);

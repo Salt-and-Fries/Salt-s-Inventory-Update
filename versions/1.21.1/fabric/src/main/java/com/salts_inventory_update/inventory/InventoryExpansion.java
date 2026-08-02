@@ -1,5 +1,6 @@
 package com.salts_inventory_update.inventory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.mojang.serialization.Codec;
@@ -16,6 +17,8 @@ import net.minecraft.world.item.ItemStack;
 
 import com.salts_inventory_update.mixin.accessor.AbstractContainerMenuAccessor;
 import com.salts_inventory_update.network.DesktopPackets.InventoryExpansionSyncPayload;
+import com.salts_inventory_update.protocol.DesktopProtocol;
+import com.salts_inventory_update.server.DesktopContainerSessions;
 import com.salts_inventory_update.SaltsInventoryRuntime;
 
 public final class InventoryExpansion {
@@ -52,13 +55,13 @@ public final class InventoryExpansion {
     }
 
     public static boolean isExtraSlot(Slot slot) {
-        return SaltsInventoryRuntime.isEnabled() && slot instanceof InventoryExpansionSlot;
+        return slot instanceof InventoryExpansionSlot;
     }
 
     public static boolean isMainInventorySlot(net.minecraft.world.entity.player.Player player, Slot slot) {
-        return slot.container == player.getInventory()
+        return (slot.container == player.getInventory()
             && slot.getContainerSlot() >= VANILLA_MAIN_START
-            && slot.getContainerSlot() < VANILLA_MAIN_END
+            && slot.getContainerSlot() < VANILLA_MAIN_END)
             || isExtraSlot(slot);
     }
 
@@ -70,7 +73,7 @@ public final class InventoryExpansion {
     }
 
     public static void appendMissingMenuSlots(InventoryMenu menu, net.minecraft.world.entity.player.Player player) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
+        if (!isTopologyNegotiated(player)) {
             return;
         }
 
@@ -90,11 +93,67 @@ public final class InventoryExpansion {
     }
 
     public static boolean insertIntoExtra(net.minecraft.world.entity.player.Player player, ItemStack stack) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
+        if (!isGameplayActive(player)) {
             return false;
         }
 
         return access(player).salts_inventory_update$getExtraInventory().insert(stack);
+    }
+
+    public static boolean canStowRecipeGrid(net.minecraft.world.entity.player.Player player, List<ItemStack> incoming) {
+        net.minecraft.world.entity.player.Inventory inventory = player.getInventory();
+        List<ItemStack> main = new ArrayList<>(inventory.items.size());
+        for (ItemStack stack : inventory.items) {
+            main.add(stack.copy());
+        }
+        ItemStack offhand = inventory.getItem(net.minecraft.world.entity.player.Inventory.SLOT_OFFHAND).copy();
+        List<ItemStack> extra = access(player).salts_inventory_update$getExtraInventory().snapshot();
+        for (ItemStack source : incoming) {
+            ItemStack remaining = source.copy();
+            mergeIntoCopies(remaining, main, inventory.getMaxStackSize());
+            if (!offhand.isEmpty()) {
+                moveIntoCopy(remaining, offhand, inventory.getMaxStackSize());
+            }
+            fillEmptyCopies(remaining, main, inventory.getMaxStackSize());
+            mergeIntoCopies(remaining, extra, inventory.getMaxStackSize());
+            fillEmptyCopies(remaining, extra, inventory.getMaxStackSize());
+            if (!remaining.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void mergeIntoCopies(ItemStack moving, List<ItemStack> targets, int containerMax) {
+        if (!moving.isStackable()) {
+            return;
+        }
+        for (ItemStack target : targets) {
+            if (moving.isEmpty()) {
+                return;
+            }
+            moveIntoCopy(moving, target, containerMax);
+        }
+    }
+
+    private static void moveIntoCopy(ItemStack moving, ItemStack target, int containerMax) {
+        if (target.isEmpty() || !ItemStack.isSameItemSameComponents(moving, target)) {
+            return;
+        }
+        int available = Math.min(containerMax, target.getMaxStackSize()) - target.getCount();
+        int moved = Math.min(Math.max(available, 0), moving.getCount());
+        target.grow(moved);
+        moving.shrink(moved);
+    }
+
+    private static void fillEmptyCopies(ItemStack moving, List<ItemStack> targets, int containerMax) {
+        for (int i = 0; i < targets.size() && !moving.isEmpty(); i++) {
+            if (targets.get(i).isEmpty()) {
+                int moved = Math.min(moving.getCount(), Math.min(containerMax, moving.getMaxStackSize()));
+                targets.set(i, moving.copyWithCount(moved));
+                moving.shrink(moved);
+            }
+        }
     }
 
     public static void ensurePlayerMenuCanReadSlotCount(net.minecraft.world.entity.player.Player player, int packetSlotCount) {
@@ -158,10 +217,6 @@ public final class InventoryExpansion {
         net.minecraft.world.entity.player.Player source,
         boolean copyContents
     ) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
-            return;
-        }
-
         InventoryExpansionAccess sourceAccess = access(source);
         InventoryExpansionAccess targetAccess = access(target);
         targetAccess.salts_inventory_update$setExtraSlotCount(sourceAccess.salts_inventory_update$getExtraSlotCount());
@@ -170,11 +225,14 @@ public final class InventoryExpansion {
     }
 
     public static void syncToClient(ServerPlayer player) {
-        if (SaltsInventoryRuntime.isEnabled() && ServerPlayNetworking.canSend(player, InventoryExpansionSyncPayload.TYPE)) {
+        if (DesktopContainerSessions.isPlayerNegotiated(player)
+            && ServerPlayNetworking.canSend(player, InventoryExpansionSyncPayload.TYPE)) {
             InventoryExpansionAccess access = access(player);
             ServerPlayNetworking.send(
                 player,
                 new InventoryExpansionSyncPayload(
+                    DesktopContainerSessions.connectionNonceFor(player),
+                    DesktopContainerSessions.playerMenuNonceFor(player),
                     access.salts_inventory_update$getExtraSlotCount(),
                     access.salts_inventory_update$getExtraInventory().snapshot()
                 )
@@ -183,7 +241,7 @@ public final class InventoryExpansion {
     }
 
     public static boolean tryPurchase(ServerPlayer player) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
+        if (!DesktopContainerSessions.isPlayerActive(player)) {
             return false;
         }
 
@@ -201,6 +259,20 @@ public final class InventoryExpansion {
         syncToClient(player);
         player.inventoryMenu.broadcastFullState();
         return true;
+    }
+
+    public static boolean isGameplayActive(net.minecraft.world.entity.player.Player player) {
+        return player instanceof ServerPlayer serverPlayer
+            ? DesktopContainerSessions.isPlayerActive(serverPlayer)
+            : SaltsInventoryRuntime.isEnabled()
+                && SaltsInventoryRuntime.hasServerDesktopCapability(DesktopProtocol.CAP_INVENTORY_TOPOLOGY);
+    }
+
+    private static boolean isTopologyNegotiated(net.minecraft.world.entity.player.Player player) {
+        return player instanceof ServerPlayer serverPlayer
+            ? DesktopContainerSessions.isPlayerNegotiated(serverPlayer)
+            : SaltsInventoryRuntime.isServerDesktopAvailable()
+                && SaltsInventoryRuntime.hasServerDesktopCapability(DesktopProtocol.CAP_INVENTORY_TOPOLOGY);
     }
 
     public record SavedExtraSlot(int slot, ItemStack stack) {

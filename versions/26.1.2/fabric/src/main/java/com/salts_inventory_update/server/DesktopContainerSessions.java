@@ -1,17 +1,19 @@
 package com.salts_inventory_update.server;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.security.SecureRandom;
 import java.util.Set;
-import java.util.UUID;
 
 import com.salts_inventory_update.platform.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import com.salts_inventory_update.platform.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -19,6 +21,7 @@ import com.salts_inventory_update.platform.fabric.api.networking.v1.ServerPlayNe
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.HashedStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -57,6 +60,7 @@ import net.minecraft.world.inventory.StonecutterMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -70,13 +74,16 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 
 import com.salts_inventory_update.api.server.desktop.DesktopServerApi;
 import com.salts_inventory_update.api.server.desktop.DesktopServerPayloadContext;
 import com.salts_inventory_update.api.server.desktop.DesktopServerPayloadHandler;
 import com.salts_inventory_update.api.server.desktop.DesktopServerSessionContext;
 import com.salts_inventory_update.api.server.desktop.DesktopServerWindowHandler;
-import com.salts_inventory_update.SaltsInventoryRuntime;
+import com.salts_inventory_update.api.server.desktop.DesktopTransferDecision;
+import com.salts_inventory_update.api.server.desktop.DesktopTransferRequest;
+import com.salts_inventory_update.api.server.desktop.DesktopTransferValidators;
 import com.salts_inventory_update.compat.toms_storage.TomsStorageCompat;
 import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.inventory.InventoryExpansion;
@@ -92,35 +99,54 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopOpenLinkedSource
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopGhostRecipePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferPayload;
-import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferRequirement;
 import com.salts_inventory_update.network.DesktopPackets.DesktopPlaceRecipePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopQuickMovePayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopHelloPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopHelloAckPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopReadyPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopModePayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopPlayerSessionPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopLinkPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopRenamePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionClosedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionPinPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionVisibilityPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotPayload;
 import com.salts_inventory_update.network.DesktopPackets.InventorySlotPurchasePayload;
+import com.salts_inventory_update.protocol.DesktopProtocol;
+import com.salts_inventory_update.protocol.BoundedLinkGraph;
+import com.salts_inventory_update.protocol.BoundedTransferPlanner;
+import com.salts_inventory_update.protocol.TokenBucket;
+import net.minecraft.world.item.crafting.Recipe;
 
 public final class DesktopContainerSessions {
-    private static final int MAX_SESSIONS = 16;
+    private static final int MAX_SESSIONS = DesktopProtocol.MAX_DESKTOP_SESSIONS;
+    private static final int MAX_DORMANT_GHOST_SOURCES = DesktopProtocol.MAX_DORMANT_SOURCES;
     private static final int DORMANT_GHOST_REOPEN_INTERVAL_TICKS = 10;
     private static final int CRAFTER_INPUT_SLOT_COUNT = 9;
     private static final int CRAFTER_SLOT_STATE_ENABLED_FLAG = 16;
     private static final int MERCHANT_RESULT_SLOT = 2;
     private static final int BEACON_EFFECT_ID_MASK = 0xFFFF;
     private static final int BEACON_SECONDARY_EFFECT_SHIFT = 16;
-    private static final Map<UUID, PlayerSessions> PLAYERS = new LinkedHashMap<>();
-    private static final Map<UUID, String> PENDING_USE_TARGETS = new LinkedHashMap<>();
+    private static final Map<ServerPlayer, PlayerSessions> PLAYERS = new IdentityHashMap<>();
+    private static final Map<ServerPlayer, String> PENDING_USE_TARGETS = new IdentityHashMap<>();
+    private static final Set<ServerPlayer> PROTOCOL_REJECTED = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final String PLAYER_LINK_NODE = "player";
 
     private DesktopContainerSessions() {
     }
 
     public static void initialize() {
         DesktopDebug.log("server desktop session networking initialized");
+        ServerPlayNetworking.registerGlobalReceiver(DesktopHelloPayload.TYPE, (payload, context) ->
+            context.server().execute(() -> hello(context.player(), payload))
+        );
         ServerPlayNetworking.registerGlobalReceiver(DesktopReadyPayload.TYPE, (payload, context) ->
-            context.server().execute(() -> setReady(context.player(), payload.ready()))
+            context.server().execute(() -> rejectLegacyReady(context.player()))
+        );
+        ServerPlayNetworking.registerGlobalReceiver(DesktopModePayload.TYPE, (payload, context) ->
+            context.server().execute(() -> setMode(context.player(), payload))
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopClickPayload.TYPE, (payload, context) ->
             context.server().execute(() -> click(context.player(), payload))
@@ -141,7 +167,7 @@ public final class DesktopContainerSessions {
             context.server().execute(() -> rename(context.player(), payload))
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopCloseSessionPayload.TYPE, (payload, context) ->
-            context.server().execute(() -> closeSession(context.player(), payload.sessionId(), true))
+            context.server().execute(() -> closeSession(context.player(), payload))
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopSessionPinPayload.TYPE, (payload, context) ->
             context.server().execute(() -> setSessionPin(context.player(), payload))
@@ -152,6 +178,9 @@ public final class DesktopContainerSessions {
         ServerPlayNetworking.registerGlobalReceiver(DesktopOpenLinkedSourcesPayload.TYPE, (payload, context) ->
             context.server().execute(() -> openLinkedSources(context.player(), payload))
         );
+        ServerPlayNetworking.registerGlobalReceiver(DesktopLinkPayload.TYPE, (payload, context) ->
+            context.server().execute(() -> updateLink(context.player(), payload))
+        );
         ServerPlayNetworking.registerGlobalReceiver(DesktopCustomPayload.TYPE, (payload, context) ->
             context.server().execute(() -> customPayload(context.player(), payload))
         );
@@ -159,37 +188,62 @@ public final class DesktopContainerSessions {
             context.server().execute(() -> carried(context.player(), payload))
         );
         ServerPlayNetworking.registerGlobalReceiver(InventorySlotPurchasePayload.TYPE, (payload, context) ->
-            context.server().execute(() -> InventoryExpansion.tryPurchase(context.player()))
+            context.server().execute(() -> purchaseInventorySlot(context.player(), payload))
         );
         ServerTickEvents.END_SERVER_TICK.register(DesktopContainerSessions::tick);
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> disconnect(handler.player));
     }
 
     public static boolean shouldCapture(ServerPlayer player) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
-            return false;
-        }
+        PlayerSessions sessions = PLAYERS.get(player);
+        return sessions != null && sessions.isActive() && sessions.hasCapability(DesktopProtocol.CAP_CUSTOM_WINDOWS);
+    }
 
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions != null && sessions.ready) {
-            return true;
-        }
+    public static boolean isGameplayActive(ServerPlayer player) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        return sessions != null
+            && sessions.isGameplayActive()
+            && sessions.hasCapability(DesktopProtocol.CAP_INVENTORY_TOPOLOGY);
+    }
 
-        try {
-            if (ServerPlayNetworking.canSend(player, DesktopOpenSessionPayload.TYPE)) {
-                sessions(player).ready = true;
-                DesktopDebug.log("server desktop capture enabled player={} reason=client-can-receive", player.getName().getString());
-                return true;
-            }
-        } catch (IllegalArgumentException | IllegalStateException exception) {
-            DesktopDebug.warn("server desktop capture unavailable player={} reason={}", player.getName().getString(), exception.toString());
-        }
+    public static boolean isTopologyNegotiated(ServerPlayer player) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        return sessions != null && sessions.negotiated && sessions.hasCapability(DesktopProtocol.CAP_INVENTORY_TOPOLOGY);
+    }
 
-        return false;
+    public static void transferPlayerState(ServerPlayer target, ServerPlayer source) {
+        if (target == source) {
+            return;
+        }
+        PlayerSessions previous = PLAYERS.get(source);
+        PENDING_USE_TARGETS.remove(source);
+        if (previous == null) {
+            return;
+        }
+        previous.closeAll(source, false);
+        PLAYERS.remove(source);
+        PlayerSessions replacement = new PlayerSessions();
+        replacement.negotiated = previous.negotiated;
+        replacement.uiEnabled = previous.uiEnabled;
+        replacement.gameplayEnabled = previous.gameplayEnabled;
+        replacement.capabilities = previous.capabilities;
+        replacement.connectionNonce = previous.connectionNonce;
+        replacement.playerSessionToken = nextToken();
+        replacement.lastModeSequence = previous.lastModeSequence;
+        replacement.forcedMenuIds = previous.forcedMenuIds;
+        PLAYERS.put(target, replacement);
+        send(target, new DesktopPlayerSessionPayload(replacement.connectionNonce, replacement.playerSessionToken));
+    }
+
+    public static void preparePlayerStateTransfer(ServerPlayer source) {
+        PlayerSessions sessions = PLAYERS.get(source);
+        if (sessions != null) {
+            sessions.closeAll(source, false);
+        }
     }
 
     public static void captureUseTarget(ServerPlayer player, BlockHitResult hitResult) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
+        if (!shouldCapture(player)) {
             return;
         }
 
@@ -198,25 +252,21 @@ public final class DesktopContainerSessions {
         }
 
         String sourceKey = sourceKeyForBlock(player, hitResult.getBlockPos());
-        PENDING_USE_TARGETS.put(player.getUUID(), sourceKey);
+        PENDING_USE_TARGETS.put(player, sourceKey);
         DesktopDebug.trace("server use target player={} key={}", player.getName().getString(), sourceKey);
     }
 
     public static void clearUseTarget(ServerPlayer player) {
-        PENDING_USE_TARGETS.remove(player.getUUID());
+        PENDING_USE_TARGETS.remove(player);
     }
 
     public static boolean hasOpenSessionForContainer(Player player, Container container) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
-            return false;
-        }
-
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return false;
         }
 
-        PlayerSessions sessions = PLAYERS.get(serverPlayer.getUUID());
-        if (sessions == null || !sessions.ready) {
+        PlayerSessions sessions = PLAYERS.get(serverPlayer);
+        if (sessions == null || !sessions.isActive() || !sessions.hasCapability(DesktopProtocol.CAP_CUSTOM_WINDOWS)) {
             return false;
         }
 
@@ -253,10 +303,13 @@ public final class DesktopContainerSessions {
             return OptionalInt.empty();
         }
 
-        PlayerSessions sessions = sessions(player);
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null || !sessions.isActive() || !sessions.hasCapability(DesktopProtocol.CAP_CUSTOM_WINDOWS)) {
+            return null;
+        }
         String sourceKey = forcedSourceKey == null ? sourceKeyForProvider(player, provider) : forcedSourceKey;
         if (sourceKey == null) {
-            sourceKey = PENDING_USE_TARGETS.get(player.getUUID());
+            sourceKey = PENDING_USE_TARGETS.get(player);
         }
 
         if (toggleExisting && sessions.closeBySourceKey(player, sourceKey, true)) {
@@ -270,7 +323,7 @@ public final class DesktopContainerSessions {
             return OptionalInt.empty();
         }
 
-        if (!isDesktopSupportedMenu(menu)) {
+        if (!isDesktopSupportedMenu(sessions, menu)) {
             Identifier menuKey = BuiltInRegistries.MENU.getKey(menu.getType());
             DesktopDebug.log(
                 "server capture skipped player={} title={} menu={} menuType={} source={} reason=unsupported-menu-vanilla-fallback",
@@ -312,8 +365,11 @@ public final class DesktopContainerSessions {
     }
 
     public static void openHorseSession(ServerPlayer player, AbstractHorse horse, Container container) {
-        PlayerSessions sessions = sessions(player);
-        String sourceKey = sourceKeyForEntity(player, horse.getId());
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null || !sessions.isActive() || !sessions.hasCapability(DesktopProtocol.CAP_CUSTOM_WINDOWS)) {
+            return;
+        }
+        String sourceKey = sourceKeyForEntity(player, horse);
         int columns = horse.getInventoryColumns();
         int specialKind = horseSpecialKind(horse);
         if (isCamelOrLlama(horse)) {
@@ -329,7 +385,7 @@ public final class DesktopContainerSessions {
                 container.getClass().getName(),
                 container.getContainerSize(),
                 sessions.sessions.size(),
-                sessions.ready
+                sessions.isActive()
             );
         }
         if (sessions.closeBySourceKey(player, sourceKey, true)) {
@@ -389,12 +445,15 @@ public final class DesktopContainerSessions {
     }
 
     private static void mountDiag(String message, Object... args) {
-        DesktopDebug.warn("SIU_MOUNT_DIAG " + message, args);
+        DesktopDebug.detail("SIU_MOUNT_DIAG " + message, args);
     }
 
     public static void openNautilusSession(ServerPlayer player, AbstractNautilus nautilus, Container container) {
-        PlayerSessions sessions = sessions(player);
-        String sourceKey = sourceKeyForEntity(player, nautilus.getId());
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null || !sessions.isActive() || !sessions.hasCapability(DesktopProtocol.CAP_CUSTOM_WINDOWS)) {
+            return;
+        }
+        String sourceKey = sourceKeyForEntity(player, nautilus);
         if (sessions.closeBySourceKey(player, sourceKey, true)) {
             DesktopDebug.log("server toggle close nautilus player={} source={}", player.getName().getString(), sourceKey);
             return;
@@ -416,10 +475,10 @@ public final class DesktopContainerSessions {
         DesktopDebug.log("server capture nautilus player={} session={} entity={} columns={}", player.getName().getString(), sessionId, nautilus.getId(), columns);
     }
 
-    private static boolean isDesktopSupportedMenu(AbstractContainerMenu menu) {
+    private static boolean isDesktopSupportedMenu(PlayerSessions sessions, AbstractContainerMenu menu) {
         MenuType<?> type = menu.getType();
         Identifier key = BuiltInRegistries.MENU.getKey(type);
-        if (key != null && SaltsInventoryRuntime.isForcedContainerWindow(key.toString())) {
+        if (key != null && sessions.forcedMenuIds.contains(key.toString())) {
             DesktopDebug.log("server capture force-enabled menu={}", key);
             return true;
         }
@@ -463,8 +522,11 @@ public final class DesktopContainerSessions {
     }
 
     public static boolean sendMerchantOffers(ServerPlayer player, int containerId, MerchantOffers offers, int villagerLevel, int villagerXp, boolean showProgress, boolean canRestock) {
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions == null || !sessions.ready || !sessions.sessions.containsKey(containerId)) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null
+            || !sessions.isActive()
+            || !sessions.hasCapability(DesktopProtocol.CAP_CUSTOM_WINDOWS)
+            || !sessions.sessions.containsKey(containerId)) {
             return false;
         }
 
@@ -481,50 +543,133 @@ public final class DesktopContainerSessions {
         return true;
     }
 
-    private static void setReady(ServerPlayer player, boolean ready) {
-        PlayerSessions sessions = sessions(player);
-        sessions.ready = ready && SaltsInventoryRuntime.isEnabled();
-        DesktopDebug.log("server ready player={} ready={} sessions={}", player.getName().getString(), ready, sessions.sessions.size());
-        if (!ready) {
-            sessions.closeAll(player, false);
-        } else {
-            InventoryExpansion.appendMissingMenuSlots(player.inventoryMenu, player);
-            InventoryExpansion.syncToClient(player);
+    private static void hello(ServerPlayer player, DesktopHelloPayload payload) {
+        if (PROTOCOL_REJECTED.contains(player)) {
+            return;
         }
+        PlayerSessions sessions = sessions(player);
+        if (sessions.negotiated) {
+            PENDING_USE_TARGETS.remove(player);
+            sessions.closeAll(player, false);
+            sessions.uiEnabled = false;
+            sessions.gameplayEnabled = false;
+            sessions.negotiated = false;
+            sessions.links.clear();
+            PROTOCOL_REJECTED.add(player);
+            player.connection.disconnect(Component.literal("Salt's Inventory Update received a repeated desktop handshake."));
+            return;
+        }
+        PENDING_USE_TARGETS.remove(player);
+        if (payload.protocolVersion() != DesktopProtocol.VERSION
+            || payload.clientNonce() == 0L
+            || (payload.capabilities() & ~DesktopProtocol.KNOWN_CAPABILITIES) != 0L) {
+            Component reason = Component.literal("Salt's Inventory Update versions do not match. Update the mod on both client and server.");
+            DesktopDebug.warn(
+                "server desktop handshake rejected player={} protocol={} expected={} capabilities={} required={}",
+                player.getName().getString(), payload.protocolVersion(), DesktopProtocol.VERSION,
+                payload.capabilities(), DesktopProtocol.KNOWN_CAPABILITIES
+            );
+            PROTOCOL_REJECTED.add(player);
+            player.connection.disconnect(reason);
+            return;
+        }
+
+        sessions.connectionNonce = nextToken();
+        sessions.playerSessionToken = nextToken();
+        sessions.capabilities = DesktopProtocol.sanitizeCapabilities(payload.capabilities());
+        sessions.forcedMenuIds = validateForcedMenuIds(payload.forcedMenuIds());
+        sessions.negotiated = true;
+        sessions.uiEnabled = payload.uiEnabled();
+        sessions.gameplayEnabled = payload.uiEnabled();
+        sessions.lastModeSequence = -1L;
+        sessions.closeAll(player, false);
+        sessions.links.clear();
+        send(player, new DesktopHelloAckPayload(
+            DesktopProtocol.VERSION,
+            payload.clientNonce(),
+            sessions.connectionNonce,
+            sessions.capabilities,
+            sessions.uiEnabled,
+            sessions.playerSessionToken
+        ));
+        InventoryExpansion.appendMissingMenuSlots(player.inventoryMenu, player);
+        InventoryExpansion.syncToClient(player);
+        DesktopDebug.log("server desktop handshake accepted player={} ui={} capabilities={}", player.getName().getString(), sessions.uiEnabled, sessions.capabilities);
+    }
+
+    private static void setMode(ServerPlayer player, DesktopModePayload payload) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null
+            || !sessions.negotiated
+            || payload.connectionNonce() != sessions.connectionNonce
+            || payload.sequence() <= sessions.lastModeSequence
+            || !sessions.modeRateLimit.tryConsume(1.0D, System.nanoTime())) {
+            DesktopDebug.trace("server desktop mode dropped player={} sequence={} reason=unauthorized-or-stale", player.getName().getString(), payload.sequence());
+            return;
+        }
+        sessions.lastModeSequence = payload.sequence();
+        sessions.forcedMenuIds = validateForcedMenuIds(payload.forcedMenuIds());
+        if (!payload.uiEnabled()) {
+            PENDING_USE_TARGETS.remove(player);
+            sessions.uiEnabled = false;
+            sessions.closeAll(player, true);
+            sessions.links.clear();
+            sessions.gameplayEnabled = false;
+        } else {
+            sessions.gameplayEnabled = true;
+            sessions.uiEnabled = true;
+        }
+        DesktopDebug.log("server desktop mode player={} ui={} sequence={}", player.getName().getString(), sessions.uiEnabled, sessions.lastModeSequence);
+    }
+
+    private static void rejectLegacyReady(ServerPlayer player) {
+        if (!PROTOCOL_REJECTED.add(player)) {
+            return;
+        }
+        PENDING_USE_TARGETS.remove(player);
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions != null) {
+            sessions.closeAll(player, false);
+            sessions.uiEnabled = false;
+            sessions.gameplayEnabled = false;
+            sessions.negotiated = false;
+            sessions.links.clear();
+        }
+        DesktopDebug.warn("server rejected legacy desktop-ready packet player={} expectedProtocol={}", player.getName().getString(), DesktopProtocol.VERSION);
+        player.connection.disconnect(Component.literal("Salt's Inventory Update 0.1.1 is incompatible. Update the mod on both client and server (protocol 2 required)."));
     }
 
     private static void disconnect(ServerPlayer player) {
-        PlayerSessions sessions = PLAYERS.remove(player.getUUID());
+        PlayerSessions sessions = PLAYERS.get(player);
+        PENDING_USE_TARGETS.remove(player);
         if (sessions != null) {
             DesktopDebug.log("server disconnect close player={} sessions={}", player.getName().getString(), sessions.sessions.size());
             sessions.closeAll(player, false);
         }
+        PLAYERS.remove(player);
+        PROTOCOL_REJECTED.remove(player);
     }
 
     private static void tick(MinecraftServer server) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
-            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                PlayerSessions sessions = PLAYERS.get(player.getUUID());
-                if (sessions != null && sessions.ready) {
-                    sessions.ready = false;
-                    sessions.closeAll(player, true);
-                }
-            }
-            return;
-        }
-
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            PlayerSessions sessions = PLAYERS.get(player.getUUID());
-            if (sessions != null && sessions.ready) {
+        PlayerSessions sessions = PLAYERS.get(player);
+            if (sessions != null && sessions.isActive()) {
                 sessions.tick(player);
             }
         }
     }
 
     private static void click(ServerPlayer player, DesktopClickPayload payload) {
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions == null || !sessions.ready) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null) {
             DesktopDebug.trace("server click dropped player={} session={} reason=not-ready", player.getName().getString(), payload.sessionId());
+            return;
+        }
+        SessionAuthorization authorization = authorizeMenu(
+            player, sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(),
+            payload.stateId(), 0L, "click"
+        );
+        if (authorization == null) {
             return;
         }
 
@@ -535,60 +680,85 @@ public final class DesktopContainerSessions {
             DesktopDebug.warn("server click dropped player={} session={} reason=bad-input input={}", player.getName().getString(), payload.sessionId(), payload.inputName());
             return;
         }
+        if (!mayMutateInventory(player) || !sessions.allowOperation(player, "click", 1.0D)) {
+            DesktopDebug.trace("server click dropped player={} session={} reason=player-state", player.getName().getString(), payload.sessionId());
+            return;
+        }
 
-        if (payload.sessionId() == DesktopPackets.PLAYER_MENU_SESSION) {
+        if (authorization.session() == null) {
             DesktopDebug.trace("server click player-menu id={} player={} slot={} button={} input={} clientCarried={}", payload.debugId(), player.getName().getString(), payload.slotIndex(), payload.button(), input, payload.clientCarried());
-            clickMenu(payload.debugId(), player, sessions, player.inventoryMenu, payload.slotIndex(), payload.button(), input, payload.clientCarried());
+            clickMenu(payload.debugId(), player, sessions, authorization.menu(), payload.slotIndex(), payload.button(), input, payload.clientCarried());
             player.inventoryMenu.broadcastChanges();
             sessions.broadcastAll(player);
+            syncCarried(player, sessions);
             return;
         }
 
-        Session session = sessions.sessions.get(payload.sessionId());
-        if (session == null) {
-            DesktopDebug.trace("server click dropped player={} session={} reason=missing-session", player.getName().getString(), payload.sessionId());
-            return;
-        }
-        if (!session.visibleToClient) {
-            DesktopDebug.trace("server click dropped player={} session={} reason=hidden", player.getName().getString(), payload.sessionId());
-            return;
-        }
-
+        Session session = authorization.session();
         DesktopDebug.trace("server click session id={} player={} session={} slot={} button={} input={} clientCarried={}", payload.debugId(), player.getName().getString(), payload.sessionId(), payload.slotIndex(), payload.button(), input, payload.clientCarried());
         clickMenu(payload.debugId(), player, sessions, session.menu, payload.slotIndex(), payload.button(), input, payload.clientCarried());
         session.menu.broadcastChanges();
-        syncCraftingResultSlot(player, session);
-        syncMerchantOffers(player, session);
         syncCarried(player, sessions);
     }
 
     private static void carried(ServerPlayer player, DesktopCarriedPayload payload) {
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions == null || !sessions.ready) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null || authorizeMenu(
+            player, sessions, payload.connectionNonce(), DesktopPackets.PLAYER_MENU_SESSION,
+            payload.playerSessionToken(), payload.stateId(), 0L, "carried"
+        ) == null) {
             DesktopDebug.trace("server carried dropped player={} reason=not-ready stack={}", player.getName().getString(), payload.carried());
+            return;
+        }
+        if (!mayMutateInventory(player) || !sessions.allowOperation(player, "carried", 1.0D)) {
+            syncCarried(player, sessions);
             return;
         }
 
         if (!player.hasInfiniteMaterials()) {
-            DesktopDebug.trace("server carried dropped player={} reason=not-creative stack={} serverCarried={}", player.getName().getString(), payload.carried(), sessions.carried);
+            DesktopDebug.trace("server carried dropped player={} reason=not-creative stack={} serverCarried={}", player.getName().getString(), payload.carried(), player.inventoryMenu.getCarried());
             syncCarried(player, sessions);
             return;
         }
 
         ItemStack carried = payload.carried().copy();
-        sessions.carried = carried;
         player.inventoryMenu.setCarried(carried.copy());
         for (Session session : sessions.sessions.values()) {
-            session.menu.setCarried(carried.copy());
+            session.menu.setCarried(ItemStack.EMPTY);
         }
-        DesktopDebug.trace("server carried sync player={} stack={}", player.getName().getString(), sessions.carried);
+        DesktopDebug.trace("server carried sync player={} stack={}", player.getName().getString(), carried);
         syncCarried(player, sessions);
     }
 
     private static void quickMove(ServerPlayer player, DesktopQuickMovePayload payload) {
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions == null || !sessions.ready) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null) {
             DesktopDebug.trace("server quick move dropped player={} sourceSession={} reason=not-ready", player.getName().getString(), payload.sourceSessionId());
+            return;
+        }
+        if (payload.targetKind() < DesktopPackets.QUICK_TARGET_DEFAULT
+            || payload.targetKind() > DesktopPackets.QUICK_TARGET_HOTBAR
+            || payload.targetKind() == DesktopPackets.QUICK_TARGET_SESSION
+                && payload.targetSessionId() == payload.sourceSessionId()) {
+            DesktopDebug.trace("server quick move dropped player={} sourceSession={} targetKind={} targetSession={} reason=invalid-target", player.getName().getString(), payload.sourceSessionId(), payload.targetKind(), payload.targetSessionId());
+            return;
+        }
+
+        SessionAuthorization sourceAuthorization = authorizeMenu(
+            player, sessions, payload.connectionNonce(), payload.sourceSessionId(), payload.sourceSessionToken(),
+            payload.sourceStateId(), 0L, "quick-move-source"
+        );
+        if (sourceAuthorization == null) {
+            return;
+        }
+        int authorizedTargetId = payload.targetKind() == DesktopPackets.QUICK_TARGET_SESSION
+            ? payload.targetSessionId()
+            : DesktopPackets.PLAYER_MENU_SESSION;
+        SessionAuthorization targetAuthorization = authorizeMenu(
+            player, sessions, payload.connectionNonce(), authorizedTargetId, payload.targetSessionToken(),
+            payload.targetStateId(), 0L, "quick-move-target"
+        );
+        if (targetAuthorization == null) {
             return;
         }
 
@@ -596,8 +766,12 @@ public final class DesktopContainerSessions {
         if (source == null) {
             return;
         }
+        if (!mayMutateInventory(player) || !sessions.allowOperation(player, "quick-move", 1.0D)) {
+            DesktopDebug.trace("server quick move dropped player={} sourceSession={} reason=player-state", player.getName().getString(), payload.sourceSessionId());
+            return;
+        }
 
-        ItemStack carriedBeforeQuickMove = sessions.carried.copy();
+        ItemStack carriedBeforeQuickMove = player.inventoryMenu.getCarried().copy();
         if (!carriedBeforeQuickMove.isEmpty()) {
             DesktopDebug.trace(
                 "server quick move treating carried as empty player={} sourceSession={} sourceSlot={} carried={}",
@@ -608,7 +782,8 @@ public final class DesktopContainerSessions {
             );
         }
 
-        if (isVanillaResultSource(source, payload.sourceSlotIndex())) {
+        if (payload.targetKind() != DesktopPackets.QUICK_TARGET_SESSION
+            && isVanillaResultSource(source, payload.sourceSlotIndex())) {
             DesktopDebug.trace(
                 "server quick move vanilla result player={} sourceSession={} sourceSlot={} menu={}",
                 player.getName().getString(),
@@ -619,15 +794,14 @@ public final class DesktopContainerSessions {
             if (!carriedBeforeQuickMove.isEmpty()) {
                 setSharedCarried(player, sessions, ItemStack.EMPTY);
             }
-            clickMenu(0, player, sessions, source.menu, payload.sourceSlotIndex(), 0, ContainerInput.QUICK_MOVE, ItemStack.EMPTY);
-            if (!carriedBeforeQuickMove.isEmpty()) {
-                setSharedCarried(player, sessions, carriedBeforeQuickMove);
+            try {
+                clickMenu(0, player, sessions, source.menu, payload.sourceSlotIndex(), 0, ContainerInput.QUICK_MOVE, ItemStack.EMPTY);
+            } finally {
+                if (!carriedBeforeQuickMove.isEmpty()) {
+                    setSharedCarried(player, sessions, carriedBeforeQuickMove);
+                }
             }
             source.menu.broadcastChanges();
-            if (source.session != null) {
-                syncCraftingResultSlot(player, source.session);
-                syncMerchantOffers(player, source.session);
-            }
             player.inventoryMenu.broadcastChanges();
             sessions.broadcastAll(player);
             syncCarried(player, sessions);
@@ -662,15 +836,125 @@ public final class DesktopContainerSessions {
         }
 
         source.menu.broadcastChanges();
-        if (source.session != null) {
-            syncCraftingResultSlot(player, source.session);
-            syncMerchantOffers(player, source.session);
-        }
         player.inventoryMenu.broadcastChanges();
         sessions.broadcastAll(player);
-        if (!carriedBeforeQuickMove.isEmpty()) {
-            syncCarried(player, sessions);
+        syncCarried(player, sessions);
+    }
+
+    private static boolean mayMutateInventory(ServerPlayer player) {
+        return player.isAlive() && !player.isSpectator();
+    }
+
+    private static @Nullable SessionAuthorization authorizeSession(
+        ServerPlayer player,
+        PlayerSessions sessions,
+        long connectionNonce,
+        int sessionId,
+        long sessionToken,
+        long capability,
+        boolean requireVisible,
+        String operation
+    ) {
+        long requiredCapabilities = capability | capabilityForSession(sessionId);
+        if (!sessions.authorizes(connectionNonce, requiredCapabilities)) {
+            DesktopDebug.trace("server {} dropped player={} reason=connection-auth", operation, player.getName().getString());
+            return null;
         }
+        if (sessionId == DesktopPackets.PLAYER_MENU_SESSION) {
+            if (sessionToken != sessions.playerSessionToken) {
+                DesktopDebug.trace("server {} dropped player={} reason=player-token", operation, player.getName().getString());
+                return null;
+            }
+            return new SessionAuthorization(sessionId, player.inventoryMenu, null, PLAYER_LINK_NODE);
+        }
+        Session session = sessions.sessions.get(sessionId);
+        if (session == null || session.sessionToken != sessionToken || (requireVisible && !session.visibleToClient)) {
+            DesktopDebug.trace("server {} dropped player={} session={} reason=session-auth", operation, player.getName().getString(), sessionId);
+            return null;
+        }
+        if (!session.menu.stillValid(player)) {
+            sessions.close(player, sessionId, true);
+            return null;
+        }
+        String linkNode = session.sourceKey.isBlank() ? "session:" + session.sessionId : session.sourceKey;
+        return new SessionAuthorization(sessionId, session.menu, session, linkNode);
+    }
+
+    private static boolean preauthorizesSession(
+        PlayerSessions sessions,
+        long connectionNonce,
+        int sessionId,
+        long sessionToken,
+        long capability,
+        boolean requireVisible
+    ) {
+        long requiredCapabilities = capability | capabilityForSession(sessionId);
+        if (!sessions.authorizes(connectionNonce, requiredCapabilities)) {
+            return false;
+        }
+        if (sessionId == DesktopPackets.PLAYER_MENU_SESSION) {
+            return sessionToken == sessions.playerSessionToken;
+        }
+        Session session = sessions.sessions.get(sessionId);
+        return session != null
+            && session.sessionToken == sessionToken
+            && (!requireVisible || session.visibleToClient);
+    }
+
+    private static long capabilityForSession(int sessionId) {
+        return sessionId == DesktopPackets.PLAYER_MENU_SESSION
+            ? DesktopProtocol.CAP_INVENTORY_TOPOLOGY
+            : DesktopProtocol.CAP_CUSTOM_WINDOWS;
+    }
+
+    private static @Nullable SessionAuthorization authorizeMenu(
+        ServerPlayer player,
+        PlayerSessions sessions,
+        long connectionNonce,
+        int sessionId,
+        long sessionToken,
+        int expectedStateId,
+        long capability,
+        String operation
+    ) {
+        SessionAuthorization authorization = authorizeSession(
+            player, sessions, connectionNonce, sessionId, sessionToken, capability, true, operation
+        );
+        if (authorization == null) {
+            return null;
+        }
+        if (authorization.menu().getStateId() != expectedStateId) {
+            DesktopDebug.trace(
+                "server {} dropped player={} session={} reason=state-id expected={} actual={}",
+                operation, player.getName().getString(), sessionId, expectedStateId, authorization.menu().getStateId()
+            );
+            if (sessions.allowResync(player, operation)) {
+                if (authorization.session() == null) {
+                    syncPlayerMenu(player);
+                } else {
+                    authorization.menu().sendAllDataToRemote();
+                }
+                syncCarried(player, sessions);
+            }
+            return null;
+        }
+        return authorization;
+    }
+
+    private static void purchaseInventorySlot(ServerPlayer player, InventorySlotPurchasePayload payload) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null
+            || authorizeMenu(
+                player, sessions, payload.connectionNonce(), DesktopPackets.PLAYER_MENU_SESSION,
+                payload.playerSessionToken(), payload.stateId(), DesktopProtocol.CAP_INVENTORY_TOPOLOGY,
+                "inventory-slot-purchase"
+            ) == null
+            || !mayMutateInventory(player)
+            || !sessions.allowOperation(player, "inventory-slot-purchase", 1.0D)) {
+            DesktopDebug.trace("server inventory slot purchase dropped player={} reason=unauthorized", player.getName().getString());
+            return;
+        }
+        InventoryExpansion.tryPurchase(player);
     }
 
     private static boolean quickMoveIntoTomStorageTerminal(ServerPlayer player, PlayerSessions sessions, SlotSource source, @Nullable Session targetSession) {
@@ -704,14 +988,17 @@ public final class DesktopContainerSessions {
             return false;
         }
 
-        ItemStack carriedBeforeQuickMove = sessions.carried.copy();
+        ItemStack carriedBeforeQuickMove = player.inventoryMenu.getCarried().copy();
         if (!carriedBeforeQuickMove.isEmpty()) {
             setSharedCarried(player, sessions, ItemStack.EMPTY);
         }
         ItemStack before = targetSession.menu.slots.get(targetSlotIndex).getItem().copy();
-        targetSession.menu.quickMoveStack(player, targetSlotIndex);
-        if (!carriedBeforeQuickMove.isEmpty()) {
-            setSharedCarried(player, sessions, carriedBeforeQuickMove);
+        try {
+            targetSession.menu.quickMoveStack(player, targetSlotIndex);
+        } finally {
+            if (!carriedBeforeQuickMove.isEmpty()) {
+                setSharedCarried(player, sessions, carriedBeforeQuickMove);
+            }
         }
         ItemStack after = targetSession.menu.slots.get(targetSlotIndex).getItem();
         boolean moved = !ItemStack.matches(before, after);
@@ -766,56 +1053,63 @@ public final class DesktopContainerSessions {
     }
 
     private static void button(ServerPlayer player, DesktopButtonPayload payload) {
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions == null || !sessions.ready) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null) {
             DesktopDebug.trace("server button dropped player={} session={} button={} reason=not-ready", player.getName().getString(), payload.sessionId(), payload.buttonId());
             return;
         }
-
-        Session session = sessions.sessions.get(payload.sessionId());
+        SessionAuthorization authorization = authorizeMenu(
+            player, sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(),
+            payload.stateId(), 0L, "button"
+        );
+        Session session = authorization == null ? null : authorization.session();
         if (session == null) {
-            DesktopDebug.trace("server button dropped player={} session={} button={} reason=missing-session", player.getName().getString(), payload.sessionId(), payload.buttonId());
             return;
         }
-        if (!session.visibleToClient) {
-            DesktopDebug.trace("server button dropped player={} session={} button={} reason=hidden", player.getName().getString(), payload.sessionId(), payload.buttonId());
-            return;
-        }
-
-        if (!session.menu.stillValid(player)) {
-            DesktopDebug.log("server button invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
-            sessions.close(player, session.sessionId, true);
+        if (!mayMutateInventory(player) || !sessions.allowOperation(player, "button", 1.0D)) {
+            DesktopDebug.trace("server button dropped player={} session={} reason=player-state", player.getName().getString(), payload.sessionId());
             return;
         }
 
-        session.menu.setCarried(sessions.carried.copy());
+        ItemStack carriedBefore = player.inventoryMenu.getCarried().copy();
+        boolean committedCarried = false;
         boolean clicked;
-        if (session.menu instanceof CrafterMenu crafterMenu) {
-            int slotId = payload.buttonId() & ~CRAFTER_SLOT_STATE_ENABLED_FLAG;
-            boolean enabled = (payload.buttonId() & CRAFTER_SLOT_STATE_ENABLED_FLAG) != 0;
-            clicked = slotId >= 0 && slotId < CRAFTER_INPUT_SLOT_COUNT;
-            if (clicked) {
-                Slot slot = crafterMenu.getSlot(slotId);
-                clicked = enabled || (!slot.hasItem() && crafterMenu.getCarried().isEmpty());
+        try {
+            session.menu.setCarried(carriedBefore.copy());
+            if (session.menu instanceof CrafterMenu crafterMenu) {
+                int slotId = payload.buttonId() & ~CRAFTER_SLOT_STATE_ENABLED_FLAG;
+                boolean enabled = (payload.buttonId() & CRAFTER_SLOT_STATE_ENABLED_FLAG) != 0;
+                clicked = slotId >= 0 && slotId < CRAFTER_INPUT_SLOT_COUNT;
                 if (clicked) {
-                    crafterMenu.setSlotState(slotId, enabled);
+                    Slot slot = crafterMenu.getSlot(slotId);
+                    clicked = enabled || (!slot.hasItem() && crafterMenu.getCarried().isEmpty());
+                    if (clicked) {
+                        crafterMenu.setSlotState(slotId, enabled);
+                    }
                 }
+            } else if (session.menu instanceof BeaconMenu beaconMenu) {
+                clicked = applyBeaconButton(beaconMenu, payload.buttonId());
+            } else if (session.menu instanceof MerchantMenu merchantMenu) {
+                clicked = payload.buttonId() >= 0 && payload.buttonId() < merchantMenu.getOffers().size();
+                if (clicked) {
+                    merchantMenu.setSelectionHint(payload.buttonId());
+                    merchantMenu.tryMoveItems(payload.buttonId());
+                }
+            } else {
+                clicked = session.menu.clickMenuButton(player, payload.buttonId());
             }
-        } else if (session.menu instanceof BeaconMenu beaconMenu) {
-            clicked = applyBeaconButton(beaconMenu, payload.buttonId());
-        } else if (session.menu instanceof MerchantMenu merchantMenu) {
-            clicked = payload.buttonId() >= 0 && payload.buttonId() < merchantMenu.getOffers().size();
-            if (clicked) {
-                merchantMenu.setSelectionHint(payload.buttonId());
-                merchantMenu.tryMoveItems(payload.buttonId());
+            player.inventoryMenu.setCarried(session.menu.getCarried().copy());
+            committedCarried = true;
+        } catch (RuntimeException exception) {
+            player.inventoryMenu.setCarried(carriedBefore.copy());
+            DesktopDebug.warn("server button failed player={} session={} button={} reason={}", player.getName().getString(), payload.sessionId(), payload.buttonId(), exception.toString());
+            syncCarried(player, sessions);
+            return;
+        } finally {
+            if (!committedCarried) {
+                player.inventoryMenu.setCarried(carriedBefore.copy());
             }
-        } else {
-            clicked = session.menu.clickMenuButton(player, payload.buttonId());
-        }
-        sessions.carried = session.menu.getCarried().copy();
-        player.inventoryMenu.setCarried(sessions.carried.copy());
-        for (Session openSession : sessions.sessions.values()) {
-            openSession.menu.setCarried(sessions.carried.copy());
+            clearDetachedCarried(sessions);
         }
 
         DesktopDebug.trace(
@@ -829,34 +1123,28 @@ public final class DesktopContainerSessions {
             session.menu.broadcastChanges();
             player.inventoryMenu.broadcastChanges();
             sessions.broadcastAll(player);
+            syncCarried(player, sessions);
         } else {
             syncCarried(player, sessions);
         }
     }
 
     private static void placeRecipe(ServerPlayer player, DesktopPlaceRecipePayload payload) {
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions == null || !sessions.ready) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null) {
             DesktopDebug.trace("server recipe place dropped player={} session={} recipe={} reason=not-ready", player.getName().getString(), payload.sessionId(), payload.recipeId());
             return;
         }
-
-        Session session = sessions.sessions.get(payload.sessionId());
+        SessionAuthorization authorization = authorizeMenu(
+            player, sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(),
+            payload.stateId(), DesktopProtocol.CAP_RECIPE_TRANSFER, "recipe-place"
+        );
+        Session session = authorization == null ? null : authorization.session();
         if (session == null) {
-            DesktopDebug.trace("server recipe place dropped player={} session={} recipe={} reason=missing-session", player.getName().getString(), payload.sessionId(), payload.recipeId());
             return;
         }
-        if (!session.visibleToClient) {
-            DesktopDebug.trace("server recipe place dropped player={} session={} recipe={} reason=hidden", player.getName().getString(), payload.sessionId(), payload.recipeId());
-            return;
-        }
-        if (player.isSpectator()) {
-            DesktopDebug.trace("server recipe place dropped player={} session={} recipe={} reason=spectator", player.getName().getString(), payload.sessionId(), payload.recipeId());
-            return;
-        }
-        if (!session.menu.stillValid(player)) {
-            DesktopDebug.log("server recipe place invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
-            sessions.close(player, session.sessionId, true);
+        if (!mayMutateInventory(player) || !sessions.allowOperation(player, "recipe-place", 2.0D)) {
+            DesktopDebug.trace("server recipe place dropped player={} session={} recipe={} reason=player-state", player.getName().getString(), payload.sessionId(), payload.recipeId());
             return;
         }
         if (!(session.menu instanceof RecipeBookMenu recipeBookMenu)) {
@@ -886,18 +1174,30 @@ public final class DesktopContainerSessions {
             return;
         }
 
-        session.menu.setCarried(sessions.carried.copy());
-        RecipeBookMenu.PostPlaceAction action = recipeBookMenu.handlePlacement(
-            payload.useMaxItems(),
-            player.isCreative(),
-            recipe,
-            player.level(),
-            player.getInventory()
-        );
-        sessions.carried = session.menu.getCarried().copy();
-        player.inventoryMenu.setCarried(sessions.carried.copy());
-        for (Session openSession : sessions.sessions.values()) {
-            openSession.menu.setCarried(sessions.carried.copy());
+        ItemStack carriedBefore = player.inventoryMenu.getCarried().copy();
+        boolean committedCarried = false;
+        RecipeBookMenu.PostPlaceAction action;
+        try {
+            session.menu.setCarried(carriedBefore.copy());
+            action = recipeBookMenu.handlePlacement(
+                payload.useMaxItems(),
+                player.isCreative(),
+                recipe,
+                player.level(),
+                player.getInventory()
+            );
+            player.inventoryMenu.setCarried(session.menu.getCarried().copy());
+            committedCarried = true;
+        } catch (RuntimeException exception) {
+            player.inventoryMenu.setCarried(carriedBefore.copy());
+            DesktopDebug.warn("server recipe place failed player={} session={} recipe={} reason={}", player.getName().getString(), payload.sessionId(), payload.recipeId(), exception.toString());
+            syncCarried(player, sessions);
+            return;
+        } finally {
+            if (!committedCarried) {
+                player.inventoryMenu.setCarried(carriedBefore.copy());
+            }
+            clearDetachedCarried(sessions);
         }
 
         DesktopDebug.trace(
@@ -908,60 +1208,130 @@ public final class DesktopContainerSessions {
             recipe.id(),
             payload.useMaxItems(),
             action,
-            sessions.carried
+            player.inventoryMenu.getCarried()
         );
 
         if (action == RecipeBookMenu.PostPlaceAction.PLACE_GHOST_RECIPE) {
             send(player, new DesktopGhostRecipePayload(session.sessionId, displayInfo.display().display()));
         }
         session.menu.broadcastChanges();
-        syncCraftingResultSlot(player, session);
         player.inventoryMenu.broadcastChanges();
         sessions.broadcastAll(player);
+        syncCarried(player, sessions);
     }
 
     private static void transferJeiRecipe(ServerPlayer player, DesktopJeiTransferPayload payload) {
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions == null || !sessions.ready) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null) {
             DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=not-ready", player.getName().getString(), payload.targetSessionId());
             return;
         }
-        if (player.isSpectator()) {
-            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=spectator", player.getName().getString(), payload.targetSessionId());
+        SessionAuthorization authorization = authorizeMenu(
+            player, sessions, payload.connectionNonce(), payload.targetSessionId(), payload.targetSessionToken(),
+            payload.targetStateId(), DesktopProtocol.CAP_RECIPE_TRANSFER, "jei-transfer"
+        );
+        if (authorization == null) {
             return;
         }
-        if (!sessions.carried.isEmpty()) {
-            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=carried carried={}", player.getName().getString(), payload.targetSessionId(), sessions.carried);
+        if (!mayMutateInventory(player) || !sessions.allowOperation(player, "jei-transfer", 8.0D)) {
+            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=player-state", player.getName().getString(), payload.targetSessionId());
+            return;
+        }
+        if (!player.inventoryMenu.getCarried().isEmpty()) {
+            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=carried carried={}", player.getName().getString(), payload.targetSessionId(), player.inventoryMenu.getCarried());
             syncCarried(player, sessions);
             return;
         }
 
-        JeiTransferTarget target = resolveJeiTransferTarget(player, sessions, payload.targetSessionId());
-        if (target == null) {
+        MinecraftServer server = player.level().getServer();
+        if (server == null) {
+            return;
+        }
+        ResourceKey<Recipe<?>> recipeKey = ResourceKey.create(Registries.RECIPE, payload.recipeId());
+        RecipeHolder<?> recipe = server.getRecipeManager().byKey(recipeKey).orElse(null);
+        if (recipe == null || recipe.value().placementInfo().isImpossibleToPlace()) {
+            DesktopDebug.trace("server JEI transfer dropped player={} recipe={} reason=unknown-recipe", player.getName().getString(), payload.recipeId());
             return;
         }
 
-        List<Slot> recipeSlots = resolveJeiTransferRecipeSlots(target.menu(), payload.recipeSlotIds());
-        if (recipeSlots == null || recipeSlots.isEmpty()) {
-            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=bad-recipe-slots", player.getName().getString(), payload.targetSessionId());
+        JeiTransferTarget target = new JeiTransferTarget(payload.targetSessionId(), authorization.menu(), authorization.session());
+        if (target.menu() instanceof AbstractCraftingMenu craftingMenu) {
+            if (!(recipe.value() instanceof CraftingRecipe)) {
+                DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} recipe={} reason=not-crafting-recipe", player.getName().getString(), payload.targetSessionId(), payload.recipeId());
+                return;
+            }
+            ItemStack carriedBefore = player.inventoryMenu.getCarried().copy();
+            boolean committedCarried = false;
+            RecipeBookMenu.PostPlaceAction action;
+            try {
+                target.menu().setCarried(carriedBefore.copy());
+                action = craftingMenu.handlePlacement(
+                    payload.maxTransfer(),
+                    player.isCreative(),
+                    recipe,
+                    player.level(),
+                    player.getInventory()
+                );
+                player.inventoryMenu.setCarried(target.menu().getCarried().copy());
+                committedCarried = true;
+            } catch (RuntimeException exception) {
+                player.inventoryMenu.setCarried(carriedBefore.copy());
+                DesktopDebug.warn("server JEI crafting transfer failed player={} targetSession={} recipe={} reason={}", player.getName().getString(), payload.targetSessionId(), payload.recipeId(), exception.toString());
+                syncCarried(player, sessions);
+                return;
+            } finally {
+                if (!committedCarried) {
+                    player.inventoryMenu.setCarried(carriedBefore.copy());
+                }
+                clearDetachedCarried(sessions);
+            }
+            if (action == RecipeBookMenu.PostPlaceAction.PLACE_GHOST_RECIPE && !recipe.value().display().isEmpty()) {
+                send(player, new DesktopGhostRecipePayload(payload.targetSessionId(), recipe.value().display().getFirst()));
+            }
+            target.menu().broadcastChanges();
+            player.inventoryMenu.broadcastChanges();
+            sessions.broadcastAll(player);
+            syncCarried(player, sessions);
             return;
         }
 
-        Map<Integer, Slot> recipeSlotsById = new HashMap<>();
+        Session session = target.session();
+        if (session == null || session.serverHandler == null || !DesktopTransferValidators.supports(session.serverHandler)) {
+            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=unsupported-custom-menu", player.getName().getString(), payload.targetSessionId());
+            return;
+        }
+        DesktopTransferDecision decision;
+        sessions.beginHandlerCallback();
+        try {
+            decision = DesktopTransferValidators.validate(
+                session.serverHandler,
+                new DesktopTransferRequest<>(new ServerSessionContext(player, sessions, session), recipe.value(), payload.maxTransfer())
+            );
+        } catch (RuntimeException exception) {
+            session.quarantineServerHandler(player, "transfer-validation", exception);
+            return;
+        } finally {
+            sessions.endHandlerCallback(player);
+        }
+        if (!decision.allowed()) {
+            return;
+        }
+        List<Slot> recipeSlots = resolveJeiTransferRecipeSlots(target.menu(), decision.destinationSlots());
+        List<JeiTransferRequirement> requirements = resolveCustomTransferRequirements(target.menu(), decision.requirements());
+        int maximumCrafts = decision.maximumCrafts();
+
+        if (recipeSlots == null || recipeSlots.isEmpty() || requirements == null || requirements.isEmpty()) {
+            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=bad-server-transfer-plan", player.getName().getString(), payload.targetSessionId());
+            return;
+        }
+
         Set<Slot> recipeSlotSet = new HashSet<>();
         for (Slot slot : recipeSlots) {
-            recipeSlotsById.put(slot.index, slot);
             recipeSlotSet.add(slot);
         }
 
-        List<JeiTransferRequirement> requirements = resolveJeiTransferRequirements(payload.requirements(), recipeSlotsById);
-        if (requirements == null || requirements.isEmpty()) {
-            DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=bad-requirements", player.getName().getString(), payload.targetSessionId());
-            return;
-        }
-
         List<Slot> sourceSlots = jeiTransferSourceSlots(player, sessions, payload.targetSessionId(), recipeSlotSet);
-        JeiTransferSimulation simulation = simulateJeiTransfer(player, recipeSlots, requirements, sourceSlots, payload.maxTransfer());
+        JeiTransferSimulation simulation = simulateJeiTransfer(player, recipeSlots, requirements, sourceSlots, payload.maxTransfer(), maximumCrafts);
         if (simulation == null) {
             DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=simulation-failed", player.getName().getString(), payload.targetSessionId());
             return;
@@ -969,9 +1339,7 @@ public final class DesktopContainerSessions {
 
         applyJeiTransferSimulation(simulation);
         target.menu().broadcastChanges();
-        if (target.session() != null) {
-            syncCraftingResultSlot(player, target.session());
-        } else {
+        if (target.session() == null) {
             player.inventoryMenu.broadcastChanges();
         }
         sessions.broadcastAll(player);
@@ -1028,24 +1396,27 @@ public final class DesktopContainerSessions {
         return slots;
     }
 
-    private static @Nullable List<JeiTransferRequirement> resolveJeiTransferRequirements(List<DesktopJeiTransferRequirement> payloadRequirements, Map<Integer, Slot> recipeSlotsById) {
-        List<JeiTransferRequirement> requirements = new ArrayList<>(payloadRequirements.size());
+    private static @Nullable List<JeiTransferRequirement> resolveCustomTransferRequirements(
+        AbstractContainerMenu menu,
+        List<com.salts_inventory_update.api.server.desktop.DesktopTransferRequirement> approvedRequirements
+    ) {
+        List<JeiTransferRequirement> requirements = new ArrayList<>(approvedRequirements.size());
         Set<Integer> targetSlots = new HashSet<>();
-        for (DesktopJeiTransferRequirement payloadRequirement : payloadRequirements) {
-            Slot targetSlot = recipeSlotsById.get(payloadRequirement.targetSlotId());
-            if (targetSlot == null || !targetSlots.add(payloadRequirement.targetSlotId())) {
+        int inputIndex = 0;
+        for (com.salts_inventory_update.api.server.desktop.DesktopTransferRequirement approved : approvedRequirements) {
+            int targetSlotId = approved.targetSlotId();
+            if (targetSlotId < 0 || targetSlotId >= menu.slots.size() || !targetSlots.add(targetSlotId)) {
                 return null;
             }
-            List<ItemStack> alternatives = new ArrayList<>();
-            for (ItemStack alternative : payloadRequirement.alternatives()) {
-                if (!alternative.isEmpty()) {
-                    alternatives.add(alternative.copyWithCount(Math.max(1, alternative.getCount())));
-                }
-            }
+            Slot target = menu.slots.get(targetSlotId);
+            List<ItemStack> alternatives = approved.alternatives().stream()
+                .filter(stack -> !stack.isEmpty() && target.mayPlace(stack))
+                .map(stack -> stack.copyWithCount(approved.count()))
+                .toList();
             if (alternatives.isEmpty()) {
                 return null;
             }
-            requirements.add(new JeiTransferRequirement(payloadRequirement.inputIndex(), targetSlot, alternatives));
+            requirements.add(new JeiTransferRequirement(inputIndex++, target, alternatives));
         }
         return requirements;
     }
@@ -1087,7 +1458,7 @@ public final class DesktopContainerSessions {
         return slot.mayPlace(slot.getItem());
     }
 
-    private static @Nullable JeiTransferSimulation simulateJeiTransfer(ServerPlayer player, List<Slot> recipeSlots, List<JeiTransferRequirement> requirements, List<Slot> sourceSlots, boolean maxTransfer) {
+    private static @Nullable JeiTransferSimulation simulateJeiTransfer(ServerPlayer player, List<Slot> recipeSlots, List<JeiTransferRequirement> requirements, List<Slot> sourceSlots, boolean maxTransfer, int maximumCrafts) {
         Map<Slot, ItemStack> sourceStacks = new LinkedHashMap<>();
         for (Slot sourceSlot : sourceSlots) {
             sourceStacks.put(sourceSlot, sourceSlot.getItem().copy());
@@ -1115,22 +1486,113 @@ public final class DesktopContainerSessions {
             }
         }
 
-        JeiTransferMatch match = matchJeiTransferRequirements(sourceStacks, requirements, 0, targetStacks);
-        if (match == null) {
-            return null;
-        }
-
-        if (maxTransfer) {
-            while (true) {
-                JeiTransferMatch next = matchJeiTransferRequirements(match.sourceStacks(), requirements, 0, match.targetStacks());
-                if (next == null) {
-                    break;
+        Map<StackVariant, Integer> supply = new LinkedHashMap<>();
+        for (ItemStack stack : sourceStacks.values()) {
+            if (!stack.isEmpty()) {
+                try {
+                    supply.merge(new StackVariant(stack), stack.getCount(), Math::addExact);
+                } catch (ArithmeticException exception) {
+                    return null;
                 }
-                match = next;
             }
         }
 
-        return new JeiTransferSimulation(match.sourceStacks(), match.targetStacks());
+        int craftLimit = Math.max(1, Math.min(maximumCrafts, DesktopProtocol.MAX_TRANSFER_CRAFTS));
+        List<BoundedTransferPlanner.Requirement<StackVariant>> plannerRequirements = new ArrayList<>(requirements.size());
+        for (JeiTransferRequirement requirement : requirements) {
+            int unitsPerCraft = requirement.alternatives().getFirst().getCount();
+            if (unitsPerCraft <= 0 || requirement.alternatives().stream().anyMatch(stack -> stack.getCount() != unitsPerCraft)) {
+                return null;
+            }
+            List<StackVariant> alternatives = requirement.alternatives().stream().map(StackVariant::new).distinct().toList();
+            ItemStack existing = targetStacks.getOrDefault(requirement.targetSlot(), ItemStack.EMPTY);
+            List<StackVariant> compatibleAlternatives = existing.isEmpty()
+                ? alternatives
+                : alternatives.stream().filter(variant -> variant.matches(existing)).toList();
+            if (compatibleAlternatives.isEmpty()) {
+                return null;
+            }
+            Map<StackVariant, Integer> maximumUnits = new LinkedHashMap<>();
+            for (StackVariant alternative : compatibleAlternatives) {
+                ItemStack stack = alternative.stack();
+                maximumUnits.put(
+                    alternative,
+                    Math.min(stack.getMaxStackSize(), requirement.targetSlot().getMaxStackSize(stack))
+                );
+            }
+            plannerRequirements.add(new BoundedTransferPlanner.Requirement<>(
+                requirement.targetSlot().index,
+                unitsPerCraft,
+                existing.getCount(),
+                compatibleAlternatives,
+                maximumUnits
+            ));
+        }
+
+        Optional<BoundedTransferPlanner.Plan<StackVariant>> planned;
+        try {
+            BoundedTransferPlanner<StackVariant> planner = new BoundedTransferPlanner<>(StackVariant.COMPARATOR);
+            planned = maxTransfer
+                ? planner.planMaximum(supply, plannerRequirements, craftLimit)
+                : planner.planExact(supply, plannerRequirements, 1);
+        } catch (IllegalArgumentException | ArithmeticException exception) {
+            return null;
+        }
+        if (planned.isEmpty()) {
+            return null;
+        }
+
+        Map<Integer, JeiTransferRequirement> requirementsByMenuSlot = new HashMap<>();
+        for (JeiTransferRequirement requirement : requirements) {
+            requirementsByMenuSlot.put(requirement.targetSlot().index, requirement);
+        }
+        Map<Slot, ItemStack> plannedSources = copyJeiTransferStacks(sourceStacks);
+        Map<Slot, ItemStack> plannedTargets = copyJeiTransferStacks(targetStacks);
+        for (BoundedTransferPlanner.Allocation<StackVariant> allocation : planned.get().allocations()) {
+            if (allocation.units().size() != 1) {
+                return null;
+            }
+            JeiTransferRequirement requirement = requirementsByMenuSlot.get(allocation.targetId());
+            if (requirement == null) {
+                return null;
+            }
+            Map.Entry<StackVariant, Integer> selected = allocation.units().entrySet().iterator().next();
+            if (!consumeVariant(plannedSources, selected.getKey(), selected.getValue())) {
+                return null;
+            }
+            ItemStack existing = plannedTargets.getOrDefault(requirement.targetSlot(), ItemStack.EMPTY);
+            ItemStack selectedStack = selected.getKey().stack();
+            int limit = Math.min(selectedStack.getMaxStackSize(), requirement.targetSlot().getMaxStackSize(selectedStack));
+            if (!existing.isEmpty() && !ItemStack.isSameItemSameComponents(existing, selectedStack)
+                || existing.getCount() + selected.getValue() > limit) {
+                return null;
+            }
+            if (existing.isEmpty()) {
+                plannedTargets.put(requirement.targetSlot(), selectedStack.copyWithCount(selected.getValue()));
+            } else {
+                existing.grow(selected.getValue());
+            }
+        }
+        return new JeiTransferSimulation(plannedSources, plannedTargets);
+    }
+
+    private static boolean consumeVariant(Map<Slot, ItemStack> sourceStacks, StackVariant variant, int amount) {
+        if (amount <= 0) {
+            return amount == 0;
+        }
+        int remaining = amount;
+        for (ItemStack stack : sourceStacks.values()) {
+            if (stack.isEmpty() || !variant.matches(stack)) {
+                continue;
+            }
+            int consumed = Math.min(stack.getCount(), remaining);
+            stack.shrink(consumed);
+            remaining -= consumed;
+            if (remaining == 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static @Nullable Map<Slot, ItemStack> compatibleJeiTransferTargetStacks(ServerPlayer player, List<Slot> recipeSlots, List<JeiTransferRequirement> requirements) {
@@ -1219,74 +1681,6 @@ public final class DesktopContainerSessions {
         return moving.isEmpty();
     }
 
-    private static @Nullable JeiTransferMatch matchJeiTransferRequirements(Map<Slot, ItemStack> sourceStacks, List<JeiTransferRequirement> requirements, int index, Map<Slot, ItemStack> targetStacks) {
-        if (index >= requirements.size()) {
-            return new JeiTransferMatch(sourceStacks, targetStacks);
-        }
-
-        JeiTransferRequirement requirement = requirements.get(index);
-        for (ItemStack alternative : requirement.alternatives()) {
-            Map<Slot, ItemStack> candidateSources = copyJeiTransferStacks(sourceStacks);
-            ItemStack selected = consumeJeiTransferAlternative(candidateSources, alternative);
-            if (selected.isEmpty()
-                || !requirement.targetSlot().mayPlace(selected)
-                || selected.getCount() > requirement.targetSlot().getMaxStackSize(selected)) {
-                continue;
-            }
-
-            Map<Slot, ItemStack> candidateTargets = addJeiTransferTargetStack(targetStacks, requirement.targetSlot(), selected);
-            if (candidateTargets == null) {
-                continue;
-            }
-            JeiTransferMatch match = matchJeiTransferRequirements(candidateSources, requirements, index + 1, candidateTargets);
-            if (match != null) {
-                return match;
-            }
-        }
-        return null;
-    }
-
-    private static @Nullable Map<Slot, ItemStack> addJeiTransferTargetStack(Map<Slot, ItemStack> targetStacks, Slot targetSlot, ItemStack selected) {
-        if (selected.isEmpty() || !targetSlot.mayPlace(selected)) {
-            return null;
-        }
-
-        int limit = Math.min(selected.getMaxStackSize(), targetSlot.getMaxStackSize(selected));
-        if (selected.getCount() > limit) {
-            return null;
-        }
-
-        Map<Slot, ItemStack> candidateTargets = copyJeiTransferStacks(targetStacks);
-        ItemStack existing = candidateTargets.getOrDefault(targetSlot, ItemStack.EMPTY);
-        if (existing.isEmpty()) {
-            candidateTargets.put(targetSlot, selected.copy());
-            return candidateTargets;
-        }
-        if (!ItemStack.isSameItemSameComponents(existing, selected) || existing.getCount() + selected.getCount() > limit) {
-            return null;
-        }
-
-        existing.grow(selected.getCount());
-        return candidateTargets;
-    }
-
-    private static ItemStack consumeJeiTransferAlternative(Map<Slot, ItemStack> sourceStacks, ItemStack alternative) {
-        int remaining = Math.max(1, alternative.getCount());
-        for (Map.Entry<Slot, ItemStack> entry : sourceStacks.entrySet()) {
-            ItemStack stack = entry.getValue();
-            if (stack.isEmpty() || !ItemStack.isSameItemSameComponents(stack, alternative)) {
-                continue;
-            }
-            int consumed = Math.min(stack.getCount(), remaining);
-            stack.shrink(consumed);
-            remaining -= consumed;
-            if (remaining <= 0) {
-                return alternative.copyWithCount(Math.max(1, alternative.getCount()));
-            }
-        }
-        return ItemStack.EMPTY;
-    }
-
     private static Map<Slot, ItemStack> copyJeiTransferStacks(Map<Slot, ItemStack> stacks) {
         Map<Slot, ItemStack> copy = new LinkedHashMap<>();
         for (Map.Entry<Slot, ItemStack> entry : stacks.entrySet()) {
@@ -1315,25 +1709,21 @@ public final class DesktopContainerSessions {
     }
 
     private static void rename(ServerPlayer player, DesktopRenamePayload payload) {
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions == null || !sessions.ready) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null) {
             DesktopDebug.trace("server rename dropped player={} session={} reason=not-ready", player.getName().getString(), payload.sessionId());
             return;
         }
-
-        Session session = sessions.sessions.get(payload.sessionId());
+        SessionAuthorization authorization = authorizeMenu(
+            player, sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(),
+            payload.stateId(), 0L, "rename"
+        );
+        Session session = authorization == null ? null : authorization.session();
         if (session == null) {
-            DesktopDebug.trace("server rename dropped player={} session={} reason=missing-session", player.getName().getString(), payload.sessionId());
             return;
         }
-        if (!session.visibleToClient) {
-            DesktopDebug.trace("server rename dropped player={} session={} reason=hidden", player.getName().getString(), payload.sessionId());
-            return;
-        }
-
-        if (!session.menu.stillValid(player)) {
-            DesktopDebug.log("server rename invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
-            sessions.close(player, session.sessionId, true);
+        if (!mayMutateInventory(player) || !sessions.allowOperation(player, "rename", 1.0D)) {
+            DesktopDebug.trace("server rename dropped player={} session={} reason=player-state", player.getName().getString(), payload.sessionId());
             return;
         }
 
@@ -1352,25 +1742,21 @@ public final class DesktopContainerSessions {
     }
 
     private static void customPayload(ServerPlayer player, DesktopCustomPayload payload) {
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions == null || !sessions.ready) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null) {
             DesktopDebug.trace("server custom dropped player={} session={} channel={} reason=not-ready", player.getName().getString(), payload.sessionId(), payload.channel());
             return;
         }
-
-        Session session = sessions.sessions.get(payload.sessionId());
+        SessionAuthorization authorization = authorizeMenu(
+            player, sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(),
+            payload.stateId(), DesktopProtocol.CAP_CUSTOM_WINDOWS, "custom"
+        );
+        Session session = authorization == null ? null : authorization.session();
         if (session == null) {
-            DesktopDebug.trace("server custom dropped player={} session={} channel={} reason=missing-session", player.getName().getString(), payload.sessionId(), payload.channel());
             return;
         }
-        if (!session.visibleToClient) {
-            DesktopDebug.trace("server custom dropped player={} session={} channel={} reason=hidden", player.getName().getString(), payload.sessionId(), payload.channel());
-            return;
-        }
-
-        if (!session.menu.stillValid(player)) {
-            DesktopDebug.log("server custom invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
-            sessions.close(player, session.sessionId, true);
+        if (!mayMutateInventory(player) || !sessions.allowOperation(player, "custom", 2.0D)) {
+            DesktopDebug.trace("server custom dropped player={} session={} reason=player-state", player.getName().getString(), payload.sessionId());
             return;
         }
 
@@ -1399,6 +1785,7 @@ public final class DesktopContainerSessions {
             payload.channel(),
             payload.data().length
         );
+        sessions.beginHandlerCallback();
         try {
             handler.handle(new ServerPayloadContext(player, sessions, session, payload));
         } catch (RuntimeException exception) {
@@ -1409,6 +1796,8 @@ public final class DesktopContainerSessions {
                 payload.channel(),
                 exception.toString()
             );
+        } finally {
+            sessions.endHandlerCallback(player);
         }
     }
 
@@ -1484,14 +1873,12 @@ public final class DesktopContainerSessions {
     }
 
     private static List<net.minecraft.world.inventory.Slot> quickMoveTargets(ServerPlayer player, PlayerSessions sessions, SlotSource source, DesktopQuickMovePayload payload) {
-        if (payload.targetKind() == DesktopPackets.QUICK_TARGET_SESSION && payload.targetSessionId() != source.sessionId) {
+        if (payload.targetKind() == DesktopPackets.QUICK_TARGET_SESSION) {
             Session targetSession = sessions.sessions.get(payload.targetSessionId());
             if (targetSession != null && targetSession.visibleToClient && targetSession.menu.stillValid(player)) {
-                List<net.minecraft.world.inventory.Slot> targetSlots = containerSlots(targetSession.menu, player);
-                if (!targetSlots.isEmpty()) {
-                    return targetSlots;
-                }
+                return containerSlots(targetSession.menu, player);
             }
+            return List.of();
         }
 
         if (payload.targetKind() == DesktopPackets.QUICK_TARGET_HOTBAR && !isPlayerInventorySlot(player, source.slot)) {
@@ -1625,15 +2012,20 @@ public final class DesktopContainerSessions {
     }
 
     private static void clickMenu(int debugId, ServerPlayer player, PlayerSessions sessions, AbstractContainerMenu menu, int slotIndex, int button, ContainerInput input, ItemStack clientCarried) {
-        if (slotIndex < AbstractContainerMenu.SLOT_CLICKED_OUTSIDE || slotIndex >= menu.slots.size()) {
+        if (!mayMutateInventory(player) || !menu.stillValid(player)) {
+            DesktopDebug.trace("server click ignored id={} player={} menu={} reason=invalid-player-or-menu", debugId, player.getName().getString(), menu.containerId);
+            return;
+        }
+        if (slotIndex != AbstractContainerMenu.SLOT_CLICKED_OUTSIDE
+            && (slotIndex < 0 || slotIndex >= menu.slots.size())) {
             DesktopDebug.trace("server click ignored id={} player={} menu={} slot={} reason=out-of-range", debugId, player.getName().getString(), menu.containerId, slotIndex);
             return;
         }
 
         ItemStack slotBefore = serverSlotStack(menu, slotIndex);
-        ItemStack carriedBefore = sessions.carried.copy();
+        ItemStack carriedBefore = player.inventoryMenu.getCarried().copy();
         ItemStack menuCarriedBefore = menu.getCarried().copy();
-        ItemStack effectiveCarried = player.hasInfiniteMaterials() ? clientCarried.copy() : sessions.carried.copy();
+        ItemStack effectiveCarried = player.hasInfiniteMaterials() ? clientCarried.copy() : player.inventoryMenu.getCarried().copy();
         DesktopDebug.trace(
             "server click before id={} player={} menu={} slot={} button={} input={} slotBefore={} sessionsCarried={} menuCarried={} clientCarried={} effectiveCarried={} creative={}",
             debugId,
@@ -1649,12 +2041,31 @@ public final class DesktopContainerSessions {
             effectiveCarried,
             player.hasInfiniteMaterials()
         );
-        menu.setCarried(effectiveCarried);
-        menu.clicked(slotIndex, button, input, player);
-        sessions.carried = menu.getCarried().copy();
-        player.inventoryMenu.setCarried(sessions.carried.copy());
-        for (Session session : sessions.sessions.values()) {
-            session.menu.setCarried(sessions.carried.copy());
+        boolean committedCarried = false;
+        try {
+            menu.setCarried(effectiveCarried);
+            menu.clicked(slotIndex, button, input, player);
+            player.inventoryMenu.setCarried(menu.getCarried().copy());
+            committedCarried = true;
+        } catch (RuntimeException exception) {
+            player.inventoryMenu.setCarried(carriedBefore.copy());
+            DesktopDebug.warn(
+                "server click failed id={} player={} menu={} slot={} button={} input={} reason={}",
+                debugId,
+                player.getName().getString(),
+                menu.containerId,
+                slotIndex,
+                button,
+                input,
+                exception.toString()
+            );
+            syncCarried(player, sessions);
+            return;
+        } finally {
+            if (!committedCarried) {
+                player.inventoryMenu.setCarried(carriedBefore.copy());
+            }
+            clearDetachedCarried(sessions);
         }
         DesktopDebug.trace(
             "server click after id={} player={} menu={} slot={} slotAfter={} sessionsCarried={} playerMenuCarried={}",
@@ -1663,7 +2074,7 @@ public final class DesktopContainerSessions {
             menu.containerId,
             slotIndex,
             serverSlotStack(menu, slotIndex),
-            sessions.carried,
+            player.inventoryMenu.getCarried(),
             player.inventoryMenu.getCarried()
         );
     }
@@ -1677,8 +2088,9 @@ public final class DesktopContainerSessions {
     }
 
     private static void syncCarried(ServerPlayer player, PlayerSessions sessions) {
-        DesktopDebug.trace("server sync carried player={} stack={}", player.getName().getString(), sessions.carried);
-        send(player, new DesktopCarriedPayload(sessions.carried.copy()));
+        ItemStack carried = player.inventoryMenu.getCarried().copy();
+        DesktopDebug.trace("server sync carried player={} stack={}", player.getName().getString(), carried);
+        send(player, new DesktopCarriedPayload(sessions.connectionNonce, sessions.playerSessionToken, player.inventoryMenu.getStateId(), carried));
     }
 
     private static void syncPlayerMenu(ServerPlayer player) {
@@ -1698,25 +2110,14 @@ public final class DesktopContainerSessions {
 
     private static void setSharedCarried(ServerPlayer player, PlayerSessions sessions, ItemStack stack) {
         ItemStack carried = stack.copy();
-        sessions.carried = carried.copy();
         player.inventoryMenu.setCarried(carried.copy());
-        for (Session session : sessions.sessions.values()) {
-            session.menu.setCarried(carried.copy());
-        }
+        clearDetachedCarried(sessions);
     }
 
-    private static void syncCraftingResultSlot(ServerPlayer player, Session session) {
-        if (!(session.menu instanceof AbstractCraftingMenu craftingMenu)) {
-            return;
+    private static void clearDetachedCarried(PlayerSessions sessions) {
+        for (Session session : sessions.sessions.values()) {
+            session.menu.setCarried(ItemStack.EMPTY);
         }
-
-        net.minecraft.world.inventory.Slot resultSlot = craftingMenu.getResultSlot();
-        int slotIndex = session.menu.slots.indexOf(resultSlot);
-        if (slotIndex < 0) {
-            return;
-        }
-
-        send(player, new DesktopSlotPayload(session.sessionId, slotIndex, session.menu.getStateId(), resultSlot.getItem().copy()));
     }
 
     private static void syncMerchantOffers(ServerPlayer player, Session session) {
@@ -1734,63 +2135,88 @@ public final class DesktopContainerSessions {
         ));
     }
 
-    private static void closeSession(ServerPlayer player, int sessionId, boolean notifyClient) {
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions != null) {
-            DesktopDebug.log("server close request player={} session={} notify={}", player.getName().getString(), sessionId, notifyClient);
-            sessions.close(player, sessionId, notifyClient);
+    private static void closeSession(ServerPlayer player, DesktopCloseSessionPayload payload) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null
+            || !preauthorizesSession(sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(), 0L, false)
+            || !sessions.allowControl(player, "close", 1.0D)
+            || authorizeSession(
+                player, sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(), 0L, false, "close"
+            ) == null) {
+            return;
         }
+        DesktopDebug.log("server close request player={} session={}", player.getName().getString(), payload.sessionId());
+        sessions.close(player, payload.sessionId(), true);
     }
 
     private static void setSessionPin(ServerPlayer player, DesktopSessionPinPayload payload) {
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions == null || !sessions.ready) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null) {
             DesktopDebug.trace("server pin dropped player={} session={} reason=not-ready", player.getName().getString(), payload.sessionId());
             return;
         }
 
-        Session session = sessions.sessions.get(payload.sessionId());
+        if (payload.pinMode() < DesktopPackets.PIN_MODE_UNPINNED
+            || payload.pinMode() > DesktopPackets.PIN_MODE_GHOST_PINNED
+            || !preauthorizesSession(sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(), 0L, false)
+            || !sessions.allowControl(player, "pin", 1.0D)) {
+            return;
+        }
+        SessionAuthorization authorization = authorizeSession(
+            player, sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(), 0L, false, "pin"
+        );
+        Session session = authorization == null ? null : authorization.session();
         if (session == null) {
-            DesktopDebug.trace("server pin dropped player={} session={} reason=missing-session", player.getName().getString(), payload.sessionId());
             return;
         }
 
         session.ghostPinned = payload.pinMode() == DesktopPackets.PIN_MODE_GHOST_PINNED;
         DesktopDebug.trace("server pin player={} session={} ghostPinned={}", player.getName().getString(), payload.sessionId(), session.ghostPinned);
-        session.dispatchPinChanged(player);
+        session.dispatchPinChanged(player, sessions);
     }
 
     private static void setSessionVisibility(ServerPlayer player, DesktopSessionVisibilityPayload payload) {
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions == null || !sessions.ready) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null) {
             DesktopDebug.trace("server visibility dropped player={} session={} reason=not-ready", player.getName().getString(), payload.sessionId());
             return;
         }
 
-        Session session = sessions.sessions.get(payload.sessionId());
+        if (!preauthorizesSession(sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(), 0L, false)
+            || !sessions.allowControl(player, "visibility", 1.0D)) {
+            return;
+        }
+        SessionAuthorization authorization = authorizeSession(
+            player, sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(), 0L, false, "visibility"
+        );
+        Session session = authorization == null ? null : authorization.session();
         if (session == null) {
-            DesktopDebug.trace("server visibility dropped player={} session={} reason=missing-session", player.getName().getString(), payload.sessionId());
             return;
         }
-
-        if (!session.menu.stillValid(player)) {
-            DesktopDebug.log("server visibility invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
-            sessions.rememberDormantGhost(session, "visibility-invalid");
-            sessions.close(player, session.sessionId, true);
-            return;
-        }
-
         sessions.setVisible(player, session, payload.visible(), true);
     }
 
     private static void openLinkedSources(ServerPlayer player, DesktopOpenLinkedSourcesPayload payload) {
-        PlayerSessions sessions = PLAYERS.get(player.getUUID());
-        if (sessions == null || !sessions.ready) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null) {
             DesktopDebug.trace("server linked open dropped player={} reason=not-ready", player.getName().getString());
             return;
         }
+        if (!preauthorizesSession(
+            sessions, payload.connectionNonce(), payload.originSessionId(), payload.originSessionToken(),
+            DesktopProtocol.CAP_LINK_GRAPH | DesktopProtocol.CAP_CUSTOM_WINDOWS, false
+        ) || !sessions.allowControl(player, "open-linked", 2.0D)) {
+            return;
+        }
+        SessionAuthorization origin = authorizeSession(
+            player, sessions, payload.connectionNonce(), payload.originSessionId(), payload.originSessionToken(),
+            DesktopProtocol.CAP_LINK_GRAPH | DesktopProtocol.CAP_CUSTOM_WINDOWS, false, "open-linked"
+        );
+        if (origin == null) {
+            return;
+        }
 
-        for (String sourceKey : payload.sourceKeys()) {
+        for (String sourceKey : sessions.links.connectedComponent(origin.linkNode(), MAX_DORMANT_GHOST_SOURCES)) {
             if (sourceKey == null || sourceKey.isBlank() || !isBlockBackedSourceKey(sourceKey)) {
                 DesktopDebug.trace("server linked open skipped player={} source={} reason=unsupported-source", player.getName().getString(), sourceKey);
                 continue;
@@ -1804,7 +2230,12 @@ public final class DesktopContainerSessions {
                 continue;
             }
 
-            MenuProvider provider = providerForDormantGhost(player, sourceKey);
+            SourceIdentity sourceIdentity = sessions.sourceIdentities.get(sourceKey);
+            if (sourceIdentity == null) {
+                DesktopDebug.trace("server linked open skipped player={} source={} reason=missing-source-identity", player.getName().getString(), sourceKey);
+                continue;
+            }
+            MenuProvider provider = providerForDormantGhost(player, sourceKey, sourceIdentity);
             if (provider == null) {
                 DesktopDebug.trace("server linked open skipped player={} source={} reason=unavailable", player.getName().getString(), sourceKey);
                 continue;
@@ -1815,17 +2246,81 @@ public final class DesktopContainerSessions {
         }
     }
 
+    private static void updateLink(ServerPlayer player, DesktopLinkPayload payload) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null) {
+            return;
+        }
+        if (!preauthorizesSession(
+            sessions, payload.connectionNonce(), payload.firstSessionId(), payload.firstSessionToken(),
+            DesktopProtocol.CAP_LINK_GRAPH, false
+        ) || !preauthorizesSession(
+            sessions, payload.connectionNonce(), payload.secondSessionId(), payload.secondSessionToken(),
+            DesktopProtocol.CAP_LINK_GRAPH, false
+        ) || !sessions.allowControl(player, "link", 2.0D)) {
+            return;
+        }
+        SessionAuthorization first = authorizeSession(
+            player, sessions, payload.connectionNonce(), payload.firstSessionId(), payload.firstSessionToken(),
+            DesktopProtocol.CAP_LINK_GRAPH, false, "link-first"
+        );
+        if (first == null) {
+            return;
+        }
+        if (payload.action() == DesktopLinkPayload.ACTION_DETACH) {
+            if (!first.linkNode().equals(secondLinkNodeCandidate(sessions, payload))) {
+                SessionAuthorization second = authorizeSession(
+                    player, sessions, payload.connectionNonce(), payload.secondSessionId(), payload.secondSessionToken(),
+                    DesktopProtocol.CAP_LINK_GRAPH, false, "unlink-second"
+                );
+                if (second != null) {
+                    sessions.links.unlink(first.linkNode(), second.linkNode());
+                }
+                return;
+            }
+            Set<String> neighbors = sessions.links.snapshot().get(first.linkNode());
+            if (neighbors != null) {
+                for (String neighbor : List.copyOf(neighbors)) {
+                    sessions.links.unlink(first.linkNode(), neighbor);
+                }
+            }
+            return;
+        }
+        SessionAuthorization second = authorizeSession(
+            player, sessions, payload.connectionNonce(), payload.secondSessionId(), payload.secondSessionToken(),
+            DesktopProtocol.CAP_LINK_GRAPH, false, "link-second"
+        );
+        if (second != null) {
+            sessions.links.link(first.linkNode(), second.linkNode());
+        }
+    }
+
+    private static String secondLinkNodeCandidate(PlayerSessions sessions, DesktopLinkPayload payload) {
+        if (payload.secondSessionId() == DesktopPackets.PLAYER_MENU_SESSION
+            && payload.secondSessionToken() == sessions.playerSessionToken) {
+            return PLAYER_LINK_NODE;
+        }
+        Session second = sessions.sessions.get(payload.secondSessionId());
+        if (second == null || second.sessionToken != payload.secondSessionToken()) {
+            return "";
+        }
+        return second.sourceKey.isBlank() ? "session:" + second.sessionId : second.sourceKey;
+    }
+
     private static int nextSessionId(ServerPlayer player) {
         PlayerSessions sessions = sessions(player);
-        int next = sessions.nextSessionId++;
-        if (sessions.nextSessionId == Integer.MAX_VALUE) {
-            sessions.nextSessionId = 1;
+        for (int attempt = 0; attempt <= MAX_SESSIONS; attempt++) {
+            int candidate = sessions.nextSessionId <= 0 ? 1 : sessions.nextSessionId;
+            sessions.nextSessionId = candidate == Integer.MAX_VALUE ? 1 : candidate + 1;
+            if (!sessions.sessions.containsKey(candidate)) {
+                return candidate;
+            }
         }
-        return next;
+        throw new IllegalStateException("No free desktop session identifier");
     }
 
     private static PlayerSessions sessions(ServerPlayer player) {
-        return PLAYERS.computeIfAbsent(player.getUUID(), uuid -> new PlayerSessions());
+        return PLAYERS.computeIfAbsent(player, ignored -> new PlayerSessions());
     }
 
     private static void send(ServerPlayer player, CustomPacketPayload payload) {
@@ -1853,10 +2348,65 @@ public final class DesktopContainerSessions {
     private static final class PlayerSessions {
         private final LinkedHashMap<Integer, Session> sessions = new LinkedHashMap<>();
         private final LinkedHashMap<String, DormantGhostSource> dormantGhostSources = new LinkedHashMap<>();
-        private boolean ready;
+        private final LinkedHashMap<String, SourceIdentity> sourceIdentities = new LinkedHashMap<>();
+        private final TokenBucket operationRateLimit = new TokenBucket(40.0D, 80.0D, System.nanoTime());
+        private final TokenBucket controlRateLimit = new TokenBucket(10.0D, 20.0D, System.nanoTime());
+        private final TokenBucket modeRateLimit = new TokenBucket(1.0D, 4.0D, System.nanoTime());
+        private final TokenBucket resyncRateLimit = new TokenBucket(1.0D, 2.0D, System.nanoTime());
+        private final BoundedLinkGraph<String> links = new BoundedLinkGraph<>();
+        private boolean negotiated;
+        private boolean uiEnabled;
+        private boolean gameplayEnabled;
+        private long capabilities;
+        private long connectionNonce;
+        private long playerSessionToken;
+        private long lastModeSequence = -1L;
+        private Set<String> forcedMenuIds = Set.of();
         private int nextSessionId = 1;
         private int dormantGhostProbeTicks;
-        private ItemStack carried = ItemStack.EMPTY;
+        private long lifecycleTicks;
+        private int handlerCallbackDepth;
+        private boolean handlerBroadcastPending;
+
+        private boolean isActive() {
+            return this.negotiated && this.uiEnabled;
+        }
+
+        private boolean isGameplayActive() {
+            return this.negotiated && this.gameplayEnabled;
+        }
+
+        private boolean authorizes(long nonce, long capability) {
+            return this.isActive() && nonce != 0L && nonce == this.connectionNonce && this.hasCapability(capability);
+        }
+
+        private boolean hasCapability(long capability) {
+            return (this.capabilities & capability) == capability;
+        }
+
+        private boolean allowOperation(ServerPlayer player, String operation, double cost) {
+            boolean allowed = this.operationRateLimit.tryConsume(cost, System.nanoTime());
+            if (!allowed) {
+                DesktopDebug.trace("server desktop operation rate-limited player={} operation={}", player.getName().getString(), operation);
+            }
+            return allowed;
+        }
+
+        private boolean allowControl(ServerPlayer player, String operation, double cost) {
+            boolean allowed = this.controlRateLimit.tryConsume(cost, System.nanoTime());
+            if (!allowed) {
+                DesktopDebug.trace("server desktop control rate-limited player={} operation={}", player.getName().getString(), operation);
+            }
+            return allowed;
+        }
+
+        private boolean allowResync(ServerPlayer player, String operation) {
+            boolean allowed = this.resyncRateLimit.tryConsume(1.0D, System.nanoTime());
+            if (!allowed) {
+                DesktopDebug.trace("server desktop resync rate-limited player={} operation={}", player.getName().getString(), operation);
+            }
+            return allowed;
+        }
 
         private void add(ServerPlayer player, Session session) {
             while (this.sessions.size() >= MAX_SESSIONS) {
@@ -1869,13 +2419,15 @@ public final class DesktopContainerSessions {
                 this.close(player, sessionId, true);
             }
 
-            this.sessions.put(session.sessionId, session);
-            if (this.carried.isEmpty()) {
-                this.carried = player.inventoryMenu.getCarried().copy();
+            session.sourceIdentity = captureBlockSourceIdentity(player, session.sourceKey);
+            if (session.sourceIdentity != null) {
+                this.rememberSourceIdentity(session.sourceKey, session.sourceIdentity);
             }
+            this.sessions.put(session.sessionId, session);
             session.initializeServerHandler(player, this);
-            session.menu.setCarried(this.carried.copy());
+            session.menu.setCarried(ItemStack.EMPTY);
             session.menu.setSynchronizer(new SessionSynchronizer(player, session));
+            syncMerchantOffers(player, session);
             DesktopDebug.log("server session add player={} session={} title={} count={}", player.getName().getString(), session.sessionId, session.title.getString(), this.sessions.size());
             session.dispatchOpened(player, this);
         }
@@ -1888,7 +2440,9 @@ public final class DesktopContainerSessions {
             boolean handled = false;
             for (Session session : List.copyOf(this.sessions.values())) {
                 if (sourceKey.equals(session.sourceKey)) {
-                    if (session.ghostPinned) {
+                    if (!session.visibleToClient) {
+                        this.setVisible(player, session, true, notifyClient);
+                    } else if (session.ghostPinned) {
                         this.setVisible(player, session, !session.visibleToClient, notifyClient);
                     } else {
                         this.close(player, session.sessionId, notifyClient);
@@ -1900,19 +2454,37 @@ public final class DesktopContainerSessions {
             return handled;
         }
 
+        private void rememberSourceIdentity(String sourceKey, SourceIdentity identity) {
+            this.sourceIdentities.remove(sourceKey);
+            while (this.sourceIdentities.size() >= DesktopProtocol.MAX_LINK_NODES) {
+                Iterator<String> iterator = this.sourceIdentities.keySet().iterator();
+                if (!iterator.hasNext()) {
+                    break;
+                }
+                iterator.next();
+                iterator.remove();
+            }
+            this.sourceIdentities.put(sourceKey, identity);
+        }
+
         private void setVisible(ServerPlayer player, Session session, boolean visible, boolean notifyClient) {
             if (session.visibleToClient == visible) {
+                return;
+            }
+
+            if (visible && !canRestoreHiddenSession(player, session)) {
+                DesktopDebug.log("server session restore rejected player={} session={} title={} source={}", player.getName().getString(), session.sessionId, session.title.getString(), session.sourceKey);
+                this.close(player, session.sessionId, notifyClient);
                 return;
             }
 
             session.visibleToClient = visible;
             DesktopDebug.log("server session visibility player={} session={} title={} visible={} notify={}", player.getName().getString(), session.sessionId, session.title.getString(), visible, notifyClient);
             if (notifyClient) {
-                send(player, new DesktopSessionVisibilityPayload(session.sessionId, visible));
+                send(player, new DesktopSessionVisibilityPayload(this.connectionNonce, session.sessionId, session.sessionToken, visible));
             }
             if (visible) {
                 session.menu.sendAllDataToRemote();
-                syncCraftingResultSlot(player, session);
                 syncMerchantOffers(player, session);
                 syncCarried(player, this);
             }
@@ -1928,6 +2500,9 @@ public final class DesktopContainerSessions {
 
             DesktopDebug.log("server session close player={} session={} title={} notify={}", player.getName().getString(), sessionId, session.title.getString(), notifyClient);
             session.dispatchClosed(player, this);
+            // The canonical cursor lives on the player menu. A copied cursor on a
+            // desktop menu must never be settled again by removed().
+            session.menu.setCarried(ItemStack.EMPTY);
             session.menu.removed(player);
             if (notifyClient) {
                 send(player, new DesktopSessionClosedPayload(sessionId));
@@ -1939,10 +2514,11 @@ public final class DesktopContainerSessions {
                 this.close(player, sessionId, notifyClient);
             }
             this.dormantGhostSources.clear();
-            this.carried = ItemStack.EMPTY;
+            this.sourceIdentities.clear();
         }
 
         private void tick(ServerPlayer player) {
+            this.lifecycleTicks++;
             for (Session session : List.copyOf(this.sessions.values())) {
                 if (!session.menu.stillValid(player)) {
                     DesktopDebug.log("server session invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
@@ -1962,30 +2538,65 @@ public final class DesktopContainerSessions {
                     this.close(player, session.sessionId, true);
                 } else {
                     session.menu.broadcastChanges();
-                    syncCraftingResultSlot(player, session);
-                    syncMerchantOffers(player, session);
                     session.dispatchTick(player, this);
                 }
             }
             this.reopenDormantGhosts(player);
         }
 
-        private void broadcastAll(ServerPlayer player) {
-            for (Session session : this.sessions.values()) {
-                session.menu.broadcastChanges();
-                syncMerchantOffers(player, session);
-                session.dispatchTick(player, this);
+        private void beginHandlerCallback() {
+            this.handlerCallbackDepth++;
+        }
+
+        private void endHandlerCallback(ServerPlayer player) {
+            if (this.handlerCallbackDepth <= 0) {
+                throw new IllegalStateException("Unbalanced desktop handler callback");
             }
-            syncPlayerMenu(player);
+            this.handlerCallbackDepth--;
+            this.flushHandlerBroadcast(player);
+        }
+
+        private void requestHandlerBroadcast(ServerPlayer player) {
+            this.handlerBroadcastPending = true;
+            this.flushHandlerBroadcast(player);
+        }
+
+        private void flushHandlerBroadcast(ServerPlayer player) {
+            if (this.handlerCallbackDepth != 0 || !this.handlerBroadcastPending) {
+                return;
+            }
+            this.handlerBroadcastPending = false;
+            this.broadcastAll(player);
             syncCarried(player, this);
         }
 
+        private void broadcastAll(ServerPlayer player) {
+            for (Session session : this.sessions.values()) {
+                session.menu.broadcastChanges();
+            }
+            player.inventoryMenu.broadcastChanges();
+        }
+
         private void rememberDormantGhost(Session session, String reason) {
-            if (!session.ghostPinned || !isBlockBackedSourceKey(session.sourceKey)) {
+            if (!session.ghostPinned || !isBlockBackedSourceKey(session.sourceKey) || session.sourceIdentity == null) {
                 return;
             }
 
-            this.dormantGhostSources.put(session.sourceKey, new DormantGhostSource(session.sourceKey));
+            this.purgeExpiredDormantGhosts();
+            this.dormantGhostSources.remove(session.sourceKey);
+            while (this.dormantGhostSources.size() >= MAX_DORMANT_GHOST_SOURCES) {
+                Iterator<String> iterator = this.dormantGhostSources.keySet().iterator();
+                if (!iterator.hasNext()) {
+                    break;
+                }
+                iterator.next();
+                iterator.remove();
+            }
+            this.dormantGhostSources.put(session.sourceKey, new DormantGhostSource(
+                session.sourceKey,
+                session.sourceIdentity,
+                this.lifecycleTicks + DesktopProtocol.DORMANT_SOURCE_TTL_TICKS
+            ));
             DesktopDebug.log("server dormant ghost remember source={} session={} title={} reason={}", session.sourceKey, session.sessionId, session.title.getString(), reason);
         }
 
@@ -1994,6 +2605,7 @@ public final class DesktopContainerSessions {
                 return;
             }
 
+            this.purgeExpiredDormantGhosts();
             this.dormantGhostProbeTicks++;
             if (this.dormantGhostProbeTicks % DORMANT_GHOST_REOPEN_INTERVAL_TICKS != 0) {
                 return;
@@ -2005,15 +2617,21 @@ public final class DesktopContainerSessions {
                     continue;
                 }
 
-                MenuProvider provider = providerForDormantGhost(player, dormant.sourceKey());
+                MenuProvider provider = providerForDormantGhost(player, dormant.sourceKey(), dormant.sourceIdentity());
                 if (provider == null) {
                     continue;
                 }
 
-                this.dormantGhostSources.remove(dormant.sourceKey());
                 DesktopDebug.log("server dormant ghost reopen player={} source={} title={}", player.getName().getString(), dormant.sourceKey(), provider.getDisplayName().getString());
-                openMenuSession(player, provider, dormant.sourceKey(), false, true, false);
+                OptionalInt opened = openMenuSession(player, provider, dormant.sourceKey(), false, true, false);
+                if (opened != null && opened.isPresent()) {
+                    this.dormantGhostSources.remove(dormant.sourceKey());
+                }
             }
+        }
+
+        private void purgeExpiredDormantGhosts() {
+            this.dormantGhostSources.values().removeIf(dormant -> dormant.expiresAtTick() <= this.lifecycleTicks);
         }
 
         private boolean hasSessionForSourceKey(String sourceKey) {
@@ -2032,6 +2650,7 @@ public final class DesktopContainerSessions {
 
     private static final class Session {
         private final int sessionId;
+        private final long sessionToken;
         private final AbstractContainerMenu menu;
         private final Component title;
         private final int specialKind;
@@ -2039,6 +2658,7 @@ public final class DesktopContainerSessions {
         private final int columns;
         private final int menuTypeId;
         private final String sourceKey;
+        private @Nullable SourceIdentity sourceIdentity;
         private boolean ghostPinned;
         private boolean visibleToClient = true;
         private @Nullable DesktopServerWindowHandler<AbstractContainerMenu, Object> serverHandler;
@@ -2046,6 +2666,7 @@ public final class DesktopContainerSessions {
 
         private Session(int sessionId, AbstractContainerMenu menu, Component title, int specialKind, int entityId, int columns, int menuTypeId, String sourceKey) {
             this.sessionId = sessionId;
+            this.sessionToken = nextToken();
             this.menu = menu;
             this.title = title;
             this.specialKind = specialKind;
@@ -2082,22 +2703,32 @@ public final class DesktopContainerSessions {
                 return;
             }
 
+            sessions.beginHandlerCallback();
             try {
                 this.serverState = this.serverHandler.createState(new ServerSessionContext(player, sessions, this));
             } catch (RuntimeException exception) {
-                DesktopDebug.warn("server window handler createState failed player={} session={} title={} reason={}", player.getName().getString(), this.sessionId, this.title.getString(), exception.toString());
-                this.serverState = null;
+                this.quarantineServerHandler(player, "create-state", exception);
+            } finally {
+                sessions.endHandlerCallback(player);
             }
+        }
+
+        private boolean recipeTransferSupported() {
+            return this.menu instanceof AbstractCraftingMenu
+                || this.serverHandler != null && DesktopTransferValidators.supports(this.serverHandler);
         }
 
         private void dispatchOpened(ServerPlayer player, PlayerSessions sessions) {
             if (this.serverHandler == null) {
                 return;
             }
+            sessions.beginHandlerCallback();
             try {
                 this.serverHandler.opened(new ServerSessionContext(player, sessions, this));
             } catch (RuntimeException exception) {
-                DesktopDebug.warn("server window handler opened failed player={} session={} title={} reason={}", player.getName().getString(), this.sessionId, this.title.getString(), exception.toString());
+                this.quarantineServerHandler(player, "opened", exception);
+            } finally {
+                sessions.endHandlerCallback(player);
             }
         }
 
@@ -2105,10 +2736,13 @@ public final class DesktopContainerSessions {
             if (this.serverHandler == null) {
                 return;
             }
+            sessions.beginHandlerCallback();
             try {
                 this.serverHandler.tick(new ServerSessionContext(player, sessions, this));
             } catch (RuntimeException exception) {
-                DesktopDebug.warn("server window handler tick failed player={} session={} title={} reason={}", player.getName().getString(), this.sessionId, this.title.getString(), exception.toString());
+                this.quarantineServerHandler(player, "tick", exception);
+            } finally {
+                sessions.endHandlerCallback(player);
             }
         }
 
@@ -2116,10 +2750,13 @@ public final class DesktopContainerSessions {
             if (this.serverHandler == null) {
                 return;
             }
+            sessions.beginHandlerCallback();
             try {
                 this.serverHandler.closed(new ServerSessionContext(player, sessions, this));
             } catch (RuntimeException exception) {
-                DesktopDebug.warn("server window handler closed failed player={} session={} title={} reason={}", player.getName().getString(), this.sessionId, this.title.getString(), exception.toString());
+                this.quarantineServerHandler(player, "closed", exception);
+            } finally {
+                sessions.endHandlerCallback(player);
             }
         }
 
@@ -2127,27 +2764,53 @@ public final class DesktopContainerSessions {
             if (this.serverHandler == null) {
                 return;
             }
+            sessions.beginHandlerCallback();
             try {
                 this.serverHandler.visibilityChanged(new ServerSessionContext(player, sessions, this), this.visibleToClient);
             } catch (RuntimeException exception) {
-                DesktopDebug.warn("server window handler visibility failed player={} session={} title={} reason={}", player.getName().getString(), this.sessionId, this.title.getString(), exception.toString());
+                this.quarantineServerHandler(player, "visibility", exception);
+            } finally {
+                sessions.endHandlerCallback(player);
             }
         }
 
-        private void dispatchPinChanged(ServerPlayer player) {
+        private void dispatchPinChanged(ServerPlayer player, PlayerSessions sessions) {
             if (this.serverHandler == null) {
                 return;
             }
-            PlayerSessions sessions = sessions(player);
+            sessions.beginHandlerCallback();
             try {
                 this.serverHandler.pinChanged(new ServerSessionContext(player, sessions, this), this.ghostPinned);
             } catch (RuntimeException exception) {
-                DesktopDebug.warn("server window handler pin failed player={} session={} title={} reason={}", player.getName().getString(), this.sessionId, this.title.getString(), exception.toString());
+                this.quarantineServerHandler(player, "pin", exception);
+            } finally {
+                sessions.endHandlerCallback(player);
             }
+        }
+
+        private void quarantineServerHandler(ServerPlayer player, String callback, RuntimeException exception) {
+            DesktopDebug.warn(
+                "server window handler quarantined player={} session={} title={} callback={} reason={}",
+                player.getName().getString(),
+                this.sessionId,
+                this.title.getString(),
+                callback,
+                exception.toString()
+            );
+            this.serverHandler = null;
+            this.serverState = null;
         }
     }
 
     private record SlotSource(int sessionId, AbstractContainerMenu menu, net.minecraft.world.inventory.Slot slot, @Nullable Session session) {
+    }
+
+    private record SessionAuthorization(
+        int sessionId,
+        AbstractContainerMenu menu,
+        @Nullable Session session,
+        String linkNode
+    ) {
     }
 
     private record JeiTransferTarget(int sessionId, AbstractContainerMenu menu, @Nullable Session session) {
@@ -2159,13 +2822,76 @@ public final class DesktopContainerSessions {
     private record JeiTransferSimulation(Map<Slot, ItemStack> sourceStacks, Map<Slot, ItemStack> targetStacks) {
     }
 
-    private record JeiTransferMatch(Map<Slot, ItemStack> sourceStacks, Map<Slot, ItemStack> targetStacks) {
+    private static final class StackVariant {
+        private static final Comparator<StackVariant> COMPARATOR = Comparator
+            .comparing((StackVariant variant) -> BuiltInRegistries.ITEM.getKey(variant.stack.getItem()).toString())
+            .thenComparingInt(variant -> ItemStack.hashItemAndComponents(variant.stack))
+            .thenComparing(variant -> variant.stack.toString());
+
+        private final ItemStack stack;
+
+        private StackVariant(ItemStack stack) {
+            this.stack = stack.copyWithCount(1);
+        }
+
+        private ItemStack stack() {
+            return this.stack;
+        }
+
+        private boolean matches(ItemStack other) {
+            return ItemStack.isSameItemSameComponents(this.stack, other);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof StackVariant variant && this.matches(variant.stack);
+        }
+
+        @Override
+        public int hashCode() {
+            return ItemStack.hashItemAndComponents(this.stack);
+        }
     }
 
     private record JeiTransferSourceKey(Container container, int containerSlot) {
     }
 
-    private record DormantGhostSource(String sourceKey) {
+    private record SourceIdentity(List<SourceBackingIdentity> backing) {
+        private SourceIdentity {
+            backing = List.copyOf(backing);
+        }
+
+        private boolean matches(ServerLevel level, SourceKey source) {
+            if (this.backing.size() != source.positions().size()) {
+                return false;
+            }
+            for (int index = 0; index < this.backing.size(); index++) {
+                BlockPos pos = source.positions().get(index);
+                BlockState state = level.getBlockState(pos);
+                BlockEntity blockEntity = level.getBlockEntity(pos);
+                SourceBackingIdentity expected = this.backing.get(index);
+                String blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
+                String blockEntityTypeId = blockEntity == null
+                    ? ""
+                    : String.valueOf(BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType()));
+                if (!expected.blockId().equals(blockId)
+                    || !expected.blockEntityTypeId().equals(blockEntityTypeId)
+                    || (expected.blockEntity() == null ? blockEntity != null : expected.blockEntity().get() != blockEntity)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    private record SourceBackingIdentity(
+        String blockId,
+        String blockEntityTypeId,
+        @Nullable WeakReference<BlockEntity> blockEntity
+    ) {
+    }
+
+    private record DormantGhostSource(String sourceKey, SourceIdentity sourceIdentity, long expiresAtTick) {
     }
 
     private record ServerSessionContext(
@@ -2205,20 +2931,15 @@ public final class DesktopContainerSessions {
 
         @Override
         public void sendToClient(Identifier channel, byte[] data) {
-            send(this.player, new DesktopCustomPayload(this.session.sessionId, channel, data));
+            send(this.player, new DesktopCustomPayload(
+                this.sessions.connectionNonce, this.session.sessionId, this.session.sessionToken,
+                this.session.menu.getStateId(), channel, data
+            ));
         }
 
         @Override
         public void broadcastChanges() {
-            this.session.menu.broadcastChanges();
-            this.sessions.carried = this.session.menu.getCarried().copy();
-            this.player.inventoryMenu.setCarried(this.sessions.carried.copy());
-            for (Session openSession : this.sessions.sessions.values()) {
-                openSession.menu.setCarried(this.sessions.carried.copy());
-            }
-            this.player.inventoryMenu.broadcastChanges();
-            this.sessions.broadcastAll(this.player);
-            syncCarried(this.player, this.sessions);
+            this.sessions.requestHandlerBroadcast(this.player);
         }
     }
 
@@ -2270,20 +2991,15 @@ public final class DesktopContainerSessions {
 
         @Override
         public void sendToClient(Identifier channel, byte[] data) {
-            send(this.player, new DesktopCustomPayload(this.session.sessionId, channel, data));
+            send(this.player, new DesktopCustomPayload(
+                this.sessions.connectionNonce, this.session.sessionId, this.session.sessionToken,
+                this.session.menu.getStateId(), channel, data
+            ));
         }
 
         @Override
         public void broadcastChanges() {
-            this.session.menu.broadcastChanges();
-            this.sessions.carried = this.session.menu.getCarried().copy();
-            this.player.inventoryMenu.setCarried(this.sessions.carried.copy());
-            for (Session openSession : this.sessions.sessions.values()) {
-                openSession.menu.setCarried(this.sessions.carried.copy());
-            }
-            this.player.inventoryMenu.broadcastChanges();
-            this.sessions.broadcastAll(this.player);
-            syncCarried(this.player, this.sessions);
+            this.sessions.requestHandlerBroadcast(this.player);
         }
     }
 
@@ -2317,19 +3033,24 @@ public final class DesktopContainerSessions {
             }
             send(this.player, new DesktopOpenSessionPayload(
                 this.session.sessionId,
+                this.session.sessionToken,
                 this.session.menuTypeId,
                 this.session.specialKind,
                 this.session.entityId,
                 this.session.columns,
                 menu.getStateId(),
                 this.session.visibleToClient,
+                this.session.recipeTransferSupported(),
                 this.session.sourceKey,
                 this.session.title,
                 stacks,
-                carried,
+                this.player.inventoryMenu.getCarried().copy(),
                 dataSlots
             ));
-            send(this.player, new DesktopCarriedPayload(carried.copy()));
+            PlayerSessions sessions = PLAYERS.get(this.player);
+            if (sessions != null) {
+                syncCarried(this.player, sessions);
+            }
         }
 
         @Override
@@ -2340,12 +3061,20 @@ public final class DesktopContainerSessions {
 
         @Override
         public void sendCarriedChange(AbstractContainerMenu menu, ItemStack stack) {
-            PlayerSessions sessions = PLAYERS.get(this.player.getUUID());
+            ItemStack canonicalCarried = this.player.inventoryMenu.getCarried().copy();
+            menu.setCarried(ItemStack.EMPTY);
+            menu.setRemoteCarried(HashedStack.EMPTY);
+            PlayerSessions sessions = PLAYERS.get(this.player);
             if (sessions != null) {
-                sessions.carried = stack.copy();
+                syncCarried(this.player, sessions);
             }
-            DesktopDebug.trace("server send carried player={} session={} stack={}", this.player.getName().getString(), this.session.sessionId, stack);
-            send(this.player, new DesktopCarriedPayload(stack.copy()));
+            DesktopDebug.trace(
+                "server ignored detached carried player={} session={} reported={} canonical={}",
+                this.player.getName().getString(),
+                this.session.sessionId,
+                stack,
+                canonicalCarried
+            );
         }
 
         @Override
@@ -2391,13 +3120,19 @@ public final class DesktopContainerSessions {
         return sourceKey.startsWith("block:") || sourceKey.startsWith("chest:");
     }
 
-    private static @Nullable MenuProvider providerForDormantGhost(ServerPlayer player, String sourceKey) {
+    private static @Nullable MenuProvider providerForDormantGhost(ServerPlayer player, String sourceKey, @Nullable SourceIdentity expectedIdentity) {
         SourceKey source = SourceKey.parse(sourceKey);
-        if (source == null || !source.dimension().equals(player.level().dimension().identifier().toString())) {
+        if (source == null
+            || expectedIdentity == null
+            || !source.dimension().equals(player.level().dimension().identifier().toString())) {
             return null;
         }
 
         ServerLevel level = player.level();
+        if (!prevalidateSourcePositions(player, level, source)
+            || !expectedIdentity.matches(level, source)) {
+            return null;
+        }
         for (BlockPos pos : source.positions()) {
             if (!canReachDormantSource(player, level, pos)) {
                 continue;
@@ -2416,14 +3151,66 @@ public final class DesktopContainerSessions {
         return null;
     }
 
+    private static boolean canRestoreHiddenSession(ServerPlayer player, Session session) {
+        if (!session.menu.stillValid(player)) {
+            return false;
+        }
+        if (isBlockBackedSourceKey(session.sourceKey)) {
+            return providerForDormantGhost(player, session.sourceKey, session.sourceIdentity) != null;
+        }
+        return true;
+    }
+
+    private static @Nullable SourceIdentity captureBlockSourceIdentity(ServerPlayer player, String sourceKey) {
+        SourceKey source = SourceKey.parse(sourceKey);
+        if (source == null || !source.dimension().equals(player.level().dimension().identifier().toString())) {
+            return null;
+        }
+        ServerLevel level = player.level();
+        return prevalidateSourcePositions(player, level, source) ? captureLoadedSourceIdentity(level, source) : null;
+    }
+
+    private static boolean prevalidateSourcePositions(ServerPlayer player, ServerLevel level, SourceKey source) {
+        for (BlockPos pos : source.positions()) {
+            if (!level.isInWorldBounds(pos)
+                || !level.hasChunkAt(pos)
+                || !level.isLoaded(pos)
+                || !level.mayInteract(player, pos)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static SourceIdentity captureLoadedSourceIdentity(ServerLevel level, SourceKey source) {
+        List<SourceBackingIdentity> backing = new ArrayList<>(source.positions().size());
+        for (BlockPos pos : source.positions()) {
+            BlockState state = level.getBlockState(pos);
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            String blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
+            String blockEntityTypeId = blockEntity == null
+                ? ""
+                : String.valueOf(BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType()));
+            backing.add(new SourceBackingIdentity(
+                blockId,
+                blockEntityTypeId,
+                blockEntity == null ? null : new WeakReference<>(blockEntity)
+            ));
+        }
+        return new SourceIdentity(List.copyOf(backing));
+    }
+
     private static boolean canReachDormantSource(ServerPlayer player, ServerLevel level, BlockPos pos) {
         Vec3 target = Vec3.atCenterOf(pos);
-        double range = Math.max(player.blockInteractionRange(), 8.0D);
-        if (player.position().distanceToSqr(target) > range * range) {
+        Vec3 eye = player.getEyePosition();
+        double range = player.blockInteractionRange();
+        if (!Double.isFinite(range) || range < 0.0D) {
+            return false;
+        }
+        if (eye.distanceToSqr(target) > range * range) {
             return false;
         }
 
-        Vec3 eye = player.getEyePosition();
         BlockHitResult hit = level.clip(new ClipContext(
             eye,
             target,
@@ -2436,6 +3223,9 @@ public final class DesktopContainerSessions {
 
     private record SourceKey(String kind, String dimension, List<BlockPos> positions) {
         private static @Nullable SourceKey parse(String sourceKey) {
+            if (sourceKey == null || sourceKey.isBlank() || sourceKey.length() > DesktopProtocol.MAX_SOURCE_TEXT_LENGTH) {
+                return null;
+            }
             int firstColon = sourceKey.indexOf(':');
             int lastColon = sourceKey.lastIndexOf(':');
             if (firstColon <= 0 || lastColon <= firstColon) {
@@ -2451,6 +3241,9 @@ public final class DesktopContainerSessions {
             String positionsPart = sourceKey.substring(lastColon + 1);
             List<BlockPos> positions = new ArrayList<>();
             for (String positionPart : positionsPart.split("\\|")) {
+                if (positions.size() >= 2) {
+                    return null;
+                }
                 BlockPos pos = parseBlockPos(positionPart);
                 if (pos == null) {
                     return null;
@@ -2458,7 +3251,8 @@ public final class DesktopContainerSessions {
                 positions.add(pos);
             }
 
-            return positions.isEmpty() ? null : new SourceKey(kind, dimension, List.copyOf(positions));
+            int expectedPositions = kind.equals("chest") ? 2 : 1;
+            return positions.size() == expectedPositions ? new SourceKey(kind, dimension, List.copyOf(positions)) : null;
         }
     }
 
@@ -2475,8 +3269,8 @@ public final class DesktopContainerSessions {
         }
     }
 
-    private static String sourceKeyForEntity(ServerPlayer player, int entityId) {
-        return "entity:" + player.level().dimension().identifier() + ":" + entityId;
+    private static String sourceKeyForEntity(ServerPlayer player, net.minecraft.world.entity.Entity entity) {
+        return "entity:" + player.level().dimension().identifier() + ":" + entity.getUUID();
     }
 
     private static String sourceKeyForBlock(ServerPlayer player, BlockPos pos) {
@@ -2502,5 +3296,31 @@ public final class DesktopContainerSessions {
 
     private static String blockPosKey(BlockPos pos) {
         return pos.getX() + "," + pos.getY() + "," + pos.getZ();
+    }
+
+    private static long nextToken() {
+        long token;
+        do {
+            token = SECURE_RANDOM.nextLong();
+        } while (token == 0L);
+        return token;
+    }
+
+    private static Set<String> validateForcedMenuIds(List<String> rawIds) {
+        Set<String> validated = new HashSet<>();
+        for (String raw : rawIds) {
+            if (raw == null || raw.isBlank() || raw.length() > DesktopProtocol.MAX_IDENTIFIER_LENGTH) {
+                continue;
+            }
+            try {
+                Identifier id = Identifier.parse(raw);
+                if (BuiltInRegistries.MENU.containsKey(id)) {
+                    validated.add(id.toString());
+                }
+            } catch (RuntimeException ignored) {
+                // Invalid client configuration never becomes server authority.
+            }
+        }
+        return Set.copyOf(validated);
     }
 }

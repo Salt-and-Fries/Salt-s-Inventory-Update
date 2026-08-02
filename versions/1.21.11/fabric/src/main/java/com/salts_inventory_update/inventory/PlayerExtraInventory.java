@@ -5,9 +5,13 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.Holder;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.StackedItemContents;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public final class PlayerExtraInventory implements Container {
@@ -17,6 +21,10 @@ public final class PlayerExtraInventory implements Container {
 
     public PlayerExtraInventory(Player owner) {
         this.owner = owner;
+    }
+
+    public Player owner() {
+        return this.owner;
     }
 
     public void resize(int size) {
@@ -57,6 +65,34 @@ public final class PlayerExtraInventory implements Container {
         return snapshot;
     }
 
+    public void tick() {
+        for (int i = 0; i < this.items.size(); i++) {
+            ItemStack stack = this.items.get(i);
+            if (!stack.isEmpty()) {
+                stack.inventoryTick(this.owner.level(), this.owner, (EquipmentSlot) null);
+            }
+        }
+    }
+
+    public void fillStackedContents(StackedItemContents contents) {
+        for (ItemStack stack : this.items) {
+            contents.accountSimpleStack(stack);
+        }
+    }
+
+    public int findSlotMatchingCraftingIngredient(Holder<Item> item, ItemStack existingItem) {
+        for (int i = 0; i < this.items.size(); i++) {
+            ItemStack stack = this.items.get(i);
+            if (!stack.isEmpty()
+                && stack.is(item)
+                && net.minecraft.world.entity.player.Inventory.isUsableForCrafting(stack)
+                && (existingItem.isEmpty() || ItemStack.isSameItemSameComponents(existingItem, stack))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public boolean insert(ItemStack stack) {
         if (stack.isEmpty()) {
             return false;
@@ -92,9 +128,9 @@ public final class PlayerExtraInventory implements Container {
     public int clearOrCountMatchingItems(Predicate<ItemStack> predicate, int maxCount, boolean simulate) {
         int count = 0;
         for (ItemStack stack : this.items) {
-            int remaining = maxCount == 0 ? 0 : maxCount - count;
+            int remaining = maxCount < 0 ? -1 : maxCount == 0 ? 0 : maxCount - count;
             count += ContainerHelper.clearOrCountMatchingItems(stack, predicate, remaining, simulate);
-            if (maxCount != 0 && count >= maxCount) {
+            if (maxCount > 0 && count >= maxCount) {
                 break;
             }
         }

@@ -1,11 +1,6 @@
 package com.salts_inventory_update.client;
 
 import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -20,11 +15,17 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.salts_inventory_update.platform.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
+import net.minecraft.world.level.storage.LevelResource;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
 import com.salts_inventory_update.debug.DesktopDebug;
+import com.salts_inventory_update.persistence.AtomicUtf8File;
+import com.salts_inventory_update.persistence.StableStateIdentity;
+import com.salts_inventory_update.protocol.BoundedLinkGraph;
+import com.salts_inventory_update.protocol.DesktopProtocol;
 
 final class DesktopWindowStateStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -32,6 +33,13 @@ final class DesktopWindowStateStore {
         .getConfigDir()
         .resolve(SaltsInventoryUpdate.MOD_ID)
         .resolve("desktop_window_state.json");
+    private static final int MAX_STATE_FILE_BYTES = 4 * 1024 * 1024;
+    private static final int MAX_WORLDS = 64;
+    private static final int MAX_WINDOWS_PER_WORLD = 256;
+    private static final int MAX_LOCAL_STATE_LENGTH = 32 * 1024;
+    private static final int MAX_LOCAL_STATE_DEPTH = 64;
+    private static final int MAX_LOCAL_STATE_NODES = 4_096;
+    private static final int MAX_LOCAL_STATE_DELIMITERS = MAX_LOCAL_STATE_NODES * 4;
     private static StateFile stateFile;
 
     private DesktopWindowStateStore() {
@@ -39,7 +47,11 @@ final class DesktopWindowStateStore {
 
     static Optional<WindowState> load(Minecraft minecraft, String windowKey) {
         StateFile file = stateFile();
-        Map<String, WindowState> world = file.worlds.get(worldKey(minecraft));
+        Optional<String> identity = worldKey(minecraft, file);
+        if (identity.isEmpty()) {
+            return Optional.empty();
+        }
+        Map<String, WindowState> world = file.worlds.get(identity.get());
         if (world == null) {
             return Optional.empty();
         }
@@ -49,12 +61,21 @@ final class DesktopWindowStateStore {
 
     static void save(Minecraft minecraft, String windowKey, WindowState state) {
         StateFile file = stateFile();
-        file.worlds.computeIfAbsent(worldKey(minecraft), ignored -> new LinkedHashMap<>()).put(windowKey, state);
+        Optional<String> identity = worldKey(minecraft, file);
+        if (identity.isEmpty()) {
+            return;
+        }
+        file.worlds.computeIfAbsent(identity.get(), ignored -> new LinkedHashMap<>()).put(windowKey, state);
         write(file);
     }
 
     static Set<String> linkedWindowKeys(Minecraft minecraft, String windowKey) {
-        Map<String, List<String>> worldLinks = stateFile().links.get(worldKey(minecraft));
+        StateFile file = stateFile();
+        Optional<String> identity = worldKey(minecraft, file);
+        if (identity.isEmpty()) {
+            return Set.of();
+        }
+        Map<String, List<String>> worldLinks = file.links.get(identity.get());
         if (worldLinks == null || windowKey == null || windowKey.isBlank()) {
             return Set.of();
         }
@@ -82,7 +103,11 @@ final class DesktopWindowStateStore {
         }
 
         StateFile file = stateFile();
-        Map<String, List<String>> worldLinks = file.links.computeIfAbsent(worldKey(minecraft), ignored -> new LinkedHashMap<>());
+        Optional<String> identity = worldKey(minecraft, file);
+        if (identity.isEmpty()) {
+            return;
+        }
+        Map<String, List<String>> worldLinks = file.links.computeIfAbsent(identity.get(), ignored -> new LinkedHashMap<>());
         addLink(worldLinks, firstKey, secondKey);
         addLink(worldLinks, secondKey, firstKey);
         write(file);
@@ -94,7 +119,11 @@ final class DesktopWindowStateStore {
         }
 
         StateFile file = stateFile();
-        Map<String, List<String>> worldLinks = file.links.get(worldKey(minecraft));
+        Optional<String> identity = worldKey(minecraft, file);
+        if (identity.isEmpty()) {
+            return;
+        }
+        Map<String, List<String>> worldLinks = file.links.get(identity.get());
         if (worldLinks == null) {
             return;
         }
@@ -124,7 +153,11 @@ final class DesktopWindowStateStore {
         }
 
         StateFile file = stateFile();
-        Map<String, List<String>> worldLinks = file.links.get(worldKey(minecraft));
+        Optional<String> identity = worldKey(minecraft, file);
+        if (identity.isEmpty()) {
+            return;
+        }
+        Map<String, List<String>> worldLinks = file.links.get(identity.get());
         if (worldLinks == null) {
             return;
         }
@@ -164,15 +197,11 @@ final class DesktopWindowStateStore {
             return stateFile;
         }
 
-        if (!Files.isRegularFile(CONFIG_PATH)) {
-            stateFile = new StateFile();
-            return stateFile;
-        }
-
-        try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
-            StateFile loaded = GSON.fromJson(reader, StateFile.class);
+        try {
+            Optional<String> contents = AtomicUtf8File.read(CONFIG_PATH, MAX_STATE_FILE_BYTES, DesktopWindowStateStore::isValidStateJson);
+            StateFile loaded = contents.isEmpty() ? null : GSON.fromJson(contents.get(), StateFile.class);
             stateFile = loaded == null ? new StateFile() : loaded.normalized();
-        } catch (IOException | RuntimeException exception) {
+        } catch (IOException | RuntimeException | StackOverflowError exception) {
             DesktopDebug.warn("client window state load failed path={} reason={}", CONFIG_PATH, exception.toString());
             stateFile = new StateFile();
         }
@@ -181,65 +210,167 @@ final class DesktopWindowStateStore {
 
     private static void write(StateFile file) {
         try {
-            Files.createDirectories(CONFIG_PATH.getParent());
-            try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
-                GSON.toJson(file.normalized(), writer);
-            }
-        } catch (IOException | RuntimeException exception) {
+            AtomicUtf8File.write(CONFIG_PATH, GSON.toJson(file.normalized()), MAX_STATE_FILE_BYTES, DesktopWindowStateStore::isValidStateJson);
+        } catch (IOException | RuntimeException | StackOverflowError exception) {
             DesktopDebug.warn("client window state save failed path={} reason={}", CONFIG_PATH, exception.toString());
         }
     }
 
-    private static String worldKey(Minecraft minecraft) {
-        Object server = minecraft.getCurrentServer();
+    private static boolean isValidStateJson(String contents) {
+        try {
+            StateFile parsed = GSON.fromJson(contents, StateFile.class);
+            return parsed != null;
+        } catch (RuntimeException | StackOverflowError ignored) {
+            return false;
+        }
+    }
+
+    private static Optional<String> worldKey(Minecraft minecraft, StateFile file) {
+        ServerData server = minecraft.getCurrentServer();
         if (server != null) {
-            String address = reflectedString(server, "ip");
-            if (!address.isEmpty()) {
-                return "server:" + address;
+            ServerEndpoint endpoint = ServerEndpoint.parse(server.ip);
+            if (endpoint == null) {
+                return Optional.empty();
             }
-            return "server:" + server;
+            Optional<String> stableKey = StableStateIdentity.server(endpoint.host(), endpoint.port());
+            if (stableKey.isEmpty()) {
+                return Optional.empty();
+            }
+            String key = stableKey.get();
+            migrateLegacyState(file, key, "server:" + server.ip);
+            return Optional.of(key);
         }
 
-        Object singleplayer = minecraft.getSingleplayerServer();
+        var singleplayer = minecraft.getSingleplayerServer();
         if (singleplayer != null) {
-            String levelName = reflectedMethodString(reflectedMethod(singleplayer, "getWorldData"), "getLevelName");
-            if (!levelName.isEmpty()) {
-                return "singleplayer:" + levelName;
+            Optional<String> stableKey = StableStateIdentity.singleplayer(singleplayer.getWorldPath(LevelResource.ROOT));
+            if (stableKey.isEmpty()) {
+                return Optional.empty();
+            }
+            String key = stableKey.get();
+            migrateLegacyState(file, key, "singleplayer:" + singleplayer.getWorldData().getLevelName());
+            return Optional.of(key);
+        }
+        return Optional.empty();
+    }
+
+    private static void migrateLegacyState(StateFile file, String key, String legacyKey) {
+        boolean changed = false;
+        Map<String, WindowState> legacyWorld = file.worlds.remove(legacyKey);
+        if (legacyWorld != null) {
+            Map<String, WindowState> stableWorld = file.worlds.computeIfAbsent(key, ignored -> new LinkedHashMap<>());
+            legacyWorld.forEach(stableWorld::putIfAbsent);
+            changed = true;
+        }
+        Map<String, List<String>> legacyLinks = file.links.remove(legacyKey);
+        if (legacyLinks != null) {
+            Map<String, List<String>> stableLinks = file.links.computeIfAbsent(key, ignored -> new LinkedHashMap<>());
+            legacyLinks.forEach((source, targets) -> {
+                LinkedHashSet<String> merged = new LinkedHashSet<>(stableLinks.getOrDefault(source, List.of()));
+                if (targets != null) {
+                    merged.addAll(targets);
+                }
+                stableLinks.put(source, List.copyOf(merged));
+            });
+            changed = true;
+        }
+        if (changed) {
+            write(file);
+        }
+    }
+
+    private static boolean hasSafeSnbtStructure(String value) {
+        char[] containers = new char[MAX_LOCAL_STATE_DEPTH];
+        int depth = 0;
+        int nodes = 1;
+        int delimiters = 0;
+        char quote = 0;
+        boolean escaped = false;
+        for (int index = 0; index < value.length(); index++) {
+            char current = value.charAt(index);
+            if (quote != 0) {
+                if (escaped) {
+                    escaped = false;
+                } else if (current == '\\') {
+                    escaped = true;
+                } else if (current == quote) {
+                    quote = 0;
+                }
+                continue;
+            }
+            if (current == '\'' || current == '"') {
+                quote = current;
+                continue;
+            }
+            if (current == '{' || current == '[') {
+                if (depth >= MAX_LOCAL_STATE_DEPTH || ++nodes > MAX_LOCAL_STATE_NODES) {
+                    return false;
+                }
+                containers[depth++] = current;
+                delimiters++;
+            } else if (current == '}' || current == ']') {
+                char expected = current == '}' ? '{' : '[';
+                if (depth == 0 || containers[--depth] != expected) {
+                    return false;
+                }
+                delimiters++;
+            } else if (current == ',') {
+                if (++nodes > MAX_LOCAL_STATE_NODES) {
+                    return false;
+                }
+                delimiters++;
+            } else if (current == ':') {
+                delimiters++;
+            }
+            if (delimiters > MAX_LOCAL_STATE_DELIMITERS) {
+                return false;
             }
         }
-
-        if (minecraft.level != null) {
-            return "level:" + minecraft.level.dimension().location();
-        }
-        return "unknown";
+        return quote == 0 && !escaped && depth == 0;
     }
 
-    private static String reflectedString(Object target, String fieldName) {
-        try {
-            Field field = target.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            Object value = field.get(target);
-            return value == null ? "" : value.toString();
-        } catch (ReflectiveOperationException | RuntimeException ignored) {
-            return "";
+    private record ServerEndpoint(String host, int port) {
+        private static ServerEndpoint parse(String address) {
+            if (address == null) {
+                return null;
+            }
+            String value = address.trim();
+            if (value.isEmpty()) {
+                return null;
+            }
+            String host = value;
+            int port = 25565;
+            if (value.startsWith("[")) {
+                int end = value.indexOf(']');
+                if (end <= 1) {
+                    return null;
+                }
+                host = value.substring(1, end);
+                if (end + 1 < value.length()) {
+                    if (value.charAt(end + 1) != ':') {
+                        return null;
+                    }
+                    port = parsePort(value.substring(end + 2));
+                }
+            } else {
+                int firstColon = value.indexOf(':');
+                int lastColon = value.lastIndexOf(':');
+                if (firstColon > 0 && firstColon == lastColon) {
+                    host = value.substring(0, firstColon);
+                    port = parsePort(value.substring(firstColon + 1));
+                }
+            }
+            return host.isBlank() || port < 1 ? null : new ServerEndpoint(host, port);
         }
-    }
 
-    private static Object reflectedMethod(Object target, String methodName) {
-        try {
-            Method method = target.getClass().getMethod(methodName);
-            return method.invoke(target);
-        } catch (ReflectiveOperationException | RuntimeException ignored) {
-            return null;
+        private static int parsePort(String value) {
+            try {
+                int parsed = Integer.parseInt(value);
+                return parsed >= 1 && parsed <= 65_535 ? parsed : -1;
+            } catch (NumberFormatException ignored) {
+                return -1;
+            }
         }
-    }
-
-    private static String reflectedMethodString(Object target, String methodName) {
-        if (target == null) {
-            return "";
-        }
-        Object value = reflectedMethod(target, methodName);
-        return value == null ? "" : value.toString();
     }
 
     static final class WindowState {
@@ -272,28 +403,41 @@ final class DesktopWindowStateStore {
         }
 
         CompoundTag localState() {
-            if (this.localState == null || this.localState.isBlank()) {
+            if (this.localState == null || this.localState.isBlank() || this.localState.length() > MAX_LOCAL_STATE_LENGTH
+                || !hasSafeSnbtStructure(this.localState)) {
+                this.localState = "{}";
                 return new CompoundTag();
             }
 
             try {
                 return TagParser.parseTag(this.localState);
-            } catch (Exception exception) {
+            } catch (Exception | StackOverflowError exception) {
                 DesktopDebug.warn("client window local state parse failed reason={}", exception.toString());
+                this.localState = "{}";
                 return new CompoundTag();
             }
         }
 
         void localState(CompoundTag tag) {
-            this.localState = tag == null || tag.isEmpty() ? "{}" : tag.toString();
+            try {
+                String encoded = tag == null || tag.isEmpty() ? "{}" : tag.toString();
+                this.localState = encoded.length() <= MAX_LOCAL_STATE_LENGTH && hasSafeSnbtStructure(encoded)
+                    ? encoded
+                    : "{}";
+            } catch (RuntimeException | StackOverflowError exception) {
+                DesktopDebug.warn("client window local state encode failed reason={}", exception.toString());
+                this.localState = "{}";
+            }
         }
     }
 
     private static final class StateFile {
+        int schemaVersion = 2;
         Map<String, Map<String, WindowState>> worlds = new LinkedHashMap<>();
         Map<String, Map<String, List<String>>> links = new LinkedHashMap<>();
 
         private StateFile normalized() {
+            this.schemaVersion = 2;
             if (this.worlds == null) {
                 this.worlds = new LinkedHashMap<>();
             }
@@ -301,9 +445,18 @@ final class DesktopWindowStateStore {
                 this.links = new LinkedHashMap<>();
             }
 
+            trimOldest(this.worlds, MAX_WORLDS);
+            trimOldest(this.links, MAX_WORLDS);
+
             for (Map.Entry<String, Map<String, WindowState>> entry : List.copyOf(this.worlds.entrySet())) {
                 if (entry.getValue() == null) {
                     this.worlds.put(entry.getKey(), new LinkedHashMap<>());
+                } else {
+                    entry.getValue().entrySet().removeIf(window -> window.getKey() == null
+                        || window.getKey().isBlank()
+                        || window.getKey().length() > DesktopProtocol.MAX_SOURCE_TEXT_LENGTH
+                        || window.getValue() == null);
+                    trimOldest(entry.getValue(), MAX_WINDOWS_PER_WORLD);
                 }
             }
             for (Map.Entry<String, Map<String, List<String>>> worldEntry : List.copyOf(this.links.entrySet())) {
@@ -313,14 +466,17 @@ final class DesktopWindowStateStore {
                     continue;
                 }
                 for (Map.Entry<String, List<String>> linkEntry : List.copyOf(worldLinks.entrySet())) {
-                    if (linkEntry.getKey() == null || linkEntry.getKey().isBlank()) {
+                    if (linkEntry.getKey() == null || linkEntry.getKey().isBlank()
+                        || linkEntry.getKey().length() > DesktopProtocol.MAX_SOURCE_TEXT_LENGTH) {
                         worldLinks.remove(linkEntry.getKey());
                         continue;
                     }
                     List<String> values = linkEntry.getValue() == null
                         ? List.of()
                         : linkEntry.getValue().stream()
-                            .filter(value -> value != null && !value.isBlank() && !value.equals(linkEntry.getKey()))
+                            .filter(value -> value != null && !value.isBlank()
+                                && value.length() <= DesktopProtocol.MAX_SOURCE_TEXT_LENGTH
+                                && !value.equals(linkEntry.getKey()))
                             .distinct()
                             .toList();
                     if (values.isEmpty()) {
@@ -329,8 +485,23 @@ final class DesktopWindowStateStore {
                         worldLinks.put(linkEntry.getKey(), values);
                     }
                 }
+                BoundedLinkGraph<String> graph = new BoundedLinkGraph<>();
+                worldLinks.forEach((source, targets) -> targets.forEach(target -> graph.link(source, target)));
+                worldLinks.clear();
+                graph.snapshot().forEach((source, targets) -> worldLinks.put(source, List.copyOf(targets)));
             }
             return this;
+        }
+    }
+
+    private static <K, V> void trimOldest(Map<K, V> values, int maximumSize) {
+        while (values.size() > maximumSize) {
+            var iterator = values.keySet().iterator();
+            if (!iterator.hasNext()) {
+                return;
+            }
+            iterator.next();
+            iterator.remove();
         }
     }
 }

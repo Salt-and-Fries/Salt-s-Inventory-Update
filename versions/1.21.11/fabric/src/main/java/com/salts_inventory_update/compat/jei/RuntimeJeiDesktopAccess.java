@@ -763,9 +763,19 @@ final class RuntimeRecipeBrowserAccess implements RecipeBrowserAccess {
             if (layout.isEmpty()) {
                 continue;
             }
-            String uid = category.uid() + ":" + i;
+            Object recipeId = recipeCategory.getIdentifier(recipe);
+            String stableRecipeId = recipeId == null ? null : recipeId.toString();
+            String uid = category.uid() + ":" + (stableRecipeId == null ? i : stableRecipeId);
             Rect2i rect = layout.get().getRectWithBorder();
-            entries.add(new RecipeBrowserRecipe(uid, category.uid(), rect.getWidth(), rect.getHeight(), recipe, layout.get()));
+            entries.add(new RecipeBrowserRecipe(
+                uid,
+                category.uid(),
+                stableRecipeId,
+                rect.getWidth(),
+                rect.getHeight(),
+                recipe,
+                layout.get()
+            ));
         }
         this.sortRecipes(entries);
         return entries;

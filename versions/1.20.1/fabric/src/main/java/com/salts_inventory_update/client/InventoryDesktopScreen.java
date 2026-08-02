@@ -147,7 +147,6 @@ import com.salts_inventory_update.mixin.client.RecipeBookComponentAccessor;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopGhostRecipePayload;
-import com.salts_inventory_update.network.DesktopPackets.DesktopJeiTransferRequirement;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -1581,6 +1580,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 this.exitLinkMode("session-remove");
                 this.saveWindowState(window, false);
                 this.clearPopupStateFor(window);
+                this.closeRecipeBrowserView(window);
+                this.apiClosed(window);
                 this.windows.remove(window);
                 removedWindow = true;
             }
@@ -6064,6 +6065,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         if (targetKey.equals(originKey)) {
+            Set<String> linked = DesktopWindowStateStore.linkedWindowKeys(this.minecraftInstance(), originKey);
+            for (String linkedKey : linked) {
+                this.syncServerSourceLink(originKey, linkedKey, false);
+            }
             DesktopWindowStateStore.unlinkWindowKey(this.minecraftInstance(), originKey);
             this.exitLinkMode("unlink-origin");
             DesktopDebug.log("client window unlink desktop={} origin={} window={}", this.desktopId, originKey, window.debugName());
@@ -6072,9 +6077,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         Set<String> linked = DesktopWindowStateStore.linkedWindowKeys(this.minecraftInstance(), originKey);
         if (linked.contains(targetKey)) {
+            for (String linkedKey : linked) {
+                this.syncServerSourceLink(targetKey, linkedKey, false);
+            }
             DesktopWindowStateStore.unlinkWindowKeyFromGroup(this.minecraftInstance(), originKey, targetKey);
             DesktopDebug.log("client window unlink target desktop={} origin={} target={} window={}", this.desktopId, originKey, targetKey, window.debugName());
         } else {
+            this.syncServerSourceLink(originKey, targetKey, true);
             DesktopWindowStateStore.linkWindowKeys(this.minecraftInstance(), originKey, targetKey);
             DesktopDebug.log("client window link desktop={} origin={} target={} window={}", this.desktopId, originKey, targetKey, window.debugName());
         }
@@ -6131,7 +6140,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
             if (!sourceKeys.isEmpty()) {
                 DesktopDebug.log("client linked source request desktop={} origin={} reason={} sources={}", this.desktopId, originKey, reason, sourceKeys);
-                DesktopContainerClient.openLinkedSources(List.copyOf(sourceKeys));
+                String originSourceKey = rawSourceKey(originKey);
+                if (originSourceKey != null) {
+                    DesktopContainerClient.openLinkedSources(originSourceKey, List.copyOf(sourceKeys));
+                }
             }
         } finally {
             this.syncingLinkedWindows = false;
@@ -7555,7 +7567,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     this.desktopId,
                     payload.sessionId(),
                     payload.channel(),
-                    payload.data().length,
+                    payload.dataLength(),
                     window == null ? "none" : window.debugName(),
                     window == null ? "none" : definitionName(window.apiDefinition),
                     safeMenuKey(window == null ? null : window.containerMenu())
@@ -7564,7 +7576,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     "client custom payload dropped session={} channel={} bytes={} reason=no-api-window window={} api={} menu={}",
                     payload.sessionId(),
                     payload.channel(),
-                    payload.data().length,
+                    payload.dataLength(),
                     window == null ? "none" : window.debugName(),
                     window == null ? "none" : definitionName(window.apiDefinition),
                     safeMenuKey(window == null ? null : window.containerMenu())
@@ -7584,7 +7596,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     window.debugName(),
                     safeMenuKey(window.containerMenu()),
                     payload.channel(),
-                    payload.data().length,
+                    payload.dataLength(),
                     definitionName(window.apiDefinition)
                 );
                 TomsStorageCompat.info(
@@ -7593,7 +7605,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     window.debugName(),
                     safeMenuKey(window.containerMenu()),
                     payload.channel(),
-                    payload.data().length,
+                    payload.dataLength(),
                     definitionName(window.apiDefinition)
                 );
             }
@@ -9731,6 +9743,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.renderRecipeBrowserButton(graphics, rect, hovered);
     }
 
+    private void syncServerSourceLink(String firstWindowKey, String secondWindowKey, boolean linked) {
+        String firstSourceKey = rawSourceKey(firstWindowKey);
+        String secondSourceKey = rawSourceKey(secondWindowKey);
+        if (firstSourceKey != null && secondSourceKey != null
+            && isBlockBackedLinkedSourceKey(firstSourceKey)
+            && isBlockBackedLinkedSourceKey(secondSourceKey)) {
+            DesktopContainerClient.setSourcesLinked(firstSourceKey, secondSourceKey, linked);
+        }
+    }
+
     private void renderRecipeBrowserButton(GuiGraphicsExtractor graphics, JeiRecipeButtonRect rect, boolean hovered) {
         renderJeiNineSlice(
             graphics,
@@ -10340,6 +10362,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (!this.isJeiTransferTargetCandidateWindow(candidate)) {
             return null;
         }
+        ResourceLocation recipeId = recipe.recipeId() == null ? null : ResourceLocation.tryParse(recipe.recipeId());
+        if (recipeId == null) {
+            return null;
+        }
 
         AbstractContainerMenu menu = this.jeiTransferTargetMenu(candidate);
         if (menu == null) {
@@ -10381,7 +10407,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 plan.button().x(),
                 plan.button().y()
             );
-            return new JeiRecipeTransferTarget(this.jeiTransferTargetSessionId(candidate), menu, plan);
+            return new JeiRecipeTransferTarget(this.jeiTransferTargetSessionId(candidate), recipeId, menu, plan);
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client JEI transfer target lookup failed desktop={} window={} reason={}", this.desktopId, candidate.debugName(), exception.toString());
             return null;
@@ -10395,7 +10421,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (window.kind == WindowKind.CHARACTER) {
             return true;
         }
-        return window.kind == WindowKind.CONTAINER && window.session != null;
+        return window.kind == WindowKind.CONTAINER
+            && window.session != null
+            && window.session.transferSupported();
     }
 
     private void logJeiTransferDiagnostic(String key, String message, Object... args) {
@@ -10735,11 +10763,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void sendJeiRecipeTransfer(JeiRecipeTransferTarget target, boolean maxTransfer) {
-        List<DesktopJeiTransferRequirement> requirements = target.plan().requirements()
-            .stream()
-            .map(requirement -> new DesktopJeiTransferRequirement(requirement.inputIndex(), requirement.targetSlotId(), requirement.alternatives()))
-            .toList();
-        DesktopContainerClient.transferJeiRecipe(target.sessionId(), target.plan().recipeSlotIds(), requirements, maxTransfer);
+        DesktopContainerClient.transferJeiRecipe(target.sessionId(), target.recipeId(), maxTransfer);
     }
 
     private boolean jeiMouseClicked(InventoryWindow window, MouseButtonEvent event, boolean doubleClick) {
@@ -15678,7 +15702,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private record JeiRecipeLayoutPlacement(RecipeBrowserRecipe recipe, int x, int y, int index) {
     }
 
-    private record JeiRecipeTransferTarget(int sessionId, AbstractContainerMenu menu, RecipeBrowserTransferPlan plan) {
+    private record JeiRecipeTransferTarget(
+        int sessionId,
+        ResourceLocation recipeId,
+        AbstractContainerMenu menu,
+        RecipeBrowserTransferPlan plan
+    ) {
     }
 
     private record JeiRecipeTransferAvailability(boolean craftable, List<Integer> missingInputIndexes) {

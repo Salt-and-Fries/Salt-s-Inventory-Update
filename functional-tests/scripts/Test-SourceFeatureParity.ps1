@@ -45,6 +45,25 @@ function Assert-Contains {
     }
 }
 
+function Assert-NotContains {
+    param(
+        [string] $Path,
+        [string] $Text,
+        [string] $Label
+    )
+
+    if (-not (Assert-File -Path $Path -Label $Label)) {
+        return
+    }
+
+    $content = Get-Content -LiteralPath $Path -Raw
+    if ($content.Contains($Text)) {
+        Add-Failure "$Label unexpectedly found text '$Text' in $Path"
+    } else {
+        Write-Host "PASS $Label" -ForegroundColor Green
+    }
+}
+
 function Assert-Count {
     param(
         [string] $Path,
@@ -135,16 +154,20 @@ $baseMenus = @(
 $payloads = @(
     'InventorySlotPurchasePayload',
     'InventoryExpansionSyncPayload',
-    'DesktopReadyPayload',
+    'DesktopHelloPayload',
+    'DesktopHelloAckPayload',
+    'DesktopModePayload',
     'DesktopClickPayload',
     'DesktopQuickMovePayload',
     'DesktopButtonPayload',
     'DesktopPlaceRecipePayload',
+    'DesktopJeiTransferPayload',
     'DesktopRenamePayload',
     'DesktopCustomPayload',
     'DesktopCloseSessionPayload',
     'DesktopSessionPinPayload',
     'DesktopSessionVisibilityPayload',
+    'DesktopOpenLinkedSourcesPayload',
     'DesktopOpenSessionPayload',
     'DesktopSlotPayload',
     'DesktopDataPayload',
@@ -163,6 +186,17 @@ foreach ($version in $versions) {
     $packets = Join-Path $fabricRoot 'network\DesktopPackets.java'
     $windowedClient = Join-Path $fabricRoot 'client\WindowedInventoryClient.java'
     $config = Join-Path $fabricRoot 'client\SaltsInventoryConfig.java'
+    $containerClient = Join-Path $fabricRoot 'client\DesktopContainerClient.java'
+    $stateStore = Join-Path $fabricRoot 'client\DesktopWindowStateStore.java'
+    $inventoryMixin = Join-Path $fabricRoot 'mixin\InventoryExpansionInventoryMixin.java'
+    $inventorySlot = Join-Path $fabricRoot 'inventory\InventoryExpansionSlot.java'
+    $serverPlayerMixin = Join-Path $fabricRoot 'mixin\server\ServerPlayerInventoryExpansionMixin.java'
+    $deathMixin = if ($version -eq '1.21.1' -or $version -eq '1.21.11') {
+        Join-Path $fabricRoot 'mixin\server\ServerPlayerMixin.java'
+    } else {
+        $serverPlayerMixin
+    }
+    $tomsPayloads = Join-Path $fabricRoot 'compat\toms_storage\TomsStoragePayloads.java'
     $language = Join-Path $RepoRoot "versions\$version\common\src\main\resources\assets\salts_inventory_update\lang\en_us.json"
 
     $menus = [System.Collections.Generic.List[string]]::new()
@@ -179,6 +213,12 @@ foreach ($version in $versions) {
     foreach ($payload in $payloads) {
         Assert-Contains -Path $packets -Text $payload -Label "$version packet $payload"
     }
+
+    Assert-Contains -Path $packets -Text 'desktop_ready' -Label "$version legacy protocol detector"
+    Assert-Matches -Path $packets -Pattern 'Desktop(?:SourceLink|LinkSessions|Link)Payload' -Label "$version authenticated link mutation payload"
+    Assert-Matches -Path $packets -Pattern '(?:DesktopAuthenticatedPayload|MutationStamp|sessionToken)' -Label "$version session mutation authorization"
+    Assert-NotContains -Path $packets -Text 'List<Integer> recipeSlotIds' -Label "$version recipe transfer does not trust client slot IDs"
+    Assert-NotContains -Path $packets -Text 'DesktopJeiTransferRequirement' -Label "$version recipe transfer does not trust client ingredients"
 
     Assert-Contains -Path $packets -Text 'PIN_MODE_GHOST_PINNED' -Label "$version packet pin modes"
     Assert-Contains -Path $packets -Text 'QUICK_TARGET_HOTBAR' -Label "$version quick move target"
@@ -199,6 +239,50 @@ foreach ($version in $versions) {
     Assert-Contains -Path $config -Text 'enableMod' -Label "$version config enableMod"
     Assert-Contains -Path $config -Text 'expandableInventory' -Label "$version config expandableInventory"
     Assert-Contains -Path $config -Text 'enableGhostPins' -Label "$version config ghost pins"
+
+    Assert-Contains -Path $server -Text 'BoundedLinkGraph' -Label "$version server-owned bounded link graph"
+    Assert-Contains -Path $server -Text 'BoundedTransferPlanner' -Label "$version bounded shared recipe-transfer planner"
+    Assert-Contains -Path $server -Text 'SecureRandom' -Label "$version cryptographic session nonces"
+    Assert-Contains -Path $server -Text 'TokenBucket' -Label "$version bounded request rates"
+    Assert-Contains -Path $server -Text 'MAX_DESKTOP_SESSIONS' -Label "$version server session aggregate cap"
+    Assert-Contains -Path $server -Text 'WeakReference' -Label "$version exact block-entity source identity"
+    Assert-Matches -Path $server -Pattern 'PROTOCOL_REJECT' -Label "$version once-only protocol rejection state"
+    Assert-Contains -Path $server -Text 'capabilityForSession' -Label "$version session-derived base capability gate"
+    Assert-Matches -Path $server -Pattern '(?:serverHandlerCallbackDepth|handlerCallbackDepth|callbackDepth)' -Label "$version nested handler callback tracking"
+    Assert-Matches -Path $server -Pattern '(?:serverHandlerBroadcastPending|handlerBroadcastPending|pendingCallbackBroadcast)' -Label "$version coalesced handler broadcasts"
+    Assert-Contains -Path $server -Text 'quarantineServerHandler' -Label "$version faulting server handler quarantine"
+    Assert-Contains -Path $server -Text 'Double.isFinite(range)' -Label "$version finite interaction-range validation"
+    Assert-Contains -Path $server -Text 'SLOT_CLICKED_OUTSIDE' -Label "$version strict negative click-slot validation"
+    Assert-Contains -Path $server -Text 'payload.targetKind() < DesktopPackets.QUICK_TARGET_DEFAULT' -Label "$version quick-move target discriminator lower bound"
+    Assert-Contains -Path $server -Text 'payload.targetKind() > DesktopPackets.QUICK_TARGET_HOTBAR' -Label "$version quick-move target discriminator upper bound"
+    Assert-Contains -Path $server -Text 'payload.targetKind() != DesktopPackets.QUICK_TARGET_SESSION' -Label "$version explicit session target bypasses vanilla result routing"
+    Assert-Matches -Path $server -Pattern '(?s)sendCarriedChange\([^)]*ItemStack stack\).{0,1400}(?:this\.)?player\.inventoryMenu\.getCarried\(\)' -Label "$version detached synchronizer preserves canonical player cursor"
+    Assert-Contains -Path $server -Text 'mayInteract(player, pos)' -Label "$version linked-source protection check"
+    Assert-NotContains -Path $server -Text 'SaltsInventoryRuntime' -Label "$version server decisions do not use client-global config"
+    Assert-NotContains -Path $server -Text 'DesktopJeiTransferRequirement' -Label "$version server ignores client ingredient authority"
+    Assert-NotContains -Path $server -Text 'ThreadLocalRandom' -Label "$version server authorization tokens are not predictable PRNG output"
+    Assert-NotContains -Path $containerClient -Text 'ThreadLocalRandom' -Label "$version client handshake nonce uses secure randomness"
+    Assert-Matches -Path $containerClient -Pattern 'MODE_(?:RESEND|REFRESH)_INTERVAL_TICKS' -Label "$version dropped mode updates eventually converge"
+    Assert-Contains -Path $containerClient -Text 'MAX_DESKTOP_SESSIONS' -Label "$version client session aggregate cap"
+    Assert-Contains -Path $stateStore -Text 'AtomicUtf8File' -Label "$version atomic state persistence"
+    Assert-Contains -Path $stateStore -Text 'StableStateIdentity' -Label "$version stable private world identity"
+    Assert-Matches -Path $stateStore -Pattern '(?:hasSafeSnbtStructure|isSafeLocalState)' -Label "$version bounded local SNBT parser input"
+    Assert-Contains -Path $tomsPayloads -Text 'MAX_TOMS_COMPRESSED_BYTES' -Label "$version Tom's compressed payload cap"
+    Assert-Contains -Path $tomsPayloads -Text 'MAX_TOMS_DECOMPRESSED_BYTES' -Label "$version Tom's decompressed payload cap"
+    Assert-Contains -Path $tomsPayloads -Text 'MAX_TOMS_DEPTH' -Label "$version Tom's NBT depth cap"
+    Assert-Contains -Path $tomsPayloads -Text 'MAX_TOMS_NODES' -Label "$version Tom's NBT node cap"
+    Assert-Contains -Path $tomsPayloads -Text 'MAX_TOMS_STRING_BYTES' -Label "$version Tom's NBT string cap"
+    Assert-Contains -Path $tomsPayloads -Text 'MAX_TOMS_PRIMITIVE_ARRAY_BYTES' -Label "$version Tom's NBT primitive-array cap"
+    Assert-Contains -Path $tomsPayloads -Text 'StackOverflowError' -Label "$version Tom's recursive decoder fail-safe"
+    Assert-Contains -Path $config -Text 'MAX_FORCED_MENU_IDS' -Label "$version forced-menu config count cap"
+    Assert-Contains -Path $config -Text 'MAX_IDENTIFIER_LENGTH' -Label "$version forced-menu identifier length cap"
+    Assert-Contains -Path $inventorySlot -Text 'isGameplay' -Label "$version dormant extra slots reject vanilla access"
+    Assert-Contains -Path $inventorySlot -Text 'boolean isActive()' -Label "$version extra-slot activation gate"
+    Assert-Contains -Path $inventorySlot -Text 'boolean mayPickup(Player player)' -Label "$version extra-slot pickup gate"
+    Assert-Contains -Path $inventorySlot -Text 'boolean mayPlace(ItemStack stack)' -Label "$version extra-slot placement gate"
+    Assert-Matches -Path $inventoryMixin -Pattern '(?s)isExpansionInventoryEmpty\([^)]*\).{0,220}if \(\s*cir\.getReturnValueZ\(\)\s*&&\s*!InventoryExpansion\.access' -Label "$version extra contents remain visible to lifecycle isEmpty"
+    Assert-Contains -Path $deathMixin -Text 'method = "die"' -Label "$version transient menu inputs close before death drops"
+    Assert-Contains -Path $serverPlayerMixin -Text 'method = "restoreFrom"' -Label "$version player replacement state transfer"
 }
 
 foreach ($version in $versions) {
@@ -277,7 +361,103 @@ Assert-Matches -Path $hotbarClient -Pattern '(?s)(?:usesInventoryWindowHotbar\(\
 }
 
 $rootBuildScript = Join-Path $RepoRoot 'build.gradle.kts'
-Assert-Contains -Path $rootBuildScript -Text '"**/compat/rei/**"' -Label 'non-Fabric loaders exclude the Fabric-only REI plugin sources'
+$settingsScript = Join-Path $RepoRoot 'settings.gradle.kts'
+Assert-Contains -Path $rootBuildScript -Text 'version = "0.1.2"' -Label 'release version is 0.1.2'
+Assert-Contains -Path $rootBuildScript -Text 'org.jspecify:jspecify:1.0.0' -Label 'JSpecify is an explicit compile-only dependency'
+Assert-Contains -Path $rootBuildScript -Text '"**/compat/rei/SaltsReiClientPlugin.java"' -Label 'non-Fabric loaders exclude only the Fabric REI entrypoint'
+Assert-NotContains -Path $rootBuildScript -Text '"**/compat/rei/**"' -Label 'non-Fabric loaders retain shared REI runtime support'
+Assert-NotContains -Path $rootBuildScript -Text '"--mixin.config", "salts_inventory_update.mixins.json"' -Label 'development runs do not duplicate the loader-supplied mixin config'
+Assert-Contains -Path $settingsScript -Text 'id("dev.prism.settings") version "0.5.17"' -Label 'Prism settings plugin version is reproducibly pinned'
+
+foreach ($version in $versions) {
+    $runtimeRei = Join-Path $RepoRoot "versions\$version\fabric\src\main\java\com\salts_inventory_update\compat\rei\RuntimeReiRecipeBrowserAccess.java"
+    Assert-File -Path $runtimeRei -Label "$version shared REI runtime access retained" | Out-Null
+
+    $nonFabricLoader = if ($version -eq '1.20.1') { 'forge' } else { 'neoforge' }
+    $nonFabricRei = Join-Path $RepoRoot "versions\$version\$nonFabricLoader\src\main\java\com\salts_inventory_update\compat\rei\SaltsReiForgeClientPlugin.java"
+    Assert-File -Path $nonFabricRei -Label "$version non-Fabric REI client plugin retained" | Out-Null
+}
+
+$packFormats = @{
+    '1.20.1' = 15
+    '1.21.1' = 34
+    '1.21.11' = 75
+    '26.1.2' = 84
+    '26.2' = 88
+}
+$mixinLevels = @{
+    '1.20.1' = 'JAVA_17'
+    '1.21.1' = 'JAVA_21'
+    '1.21.11' = 'JAVA_21'
+    '26.1.2' = 'JAVA_25'
+    '26.2' = 'JAVA_25'
+}
+$canonicalHotbarDescription = 'Places the hotbar below the player inventory and creative windows and the offhand slot in the character window. The normal HUD hotbar is hidden while any Salt window is open.'
+foreach ($version in $versions) {
+    $commonResources = Join-Path $RepoRoot "versions\$version\common\src\main\resources"
+    Assert-Contains -Path (Join-Path $commonResources 'pack.mcmeta') -Text "`"pack_format`": $($packFormats[$version])" -Label "$version exact pack format"
+    if ($version -in @('1.21.11', '26.1.2', '26.2')) {
+        Assert-Contains -Path (Join-Path $commonResources 'pack.mcmeta') -Text "`"min_format`": $($packFormats[$version])" -Label "$version exact minimum pack format"
+        Assert-Contains -Path (Join-Path $commonResources 'pack.mcmeta') -Text "`"max_format`": $($packFormats[$version])" -Label "$version exact maximum pack format"
+    }
+    Assert-Contains -Path (Join-Path $commonResources 'salts_inventory_update.mixins.json') -Text "`"compatibilityLevel`": `"$($mixinLevels[$version])`"" -Label "$version Mixin/Java compatibility"
+    Assert-Contains -Path (Join-Path $commonResources 'assets\salts_inventory_update\lang\en_us.json') -Text $canonicalHotbarDescription -Label "$version canonical hotbar translation"
+
+    $resourceArtwork = Get-ChildItem -LiteralPath $commonResources -Recurse -Filter '*.pdn' -File -ErrorAction SilentlyContinue
+    if ($resourceArtwork) {
+        Add-Failure "$version resource tree contains editor artwork: $($resourceArtwork.FullName -join ', ')"
+    } else {
+        Write-Host "PASS $version resource tree excludes editor artwork" -ForegroundColor Green
+    }
+
+    $mixinRoot = Join-Path $RepoRoot "versions\$version\fabric\src\main\java\com\salts_inventory_update\mixin"
+    $mixinConfigPath = Join-Path $commonResources 'salts_inventory_update.mixins.json'
+    if ((Assert-File -Path $mixinConfigPath -Label "$version mixin config") -and (Test-Path -LiteralPath $mixinRoot -PathType Container)) {
+        $mixinConfig = Get-Content -LiteralPath $mixinConfigPath -Raw | ConvertFrom-Json
+        $registeredMixins = @($mixinConfig.mixins) + @($mixinConfig.client) + @($mixinConfig.server)
+        $declaredMixins = Get-ChildItem -LiteralPath $mixinRoot -Recurse -Filter '*.java' -File |
+            Where-Object { (Get-Content -LiteralPath $_.FullName -Raw).Contains('@Mixin') } |
+            ForEach-Object {
+                $_.FullName.Substring($mixinRoot.Length + 1, $_.FullName.Length - $mixinRoot.Length - 6).Replace('\', '.')
+            }
+        $missingMixins = @($declaredMixins | Where-Object { $_ -notin $registeredMixins })
+        $staleMixins = @($registeredMixins | Where-Object { $_ -notin $declaredMixins })
+        $duplicateMixins = @($registeredMixins | Group-Object | Where-Object { $_.Count -ne 1 } | ForEach-Object { $_.Name })
+        if ($missingMixins.Count -gt 0) {
+            Add-Failure "$version mixin classes are not registered: $($missingMixins -join ', ')"
+        } elseif ($staleMixins.Count -gt 0) {
+            Add-Failure "$version mixin config has missing classes: $($staleMixins -join ', ')"
+        } elseif ($duplicateMixins.Count -gt 0) {
+            Add-Failure "$version mixin classes are registered more than once: $($duplicateMixins -join ', ')"
+        } else {
+            Write-Host "PASS $version every mixin class is registered exactly once" -ForegroundColor Green
+        }
+    }
+}
+
+Assert-File -Path (Join-Path $RepoRoot 'artwork\window_controls.pdn') -Label 'canonical window-controls source artwork' | Out-Null
+$bundledNullable = Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'versions') -Recurse -Filter 'Nullable.java' -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -match 'org[\\/]jspecify[\\/]annotations' }
+if ($bundledNullable) {
+    Add-Failure "bundled JSpecify annotation sources remain: $($bundledNullable.FullName -join ', ')"
+} else {
+    Write-Host 'PASS no bundled JSpecify annotation sources' -ForegroundColor Green
+}
+
+$nonFabricRanges = @{
+    '1.20.1' = @{ Loader = 'forge'; LanguageRange = '[47,48)'; ModRange = '[47.4.0,48)'; File = 'mods.toml' }
+    '1.21.1' = @{ Loader = 'neoforge'; LanguageRange = '[4.0.34,5)'; ModRange = '[21.1.95,21.2)'; File = 'neoforge.mods.toml' }
+    '1.21.11' = @{ Loader = 'neoforge'; LanguageRange = '[10.0.36,11)'; ModRange = '[21.11.42,21.12)'; File = 'neoforge.mods.toml' }
+    '26.1.2' = @{ Loader = 'neoforge'; LanguageRange = '[11.0.13,12)'; ModRange = '[26.1.2.59-beta,26.1.3)'; File = 'neoforge.mods.toml' }
+    '26.2' = @{ Loader = 'neoforge'; LanguageRange = '[11.0.13,12)'; ModRange = '[26.2.0.7-beta,26.3)'; File = 'neoforge.mods.toml' }
+}
+foreach ($version in $versions) {
+    $range = $nonFabricRanges[$version]
+    $metadata = Join-Path $RepoRoot "versions\$version\$($range.Loader)\src\main\resources\META-INF\$($range.File)"
+    Assert-Contains -Path $metadata -Text "loaderVersion = `"$($range.LanguageRange)`"" -Label "$version bounded javafml language-loader range"
+    Assert-Contains -Path $metadata -Text "versionRange = `"$($range.ModRange)`"" -Label "$version bounded Forge/NeoForge mod range"
+    Assert-Contains -Path $metadata -Text 'versionRange = "[${minecraft_version}]"' -Label "$version exact non-Fabric Minecraft range"
+}
 
 foreach ($entry in $loaderMatrix) {
     $version = $entry.Version
@@ -294,6 +474,8 @@ foreach ($entry in $loaderMatrix) {
         $clientClass = Join-Path $RepoRoot "versions\$version\$loader\src\main\java\com\salts_inventory_update\$($entry.ClientClass)"
         Assert-Contains -Path $clientClass -Text 'WindowedInventoryClient.initialize();' -Label "$version $loader client init"
         Assert-Contains -Path $metadata -Text '"entrypoints"' -Label "$version $loader entrypoint metadata"
+        Assert-Contains -Path $metadata -Text '"fabricloader": ">=${fabric_loader_version}"' -Label "$version $loader loader requirement expansion"
+        Assert-Contains -Path $metadata -Text '"java": ">=${java_version}"' -Label "$version $loader Java requirement expansion"
         Assert-Contains -Path $metadata -Text 'SaltsInventoryUpdateFabric' -Label "$version $loader main entrypoint metadata"
         Assert-Contains -Path $metadata -Text 'SaltsInventoryUpdateFabricClient' -Label "$version $loader client entrypoint metadata"
         Assert-Contains -Path $metadata -Text '"mixins"' -Label "$version $loader mixin metadata block"
@@ -304,8 +486,6 @@ foreach ($entry in $loaderMatrix) {
         if ($loader -eq 'forge') {
             $manifest = Join-Path $RepoRoot "versions\$version\$loader\src\main\resources\META-INF\MANIFEST.MF"
             Assert-Contains -Path $manifest -Text 'MixinConfigs: salts_inventory_update.mixins.json' -Label "$version $loader mixin manifest config"
-            $buildScript = Join-Path $RepoRoot "build.gradle.kts"
-            Assert-Contains -Path $buildScript -Text '"--mixin.config", "salts_inventory_update.mixins.json"' -Label "$version $loader dev run mixin launch arg"
         }
     }
 }

@@ -9,9 +9,15 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameRules;
 
 import com.salts_inventory_update.inventory.InventoryExpansion;
+import com.salts_inventory_update.server.DesktopContainerSessions;
 
 @Mixin(ServerPlayer.class)
 public abstract class ServerPlayerInventoryExpansionMixin {
+    @Inject(method = "restoreFrom", at = @At("HEAD"))
+    private void salts_inventory_update$closeOldDesktopSessions(ServerPlayer oldPlayer, boolean keepEverything, CallbackInfo ci) {
+        DesktopContainerSessions.beforePlayerReplacement(oldPlayer);
+    }
+
     @Inject(method = "restoreFrom", at = @At("RETURN"))
     private void salts_inventory_update$restoreExpansionInventory(ServerPlayer oldPlayer, boolean keepEverything, CallbackInfo ci) {
         ServerPlayer player = (ServerPlayer) (Object) this;
@@ -19,6 +25,8 @@ public abstract class ServerPlayerInventoryExpansionMixin {
             || player.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY)
             || oldPlayer.isSpectator();
         InventoryExpansion.copyFrom(player, oldPlayer, keepContents);
+        DesktopContainerSessions.afterPlayerReplacement(player, oldPlayer);
+        InventoryExpansion.appendMissingMenuSlots(player.inventoryMenu, player);
         InventoryExpansion.syncToClient(player);
     }
 }

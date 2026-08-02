@@ -2,6 +2,10 @@
 
 First-time help window, in-game controls guide, persistent and linked window behavior, text box editing controls, new desktop window config options, container/inventory placement fixes, command cleanup, Forge/NeoForge Sinytra Connector compatibility fixes, and cross-version support.
 
+This is also a protocol-breaking correctness and security release. Salt's Inventory Update 0.1.2 clients and servers use desktop protocol 2 and must be updated together. A genuinely unmodded peer continues to use vanilla container behavior, while a detected 0.1.1 Salt peer is rejected with a clear incompatibility message instead of being allowed to enter a partially compatible session.
+
+Linked container reopening is now authorized by a bounded server-owned link graph. Existing visual links remain in client layout state, but an old link becomes reopenable only after both linked containers have been opened legitimately together once on 0.1.2. Raw saved source strings no longer grant remote container access.
+
 This release adds a built-in Salt's Inventory Help window that introduces the desktop inventory workflow the first time a player opens a world with the mod installed. The same guide can be opened again with `/saltsinventory help`, includes formatted pages for controls and supported integrations, and is available across every supported Minecraft version and loader.
 
 This release also fixes Salt-managed text boxes so Creative search, JEI search, anvil renaming, Tom's Simple Storage fields, and add-on text boxes support normal single-line editing controls such as arrow keys, selection, copy, cut, paste, and select-all while typing.
@@ -134,6 +138,12 @@ This release also fixes the Forge and NeoForge jar layout so the non-Fabric buil
 
 ## Compatibility And Safety
 
+- Added protocol-2 connection and capability negotiation, connection/session nonces, stale-state validation, and bounded per-action request rates.
+- Made the player inventory menu the single cursor authority so closing multiple desktop sessions cannot return or drop duplicate carried stacks.
+- Kept expanded inventory save/load, death drops, respawn copying, clearing, and synchronization active while the desktop UI is disabled; gameplay access remains dormant until re-enabled.
+- Added centralized server authorization for menu mutations and current reach, line-of-sight, loaded-chunk, provider identity, and protection checks for linked and hidden container restoration.
+- Bounded packet collections, custom data, recipe transfer work, and Tom's Storage compressed NBT before allocation or mutation.
+- Made state/config writes atomic with backup recovery and stable hashed world/server identities.
 - Kept the help system client-side and config-backed so it does not affect server inventory sessions.
 - Kept the help window separate from functional inventory windows so it cannot move items or alter desktop session state.
 - Kept optional integration pages guarded by mod detection so the guide does not mention unavailable controls or pages.

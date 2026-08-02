@@ -42,6 +42,11 @@ public final class PayloadTypeRegistry {
     }
 
     public static void register(RegisterPayloadHandlersEvent event) {
+        // Keep the NeoForge transport version stable across Salt protocol
+        // revisions.  The protocol-2 Hello/Ready negotiation below the
+        // transport layer must be able to see an older Salt peer so it can
+        // reject it explicitly; versioning the optional transport itself
+        // makes that peer indistinguishable from a genuinely vanilla one.
         PayloadRegistrar registrar = event.registrar(SaltsInventoryUpdate.MOD_ID).optional();
         Map<CustomPacketPayload.Type<?>, Entry<?>> serverbound = entriesByType(SERVERBOUND);
         Map<CustomPacketPayload.Type<?>, Entry<?>> clientbound = entriesByType(CLIENTBOUND);

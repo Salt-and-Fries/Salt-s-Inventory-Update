@@ -30,6 +30,7 @@ public final class DesktopContainerSession {
     private final int specialKind;
     private final int entityId;
     private final int columns;
+    private final boolean transferSupported;
     private final List<Slot> containerSlots;
     private final int minSlotX;
     private final int minSlotY;
@@ -44,7 +45,8 @@ public final class DesktopContainerSession {
         String sourceKey,
         int specialKind,
         int entityId,
-        int columns
+        int columns,
+        boolean transferSupported
     ) {
         this.sessionId = sessionId;
         this.menu = menu;
@@ -53,6 +55,7 @@ public final class DesktopContainerSession {
         this.specialKind = specialKind;
         this.entityId = entityId;
         this.columns = columns;
+        this.transferSupported = transferSupported;
         this.containerSlots = findContainerSlots(menu, playerInventory);
         this.minSlotX = minSlotX(this.containerSlots);
         this.minSlotY = minSlotY(this.containerSlots);
@@ -72,9 +75,10 @@ public final class DesktopContainerSession {
             items = items.subList(0, menu.slots.size());
         }
         menu.initializeContents(payload.stateId(), items, payload.carried());
-        for (int i = 0; i < payload.data().length; i++) {
+        int[] data = payload.data();
+        for (int i = 0; i < data.length; i++) {
             try {
-                menu.setData(i, payload.data()[i]);
+                menu.setData(i, data[i]);
             } catch (IndexOutOfBoundsException ignored) {
                 break;
             }
@@ -88,7 +92,8 @@ public final class DesktopContainerSession {
             payload.sourceKey(),
             payload.specialKind(),
             payload.entityId(),
-            payload.columns()
+            payload.columns(),
+            payload.transferSupported()
         );
     }
 
@@ -145,6 +150,10 @@ public final class DesktopContainerSession {
 
     public int columns() {
         return this.columns;
+    }
+
+    public boolean transferSupported() {
+        return this.transferSupported;
     }
 
     public boolean isMountSession() {

@@ -19,21 +19,33 @@ public final class ServerPlayNetworking {
 
     public static void registerGlobalReceiver(ResourceLocation id, PlayChannelHandler handler) {
         RECEIVERS.put(id, handler);
+        ForgeNetworking.registerServerbound(id);
     }
 
     static void receive(ForgeNetworking.NetworkMessage message, NetworkEvent.Context context) {
         PlayChannelHandler handler = RECEIVERS.get(message.id());
         ServerPlayer player = context.getSender();
         if (handler != null && player != null) {
-            handler.receive(player.server, player, player.connection, message.buffer(), PacketSender.INSTANCE);
+            FriendlyByteBuf buf = message.buffer();
+            try {
+                handler.receive(player.server, player, player.connection, buf, PacketSender.INSTANCE);
+            } finally {
+                buf.release();
+            }
         }
     }
 
     public static boolean canSend(ServerPlayer player, ResourceLocation id) {
-        return player.connection != null && ForgeNetworking.CHANNEL.isRemotePresent(player.connection.connection);
+        return player.connection != null
+            && ForgeNetworking.supportsClientbound(id)
+            && ForgeNetworking.CHANNEL.isRemotePresent(player.connection.connection);
     }
 
     public static void send(ServerPlayer player, ResourceLocation id, FriendlyByteBuf buf) {
+        if (!canSend(player, id)) {
+            buf.release();
+            throw new IllegalStateException("Cannot send unnegotiated clientbound payload: " + id);
+        }
         ForgeNetworking.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), ForgeNetworking.message(id, buf));
     }
 
