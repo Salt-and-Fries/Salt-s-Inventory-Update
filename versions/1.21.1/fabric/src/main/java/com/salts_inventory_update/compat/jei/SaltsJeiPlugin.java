@@ -6,11 +6,13 @@ import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.resources.ResourceLocation;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserBridge;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserSource;
 
 @JeiPlugin
 public final class SaltsJeiPlugin implements IModPlugin {
     private static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(SaltsInventoryUpdate.MOD_ID, "jei_window");
-    private RuntimeJeiDesktopAccess access;
+    private RuntimeRecipeBrowserAccess access;
 
     @Override
     public ResourceLocation getPluginUid() {
@@ -19,14 +21,14 @@ public final class SaltsJeiPlugin implements IModPlugin {
 
     @Override
     public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
-        this.access = new RuntimeJeiDesktopAccess(jeiRuntime);
-        JeiDesktopBridge.install(this.access);
+        this.access = new RuntimeRecipeBrowserAccess(jeiRuntime);
+        RecipeBrowserBridge.install(RecipeBrowserSource.JEI, this.access);
     }
 
     @Override
     public void onRuntimeUnavailable() {
         if (this.access != null) {
-            JeiDesktopBridge.clear(this.access);
+            RecipeBrowserBridge.clear(RecipeBrowserSource.JEI, this.access);
             this.access = null;
         }
     }

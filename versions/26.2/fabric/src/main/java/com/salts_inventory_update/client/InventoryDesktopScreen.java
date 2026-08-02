@@ -170,6 +170,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     static final int SLOT_SIZE = 18;
     private static final int SLOT_ITEM_SIZE = 16;
     private static final int CONTROL_SIZE = 11;
+    private static final long CONTROL_TOOLTIP_DELAY_MS = 1_000L;
     private static final int CONTROL_GAP = 3;
     private static final int CONTROL_RIGHT_EXTRA_INSET = 2;
     private static final int CONTROL_TOP_INSET = 4;
@@ -231,7 +232,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final Identifier INVENTORY_EFFECT_BACKGROUND_AMBIENT_SPRITE = Identifier.withDefaultNamespace("container/inventory/effect_background_ambient");
     private static final int WINDOW_TEXTURE_SIZE = 11;
     private static final int WINDOW_EDGE_SIZE = 5;
-    private static final int CONTROL_TEXTURE_WIDTH = CONTROL_SIZE * 9;
+    private static final int LINK_CONTROL_TEXTURE_COLUMN = 9;
+    private static final int CONTROL_TEXTURE_WIDTH = CONTROL_SIZE * 10;
     private static final int CONTROL_TEXTURE_HEIGHT = CONTROL_SIZE * 3;
     private static final int SLOT_TEXTURE_WIDTH = SLOT_SIZE * 2;
     private static final int SLOT_TEXTURE_HEIGHT = SLOT_SIZE;
@@ -346,6 +348,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int JEI_RECIPE_FAVORITE_BUTTON_SIZE = 13;
     private static final int JEI_RECIPE_FAVORITE_BUTTON_ICON_SIZE = 9;
     private static final int JEI_RECIPE_FAVORITE_BUTTON_GAP = 1;
+    private static final int JEI_RECIPE_SIDE_BUTTON_RESERVED_WIDTH = JEI_RECIPE_FAVORITE_BUTTON_GAP + JEI_RECIPE_FAVORITE_BUTTON_SIZE;
     private static final int JEI_RECIPE_TRANSFER_BUTTON_ICON_SIZE = 9;
     private static final int JEI_RECIPE_MISSING_SLOT_COLOR = 0x66FF0000;
     private static final int JEI_RECIPE_OPTION_BUTTON_SIZE = 16;
@@ -894,6 +897,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable InventoryWindow pressedControlWindow;
     private @Nullable WindowControl pressedControl;
     private boolean pressedControlInPopup;
+    private @Nullable ControlHit hoveredControlTooltip;
+    private long hoveredControlTooltipStartedMs;
     private @Nullable InventoryWindow editingAnvilWindow;
     private @Nullable InventoryWindow editingCreativeSearchWindow;
     private @Nullable InventoryWindow editingJeiSearchWindow;
@@ -1730,6 +1735,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.extractHoveredTooltip(graphics, mouseX, mouseY);
         } else {
             this.updateBundleHover(null);
+            this.clearControlTooltipHover();
         }
         this.renderDebugOverlay(graphics, uiMouseX, uiMouseY);
         InventoryKeyHoldController.extractOverlay(this.minecraft, graphics);
@@ -7044,19 +7050,21 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void renderLinkControlIcon(GuiGraphicsExtractor graphics, int x, int y, boolean hovered, boolean pressed, boolean toggled) {
-        int background = pressed || toggled ? 0xFF2E5A3A : hovered ? 0xFF343A44 : 0xFF252A31;
-        int outline = toggled ? LINK_MODE_ORIGIN_OUTLINE : hovered ? 0xFF7B8798 : 0xFF4B5361;
-        int glyph = toggled ? 0xFFFFFFFF : 0xFFE8E8E8;
-        graphics.fill(x, y, x + CONTROL_SIZE, y + CONTROL_SIZE, this.uiColor(background));
-        graphics.outline(x, y, CONTROL_SIZE, CONTROL_SIZE, this.uiColor(outline));
-        this.renderLinkGlyph(graphics, x, y, glyph);
-    }
-
-    private void renderLinkGlyph(GuiGraphicsExtractor graphics, int x, int y, int color) {
-        int uiColor = this.uiColor(color);
-        graphics.outline(x + 2, y + 3, 5, 4, uiColor);
-        graphics.outline(x + 4, y + 4, 5, 4, uiColor);
-        graphics.fill(x + 5, y + 5, x + 7, y + 6, uiColor);
+        int textureRow = pressed || toggled ? 2 : hovered ? 1 : 0;
+        blitRegion(
+            graphics,
+            WINDOW_CONTROLS_TEXTURE,
+            x,
+            y,
+            LINK_CONTROL_TEXTURE_COLUMN * CONTROL_SIZE,
+            textureRow * CONTROL_SIZE,
+            CONTROL_SIZE,
+            CONTROL_SIZE,
+            CONTROL_SIZE,
+            CONTROL_SIZE,
+            CONTROL_TEXTURE_WIDTH,
+            CONTROL_TEXTURE_HEIGHT
+        );
     }
 
     private int controlTextureColumn(InventoryWindow window, WindowControl control) {
@@ -7065,7 +7073,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             case MINIMIZE -> 1;
             case CLOSE -> 2;
             case ELLIPSIS -> 3;
-            case LINK -> 3;
+            case LINK -> LINK_CONTROL_TEXTURE_COLUMN;
             case LOCK -> window.locked ? 5 : 4;
             case PIN -> switch (window.pinMode) {
                 case UNPINNED -> 6;
@@ -7523,6 +7531,20 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         return this.titleBarLayout(window).controlAt(mouseX, mouseY);
+    }
+
+    private @Nullable ControlHit windowControlAt(double mouseX, double mouseY) {
+        ControlHit popupHit = this.popupControlAt(mouseX, mouseY);
+        if (popupHit != null) {
+            return popupHit;
+        }
+        if (this.popupContains(mouseX, mouseY)) {
+            return null;
+        }
+
+        InventoryWindow window = this.windowAt(mouseX, mouseY);
+        WindowControl control = window == null ? null : this.titleBarControlAt(window, mouseX, mouseY);
+        return control == null ? null : new ControlHit(window, control);
     }
 
     private void renderControlPopup(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -10078,7 +10100,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         List<JeiRecipeLayoutPlacement> placements = new ArrayList<>(visible);
         for (int i = first; i < end; i++) {
             RecipeBrowserRecipe recipe = window.jeiRecipeEntries.get(i);
-            int layoutX = this.jeiRecipeLayoutAreaX(window) + Math.max(0, (this.jeiRecipeLayoutAreaWidth(window) - Math.max(1, recipe.width())) / 2);
+            int recipeWidth = Math.max(1, recipe.width());
+            int layoutX = this.jeiRecipeLayoutAreaX(window)
+                + Math.max(0, (this.jeiRecipeLayoutAreaWidth(window) - recipeWidth - JEI_RECIPE_SIDE_BUTTON_RESERVED_WIDTH) / 2);
             int layoutY = y + Math.max(0, (recipeHeight - Math.max(1, recipe.height())) / 2);
             placements.add(new JeiRecipeLayoutPlacement(recipe, layoutX, layoutY, i));
             y += recipeHeight + spacing;
@@ -11181,7 +11205,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private JeiRecipeButtonRect jeiRecipeSideButtonRect(JeiRecipeLayoutPlacement placement, int indexFromBottom) {
-        int x = placement.x() + Math.max(1, placement.recipe().width()) + JEI_RECIPE_FAVORITE_BUTTON_GAP - 3;
+        int x = placement.x() + Math.max(1, placement.recipe().width()) + JEI_RECIPE_FAVORITE_BUTTON_GAP;
         int y = placement.y()
             + Math.max(1, placement.recipe().height())
             - JEI_RECIPE_FAVORITE_BUTTON_SIZE
@@ -14521,6 +14545,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void extractHoveredTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        if (this.extractWindowControlTooltip(graphics, mouseX, mouseY)) {
+            return;
+        }
+
         InventoryWindow hoveredWindow = this.windowAt(mouseX, mouseY);
         InventoryWindow recipeBookWindow = this.recipeBookWindowAt(mouseX, mouseY);
         if (recipeBookWindow != null && (hoveredWindow == null || hoveredWindow == recipeBookWindow) && this.sharedCarried.isEmpty()) {
@@ -14673,6 +14701,27 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (window != null && window.kind == WindowKind.CREATIVE && this.creativeDeleteSlotContains(window, mouseX, mouseY) && this.sharedCarried.isEmpty()) {
             graphics.setTooltipForNextFrame(this.font, CREATIVE_DELETE_TOOLTIP, mouseX, mouseY);
         }
+    }
+
+    private boolean extractWindowControlTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        ControlHit hit = this.windowControlAt(mouseX, mouseY);
+        if (!java.util.Objects.equals(hit, this.hoveredControlTooltip)) {
+            this.hoveredControlTooltip = hit;
+            this.hoveredControlTooltipStartedMs = hit == null ? 0L : System.currentTimeMillis();
+            return hit != null;
+        }
+        if (hit == null) {
+            return false;
+        }
+        if (System.currentTimeMillis() - this.hoveredControlTooltipStartedMs >= CONTROL_TOOLTIP_DELAY_MS) {
+            graphics.setTooltipForNextFrame(this.font, hit.control().tooltip(), mouseX, mouseY);
+        }
+        return true;
+    }
+
+    private void clearControlTooltipHover() {
+        this.hoveredControlTooltip = null;
+        this.hoveredControlTooltipStartedMs = 0L;
     }
 
     private void renderDesktopHotbarAffordances(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -15435,18 +15484,22 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private enum WindowControl {
-        FOCUS("F"),
-        PIN("P"),
-        MINIMIZE("_"),
-        CLOSE("x"),
-        ELLIPSIS("..."),
-        LOCK("L"),
-        LINK("link");
+        FOCUS("tooltip.salts_inventory_update.window_control.focus"),
+        PIN("tooltip.salts_inventory_update.window_control.pin"),
+        MINIMIZE("tooltip.salts_inventory_update.window_control.minimize"),
+        CLOSE("tooltip.salts_inventory_update.window_control.close"),
+        ELLIPSIS("tooltip.salts_inventory_update.window_control.more"),
+        LOCK("tooltip.salts_inventory_update.window_control.lock"),
+        LINK("tooltip.salts_inventory_update.window_control.link");
 
-        private final String label;
+        private final String tooltipKey;
 
-        WindowControl(String label) {
-            this.label = label;
+        WindowControl(String tooltipKey) {
+            this.tooltipKey = tooltipKey;
+        }
+
+        private Component tooltip() {
+            return Component.translatable(this.tooltipKey);
         }
     }
 

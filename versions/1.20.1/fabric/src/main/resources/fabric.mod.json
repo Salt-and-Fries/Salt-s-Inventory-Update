@@ -27,6 +27,9 @@
     ],
     "jei_mod_plugin": [
       "com.salts_inventory_update.compat.jei.SaltsJeiPlugin"
+    ],
+    "rei_client": [
+      "com.salts_inventory_update.compat.rei.SaltsReiClientPlugin"
     ]
   },
   "mixins": [
@@ -48,6 +51,8 @@
     "java": ">=${java_version}"
   },
   "suggests": {
-    "jei": "*"
+    "jei": "*",
+    "roughlyenoughitems": "*",
+    "emi": "*"
   }
 }

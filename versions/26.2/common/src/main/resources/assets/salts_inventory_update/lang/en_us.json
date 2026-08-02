@@ -54,6 +54,13 @@
   "config.salts_inventory_update.value.percent": "%s%%",
   "config.salts_inventory_update.value.seconds": "%ss",
   "config.salts_inventory_update.runtime_disabled.server": "Disabled for this server because Salt desktop networking is unavailable.",
+  "tooltip.salts_inventory_update.window_control.focus": "Focus",
+  "tooltip.salts_inventory_update.window_control.pin": "Pin",
+  "tooltip.salts_inventory_update.window_control.minimize": "Minimize",
+  "tooltip.salts_inventory_update.window_control.close": "Close",
+  "tooltip.salts_inventory_update.window_control.more": "More Controls",
+  "tooltip.salts_inventory_update.window_control.lock": "Lock",
+  "tooltip.salts_inventory_update.window_control.link": "Link",
   "tooltip.salts_inventory_update.inventory_slot.add": "Add inventory slot",
   "tooltip.salts_inventory_update.inventory_slot.cost": "Cost: %s levels",
   "tooltip.salts_inventory_update.inventory_slot.have": "You have: %s levels"

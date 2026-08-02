@@ -15,6 +15,18 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserAccess;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserCategory;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserEntry;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserMode;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserRecipe;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserSortStage;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserSource;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserTab;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserTabKind;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserTransferPlan;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserTransferRect;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserTransferSlot;
 import com.salts_inventory_update.debug.DesktopDebug;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.IRecipeLayoutDrawable;
@@ -54,18 +66,23 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import org.jspecify.annotations.Nullable;
 
-final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
+final class RuntimeRecipeBrowserAccess implements RecipeBrowserAccess {
     private static final String FAVORITES_TAB_UID = "salts_inventory_update:jei_favorites";
     private static final String RECENT_TAB_UID = "salts_inventory_update:jei_recent";
     private static final int RECENT_HISTORY_LIMIT = 64;
     private static final boolean JEI_TRANSFER_DEBUG = Boolean.getBoolean("salts_inventory_update.jeiTransferDebug");
     private final IJeiRuntime runtime;
-    private final List<JeiDesktopEntry> recentEntries = new ArrayList<>();
+    private final List<RecipeBrowserEntry> recentEntries = new ArrayList<>();
     private String lastTransferDebugKey = "";
     private long lastTransferDebugAt;
 
-    RuntimeJeiDesktopAccess(IJeiRuntime runtime) {
+    RuntimeRecipeBrowserAccess(IJeiRuntime runtime) {
         this.runtime = runtime;
+    }
+
+    @Override
+    public RecipeBrowserSource source() {
+        return RecipeBrowserSource.JEI;
     }
 
     @Override
@@ -84,28 +101,28 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @Override
-    public List<JeiDesktopTab> tabs() {
+    public List<RecipeBrowserTab> tabs() {
         List<IIngredientType<?>> types = new ArrayList<>(this.manager().getRegisteredIngredientTypes());
         types.sort(Comparator.comparing(IIngredientType::getUid));
-        List<JeiDesktopTab> tabs = new ArrayList<>();
-        tabs.add(new JeiDesktopTab(FAVORITES_TAB_UID, Component.literal("Favorites"), null, JeiDesktopTabKind.FAVORITES));
-        tabs.add(new JeiDesktopTab(RECENT_TAB_UID, Component.literal("Recent"), null, JeiDesktopTabKind.RECENT));
+        List<RecipeBrowserTab> tabs = new ArrayList<>();
+        tabs.add(new RecipeBrowserTab(FAVORITES_TAB_UID, Component.literal("Favorites"), null, RecipeBrowserTabKind.FAVORITES));
+        tabs.add(new RecipeBrowserTab(RECENT_TAB_UID, Component.literal("Recent"), null, RecipeBrowserTabKind.RECENT));
         for (IIngredientType<?> type : types) {
             if (!this.hasIngredients(type)) {
                 continue;
             }
             String uid = type.getUid();
-            tabs.add(new JeiDesktopTab(uid, Component.literal(this.titleFor(type)), this.tabIcon(type)));
+            tabs.add(new RecipeBrowserTab(uid, Component.literal(this.titleFor(type)), this.tabIcon(type)));
         }
         return tabs;
     }
 
     @Override
-    public List<JeiDesktopEntry> filteredEntries(JeiDesktopTab tab) {
-        if (tab != null && tab.kind() == JeiDesktopTabKind.FAVORITES) {
+    public List<RecipeBrowserEntry> filteredEntries(RecipeBrowserTab tab) {
+        if (tab != null && tab.kind() == RecipeBrowserTabKind.FAVORITES) {
             return this.elementEntries(this.bookmarkList());
         }
-        if (tab != null && tab.kind() == JeiDesktopTabKind.RECENT) {
+        if (tab != null && tab.kind() == RecipeBrowserTabKind.RECENT) {
             return this.recentEntries();
         }
         IIngredientType<?> type = this.type(tab);
@@ -116,29 +133,29 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @Override
-    public void renderTabIcon(GuiGraphicsExtractor graphics, JeiDesktopTab tab, int x, int y) {
-        JeiDesktopEntry icon = tab == null ? null : tab.icon();
+    public void renderTabIcon(GuiGraphicsExtractor graphics, RecipeBrowserTab tab, int x, int y) {
+        RecipeBrowserEntry icon = tab == null ? null : tab.icon();
         if (icon != null) {
             this.renderUnchecked(graphics, icon, x, y);
         }
     }
 
     @Override
-    public void render(GuiGraphicsExtractor graphics, JeiDesktopEntry entry, int x, int y) {
+    public void render(GuiGraphicsExtractor graphics, RecipeBrowserEntry entry, int x, int y) {
         this.renderUnchecked(graphics, entry, x, y);
     }
 
     @Override
-    public List<Component> tooltip(JeiDesktopEntry entry) {
+    public List<Component> tooltip(RecipeBrowserEntry entry) {
         return this.tooltipUnchecked(entry);
     }
 
     @Override
-    public JeiDesktopEntry entryForItemStack(ItemStack stack) {
+    public RecipeBrowserEntry entryForItemStack(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return null;
         }
-        return new JeiDesktopEntry(VanillaTypes.ITEM_STACK.getUid(), VanillaTypes.ITEM_STACK, stack.copy());
+        return new RecipeBrowserEntry(VanillaTypes.ITEM_STACK.getUid(), VanillaTypes.ITEM_STACK, stack.copy());
     }
 
     @Override
@@ -152,7 +169,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @Override
-    public void addLookupHistory(JeiDesktopEntry entry) {
+    public void addLookupHistory(RecipeBrowserEntry entry) {
         this.addRecentEntry(entry);
         Object lookupHistory = this.lookupHistory();
         Object bookmark = this.createIngredientBookmark(entry);
@@ -162,7 +179,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @Override
-    public List<JeiRecipeCategory> recipeCategories(JeiDesktopEntry entry, JeiRecipeMode mode) {
+    public List<RecipeBrowserCategory> recipeCategories(RecipeBrowserEntry entry, RecipeBrowserMode mode) {
         IFocus<?> focus = this.focus(entry, mode);
         if (focus == null) {
             return List.of();
@@ -176,7 +193,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @Override
-    public List<JeiRecipeEntry> recipes(JeiDesktopEntry entry, JeiRecipeMode mode, JeiRecipeCategory category) {
+    public List<RecipeBrowserRecipe> recipes(RecipeBrowserEntry entry, RecipeBrowserMode mode, RecipeBrowserCategory category) {
         IFocus<?> focus = this.focus(entry, mode);
         if (focus == null) {
             return List.of();
@@ -187,7 +204,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
 
     @Override
     @SuppressWarnings("removal")
-    public List<JeiDesktopEntry> craftingStations(JeiRecipeCategory category) {
+    public List<RecipeBrowserEntry> craftingStations(RecipeBrowserCategory category) {
         IRecipeCategory<?> recipeCategory = this.castCategory(category.category());
         return this.recipeManager()
             .createRecipeCatalystLookup(recipeCategory.getRecipeType())
@@ -197,26 +214,26 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @Override
-    public void renderRecipeCategoryIcon(GuiGraphicsExtractor graphics, JeiRecipeCategory category, int x, int y) {
+    public void renderRecipeCategoryIcon(GuiGraphicsExtractor graphics, RecipeBrowserCategory category, int x, int y) {
         this.castCategory(category.category()).getIcon().draw(graphics.unwrap(), x, y);
     }
 
     @Override
-    public void renderRecipe(GuiGraphicsExtractor graphics, JeiRecipeEntry recipe, int x, int y, int mouseX, int mouseY) {
+    public void renderRecipe(GuiGraphicsExtractor graphics, RecipeBrowserRecipe recipe, int x, int y, int mouseX, int mouseY) {
         IRecipeLayoutDrawable<?> layout = this.castRecipeLayout(recipe.layout());
         layout.setPosition(x, y);
         layout.drawRecipe(graphics.unwrap(), mouseX, mouseY);
     }
 
     @Override
-    public void renderRecipeOverlays(GuiGraphicsExtractor graphics, JeiRecipeEntry recipe, int x, int y, int mouseX, int mouseY) {
+    public void renderRecipeOverlays(GuiGraphicsExtractor graphics, RecipeBrowserRecipe recipe, int x, int y, int mouseX, int mouseY) {
         IRecipeLayoutDrawable<?> layout = this.castRecipeLayout(recipe.layout());
         layout.setPosition(x, y);
         layout.drawOverlays(graphics.unwrap(), mouseX, mouseY);
     }
 
     @Override
-    public void renderRecipeSlotHighlights(GuiGraphicsExtractor graphics, JeiRecipeEntry recipe, int x, int y, List<Integer> inputIndexes, int color) {
+    public void renderRecipeSlotHighlights(GuiGraphicsExtractor graphics, RecipeBrowserRecipe recipe, int x, int y, List<Integer> inputIndexes, int color) {
         if (inputIndexes.isEmpty()) {
             return;
         }
@@ -231,24 +248,24 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @Override
-    public void tickRecipe(JeiRecipeEntry recipe) {
+    public void tickRecipe(RecipeBrowserRecipe recipe) {
         this.castRecipeLayout(recipe.layout()).tick();
     }
 
     @Override
-    public boolean canBookmarkRecipe(JeiRecipeEntry recipe) {
+    public boolean canBookmarkRecipe(RecipeBrowserRecipe recipe) {
         return this.createRecipeBookmark(recipe) != null;
     }
 
     @Override
-    public boolean isRecipeBookmarked(JeiRecipeEntry recipe) {
+    public boolean isRecipeBookmarked(RecipeBrowserRecipe recipe) {
         Object bookmarkList = this.bookmarkList();
         Object bookmark = this.createRecipeBookmark(recipe);
         return bookmarkList != null && bookmark != null && this.invokeBoolean(bookmarkList, "contains", false, this.classForName("mezz.jei.gui.bookmarks.IBookmark"), bookmark);
     }
 
     @Override
-    public void toggleRecipeBookmark(JeiRecipeEntry recipe) {
+    public void toggleRecipeBookmark(RecipeBrowserRecipe recipe) {
         Object bookmarkList = this.bookmarkList();
         Object bookmark = this.createRecipeBookmark(recipe);
         if (bookmarkList != null && bookmark != null) {
@@ -257,14 +274,14 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @Override
-    public boolean isRecipeSortStageEnabled(JeiRecipeSortStage stage) {
+    public boolean isRecipeSortStageEnabled(RecipeBrowserSortStage stage) {
         Object recipeSorterStage = this.recipeSorterStage(stage);
         Object sorterStages = this.invoke(this.clientConfig(), "getRecipeSorterStages");
         return recipeSorterStage != null && sorterStages instanceof Collection<?> collection && collection.contains(recipeSorterStage);
     }
 
     @Override
-    public void toggleRecipeSortStage(JeiRecipeSortStage stage) {
+    public void toggleRecipeSortStage(RecipeBrowserSortStage stage) {
         Object recipeSorterStage = this.recipeSorterStage(stage);
         if (recipeSorterStage == null) {
             return;
@@ -280,7 +297,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @Override
-    public JeiRecipeTransferPlan recipeTransferPlan(JeiRecipeEntry recipe, AbstractContainerMenu menu) {
+    public RecipeBrowserTransferPlan recipeTransferPlan(RecipeBrowserRecipe recipe, AbstractContainerMenu menu) {
         if (recipe == null || menu == null) {
             this.debugTransfer("plan-null-input", "plan skipped reason=null-input recipe={} menu={}", recipe == null ? "null" : recipe.uid(), this.describeMenu(menu));
             return null;
@@ -337,7 +354,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
             .map(slot -> slot.index)
             .distinct()
             .toList();
-        List<JeiRecipeTransferSlot> requirements = new ArrayList<>();
+        List<RecipeBrowserTransferSlot> requirements = new ArrayList<>();
         for (TransferSlotMapping mapping : transferSlots.mappings()) {
             IRecipeSlotView inputSlot = inputSlots.get(mapping.inputIndex());
             if (inputSlot.isEmpty()) {
@@ -360,7 +377,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
                 return null;
             }
 
-            requirements.add(new JeiRecipeTransferSlot(mapping.inputIndex(), mapping.targetSlot().index, alternatives));
+            requirements.add(new RecipeBrowserTransferSlot(mapping.inputIndex(), mapping.targetSlot().index, alternatives));
         }
 
         if (requirements.isEmpty()) {
@@ -375,15 +392,15 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
             return null;
         }
 
-        return new JeiRecipeTransferPlan(
-            new JeiRecipeTransferRect(button.getX(), button.getY(), button.getWidth(), button.getHeight()),
+        return new RecipeBrowserTransferPlan(
+            new RecipeBrowserTransferRect(button.getX(), button.getY(), button.getWidth(), button.getHeight()),
             recipeSlotIds,
             requirements
         );
     }
 
     @Override
-    public JeiDesktopEntry recipeIngredientAt(JeiRecipeEntry recipe, int x, int y, int mouseX, int mouseY) {
+    public RecipeBrowserEntry recipeIngredientAt(RecipeBrowserRecipe recipe, int x, int y, int mouseX, int mouseY) {
         IRecipeLayoutDrawable<?> layout = this.castRecipeLayout(recipe.layout());
         layout.setPosition(x, y);
         Optional<IRecipeSlotDrawable> slot = layout
@@ -407,7 +424,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @Override
-    public boolean handleRecipeMouseScrolled(JeiRecipeEntry recipe, int x, int y, double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean handleRecipeMouseScrolled(RecipeBrowserRecipe recipe, int x, int y, double mouseX, double mouseY, double scrollX, double scrollY) {
         IRecipeLayoutDrawable<?> layout = this.castRecipeLayout(recipe.layout());
         layout.setPosition(x, y);
         IJeiInputHandler inputHandler = layout.getInputHandler();
@@ -416,7 +433,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @Override
-    public boolean handleRecipeMouseClicked(JeiRecipeEntry recipe, int x, int y, MouseButtonEvent event, boolean doubleClick) {
+    public boolean handleRecipeMouseClicked(RecipeBrowserRecipe recipe, int x, int y, MouseButtonEvent event, boolean doubleClick) {
         IRecipeLayoutDrawable<?> layout = this.castRecipeLayout(recipe.layout());
         layout.setPosition(x, y);
         IJeiInputHandler inputHandler = layout.getInputHandler();
@@ -424,7 +441,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @Override
-    public boolean handleRecipeMouseReleased(JeiRecipeEntry recipe, int x, int y, MouseButtonEvent event) {
+    public boolean handleRecipeMouseReleased(RecipeBrowserRecipe recipe, int x, int y, MouseButtonEvent event) {
         IRecipeLayoutDrawable<?> layout = this.castRecipeLayout(recipe.layout());
         layout.setPosition(x, y);
         IJeiInputHandler inputHandler = layout.getInputHandler();
@@ -432,7 +449,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @Override
-    public boolean handleRecipeMouseDragged(JeiRecipeEntry recipe, int x, int y, MouseButtonEvent event, double dragX, double dragY) {
+    public boolean handleRecipeMouseDragged(RecipeBrowserRecipe recipe, int x, int y, MouseButtonEvent event, double dragX, double dragY) {
         IRecipeLayoutDrawable<?> layout = this.castRecipeLayout(recipe.layout());
         layout.setPosition(x, y);
         IJeiInputHandler inputHandler = layout.getInputHandler();
@@ -630,35 +647,35 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
         return !this.manager().getAllIngredients(type).isEmpty();
     }
 
-    private <T> JeiDesktopEntry tabIcon(IIngredientType<T> type) {
+    private <T> RecipeBrowserEntry tabIcon(IIngredientType<T> type) {
         return this.manager()
             .getAllIngredients(type)
             .stream()
             .findFirst()
-            .map(ingredient -> new JeiDesktopEntry(type.getUid(), type, ingredient))
+            .map(ingredient -> new RecipeBrowserEntry(type.getUid(), type, ingredient))
             .orElse(null);
     }
 
-    private IIngredientType<?> type(JeiDesktopTab tab) {
+    private IIngredientType<?> type(RecipeBrowserTab tab) {
         if (tab == null) {
             return null;
         }
         return this.manager().getIngredientTypeForUid(tab.uid()).orElse(null);
     }
 
-    private <T> List<JeiDesktopEntry> filteredEntries(IIngredientType<T> type) {
+    private <T> List<RecipeBrowserEntry> filteredEntries(IIngredientType<T> type) {
         List<T> ingredients = this.filter().getFilteredIngredients(type);
-        List<JeiDesktopEntry> entries = new ArrayList<>(ingredients.size());
+        List<RecipeBrowserEntry> entries = new ArrayList<>(ingredients.size());
         String uid = type.getUid();
         for (T ingredient : ingredients) {
-            entries.add(new JeiDesktopEntry(uid, type, ingredient));
+            entries.add(new RecipeBrowserEntry(uid, type, ingredient));
         }
         return entries;
     }
 
-    private List<JeiDesktopEntry> recentEntries() {
-        List<JeiDesktopEntry> entries = new ArrayList<>(this.elementEntries(this.lookupHistory()));
-        for (JeiDesktopEntry recentEntry : this.recentEntries) {
+    private List<RecipeBrowserEntry> recentEntries() {
+        List<RecipeBrowserEntry> entries = new ArrayList<>(this.elementEntries(this.lookupHistory()));
+        for (RecipeBrowserEntry recentEntry : this.recentEntries) {
             if (entries.stream().noneMatch(entry -> this.sameRecentEntry(entry, recentEntry))) {
                 entries.add(recentEntry);
             }
@@ -666,7 +683,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
         return entries;
     }
 
-    private void addRecentEntry(JeiDesktopEntry entry) {
+    private void addRecentEntry(RecipeBrowserEntry entry) {
         if (entry == null || entry.type() == null || entry.ingredient() == null) {
             return;
         }
@@ -678,7 +695,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
         }
     }
 
-    private boolean sameRecentEntry(JeiDesktopEntry left, JeiDesktopEntry right) {
+    private boolean sameRecentEntry(RecipeBrowserEntry left, RecipeBrowserEntry right) {
         if (left == null || right == null || !Objects.equals(left.typeUid(), right.typeUid())) {
             return false;
         }
@@ -691,13 +708,13 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
         return Objects.equals(left.ingredient(), right.ingredient());
     }
 
-    private List<JeiDesktopEntry> elementEntries(Object source) {
+    private List<RecipeBrowserEntry> elementEntries(Object source) {
         Object elements = this.invoke(source, "getElements");
         if (!(elements instanceof Iterable<?> iterable)) {
             return List.of();
         }
 
-        List<JeiDesktopEntry> entries = new ArrayList<>();
+        List<RecipeBrowserEntry> entries = new ArrayList<>();
         for (Object element : iterable) {
             Object typedIngredient = this.invoke(element, "getTypedIngredient");
             if (!(typedIngredient instanceof ITypedIngredient<?> ingredient)) {
@@ -710,8 +727,8 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
         return entries;
     }
 
-    private JeiRecipeCategory wrapCategory(IRecipeCategory<?> category) {
-        return new JeiRecipeCategory(
+    private RecipeBrowserCategory wrapCategory(IRecipeCategory<?> category) {
+        return new RecipeBrowserCategory(
             category.getRecipeType().getUid().toString(),
             category.getTitle(),
             category.getWidth(),
@@ -720,14 +737,14 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
         );
     }
 
-    private <R> List<JeiRecipeEntry> recipesUnchecked(IFocus<?> focus, IFocusGroup focusGroup, JeiRecipeCategory category) {
+    private <R> List<RecipeBrowserRecipe> recipesUnchecked(IFocus<?> focus, IFocusGroup focusGroup, RecipeBrowserCategory category) {
         IRecipeCategory<R> recipeCategory = this.castCategory(category.category());
         List<R> recipes = this.recipeManager()
             .createRecipeLookup(recipeCategory.getRecipeType())
             .limitFocus(List.of(focus))
             .get()
             .toList();
-        List<JeiRecipeEntry> entries = new ArrayList<>(recipes.size());
+        List<RecipeBrowserRecipe> entries = new ArrayList<>(recipes.size());
         for (int i = 0; i < recipes.size(); i++) {
             R recipe = recipes.get(i);
             Optional<IRecipeLayoutDrawable<R>> layout = this.recipeManager().createRecipeLayoutDrawable(recipeCategory, recipe, focusGroup);
@@ -736,20 +753,20 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
             }
             String uid = category.uid() + ":" + i;
             Rect2i rect = layout.get().getRectWithBorder();
-            entries.add(new JeiRecipeEntry(uid, category.uid(), rect.getWidth(), rect.getHeight(), recipe, layout.get()));
+            entries.add(new RecipeBrowserRecipe(uid, category.uid(), rect.getWidth(), rect.getHeight(), recipe, layout.get()));
         }
         this.sortRecipes(entries);
         return entries;
     }
 
-    private void sortRecipes(List<JeiRecipeEntry> entries) {
-        boolean bookmarkedFirst = this.isRecipeSortStageEnabled(JeiRecipeSortStage.BOOKMARKED);
-        boolean craftableFirst = this.isRecipeSortStageEnabled(JeiRecipeSortStage.CRAFTABLE);
+    private void sortRecipes(List<RecipeBrowserRecipe> entries) {
+        boolean bookmarkedFirst = this.isRecipeSortStageEnabled(RecipeBrowserSortStage.BOOKMARKED);
+        boolean craftableFirst = this.isRecipeSortStageEnabled(RecipeBrowserSortStage.CRAFTABLE);
         if (!bookmarkedFirst && !craftableFirst) {
             return;
         }
 
-        Comparator<JeiRecipeEntry> comparator = (left, right) -> 0;
+        Comparator<RecipeBrowserRecipe> comparator = (left, right) -> 0;
         if (bookmarkedFirst) {
             comparator = comparator.thenComparing(entry -> !this.isRecipeBookmarked(entry));
         }
@@ -759,7 +776,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
         entries.sort(comparator);
     }
 
-    private boolean isRecipeCraftable(JeiRecipeEntry entry) {
+    private boolean isRecipeCraftable(RecipeBrowserRecipe entry) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null) {
             return false;
@@ -824,15 +841,15 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
         return false;
     }
 
-    private JeiDesktopEntry wrapTypedIngredient(ITypedIngredient<?> ingredient) {
+    private RecipeBrowserEntry wrapTypedIngredient(ITypedIngredient<?> ingredient) {
         return this.wrapTypedIngredient(ingredient, null);
     }
 
-    private JeiDesktopEntry wrapTypedIngredient(ITypedIngredient<?> ingredient, Object opaque) {
-        return new JeiDesktopEntry(ingredient.getType().getUid(), ingredient.getType(), ingredient.getIngredient(), opaque);
+    private RecipeBrowserEntry wrapTypedIngredient(ITypedIngredient<?> ingredient, Object opaque) {
+        return new RecipeBrowserEntry(ingredient.getType().getUid(), ingredient.getType(), ingredient.getIngredient(), opaque);
     }
 
-    private <T> void renderUnchecked(GuiGraphicsExtractor graphics, JeiDesktopEntry entry, int x, int y) {
+    private <T> void renderUnchecked(GuiGraphicsExtractor graphics, RecipeBrowserEntry entry, int x, int y) {
         IIngredientType<T> type = this.castType(entry.type());
         T ingredient = this.castIngredient(entry.ingredient());
         IIngredientRenderer<T> renderer = this.manager().getIngredientRenderer(type);
@@ -841,7 +858,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
         renderer.render(graphics.unwrap(), ingredient, renderX, renderY);
     }
 
-    private <T> List<Component> tooltipUnchecked(JeiDesktopEntry entry) {
+    private <T> List<Component> tooltipUnchecked(RecipeBrowserEntry entry) {
         IIngredientType<T> type = this.castType(entry.type());
         T ingredient = this.castIngredient(entry.ingredient());
         IIngredientRenderer<T> renderer = this.manager().getIngredientRenderer(type);
@@ -849,13 +866,13 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
         return renderer.getTooltip(ingredient, flag);
     }
 
-    private <T> IFocus<T> focus(JeiDesktopEntry entry, JeiRecipeMode mode) {
-        if (entry == null || mode == null || mode == JeiRecipeMode.INGREDIENTS) {
+    private <T> IFocus<T> focus(RecipeBrowserEntry entry, RecipeBrowserMode mode) {
+        if (entry == null || mode == null || mode == RecipeBrowserMode.INGREDIENTS) {
             return null;
         }
         IIngredientType<T> type = this.castType(entry.type());
         T ingredient = this.castIngredient(entry.ingredient());
-        RecipeIngredientRole role = mode == JeiRecipeMode.RECIPES ? RecipeIngredientRole.OUTPUT : RecipeIngredientRole.INPUT;
+        RecipeIngredientRole role = mode == RecipeBrowserMode.RECIPES ? RecipeIngredientRole.OUTPUT : RecipeIngredientRole.INPUT;
         return this.runtime.getJeiHelpers().getFocusFactory().createFocus(role, type, ingredient);
     }
 
@@ -875,7 +892,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private Object recipeSorterStage(JeiRecipeSortStage stage) {
+    private Object recipeSorterStage(RecipeBrowserSortStage stage) {
         Class<?> stageClass = this.classForName("mezz.jei.common.config.RecipeSorterStage");
         if (stageClass == null || !stageClass.isEnum()) {
             return null;
@@ -887,7 +904,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
         }
     }
 
-    private Object createIngredientBookmark(JeiDesktopEntry entry) {
+    private Object createIngredientBookmark(RecipeBrowserEntry entry) {
         Optional<? extends ITypedIngredient<?>> typedIngredient = this.typedIngredient(entry);
         if (typedIngredient.isEmpty()) {
             return null;
@@ -901,7 +918,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
         );
     }
 
-    private Object createRecipeBookmark(JeiRecipeEntry recipe) {
+    private Object createRecipeBookmark(RecipeBrowserRecipe recipe) {
         if (recipe == null || recipe.layout() == null) {
             return null;
         }
@@ -914,7 +931,7 @@ final class RuntimeJeiDesktopAccess implements JeiDesktopAccess {
         );
     }
 
-    private <T> Optional<ITypedIngredient<T>> typedIngredient(JeiDesktopEntry entry) {
+    private <T> Optional<ITypedIngredient<T>> typedIngredient(RecipeBrowserEntry entry) {
         if (entry == null || entry.type() == null || entry.ingredient() == null) {
             return Optional.empty();
         }

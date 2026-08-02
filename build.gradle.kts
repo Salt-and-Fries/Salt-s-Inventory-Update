@@ -45,7 +45,7 @@ val includeReiRuntime = providers.gradleProperty("includeReiRuntime")
 val nonFabricSharedSourceExcludes = listOf(
     "**/SaltsInventoryUpdateFabric.java",
     "**/SaltsInventoryUpdateFabricClient.java",
-    "**/compat/rei/**"
+    "**/compat/rei/SaltsReiClientPlugin.java"
 )
 
 fun fabricPlatformSourceDir(minecraftVersion: String) =
@@ -337,43 +337,60 @@ subprojects {
     }
 
     val reiVersions = mapOf(
-        "26.2" to "26.2.820"
+        "26.2" to "26.2.820",
+        "26.1.2" to "26.1.818",
+        "1.21.11" to "21.11.816",
+        "1.21.1" to "16.0.799",
+        "1.20.1" to "12.1.785"
     )
     val reiBasicMathVersions = mapOf(
-        "26.2" to "0.6.1"
+        "26.2" to "0.6.1",
+        "26.1.2" to "0.6.1",
+        "1.21.11" to "0.6.1",
+        "1.21.1" to "0.6.1",
+        "1.20.1" to "0.6.1"
     )
     val reiClothConfigVersions = mapOf(
-        "26.2" to "26.2.155"
+        "26.2" to "26.2.155",
+        "26.1.2" to "26.1.154",
+        "1.21.11" to "21.11.151",
+        "1.21.1" to "15.0.130",
+        "1.20.1" to "11.0.99"
     )
     val reiArchitecturyVersions = mapOf(
-        "26.2" to "21.0.2"
+        "26.2" to "21.0.2",
+        "26.1.2" to "20.0.6",
+        "1.21.11" to "19.0.1",
+        "1.21.1" to "13.0.6",
+        "1.20.1" to "9.0.7"
     )
-    if (minecraftVersion != null && name == "fabric") {
+    if (minecraftVersion != null && (name == "fabric" || name == "neoforge" || name == "forge")) {
         afterEvaluate {
             reiVersions[minecraftVersion]?.let { reiVersion ->
-                val apiConfiguration = if (!minecraftVersion.startsWith("26.") && configurations.findByName("modCompileOnly") != null) {
+                val reiLoader = name
+                val apiConfiguration = if (name == "fabric" && !minecraftVersion.startsWith("26.") && configurations.findByName("modCompileOnly") != null) {
                     "modCompileOnly"
                 } else {
                     "compileOnly"
                 }
-                dependencies.add(apiConfiguration, "me.shedaniel:RoughlyEnoughItems-api-fabric:$reiVersion")
-                dependencies.add(apiConfiguration, "me.shedaniel:RoughlyEnoughItems-default-plugin-fabric:$reiVersion")
+                dependencies.add(apiConfiguration, "me.shedaniel:RoughlyEnoughItems-api-$reiLoader:$reiVersion")
+                dependencies.add(apiConfiguration, "me.shedaniel:RoughlyEnoughItems-default-plugin-$reiLoader:$reiVersion")
                 reiBasicMathVersions[minecraftVersion]?.let { basicMathVersion ->
                     dependencies.add(apiConfiguration, "me.shedaniel.cloth:basic-math:$basicMathVersion")
                 }
                 reiClothConfigVersions[minecraftVersion]?.let { clothConfigVersion ->
-                    dependencies.add(apiConfiguration, "me.shedaniel.cloth:cloth-config-fabric:$clothConfigVersion")
+                    dependencies.add(apiConfiguration, "me.shedaniel.cloth:cloth-config-$reiLoader:$clothConfigVersion")
                 }
                 reiArchitecturyVersions[minecraftVersion]?.let { architecturyVersion ->
-                    dependencies.add(apiConfiguration, "dev.architectury:architectury-fabric:$architecturyVersion")
+                    dependencies.add(apiConfiguration, "dev.architectury:architectury-$reiLoader:$architecturyVersion")
                 }
                 if (includeReiRuntime.get()) {
-                    val runtimeConfiguration = if (!minecraftVersion.startsWith("26.") && configurations.findByName("modRuntimeOnly") != null) {
+                    val runtimeConfiguration = if (name == "fabric" && !minecraftVersion.startsWith("26.") && configurations.findByName("modRuntimeOnly") != null) {
                         "modRuntimeOnly"
                     } else {
                         "runtimeOnly"
                     }
-                    dependencies.add(runtimeConfiguration, "me.shedaniel:RoughlyEnoughItems-fabric:$reiVersion")
+                    dependencies.add(runtimeConfiguration, "me.shedaniel:RoughlyEnoughItems-$reiLoader:$reiVersion")
                 }
             }
         }

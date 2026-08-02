@@ -1,6 +1,6 @@
 {
   "key.salts_inventory_update.character_window": "Character Window",
-  "key.salts_inventory_update.jei_window": "JEI Window",
+  "key.salts_inventory_update.jei_window": "Recipe Browser Window",
   "key.salts_inventory_update.mouse_focus": "Change Mouse Focus",
   "modmenu.summaryTranslation.salts_inventory_update": "Desktop-style inventory upgrades with expandable storage, movable windows, pins, resizing, and API hooks.",
   "modmenu.descriptionTranslation.salts_inventory_update": "Salt's Inventory Update upgrades Minecraft's inventory workflow with expandable player storage, desktop-style movable container windows, pin and ghost-pin controls, resize and snapping options, and API hooks for supported inventory screens. Configure it with /saltsinventory config or the mod-list config button.\n\nDiscord: https://discord.gg/kfdE9gGGxP\nAPI: https://salt-and-fries.github.io/Salt-s-Inventory-Update/\nSource: https://github.com/Salt-and-Fries/Salt-s-Inventory-Update\nDonate: https://www.paypal.com/donate/?business=ERE5F32WV4NWN&no_recurring=1&currency_code=USD",
@@ -54,6 +54,13 @@
   "config.salts_inventory_update.value.percent": "%s%%",
   "config.salts_inventory_update.value.seconds": "%ss",
   "config.salts_inventory_update.runtime_disabled.server": "Disabled for this server because Salt desktop networking is unavailable.",
+  "tooltip.salts_inventory_update.window_control.focus": "Focus",
+  "tooltip.salts_inventory_update.window_control.pin": "Pin",
+  "tooltip.salts_inventory_update.window_control.minimize": "Minimize",
+  "tooltip.salts_inventory_update.window_control.close": "Close",
+  "tooltip.salts_inventory_update.window_control.more": "More Controls",
+  "tooltip.salts_inventory_update.window_control.lock": "Lock",
+  "tooltip.salts_inventory_update.window_control.link": "Link",
   "tooltip.salts_inventory_update.inventory_slot.add": "Add inventory slot",
   "tooltip.salts_inventory_update.inventory_slot.cost": "Cost: %s levels",
   "tooltip.salts_inventory_update.inventory_slot.have": "You have: %s levels"

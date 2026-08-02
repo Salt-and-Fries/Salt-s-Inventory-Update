@@ -135,17 +135,18 @@ import com.salts_inventory_update.api.client.desktop.widget.DesktopTextBoxState;
 import com.salts_inventory_update.api.client.desktop.widget.DesktopWidgets;
 import com.salts_inventory_update.api.desktop.DesktopPayloadCodecs;
 import com.salts_inventory_update.api.desktop.SaltsInventoryDesktopApi;
-import com.salts_inventory_update.compat.jei.JeiDesktopAccess;
-import com.salts_inventory_update.compat.jei.JeiDesktopBridge;
-import com.salts_inventory_update.compat.jei.JeiDesktopEntry;
-import com.salts_inventory_update.compat.jei.JeiDesktopTab;
-import com.salts_inventory_update.compat.jei.JeiDesktopTabKind;
-import com.salts_inventory_update.compat.jei.JeiRecipeCategory;
-import com.salts_inventory_update.compat.jei.JeiRecipeEntry;
-import com.salts_inventory_update.compat.jei.JeiRecipeMode;
-import com.salts_inventory_update.compat.jei.JeiRecipeSortStage;
-import com.salts_inventory_update.compat.jei.JeiRecipeTransferPlan;
-import com.salts_inventory_update.compat.jei.JeiRecipeTransferSlot;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserAccess;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserBridge;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserEntry;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserTab;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserTabKind;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserCategory;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserRecipe;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserMode;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserSortStage;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserTransferPlan;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserTransferSlot;
+import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserView;
 import com.salts_inventory_update.compat.toms_storage.TomsStorageCompat;
 import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.mixin.client.MenuScreensAccessor;
@@ -163,6 +164,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     static final int SLOT_SIZE = 18;
     private static final int SLOT_ITEM_SIZE = 16;
     private static final int CONTROL_SIZE = 11;
+    private static final long CONTROL_TOOLTIP_DELAY_MS = 1_000L;
     private static final int CONTROL_GAP = 3;
     private static final int CONTROL_RIGHT_EXTRA_INSET = 2;
     private static final int CONTROL_TOP_INSET = 4;
@@ -216,6 +218,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final ResourceLocation CREATIVE_SCROLLBAR_BACKGROUND_TEXTURE = WindowedInventoryClient.id("textures/gui/scroll_bar_behind.png");
     private static final ResourceLocation INCREASE_INVENTORY_BUTTON_TEXTURE = WindowedInventoryClient.id("textures/gui/increase_inventory_button.png");
     private static final ResourceLocation MODEL_DISPLAY_TEXTURE = WindowedInventoryClient.id("textures/gui/3d_model_display.png");
+    private static final ResourceLocation WINDOW_BACKGROUND_DYNAMIC_TEXTURE = WindowedInventoryClient.id("textures/gui/window_background_dynamic.png");
     private static final ResourceLocation SLOT_HIGHLIGHT_BACK_SPRITE = ResourceLocation.withDefaultNamespace("container/slot_highlight_back");
     private static final ResourceLocation SLOT_HIGHLIGHT_FRONT_SPRITE = ResourceLocation.withDefaultNamespace("container/slot_highlight_front");
     private static final ResourceLocation HOTBAR_OFFHAND_LEFT_SPRITE = ResourceLocation.withDefaultNamespace("hud/hotbar_offhand_left");
@@ -223,7 +226,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final ResourceLocation INVENTORY_EFFECT_BACKGROUND_AMBIENT_SPRITE = ResourceLocation.withDefaultNamespace("container/inventory/effect_background_ambient");
     private static final int WINDOW_TEXTURE_SIZE = 11;
     private static final int WINDOW_EDGE_SIZE = 5;
-    private static final int CONTROL_TEXTURE_WIDTH = CONTROL_SIZE * 9;
+    private static final int LINK_CONTROL_TEXTURE_COLUMN = 9;
+    private static final int CONTROL_TEXTURE_WIDTH = CONTROL_SIZE * 10;
     private static final int CONTROL_TEXTURE_HEIGHT = CONTROL_SIZE * 3;
     private static final int SLOT_TEXTURE_WIDTH = SLOT_SIZE * 2;
     private static final int SLOT_TEXTURE_HEIGHT = SLOT_SIZE;
@@ -255,7 +259,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int INCREASE_INVENTORY_BUTTON_TEXTURE_WIDTH = 36;
     private static final int INCREASE_INVENTORY_BUTTON_TEXTURE_HEIGHT = 18;
     private static final int INCREASE_INVENTORY_BUTTON_FRAME_SIZE = 18;
-    private static final int MODEL_DISPLAY_TEXTURE_SIZE = 3;
+    private static final int ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE = 3;
     private static final int SLOT_HIGHLIGHT_SIZE = 24;
     private static final int SLOT_HIGHLIGHT_OFFSET = 4;
     private static final int WIDGET_FLAME_EMPTY_X = 0;
@@ -325,7 +329,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int JEI_SCROLLBAR_GAP = 3;
     private static final int JEI_SCROLLBAR_BACKGROUND_HEIGHT = JEI_GRID_ROWS * SLOT_SIZE;
     private static final int JEI_SCROLLBAR_TRACK_HEIGHT = JEI_SCROLLBAR_BACKGROUND_HEIGHT - SCROLLBAR_INSET * 2 - SCROLLBAR_THUMB_HEIGHT;
-    private static final Component JEI_TITLE = Component.literal("JEI");
+    private static final Component JEI_TITLE = Component.literal("Recipe Browser");
     private static final int JEI_RECIPE_MIN_HEIGHT = 176;
     private static final int JEI_RECIPE_BORDER_PADDING = 6;
     private static final int JEI_RECIPE_MIN_PADDING = 4;
@@ -339,6 +343,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int JEI_RECIPE_FAVORITE_BUTTON_SIZE = 13;
     private static final int JEI_RECIPE_FAVORITE_BUTTON_ICON_SIZE = 9;
     private static final int JEI_RECIPE_FAVORITE_BUTTON_GAP = 1;
+    private static final int JEI_RECIPE_SIDE_BUTTON_RESERVED_WIDTH = JEI_RECIPE_FAVORITE_BUTTON_GAP + JEI_RECIPE_FAVORITE_BUTTON_SIZE;
     private static final int JEI_RECIPE_TRANSFER_BUTTON_ICON_SIZE = 9;
     private static final int JEI_RECIPE_MISSING_SLOT_COLOR = 0x66FF0000;
     private static final int JEI_RECIPE_OPTION_BUTTON_SIZE = 16;
@@ -368,23 +373,30 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int JEI_RECIPE_STATION_GAP = 1;
     private static final int JEI_RECIPE_STATION_PADDING = 5;
     private static final int JEI_RECIPE_SIDE_WIDTH = JEI_RECIPE_STATION_TAB_SIZE + 8;
-    private static final ResourceLocation JEI_TAB_SELECTED_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/tab_selected.png");
-    private static final ResourceLocation JEI_TAB_UNSELECTED_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/tab_unselected.png");
-    private static final ResourceLocation JEI_CATALYST_TAB_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/catalyst_tab.png");
-    private static final ResourceLocation JEI_CATALYST_SLOT_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/recipe_catalyst_slot_background.png");
-    private static final ResourceLocation JEI_RECIPE_OPTIONS_TAB_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/recipe_options_tab.png");
-    private static final ResourceLocation JEI_BUTTON_SPRITE = ResourceLocation.withDefaultNamespace("widget/button");
-    private static final ResourceLocation JEI_BUTTON_HIGHLIGHTED_SPRITE = ResourceLocation.withDefaultNamespace("widget/button_highlighted");
-    private static final ResourceLocation JEI_ARROW_NEXT_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/icons/arrow_next.png");
-    private static final ResourceLocation JEI_ARROW_PREVIOUS_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/icons/arrow_previous.png");
-    private static final ResourceLocation JEI_BOOKMARK_BUTTON_ENABLED_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/icons/bookmark_button_enabled.png");
-    private static final ResourceLocation JEI_BOOKMARK_BUTTON_DISABLED_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/icons/bookmark_button_disabled.png");
-    private static final ResourceLocation JEI_HISTORY_BUTTON_ENABLED_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/icons/history_button_enabled.png");
-    private static final ResourceLocation JEI_HISTORY_BUTTON_DISABLED_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/icons/history_button_disabled.png");
-    private static final ResourceLocation JEI_RECIPE_BOOKMARK_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/icons/recipe_bookmark.png");
-    private static final ResourceLocation JEI_BOOKMARKS_FIRST_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/icons/bookmarks_first.png");
-    private static final ResourceLocation JEI_CRAFTABLE_FIRST_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/icons/craftable_first.png");
-    private static final ResourceLocation JEI_RECIPE_TRANSFER_TEXTURE = ResourceLocation.fromNamespaceAndPath("jei", "textures/jei/atlas/gui/icons/recipe_transfer.png");
+    private static final int RECIPE_BROWSER_VIEW_DEFAULT_WIDTH = 260;
+    private static final int RECIPE_BROWSER_VIEW_DEFAULT_HEIGHT = 190;
+    private static final int RECIPE_BROWSER_VIEW_MIN_WIDTH = 120;
+    private static final int RECIPE_BROWSER_VIEW_MIN_HEIGHT = 88;
+    private static final double RECIPE_BROWSER_VIEW_CLICK_DRAG_THRESHOLD_SQUARED = 16.0D;
+    private static final ResourceLocation JEI_TAB_SELECTED_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/tab_selected.png");
+    private static final ResourceLocation JEI_TAB_UNSELECTED_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/tab_unselected.png");
+    private static final ResourceLocation JEI_CATALYST_TAB_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/station_panel.png");
+    private static final ResourceLocation JEI_CATALYST_SLOT_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/station_slot.png");
+    private static final ResourceLocation JEI_RECIPE_OPTIONS_TAB_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/recipe_options_tab.png");
+    private static final int JEI_BUTTON_TEXTURE_SIZE = 16;
+    private static final int JEI_BUTTON_TEXTURE_BORDER = 3;
+    private static final ResourceLocation JEI_BUTTON_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/button.png");
+    private static final ResourceLocation JEI_BUTTON_HIGHLIGHTED_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/button_highlighted.png");
+    private static final ResourceLocation JEI_ARROW_NEXT_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/icons/arrow_next.png");
+    private static final ResourceLocation JEI_ARROW_PREVIOUS_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/icons/arrow_previous.png");
+    private static final ResourceLocation JEI_BOOKMARK_BUTTON_ENABLED_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/icons/bookmark_button_enabled.png");
+    private static final ResourceLocation JEI_BOOKMARK_BUTTON_DISABLED_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/icons/bookmark_button_disabled.png");
+    private static final ResourceLocation JEI_HISTORY_BUTTON_ENABLED_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/icons/history_button_enabled.png");
+    private static final ResourceLocation JEI_HISTORY_BUTTON_DISABLED_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/icons/history_button_disabled.png");
+    private static final ResourceLocation JEI_RECIPE_BOOKMARK_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/icons/recipe_bookmark.png");
+    private static final ResourceLocation JEI_BOOKMARKS_FIRST_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/icons/bookmarks_first.png");
+    private static final ResourceLocation JEI_CRAFTABLE_FIRST_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/icons/craftable_first.png");
+    private static final ResourceLocation JEI_RECIPE_TRANSFER_TEXTURE = WindowedInventoryClient.id("textures/gui/recipe_browser/icons/recipe_transfer.png");
     private static final int MOUNT_SADDLE_SLOT = 0;
     private static final int MOUNT_BODY_SLOT = 1;
     private static final int MOUNT_STORAGE_START_SLOT = 2;
@@ -855,6 +867,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final ResourceLocation INSTRUCTIONS_BUTTON_HIGHLIGHTED_SPRITE = ResourceLocation.withDefaultNamespace("widget/button_highlighted");
     private static final ResourceLocation INSTRUCTIONS_BUTTON_DISABLED_SPRITE = ResourceLocation.withDefaultNamespace("widget/button_disabled");
     private static final String JEI_MOD_ID = "jei";
+    private static final String REI_MOD_ID = "roughlyenoughitems";
+    private static final String EMI_MOD_ID = "emi";
     private static final int WINDOW_PLACEMENT_MARGIN = 8;
     private static final int WINDOW_PLACEMENT_GAP = 8;
     private static final int WINDOW_CASCADE_OFFSET = 14;
@@ -882,6 +896,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable InventoryWindow pressedControlWindow;
     private @Nullable WindowControl pressedControl;
     private boolean pressedControlInPopup;
+    private @Nullable ControlHit hoveredControlTooltip;
+    private long hoveredControlTooltipStartedMs;
     private @Nullable InventoryWindow editingAnvilWindow;
     private @Nullable InventoryWindow editingCreativeSearchWindow;
     private @Nullable InventoryWindow editingJeiSearchWindow;
@@ -901,7 +917,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable InventoryWindow scrollingCreativeWindow;
     private @Nullable InventoryWindow scrollingJeiWindow;
     private @Nullable InventoryWindow draggingJeiRecipeLayoutWindow;
-    private @Nullable JeiRecipeEntry draggingJeiRecipeLayoutEntry;
+    private @Nullable RecipeBrowserRecipe draggingJeiRecipeLayoutEntry;
+    private @Nullable InventoryWindow draggingRecipeBrowserViewWindow;
+    private @Nullable RecipeBrowserEntry pressedRecipeBrowserViewEntry;
+    private double recipeBrowserViewPressX;
+    private double recipeBrowserViewPressY;
+    private boolean recipeBrowserViewDragged;
     private @Nullable InventoryWindow lastFocusedJeiTransferTargetWindow;
     private String lastJeiTransferDiagnosticKey = "";
     private long lastJeiTransferDiagnosticAt;
@@ -1269,9 +1290,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         InventoryDesktopScreen screen = getOrCreate(minecraft);
-        JeiDesktopAccess access = JeiDesktopBridge.access();
+        RecipeBrowserAccess access = RecipeBrowserBridge.access();
         if (!access.isAvailable()) {
-            DesktopDebug.trace("client request H JEI ignored desktop={} reason=unavailable", screen.desktopId);
+            DesktopDebug.trace("client request H recipe browser ignored desktop={} reason=unavailable", screen.desktopId);
             return;
         }
         if (screen.restorePersistentWindowsForStandalone(WindowKind.JEI)) {
@@ -1279,7 +1300,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return;
         }
 
-        DesktopDebug.log("client request H JEI desktop={} active={}", screen.desktopId, minecraft.screen == screen);
+        DesktopDebug.log("client request H recipe browser desktop={} active={}", screen.desktopId, minecraft.screen == screen);
         screen.toggleWindow(WindowKind.JEI);
         screen.showIfNeeded(minecraft);
     }
@@ -1588,6 +1609,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.scrollingCreativeWindow = null;
             this.scrollingJeiWindow = null;
             this.clearJeiRecipeLayoutDrag();
+            this.clearRecipeBrowserViewDrag();
             this.scrollingStorageWindow = null;
             this.popupWindow = null;
             this.dragStartSlot = null;
@@ -1631,6 +1653,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.scrollingCreativeWindow = null;
         this.scrollingJeiWindow = null;
         this.clearJeiRecipeLayoutDrag();
+        this.clearRecipeBrowserViewDrag();
         this.scrollingStorageWindow = null;
         DesktopDebug.trace("client removed from active screen desktop={} windows={} sessions={}", this.desktopId, this.windows.size(), this.sessions.size());
         super.removed();
@@ -1705,7 +1728,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 continue;
             }
             this.renderAttachedRecipeBook(graphics, window, uiMouseX, uiMouseY, tickProgress);
-            this.renderWindow(graphics, window, uiMouseX, uiMouseY);
+            this.renderWindow(graphics, window, uiMouseX, uiMouseY, tickProgress);
             this.renderLinkModeHighlight(graphics, window);
             graphics.nextStratum();
         }
@@ -1721,6 +1744,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.extractHoveredTooltip(graphics, mouseX, mouseY);
         } else {
             this.updateBundleHover(null);
+            this.clearControlTooltipHover();
         }
         this.renderDebugOverlay(graphics, uiMouseX, uiMouseY);
         InventoryKeyHoldController.extractOverlay(this.minecraft, graphics);
@@ -1744,9 +1768,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void extractGhostRenderState(GuiGraphicsExtractor graphics) {
+        float tickProgress = this.minecraft == null ? 0.0F : this.minecraft.getTimer().getGameTimeDeltaPartialTick(false);
         for (InventoryWindow window : this.windows) {
             if (window.ghosted && !window.persistentHidden) {
-                this.renderWindow(graphics, window, Integer.MIN_VALUE, Integer.MIN_VALUE);
+                this.renderWindow(graphics, window, Integer.MIN_VALUE, Integer.MIN_VALUE, tickProgress);
                 graphics.nextStratum();
             }
         }
@@ -1906,6 +1931,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 this.movingWindow = null;
                 this.scrollingJeiWindow = null;
                 this.clearJeiRecipeLayoutDrag();
+                this.clearRecipeBrowserViewDrag();
                 this.scrollingStorageWindow = null;
                 this.popupWindow = null;
                 this.resizeStartMouseX = (int) event.x();
@@ -1924,6 +1950,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 this.resizingWindow = null;
                 this.scrollingJeiWindow = null;
                 this.clearJeiRecipeLayoutDrag();
+                this.clearRecipeBrowserViewDrag();
                 this.popupWindow = null;
                 this.moveOffsetX = (int) event.x() - window.x;
                 this.moveOffsetY = (int) event.y() - window.y;
@@ -1944,6 +1971,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
             if (window.kind == WindowKind.JEI) {
                 return this.jeiMouseClicked(window, event, doubleClick);
+            }
+
+            if (window.kind == WindowKind.RECIPE_BROWSER_VIEW) {
+                return this.recipeBrowserViewMouseClicked(window, event, doubleClick);
             }
 
             if (window.kind == WindowKind.INSTRUCTIONS) {
@@ -2086,12 +2117,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             int maxHeight = Math.max(minHeight, this.desktopHeight() - window.y);
             window.width = clamp(this.resizeStartWidth + (int) event.x() - this.resizeStartMouseX, minWidth, maxWidth);
             window.height = clamp(this.resizeStartHeight + (int) event.y() - this.resizeStartMouseY, minHeight, maxHeight);
-            this.clampStorageScroll(window);
+            if (this.isResizableStorageWindow(window)) {
+                this.clampStorageScroll(window);
+            }
             return true;
         }
 
         if (this.scrollingCreativeWindow != null) {
             this.updateCreativeScrollFromMouse(this.scrollingCreativeWindow, event.y());
+            return true;
+        }
+
+        if (this.dragRecipeBrowserView(event, dx, dy)) {
             return true;
         }
 
@@ -2181,6 +2218,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.scrollingCreativeWindow = null;
             this.scrollingJeiWindow = null;
             this.clearJeiRecipeLayoutDrag();
+            this.clearRecipeBrowserViewDrag();
             this.scrollingStorageWindow = null;
             this.clearSlotInteractionState("link-release");
             return true;
@@ -2190,12 +2228,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.movingWindow = null;
         InventoryWindow resizedWindow = this.resizingWindow;
         this.resizingWindow = null;
+        boolean releasedRecipeBrowserView = this.releaseRecipeBrowserViewDrag(event);
         boolean releasedJeiRecipeLayout = this.releaseJeiRecipeLayoutDrag(event);
         this.scrollingCreativeWindow = null;
         this.scrollingJeiWindow = null;
         this.clearJeiRecipeLayoutDrag();
+        this.clearRecipeBrowserViewDrag();
         this.scrollingStorageWindow = null;
-        if (releasedJeiRecipeLayout) {
+        if (releasedRecipeBrowserView || releasedJeiRecipeLayout) {
             return true;
         }
         if (movedWindow != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
@@ -2203,7 +2243,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.apiMoved(movedWindow);
         }
         if (resizedWindow != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            if (SaltsInventoryConfig.get().enableWindowSnapping) {
+            if (resizedWindow.kind == WindowKind.RECIPE_BROWSER_VIEW) {
+                this.clampWindowIntoDesktop(resizedWindow);
+            } else if (SaltsInventoryConfig.get().enableWindowSnapping) {
                 this.snapResizableWindow(resizedWindow);
             } else {
                 this.clampStorageScroll(resizedWindow);
@@ -3191,6 +3233,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         InventoryWindow window = this.windowAt(x, y);
+        if (window != null && !window.minimized && window.kind == WindowKind.RECIPE_BROWSER_VIEW) {
+            this.scrollRecipeBrowserView(window, x, y, scrollX, scrollY);
+            return true;
+        }
+
         if (window != null && !window.minimized && window.kind == WindowKind.CREATIVE && this.creativeGridContains(window, x, y)) {
             if (this.scrollCreativeWindow(window, scrollY)) {
                 return true;
@@ -3203,7 +3250,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
         }
 
-        if (window != null && !window.minimized && window.kind == WindowKind.JEI && window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+        if (window != null && !window.minimized && window.kind == WindowKind.JEI && window.jeiMode != RecipeBrowserMode.INGREDIENTS) {
             if (this.scrollJeiRecipeWindow(window, x, y, scrollX, scrollY)) {
                 return true;
             }
@@ -3375,21 +3422,21 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean handleJeiLookupKey(KeyEvent event) {
-        JeiDesktopAccess access = this.jeiAccess();
+        RecipeBrowserAccess access = this.jeiAccess();
         if (!access.isAvailable()) {
             return false;
         }
 
-        JeiRecipeMode mode;
+        RecipeBrowserMode mode;
         if (access.matchesRecipeKey(event.key())) {
-            mode = JeiRecipeMode.RECIPES;
+            mode = RecipeBrowserMode.RECIPES;
         } else if (access.matchesUsesKey(event.key())) {
-            mode = JeiRecipeMode.USES;
+            mode = RecipeBrowserMode.USES;
         } else {
             return false;
         }
 
-        JeiDesktopEntry entry = this.hoveredJeiLookupEntry(access);
+        RecipeBrowserEntry entry = this.hoveredJeiLookupEntry(access);
         if (entry == null) {
             return false;
         }
@@ -3404,7 +3451,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return true;
     }
 
-    private @Nullable JeiDesktopEntry hoveredJeiLookupEntry(JeiDesktopAccess access) {
+    private @Nullable RecipeBrowserEntry hoveredJeiLookupEntry(RecipeBrowserAccess access) {
         if (this.minecraft == null) {
             return null;
         }
@@ -3412,12 +3459,17 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         double mouseX = this.scaledMouseX();
         double mouseY = this.scaledMouseY();
 
+        RecipeBrowserEntry expandedViewEntry = this.recipeBrowserViewEntryAt(mouseX, mouseY);
+        if (expandedViewEntry != null) {
+            return expandedViewEntry;
+        }
+
         JeiEntryHit jeiEntryHit = this.jeiEntryAt(mouseX, mouseY);
         if (jeiEntryHit != null) {
             return jeiEntryHit.entry();
         }
 
-        JeiDesktopEntry recipeEntry = this.hoveredJeiRecipeEntry(access, mouseX, mouseY);
+        RecipeBrowserEntry recipeEntry = this.hoveredRecipeBrowserRecipe(access, mouseX, mouseY);
         if (recipeEntry != null) {
             return recipeEntry;
         }
@@ -3440,9 +3492,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return null;
     }
 
-    private @Nullable JeiDesktopEntry hoveredJeiRecipeEntry(JeiDesktopAccess access, double mouseX, double mouseY) {
+    private @Nullable RecipeBrowserEntry hoveredRecipeBrowserRecipe(RecipeBrowserAccess access, double mouseX, double mouseY) {
         InventoryWindow window = this.windowAt(mouseX, mouseY);
-        if (window == null || window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+        if (window == null || window.kind != WindowKind.JEI || window.minimized || window.jeiMode == RecipeBrowserMode.INGREDIENTS) {
             return null;
         }
 
@@ -3451,7 +3503,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return stationHit.station();
         }
 
-        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        RecipeBrowserCategory category = this.selectedRecipeBrowserCategory(window);
         if (category == null) {
             return null;
         }
@@ -3472,7 +3524,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable InventoryWindow showJeiWindowForLookup() {
-        JeiDesktopAccess access = this.jeiAccess();
+        RecipeBrowserAccess access = this.jeiAccess();
         if (!access.isAvailable()) {
             return null;
         }
@@ -3480,11 +3532,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         for (int i = this.windows.size() - 1; i >= 0; i--) {
             InventoryWindow window = this.windows.get(i);
             if (window.kind == WindowKind.JEI && window.session == null && window.legacyMenu == null) {
-                if (window.ghosted) {
+                if (window.persistentHidden) {
+                    this.promotePersistentWindow(window);
+                } else if (window.ghosted) {
                     this.promoteGhostWindow(window);
                 }
                 window.minimized = false;
                 this.hotbarOnly = false;
+                this.bringToFront(window);
                 this.setFocusedWindow(window);
                 return window;
             }
@@ -3503,7 +3558,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private boolean closeTopmostJeiRecipeView() {
         for (int i = this.windows.size() - 1; i >= 0; i--) {
             InventoryWindow window = this.windows.get(i);
-            if (window.kind == WindowKind.JEI && !window.minimized && !window.ghosted && window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+            if (window.kind == WindowKind.JEI && !window.minimized && !window.ghosted && window.jeiMode != RecipeBrowserMode.INGREDIENTS) {
                 this.leaveJeiRecipeView(window);
                 return true;
             }
@@ -3922,6 +3977,29 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.handleWindowOpened(window, "local-add");
         DesktopDebug.log("client window add desktop={} kind={} title={} windows={}", this.desktopId, kind, window.title.getString(), this.windows.size());
         this.promoteGhostWindowsForDesktopOpen(window);
+    }
+
+    private void addRecipeBrowserViewWindow(RecipeBrowserView view) {
+        int minWidth = Math.min(this.recipeBrowserViewMinWidth(view.title()), Math.max(1, this.desktopWidth()));
+        int minHeight = Math.min(RECIPE_BROWSER_VIEW_MIN_HEIGHT, Math.max(1, this.desktopHeight()));
+        int maxWidth = Math.max(minWidth, this.desktopWidth() - WINDOW_PLACEMENT_MARGIN * 2);
+        int maxHeight = Math.max(minHeight, this.desktopHeight() - WINDOW_PLACEMENT_MARGIN * 2);
+        InventoryWindow window = new InventoryWindow(
+            WindowKind.RECIPE_BROWSER_VIEW,
+            view.title(),
+            0,
+            0,
+            clamp(RECIPE_BROWSER_VIEW_DEFAULT_WIDTH, minWidth, maxWidth),
+            clamp(RECIPE_BROWSER_VIEW_DEFAULT_HEIGHT, minHeight, maxHeight)
+        );
+        window.recipeBrowserView = view;
+        this.placeWindow(window, WindowPlacement.CENTER);
+        this.windows.add(window);
+        this.setFocusedWindow(window);
+        this.hotbarOnly = false;
+        this.handleWindowOpened(window, "recipe-browser-view-add");
+        this.promoteGhostWindowsForDesktopOpen(window);
+        DesktopDebug.log("client recipe browser view add desktop={} window={} size={}x{}", this.desktopId, window.debugName(), window.width, window.height);
     }
 
     private void addLegacyContainerWindow(AbstractContainerMenu menu, Inventory playerInventory, Component title) {
@@ -4474,7 +4552,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return switch (window.kind) {
             case INVENTORY -> this.inventoryVirtualSlotCount();
             case CONTAINER -> window.containerSlots().size();
-            case CHARACTER, CREATIVE, JEI, INSTRUCTIONS -> 0;
+            case CHARACTER, CREATIVE, JEI, RECIPE_BROWSER_VIEW, INSTRUCTIONS -> 0;
         };
     }
 
@@ -4596,7 +4674,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             && !window.ghosted
             && !window.locked
             && !window.minimized
-            && this.isResizableStorageWindow(window);
+            && (window.kind == WindowKind.RECIPE_BROWSER_VIEW || this.isResizableStorageWindow(window));
     }
 
     private boolean isResizableStorageWindow(InventoryWindow window) {
@@ -4694,6 +4772,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private int minResizableWidth(InventoryWindow window) {
+        if (window.kind == WindowKind.RECIPE_BROWSER_VIEW) {
+            return this.recipeBrowserViewMinWidth(window.title);
+        }
         if (window.apiDefinition != null) {
             return Math.max(this.apiMinSize(window).width(), this.minimumTitleBarWidth(window.title));
         }
@@ -4704,10 +4785,17 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private int minResizableHeight(InventoryWindow window) {
+        if (window.kind == WindowKind.RECIPE_BROWSER_VIEW) {
+            return RECIPE_BROWSER_VIEW_MIN_HEIGHT;
+        }
         if (window.apiDefinition != null) {
             return this.apiMinSize(window).height();
         }
         return this.minResizableHeight() + inventoryHotbarReservedHeight(window);
+    }
+
+    private int recipeBrowserViewMinWidth(Component title) {
+        return Math.max(RECIPE_BROWSER_VIEW_MIN_WIDTH, this.minimumTitleBarWidth(title));
     }
 
     private int minResizableHeight() {
@@ -5006,7 +5094,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private WindowPlacement defaultPlacement(InventoryWindow window) {
         return switch (window.kind) {
-            case INVENTORY, CREATIVE, INSTRUCTIONS -> WindowPlacement.CENTER;
+            case INVENTORY, CREATIVE, RECIPE_BROWSER_VIEW, INSTRUCTIONS -> WindowPlacement.CENTER;
             case CHARACTER -> WindowPlacement.BOTTOM_LEFT;
             case JEI -> WindowPlacement.TOP_RIGHT;
             case CONTAINER -> WindowPlacement.CONTAINER;
@@ -5024,6 +5112,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             case CREATIVE -> DesktopWindowSize.of(creativeWindowWidth(), creativeWindowHeight());
             case CHARACTER -> DesktopWindowSize.of(CHARACTER_WINDOW_WIDTH, CHARACTER_WINDOW_HEIGHT);
             case JEI -> this.jeiTargetWindowSize(window);
+            case RECIPE_BROWSER_VIEW -> DesktopWindowSize.of(
+                clamp(RECIPE_BROWSER_VIEW_DEFAULT_WIDTH, this.minResizableWidth(window), Math.max(this.minResizableWidth(window), this.desktopWidth() - WINDOW_PLACEMENT_MARGIN * 2)),
+                clamp(RECIPE_BROWSER_VIEW_DEFAULT_HEIGHT, this.minResizableHeight(window), Math.max(this.minResizableHeight(window), this.desktopHeight() - WINDOW_PLACEMENT_MARGIN * 2))
+            );
             case INSTRUCTIONS -> DesktopWindowSize.of(INSTRUCTIONS_WINDOW_WIDTH, this.instructionsWindowHeight());
             case CONTAINER -> this.defaultContainerWindowSize(window);
         };
@@ -5161,13 +5253,17 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void clampWindowIntoDesktop(InventoryWindow window) {
+        this.clampWindowIntoDesktop(window, WINDOW_PLACEMENT_MARGIN);
+    }
+
+    private void clampWindowIntoDesktop(InventoryWindow window, int placementMargin) {
         window.x = this.clampedWindowX(window.x, window.width);
         window.y = this.clampedWindowY(window.y, window.minimized ? TOP_BAR_HEIGHT : window.height);
         WindowBounds bounds = this.visibleWindowBounds(window);
-        int minX = WINDOW_PLACEMENT_MARGIN;
-        int minY = WINDOW_PLACEMENT_MARGIN;
-        int maxRight = this.desktopWidth() - WINDOW_PLACEMENT_MARGIN;
-        int maxBottom = this.desktopHeight() - WINDOW_PLACEMENT_MARGIN;
+        int minX = placementMargin;
+        int minY = placementMargin;
+        int maxRight = this.desktopWidth() - placementMargin;
+        int maxBottom = this.desktopHeight() - placementMargin;
         if (bounds.x() < minX) {
             window.x += minX - bounds.x();
             bounds = this.visibleWindowBounds(window);
@@ -5577,7 +5673,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (window.kind == WindowKind.JEI && !window.minimized) {
             y = Math.min(y, window.y - jeiRecipeTopTabProtrusion());
 
-            int topTabsWidth = window.jeiMode == JeiRecipeMode.INGREDIENTS ? 0 : jeiRecipeTopTabsWidth(window);
+            int topTabsWidth = window.jeiMode == RecipeBrowserMode.INGREDIENTS ? 0 : jeiRecipeTopTabsWidth(window);
             if (topTabsWidth > 0) {
                 int tabsX = jeiRecipeTopTabsX(window);
                 if (jeiRecipeHasCategoryTabPages(window)) {
@@ -5586,7 +5682,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 right = Math.max(right, tabsX + topTabsWidth);
             }
 
-            if (window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+            if (window.jeiMode != RecipeBrowserMode.INGREDIENTS) {
                 JeiRecipeButtonRect historyButton = jeiRecipeHistoryButtonRect(window);
                 x = Math.min(x, historyButton.x());
                 y = Math.min(y, historyButton.y());
@@ -5598,7 +5694,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 bottom = Math.max(bottom, optionButtons.y() + optionButtons.height());
             }
 
-            int stationTabsHeight = window.jeiMode == JeiRecipeMode.INGREDIENTS ? 0 : jeiRecipeStationTabsHeight(window);
+            int stationTabsHeight = window.jeiMode == RecipeBrowserMode.INGREDIENTS ? 0 : jeiRecipeStationTabsHeight(window);
             if (stationTabsHeight > 0) {
                 int tabsX = jeiRecipeStationTabsX(window);
                 int tabsY = jeiRecipeStationTabsY(window);
@@ -5647,6 +5743,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (this.draggingJeiRecipeLayoutWindow == window) {
             this.clearJeiRecipeLayoutDrag();
         }
+        if (this.draggingRecipeBrowserViewWindow == window) {
+            this.clearRecipeBrowserViewDrag();
+        }
         if (this.scrollingStorageWindow == window) {
             this.scrollingStorageWindow = null;
         }
@@ -5660,6 +5759,20 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private void clearJeiRecipeLayoutDrag() {
         this.draggingJeiRecipeLayoutWindow = null;
         this.draggingJeiRecipeLayoutEntry = null;
+    }
+
+    private void closeRecipeBrowserView(InventoryWindow window) {
+        RecipeBrowserView view = window.recipeBrowserView;
+        window.recipeBrowserView = null;
+        if (view == null) {
+            return;
+        }
+
+        try {
+            view.close();
+        } catch (RuntimeException | LinkageError exception) {
+            DesktopDebug.warn("client recipe browser view close failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+        }
     }
 
     private void clearSlotInteractionState(String reason) {
@@ -5794,6 +5907,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.scrollingCreativeWindow = null;
         this.scrollingJeiWindow = null;
         this.clearJeiRecipeLayoutDrag();
+        this.clearRecipeBrowserViewDrag();
         this.scrollingStorageWindow = null;
         this.clearSlotInteractionState("link-mode");
     }
@@ -6100,6 +6214,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.scrollingCreativeWindow = null;
         this.scrollingJeiWindow = null;
         this.clearJeiRecipeLayoutDrag();
+        this.clearRecipeBrowserViewDrag();
         this.scrollingStorageWindow = null;
         this.clearSlotInteractionState(reason);
         DesktopDebug.trace("client transient state cleared desktop={} reason={}", this.desktopId, reason);
@@ -6111,6 +6226,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         for (InventoryWindow window : this.windows) {
             this.rememberCreativeWindow(window);
             this.saveWindowState(window);
+            this.closeRecipeBrowserView(window);
         }
         this.windows.clear();
         this.sessions.clear();
@@ -6129,6 +6245,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.scrollingCreativeWindow = null;
         this.scrollingJeiWindow = null;
         this.clearJeiRecipeLayoutDrag();
+        this.clearRecipeBrowserViewDrag();
         this.scrollingStorageWindow = null;
         this.rememberedCreativeTab = null;
         this.rememberedCreativeScrollRow = 0;
@@ -6315,6 +6432,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.editingCreativeSearchWindow = this.editingCreativeSearchWindow == window ? null : this.editingCreativeSearchWindow;
         this.scrollingCreativeWindow = this.scrollingCreativeWindow == window ? null : this.scrollingCreativeWindow;
         this.scrollingStorageWindow = this.scrollingStorageWindow == window ? null : this.scrollingStorageWindow;
+        this.draggingRecipeBrowserViewWindow = this.draggingRecipeBrowserViewWindow == window ? null : this.draggingRecipeBrowserViewWindow;
         this.movingWindow = this.movingWindow == window ? null : this.movingWindow;
         this.resizingWindow = this.resizingWindow == window ? null : this.resizingWindow;
 
@@ -6332,6 +6450,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.closeLegacyContainer(window);
         }
 
+        this.closeRecipeBrowserView(window);
         this.apiClosed(window);
         window.persistentHidden = false;
         this.windows.remove(window);
@@ -6504,7 +6623,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             : null;
     }
 
-    private void renderWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+    private void renderWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY, float tickProgress) {
         if (window.persistentHidden) {
             return;
         }
@@ -6525,13 +6644,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 this.renderCreativeTabs(graphics, window, selectedCreativeTab, false);
             }
             if (this.shouldRenderJeiIngredientTabs(window, ghosted)) {
-                JeiDesktopAccess access = this.jeiAccess();
+                RecipeBrowserAccess access = this.jeiAccess();
                 this.renderJeiIngredientTabs(graphics, window, access, mouseX, mouseY, false);
             }
             if (this.shouldRenderJeiRecipeTabs(window, ghosted)) {
-                JeiDesktopAccess access = this.jeiAccess();
+                RecipeBrowserAccess access = this.jeiAccess();
                 this.ensureJeiRecipeView(window);
-                this.renderJeiRecipeCategoryTabs(graphics, window, access, mouseX, mouseY, false);
+                this.renderRecipeBrowserCategoryTabs(graphics, window, access, mouseX, mouseY, false);
             }
 
             if (ghosted) {
@@ -6563,6 +6682,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 case CHARACTER -> this.renderCharacterWindow(graphics, window, mouseX, mouseY);
                 case CREATIVE -> this.renderCreativeWindow(graphics, window, mouseX, mouseY);
                 case JEI -> this.renderJeiWindow(graphics, window, mouseX, mouseY);
+                case RECIPE_BROWSER_VIEW -> this.renderRecipeBrowserViewWindow(graphics, window, mouseX, mouseY, tickProgress);
                 case INSTRUCTIONS -> this.renderInstructionsWindow(graphics, window, mouseX, mouseY);
             }
 
@@ -6933,19 +7053,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void renderLinkControlIcon(GuiGraphicsExtractor graphics, int x, int y, boolean hovered, boolean pressed, boolean toggled) {
-        int background = pressed || toggled ? 0xFF2E5A3A : hovered ? 0xFF343A44 : 0xFF252A31;
-        int outline = toggled ? LINK_MODE_ORIGIN_OUTLINE : hovered ? 0xFF7B8798 : 0xFF4B5361;
-        int glyph = toggled ? 0xFFFFFFFF : 0xFFE8E8E8;
-        graphics.fill(x, y, x + CONTROL_SIZE, y + CONTROL_SIZE, this.uiColor(background));
-        graphics.outline(x, y, CONTROL_SIZE, CONTROL_SIZE, this.uiColor(outline));
-        this.renderLinkGlyph(graphics, x, y, glyph);
-    }
-
-    private void renderLinkGlyph(GuiGraphicsExtractor graphics, int x, int y, int color) {
-        int uiColor = this.uiColor(color);
-        graphics.outline(x + 2, y + 3, 5, 4, uiColor);
-        graphics.outline(x + 4, y + 4, 5, 4, uiColor);
-        graphics.fill(x + 5, y + 5, x + 7, y + 6, uiColor);
+        int textureRow = pressed || toggled ? 2 : hovered ? 1 : 0;
+        blitRegion(graphics, WINDOW_CONTROLS_TEXTURE, x, y, LINK_CONTROL_TEXTURE_COLUMN * CONTROL_SIZE, textureRow * CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_TEXTURE_WIDTH, CONTROL_TEXTURE_HEIGHT);
     }
 
     private int controlTextureColumn(InventoryWindow window, WindowControl control) {
@@ -6954,7 +7063,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             case MINIMIZE -> 1;
             case CLOSE -> 2;
             case ELLIPSIS -> 3;
-            case LINK -> 3;
+            case LINK -> LINK_CONTROL_TEXTURE_COLUMN;
             case LOCK -> window.locked ? 5 : 4;
             case PIN -> switch (window.pinMode) {
                 case UNPINNED -> 6;
@@ -7423,6 +7532,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         return this.titleBarLayout(window).controlAt(mouseX, mouseY);
+    }
+
+    private @Nullable ControlHit windowControlAt(double mouseX, double mouseY) {
+        ControlHit popupHit = this.popupControlAt(mouseX, mouseY);
+        if (popupHit != null) {
+            return popupHit;
+        }
+        if (this.popupContains(mouseX, mouseY)) {
+            return null;
+        }
+        InventoryWindow window = this.windowAt(mouseX, mouseY);
+        WindowControl control = window == null ? null : this.titleBarControlAt(window, mouseX, mouseY);
+        return control == null ? null : new ControlHit(window, control);
     }
 
     private void renderControlPopup(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -8723,8 +8845,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private record TextBoxVisibleRange(int start, int end, String text) {
     }
 
-    private JeiDesktopAccess jeiAccess() {
-        return JeiDesktopBridge.access();
+    private RecipeBrowserAccess jeiAccess() {
+        return RecipeBrowserBridge.access();
     }
 
     private void initializeJeiWindow(InventoryWindow window) {
@@ -8737,7 +8859,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return !ghosted
             && window.kind == WindowKind.JEI
             && !window.minimized
-            && window.jeiMode == JeiRecipeMode.INGREDIENTS
+            && window.jeiMode == RecipeBrowserMode.INGREDIENTS
             && this.jeiAccess().isAvailable();
     }
 
@@ -8745,7 +8867,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return !ghosted
             && window.kind == WindowKind.JEI
             && !window.minimized
-            && window.jeiMode != JeiRecipeMode.INGREDIENTS
+            && window.jeiMode != RecipeBrowserMode.INGREDIENTS
             && this.jeiAccess().isAvailable();
     }
 
@@ -8753,7 +8875,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         List<InstructionsPage> pages = this.instructionsPages();
         window.instructionsPage = clamp(window.instructionsPage, 0, Math.max(0, pages.size() - 1));
         InstructionsPage page = pages.get(window.instructionsPage);
-        boolean jeiInstalled = this.isJeiInstalled();
+        boolean recipeBrowserInstalled = this.isRecipeBrowserInstalled();
         int desiredHeight = this.instructionsWindowHeight();
         if (window.height != desiredHeight) {
             window.height = desiredHeight;
@@ -8778,7 +8900,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int contentX = panelX + INSTRUCTIONS_INNER_PADDING;
         int contentWidth = panelWidth - INSTRUCTIONS_INNER_PADDING * 2;
         int navY = this.instructionsPreviousButtonRect(window).y();
-        for (InstructionsSection section : page.sections(jeiInstalled)) {
+        for (InstructionsSection section : page.sections(recipeBrowserInstalled)) {
             int sectionHeight = this.instructionsSectionHeight(section, contentWidth);
             if (lineY + sectionHeight > navY - INSTRUCTIONS_SECTION_GAP) {
                 break;
@@ -8820,7 +8942,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         pages.add(InstructionsPage.CONTROLS);
         pages.add(InstructionsPage.WINDOWS);
         pages.add(InstructionsPage.INVENTORY);
-        if (this.isJeiInstalled()) {
+        if (this.isRecipeBrowserInstalled()) {
             pages.add(InstructionsPage.JEI);
         }
         if (TomsStorageCompat.loaded()) {
@@ -8829,17 +8951,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return pages;
     }
 
-    private boolean isJeiInstalled() {
-        return FabricLoader.getInstance().isModLoaded(JEI_MOD_ID);
+    private boolean isRecipeBrowserInstalled() {
+        FabricLoader loader = FabricLoader.getInstance();
+        return loader.isModLoaded(JEI_MOD_ID) || loader.isModLoaded(REI_MOD_ID) || loader.isModLoaded(EMI_MOD_ID);
     }
 
     private int instructionsWindowHeight() {
-        boolean jeiInstalled = this.isJeiInstalled();
+        boolean recipeBrowserInstalled = this.isRecipeBrowserInstalled();
         int contentWidth = INSTRUCTIONS_WINDOW_WIDTH - WINDOW_CONTENT_PADDING * 2 - INSTRUCTIONS_INNER_PADDING * 2;
         int maxSectionHeight = 0;
         for (InstructionsPage page : this.instructionsPages()) {
             int pageHeight = 0;
-            for (InstructionsSection section : page.sections(jeiInstalled)) {
+            for (InstructionsSection section : page.sections(recipeBrowserInstalled)) {
                 pageHeight += this.instructionsSectionHeight(section, contentWidth) + INSTRUCTIONS_SECTION_GAP;
             }
             maxSectionHeight = Math.max(maxSectionHeight, pageHeight);
@@ -9060,29 +9183,29 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void renderJeiWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
-        JeiDesktopAccess access = this.jeiAccess();
+        RecipeBrowserAccess access = this.jeiAccess();
         if (!access.isAvailable()) {
-            graphics.text(this.font, "JEI is not available", window.contentX(), window.contentY(), this.uiColor(COLOR_MUTED_TEXT), false);
+            graphics.text(this.font, "Recipe browser is not available", window.contentX(), window.contentY(), this.uiColor(COLOR_MUTED_TEXT), false);
             return;
         }
 
-        if (window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+        if (window.jeiMode != RecipeBrowserMode.INGREDIENTS) {
             this.renderJeiRecipeWindow(graphics, window, access, mouseX, mouseY);
             return;
         }
 
-        List<JeiDesktopTab> tabs = access.tabs();
+        List<RecipeBrowserTab> tabs = access.tabs();
         this.refreshJeiSelection(window, tabs);
         this.renderJeiIngredientTabs(graphics, window, access, mouseX, mouseY, true);
         this.renderJeiSearchBox(graphics, window, access);
 
-        JeiDesktopTab selectedTab = this.selectedJeiTab(window, tabs);
+        RecipeBrowserTab selectedTab = this.selectedJeiTab(window, tabs);
         if (selectedTab == null) {
-            graphics.text(this.font, "No JEI tabs", window.contentX(), this.jeiGridY(window), this.uiColor(COLOR_MUTED_TEXT), false);
+            graphics.text(this.font, "No recipe browser tabs", window.contentX(), this.jeiGridY(window), this.uiColor(COLOR_MUTED_TEXT), false);
             return;
         }
 
-        List<JeiDesktopEntry> entries = access.filteredEntries(selectedTab);
+        List<RecipeBrowserEntry> entries = access.filteredEntries(selectedTab);
         JeiGridLayout layout = this.jeiGridLayout(entries.size());
         window.jeiScrollRow = clamp(window.jeiScrollRow, 0, layout.maxScrollRow());
         int firstIndex = window.jeiScrollRow * JEI_GRID_COLUMNS;
@@ -9093,7 +9216,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 int index = firstIndex + row * JEI_GRID_COLUMNS + column;
                 int x = gridX + column * SLOT_SIZE;
                 int y = gridY + row * SLOT_SIZE;
-                JeiDesktopEntry entry = index >= 0 && index < entries.size() ? entries.get(index) : null;
+                RecipeBrowserEntry entry = index >= 0 && index < entries.size() ? entries.get(index) : null;
                 this.renderJeiEntrySlot(graphics, access, entry, x, y, mouseX, mouseY);
             }
         }
@@ -9104,13 +9227,34 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.renderJeiScrollbar(graphics, window, layout);
     }
 
+    private void renderRecipeBrowserViewWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY, float tickProgress) {
+        int x = window.contentX();
+        int y = window.contentY();
+        int width = Math.max(1, window.width - WINDOW_CONTENT_PADDING * 2);
+        int height = Math.max(1, window.height - TOP_BAR_HEIGHT - WINDOW_CONTENT_PADDING * 2);
+        renderOnePixelNineSlice(graphics, WINDOW_BACKGROUND_DYNAMIC_TEXTURE, x - 1, y - 1, width + 2, height + 2);
+
+        RecipeBrowserView view = window.recipeBrowserView;
+        if (view == null) {
+            graphics.text(this.font, "Recipe browser view is unavailable", x + 4, y + 4, this.uiColor(COLOR_MUTED_TEXT), false);
+            return;
+        }
+
+        try {
+            view.render(graphics, x, y, width, height, mouseX, mouseY, tickProgress);
+        } catch (RuntimeException | LinkageError exception) {
+            DesktopDebug.warn("client recipe browser view render failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            graphics.text(this.font, "Unable to render tree", x + 4, y + 4, this.uiColor(COLOR_MUTED_TEXT), false);
+        }
+    }
+
     private void renderJeiDefaultTabButton(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
         JeiRecipeButtonRect rect = this.jeiDefaultTabButtonRect(window);
         boolean selectedDefault = !window.jeiDefaultTabUid.isEmpty() && window.jeiDefaultTabUid.equals(window.jeiSelectedTabUid);
         this.renderJeiIconButton(graphics, rect, mouseX, mouseY, JEI_RECIPE_BOOKMARK_TEXTURE, selectedDefault, JEI_DEFAULT_TAB_BUTTON_ICON_SIZE);
     }
 
-    private void renderJeiSearchBox(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access) {
+    private void renderJeiSearchBox(GuiGraphicsExtractor graphics, InventoryWindow window, RecipeBrowserAccess access) {
         int x = this.jeiSearchX(window);
         int y = this.jeiSearchY(window);
         int width = this.jeiSearchWidth(window);
@@ -9132,8 +9276,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.renderInlineTextBoxText(graphics, searchBox, x + 4, y + 2, width - 8, editing ? 0xFFFFFFFF : 0xFFE8E8E8);
     }
 
-    private void renderJeiIngredientTabs(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, int mouseX, int mouseY, boolean selectedOnly) {
-        List<JeiDesktopTab> tabs = access.tabs();
+    private void renderJeiIngredientTabs(GuiGraphicsExtractor graphics, InventoryWindow window, RecipeBrowserAccess access, int mouseX, int mouseY, boolean selectedOnly) {
+        List<RecipeBrowserTab> tabs = access.tabs();
         if (tabs.isEmpty()) {
             return;
         }
@@ -9144,31 +9288,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int y = jeiRecipeTopTabsY(window);
         String selectedUid = window.jeiSelectedTabUid;
         for (int i = 0; i < visible; i++) {
-            JeiDesktopTab tab = tabs.get(i);
+            RecipeBrowserTab tab = tabs.get(i);
             boolean selected = tab.uid().equals(selectedUid);
             if (selected != selectedOnly) {
                 x += JEI_RECIPE_TAB_SIZE + JEI_RECIPE_TAB_GAP;
                 continue;
             }
             boolean hovered = contains(mouseX, mouseY, x, y, JEI_RECIPE_TAB_SIZE, JEI_RECIPE_TAB_SIZE);
-            blitRegion(
-                graphics,
-                selected ? JEI_TAB_SELECTED_TEXTURE : JEI_TAB_UNSELECTED_TEXTURE,
-                x,
-                y,
-                0,
-                0,
-                JEI_RECIPE_TAB_SIZE,
-                JEI_RECIPE_TAB_SIZE,
-                JEI_RECIPE_TAB_SIZE,
-                JEI_RECIPE_TAB_SIZE,
-                JEI_RECIPE_TAB_SIZE,
-                JEI_RECIPE_TAB_SIZE
-            );
-            JeiDesktopEntry icon = tab.icon();
-            if (tab.kind() == JeiDesktopTabKind.FAVORITES) {
+            this.renderRecipeBrowserTabFrame(graphics, x, y, selected);
+            RecipeBrowserEntry icon = tab.icon();
+            if (tab.kind() == RecipeBrowserTabKind.FAVORITES) {
                 this.renderJeiTabIconTexture(graphics, JEI_BOOKMARK_BUTTON_ENABLED_TEXTURE, x + 4, y + 4);
-            } else if (tab.kind() == JeiDesktopTabKind.RECENT) {
+            } else if (tab.kind() == RecipeBrowserTabKind.RECENT) {
                 this.renderJeiTabIconTexture(graphics, JEI_HISTORY_BUTTON_ENABLED_TEXTURE, x + 4, y + 4);
             } else if (icon != null) {
                 try {
@@ -9187,7 +9318,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
-    private void renderJeiEntrySlot(GuiGraphicsExtractor graphics, JeiDesktopAccess access, @Nullable JeiDesktopEntry entry, int x, int y, int mouseX, int mouseY) {
+    private void renderJeiEntrySlot(GuiGraphicsExtractor graphics, RecipeBrowserAccess access, @Nullable RecipeBrowserEntry entry, int x, int y, int mouseX, int mouseY) {
         boolean hovered = contains(mouseX, mouseY, x - 1, y - 1, SLOT_SIZE, SLOT_SIZE);
         renderSlotBackground(graphics, x, y);
         if (hovered && entry != null) {
@@ -9214,7 +9345,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.blitSprite(graphics, sprite, x + SCROLLBAR_INSET, y + SCROLLBAR_INSET + offset, SCROLLBAR_THUMB_WIDTH, SCROLLBAR_THUMB_HEIGHT);
     }
 
-    private void renderJeiRecipeScrollbar(GuiGraphicsExtractor graphics, InventoryWindow window, JeiRecipeCategory category) {
+    private void renderJeiRecipeScrollbar(GuiGraphicsExtractor graphics, InventoryWindow window, RecipeBrowserCategory category) {
         int maxScroll = this.jeiRecipeMaxScrollIndex(window, category);
         if (maxScroll <= 0) {
             return;
@@ -9228,14 +9359,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.blitSprite(graphics, CREATIVE_SCROLLER_SPRITE, x + SCROLLBAR_INSET, y + SCROLLBAR_INSET + offset, SCROLLBAR_THUMB_WIDTH, SCROLLBAR_THUMB_HEIGHT);
     }
 
-    private void renderJeiRecipeWindow(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, int mouseX, int mouseY) {
+    private void renderJeiRecipeWindow(GuiGraphicsExtractor graphics, InventoryWindow window, RecipeBrowserAccess access, int mouseX, int mouseY) {
         this.ensureJeiRecipeView(window);
         int panelX = this.jeiRecipePanelX(window);
         int panelY = this.jeiRecipePanelY(window);
 
-        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        RecipeBrowserCategory category = this.selectedRecipeBrowserCategory(window);
         this.renderJeiRecipeHeader(graphics, window, category, mouseX, mouseY);
-        this.renderJeiRecipeCategoryTabs(graphics, window, access, mouseX, mouseY, true);
+        this.renderRecipeBrowserCategoryTabs(graphics, window, access, mouseX, mouseY, true);
         this.renderJeiRecipeHistoryButton(graphics, window, mouseX, mouseY);
 
         if (window.jeiFocusEntry == null || category == null) {
@@ -9292,7 +9423,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
-    private void renderJeiRecipeCategoryTabs(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, int mouseX, int mouseY, boolean selectedOnly) {
+    private void renderRecipeBrowserCategoryTabs(GuiGraphicsExtractor graphics, InventoryWindow window, RecipeBrowserAccess access, int mouseX, int mouseY, boolean selectedOnly) {
         int tabsPerPage = this.jeiRecipeTabsPerPage(window);
         if (tabsPerPage <= 0 || window.jeiRecipeCategories.isEmpty()) {
             return;
@@ -9305,27 +9436,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int x = this.jeiRecipeTabsX(window);
         int y = this.jeiRecipeTabsY(window);
         for (int i = start; i < end; i++) {
-            JeiRecipeCategory category = window.jeiRecipeCategories.get(i);
+            RecipeBrowserCategory category = window.jeiRecipeCategories.get(i);
             boolean selected = category.uid().equals(window.jeiSelectedRecipeCategoryUid);
             if (selected != selectedOnly) {
                 x += JEI_RECIPE_TAB_SIZE + JEI_RECIPE_TAB_GAP;
                 continue;
             }
             boolean hovered = contains(mouseX, mouseY, x, y, JEI_RECIPE_TAB_SIZE, JEI_RECIPE_TAB_SIZE);
-            blitRegion(
-                graphics,
-                selected ? JEI_TAB_SELECTED_TEXTURE : JEI_TAB_UNSELECTED_TEXTURE,
-                x,
-                y,
-                0,
-                0,
-                JEI_RECIPE_TAB_SIZE,
-                JEI_RECIPE_TAB_SIZE,
-                JEI_RECIPE_TAB_SIZE,
-                JEI_RECIPE_TAB_SIZE,
-                JEI_RECIPE_TAB_SIZE,
-                JEI_RECIPE_TAB_SIZE
-            );
+            this.renderRecipeBrowserTabFrame(graphics, x, y, selected);
             try {
                 access.renderRecipeCategoryIcon(graphics, category, x + 4, y + 4);
             } catch (RuntimeException exception) {
@@ -9337,12 +9455,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             x += JEI_RECIPE_TAB_SIZE + JEI_RECIPE_TAB_GAP;
         }
         if (selectedOnly) {
-            this.renderJeiRecipeCategoryTabPageButtons(graphics, window, mouseX, mouseY);
+            this.renderRecipeBrowserCategoryTabPageButtons(graphics, window, mouseX, mouseY);
         }
     }
 
-    private void renderJeiRecipeCategoryTabPageButtons(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
-        if (!this.hasJeiRecipeCategoryTabPages(window)) {
+    private void renderRecipeBrowserCategoryTabPageButtons(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        if (!this.hasRecipeBrowserCategoryTabPages(window)) {
             return;
         }
 
@@ -9354,7 +9472,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.renderJeiRecipeButton(graphics, jeiRecipeHistoryButtonRect(window), mouseX, mouseY, this.isShiftHeld() ? JEI_ARROW_NEXT_TEXTURE : JEI_ARROW_PREVIOUS_TEXTURE);
     }
 
-    private void renderJeiRecipeOptionButtons(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, int mouseX, int mouseY) {
+    private void renderJeiRecipeOptionButtons(GuiGraphicsExtractor graphics, InventoryWindow window, RecipeBrowserAccess access, int mouseX, int mouseY) {
         JeiRecipeButtonRect background = jeiRecipeOptionButtonBackgroundRect(window);
         renderJeiNineSlice(
             graphics,
@@ -9364,11 +9482,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             background.width(),
             background.height(),
             JEI_RECIPE_OPTION_TAB_WIDTH,
-            JEI_RECIPE_OPTION_TAB_WIDTH,
-            JEI_RECIPE_STATION_TAB_BORDER_LEFT,
-            JEI_RECIPE_STATION_TAB_BORDER_RIGHT,
-            JEI_RECIPE_STATION_TAB_BORDER_TOP,
-            JEI_RECIPE_STATION_TAB_BORDER_BOTTOM
+            JEI_RECIPE_OPTION_TAB_HEIGHT,
+            JEI_RECIPE_OPTION_BUTTON_BORDER
         );
         this.renderJeiIconButton(
             graphics,
@@ -9376,7 +9491,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             mouseX,
             mouseY,
             JEI_BOOKMARKS_FIRST_TEXTURE,
-            access.isRecipeSortStageEnabled(JeiRecipeSortStage.BOOKMARKED)
+            access.isRecipeSortStageEnabled(RecipeBrowserSortStage.BOOKMARKED)
         );
         this.renderJeiIconButton(
             graphics,
@@ -9384,12 +9499,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             mouseX,
             mouseY,
             JEI_CRAFTABLE_FIRST_TEXTURE,
-            access.isRecipeSortStageEnabled(JeiRecipeSortStage.CRAFTABLE)
+            access.isRecipeSortStageEnabled(RecipeBrowserSortStage.CRAFTABLE)
         );
     }
 
-    private void renderJeiRecipeHeader(GuiGraphicsExtractor graphics, InventoryWindow window, @Nullable JeiRecipeCategory category, int mouseX, int mouseY) {
-        Component title = category == null ? Component.literal(window.jeiMode == JeiRecipeMode.USES ? "Uses" : "Recipes") : category.title();
+    private void renderJeiRecipeHeader(GuiGraphicsExtractor graphics, InventoryWindow window, @Nullable RecipeBrowserCategory category, int mouseX, int mouseY) {
+        Component title = category == null ? Component.literal(window.jeiMode == RecipeBrowserMode.USES ? "Uses" : "Recipes") : category.title();
         this.renderJeiRecipeNavigationRow(
             graphics,
             title.getString(),
@@ -9411,7 +9526,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void renderJeiRecipeButton(GuiGraphicsExtractor graphics, JeiRecipeButtonRect rect, int mouseX, int mouseY, ResourceLocation arrowTexture) {
         boolean hovered = contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height());
-        this.blitSprite(graphics, hovered ? JEI_BUTTON_HIGHLIGHTED_SPRITE : JEI_BUTTON_SPRITE, rect.x(), rect.y(), rect.width(), rect.height());
+        this.renderRecipeBrowserButton(graphics, rect, hovered);
         int arrowX = rect.x() + (rect.width() - JEI_RECIPE_ARROW_WIDTH) / 2;
         int arrowY = rect.y() + (rect.height() - JEI_RECIPE_ARROW_HEIGHT) / 2;
         blitRegion(
@@ -9430,7 +9545,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         );
     }
 
-    private void renderJeiRecipeTransferButtons(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, List<JeiRecipeLayoutPlacement> placements, int mouseX, int mouseY) {
+    private void renderJeiRecipeTransferButtons(GuiGraphicsExtractor graphics, InventoryWindow window, RecipeBrowserAccess access, List<JeiRecipeLayoutPlacement> placements, int mouseX, int mouseY) {
         for (JeiRecipeLayoutPlacement placement : placements) {
             JeiRecipeTransferTarget target = this.jeiRecipeTransferTargetFor(access, placement.recipe());
             if (target == null) {
@@ -9454,7 +9569,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
-    private void renderJeiRecipeBookmarkButtons(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, List<JeiRecipeLayoutPlacement> placements, int mouseX, int mouseY) {
+    private void renderJeiRecipeBookmarkButtons(GuiGraphicsExtractor graphics, InventoryWindow window, RecipeBrowserAccess access, List<JeiRecipeLayoutPlacement> placements, int mouseX, int mouseY) {
         for (JeiRecipeLayoutPlacement placement : placements) {
             if (!access.canBookmarkRecipe(placement.recipe())) {
                 continue;
@@ -9477,17 +9592,83 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void renderJeiIconButton(GuiGraphicsExtractor graphics, JeiRecipeButtonRect rect, int mouseX, int mouseY, ResourceLocation iconTexture, boolean pressed, int iconSize) {
         boolean hovered = contains(mouseX, mouseY, rect.x(), rect.y(), rect.width(), rect.height());
-        this.blitSprite(graphics, hovered ? JEI_BUTTON_HIGHLIGHTED_SPRITE : JEI_BUTTON_SPRITE, rect.x(), rect.y(), rect.width(), rect.height());
+        this.renderRecipeBrowserButton(graphics, rect, hovered);
         int iconX = rect.x() + (rect.width() - iconSize) / 2;
         int iconY = rect.y() + (rect.height() - iconSize) / 2;
-        blitRegion(graphics, iconTexture, iconX, iconY, 0, 0, iconSize, iconSize, 16, 16, 16, 16);
+        this.renderRecipeBrowserIcon(graphics, iconTexture, iconX, iconY, iconSize);
         if (pressed) {
             graphics.fill(rect.x(), rect.y(), rect.x() + rect.width(), rect.y() + rect.height(), this.uiColor(0x1100FF00));
         }
     }
 
     private void renderJeiTabIconTexture(GuiGraphicsExtractor graphics, ResourceLocation texture, int x, int y) {
-        blitRegion(graphics, texture, x, y, 0, 0, 16, 16, 16, 16, 16, 16);
+        this.renderRecipeBrowserIcon(graphics, texture, x, y, 16);
+    }
+
+    private void renderRecipeBrowserButton(GuiGraphicsExtractor graphics, JeiRecipeButtonRect rect, boolean hovered) {
+        renderJeiNineSlice(
+            graphics,
+            hovered ? JEI_BUTTON_HIGHLIGHTED_TEXTURE : JEI_BUTTON_TEXTURE,
+            rect.x(),
+            rect.y(),
+            rect.width(),
+            rect.height(),
+            JEI_BUTTON_TEXTURE_SIZE,
+            JEI_BUTTON_TEXTURE_SIZE,
+            JEI_BUTTON_TEXTURE_BORDER
+        );
+    }
+
+    private void renderRecipeBrowserTabFrame(GuiGraphicsExtractor graphics, int x, int y, boolean selected) {
+        blitRegion(
+            graphics,
+            selected ? JEI_TAB_SELECTED_TEXTURE : JEI_TAB_UNSELECTED_TEXTURE,
+            x,
+            y,
+            0,
+            0,
+            JEI_RECIPE_TAB_SIZE,
+            JEI_RECIPE_TAB_SIZE,
+            JEI_RECIPE_TAB_SIZE,
+            JEI_RECIPE_TAB_SIZE,
+            JEI_RECIPE_TAB_SIZE,
+            JEI_RECIPE_TAB_SIZE
+        );
+    }
+
+    private void renderRecipeBrowserPanel(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
+        renderJeiNineSlice(
+            graphics,
+            JEI_CATALYST_TAB_TEXTURE,
+            x,
+            y,
+            width,
+            height,
+            JEI_RECIPE_STATION_TAB_SIZE,
+            JEI_RECIPE_STATION_TAB_SIZE,
+            JEI_RECIPE_STATION_TAB_BORDER_LEFT,
+            JEI_RECIPE_STATION_TAB_BORDER_RIGHT,
+            JEI_RECIPE_STATION_TAB_BORDER_TOP,
+            JEI_RECIPE_STATION_TAB_BORDER_BOTTOM
+        );
+    }
+
+    private void renderRecipeBrowserSlotFrame(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
+        renderJeiNineSlice(
+            graphics,
+            JEI_CATALYST_SLOT_TEXTURE,
+            x,
+            y,
+            width,
+            height,
+            JEI_RECIPE_STATION_SLOT_SIZE,
+            JEI_RECIPE_STATION_SLOT_SIZE,
+            JEI_RECIPE_STATION_SLOT_BORDER
+        );
+    }
+
+    private void renderRecipeBrowserIcon(GuiGraphicsExtractor graphics, ResourceLocation texture, int x, int y, int size) {
+        blitRegion(graphics, texture, x, y, 0, 0, size, size, 16, 16, 16, 16);
     }
 
     private String jeiRecipeButtonTooltip(JeiRecipeButton button) {
@@ -9500,7 +9681,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return this.isShiftHeld() ? "Forward" : "Back";
     }
 
-    private void renderJeiRecipeStations(GuiGraphicsExtractor graphics, InventoryWindow window, JeiDesktopAccess access, int mouseX, int mouseY) {
+    private void renderJeiRecipeStations(GuiGraphicsExtractor graphics, InventoryWindow window, RecipeBrowserAccess access, int mouseX, int mouseY) {
         int visible = this.jeiVisibleStationCount(window);
         if (visible <= 0 || window.jeiStations.isEmpty()) {
             return;
@@ -9511,34 +9692,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int y = this.jeiStationTabsY(window);
         int end = Math.min(window.jeiStations.size(), window.jeiStationScroll + visible);
         int height = jeiRecipeStationTabsHeight(window);
-        renderJeiNineSlice(
-            graphics,
-            JEI_CATALYST_TAB_TEXTURE,
-            x,
-            y,
-            JEI_RECIPE_STATION_TAB_SIZE,
-            height,
-            JEI_RECIPE_STATION_TAB_SIZE,
-            JEI_RECIPE_STATION_TAB_SIZE,
-            JEI_RECIPE_STATION_TAB_BORDER_LEFT,
-            JEI_RECIPE_STATION_TAB_BORDER_RIGHT,
-            JEI_RECIPE_STATION_TAB_BORDER_TOP,
-            JEI_RECIPE_STATION_TAB_BORDER_BOTTOM
-        );
+        this.renderRecipeBrowserPanel(graphics, x, y, JEI_RECIPE_STATION_TAB_SIZE, height);
         for (int i = window.jeiStationScroll; i < end; i++) {
-            JeiDesktopEntry station = window.jeiStations.get(i);
+            RecipeBrowserEntry station = window.jeiStations.get(i);
             int slotY = this.jeiStationSlotY(window, i - window.jeiStationScroll);
-            renderJeiNineSlice(
-                graphics,
-                JEI_CATALYST_SLOT_TEXTURE,
-                x + JEI_RECIPE_STATION_PADDING,
-                slotY,
-                JEI_RECIPE_STATION_SLOT_SIZE,
-                JEI_RECIPE_STATION_SLOT_SIZE,
-                JEI_RECIPE_STATION_SLOT_SIZE,
-                JEI_RECIPE_STATION_SLOT_SIZE,
-                JEI_RECIPE_STATION_SLOT_BORDER
-            );
+            this.renderRecipeBrowserSlotFrame(graphics, x + JEI_RECIPE_STATION_PADDING, slotY, JEI_RECIPE_STATION_SLOT_SIZE, JEI_RECIPE_STATION_SLOT_SIZE);
             try {
                 access.render(graphics, station, x + JEI_RECIPE_STATION_PADDING + 1, slotY + 1);
             } catch (RuntimeException exception) {
@@ -9550,9 +9708,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
-    private @Nullable JeiDesktopTab selectedJeiTab(InventoryWindow window, List<JeiDesktopTab> tabs) {
+    private @Nullable RecipeBrowserTab selectedJeiTab(InventoryWindow window, List<RecipeBrowserTab> tabs) {
         this.refreshJeiSelection(window, tabs);
-        for (JeiDesktopTab tab : tabs) {
+        for (RecipeBrowserTab tab : tabs) {
             if (tab.uid().equals(window.jeiSelectedTabUid)) {
                 return tab;
             }
@@ -9560,14 +9718,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return null;
     }
 
-    private void refreshJeiSelection(InventoryWindow window, List<JeiDesktopTab> tabs) {
+    private void refreshJeiSelection(InventoryWindow window, List<RecipeBrowserTab> tabs) {
         if (tabs.isEmpty()) {
             window.jeiSelectedTabUid = "";
             window.jeiScrollRow = 0;
             return;
         }
 
-        for (JeiDesktopTab tab : tabs) {
+        for (RecipeBrowserTab tab : tabs) {
             if (tab.uid().equals(window.jeiSelectedTabUid)) {
                 return;
             }
@@ -9576,16 +9734,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         window.jeiScrollRow = 0;
     }
 
-    private JeiDesktopTab defaultJeiTab(InventoryWindow window, List<JeiDesktopTab> tabs) {
+    private RecipeBrowserTab defaultJeiTab(InventoryWindow window, List<RecipeBrowserTab> tabs) {
         if (!window.jeiDefaultTabUid.isEmpty()) {
-            for (JeiDesktopTab tab : tabs) {
+            for (RecipeBrowserTab tab : tabs) {
                 if (tab.uid().equals(window.jeiDefaultTabUid)) {
                     return tab;
                 }
             }
         }
-        for (JeiDesktopTab tab : tabs) {
-            if (tab.kind() == JeiDesktopTabKind.INGREDIENTS) {
+        for (RecipeBrowserTab tab : tabs) {
+            if (tab.kind() == RecipeBrowserTabKind.INGREDIENTS) {
                 return tab;
             }
         }
@@ -9600,7 +9758,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.saveWindowState(window);
     }
 
-    private int jeiVisibleIngredientTabCount(InventoryWindow window, List<JeiDesktopTab> tabs) {
+    private int jeiVisibleIngredientTabCount(InventoryWindow window, List<RecipeBrowserTab> tabs) {
         if (tabs.isEmpty()) {
             return 0;
         }
@@ -9611,7 +9769,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (this.draggingJeiRecipeLayoutWindow == window) {
             this.clearJeiRecipeLayoutDrag();
         }
-        window.jeiMode = JeiRecipeMode.INGREDIENTS;
+        window.jeiMode = RecipeBrowserMode.INGREDIENTS;
         window.jeiFocusEntry = null;
         window.jeiSelectedRecipeCategoryUid = "";
         window.jeiRecipePage = 0;
@@ -9625,7 +9783,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void leaveJeiRecipeView(InventoryWindow window) {
-        if (window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+        if (window.jeiMode == RecipeBrowserMode.INGREDIENTS) {
             return;
         }
         this.clearJeiRecipeView(window);
@@ -9633,8 +9791,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         DesktopDebug.trace("client JEI recipe back desktop={} window={}", this.desktopId, window.debugName());
     }
 
-    private void enterJeiRecipeView(InventoryWindow window, JeiDesktopEntry entry, JeiRecipeMode mode) {
-        if (mode == JeiRecipeMode.INGREDIENTS) {
+    private void enterJeiRecipeView(InventoryWindow window, RecipeBrowserEntry entry, RecipeBrowserMode mode) {
+        if (mode == RecipeBrowserMode.INGREDIENTS) {
             this.leaveJeiRecipeView(window);
             return;
         }
@@ -9652,8 +9810,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         DesktopDebug.trace("client JEI recipe mode desktop={} window={} mode={} categories={} recipes={}", this.desktopId, window.debugName(), mode, window.jeiRecipeCategories.size(), window.jeiRecipeEntries.size());
     }
 
-    private void navigateToJeiRecipeView(InventoryWindow window, JeiDesktopEntry entry, JeiRecipeMode mode) {
-        if (mode == JeiRecipeMode.INGREDIENTS) {
+    private void navigateToJeiRecipeView(InventoryWindow window, RecipeBrowserEntry entry, RecipeBrowserMode mode) {
+        if (mode == RecipeBrowserMode.INGREDIENTS) {
             this.leaveJeiRecipeView(window);
             return;
         }
@@ -9705,7 +9863,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable JeiRecipeHistoryEntry currentJeiRecipeHistoryEntry(InventoryWindow window) {
-        return window.jeiMode == JeiRecipeMode.INGREDIENTS || window.jeiFocusEntry == null ? null : new JeiRecipeHistoryEntry(window.jeiFocusEntry, window.jeiMode);
+        return window.jeiMode == RecipeBrowserMode.INGREDIENTS || window.jeiFocusEntry == null ? null : new JeiRecipeHistoryEntry(window.jeiFocusEntry, window.jeiMode);
     }
 
     private static @Nullable JeiRecipeHistoryEntry popLast(List<JeiRecipeHistoryEntry> entries) {
@@ -9713,29 +9871,29 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void ensureJeiRecipeView(InventoryWindow window) {
-        if (window.jeiMode == JeiRecipeMode.INGREDIENTS || window.jeiFocusEntry == null) {
+        if (window.jeiMode == RecipeBrowserMode.INGREDIENTS || window.jeiFocusEntry == null) {
             return;
         }
         if (window.jeiRecipeCategories.isEmpty() && window.jeiRecipeEntries.isEmpty()) {
             this.rebuildJeiRecipeView(window);
         } else {
-            this.refreshJeiRecipeCategorySelection(window);
+            this.refreshRecipeBrowserCategorySelection(window);
             this.clampJeiRecipePage(window);
             window.jeiStationScroll = clamp(window.jeiStationScroll, 0, this.jeiMaxStationScroll(window));
         }
     }
 
     private void rebuildJeiRecipeView(InventoryWindow window) {
-        JeiDesktopAccess access = this.jeiAccess();
-        if (!access.isAvailable() || window.jeiFocusEntry == null || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+        RecipeBrowserAccess access = this.jeiAccess();
+        if (!access.isAvailable() || window.jeiFocusEntry == null || window.jeiMode == RecipeBrowserMode.INGREDIENTS) {
             this.clearJeiRecipeView(window);
             this.applyJeiWindowSize(window);
             return;
         }
 
         window.jeiRecipeCategories = access.recipeCategories(window.jeiFocusEntry, window.jeiMode);
-        this.refreshJeiRecipeCategorySelection(window);
-        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        this.refreshRecipeBrowserCategorySelection(window);
+        RecipeBrowserCategory category = this.selectedRecipeBrowserCategory(window);
         if (category == null) {
             window.jeiRecipeEntries = List.of();
             window.jeiStations = List.of();
@@ -9748,9 +9906,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         window.jeiStationScroll = clamp(window.jeiStationScroll, 0, this.jeiMaxStationScroll(window));
     }
 
-    private @Nullable JeiRecipeCategory selectedJeiRecipeCategory(InventoryWindow window) {
-        this.refreshJeiRecipeCategorySelection(window);
-        for (JeiRecipeCategory category : window.jeiRecipeCategories) {
+    private @Nullable RecipeBrowserCategory selectedRecipeBrowserCategory(InventoryWindow window) {
+        this.refreshRecipeBrowserCategorySelection(window);
+        for (RecipeBrowserCategory category : window.jeiRecipeCategories) {
             if (category.uid().equals(window.jeiSelectedRecipeCategoryUid)) {
                 return category;
             }
@@ -9758,7 +9916,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return null;
     }
 
-    private void refreshJeiRecipeCategorySelection(InventoryWindow window) {
+    private void refreshRecipeBrowserCategorySelection(InventoryWindow window) {
         if (window.jeiRecipeCategories.isEmpty()) {
             window.jeiSelectedRecipeCategoryUid = "";
             window.jeiCategoryTabPage = 0;
@@ -9766,7 +9924,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         for (int i = 0; i < window.jeiRecipeCategories.size(); i++) {
-            JeiRecipeCategory category = window.jeiRecipeCategories.get(i);
+            RecipeBrowserCategory category = window.jeiRecipeCategories.get(i);
             if (category.uid().equals(window.jeiSelectedRecipeCategoryUid)) {
                 this.ensureJeiSelectedCategoryTabVisible(window, i);
                 return;
@@ -9777,7 +9935,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         window.jeiCategoryTabPage = 0;
     }
 
-    private void selectJeiRecipeCategory(InventoryWindow window, JeiRecipeCategory category) {
+    private void selectRecipeBrowserCategory(InventoryWindow window, RecipeBrowserCategory category) {
         if (category.uid().equals(window.jeiSelectedRecipeCategoryUid)) {
             return;
         }
@@ -9788,16 +9946,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.rebuildJeiRecipeView(window);
     }
 
-    private void changeJeiRecipeCategory(InventoryWindow window, int direction) {
+    private void changeRecipeBrowserCategory(InventoryWindow window, int direction) {
         if (window.jeiRecipeCategories.isEmpty()) {
             return;
         }
-        int index = this.selectedJeiRecipeCategoryIndex(window);
+        int index = this.selectedRecipeBrowserCategoryIndex(window);
         int next = clamp(index + direction, 0, window.jeiRecipeCategories.size() - 1);
-        this.selectJeiRecipeCategory(window, window.jeiRecipeCategories.get(next));
+        this.selectRecipeBrowserCategory(window, window.jeiRecipeCategories.get(next));
     }
 
-    private void changeJeiRecipeCategoryTabPage(InventoryWindow window, int direction) {
+    private void changeRecipeBrowserCategoryTabPage(InventoryWindow window, int direction) {
         int tabsPerPage = this.jeiRecipeTabsPerPage(window);
         if (tabsPerPage <= 0 || window.jeiRecipeCategories.isEmpty()) {
             return;
@@ -9810,10 +9968,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         int categoryIndex = clamp(nextPage * tabsPerPage, 0, window.jeiRecipeCategories.size() - 1);
         window.jeiCategoryTabPage = nextPage;
-        this.selectJeiRecipeCategory(window, window.jeiRecipeCategories.get(categoryIndex));
+        this.selectRecipeBrowserCategory(window, window.jeiRecipeCategories.get(categoryIndex));
     }
 
-    private int selectedJeiRecipeCategoryIndex(InventoryWindow window) {
+    private int selectedRecipeBrowserCategoryIndex(InventoryWindow window) {
         for (int i = 0; i < window.jeiRecipeCategories.size(); i++) {
             if (window.jeiRecipeCategories.get(i).uid().equals(window.jeiSelectedRecipeCategoryUid)) {
                 return i;
@@ -9835,30 +9993,39 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         DesktopWindowSize size = this.jeiTargetWindowSize(window);
         window.width = size.width();
         window.height = size.height();
-        this.clampWindowIntoDesktop(window);
+        int regularMaxHeight = this.jeiRegularMaxWindowHeight();
+        this.clampWindowIntoDesktop(window, size.height() > regularMaxHeight ? 0 : WINDOW_PLACEMENT_MARGIN);
     }
 
     private DesktopWindowSize jeiTargetWindowSize(InventoryWindow window) {
-        if (window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+        if (window.jeiMode == RecipeBrowserMode.INGREDIENTS) {
             return DesktopWindowSize.of(JEI_WINDOW_WIDTH, JEI_WINDOW_HEIGHT);
         }
 
-        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        RecipeBrowserCategory category = this.selectedRecipeBrowserCategory(window);
         int maxWidth = Math.max(JEI_WINDOW_WIDTH, this.desktopWidth() - WINDOW_PLACEMENT_MARGIN * 2);
-        int topTabProtrusion = jeiRecipeTopTabProtrusion();
-        int maxHeight = Math.max(JEI_RECIPE_MIN_HEIGHT, this.desktopHeight() - WINDOW_PLACEMENT_MARGIN * 2 - topTabProtrusion);
+        int regularMaxHeight = this.jeiRegularMaxWindowHeight();
+        int stationHeight = jeiRecipeStationRequiredWindowHeight(window);
+        int maxHeight = stationHeight > regularMaxHeight
+            ? Math.max(JEI_RECIPE_MIN_HEIGHT, this.desktopHeight() - jeiRecipeTopTabProtrusion())
+            : regularMaxHeight;
         int desiredWidth = JEI_WINDOW_WIDTH;
         int desiredHeight = JEI_RECIPE_MIN_HEIGHT;
         if (category != null) {
-            int visibleRecipes = this.jeiTargetRecipePreviewCount(window, category, maxHeight);
+            int visibleRecipes = this.jeiTargetRecipePreviewCount(window, category, regularMaxHeight);
             int layoutAreaHeight = this.jeiRecipeLayoutAreaHeightFor(window, category, visibleRecipes);
             int panelHeight = JEI_RECIPE_HEADER_HEIGHT + JEI_RECIPE_NAV_BAR_PADDING + JEI_RECIPE_LIST_TOP_PADDING + JEI_RECIPE_BORDER_PADDING + layoutAreaHeight;
             desiredHeight = TOP_BAR_HEIGHT + WINDOW_CONTENT_PADDING * 2 + panelHeight;
         }
+        desiredHeight = Math.max(desiredHeight, stationHeight);
         return DesktopWindowSize.of(clamp(desiredWidth, Math.min(JEI_WINDOW_WIDTH, maxWidth), maxWidth), clamp(desiredHeight, Math.min(JEI_RECIPE_MIN_HEIGHT, maxHeight), maxHeight));
     }
 
-    private int jeiTargetRecipePreviewCount(InventoryWindow window, JeiRecipeCategory category, int maxWindowHeight) {
+    private int jeiRegularMaxWindowHeight() {
+        return Math.max(JEI_RECIPE_MIN_HEIGHT, this.desktopHeight() - WINDOW_PLACEMENT_MARGIN * 2 - jeiRecipeTopTabProtrusion());
+    }
+
+    private int jeiTargetRecipePreviewCount(InventoryWindow window, RecipeBrowserCategory category, int maxWindowHeight) {
         int recipeCount = Math.max(1, window.jeiRecipeEntries.size());
         int panelHeight = maxWindowHeight - TOP_BAR_HEIGHT - WINDOW_CONTENT_PADDING * 2;
         int availableLayoutHeight = Math.max(1, panelHeight - JEI_RECIPE_HEADER_HEIGHT - JEI_RECIPE_NAV_BAR_PADDING - JEI_RECIPE_LIST_TOP_PADDING - JEI_RECIPE_BORDER_PADDING);
@@ -9869,29 +10036,29 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return clamp(recipeCount, 1, maxVisible);
     }
 
-    private int jeiRecipeLayoutAreaHeightFor(@Nullable InventoryWindow window, JeiRecipeCategory category, int recipeCount) {
+    private int jeiRecipeLayoutAreaHeightFor(@Nullable InventoryWindow window, RecipeBrowserCategory category, int recipeCount) {
         int visible = Math.max(1, recipeCount);
         return visible * this.jeiRecipeLayoutHeight(window, category) + (visible + 1) * JEI_RECIPE_MIN_PADDING;
     }
 
-    private int jeiRecipeLayoutHeight(@Nullable InventoryWindow window, @Nullable JeiRecipeCategory category) {
+    private int jeiRecipeLayoutHeight(@Nullable InventoryWindow window, @Nullable RecipeBrowserCategory category) {
         int fallback = category == null ? 1 : Math.max(1, category.height());
         if (window == null || window.jeiRecipeEntries.isEmpty()) {
             return fallback;
         }
         int height = fallback;
-        for (JeiRecipeEntry entry : window.jeiRecipeEntries) {
+        for (RecipeBrowserRecipe entry : window.jeiRecipeEntries) {
             height = Math.max(height, Math.max(1, entry.height()));
         }
         return height;
     }
 
     private void clampJeiRecipePage(InventoryWindow window) {
-        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        RecipeBrowserCategory category = this.selectedRecipeBrowserCategory(window);
         window.jeiRecipePage = this.jeiRecipeFirstIndex(window, category);
     }
 
-    private int jeiVisibleRecipeCount(InventoryWindow window, @Nullable JeiRecipeCategory category) {
+    private int jeiVisibleRecipeCount(InventoryWindow window, @Nullable RecipeBrowserCategory category) {
         if (category == null) {
             return 1;
         }
@@ -9903,11 +10070,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return clamp(Math.max(1, window.jeiRecipeEntries.size()), 1, visible);
     }
 
-    private int jeiRecipeFirstIndex(InventoryWindow window, @Nullable JeiRecipeCategory category) {
+    private int jeiRecipeFirstIndex(InventoryWindow window, @Nullable RecipeBrowserCategory category) {
         return clamp(window.jeiRecipePage, 0, this.jeiRecipeMaxScrollIndex(window, category));
     }
 
-    private int jeiRecipeMaxScrollIndex(InventoryWindow window, @Nullable JeiRecipeCategory category) {
+    private int jeiRecipeMaxScrollIndex(InventoryWindow window, @Nullable RecipeBrowserCategory category) {
         if (window.jeiRecipeEntries.isEmpty()) {
             return 0;
         }
@@ -9915,7 +10082,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return Math.max(0, window.jeiRecipeEntries.size() - Math.max(1, visible));
     }
 
-    private List<JeiRecipeLayoutPlacement> visibleJeiRecipePlacements(InventoryWindow window, JeiRecipeCategory category) {
+    private List<JeiRecipeLayoutPlacement> visibleJeiRecipePlacements(InventoryWindow window, RecipeBrowserCategory category) {
         if (window.jeiRecipeEntries.isEmpty()) {
             return List.of();
         }
@@ -9932,8 +10099,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int y = this.jeiRecipeLayoutAreaY(window) + spacing;
         List<JeiRecipeLayoutPlacement> placements = new ArrayList<>(visible);
         for (int i = first; i < end; i++) {
-            JeiRecipeEntry recipe = window.jeiRecipeEntries.get(i);
-            int layoutX = this.jeiRecipeLayoutAreaX(window) + Math.max(0, (this.jeiRecipeLayoutAreaWidth(window) - Math.max(1, recipe.width())) / 2);
+            RecipeBrowserRecipe recipe = window.jeiRecipeEntries.get(i);
+            int recipeWidth = Math.max(1, recipe.width());
+            int layoutX = this.jeiRecipeLayoutAreaX(window) + Math.max(0, (this.jeiRecipeLayoutAreaWidth(window) - recipeWidth - JEI_RECIPE_SIDE_BUTTON_RESERVED_WIDTH) / 2);
             int layoutY = y + Math.max(0, (recipeHeight - Math.max(1, recipe.height())) / 2);
             placements.add(new JeiRecipeLayoutPlacement(recipe, layoutX, layoutY, i));
             y += recipeHeight + spacing;
@@ -9942,7 +10110,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable JeiRecipeLayoutPlacement jeiRecipeLayoutPlacementAt(InventoryWindow window, double mouseX, double mouseY) {
-        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        RecipeBrowserCategory category = this.selectedRecipeBrowserCategory(window);
         if (category == null) {
             return null;
         }
@@ -9954,8 +10122,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return null;
     }
 
-    private @Nullable JeiRecipeLayoutPlacement jeiRecipeLayoutPlacementFor(InventoryWindow window, JeiRecipeEntry recipe) {
-        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+    private @Nullable JeiRecipeLayoutPlacement jeiRecipeLayoutPlacementFor(InventoryWindow window, RecipeBrowserRecipe recipe) {
+        RecipeBrowserCategory category = this.selectedRecipeBrowserCategory(window);
         if (category == null) {
             return null;
         }
@@ -9968,11 +10136,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable JeiRecipeLayoutPlacement jeiRecipeBookmarkButtonAt(InventoryWindow window, double mouseX, double mouseY) {
-        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        RecipeBrowserCategory category = this.selectedRecipeBrowserCategory(window);
         if (category == null) {
             return null;
         }
-        JeiDesktopAccess access = this.jeiAccess();
+        RecipeBrowserAccess access = this.jeiAccess();
         for (JeiRecipeLayoutPlacement placement : this.visibleJeiRecipePlacements(window, category)) {
             if (!access.canBookmarkRecipe(placement.recipe())) {
                 continue;
@@ -9986,7 +10154,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable JeiRecipeTransferButtonHit jeiRecipeTransferButtonAt(InventoryWindow window, double mouseX, double mouseY) {
-        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        RecipeBrowserCategory category = this.selectedRecipeBrowserCategory(window);
         if (category == null) {
             return null;
         }
@@ -9994,7 +10162,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable JeiRecipeTransferButtonHit jeiRecipeTransferButtonAt(InventoryWindow window, List<JeiRecipeLayoutPlacement> placements, double mouseX, double mouseY) {
-        JeiDesktopAccess access = this.jeiAccess();
+        RecipeBrowserAccess access = this.jeiAccess();
         for (JeiRecipeLayoutPlacement placement : placements) {
             JeiRecipeTransferTarget target = this.jeiRecipeTransferTargetFor(access, placement.recipe());
             if (target == null) {
@@ -10008,7 +10176,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return null;
     }
 
-    private @Nullable JeiRecipeTransferTarget jeiRecipeTransferTargetFor(JeiDesktopAccess access, JeiRecipeEntry recipe) {
+    private @Nullable JeiRecipeTransferTarget jeiRecipeTransferTargetFor(RecipeBrowserAccess access, RecipeBrowserRecipe recipe) {
         InventoryWindow remembered = this.lastFocusedJeiTransferTargetWindow;
         if (this.windows.contains(remembered)) {
             JeiRecipeTransferTarget target = this.jeiRecipeTransferTargetFor(access, recipe, remembered);
@@ -10038,7 +10206,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return null;
     }
 
-    private @Nullable JeiRecipeTransferTarget jeiRecipeTransferTargetFor(JeiDesktopAccess access, JeiRecipeEntry recipe, @Nullable InventoryWindow candidate) {
+    private @Nullable JeiRecipeTransferTarget jeiRecipeTransferTargetFor(RecipeBrowserAccess access, RecipeBrowserRecipe recipe, @Nullable InventoryWindow candidate) {
         if (!this.isJeiTransferTargetCandidateWindow(candidate)) {
             return null;
         }
@@ -10056,7 +10224,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         try {
-            JeiRecipeTransferPlan plan = access.recipeTransferPlan(recipe, menu);
+            RecipeBrowserTransferPlan plan = access.recipeTransferPlan(recipe, menu);
             if (plan == null) {
                 this.logJeiTransferDiagnostic(
                     "plan-null|" + recipe.uid() + "|" + this.jeiTransferWindowSummary(candidate),
@@ -10176,7 +10344,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         List<Integer> missing = new ArrayList<>();
-        for (JeiRecipeTransferSlot requirement : target.plan().requirements()) {
+        for (RecipeBrowserTransferSlot requirement : target.plan().requirements()) {
             if (!this.consumeAnyJeiTransferAlternative(available, requirement.alternatives())) {
                 missing.add(requirement.inputIndex());
             }
@@ -10184,12 +10352,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return new JeiRecipeTransferAvailability(missing.isEmpty(), missing);
     }
 
-    private boolean canSatisfyJeiTransferRequirements(List<ItemStack> available, List<JeiRecipeTransferSlot> requirements, int index) {
+    private boolean canSatisfyJeiTransferRequirements(List<ItemStack> available, List<RecipeBrowserTransferSlot> requirements, int index) {
         if (index >= requirements.size()) {
             return true;
         }
 
-        JeiRecipeTransferSlot requirement = requirements.get(index);
+        RecipeBrowserTransferSlot requirement = requirements.get(index);
         for (ItemStack alternative : requirement.alternatives()) {
             List<ItemStack> candidate = available.stream()
                 .map(ItemStack::copy)
@@ -10290,6 +10458,152 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return slot.mayPlace(slot.getItem());
     }
 
+    private boolean recipeBrowserViewMouseClicked(InventoryWindow window, MouseButtonEvent event, boolean doubleClick) {
+        RecipeBrowserView view = window.recipeBrowserView;
+        if (view == null || !this.recipeBrowserViewContentContains(window, event.x(), event.y())) {
+            return true;
+        }
+
+        RecipeBrowserEntry entry = this.recipeBrowserViewEntryAt(window, event.x(), event.y());
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT && entry != null) {
+            this.navigateFromRecipeBrowserView(entry, RecipeBrowserMode.USES);
+            return true;
+        }
+
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            this.draggingRecipeBrowserViewWindow = window;
+            this.pressedRecipeBrowserViewEntry = entry;
+            this.recipeBrowserViewPressX = event.x();
+            this.recipeBrowserViewPressY = event.y();
+            this.recipeBrowserViewDragged = false;
+        }
+        try {
+            view.mouseClicked(event, doubleClick);
+        } catch (RuntimeException | LinkageError exception) {
+            this.clearRecipeBrowserViewDrag();
+            DesktopDebug.warn("client recipe browser view click failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+        }
+        return true;
+    }
+
+    private boolean dragRecipeBrowserView(MouseButtonEvent event, double dragX, double dragY) {
+        InventoryWindow window = this.draggingRecipeBrowserViewWindow;
+        if (window == null) {
+            return false;
+        }
+        RecipeBrowserView view = window.recipeBrowserView;
+        if (!this.windows.contains(window) || window.persistentHidden || window.minimized || view == null) {
+            this.clearRecipeBrowserViewDrag();
+            return false;
+        }
+
+        double movedX = event.x() - this.recipeBrowserViewPressX;
+        double movedY = event.y() - this.recipeBrowserViewPressY;
+        if (!this.recipeBrowserViewDragged
+            && movedX * movedX + movedY * movedY <= RECIPE_BROWSER_VIEW_CLICK_DRAG_THRESHOLD_SQUARED) {
+            return true;
+        }
+        if (!this.recipeBrowserViewDragged) {
+            this.recipeBrowserViewDragged = true;
+        }
+
+        try {
+            view.mouseDragged(event, dragX, dragY);
+        } catch (RuntimeException | LinkageError exception) {
+            this.clearRecipeBrowserViewDrag();
+            DesktopDebug.warn("client recipe browser view drag failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+        }
+        return true;
+    }
+
+    private boolean releaseRecipeBrowserViewDrag(MouseButtonEvent event) {
+        InventoryWindow window = this.draggingRecipeBrowserViewWindow;
+        if (window == null || event.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            return false;
+        }
+        RecipeBrowserEntry clickedEntry = this.pressedRecipeBrowserViewEntry;
+        boolean dragged = this.recipeBrowserViewDragged;
+        this.clearRecipeBrowserViewDrag();
+        RecipeBrowserView view = window.recipeBrowserView;
+        if (!this.windows.contains(window) || view == null) {
+            return true;
+        }
+
+        try {
+            view.mouseReleased(event);
+        } catch (RuntimeException | LinkageError exception) {
+            DesktopDebug.warn("client recipe browser view release failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+        }
+        if (!dragged && clickedEntry != null && this.recipeBrowserViewContentContains(window, event.x(), event.y())) {
+            this.navigateFromRecipeBrowserView(clickedEntry, RecipeBrowserMode.RECIPES);
+        }
+        return true;
+    }
+
+    private void scrollRecipeBrowserView(InventoryWindow window, double mouseX, double mouseY, double scrollX, double scrollY) {
+        RecipeBrowserView view = window.recipeBrowserView;
+        if (view == null || !this.recipeBrowserViewContentContains(window, mouseX, mouseY)) {
+            return;
+        }
+
+        try {
+            view.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        } catch (RuntimeException | LinkageError exception) {
+            DesktopDebug.warn("client recipe browser view scroll failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+        }
+    }
+
+    private boolean recipeBrowserViewContentContains(InventoryWindow window, double mouseX, double mouseY) {
+        return contains(
+            mouseX,
+            mouseY,
+            window.contentX(),
+            window.contentY(),
+            Math.max(1, window.width - WINDOW_CONTENT_PADDING * 2),
+            Math.max(1, window.height - TOP_BAR_HEIGHT - WINDOW_CONTENT_PADDING * 2)
+        );
+    }
+
+    private @Nullable RecipeBrowserEntry recipeBrowserViewEntryAt(double mouseX, double mouseY) {
+        InventoryWindow window = this.windowAt(mouseX, mouseY);
+        return window == null ? null : this.recipeBrowserViewEntryAt(window, mouseX, mouseY);
+    }
+
+    private @Nullable RecipeBrowserEntry recipeBrowserViewEntryAt(InventoryWindow window, double mouseX, double mouseY) {
+        RecipeBrowserView view = window.recipeBrowserView;
+        if (window.kind != WindowKind.RECIPE_BROWSER_VIEW
+            || window.minimized
+            || window.ghosted
+            || window.persistentHidden
+            || view == null
+            || !this.recipeBrowserViewContentContains(window, mouseX, mouseY)) {
+            return null;
+        }
+        try {
+            return view.entryAt(mouseX, mouseY);
+        } catch (RuntimeException | LinkageError exception) {
+            DesktopDebug.warn("client recipe browser view entry hit failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            return null;
+        }
+    }
+
+    private void navigateFromRecipeBrowserView(RecipeBrowserEntry entry, RecipeBrowserMode mode) {
+        InventoryWindow recipeBrowserWindow = this.showJeiWindowForLookup();
+        if (recipeBrowserWindow == null) {
+            return;
+        }
+        this.navigateToJeiRecipeView(recipeBrowserWindow, entry, mode);
+        this.bringToFront(recipeBrowserWindow);
+        this.setFocusedWindow(recipeBrowserWindow);
+        this.showIfNeeded(this.minecraft);
+    }
+
+    private void clearRecipeBrowserViewDrag() {
+        this.draggingRecipeBrowserViewWindow = null;
+        this.pressedRecipeBrowserViewEntry = null;
+        this.recipeBrowserViewDragged = false;
+    }
+
     private void sendJeiRecipeTransfer(JeiRecipeTransferTarget target, boolean maxTransfer) {
         List<DesktopJeiTransferRequirement> requirements = target.plan().requirements()
             .stream()
@@ -10299,12 +10613,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean jeiMouseClicked(InventoryWindow window, MouseButtonEvent event, boolean doubleClick) {
-        JeiDesktopAccess access = this.jeiAccess();
+        RecipeBrowserAccess access = this.jeiAccess();
         if (!access.isAvailable()) {
             return true;
         }
 
-        if (window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+        if (window.jeiMode != RecipeBrowserMode.INGREDIENTS) {
             return this.jeiRecipeMouseClicked(window, event, doubleClick);
         }
 
@@ -10347,9 +10661,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         JeiEntryHit entryHit = this.jeiEntryAt(window, event.x(), event.y());
         if (entryHit != null) {
             if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-                this.navigateToJeiRecipeView(window, entryHit.entry(), JeiRecipeMode.RECIPES);
+                this.navigateToJeiRecipeView(window, entryHit.entry(), RecipeBrowserMode.RECIPES);
             } else if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-                this.navigateToJeiRecipeView(window, entryHit.entry(), JeiRecipeMode.USES);
+                this.navigateToJeiRecipeView(window, entryHit.entry(), RecipeBrowserMode.USES);
             }
             return true;
         }
@@ -10372,7 +10686,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
             JeiRecipeOptionButton optionButton = this.jeiRecipeOptionButtonAt(window, event.x(), event.y());
             if (optionButton != null) {
-                JeiDesktopAccess access = this.jeiAccess();
+                RecipeBrowserAccess access = this.jeiAccess();
                 access.toggleRecipeSortStage(optionButton.stage());
                 this.rebuildJeiRecipeView(window);
                 return true;
@@ -10397,31 +10711,37 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             if (button != null) {
                 switch (button) {
                     case HISTORY -> this.activateJeiRecipeHistoryButton(window);
-                    case PREVIOUS_CATEGORY -> this.changeJeiRecipeCategory(window, -1);
-                    case NEXT_CATEGORY -> this.changeJeiRecipeCategory(window, 1);
-                    case PREVIOUS_CATEGORY_TAB_PAGE -> this.changeJeiRecipeCategoryTabPage(window, -1);
-                    case NEXT_CATEGORY_TAB_PAGE -> this.changeJeiRecipeCategoryTabPage(window, 1);
+                    case PREVIOUS_CATEGORY -> this.changeRecipeBrowserCategory(window, -1);
+                    case NEXT_CATEGORY -> this.changeRecipeBrowserCategory(window, 1);
+                    case PREVIOUS_CATEGORY_TAB_PAGE -> this.changeRecipeBrowserCategoryTabPage(window, -1);
+                    case NEXT_CATEGORY_TAB_PAGE -> this.changeRecipeBrowserCategoryTabPage(window, 1);
                 }
                 return true;
             }
 
-            JeiRecipeCategoryHit categoryHit = this.jeiRecipeCategoryAt(window, event.x(), event.y());
+            RecipeBrowserCategoryHit categoryHit = this.jeiRecipeCategoryAt(window, event.x(), event.y());
             if (categoryHit != null) {
-                this.selectJeiRecipeCategory(window, categoryHit.category());
+                this.selectRecipeBrowserCategory(window, categoryHit.category());
+                return true;
+            }
+
+            RecipeBrowserView expandedView = this.expandedRecipeBrowserViewAt(window, event.x(), event.y());
+            if (expandedView != null) {
+                this.addRecipeBrowserViewWindow(expandedView);
                 return true;
             }
         }
 
-        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        RecipeBrowserCategory category = this.selectedRecipeBrowserCategory(window);
         if (category != null && (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
             for (JeiRecipeLayoutPlacement placement : this.visibleJeiRecipePlacements(window, category)) {
                 if (!contains(event.x(), event.y(), placement.x(), placement.y(), Math.max(1, placement.recipe().width()), Math.max(1, placement.recipe().height()))) {
                     continue;
                 }
                 try {
-                    JeiDesktopEntry hovered = this.jeiAccess().recipeIngredientAt(placement.recipe(), placement.x(), placement.y(), (int) event.x(), (int) event.y());
+                    RecipeBrowserEntry hovered = this.jeiAccess().recipeIngredientAt(placement.recipe(), placement.x(), placement.y(), (int) event.x(), (int) event.y());
                     if (hovered != null) {
-                        this.navigateToJeiRecipeView(window, hovered, event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT ? JeiRecipeMode.RECIPES : JeiRecipeMode.USES);
+                        this.navigateToJeiRecipeView(window, hovered, event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT ? RecipeBrowserMode.RECIPES : RecipeBrowserMode.USES);
                         return true;
                     }
                 } catch (RuntimeException exception) {
@@ -10437,9 +10757,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         JeiStationHit stationHit = this.jeiStationAt(window, event.x(), event.y());
         if (stationHit != null) {
             if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-                this.navigateToJeiRecipeView(window, stationHit.station(), JeiRecipeMode.RECIPES);
+                this.navigateToJeiRecipeView(window, stationHit.station(), RecipeBrowserMode.RECIPES);
             } else if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-                this.navigateToJeiRecipeView(window, stationHit.station(), JeiRecipeMode.USES);
+                this.navigateToJeiRecipeView(window, stationHit.station(), RecipeBrowserMode.USES);
             }
             return true;
         }
@@ -10447,9 +10767,33 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return true;
     }
 
+    private @Nullable RecipeBrowserView expandedRecipeBrowserViewAt(InventoryWindow window, double mouseX, double mouseY) {
+        RecipeBrowserCategory category = this.selectedRecipeBrowserCategory(window);
+        if (category == null) {
+            return null;
+        }
+
+        RecipeBrowserAccess access = this.jeiAccess();
+        for (JeiRecipeLayoutPlacement placement : this.visibleJeiRecipePlacements(window, category)) {
+            if (!contains(mouseX, mouseY, placement.x(), placement.y(), Math.max(1, placement.recipe().width()), Math.max(1, placement.recipe().height()))) {
+                continue;
+            }
+            try {
+                RecipeBrowserView view = access.expandedViewAt(placement.recipe(), placement.x(), placement.y(), mouseX, mouseY);
+                if (view != null) {
+                    return view;
+                }
+            } catch (RuntimeException | LinkageError exception) {
+                DesktopDebug.warn("client recipe browser expand failed desktop={} window={} index={} reason={}", this.desktopId, window.debugName(), placement.index(), exception.toString());
+                return null;
+            }
+        }
+        return null;
+    }
+
     private @Nullable InventoryWindow activeJeiSearchWindow() {
         InventoryWindow window = this.editingJeiSearchWindow;
-        if (window == null || !this.windows.contains(window) || window.persistentHidden || window.minimized || window.kind != WindowKind.JEI || window.jeiMode != JeiRecipeMode.INGREDIENTS || !this.jeiAccess().isAvailable()) {
+        if (window == null || !this.windows.contains(window) || window.persistentHidden || window.minimized || window.kind != WindowKind.JEI || window.jeiMode != RecipeBrowserMode.INGREDIENTS || !this.jeiAccess().isAvailable()) {
             this.editingJeiSearchWindow = null;
             return null;
         }
@@ -10462,7 +10806,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return false;
         }
 
-        JeiDesktopAccess access = this.jeiAccess();
+        RecipeBrowserAccess access = this.jeiAccess();
         String text = access.filterText();
         DesktopTextBoxState searchBox = window.jeiSearchBox;
         searchBox.text(text);
@@ -10501,7 +10845,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return false;
         }
 
-        List<JeiDesktopEntry> entries = this.jeiVisibleEntries(window);
+        List<RecipeBrowserEntry> entries = this.jeiVisibleEntries(window);
         JeiGridLayout layout = this.jeiGridLayout(entries.size());
         if (!layout.scrollable()) {
             return false;
@@ -10526,7 +10870,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
-        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        RecipeBrowserCategory category = this.selectedRecipeBrowserCategory(window);
         if (category != null && this.jeiRecipeScrollAreaContains(window, mouseX, mouseY)) {
             if (this.handleJeiRecipeLayoutMouseScrolled(window, mouseX, mouseY, scrollX, scrollY)) {
                 return true;
@@ -10573,8 +10917,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private boolean dragJeiRecipeLayout(MouseButtonEvent event, double dx, double dy) {
         InventoryWindow window = this.draggingJeiRecipeLayoutWindow;
-        JeiRecipeEntry entry = this.draggingJeiRecipeLayoutEntry;
-        if (window == null || entry == null || !this.windows.contains(window) || window.minimized || window.kind != WindowKind.JEI || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+        RecipeBrowserRecipe entry = this.draggingJeiRecipeLayoutEntry;
+        if (window == null || entry == null || !this.windows.contains(window) || window.minimized || window.kind != WindowKind.JEI || window.jeiMode == RecipeBrowserMode.INGREDIENTS) {
             this.clearJeiRecipeLayoutDrag();
             return false;
         }
@@ -10596,7 +10940,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private boolean releaseJeiRecipeLayoutDrag(MouseButtonEvent event) {
         InventoryWindow window = this.draggingJeiRecipeLayoutWindow;
-        JeiRecipeEntry entry = this.draggingJeiRecipeLayoutEntry;
+        RecipeBrowserRecipe entry = this.draggingJeiRecipeLayoutEntry;
         if (window == null || entry == null) {
             return false;
         }
@@ -10615,12 +10959,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void updateJeiScrollFromMouse(InventoryWindow window, double mouseY) {
-        if (window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+        if (window.jeiMode != RecipeBrowserMode.INGREDIENTS) {
             this.updateJeiRecipeScrollFromMouse(window, mouseY);
             return;
         }
 
-        List<JeiDesktopEntry> entries = this.jeiVisibleEntries(window);
+        List<RecipeBrowserEntry> entries = this.jeiVisibleEntries(window);
         JeiGridLayout layout = this.jeiGridLayout(entries.size());
         if (!layout.scrollable()) {
             window.jeiScrollRow = 0;
@@ -10632,7 +10976,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         window.jeiScrollRow = clamp(Math.round((float) amount * layout.maxScrollRow()), 0, layout.maxScrollRow());
     }
 
-    private boolean scrollJeiRecipeList(InventoryWindow window, JeiRecipeCategory category, int direction) {
+    private boolean scrollJeiRecipeList(InventoryWindow window, RecipeBrowserCategory category, int direction) {
         int maxScroll = this.jeiRecipeMaxScrollIndex(window, category);
         int oldScroll = window.jeiRecipePage;
         window.jeiRecipePage = clamp(window.jeiRecipePage + direction, 0, maxScroll);
@@ -10641,7 +10985,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void updateJeiRecipeScrollFromMouse(InventoryWindow window, double mouseY) {
-        JeiRecipeCategory category = this.selectedJeiRecipeCategory(window);
+        RecipeBrowserCategory category = this.selectedRecipeBrowserCategory(window);
         int maxScroll = this.jeiRecipeMaxScrollIndex(window, category);
         if (maxScroll <= 0) {
             window.jeiRecipePage = 0;
@@ -10661,14 +11005,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         window.jeiScrollRow = clamp(window.jeiScrollRow, 0, layout.maxScrollRow());
     }
 
-    private List<JeiDesktopEntry> jeiVisibleEntries(InventoryWindow window) {
-        JeiDesktopAccess access = this.jeiAccess();
-        if (!access.isAvailable() || window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+    private List<RecipeBrowserEntry> jeiVisibleEntries(InventoryWindow window) {
+        RecipeBrowserAccess access = this.jeiAccess();
+        if (!access.isAvailable() || window.jeiMode != RecipeBrowserMode.INGREDIENTS) {
             return List.of();
         }
 
-        List<JeiDesktopTab> tabs = access.tabs();
-        JeiDesktopTab selectedTab = this.selectedJeiTab(window, tabs);
+        List<RecipeBrowserTab> tabs = access.tabs();
+        RecipeBrowserTab selectedTab = this.selectedJeiTab(window, tabs);
         return selectedTab == null ? List.of() : access.filteredEntries(selectedTab);
     }
 
@@ -10683,7 +11027,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable JeiEntryHit jeiEntryAt(InventoryWindow window, double mouseX, double mouseY) {
-        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != JeiRecipeMode.INGREDIENTS || !this.jeiGridContains(window, mouseX, mouseY)) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != RecipeBrowserMode.INGREDIENTS || !this.jeiGridContains(window, mouseX, mouseY)) {
             return null;
         }
 
@@ -10695,7 +11039,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return null;
         }
 
-        List<JeiDesktopEntry> entries = this.jeiVisibleEntries(window);
+        List<RecipeBrowserEntry> entries = this.jeiVisibleEntries(window);
         window.jeiScrollRow = clamp(window.jeiScrollRow, 0, this.jeiGridLayout(entries.size()).maxScrollRow());
         int index = window.jeiScrollRow * JEI_GRID_COLUMNS + row * JEI_GRID_COLUMNS + column;
         if (index < 0 || index >= entries.size()) {
@@ -10711,16 +11055,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable JeiTabHit jeiTabAt(InventoryWindow window, double mouseX, double mouseY) {
-        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != JeiRecipeMode.INGREDIENTS || !this.jeiAccess().isAvailable()) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != RecipeBrowserMode.INGREDIENTS || !this.jeiAccess().isAvailable()) {
             return null;
         }
 
-        List<JeiDesktopTab> tabs = this.jeiAccess().tabs();
+        List<RecipeBrowserTab> tabs = this.jeiAccess().tabs();
         int visible = this.jeiVisibleIngredientTabCount(window, tabs);
         int x = jeiRecipeTopTabsX(window);
         int y = jeiRecipeTopTabsY(window);
         for (int i = 0; i < visible; i++) {
-            JeiDesktopTab tab = tabs.get(i);
+            RecipeBrowserTab tab = tabs.get(i);
             if (contains(mouseX, mouseY, x, y, JEI_RECIPE_TAB_SIZE, JEI_RECIPE_TAB_SIZE)) {
                 return new JeiTabHit(window, tab, x, y, JEI_RECIPE_TAB_SIZE);
             }
@@ -10731,12 +11075,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private boolean jeiGridContains(InventoryWindow window, double mouseX, double mouseY) {
         return window.kind == WindowKind.JEI
-            && window.jeiMode == JeiRecipeMode.INGREDIENTS
+            && window.jeiMode == RecipeBrowserMode.INGREDIENTS
             && contains(mouseX, mouseY, this.jeiGridX(window) - 1, this.jeiGridY(window) - 1, JEI_GRID_COLUMNS * SLOT_SIZE, JEI_GRID_ROWS * SLOT_SIZE);
     }
 
     private boolean jeiListScrollAreaContains(InventoryWindow window, double mouseX, double mouseY) {
-        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != RecipeBrowserMode.INGREDIENTS) {
             return false;
         }
         int x = this.jeiGridX(window) - 1;
@@ -10748,12 +11092,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private boolean jeiSearchBoxContains(InventoryWindow window, double mouseX, double mouseY) {
         return window.kind == WindowKind.JEI
             && !window.minimized
-            && window.jeiMode == JeiRecipeMode.INGREDIENTS
+            && window.jeiMode == RecipeBrowserMode.INGREDIENTS
             && contains(mouseX, mouseY, this.jeiSearchX(window), this.jeiSearchY(window), this.jeiSearchWidth(window), JEI_SEARCH_HEIGHT);
     }
 
     private boolean jeiDefaultTabButtonContains(InventoryWindow window, double mouseX, double mouseY) {
-        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != RecipeBrowserMode.INGREDIENTS) {
             return false;
         }
         JeiRecipeButtonRect rect = this.jeiDefaultTabButtonRect(window);
@@ -10761,7 +11105,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable JeiRecipeOptionButton jeiRecipeOptionButtonAt(InventoryWindow window, double mouseX, double mouseY) {
-        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == RecipeBrowserMode.INGREDIENTS) {
             return null;
         }
         for (JeiRecipeOptionButton button : JeiRecipeOptionButton.values()) {
@@ -10774,7 +11118,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean jeiScrollbarContains(InventoryWindow window, double mouseX, double mouseY) {
-        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != JeiRecipeMode.INGREDIENTS) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode != RecipeBrowserMode.INGREDIENTS) {
             return false;
         }
 
@@ -10784,7 +11128,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean jeiRecipeScrollAreaContains(InventoryWindow window, double mouseX, double mouseY) {
-        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == RecipeBrowserMode.INGREDIENTS) {
             return false;
         }
 
@@ -10795,20 +11139,20 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean jeiRecipeScrollbarContains(InventoryWindow window, double mouseX, double mouseY) {
-        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == RecipeBrowserMode.INGREDIENTS) {
             return false;
         }
 
-        return this.jeiRecipeMaxScrollIndex(window, this.selectedJeiRecipeCategory(window)) > 0
+        return this.jeiRecipeMaxScrollIndex(window, this.selectedRecipeBrowserCategory(window)) > 0
             && contains(mouseX, mouseY, this.jeiRecipeScrollbarX(window) - 2, this.jeiRecipeScrollbarY(window) - 2, SCROLLBAR_WIDTH + 4, this.jeiRecipeScrollbarHeight(window) + 4);
     }
 
     private @Nullable JeiRecipeButton jeiRecipeButtonAt(InventoryWindow window, double mouseX, double mouseY) {
-        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == RecipeBrowserMode.INGREDIENTS) {
             return null;
         }
         for (JeiRecipeButton button : JeiRecipeButton.values()) {
-            if ((button == JeiRecipeButton.PREVIOUS_CATEGORY_TAB_PAGE || button == JeiRecipeButton.NEXT_CATEGORY_TAB_PAGE) && !this.hasJeiRecipeCategoryTabPages(window)) {
+            if ((button == JeiRecipeButton.PREVIOUS_CATEGORY_TAB_PAGE || button == JeiRecipeButton.NEXT_CATEGORY_TAB_PAGE) && !this.hasRecipeBrowserCategoryTabPages(window)) {
                 continue;
             }
             JeiRecipeButtonRect rect = this.jeiRecipeButtonRect(window, button);
@@ -10855,12 +11199,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return new JeiRecipeButtonRect(x, y, JEI_RECIPE_FAVORITE_BUTTON_SIZE, JEI_RECIPE_FAVORITE_BUTTON_SIZE);
     }
 
-    private JeiRecipeButtonRect jeiRecipeTransferButtonRect(JeiRecipeLayoutPlacement placement, JeiRecipeTransferPlan plan) {
+    private JeiRecipeButtonRect jeiRecipeTransferButtonRect(JeiRecipeLayoutPlacement placement, RecipeBrowserTransferPlan plan) {
         return this.jeiRecipeSideButtonRect(placement, 0);
     }
 
     private JeiRecipeButtonRect jeiRecipeSideButtonRect(JeiRecipeLayoutPlacement placement, int indexFromBottom) {
-        int x = placement.x() + Math.max(1, placement.recipe().width()) + JEI_RECIPE_FAVORITE_BUTTON_GAP - 3;
+        int x = placement.x() + Math.max(1, placement.recipe().width()) + JEI_RECIPE_FAVORITE_BUTTON_GAP;
         int y = placement.y()
             + Math.max(1, placement.recipe().height())
             - JEI_RECIPE_FAVORITE_BUTTON_SIZE
@@ -10896,8 +11240,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return new JeiRecipeButtonRect(x, y, JEI_RECIPE_OPTION_BUTTON_SIZE, JEI_RECIPE_OPTION_BUTTON_SIZE);
     }
 
-    private @Nullable JeiRecipeCategoryHit jeiRecipeCategoryAt(InventoryWindow window, double mouseX, double mouseY) {
-        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+    private @Nullable RecipeBrowserCategoryHit jeiRecipeCategoryAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == RecipeBrowserMode.INGREDIENTS) {
             return null;
         }
 
@@ -10911,7 +11255,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int y = this.jeiRecipeTabsY(window);
         for (int i = start; i < end; i++) {
             if (contains(mouseX, mouseY, x, y, JEI_RECIPE_TAB_SIZE, JEI_RECIPE_TAB_SIZE)) {
-                return new JeiRecipeCategoryHit(window.jeiRecipeCategories.get(i), x, y);
+                return new RecipeBrowserCategoryHit(window.jeiRecipeCategories.get(i), x, y);
             }
             x += JEI_RECIPE_TAB_SIZE + JEI_RECIPE_TAB_GAP;
         }
@@ -10919,7 +11263,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable JeiStationHit jeiStationAt(InventoryWindow window, double mouseX, double mouseY) {
-        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == JeiRecipeMode.INGREDIENTS) {
+        if (window.kind != WindowKind.JEI || window.minimized || window.jeiMode == RecipeBrowserMode.INGREDIENTS) {
             return null;
         }
 
@@ -10979,7 +11323,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return Math.max(0, rowsForSlots(window.jeiRecipeCategories.size(), tabsPerPage) - 1);
     }
 
-    private boolean hasJeiRecipeCategoryTabPages(InventoryWindow window) {
+    private boolean hasRecipeBrowserCategoryTabPages(InventoryWindow window) {
         return jeiRecipeHasCategoryTabPages(window);
     }
 
@@ -11012,7 +11356,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private int jeiRecipeLayoutAreaWidth(InventoryWindow window) {
-        int scrollbarReserve = this.jeiRecipeMaxScrollIndex(window, this.selectedJeiRecipeCategory(window)) > 0 ? SCROLLBAR_WIDTH + JEI_RECIPE_SCROLLBAR_GAP : 0;
+        int scrollbarReserve = this.jeiRecipeMaxScrollIndex(window, this.selectedRecipeBrowserCategory(window)) > 0 ? SCROLLBAR_WIDTH + JEI_RECIPE_SCROLLBAR_GAP : 0;
         return Math.max(1, this.jeiRecipePanelWidth(window) - JEI_RECIPE_BORDER_PADDING * 2 - scrollbarReserve);
     }
 
@@ -14216,6 +14560,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void extractHoveredTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        if (this.extractWindowControlTooltip(graphics, mouseX, mouseY)) {
+            return;
+        }
+
         InventoryWindow hoveredWindow = this.windowAt(mouseX, mouseY);
         InventoryWindow recipeBookWindow = this.recipeBookWindowAt(mouseX, mouseY);
         if (recipeBookWindow != null && (hoveredWindow == null || hoveredWindow == recipeBookWindow) && this.sharedCarried.isEmpty()) {
@@ -14223,6 +14571,25 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             if (recipeBook != null) {
                 recipeBook.renderTooltip(graphics.unwrap(), recipeBookWindow.recipeBookX, recipeBookWindow.recipeBookY, mouseX, mouseY);
                 return;
+            }
+        }
+
+        if (hoveredWindow != null
+            && hoveredWindow.kind == WindowKind.RECIPE_BROWSER_VIEW
+            && !hoveredWindow.minimized
+            && this.sharedCarried.isEmpty()
+            && this.recipeBrowserViewContentContains(hoveredWindow, mouseX, mouseY)) {
+            RecipeBrowserView view = hoveredWindow.recipeBrowserView;
+            if (view != null) {
+                try {
+                    List<Component> tooltip = view.tooltipAt(mouseX, mouseY);
+                    if (!tooltip.isEmpty()) {
+                        graphics.setComponentTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
+                        return;
+                    }
+                } catch (RuntimeException | LinkageError exception) {
+                    DesktopDebug.warn("client recipe browser view tooltip failed desktop={} window={} reason={}", this.desktopId, hoveredWindow.debugName(), exception.toString());
+                }
             }
         }
 
@@ -14291,21 +14658,21 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         InventoryWindow jeiWindow = hoveredWindow != null && hoveredWindow.kind == WindowKind.JEI ? hoveredWindow : null;
-        if (jeiWindow != null && jeiWindow.jeiMode == JeiRecipeMode.INGREDIENTS && this.sharedCarried.isEmpty()) {
+        if (jeiWindow != null && jeiWindow.jeiMode == RecipeBrowserMode.INGREDIENTS && this.sharedCarried.isEmpty()) {
             if (this.jeiDefaultTabButtonContains(jeiWindow, mouseX, mouseY)) {
                 boolean selectedDefault = !jeiWindow.jeiDefaultTabUid.isEmpty() && jeiWindow.jeiDefaultTabUid.equals(jeiWindow.jeiSelectedTabUid);
-                graphics.setTooltipForNextFrame(this.font, Component.literal(selectedDefault ? "Clear default JEI tab" : "Set as default JEI tab"), mouseX, mouseY);
+                graphics.setTooltipForNextFrame(this.font, Component.literal(selectedDefault ? "Clear default recipe browser tab" : "Set as default recipe browser tab"), mouseX, mouseY);
                 return;
             }
         }
-        if (jeiWindow != null && jeiWindow.jeiMode != JeiRecipeMode.INGREDIENTS && this.sharedCarried.isEmpty()) {
+        if (jeiWindow != null && jeiWindow.jeiMode != RecipeBrowserMode.INGREDIENTS && this.sharedCarried.isEmpty()) {
             JeiRecipeOptionButton optionButton = this.jeiRecipeOptionButtonAt(jeiWindow, mouseX, mouseY);
             if (optionButton != null) {
                 boolean enabled = this.jeiAccess().isRecipeSortStageEnabled(optionButton.stage());
-                graphics.setTooltipForNextFrame(this.font, Component.translatable(optionButton.tooltipKey(enabled)), mouseX, mouseY);
+                graphics.setTooltipForNextFrame(this.font, Component.literal(optionButton.tooltip(enabled)), mouseX, mouseY);
                 return;
             }
-            JeiRecipeCategoryHit categoryHit = this.jeiRecipeCategoryAt(jeiWindow, mouseX, mouseY);
+            RecipeBrowserCategoryHit categoryHit = this.jeiRecipeCategoryAt(jeiWindow, mouseX, mouseY);
             if (categoryHit != null) {
                 graphics.setTooltipForNextFrame(this.font, categoryHit.category().title(), mouseX, mouseY);
                 return;
@@ -14330,16 +14697,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             JeiRecipeTransferButtonHit transferHit = this.jeiRecipeTransferButtonAt(jeiWindow, mouseX, mouseY);
             if (transferHit != null) {
                 List<Component> tooltip = new ArrayList<>();
-                tooltip.add(Component.translatable("jei.tooltip.transfer"));
+                tooltip.add(Component.literal("Move items"));
                 if (!transferHit.availability().craftable()) {
-                    tooltip.add(Component.translatable("jei.tooltip.error.recipe.transfer.missing").withStyle(ChatFormatting.RED));
+                    tooltip.add(Component.literal("Missing ingredients").withStyle(ChatFormatting.RED));
                 }
                 graphics.setComponentTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
                 return;
             }
             JeiRecipeLayoutPlacement bookmarkedPlacement = this.jeiRecipeBookmarkButtonAt(jeiWindow, mouseX, mouseY);
             if (bookmarkedPlacement != null) {
-                Component tooltip = Component.translatable(this.jeiAccess().isRecipeBookmarked(bookmarkedPlacement.recipe()) ? "jei.tooltip.bookmarks.recipe.remove" : "jei.tooltip.bookmarks.recipe.add");
+                Component tooltip = Component.literal(this.jeiAccess().isRecipeBookmarked(bookmarkedPlacement.recipe()) ? "Remove from favorites" : "Add to favorites");
                 graphics.setTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
                 return;
             }
@@ -14526,27 +14893,27 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         int edge = Math.min(1, Math.min(width, height) / 2);
         if (edge <= 0) {
-            blitRegion(graphics, texture, x, y, 1, 1, width, height, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+            blitRegion(graphics, texture, x, y, 1, 1, width, height, 1, 1, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE);
             return;
         }
 
         int centerWidth = Math.max(0, width - 2);
         int centerHeight = Math.max(0, height - 2);
-        blitRegion(graphics, texture, x, y, 0, 0, 1, 1, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
-        blitRegion(graphics, texture, x + width - 1, y, 2, 0, 1, 1, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
-        blitRegion(graphics, texture, x, y + height - 1, 0, 2, 1, 1, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
-        blitRegion(graphics, texture, x + width - 1, y + height - 1, 2, 2, 1, 1, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+        blitRegion(graphics, texture, x, y, 0, 0, 1, 1, 1, 1, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE);
+        blitRegion(graphics, texture, x + width - 1, y, 2, 0, 1, 1, 1, 1, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE);
+        blitRegion(graphics, texture, x, y + height - 1, 0, 2, 1, 1, 1, 1, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE);
+        blitRegion(graphics, texture, x + width - 1, y + height - 1, 2, 2, 1, 1, 1, 1, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE);
 
         if (centerWidth > 0) {
-            blitRegion(graphics, texture, x + 1, y, 1, 0, centerWidth, 1, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
-            blitRegion(graphics, texture, x + 1, y + height - 1, 1, 2, centerWidth, 1, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+            blitRegion(graphics, texture, x + 1, y, 1, 0, centerWidth, 1, 1, 1, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE);
+            blitRegion(graphics, texture, x + 1, y + height - 1, 1, 2, centerWidth, 1, 1, 1, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE);
         }
         if (centerHeight > 0) {
-            blitRegion(graphics, texture, x, y + 1, 0, 1, 1, centerHeight, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
-            blitRegion(graphics, texture, x + width - 1, y + 1, 2, 1, 1, centerHeight, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+            blitRegion(graphics, texture, x, y + 1, 0, 1, 1, centerHeight, 1, 1, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE);
+            blitRegion(graphics, texture, x + width - 1, y + 1, 2, 1, 1, centerHeight, 1, 1, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE);
         }
         if (centerWidth > 0 && centerHeight > 0) {
-            blitRegion(graphics, texture, x + 1, y + 1, 1, 1, centerWidth, centerHeight, 1, 1, MODEL_DISPLAY_TEXTURE_SIZE, MODEL_DISPLAY_TEXTURE_SIZE);
+            blitRegion(graphics, texture, x + 1, y + 1, 1, 1, centerWidth, centerHeight, 1, 1, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE, ONE_PIXEL_NINE_SLICE_TEXTURE_SIZE);
         }
     }
 
@@ -14742,13 +15109,23 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private static int jeiRecipeVisibleStationCount(InventoryWindow window) {
-        int available = window.y + window.height - WINDOW_CONTENT_PADDING - jeiRecipeStationTabsY(window);
+        int available = window.y + window.height - JEI_RECIPE_OPTION_TAB_HEIGHT - jeiRecipeStationTabsY(window);
         return Math.max(0, (available - JEI_RECIPE_STATION_PADDING * 2 + JEI_RECIPE_STATION_GAP) / (JEI_RECIPE_STATION_SLOT_SIZE + JEI_RECIPE_STATION_GAP));
     }
 
     private static int jeiRecipeStationTabsHeight(InventoryWindow window) {
         int visible = Math.min(window.jeiStations.size(), jeiRecipeVisibleStationCount(window));
-        return visible <= 0 ? 0 : JEI_RECIPE_STATION_PADDING * 2 + visible * JEI_RECIPE_STATION_SLOT_SIZE + (visible - 1) * JEI_RECIPE_STATION_GAP;
+        return jeiRecipeStationTabsHeight(visible);
+    }
+
+    private static int jeiRecipeStationRequiredWindowHeight(InventoryWindow window) {
+        return jeiRecipeStationTabsHeight(window.jeiStations.size()) + JEI_RECIPE_OPTION_TAB_HEIGHT;
+    }
+
+    private static int jeiRecipeStationTabsHeight(int stationCount) {
+        return stationCount <= 0
+            ? 0
+            : JEI_RECIPE_STATION_PADDING * 2 + stationCount * JEI_RECIPE_STATION_SLOT_SIZE + (stationCount - 1) * JEI_RECIPE_STATION_GAP;
     }
 
     private static int creativeTopTabsY(InventoryWindow window) {
@@ -14888,6 +15265,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         CHARACTER,
         CREATIVE,
         JEI,
+        RECIPE_BROWSER_VIEW,
         INSTRUCTIONS
     }
 
@@ -14918,7 +15296,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     "Open Windows",
                     InstructionsLine.bind("E", "Open/Close Inventory"),
                     InstructionsLine.bind("C", "Open/Close Armor and Crafting"),
-                    InstructionsLine.bind("H", "Open/Close JEI Window")
+                    InstructionsLine.bind("H", "Open/Close Recipe Browser Window")
                 ),
                 InstructionsSection.binds(
                     "Desktop Control",
@@ -14963,11 +15341,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             )
         ),
         JEI(
-            "JEI Window",
+            "Recipe Browser Window",
             List.of(
                 InstructionsSection.binds(
                     "Open And Search",
-                    InstructionsLine.bind("H", "Open JEI as a Salt window"),
+                    InstructionsLine.bind("H", "Open the recipe browser as a Salt window"),
                     InstructionsLine.text("Search ingredients, recipes, uses, favorites, and recent items.")
                 ),
                 InstructionsSection.binds(
@@ -15022,8 +15400,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return this.sections;
         }
 
-        private List<InstructionsSection> sections(boolean jeiInstalled) {
-            if (this == CONTROLS && !jeiInstalled) {
+        private List<InstructionsSection> sections(boolean recipeBrowserInstalled) {
+            if (this == CONTROLS && !recipeBrowserInstalled) {
                 return CONTROLS_WITHOUT_JEI_SECTIONS;
             }
             return this.sections();
@@ -15074,6 +15452,27 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    private boolean extractWindowControlTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        ControlHit hit = this.windowControlAt(mouseX, mouseY);
+        if (!java.util.Objects.equals(hit, this.hoveredControlTooltip)) {
+            this.hoveredControlTooltip = hit;
+            this.hoveredControlTooltipStartedMs = hit == null ? 0L : System.currentTimeMillis();
+            return hit != null;
+        }
+        if (hit == null) {
+            return false;
+        }
+        if (System.currentTimeMillis() - this.hoveredControlTooltipStartedMs >= CONTROL_TOOLTIP_DELAY_MS) {
+            graphics.setTooltipForNextFrame(this.font, hit.control().tooltip(), mouseX, mouseY);
+        }
+        return true;
+    }
+
+    private void clearControlTooltipHover() {
+        this.hoveredControlTooltip = null;
+        this.hoveredControlTooltipStartedMs = 0L;
+    }
+
     private enum WindowPlacement {
         TOP_LEFT,
         TOP_RIGHT,
@@ -15083,18 +15482,22 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private enum WindowControl {
-        FOCUS("F"),
-        PIN("P"),
-        MINIMIZE("_"),
-        CLOSE("x"),
-        ELLIPSIS("..."),
-        LOCK("L"),
-        LINK("link");
+        FOCUS("tooltip.salts_inventory_update.window_control.focus"),
+        PIN("tooltip.salts_inventory_update.window_control.pin"),
+        MINIMIZE("tooltip.salts_inventory_update.window_control.minimize"),
+        CLOSE("tooltip.salts_inventory_update.window_control.close"),
+        ELLIPSIS("tooltip.salts_inventory_update.window_control.more"),
+        LOCK("tooltip.salts_inventory_update.window_control.lock"),
+        LINK("tooltip.salts_inventory_update.window_control.link");
 
-        private final String label;
+        private final String tooltipKey;
 
-        WindowControl(String label) {
-            this.label = label;
+        WindowControl(String tooltipKey) {
+            this.tooltipKey = tooltipKey;
+        }
+
+        private Component tooltip() {
+            return Component.translatable(this.tooltipKey);
         }
     }
 
@@ -15117,25 +15520,25 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private enum JeiRecipeOptionButton {
-        BOOKMARKED(JeiRecipeSortStage.BOOKMARKED, "jei.tooltip.recipe.sort.bookmarks.first.disabled", "jei.tooltip.recipe.sort.bookmarks.first.enabled"),
-        CRAFTABLE(JeiRecipeSortStage.CRAFTABLE, "jei.tooltip.recipe.sort.craftable.first.disabled", "jei.tooltip.recipe.sort.craftable.first.enabled");
+        BOOKMARKED(RecipeBrowserSortStage.BOOKMARKED, "Show bookmarked recipes first", "Stop showing bookmarked recipes first"),
+        CRAFTABLE(RecipeBrowserSortStage.CRAFTABLE, "Show craftable recipes first", "Stop showing craftable recipes first");
 
-        private final JeiRecipeSortStage stage;
-        private final String disabledTooltipKey;
-        private final String enabledTooltipKey;
+        private final RecipeBrowserSortStage stage;
+        private final String disabledTooltip;
+        private final String enabledTooltip;
 
-        JeiRecipeOptionButton(JeiRecipeSortStage stage, String disabledTooltipKey, String enabledTooltipKey) {
+        JeiRecipeOptionButton(RecipeBrowserSortStage stage, String disabledTooltip, String enabledTooltip) {
             this.stage = stage;
-            this.disabledTooltipKey = disabledTooltipKey;
-            this.enabledTooltipKey = enabledTooltipKey;
+            this.disabledTooltip = disabledTooltip;
+            this.enabledTooltip = enabledTooltip;
         }
 
-        private JeiRecipeSortStage stage() {
+        private RecipeBrowserSortStage stage() {
             return this.stage;
         }
 
-        private String tooltipKey(boolean enabled) {
-            return enabled ? this.enabledTooltipKey : this.disabledTooltipKey;
+        private String tooltip(boolean enabled) {
+            return enabled ? this.enabledTooltip : this.disabledTooltip;
         }
     }
 
@@ -15228,19 +15631,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private record CreativeTabHit(InventoryWindow window, CreativeModeTab tab, CreativeTabRect rect) {
     }
 
-    private record JeiEntryHit(InventoryWindow window, JeiDesktopEntry entry, int x, int y, int index) {
+    private record JeiEntryHit(InventoryWindow window, RecipeBrowserEntry entry, int x, int y, int index) {
     }
 
-    private record JeiTabHit(InventoryWindow window, JeiDesktopTab tab, int x, int y, int width) {
+    private record JeiTabHit(InventoryWindow window, RecipeBrowserTab tab, int x, int y, int width) {
     }
 
-    private record JeiRecipeCategoryHit(JeiRecipeCategory category, int x, int y) {
+    private record RecipeBrowserCategoryHit(RecipeBrowserCategory category, int x, int y) {
     }
 
-    private record JeiRecipeLayoutPlacement(JeiRecipeEntry recipe, int x, int y, int index) {
+    private record JeiRecipeLayoutPlacement(RecipeBrowserRecipe recipe, int x, int y, int index) {
     }
 
-    private record JeiRecipeTransferTarget(int sessionId, AbstractContainerMenu menu, JeiRecipeTransferPlan plan) {
+    private record JeiRecipeTransferTarget(int sessionId, AbstractContainerMenu menu, RecipeBrowserTransferPlan plan) {
     }
 
     private record JeiRecipeTransferAvailability(boolean craftable, List<Integer> missingInputIndexes) {
@@ -15255,7 +15658,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private record JeiTransferSourceKey(Object container, int containerSlot) {
     }
 
-    private record JeiStationHit(JeiDesktopEntry station, int x, int y) {
+    private record JeiStationHit(RecipeBrowserEntry station, int x, int y) {
     }
 
     private record JeiRecipeButtonRect(int x, int y, int width, int height) {
@@ -15264,7 +15667,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private record InstructionsNavButtonRect(int x, int y, int width, int height, int direction) {
     }
 
-    private record JeiRecipeHistoryEntry(JeiDesktopEntry entry, JeiRecipeMode mode) {
+    private record JeiRecipeHistoryEntry(RecipeBrowserEntry entry, RecipeBrowserMode mode) {
     }
 
     private record CreativeTabRect(int x, int y, int width, int height, int column, boolean topRow) {
@@ -16119,17 +16522,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private final DesktopTextBoxState jeiSearchBox = new DesktopTextBoxState();
         private int jeiScrollRow;
         private int instructionsPage;
-        private JeiRecipeMode jeiMode = JeiRecipeMode.INGREDIENTS;
-        private @Nullable JeiDesktopEntry jeiFocusEntry;
+        private RecipeBrowserMode jeiMode = RecipeBrowserMode.INGREDIENTS;
+        private @Nullable RecipeBrowserEntry jeiFocusEntry;
         private String jeiSelectedRecipeCategoryUid = "";
         private int jeiRecipePage;
         private int jeiCategoryTabPage;
         private int jeiStationScroll;
-        private List<JeiRecipeCategory> jeiRecipeCategories = List.of();
-        private List<JeiRecipeEntry> jeiRecipeEntries = List.of();
-        private List<JeiDesktopEntry> jeiStations = List.of();
+        private List<RecipeBrowserCategory> jeiRecipeCategories = List.of();
+        private List<RecipeBrowserRecipe> jeiRecipeEntries = List.of();
+        private List<RecipeBrowserEntry> jeiStations = List.of();
         private final List<JeiRecipeHistoryEntry> jeiBackHistory = new ArrayList<>();
         private final List<JeiRecipeHistoryEntry> jeiForwardHistory = new ArrayList<>();
+        private @Nullable RecipeBrowserView recipeBrowserView;
         private String anvilName = "";
         private final DesktopTextBoxState anvilNameBox = new DesktopTextBoxState();
         private String anvilLastInputName = "";
@@ -16197,7 +16601,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     case CHARACTER -> "local:character";
                     case JEI -> "local:jei";
                     case INSTRUCTIONS -> "local:instructions";
-                    case CONTAINER -> null;
+                    case CONTAINER, RECIPE_BROWSER_VIEW -> null;
                 };
             }
             if (this.legacyMenu != null) {
@@ -16225,10 +16629,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     return false;
                 }
 
-                int topTabsWidth = this.jeiMode == JeiRecipeMode.INGREDIENTS
+                int topTabsWidth = this.jeiMode == RecipeBrowserMode.INGREDIENTS
                     ? this.width - JEI_RECIPE_BORDER_PADDING * 2
                     : InventoryDesktopScreen.jeiRecipeTopTabsWidth(this);
-                if (this.jeiMode != JeiRecipeMode.INGREDIENTS && InventoryDesktopScreen.jeiRecipeHasCategoryTabPages(this)) {
+                if (this.jeiMode != RecipeBrowserMode.INGREDIENTS && InventoryDesktopScreen.jeiRecipeHasCategoryTabPages(this)) {
                     topTabsWidth = Math.max(topTabsWidth, this.width - JEI_RECIPE_BORDER_PADDING);
                 }
                 if (topTabsWidth > 0
@@ -16236,7 +16640,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     return true;
                 }
 
-                if (this.jeiMode == JeiRecipeMode.INGREDIENTS) {
+                if (this.jeiMode == RecipeBrowserMode.INGREDIENTS) {
                     return false;
                 }
 
