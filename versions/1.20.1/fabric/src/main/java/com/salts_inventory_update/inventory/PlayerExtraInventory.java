@@ -104,6 +104,15 @@ public final class PlayerExtraInventory implements Container {
         return count;
     }
 
+    public boolean hasAnyMatching(Predicate<ItemStack> predicate) {
+        for (ItemStack stack : this.items) {
+            if (!stack.isEmpty() && predicate.test(stack)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void dropAll() {
         for (int i = 0; i < this.items.size(); i++) {
             ItemStack stack = this.items.get(i);
