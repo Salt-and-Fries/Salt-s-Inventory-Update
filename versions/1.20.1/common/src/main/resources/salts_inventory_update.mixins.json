@@ -24,6 +24,7 @@
     "client.MenuScreensAccessor",
     "client.MultiPlayerGameModeMixin",
     "client.MouseHandlerAccessor",
+    "client.MouseHandlerHandoffMixin",
     "client.RecipeBookComponentAccessor"
   ],
   "server": [],

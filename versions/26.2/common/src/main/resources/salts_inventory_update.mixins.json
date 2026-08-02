@@ -17,6 +17,7 @@
   "client": [
     "client.ClientPacketListenerInventoryExpansionMixin",
     "client.GuiMixin",
+    "client.GuiMouseHandoffMixin",
     "client.HudMixin",
     "client.KeyboardHandlerMixin",
     "client.MinecraftMixin",
@@ -24,6 +25,7 @@
     "client.MenuScreensAccessor",
     "client.MultiPlayerGameModeMixin",
     "client.MouseHandlerAccessor",
+    "client.MouseHandlerHandoffMixin",
     "client.RecipeBookComponentAccessor"
   ],
   "server": [],

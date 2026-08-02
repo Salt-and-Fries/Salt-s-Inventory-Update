@@ -19,11 +19,13 @@
     "client.GameRendererMixin",
     "client.GuiMixin",
     "client.KeyboardHandlerMixin",
+    "client.MinecraftMouseHandoffMixin",
     "client.MinecraftMixin",
     "client.MinecraftInvoker",
     "client.MenuScreensAccessor",
     "client.MultiPlayerGameModeMixin",
     "client.MouseHandlerAccessor",
+    "client.MouseHandlerHandoffMixin",
     "client.RecipeBookComponentAccessor"
   ],
   "server": [],

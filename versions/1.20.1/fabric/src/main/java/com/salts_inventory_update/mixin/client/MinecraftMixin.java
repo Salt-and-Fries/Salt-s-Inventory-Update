@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.salts_inventory_update.SaltsInventoryRuntime;
+import com.salts_inventory_update.client.DesktopMouseHandoff;
 import com.salts_inventory_update.client.InventoryDesktopScreen;
 import com.salts_inventory_update.debug.DesktopDebug;
 
@@ -23,6 +24,9 @@ public abstract class MinecraftMixin {
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$guardSingletonDesktopScreen(@Nullable Screen screen, CallbackInfo ci) {
         Minecraft minecraft = (Minecraft) (Object) this;
+        if (screen == null && minecraft.screen instanceof InventoryDesktopScreen) {
+            ((DesktopMouseHandoff) minecraft.mouseHandler).salts_inventory_update$beginDesktopMouseHandoff();
+        }
         if (salts_inventory_update$setScreenProbeLogs < 32) {
             salts_inventory_update$setScreenProbeLogs++;
             DesktopDebug.probe(
@@ -63,6 +67,12 @@ public abstract class MinecraftMixin {
                 consumed
             );
         }
+    }
+
+    @Inject(method = "runTick", at = @At("TAIL"))
+    private void salts_inventory_update$advanceDesktopMouseHandoffFrame(boolean renderLevel, CallbackInfo ci) {
+        Minecraft minecraft = (Minecraft) (Object) this;
+        ((DesktopMouseHandoff) minecraft.mouseHandler).salts_inventory_update$advanceDesktopMouseHandoffFrame();
     }
 
 }
