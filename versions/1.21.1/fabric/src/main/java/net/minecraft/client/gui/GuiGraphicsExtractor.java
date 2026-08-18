@@ -12,7 +12,9 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
+import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.client.model.BookModel;
 import com.salts_inventory_update.client.model.object.banner.BannerFlagModel;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -301,6 +303,16 @@ public final class GuiGraphicsExtractor {
 
     public void setComponentTooltipForNextFrame(Font font, List<Component> lines, int mouseX, int mouseY, ResourceLocation texture) {
         this.graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+    }
+
+    public void setClientTooltipForNextFrame(Font font, List<ClientTooltipComponent> components, int mouseX, int mouseY) {
+        ((GuiGraphicsAccessor) this.graphics).salts_inventory_update$invokeRenderTooltipInternal(
+            font,
+            components,
+            mouseX,
+            mouseY,
+            DefaultTooltipPositioner.INSTANCE
+        );
     }
 
     public static final class PoseAdapter {

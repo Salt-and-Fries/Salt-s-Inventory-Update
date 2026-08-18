@@ -30,6 +30,9 @@
     ],
     "rei_client": [
       "com.salts_inventory_update.compat.rei.SaltsReiClientPlugin"
+    ],
+    "emi": [
+      "com.salts_inventory_update.compat.emi.SaltsEmiClientPlugin"
     ]
   },
   "mixins": [

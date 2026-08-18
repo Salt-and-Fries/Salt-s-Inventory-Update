@@ -40,6 +40,10 @@ public interface RecipeBrowserAccess {
 
     List<RecipeBrowserRecipe> recipes(RecipeBrowserEntry entry, RecipeBrowserMode mode, RecipeBrowserCategory category);
 
+    default boolean usesCompactRecipeSpacing(RecipeBrowserCategory category) {
+        return false;
+    }
+
     List<RecipeBrowserEntry> craftingStations(RecipeBrowserCategory category);
 
     void renderRecipeCategoryIcon(GuiGraphicsExtractor graphics, RecipeBrowserCategory category, int x, int y);
@@ -47,6 +51,10 @@ public interface RecipeBrowserAccess {
     void renderRecipe(GuiGraphicsExtractor graphics, RecipeBrowserRecipe recipe, int x, int y, int mouseX, int mouseY);
 
     void renderRecipeOverlays(GuiGraphicsExtractor graphics, RecipeBrowserRecipe recipe, int x, int y, int mouseX, int mouseY);
+
+    default boolean renderRecipeTooltip(GuiGraphicsExtractor graphics, RecipeBrowserRecipe recipe, int x, int y, int mouseX, int mouseY) {
+        return false;
+    }
 
     void renderRecipeSlotHighlights(GuiGraphicsExtractor graphics, RecipeBrowserRecipe recipe, int x, int y, List<Integer> inputIndexes, int color);
 

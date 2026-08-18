@@ -268,6 +268,7 @@ foreach ($version in $versions) {
     Assert-Contains -Path $server -Text 'public static void syncCraftingResult' -Label "$version detached crafting result custom sync"
     Assert-Contains -Path $craftingMenuMixin -Text 'DesktopContainerSessions.syncCraftingResult' -Label "$version crafting result recalculation bridge"
     Assert-Contains -Path $mixinConfig -Text 'server.CraftingMenuMixin' -Label "$version crafting result mixin registration"
+    Assert-Matches -Path $server -Pattern '(?s)clickMenu\(payload\.debugId\(\), player, sessions, session\.menu,.{0,500}sessions\.broadcastAll\(player\)' -Label "$version container clicks finalize all shared menus"
     if ($version -ne '1.20.1') {
         Assert-Contains -Path $craftingMenuMixin -Text 'method = "finishPlacingRecipe"' -Label "$version recipe placement result bridge"
     }
@@ -278,6 +279,12 @@ foreach ($version in $versions) {
     Assert-NotContains -Path $server -Text 'ThreadLocalRandom' -Label "$version server authorization tokens are not predictable PRNG output"
     Assert-NotContains -Path $containerClient -Text 'ThreadLocalRandom' -Label "$version client handshake nonce uses secure randomness"
     Assert-Matches -Path $containerClient -Pattern 'MODE_(?:RESEND|REFRESH)_INTERVAL_TICKS' -Label "$version dropped mode updates eventually converge"
+    if ($version -eq '1.20.1') {
+        Assert-Matches -Path $server -Pattern '(?s)syncCarried\([^)]*\).{0,600}syncPlayerMenuState\(player\)' -Label "$version carried sync acknowledges player menu state"
+    }
+    if ($version -eq '1.21.1') {
+        Assert-Matches -Path $containerClient -Pattern '(?s)DesktopCarriedPayload\.TYPE.{0,800}applyPlayerMenuState\(client, payload\.authorization\(\)\.expectedStateId\(\)\)' -Label "$version carried payload applies acknowledged player menu state"
+    }
     Assert-Contains -Path $containerClient -Text 'MAX_DESKTOP_SESSIONS' -Label "$version client session aggregate cap"
     Assert-Contains -Path $stateStore -Text 'AtomicUtf8File' -Label "$version atomic state persistence"
     Assert-Contains -Path $stateStore -Text 'StableStateIdentity' -Label "$version stable private world identity"
@@ -379,8 +386,11 @@ $rootBuildScript = Join-Path $RepoRoot 'build.gradle.kts'
 $settingsScript = Join-Path $RepoRoot 'settings.gradle.kts'
 Assert-Contains -Path $rootBuildScript -Text 'version = "0.1.2"' -Label 'release version is 0.1.2'
 Assert-Contains -Path $rootBuildScript -Text 'org.jspecify:jspecify:1.0.0' -Label 'JSpecify is an explicit compile-only dependency'
-Assert-Contains -Path $rootBuildScript -Text '"**/compat/rei/SaltsReiClientPlugin.java"' -Label 'non-Fabric loaders exclude only the Fabric REI entrypoint'
+Assert-Contains -Path $rootBuildScript -Text '"**/compat/rei/SaltsReiClientPlugin.java"' -Label 'non-Fabric loaders exclude the Fabric REI entrypoint'
 Assert-NotContains -Path $rootBuildScript -Text '"**/compat/rei/**"' -Label 'non-Fabric loaders retain shared REI runtime support'
+Assert-Contains -Path $rootBuildScript -Text '"**/compat/emi/SaltsEmiClientPlugin.java"' -Label 'non-Fabric loaders exclude the Fabric EMI entrypoint'
+Assert-Contains -Path $rootBuildScript -Text 'val includeEmiRuntime' -Label 'EMI development runtime is opt-in'
+Assert-Contains -Path $rootBuildScript -Text '"1.21.1" to "1.1.24+1.21.1"' -Label 'EMI dependency is pinned for 1.21.1'
 Assert-NotContains -Path $rootBuildScript -Text '"--mixin.config", "salts_inventory_update.mixins.json"' -Label 'development runs do not duplicate the loader-supplied mixin config'
 Assert-Contains -Path $settingsScript -Text 'id("dev.prism.settings") version "0.5.17"' -Label 'Prism settings plugin version is reproducibly pinned'
 
@@ -391,6 +401,35 @@ foreach ($version in $versions) {
     $nonFabricLoader = if ($version -eq '1.20.1') { 'forge' } else { 'neoforge' }
     $nonFabricRei = Join-Path $RepoRoot "versions\$version\$nonFabricLoader\src\main\java\com\salts_inventory_update\compat\rei\SaltsReiForgeClientPlugin.java"
     Assert-File -Path $nonFabricRei -Label "$version non-Fabric REI client plugin retained" | Out-Null
+}
+
+$versionDifferences = Join-Path $RepoRoot 'version_differences.md'
+$emiRuntime = Join-Path $RepoRoot 'versions\1.21.1\fabric\src\main\java\com\salts_inventory_update\compat\emi\RuntimeEmiRecipeBrowserAccess.java'
+$emiBootstrap = Join-Path $RepoRoot 'versions\1.21.1\fabric\src\main\java\com\salts_inventory_update\compat\emi\EmiRecipeBrowserBootstrap.java'
+$emiFabricPlugin = Join-Path $RepoRoot 'versions\1.21.1\fabric\src\main\java\com\salts_inventory_update\compat\emi\SaltsEmiClientPlugin.java'
+$emiNeoForgePlugin = Join-Path $RepoRoot 'versions\1.21.1\neoforge\src\main\java\com\salts_inventory_update\compat\emi\SaltsEmiForgeClientPlugin.java'
+$emiFabricMetadata = Join-Path $RepoRoot 'versions\1.21.1\fabric\src\main\resources\fabric.mod.json'
+$emiClientStartup = Join-Path $RepoRoot 'versions\1.21.1\fabric\src\main\java\com\salts_inventory_update\client\WindowedInventoryClient.java'
+Assert-Contains -Path $versionDifferences -Text 'Minecraft 1.21.1 and earlier versions support EMI integration.' -Label 'EMI version boundary is documented'
+Assert-Contains -Path $emiRuntime -Text 'RecipeBrowserSource.EMI' -Label '1.21.1 shared EMI runtime access retained'
+Assert-Contains -Path $emiRuntime -Text 'EmiCraftingRecipe' -Label '1.21.1 EMI crafting transfer support retained'
+Assert-Contains -Path $emiRuntime -Text 'EMI_FAVORITES_CLASS' -Label '1.21.1 EMI favorites support retained'
+Assert-Contains -Path $emiRuntime -Text 'cachedIndexEntriesByType' -Label '1.21.1 EMI index rendering cache retained'
+Assert-Contains -Path $emiRuntime -Text 'recipeWidgetCache' -Label '1.21.1 EMI recipe widget cache retained'
+Assert-Contains -Path $emiRuntime -Text 'EMI_INGREDIENT_RECIPE_MAX_HEIGHT' -Label '1.21.1 EMI tag recipes use compact paging'
+Assert-Contains -Path $emiRuntime -Text 'usesCompactRecipeSpacing' -Label '1.21.1 EMI tag recipes remain top-packed in tall windows'
+Assert-Contains -Path $emiRuntime -Text 'renderHoveredSlot' -Label '1.21.1 EMI hover highlight renders beneath slot contents'
+Assert-Contains -Path $emiRuntime -Text 'renderRecipeTooltip' -Label '1.21.1 EMI recipe widget tooltips retained'
+Assert-Contains -Path $emiRuntime -Text 'JEMI_TAG_RECIPE_HEIGHT = 42' -Label '1.21.1 EMI compacts JEI tag recipes imported through JEMI'
+Assert-Contains -Path $emiRuntime -Text 'compactJemiTagWidgets' -Label '1.21.1 EMI replaces oversized JEMI tag widget bounds'
+Assert-Contains -Path $emiBootstrap -Text 'RecipeBrowserBridge.install(RecipeBrowserSource.EMI, access)' -Label '1.21.1 EMI startup bootstrap retained'
+Assert-Contains -Path $emiClientStartup -Text 'EmiRecipeBrowserBootstrap.initialize();' -Label '1.21.1 client initializes EMI integration'
+Assert-Contains -Path $emiFabricPlugin -Text 'implements EmiPlugin' -Label '1.21.1 Fabric EMI client plugin retained'
+Assert-Contains -Path $emiNeoForgePlugin -Text '@EmiEntrypoint' -Label '1.21.1 NeoForge EMI client plugin retained'
+Assert-Contains -Path $emiFabricMetadata -Text '"emi": [' -Label '1.21.1 Fabric EMI entrypoint metadata retained'
+foreach ($version in @('1.21.11', '26.1.2', '26.2')) {
+    $newerFabricMetadata = Join-Path $RepoRoot "versions\$version\fabric\src\main\resources\fabric.mod.json"
+    Assert-NotContains -Path $newerFabricMetadata -Text '"emi": [' -Label "$version has no unsupported EMI entrypoint"
 }
 
 $packFormats = @{

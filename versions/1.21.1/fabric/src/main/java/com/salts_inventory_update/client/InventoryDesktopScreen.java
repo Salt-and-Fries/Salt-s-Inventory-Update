@@ -10123,7 +10123,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int recipeHeight = this.jeiRecipeLayoutHeight(window, category);
         int availableHeight = Math.max(recipeHeight, this.jeiRecipeLayoutAreaHeight(window));
         int remainingHeight = Math.max(0, availableHeight - visible * recipeHeight);
-        int spacing = Math.max(JEI_RECIPE_MIN_PADDING, remainingHeight / (visible + 1));
+        int spacing = this.jeiAccess().usesCompactRecipeSpacing(category)
+            ? JEI_RECIPE_MIN_PADDING
+            : Math.max(JEI_RECIPE_MIN_PADDING, remainingHeight / (visible + 1));
         int y = this.jeiRecipeLayoutAreaY(window) + spacing;
         List<JeiRecipeLayoutPlacement> placements = new ArrayList<>(visible);
         for (int i = first; i < end; i++) {
@@ -14738,6 +14740,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 Component tooltip = Component.literal(this.jeiAccess().isRecipeBookmarked(bookmarkedPlacement.recipe()) ? "Remove from favorites" : "Add to favorites");
                 graphics.setTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
                 return;
+            }
+            for (JeiRecipeLayoutPlacement placement : this.visibleJeiRecipePlacements(jeiWindow, this.selectedRecipeBrowserCategory(jeiWindow))) {
+                if (!contains(mouseX, mouseY, placement.x(), placement.y(), Math.max(1, placement.recipe().width()), Math.max(1, placement.recipe().height()))) {
+                    continue;
+                }
+                try {
+                    if (this.jeiAccess().renderRecipeTooltip(graphics, placement.recipe(), placement.x(), placement.y(), mouseX, mouseY)) {
+                        return;
+                    }
+                } catch (RuntimeException | LinkageError exception) {
+                    DesktopDebug.warn("client recipe browser widget tooltip failed desktop={} window={} index={} reason={}", this.desktopId, jeiWindow.debugName(), placement.index(), exception.toString());
+                }
+                break;
             }
         }
 

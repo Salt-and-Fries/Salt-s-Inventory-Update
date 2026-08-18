@@ -18,6 +18,7 @@ import org.lwjgl.glfw.GLFW;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
 import com.salts_inventory_update.SaltsInventoryRuntime;
+import com.salts_inventory_update.compat.emi.EmiRecipeBrowserBootstrap;
 import com.salts_inventory_update.compat.toms_storage.client.TomsStorageClientCompat;
 import com.salts_inventory_update.mixin.client.MouseHandlerAccessor;
 
@@ -37,6 +38,7 @@ public final class WindowedInventoryClient {
 
     public static void initialize() {
         SaltsInventoryConfig.load();
+        EmiRecipeBrowserBootstrap.initialize();
         characterWindowKey = KeyBindingHelper.registerKeyBinding(
             new KeyMapping(
                 "key.salts_inventory_update.character_window",

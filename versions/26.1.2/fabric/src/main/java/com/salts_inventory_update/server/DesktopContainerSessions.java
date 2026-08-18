@@ -698,7 +698,7 @@ public final class DesktopContainerSessions {
         Session session = authorization.session();
         DesktopDebug.trace("server click session id={} player={} session={} slot={} button={} input={} clientCarried={}", payload.debugId(), player.getName().getString(), payload.sessionId(), payload.slotIndex(), payload.button(), input, payload.clientCarried());
         clickMenu(payload.debugId(), player, sessions, session.menu, payload.slotIndex(), payload.button(), input, payload.clientCarried());
-        session.menu.broadcastChanges();
+        sessions.broadcastAll(player);
         syncCarried(player, sessions);
     }
 

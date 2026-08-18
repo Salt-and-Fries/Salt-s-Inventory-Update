@@ -161,6 +161,7 @@ public final class DesktopContainerClient {
                 if (!acceptsServerStamp(DesktopPackets.PLAYER_MENU_SESSION, payload.authorization())) {
                     return;
                 }
+                applyPlayerMenuState(client, payload.authorization().expectedStateId());
                 DesktopDebug.trace("client payload carried stack={}", payload.carried());
                 InventoryDesktopScreen screen = InventoryDesktopScreen.current(client);
                 if (screen != null) {
@@ -540,6 +541,17 @@ public final class DesktopContainerClient {
         }
         SessionStamp known = SESSION_STAMPS.get(sessionId);
         return known != null && stamp.sessionNonce() == known.sessionNonce();
+    }
+
+    private static void applyPlayerMenuState(Minecraft minecraft, int stateId) {
+        if (minecraft.player == null || stateId < 0 || minecraft.player.inventoryMenu.slots.isEmpty()) {
+            return;
+        }
+
+        // An unchanged slot is the public 1.21.1 path for applying the server's menu state ID.
+        int slotIndex = Math.min(9, minecraft.player.inventoryMenu.slots.size() - 1);
+        ItemStack current = minecraft.player.inventoryMenu.getSlot(slotIndex).getItem().copy();
+        minecraft.player.inventoryMenu.setItem(slotIndex, stateId, current);
     }
 
     private record SessionStamp(long sessionNonce, int stateId) {

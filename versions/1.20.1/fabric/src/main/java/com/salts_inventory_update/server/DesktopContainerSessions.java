@@ -2209,8 +2209,25 @@ public final class DesktopContainerSessions {
                 session.menu.setCarried(canonical.copy());
             }
         }
+        syncPlayerMenuState(player);
         DesktopDebug.trace("server sync carried player={} stack={}", player.getName().getString(), canonical);
         send(player, new DesktopCarriedPayload(canonical));
+    }
+
+    private static void syncPlayerMenuState(ServerPlayer player) {
+        if (player.inventoryMenu.slots.isEmpty()) {
+            return;
+        }
+
+        // A single unchanged slot acknowledges the new state before the cursor becomes interactive.
+        int slotIndex = Math.min(9, player.inventoryMenu.slots.size() - 1);
+        Slot slot = player.inventoryMenu.getSlot(slotIndex);
+        send(player, new DesktopSlotPayload(
+            DesktopPackets.PLAYER_MENU_SESSION,
+            slotIndex,
+            player.inventoryMenu.getStateId(),
+            slot.getItem().copy()
+        ));
     }
 
     private static void syncPlayerMenu(ServerPlayer player) {

@@ -44,11 +44,15 @@ val includeJeiRuntime = providers.gradleProperty("includeJeiRuntime")
 val includeReiRuntime = providers.gradleProperty("includeReiRuntime")
     .map { it.equals("true", ignoreCase = true) }
     .orElse(false)
+val includeEmiRuntime = providers.gradleProperty("includeEmiRuntime")
+    .map { it.equals("true", ignoreCase = true) }
+    .orElse(false)
 
 val nonFabricSharedSourceExcludes = listOf(
     "**/SaltsInventoryUpdateFabric.java",
     "**/SaltsInventoryUpdateFabricClient.java",
-    "**/compat/rei/SaltsReiClientPlugin.java"
+    "**/compat/rei/SaltsReiClientPlugin.java",
+    "**/compat/emi/SaltsEmiClientPlugin.java"
 )
 
 fun fabricPlatformSourceDir(minecraftVersion: String) =
@@ -222,6 +226,10 @@ subprojects {
             name = "Shedaniel"
             url = uri("https://maven.shedaniel.me/")
         }
+        maven {
+            name = "Sleeping Town"
+            url = uri("https://repo.sleeping.town/")
+        }
     }
 
     tasks.withType<JavaExec>().configureEach {
@@ -394,6 +402,30 @@ subprojects {
                         "runtimeOnly"
                     }
                     dependencies.add(runtimeConfiguration, "me.shedaniel:RoughlyEnoughItems-$reiLoader:$reiVersion")
+                }
+            }
+        }
+    }
+
+    val emiVersions = mapOf(
+        "1.21.1" to "1.1.24+1.21.1"
+    )
+    if (minecraftVersion != null && (name == "fabric" || name == "neoforge")) {
+        afterEvaluate {
+            emiVersions[minecraftVersion]?.let { emiVersion ->
+                val apiConfiguration = if (name == "fabric" && configurations.findByName("modCompileOnly") != null) {
+                    "modCompileOnly"
+                } else {
+                    "compileOnly"
+                }
+                dependencies.add(apiConfiguration, "dev.emi:emi-$name:$emiVersion:api")
+                if (includeEmiRuntime.get()) {
+                    val runtimeConfiguration = if (name == "fabric" && configurations.findByName("modRuntimeOnly") != null) {
+                        "modRuntimeOnly"
+                    } else {
+                        "runtimeOnly"
+                    }
+                    dependencies.add(runtimeConfiguration, "dev.emi:emi-$name:$emiVersion")
                 }
             }
         }
