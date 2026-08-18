@@ -47,6 +47,7 @@ import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.ContainerSynchronizer;
 import net.minecraft.world.inventory.CrafterMenu;
+import net.minecraft.world.inventory.CraftingMenu;
 import net.minecraft.world.inventory.GrindstoneMenu;
 import net.minecraft.world.inventory.HorseInventoryMenu;
 import net.minecraft.world.inventory.MerchantMenu;
@@ -2118,6 +2119,39 @@ public final class DesktopContainerSessions {
         for (Session session : sessions.sessions.values()) {
             session.menu.setCarried(ItemStack.EMPTY);
         }
+    }
+
+    public static void syncCraftingResult(ServerPlayer player, CraftingMenu menu) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null || !sessions.isActive() || !sessions.hasCapability(DesktopProtocol.CAP_CUSTOM_WINDOWS)) {
+            return;
+        }
+
+        for (Session session : sessions.sessions.values()) {
+            if (session.menu == menu && session.visibleToClient) {
+                syncCraftingResultSlot(player, session);
+                return;
+            }
+        }
+    }
+
+    private static void syncCraftingResultSlot(ServerPlayer player, Session session) {
+        if (!(session.menu instanceof AbstractCraftingMenu craftingMenu)) {
+            return;
+        }
+
+        Slot resultSlot = craftingMenu.getResultSlot();
+        int slotIndex = session.menu.slots.indexOf(resultSlot);
+        if (slotIndex < 0) {
+            return;
+        }
+
+        send(player, new DesktopSlotPayload(
+            session.sessionId,
+            slotIndex,
+            session.menu.getStateId(),
+            resultSlot.getItem().copy()
+        ));
     }
 
     private static void syncMerchantOffers(ServerPlayer player, Session session) {

@@ -47,6 +47,7 @@ import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.ContainerSynchronizer;
 import net.minecraft.world.inventory.CrafterMenu;
+import net.minecraft.world.inventory.CraftingMenu;
 import net.minecraft.world.inventory.GrindstoneMenu;
 import net.minecraft.world.inventory.HorseInventoryMenu;
 import net.minecraft.world.inventory.MerchantMenu;
@@ -2099,6 +2100,20 @@ public final class DesktopContainerSessions {
     private static void clearDetachedCarried(PlayerSessions sessions) {
         for (Session session : sessions.sessions.values()) {
             session.menu.setCarried(ItemStack.EMPTY);
+        }
+    }
+
+    public static void syncCraftingResult(ServerPlayer player, CraftingMenu menu) {
+        PlayerSessions sessions = PLAYERS.get(player.getUUID());
+        if (sessions == null || !sessions.ready || !canUseCustomWindows(player)) {
+            return;
+        }
+
+        for (Session session : sessions.sessions.values()) {
+            if (session.menu == menu && session.visibleToClient) {
+                syncCraftingResultSlot(player, session);
+                return;
+            }
         }
     }
 

@@ -191,6 +191,7 @@ foreach ($version in $versions) {
     $stateStore = Join-Path $fabricRoot 'client\DesktopWindowStateStore.java'
     $inventoryMixin = Join-Path $fabricRoot 'mixin\InventoryExpansionInventoryMixin.java'
     $inventorySlot = Join-Path $fabricRoot 'inventory\InventoryExpansionSlot.java'
+    $craftingMenuMixin = Join-Path $fabricRoot 'mixin\server\CraftingMenuMixin.java'
     $serverPlayerMixin = Join-Path $fabricRoot 'mixin\server\ServerPlayerInventoryExpansionMixin.java'
     $deathMixin = if ($version -eq '1.21.1' -or $version -eq '1.21.11') {
         Join-Path $fabricRoot 'mixin\server\ServerPlayerMixin.java'
@@ -199,6 +200,7 @@ foreach ($version in $versions) {
     }
     $tomsPayloads = Join-Path $fabricRoot 'compat\toms_storage\TomsStoragePayloads.java'
     $language = Join-Path $RepoRoot "versions\$version\common\src\main\resources\assets\salts_inventory_update\lang\en_us.json"
+    $mixinConfig = Join-Path $RepoRoot "versions\$version\common\src\main\resources\salts_inventory_update.mixins.json"
 
     $menus = [System.Collections.Generic.List[string]]::new()
     $baseMenus | ForEach-Object { $menus.Add($_) }
@@ -263,6 +265,12 @@ foreach ($version in $versions) {
     Assert-Contains -Path $server -Text 'payload.targetKind() < DesktopPackets.QUICK_TARGET_DEFAULT' -Label "$version quick-move target discriminator lower bound"
     Assert-Contains -Path $server -Text 'payload.targetKind() > DesktopPackets.QUICK_TARGET_HOTBAR' -Label "$version quick-move target discriminator upper bound"
     Assert-Contains -Path $server -Text 'payload.targetKind() != DesktopPackets.QUICK_TARGET_SESSION' -Label "$version explicit session target bypasses vanilla result routing"
+    Assert-Contains -Path $server -Text 'public static void syncCraftingResult' -Label "$version detached crafting result custom sync"
+    Assert-Contains -Path $craftingMenuMixin -Text 'DesktopContainerSessions.syncCraftingResult' -Label "$version crafting result recalculation bridge"
+    Assert-Contains -Path $mixinConfig -Text 'server.CraftingMenuMixin' -Label "$version crafting result mixin registration"
+    if ($version -ne '1.20.1') {
+        Assert-Contains -Path $craftingMenuMixin -Text 'method = "finishPlacingRecipe"' -Label "$version recipe placement result bridge"
+    }
     Assert-Matches -Path $server -Pattern '(?s)sendCarriedChange\([^)]*ItemStack stack\).{0,1400}(?:this\.)?player\.inventoryMenu\.getCarried\(\)' -Label "$version detached synchronizer preserves canonical player cursor"
     Assert-Contains -Path $server -Text 'mayInteract(player, pos)' -Label "$version linked-source protection check"
     Assert-NotContains -Path $server -Text 'SaltsInventoryRuntime' -Label "$version server decisions do not use client-global config"

@@ -10,6 +10,7 @@
     "InventoryMenuMixin",
     "PlayerInventoryExpansionMixin",
     "server.ChestOpenersCounterMixin",
+    "server.CraftingMenuMixin",
     "server.ServerPlayerInventoryExpansionMixin",
     "server.ServerPlayerMixin",
     "server.ServerGamePacketListenerImplMixin"

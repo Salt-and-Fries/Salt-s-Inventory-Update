@@ -2236,6 +2236,27 @@ public final class DesktopContainerSessions {
         }
     }
 
+    public static void syncCraftingResult(ServerPlayer player, CraftingMenu menu) {
+        PlayerSessions sessions = existingSessions(player);
+        if (sessions == null || !sessions.canOpenSessions()) {
+            return;
+        }
+
+        for (Session session : sessions.sessions.values()) {
+            if (session.menu == menu && session.visibleToClient) {
+                int slotIndex = menu.getResultSlotIndex();
+                Slot resultSlot = menu.getSlot(slotIndex);
+                send(player, new DesktopSlotPayload(
+                    session.sessionId,
+                    slotIndex,
+                    menu.getStateId(),
+                    resultSlot.getItem().copy()
+                ));
+                return;
+            }
+        }
+    }
+
     private static <T> T withCanonicalCarried(
         ServerPlayer player,
         PlayerSessions sessions,
