@@ -33,6 +33,8 @@
   "config.salts_inventory_update.reset_locked_windows.description": "When a window is locked again, returns it to its default position and size while preserving its pin mode.",
   "config.salts_inventory_update.enable_ghost_pins": "Enable Ghost Pins",
   "config.salts_inventory_update.enable_ghost_pins.description": "Allows the pin button to cycle into Ghost Pinned mode. When disabled, the pin button skips ghost pins and existing ghost-pinned windows act like normal pinned windows.",
+  "config.salts_inventory_update.global_pins": "Global Pins",
+  "config.salts_inventory_update.global_pins.description": "Shares pinned layouts for player and other non-block windows across all worlds and servers. Windows attached to blocks, such as chests, remain saved per world and block.",
   "config.salts_inventory_update.persistent_windows": "Persistent Windows",
   "config.salts_inventory_update.persistent_windows.description": "Clears windows from the screen instead of closing them when E is held or Esc is pressed, then restores them the next time a Salt window opens.",
   "config.salts_inventory_update.minimizable_windows": "Minimizable Windows",

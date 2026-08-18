@@ -47,6 +47,13 @@ final class DesktopWindowStateStore {
 
     static Optional<WindowState> load(Minecraft minecraft, String windowKey) {
         StateFile file = stateFile();
+        boolean globalStateEnabled = usesGlobalState(windowKey);
+        if (globalStateEnabled) {
+            WindowState globalState = file.globalWindows.get(windowKey);
+            if (globalState != null) {
+                return Optional.of(globalState);
+            }
+        }
         Optional<String> identity = worldKey(minecraft, file);
         if (identity.isEmpty()) {
             return Optional.empty();
@@ -56,17 +63,34 @@ final class DesktopWindowStateStore {
             return Optional.empty();
         }
 
-        return Optional.ofNullable(world.get(windowKey));
+        WindowState state = world.get(windowKey);
+        if (globalStateEnabled && state != null) {
+            file.globalWindows.put(windowKey, state);
+            write(file);
+        }
+        return Optional.ofNullable(state);
     }
 
     static void save(Minecraft minecraft, String windowKey, WindowState state) {
         StateFile file = stateFile();
+        if (usesGlobalState(windowKey)) {
+            file.globalWindows.put(windowKey, state);
+            write(file);
+            return;
+        }
         Optional<String> identity = worldKey(minecraft, file);
         if (identity.isEmpty()) {
             return;
         }
         file.worlds.computeIfAbsent(identity.get(), ignored -> new LinkedHashMap<>()).put(windowKey, state);
         write(file);
+    }
+
+    private static boolean usesGlobalState(String windowKey) {
+        return SaltsInventoryConfig.get().globalPins
+            && windowKey != null
+            && !windowKey.startsWith("source:block:")
+            && !windowKey.startsWith("source:chest:");
     }
 
     static Set<String> linkedWindowKeys(Minecraft minecraft, String windowKey) {
@@ -432,12 +456,16 @@ final class DesktopWindowStateStore {
     }
 
     private static final class StateFile {
-        int schemaVersion = 2;
+        int schemaVersion = 3;
+        Map<String, WindowState> globalWindows = new LinkedHashMap<>();
         Map<String, Map<String, WindowState>> worlds = new LinkedHashMap<>();
         Map<String, Map<String, List<String>>> links = new LinkedHashMap<>();
 
         private StateFile normalized() {
-            this.schemaVersion = 2;
+            this.schemaVersion = 3;
+            if (this.globalWindows == null) {
+                this.globalWindows = new LinkedHashMap<>();
+            }
             if (this.worlds == null) {
                 this.worlds = new LinkedHashMap<>();
             }
@@ -447,6 +475,11 @@ final class DesktopWindowStateStore {
 
             trimOldest(this.worlds, MAX_WORLDS);
             trimOldest(this.links, MAX_WORLDS);
+            this.globalWindows.entrySet().removeIf(window -> window.getKey() == null
+                || window.getKey().isBlank()
+                || window.getKey().length() > DesktopProtocol.MAX_SOURCE_TEXT_LENGTH
+                || window.getValue() == null);
+            trimOldest(this.globalWindows, MAX_WINDOWS_PER_WORLD);
 
             for (Map.Entry<String, Map<String, WindowState>> entry : List.copyOf(this.worlds.entrySet())) {
                 if (entry.getValue() == null) {

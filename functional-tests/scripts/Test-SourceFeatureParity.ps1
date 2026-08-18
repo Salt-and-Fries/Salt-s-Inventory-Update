@@ -186,6 +186,7 @@ foreach ($version in $versions) {
     $packets = Join-Path $fabricRoot 'network\DesktopPackets.java'
     $windowedClient = Join-Path $fabricRoot 'client\WindowedInventoryClient.java'
     $config = Join-Path $fabricRoot 'client\SaltsInventoryConfig.java'
+    $configScreen = Join-Path $fabricRoot 'client\SaltsInventoryConfigScreen.java'
     $containerClient = Join-Path $fabricRoot 'client\DesktopContainerClient.java'
     $stateStore = Join-Path $fabricRoot 'client\DesktopWindowStateStore.java'
     $inventoryMixin = Join-Path $fabricRoot 'mixin\InventoryExpansionInventoryMixin.java'
@@ -239,6 +240,12 @@ foreach ($version in $versions) {
     Assert-Contains -Path $config -Text 'enableMod' -Label "$version config enableMod"
     Assert-Contains -Path $config -Text 'expandableInventory' -Label "$version config expandableInventory"
     Assert-Contains -Path $config -Text 'enableGhostPins' -Label "$version config ghost pins"
+    Assert-Contains -Path $config -Text 'globalPins' -Label "$version config global pins"
+    Assert-Contains -Path $configScreen -Text '"global_pins"' -Label "$version global pins config screen"
+    Assert-Contains -Path $language -Text '"config.salts_inventory_update.global_pins"' -Label "$version global pins translation"
+    Assert-Contains -Path $stateStore -Text 'globalWindows' -Label "$version global window state partition"
+    Assert-Contains -Path $stateStore -Text 'source:block:' -Label "$version block window pins remain world scoped"
+    Assert-Contains -Path $stateStore -Text 'source:chest:' -Label "$version chest window pins remain world scoped"
 
     Assert-Contains -Path $server -Text 'BoundedLinkGraph' -Label "$version server-owned bounded link graph"
     Assert-Contains -Path $server -Text 'BoundedTransferPlanner' -Label "$version bounded shared recipe-transfer planner"

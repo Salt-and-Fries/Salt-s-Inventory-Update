@@ -116,6 +116,7 @@ public final class SaltsInventoryConfig {
         public boolean enableWindowSnapping = true;
         public boolean resetLockedWindows = true;
         public boolean enableGhostPins = false;
+        public boolean globalPins = false;
         public boolean openInventoryWhenContainersAreOpened = false;
         public boolean persistentWindows = false;
         public boolean minimizableWindows = false;
@@ -164,6 +165,7 @@ public final class SaltsInventoryConfig {
             this.enableWindowSnapping = defaults.enableWindowSnapping;
             this.resetLockedWindows = defaults.resetLockedWindows;
             this.enableGhostPins = defaults.enableGhostPins;
+            this.globalPins = defaults.globalPins;
             this.openInventoryWhenContainersAreOpened = defaults.openInventoryWhenContainersAreOpened;
             this.persistentWindows = defaults.persistentWindows;
             this.minimizableWindows = defaults.minimizableWindows;

@@ -118,6 +118,7 @@ public final class FunctionalTestHarness {
                 config.enableWindowSnapping = false;
                 config.resetLockedWindows = false;
                 config.enableGhostPins = true;
+                config.globalPins = true;
                 config.ghostWindowOpacity = 42.0D;
                 config.eHoldCloseAllSeconds = 0.10D;
             });
@@ -130,6 +131,7 @@ public final class FunctionalTestHarness {
             );
             recorder.check("config.ghost_opacity_clamps_high", normalized.ghostWindowOpacity == 0.90D);
             recorder.check("config.e_hold_seconds_clamps_low", normalized.eHoldCloseAllSeconds == 0.50D);
+            recorder.check("config.global_pins_round_trips", normalized.globalPins);
         } finally {
             SaltsInventoryConfig.update(original::applyTo);
             SaltsInventoryConfig.reload();
@@ -398,6 +400,7 @@ public final class FunctionalTestHarness {
         boolean enableWindowSnapping,
         boolean resetLockedWindows,
         boolean enableGhostPins,
+        boolean globalPins,
         double ghostWindowOpacity,
         double eHoldCloseAllSeconds
     ) {
@@ -411,6 +414,7 @@ public final class FunctionalTestHarness {
                 config.enableWindowSnapping,
                 config.resetLockedWindows,
                 config.enableGhostPins,
+                config.globalPins,
                 config.ghostWindowOpacity,
                 config.eHoldCloseAllSeconds
             );
@@ -425,6 +429,7 @@ public final class FunctionalTestHarness {
             config.enableWindowSnapping = this.enableWindowSnapping;
             config.resetLockedWindows = this.resetLockedWindows;
             config.enableGhostPins = this.enableGhostPins;
+            config.globalPins = this.globalPins;
             config.ghostWindowOpacity = this.ghostWindowOpacity;
             config.eHoldCloseAllSeconds = this.eHoldCloseAllSeconds;
         }

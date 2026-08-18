@@ -108,6 +108,11 @@ public final class SaltsInventoryConfigScreen extends Screen {
             value -> SaltsInventoryConfig.update(config -> config.enableGhostPins = value)
         );
         this.addToggle(
+            "global_pins",
+            () -> SaltsInventoryConfig.get().globalPins,
+            value -> SaltsInventoryConfig.update(config -> config.globalPins = value)
+        );
+        this.addToggle(
             "persistent_windows",
             () -> SaltsInventoryConfig.get().persistentWindows,
             value -> SaltsInventoryConfig.update(config -> config.persistentWindows = value)

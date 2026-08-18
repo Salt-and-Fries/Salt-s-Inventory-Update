@@ -29,6 +29,7 @@ This release also fixes the Forge and NeoForge jar layout so the non-Fabric buil
 ## Desktop Window Behavior
 
 - Added a `Persistent windows` config option that saves visible windows when the screen is cleared, then restores them the next time a Salt window opens.
+- Added a `Global Pins` config option, disabled by default, that shares non-block window pin layouts across worlds and servers while keeping block-backed windows scoped to their world and block source.
 - Changed held `E` behavior while persistent windows are enabled to show `Clear Screen` and hide windows persistently instead of permanently closing them.
 - Added held `Esc` support using the same hold duration as held `E`; when completed, it truly closes all windows and suppresses the follow-up pause action until Escape is released and pressed again.
 - Added a `Minimizable windows` config option, disabled by default, that controls whether minimize buttons appear on windows.

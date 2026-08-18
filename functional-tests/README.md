@@ -174,6 +174,11 @@ Tests:
 | `<version> config enableMod` | `enableMod` |
 | `<version> config expandableInventory` | `expandableInventory` |
 | `<version> config ghost pins` | `enableGhostPins` |
+| `<version> config global pins` | `globalPins` |
+| `<version> global pins config screen` | `"global_pins"` |
+| `<version> global pins translation` | `"config.salts_inventory_update.global_pins"` |
+| `<version> global window state partition` | `globalWindows` |
+| `<version> block/chest window pins remain world scoped` | `source:block:`, `source:chest:` |
 
 ### Loader Bootstrap Coverage
 
