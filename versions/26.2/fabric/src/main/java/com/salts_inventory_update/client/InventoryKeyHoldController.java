@@ -155,6 +155,10 @@ public final class InventoryKeyHoldController {
             return;
         }
 
+        if (InventoryDesktopScreen.openOrToggleRiddenInventory(minecraft)) {
+            return;
+        }
+
         if (minecraft.gameMode.isServerControlledInventory()) {
             minecraft.player.sendOpenInventory();
         } else {

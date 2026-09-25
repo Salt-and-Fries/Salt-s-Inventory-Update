@@ -1,6 +1,6 @@
 # Salt's Inventory Update 0.1.2 Changelog
 
-First-time help window, in-game controls guide, persistent and linked window behavior, text box editing controls, configurable hotbar and mouse-focus behavior, full JEI/REI/EMI recipe-browser integration, crafting and inventory synchronization fixes, command cleanup, Forge/NeoForge Sinytra Connector compatibility fixes, and cross-version support.
+First-time help window, in-game controls guide, persistent and linked window behavior, sorting into open containers, Sophisticated Storage and Backpacks integration on Forge/NeoForge, text box editing controls, configurable hotbar and mouse-focus behavior, full JEI/REI/EMI recipe-browser integration, crafting and inventory synchronization fixes, command cleanup, Forge/NeoForge Sinytra Connector compatibility fixes, and cross-version support.
 
 This is also a protocol-breaking correctness and security release. Salt's Inventory Update 0.1.2 clients and servers use desktop protocol 2 and must be updated together. A genuinely unmodded peer continues to use vanilla container behavior, while a detected 0.1.1 Salt peer is rejected with a clear incompatibility message instead of being allowed to enter a partially compatible session.
 
@@ -23,6 +23,8 @@ The former JEI-only desktop window is now a neutral Recipe Browser Window. JEI r
 - Ported the help window feature to Minecraft 1.20.1 on Fabric and Forge.
 - Ported persistent windows, linked windows, minimizable-window config, and automatic inventory-on-container-open behavior to every supported Minecraft version and loader.
 - Ported the desktop text box editing fix to every supported Minecraft version and loader.
+- Added sorting into open containers to all five supported Minecraft versions on Fabric and their Forge/NeoForge counterparts.
+- Added Sophisticated Storage and Sophisticated Backpacks desktop integration on 1.20.1 Forge and 1.21.1, 1.21.11, 26.1.2, and 26.2 NeoForge; Fabric continues to use their native screens.
 - Added REI recipe-browser support to every supported Minecraft version and loader.
 - Added EMI recipe-browser support for Minecraft 1.21.1 on Fabric and NeoForge.
 - Documented that Minecraft 1.21.1 and earlier are the supported EMI version range, while newer Minecraft versions currently have no compatible EMI release.
@@ -46,12 +48,37 @@ The former JEI-only desktop window is now a neutral Recipe Browser Window. JEI r
 - Fixed the camera snapping after closing the desktop by preserving the first real mouse movement during the handoff back to gameplay.
 - Updated container placement so closed or pinned inventory and creative inventory windows still reserve their saved placement, preventing newly opened containers from overlapping the inventory when it is reopened.
 - Changed window ellipsis menus so using buttons inside the popup does not immediately close the popup.
+- When a title bar is crowded, moved every control except Close into the ellipsis menu, including Sort into open containers and its Shift action.
 - Added a Link title-bar button and link-selection mode. Linked windows open and close together bidirectionally, while linked container windows still respect nearby and line-of-sight checks before reopening.
 - Added link-mode visual states: the origin window is green with an outline, linked windows are green without an outline, and selectable unlinked windows receive a blue highlight without an outline.
 - Extended the shared window-control texture with a dedicated Link button column so the control can be edited consistently with the other title-bar buttons.
 - Added delayed tooltips to title-bar controls; hovering a button for one second now shows its name.
 - Fixed linked container windows on Minecraft 1.20.1 and 1.21.1 so closing a container by right-clicking the same block again also closes its linked companion windows, matching the normal title-bar close button behavior.
 - Changed server-driven session removals in old-version clients to run the same linked-window close cascade used by newer builds before removing the origin window.
+- When riding a chest boat or another inventory-bearing entity, pressing `E` opens its container together with the player inventory and pressing `E` again closes both. Opening the same entity while not riding it remains a normal container action.
+- Fixed resized player inventories reverting to their default width during layout refreshes or after reopening; valid user-selected width and height are preserved.
+- Fixed the offhand slot drawing above overlapping desktop windows.
+
+## Sort Into Open Containers
+
+- Added a window-control button for the player inventory, storage containers, and supported processing containers. Normal click moves only items whose type is already present in another open storage window; unmatched items stay in the source.
+- Shift-click tries storage containing the same item type, then storage containing an item with a shared tag, then the focused storage window, then initially empty storage windows. Full destinations pass leftovers to the next eligible destination.
+- Player inventory sorting uses main-inventory slots only. Furnaces contribute output slots, and brewing stands contribute their three bottle slots even while brewing; machine inputs and fuel remain untouched. Player inventory and processing windows are never destinations.
+- Routing uses a snapshot of destination contents taken at the start of the action, and excludes minimized, hidden, ghosted, closed, and duplicate views of the source inventory. Transfers retain normal slot restrictions, stack compatibility, and output extraction rewards.
+- Extended the editable window-control texture with normal and Shift sorting columns. Tooltips read “Sort into open containers” and “Force sort into open containers” while Shift is held.
+
+## Storage And Container Compatibility
+
+- Integrated Sophisticated Storage and Backpacks into Salt desktop windows on Forge/NeoForge while retaining native search, sorting, upgrades, settings, transfers, side tabs, and storage rules. Their mods remain optional.
+- Fixed item alignment and interaction across Sophisticated storage and ordinary Salt slots, including drag previews, double-click collection, upgrade slots, and authenticated multi-window transfers.
+- Prevented an open item Backpack from being moved or used through another inventory view until its final Salt window closes.
+- Preserved native chest, trapped chest, barrel, ender chest, and shulker open/close state, sounds, and animations while their Salt windows are open. Each ender-chest window tracks its own physical block even though the inventory contents are shared.
+- Moved shared Creative paging buttons to Salt-owned textures so Forge/NeoForge builds do not depend on a Fabric texture path.
+
+## Item Interaction Fixes
+
+- Fixed the affected legacy versions where left- and right-drag placement committed the opposite distribution from the on-screen preview, including drags involving Sophisticated windows.
+- Fixed rapid clicking over an empty slot so the first placement and pickup follow vanilla behavior instead of suppressing the placement.
 
 ## Text Box Editing Controls
 
@@ -200,6 +227,7 @@ The former JEI-only desktop window is now a neutral Recipe Browser Window. JEI r
 - Added functional harness coverage for pure desktop text editing operations, including cursor movement, Shift selection, select-all, copy, cut, paste, replacement typing, Backspace, Delete, paste filtering, max-length truncation, and Unicode-safe deletion.
 - Added functional coverage that confirms EMI wins the shared browser selection when it is installed and reports itself available.
 - Added source parity checks for browser entrypoints, optional runtime flags, EMI caching and compact tag layouts, recipe-widget tooltips, detached crafting results, player-menu state acknowledgements, and shared-menu finalization after container clicks.
+- Added 80 sorting regression cases across the five Minecraft versions, covering exact and tag matching, destination priority, full and duplicate storage, output-only extraction, and item-count preservation.
 - Verified `compileJava`, `verifyNonFabricModJars`, and the full `build` task after the compatibility fix.
 - Verified the text-editing fix with `functionalTestCompile` across the supported version and loader matrix.
 - Verified the linked-window close backport with targeted compile coverage for Minecraft 1.20.1 Fabric, 1.20.1 Forge, 1.21.1 Fabric, and 1.21.1 NeoForge.
@@ -207,6 +235,8 @@ The former JEI-only desktop window is now a neutral Recipe Browser Window. JEI r
 - Smoke-tested NeoForge `runClient` on Minecraft 1.21.1, 1.21.11, 26.1.2, and 26.2 by launching the client, opening an existing world, closing the first-time help window, and opening the inventory.
 - Confirmed the NeoForge smoke-test logs contained no crash, exception, fatal error, build failure, or error markers, and that each tested client shut down normally.
 - Verified the legacy click fixes with consecutive first-click pickup and placement flows on Minecraft 1.20.1 and 1.21.1.
+- Rebuilt all ten supported version/loader targets after the sorting control, mounted-entity window, resize, and compact-menu fixes.
+- Verified in-game on 1.20.1 Forge that a narrowed inventory retains its width after closing and reopening, and on 1.21.1 NeoForge that a mounted chest-boat window opens and closes with the player inventory.
 
 ## Compatibility And Safety
 

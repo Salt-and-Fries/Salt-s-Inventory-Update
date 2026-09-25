@@ -4429,6 +4429,10 @@ public final class DesktopContainerSessions {
             return sourceKeyForBlock(player, blockEntity.getBlockPos());
         }
 
+        if (provider instanceof net.minecraft.world.entity.Entity entity) {
+            return sourceKeyForEntity(player, entity.getUUID());
+        }
+
         return null;
     }
 

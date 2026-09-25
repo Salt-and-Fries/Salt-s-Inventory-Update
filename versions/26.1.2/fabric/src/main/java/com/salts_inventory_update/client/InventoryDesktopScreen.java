@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import com.salts_inventory_update.platform.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
@@ -69,7 +70,9 @@ import net.minecraft.util.Unit;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.HasCustomInventoryScreen;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -896,6 +899,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private final List<DesktopContainerSession> sessions = new ArrayList<>();
     private final List<InventoryWindow> windows = new ArrayList<>();
     private @Nullable LocalPlayer owner;
+    private @Nullable UUID pendingMountedVehicleId;
     private boolean hotbarOnly;
     private boolean cameraControl;
     private boolean renderingGhostWindow;
@@ -1232,6 +1236,30 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             minecraft.getTutorial().onOpenInventory();
         }
         screen.showIfNeeded(minecraft);
+    }
+
+    public static boolean openOrToggleRiddenInventory(Minecraft minecraft) {
+        if (!canUseDesktopInput(minecraft) || !(minecraft.player.getVehicle() instanceof HasCustomInventoryScreen)) {
+            return false;
+        }
+
+        InventoryDesktopScreen screen = getOrCreate(minecraft);
+        InventoryWindow mountedWindow = screen.riddenEntityWindow();
+        if (mountedWindow != null) {
+            screen.pendingMountedVehicleId = null;
+            if (mountedWindow.persistentHidden || mountedWindow.ghosted) {
+                screen.openExistingLinkedWindow(mountedWindow);
+                screen.showWindow(isCreativePlayer(minecraft) ? WindowKind.CREATIVE : WindowKind.INVENTORY);
+            } else {
+                screen.closeWindow(mountedWindow, "mounted-inventory-toggle");
+            }
+            screen.showIfNeeded(minecraft);
+            return true;
+        }
+
+        screen.pendingMountedVehicleId = minecraft.player.getVehicle().getUUID();
+        minecraft.player.sendOpenInventory();
+        return true;
     }
 
     public static void openOrToggleCreative(Minecraft minecraft) {
@@ -1577,7 +1605,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     public void refreshInventoryWindowLayout() {
         for (InventoryWindow window : this.windows) {
             if (window.kind == WindowKind.INVENTORY) {
-                this.ensureInventoryWindowAutoSize(window);
+                this.clampInventoryWindowSize(window);
             } else if (window.kind == WindowKind.CREATIVE) {
                 this.forceFixedWindowSize(window);
                 this.clampWindowIntoDesktop(window);
@@ -4397,7 +4425,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 windowHeight
             );
             this.placeOrRestoreWindow(window, WindowPlacement.CENTER);
-            this.ensureInventoryWindowAutoSize(window);
+            this.clampInventoryWindowSize(window);
         } else if (kind == WindowKind.CREATIVE) {
             window = new InventoryWindow(
                 kind,
@@ -4533,8 +4561,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             minX,
             minY
         );
+        window.mountedVehicleId = this.consumePendingMountedVehicleId("");
         this.initializeApiWindow(window, apiDefinition, apiSetup);
-        this.openInventoryWindowForContainerIfConfigured();
+        this.openInventoryWindowForContainerIfConfigured(window);
         this.placeOrRestoreWindow(window, WindowPlacement.CONTAINER);
         this.windows.add(window);
         this.apiOpened(window);
@@ -4724,6 +4753,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             apiSize.height(),
             session
         );
+        window.mountedVehicleId = this.consumePendingMountedVehicleId(session.sourceKey());
         boolean apiInitialized = this.initializeApiWindow(window, apiDefinition, apiSetup);
         if (transitionReplacedSession != null && !apiInitialized) {
             DesktopDebug.warn(
@@ -4778,7 +4808,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             window.minimized = false;
         }
         if (!window.ghosted) {
-            this.openInventoryWindowForContainerIfConfigured();
+            this.openInventoryWindowForContainerIfConfigured(window);
         }
         this.windows.add(window);
         this.apiOpened(window);
@@ -4808,8 +4838,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         );
     }
 
-    private void openInventoryWindowForContainerIfConfigured() {
-        if (SaltsInventoryConfig.get().openInventoryWhenContainersAreOpened) {
+    private void openInventoryWindowForContainerIfConfigured(InventoryWindow containerWindow) {
+        if (this.isRidingEntityWindow(containerWindow) || SaltsInventoryConfig.get().openInventoryWhenContainersAreOpened) {
             if (isCreativePlayer(this.minecraftInstance())) {
                 this.removeStandaloneWindow(WindowKind.INVENTORY, "container-open-creative");
                 this.showWindow(WindowKind.CREATIVE);
@@ -4817,6 +4847,47 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 this.showWindow(WindowKind.INVENTORY);
             }
         }
+    }
+
+    private @Nullable UUID consumePendingMountedVehicleId(String sourceKey) {
+        UUID pending = this.pendingMountedVehicleId;
+        this.pendingMountedVehicleId = null;
+        Entity vehicle = this.minecraft == null || this.minecraft.player == null ? null : this.minecraft.player.getVehicle();
+        if (pending == null || vehicle == null || !pending.equals(vehicle.getUUID())) {
+            return null;
+        }
+        return sourceKey.isEmpty() || isEntitySourceKey(sourceKey, vehicle) ? pending : null;
+    }
+
+    private @Nullable InventoryWindow riddenEntityWindow() {
+        InventoryWindow hidden = null;
+        for (InventoryWindow window : this.windows) {
+            if (!this.isRidingEntityWindow(window)) {
+                continue;
+            }
+            if (!window.persistentHidden && !window.ghosted) {
+                return window;
+            }
+            hidden = window;
+        }
+        return hidden;
+    }
+
+    private boolean isRidingEntityWindow(InventoryWindow window) {
+        Entity vehicle = this.minecraft == null || this.minecraft.player == null ? null : this.minecraft.player.getVehicle();
+        if (window.kind != WindowKind.CONTAINER || !(vehicle instanceof HasCustomInventoryScreen)) {
+            return false;
+        }
+        if (vehicle.getUUID().equals(window.mountedVehicleId)) {
+            return true;
+        }
+        return window.session != null
+            && (window.session.isMountSession() && window.session.entityId() == vehicle.getId()
+                || isEntitySourceKey(window.session.sourceKey(), vehicle));
+    }
+
+    private static boolean isEntitySourceKey(String sourceKey, Entity vehicle) {
+        return sourceKey.startsWith("entity:") && sourceKey.endsWith(":" + vehicle.getUUID());
     }
 
     private DesktopWindowDefinition<?, ?> apiDefinitionFor(
@@ -5119,23 +5190,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         };
     }
 
-    private void ensureInventoryWindowAutoSize(InventoryWindow window) {
+    private void clampInventoryWindowSize(InventoryWindow window) {
         if (window.kind != WindowKind.INVENTORY) {
             return;
         }
 
-        int slotCount = this.inventoryVirtualSlotCount();
-        int totalRows = rowsForSlots(slotCount, INVENTORY_DEFAULT_COLUMNS);
-        int visibleRows = Math.max(1, Math.min(INVENTORY_MAX_AUTO_VISIBLE_ROWS, Math.max(1, totalRows)));
-        boolean scrollbar = totalRows > visibleRows;
-        int desiredWidth = Math.max(this.minimumTitleBarWidth(window.title), storageWindowWidth(INVENTORY_DEFAULT_COLUMNS, scrollbar));
-        int desiredHeight = inventoryWindowHeight(visibleRows);
+        // New windows get their default size on creation; layout refreshes must preserve manual resizing.
         int maxWidth = Math.max(SLOT_SIZE + WINDOW_CONTENT_PADDING * 2, this.desktopWidth() - WINDOW_PLACEMENT_MARGIN * 2);
         int maxHeight = Math.max(this.minResizableHeight(window), this.desktopHeight() - WINDOW_PLACEMENT_MARGIN * 2);
         int minWidth = Math.min(this.minResizableWidth(window), maxWidth);
         int minHeight = Math.min(this.minResizableHeight(window), maxHeight);
-        window.width = clamp(Math.max(window.width, desiredWidth), minWidth, maxWidth);
-        window.height = clamp(Math.max(window.height, desiredHeight), minHeight, maxHeight);
+        window.width = clamp(window.width, minWidth, maxWidth);
+        window.height = clamp(window.height, minHeight, maxHeight);
         this.clampStorageScroll(window);
         this.clampWindowIntoDesktop(window);
     }
@@ -5612,8 +5678,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return SaltsInventoryConfig.get().minimizableWindows ? FULL_TITLE_CONTROLS_WITH_MINIMIZE : FULL_TITLE_CONTROLS;
     }
 
-    private List<WindowControl> popupControls() {
-        return SaltsInventoryConfig.get().minimizableWindows ? POPUP_CONTROLS_WITH_MINIMIZE : POPUP_CONTROLS;
+    private List<WindowControl> popupControls(InventoryWindow window) {
+        List<WindowControl> controls = SaltsInventoryConfig.get().minimizableWindows ? POPUP_CONTROLS_WITH_MINIMIZE : POPUP_CONTROLS;
+        return this.sortControls(window, controls);
     }
 
     private static int rowsForSlots(int slotCount, int columns) {
@@ -6729,12 +6796,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         String originKey = this.linkKey(origin);
-        if (originKey == null) {
-            return;
-        }
-
-        Set<String> linkedKeys = DesktopWindowStateStore.linkedWindowKeys(this.minecraftInstance(), originKey);
-        if (linkedKeys.isEmpty()) {
+        Set<String> linkedKeys = originKey == null
+            ? Set.of()
+            : DesktopWindowStateStore.linkedWindowKeys(this.minecraftInstance(), originKey);
+        boolean mountedOrigin = this.isRidingEntityWindow(origin);
+        boolean inventoryOrigin = this.isStandaloneInventoryWindow(origin);
+        if (linkedKeys.isEmpty() && !mountedOrigin && !inventoryOrigin) {
             return;
         }
 
@@ -6745,13 +6812,21 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     continue;
                 }
                 String linkedKey = this.linkKey(window);
-                if (linkedKey != null && linkedKeys.contains(linkedKey)) {
+                boolean mountedCandidate = this.isRidingEntityWindow(window);
+                if (linkedKey != null && linkedKeys.contains(linkedKey)
+                    || mountedOrigin && (mountedCandidate || this.isStandaloneInventoryWindow(window))
+                    || inventoryOrigin && mountedCandidate) {
                     this.closeWindow(window, "linked-" + reason, forcePermanent);
                 }
             }
         } finally {
             this.syncingLinkedWindows = false;
         }
+    }
+
+    private boolean isStandaloneInventoryWindow(InventoryWindow window) {
+        return window.kind == (isCreativePlayer(this.minecraftInstance()) ? WindowKind.CREATIVE : WindowKind.INVENTORY)
+            && window.session == null && window.legacyMenu == null;
     }
 
     private static @Nullable WindowKind localWindowKindForKey(String key) {
@@ -7852,7 +7927,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         List<WindowControl> fullControls = this.sortControls(window, this.fullTitleControls());
         boolean compact = TITLE_LEFT_PADDING + TITLE_TO_CONTROLS_GAP + this.font.width(titleBarTitle)
             + controlsWidth(fullControls) > window.width;
-        List<WindowControl> controls = compact ? this.sortControls(window, COMPACT_TITLE_CONTROLS) : fullControls;
+        List<WindowControl> controls = compact ? COMPACT_TITLE_CONTROLS : fullControls;
         int availableTitleWidth = Math.max(0, window.width - TITLE_LEFT_PADDING - TITLE_TO_CONTROLS_GAP - controlsWidth(controls));
         String title = this.truncatedTitle(titleBarTitle.getString(), availableTitleWidth);
         return new TitleBarLayout(title, this.controlRects(window, controls), compact);
@@ -8579,7 +8654,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         renderNineSlice(graphics, WINDOW_TEXTURE, popupRect.x(), popupRect.y(), popupRect.width(), popupRect.height());
-        for (ControlRect rect : this.popupControlRects(popupRect)) {
+        for (ControlRect rect : this.popupControlRects(window, popupRect)) {
             this.renderControlButton(graphics, window, rect.control(), rect.x(), rect.y(), mouseX, mouseY);
         }
     }
@@ -8604,7 +8679,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return null;
         }
 
-        for (ControlRect rect : this.popupControlRects(popupRect)) {
+        for (ControlRect rect : this.popupControlRects(window, popupRect)) {
             if (rect.contains(mouseX, mouseY)) {
                 return rect.control();
             }
@@ -8629,7 +8704,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return null;
         }
 
-        List<WindowControl> controls = this.popupControls();
+        List<WindowControl> controls = this.popupControls(window);
         int width = CONTROL_POPUP_PADDING * 2 + controls.size() * CONTROL_SIZE + Math.max(0, controls.size() - 1) * CONTROL_GAP;
         int height = CONTROL_POPUP_PADDING * 2 + CONTROL_SIZE;
         int x = clamp(ellipsis.x() + CONTROL_SIZE - width, 0, Math.max(0, this.desktopWidth() - width));
@@ -8641,11 +8716,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return new PopupRect(x, y, width, height);
     }
 
-    private List<ControlRect> popupControlRects(PopupRect popupRect) {
+    private List<ControlRect> popupControlRects(InventoryWindow window, PopupRect popupRect) {
         List<ControlRect> rects = new ArrayList<>();
         int x = popupRect.x() + CONTROL_POPUP_PADDING;
         int y = popupRect.y() + CONTROL_POPUP_PADDING;
-        for (WindowControl control : this.popupControls()) {
+        for (WindowControl control : this.popupControls(window)) {
             rects.add(new ControlRect(control, x, y));
             x += CONTROL_SIZE + CONTROL_GAP;
         }
@@ -17658,6 +17733,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private int height;
         private final @Nullable DesktopContainerSession session;
         private final @Nullable AbstractContainerMenu legacyMenu;
+        private @Nullable UUID mountedVehicleId;
         private final List<Slot> legacyContainerSlots;
         private final int legacyMinSlotX;
         private final int legacyMinSlotY;
