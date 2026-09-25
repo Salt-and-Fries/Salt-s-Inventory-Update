@@ -1,3 +1,2 @@
 Manifest-Version: 1.0
-MixinConfigs: salts_inventory_update.mixins.json
-
+MixinConfigs: salts_inventory_update.mixins.json,salts_inventory_update.sophisticated.mixins.json

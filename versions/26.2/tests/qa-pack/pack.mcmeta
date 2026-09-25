@@ -1,0 +1,13 @@
+{
+  "pack": {
+    "description": "26.2 Sort Windows isolated QA fixtures",
+    "min_format": [
+      107,
+      0
+    ],
+    "max_format": [
+      107,
+      1
+    ]
+  }
+}

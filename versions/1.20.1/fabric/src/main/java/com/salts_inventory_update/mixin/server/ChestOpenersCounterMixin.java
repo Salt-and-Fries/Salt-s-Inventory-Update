@@ -4,6 +4,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import net.minecraft.world.Container;
+import net.minecraft.world.level.block.entity.EnderChestBlockEntity;
+import com.salts_inventory_update.internal.desktop.DesktopEnderChestMenu;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -13,21 +15,30 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.salts_inventory_update.server.DesktopContainerSessions;
 
-@Mixin(targets = "net.minecraft.world.level.block.entity.ChestBlockEntity$1")
+@Mixin(targets = {
+    "net.minecraft.world.level.block.entity.ChestBlockEntity$1",
+    "net.minecraft.world.level.block.entity.BarrelBlockEntity$1",
+    "net.minecraft.world.level.block.entity.EnderChestBlockEntity$1"
+})
 public abstract class ChestOpenersCounterMixin {
     @Unique
     private static Field salts_inventory_update$containerField;
 
     @Inject(method = "isOwnContainer", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$desktopSessionOwnsChest(Player player, CallbackInfoReturnable<Boolean> cir) {
-        Container container = salts_inventory_update$container(this);
-        if (container != null && DesktopContainerSessions.hasOpenSessionForContainer(player, container)) {
+        Object owner = salts_inventory_update$container(this);
+        if (owner instanceof Container container
+            && DesktopContainerSessions.hasOpenSessionForContainer(player, container)) {
+            cir.setReturnValue(true);
+        } else if (owner instanceof EnderChestBlockEntity chest
+            && DesktopContainerSessions.hasOpenSessionMatching(player,
+                menu -> menu instanceof DesktopEnderChestMenu bound && bound.salts_inventory_update$ownsEnderChest(chest))) {
             cir.setReturnValue(true);
         }
     }
 
     @Unique
-    private static Container salts_inventory_update$container(Object opener) {
+    private static Object salts_inventory_update$container(Object opener) {
         try {
             Field field = salts_inventory_update$containerField;
             if (field == null) {
@@ -35,7 +46,7 @@ public abstract class ChestOpenersCounterMixin {
                 salts_inventory_update$containerField = field;
             }
             Object value = field.get(opener);
-            return value instanceof Container container ? container : null;
+            return value;
         } catch (ReflectiveOperationException | RuntimeException exception) {
             return null;
         }
@@ -44,7 +55,9 @@ public abstract class ChestOpenersCounterMixin {
     @Unique
     private static Field salts_inventory_update$findContainerField(Class<?> type) throws NoSuchFieldException {
         for (Field field : type.getDeclaredFields()) {
-            if (!Modifier.isStatic(field.getModifiers()) && Container.class.isAssignableFrom(field.getType())) {
+            if (!Modifier.isStatic(field.getModifiers())
+                && (Container.class.isAssignableFrom(field.getType())
+                    || EnderChestBlockEntity.class.isAssignableFrom(field.getType()))) {
                 field.setAccessible(true);
                 return field;
             }

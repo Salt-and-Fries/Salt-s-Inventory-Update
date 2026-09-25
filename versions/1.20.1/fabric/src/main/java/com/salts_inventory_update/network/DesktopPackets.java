@@ -1,7 +1,9 @@
 package com.salts_inventory_update.network;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -36,6 +38,9 @@ public final class DesktopPackets {
     public static final int PIN_MODE_UNPINNED = 0;
     public static final int PIN_MODE_PINNED = 1;
     public static final int PIN_MODE_GHOST_PINNED = 2;
+    public static final int MAX_GESTURE_SLOTS = 256;
+    public static final long CAP_MULTI_MENU_GESTURES = 1L << 4;
+    public static final long CAP_SORT_WINDOWS = 1L << 5;
 
     private DesktopPackets() {
     }
@@ -108,6 +113,65 @@ public final class DesktopPackets {
             values.add(buf.readUtf(maxLength));
         }
         return values;
+    }
+
+    private static void writeSlotReference(FriendlyByteBuf buf, DesktopSlotReference reference) {
+        buf.writeVarInt(reference.sessionId());
+        buf.writeLong(reference.sessionToken());
+        buf.writeVarInt(reference.stateId());
+        buf.writeVarInt(reference.slotIndex());
+    }
+
+    private static DesktopSlotReference readSlotReference(FriendlyByteBuf buf) {
+        return new DesktopSlotReference(buf.readVarInt(), buf.readLong(), buf.readVarInt(), buf.readVarInt());
+    }
+
+    private static void writeSessionReference(FriendlyByteBuf buf, DesktopSessionReference reference) {
+        buf.writeVarInt(reference.sessionId());
+        buf.writeLong(reference.sessionToken());
+        buf.writeVarInt(reference.stateId());
+    }
+
+    private static DesktopSessionReference readSessionReference(FriendlyByteBuf buf) {
+        return new DesktopSessionReference(buf.readVarInt(), buf.readLong(), buf.readVarInt());
+    }
+
+    private static void writeSlotReferences(FriendlyByteBuf buf, List<DesktopSlotReference> references) {
+        requireUniqueBounded(references, MAX_GESTURE_SLOTS, reference -> ((long) reference.sessionId() << 32) ^ reference.slotIndex());
+        buf.writeVarInt(references.size());
+        references.forEach(reference -> writeSlotReference(buf, reference));
+    }
+
+    private static List<DesktopSlotReference> readSlotReferences(FriendlyByteBuf buf) {
+        int size = buf.readVarInt();
+        DesktopProtocol.requireCount("desktop gesture slots", size, MAX_GESTURE_SLOTS);
+        List<DesktopSlotReference> result = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) result.add(readSlotReference(buf));
+        requireUniqueBounded(result, MAX_GESTURE_SLOTS, reference -> ((long) reference.sessionId() << 32) ^ reference.slotIndex());
+        return List.copyOf(result);
+    }
+
+    private static void writeSessionReferences(FriendlyByteBuf buf, List<DesktopSessionReference> references) {
+        requireUniqueBounded(references, DesktopProtocol.MAX_DESKTOP_SESSIONS + 1, reference -> (long) reference.sessionId());
+        buf.writeVarInt(references.size());
+        references.forEach(reference -> writeSessionReference(buf, reference));
+    }
+
+    private static List<DesktopSessionReference> readSessionReferences(FriendlyByteBuf buf) {
+        int size = buf.readVarInt();
+        DesktopProtocol.requireCount("desktop gesture sessions", size, DesktopProtocol.MAX_DESKTOP_SESSIONS + 1);
+        List<DesktopSessionReference> result = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) result.add(readSessionReference(buf));
+        requireUniqueBounded(result, DesktopProtocol.MAX_DESKTOP_SESSIONS + 1, reference -> (long) reference.sessionId());
+        return List.copyOf(result);
+    }
+
+    private static <T> void requireUniqueBounded(List<T> values, int maximum, java.util.function.Function<T, Long> identity) {
+        if (values == null || values.isEmpty() || values.size() > maximum) {
+            throw new IllegalArgumentException("Invalid desktop gesture list size");
+        }
+        Set<Long> seen = new HashSet<>();
+        for (T value : values) if (!seen.add(identity.apply(value))) throw new IllegalArgumentException("Duplicate desktop gesture target");
     }
 
     public interface DesktopPacket {
@@ -205,6 +269,63 @@ public final class DesktopPackets {
                 DesktopProtocol.MAX_IDENTIFIER_LENGTH
             );
         }
+    }
+
+    public record DesktopSlotReference(int sessionId, long sessionToken, int stateId, int slotIndex) {
+        public DesktopSlotReference {
+            if (sessionId < PLAYER_MENU_SESSION || sessionToken == 0L || stateId < 0 || slotIndex < 0 || slotIndex >= ITEM_LIST_MAX_SIZE) {
+                throw new IllegalArgumentException("Invalid desktop slot reference");
+            }
+        }
+    }
+
+    public record DesktopSessionReference(int sessionId, long sessionToken, int stateId) {
+        public DesktopSessionReference {
+            if (sessionId < PLAYER_MENU_SESSION || sessionToken == 0L || stateId < 0) throw new IllegalArgumentException("Invalid desktop session reference");
+        }
+    }
+
+    public record DesktopDragSlotsPayload(int quickCraftType, List<DesktopSlotReference> slots) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_drag_slots");
+        public DesktopDragSlotsPayload(FriendlyByteBuf buf) { this(buf.readVarInt(), readSlotReferences(buf)); }
+        public DesktopDragSlotsPayload { if (quickCraftType < 0 || quickCraftType > 2) throw new IllegalArgumentException("Invalid quick craft type"); slots = List.copyOf(slots); requireUniqueBounded(slots, MAX_GESTURE_SLOTS, r -> ((long) r.sessionId() << 32) ^ r.slotIndex()); }
+        @Override public ResourceLocation id() { return TYPE; }
+        @Override public void write(FriendlyByteBuf buf) { buf.writeVarInt(quickCraftType); writeSlotReferences(buf, slots); }
+    }
+
+    public record DesktopPickupAllPayload(int anchorSessionId, int anchorSlotIndex, int button, List<DesktopSessionReference> sources) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_pickup_all");
+        public DesktopPickupAllPayload(FriendlyByteBuf buf) { this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), readSessionReferences(buf)); }
+        public DesktopPickupAllPayload { if (anchorSessionId < 0 || anchorSlotIndex < 0 || (button != 0 && button != 1)) throw new IllegalArgumentException("Invalid pickup all"); sources = List.copyOf(sources); requireUniqueBounded(sources, DesktopProtocol.MAX_DESKTOP_SESSIONS + 1, r -> (long) r.sessionId()); }
+        @Override public ResourceLocation id() { return TYPE; }
+        @Override public void write(FriendlyByteBuf buf) { buf.writeVarInt(anchorSessionId); buf.writeVarInt(anchorSlotIndex); buf.writeVarInt(button); writeSessionReferences(buf, sources); }
+    }
+
+    public record DesktopSortWindowsPayload(
+        DesktopSessionReference source, List<DesktopSessionReference> destinations, int focusedSessionId, boolean shift
+    ) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_sort_windows");
+        public DesktopSortWindowsPayload(FriendlyByteBuf buf) {
+            this(readSessionReference(buf), readSessionReferences(buf), buf.readVarInt(), buf.readBoolean());
+        }
+        public DesktopSortWindowsPayload {
+            if (source == null) throw new IllegalArgumentException("Invalid sort source");
+            destinations = List.copyOf(destinations);
+            requireUniqueBounded(destinations, DesktopProtocol.MAX_DESKTOP_SESSIONS, r -> (long) r.sessionId());
+        }
+        @Override public ResourceLocation id() { return TYPE; }
+        @Override public void write(FriendlyByteBuf buf) {
+            writeSessionReference(buf, source); writeSessionReferences(buf, destinations);
+            buf.writeVarInt(focusedSessionId); buf.writeBoolean(shift);
+        }
+    }
+
+    public record DesktopQuickMoveAllPayload(List<DesktopSlotReference> sources, int targetKind, DesktopSessionReference target) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_quick_move_all");
+        public DesktopQuickMoveAllPayload(FriendlyByteBuf buf) { this(readSlotReferences(buf), buf.readVarInt(), readSessionReference(buf)); }
+        public DesktopQuickMoveAllPayload { if (targetKind < QUICK_TARGET_DEFAULT || targetKind > QUICK_TARGET_HOTBAR || target == null) throw new IllegalArgumentException("Invalid quick move all"); sources = List.copyOf(sources); requireUniqueBounded(sources, MAX_GESTURE_SLOTS, r -> ((long) r.sessionId() << 32) ^ r.slotIndex()); }
+        @Override public ResourceLocation id() { return TYPE; }
+        @Override public void write(FriendlyByteBuf buf) { writeSlotReferences(buf, sources); buf.writeVarInt(targetKind); writeSessionReference(buf, target); }
     }
 
     public record DesktopHelloAckPayload(

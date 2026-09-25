@@ -11,4 +11,5 @@ runs/
 run/
 **/run/
 .DS_Store
-
+/functional-tests/results/backup-*/
+/versions/*/*/logs/

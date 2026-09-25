@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "[11.0.13,12)"
+loaderVersion = "[11,12)"
 license = "${license}"
 
 [[mods]]
@@ -8,18 +8,42 @@ version = "${version}"
 displayName = "${mod_name}"
 displayURL = "https://salt-and-fries.github.io/Salt-s-Inventory-Update/"
 issueTrackerURL = "https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/issues"
-logoFile = "assets/salts_inventory_update/icon.png"
+iconFile = "assets/salts_inventory_update/icon.png"
 authors = "Salt"
 description = "${description}"
 
 [[mixins]]
 config = "${mod_id}.mixins.json"
 
+[[mixins]]
+config = "${mod_id}.sophisticated.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId = "neoforge"
 type = "required"
-versionRange = "[26.2.0.7-beta,26.3)"
+versionRange = "[26.2.0.53-beta,26.3)"
 ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "sophisticatedcore"
+type = "optional"
+versionRange = "[1.4.101,2)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "sophisticatedbackpacks"
+type = "optional"
+versionRange = "[3.25.90,4)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "sophisticatedstorage"
+type = "optional"
+versionRange = "[1.5.108,2)"
+ordering = "AFTER"
 side = "BOTH"
 
 [[dependencies.${mod_id}]]

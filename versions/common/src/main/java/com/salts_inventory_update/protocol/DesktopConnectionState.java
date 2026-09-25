@@ -33,12 +33,31 @@ public final class DesktopConnectionState {
         long selectedCapabilities,
         boolean uiEnabled
     ) {
+        return acknowledge(
+            protocol,
+            echoedClientNonce,
+            connectionNonce,
+            selectedCapabilities,
+            uiEnabled,
+            DesktopProtocol.KNOWN_CAPABILITIES
+        );
+    }
+
+    /** Accepts a version-local capability mask while retaining the shared protocol default. */
+    public synchronized boolean acknowledge(
+        int protocol,
+        long echoedClientNonce,
+        long connectionNonce,
+        long selectedCapabilities,
+        boolean uiEnabled,
+        long supportedCapabilities
+    ) {
         if (phase != Phase.UNNEGOTIATED ||
             clientNonce == 0L ||
             protocol != DesktopProtocol.VERSION ||
             echoedClientNonce != clientNonce ||
             connectionNonce == 0L ||
-            (selectedCapabilities & ~DesktopProtocol.KNOWN_CAPABILITIES) != 0L) {
+            (selectedCapabilities & ~supportedCapabilities) != 0L) {
             markIncompatible();
             return false;
         }

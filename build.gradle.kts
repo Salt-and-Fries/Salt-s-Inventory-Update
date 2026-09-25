@@ -11,6 +11,7 @@ import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.testing.Test
+import org.gradle.language.jvm.tasks.ProcessResources
 import java.security.MessageDigest
 import java.util.zip.ZipFile
 
@@ -45,6 +46,9 @@ val includeReiRuntime = providers.gradleProperty("includeReiRuntime")
     .map { it.equals("true", ignoreCase = true) }
     .orElse(false)
 val includeEmiRuntime = providers.gradleProperty("includeEmiRuntime")
+    .map { it.equals("true", ignoreCase = true) }
+    .orElse(false)
+val includeSophisticatedRuntime = providers.gradleProperty("includeSophisticatedRuntime")
     .map { it.equals("true", ignoreCase = true) }
     .orElse(false)
 
@@ -154,7 +158,7 @@ prism {
             fabricApi("0.153.0+26.2")
         }
         neoforge {
-            loaderVersion = "26.2.0.7-beta"
+            loaderVersion = "26.2.0.53-beta"
         }
     }
 
@@ -174,7 +178,7 @@ prism {
             fabricApi("0.116.1+1.21.1")
         }
         neoforge {
-            loaderVersion = "21.1.95"
+            loaderVersion = "21.1.229"
         }
     }
 
@@ -193,6 +197,11 @@ subprojects {
     val minecraftVersion = parent?.name
 
     plugins.withId("java") {
+        if (name in setOf("fabric", "forge", "neoforge")) {
+            tasks.withType<ProcessResources>().configureEach {
+                from(rootProject.file("artwork/shared-resources"))
+            }
+        }
         dependencies.add("compileOnly", "org.jspecify:jspecify:1.0.0")
         if (path == ":common") {
             dependencies.add("testImplementation", "org.junit.jupiter:junit-jupiter:5.11.4")
@@ -230,12 +239,94 @@ subprojects {
             name = "Sleeping Town"
             url = uri("https://repo.sleeping.town/")
         }
+        maven {
+            name = "Modrinth"
+            url = uri("https://api.modrinth.com/maven")
+            content {
+                includeGroup("maven.modrinth")
+            }
+        }
+    }
+
+    val sophisticatedVersions = mapOf(
+        "1.20.1" to listOf(
+            "maven.modrinth:nmoqTijg:JGT2DD0v", // Sophisticated Core 1.20.1-1.3.84.2308
+            "maven.modrinth:TyCTlI4b:as0tf712", // Sophisticated Backpacks 1.20.1-3.24.67.2109
+            "maven.modrinth:hMlaZH8f:JCxeJIsN"  // Sophisticated Storage 1.20.1-1.4.86.2131
+        ),
+        "1.21.1" to listOf(
+            "maven.modrinth:nmoqTijg:zvRSOlro", // Sophisticated Core 1.21.1-1.4.90.2299
+            "maven.modrinth:TyCTlI4b:6apvKKGZ", // Sophisticated Backpacks 1.21.1-3.25.78.2107
+            "maven.modrinth:hMlaZH8f:H7wGZ8Sl"  // Sophisticated Storage 1.21.1-1.5.91.2127
+        ),
+        "1.21.11" to listOf(
+            "maven.modrinth:nmoqTijg:pmCuOREP", // Sophisticated Core 1.21.11-1.4.97.2313
+            "maven.modrinth:TyCTlI4b:NzDlKHxL", // Sophisticated Backpacks 1.21.11-3.25.84.2111
+            "maven.modrinth:hMlaZH8f:PJ4lJy4t"  // Sophisticated Storage 1.21.11-1.5.102.2130
+        ),
+        "26.1.2" to listOf(
+            "maven.modrinth:nmoqTijg:tU9HuNqP", // Sophisticated Core 26.1.2-1.4.104.2314
+            "maven.modrinth:TyCTlI4b:M5qQesFi", // Sophisticated Backpacks 26.1.2-3.25.90.2106
+            "maven.modrinth:hMlaZH8f:KmorqxvZ"  // Sophisticated Storage 26.1.2-1.5.112.2123
+        ),
+        "26.2" to listOf(
+            "maven.modrinth:nmoqTijg:MNbKeSux", // Sophisticated Core 26.2-1.4.101.2276
+            "maven.modrinth:TyCTlI4b:O6LyTNAu", // Sophisticated Backpacks 26.2-3.25.90.2091
+            "maven.modrinth:hMlaZH8f:F4SdMde3"  // Sophisticated Storage 26.2-1.5.108.2088
+        )
+    )
+    if (minecraftVersion != null && name in setOf("forge", "neoforge")) {
+        afterEvaluate {
+            val dependenciesForVersion = sophisticatedVersions[minecraftVersion].orEmpty()
+            dependenciesForVersion.forEach { dependency ->
+                dependencies.add("compileOnly", dependency)
+            }
+            if (!includeSophisticatedRuntime.get()) {
+                return@afterEvaluate
+            }
+            if (name == "forge" && minecraftVersion == "1.20.1") {
+                @Suppress("UNCHECKED_CAST")
+                val mappingsType = Class.forName("net.neoforged.moddevgradle.legacyforge.internal.MinecraftMappings") as Class<Named>
+                val mappingsAttribute = Attribute.of("net.neoforged.moddevgradle.legacy.minecraft_mappings.v2", mappingsType)
+                val namedMappings = objects.named(mappingsType, "named")
+                val sophisticatedForgeRuntimeNamed = configurations.maybeCreate("sophisticatedForgeRuntimeNamed").apply {
+                    isCanBeConsumed = false
+                    isCanBeResolved = true
+                    attributes {
+                        attribute(mappingsAttribute, namedMappings)
+                        attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
+                        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
+                    }
+                }
+                dependenciesForVersion.forEach { dependency ->
+                    dependencies.add(sophisticatedForgeRuntimeNamed.name, dependency)
+                }
+                tasks.named<JavaExec>("runClient") {
+                    classpath += files(sophisticatedForgeRuntimeNamed)
+                }
+            } else {
+                dependenciesForVersion.forEach { dependency ->
+                    dependencies.add("runtimeOnly", dependency)
+                }
+            }
+        }
     }
 
     tasks.withType<JavaExec>().configureEach {
         if (name == "runClient") {
             val runTask = this
             runTask.doFirst {
+                val staleJeiJars = runTask.workingDir
+                    .resolve("mods")
+                    .listFiles { file -> file.isFile && file.name.startsWith("jei-") && file.name.endsWith(".jar") }
+                    .orEmpty()
+                if (staleJeiJars.isNotEmpty()) {
+                    project.delete(staleJeiJars)
+                    logger.lifecycle(
+                        "Removed ${staleJeiJars.size} stale JEI jar(s) from ${runTask.workingDir.resolve("mods")}; " +
+                            "the optional development JEI runtime is managed by -PincludeJeiRuntime"
+                    )
+                }
                 if (enableDesktopRunDiagnostics.get()) {
                     runTask.systemProperty("salts_inventory_update.desktopDebug", "true")
                     if (enableDesktopRunTrace.get()) {
@@ -300,9 +391,19 @@ subprojects {
         "1.21.1" to "19.25.1.332",
         "1.20.1" to "15.20.0.127"
     )
+    val neoForgeJeiVersions = mapOf(
+        "26.2" to "30.7.0.39",
+        "1.21.11" to "27.13.0.43",
+        "1.21.1" to "19.32.0.359"
+    )
     if (minecraftVersion != null && (name == "fabric" || name == "neoforge" || name == "forge")) {
         afterEvaluate {
-            jeiVersions[minecraftVersion]?.let { jeiVersion ->
+            val jeiVersion = if (name == "neoforge") {
+                neoForgeJeiVersions[minecraftVersion] ?: jeiVersions[minecraftVersion]
+            } else {
+                jeiVersions[minecraftVersion]
+            }
+            jeiVersion?.let { resolvedJeiVersion ->
                 val jeiLoader = when (name) {
                     "forge" -> "forge"
                     "neoforge" -> "neoforge"
@@ -313,7 +414,7 @@ subprojects {
                 } else {
                     "compileOnly"
                 }
-                dependencies.add(apiConfiguration, "mezz.jei:jei-$minecraftVersion-$jeiLoader-api:$jeiVersion")
+                dependencies.add(apiConfiguration, "mezz.jei:jei-$minecraftVersion-$jeiLoader-api:$resolvedJeiVersion")
                 if (!includeJeiRuntime.get()) {
                     return@let
                 }
@@ -331,7 +432,7 @@ subprojects {
                             attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
                         }
                     }
-                    dependencies.add(jeiForgeRuntimeNamed.name, "mezz.jei:jei-$minecraftVersion-$jeiLoader:$jeiVersion")
+                    dependencies.add(jeiForgeRuntimeNamed.name, "mezz.jei:jei-$minecraftVersion-$jeiLoader:$resolvedJeiVersion")
                     tasks.named<JavaExec>("runClient") {
                         classpath += files(jeiForgeRuntimeNamed)
                     }
@@ -341,7 +442,7 @@ subprojects {
                     } else {
                         "runtimeOnly"
                     }
-                    dependencies.add(runtimeConfiguration, "mezz.jei:jei-$minecraftVersion-$jeiLoader:$jeiVersion")
+                    dependencies.add(runtimeConfiguration, "mezz.jei:jei-$minecraftVersion-$jeiLoader:$resolvedJeiVersion")
                 }
             }
         }
@@ -565,17 +666,17 @@ gradle.projectsEvaluated {
 
             val expectedLoaders = mapOf(
                 "1.20.1" to mapOf("fabric" to null, "forge" to "[47.4.0,48)"),
-                "1.21.1" to mapOf("fabric" to null, "neoforge" to "[21.1.95,21.2)"),
+                "1.21.1" to mapOf("fabric" to null, "neoforge" to "[21.1.229,21.2)"),
                 "1.21.11" to mapOf("fabric" to null, "neoforge" to "[21.11.42,21.12)"),
                 "26.1.2" to mapOf("fabric" to null, "neoforge" to "[26.1.2.59-beta,26.1.3)"),
-                "26.2" to mapOf("fabric" to null, "neoforge" to "[26.2.0.7-beta,26.3)")
+                "26.2" to mapOf("fabric" to null, "neoforge" to "[26.2.0.53-beta,26.3)")
             )
             val languageLoaderRanges = mapOf(
                 "1.20.1" to "[47,48)",
                 "1.21.1" to "[4.0.34,5)",
-                "1.21.11" to "[10.0.36,11)",
-                "26.1.2" to "[11.0.13,12)",
-                "26.2" to "[11.0.13,12)"
+                "1.21.11" to "[10,11)",
+                "26.1.2" to "[11,12)",
+                "26.2" to "[11,12)"
             )
             val packFormats = mapOf(
                 "1.20.1" to 15,
@@ -642,6 +743,8 @@ gradle.projectsEvaluated {
                         }
 
                         val required = setOf(
+                            "assets/salts_inventory_update/textures/gui/creative_buttons.png",
+                            "LICENSE-creative-buttons-fabric",
                             "assets/salts_inventory_update/icon.png",
                             "LICENSE_salts_inventory_update",
                             "pack.mcmeta",
@@ -650,6 +753,15 @@ gradle.projectsEvaluated {
                         val missing = required - entries
                         if (missing.isNotEmpty()) {
                             throw GradleException("${jarFile.name} is missing required entries: $missing")
+                        }
+                        val sophisticatedMixin = "salts_inventory_update.sophisticated.mixins.json"
+                        if (minecraftVersion in setOf("1.20.1", "1.21.1", "1.21.11", "26.1.2", "26.2")
+                            && loader in setOf("forge", "neoforge")) {
+                            if (sophisticatedMixin !in entries) {
+                                throw GradleException("${jarFile.name} is missing its Forge/NeoForge Sophisticated mixin configuration")
+                            }
+                        } else if (sophisticatedMixin in entries) {
+                            throw GradleException("${jarFile.name} contains the Forge/NeoForge-only Sophisticated mixin configuration")
                         }
 
                         fun textEntry(name: String): String {

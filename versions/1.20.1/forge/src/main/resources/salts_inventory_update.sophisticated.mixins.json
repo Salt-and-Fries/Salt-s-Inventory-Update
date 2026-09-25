@@ -1,0 +1,35 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.compat.sophisticated.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "salts_inventory_update.refmap.json",
+  "plugin": "com.salts_inventory_update.compat.sophisticated.mixin.SophisticatedMixinPlugin",
+  "mixins": [
+    "BackpackContextItemAccessor",
+    "SettingsContainerSynchronizerMixin",
+    "StorageContainerSynchronizerMixin",
+    "ServerPlayerOpeningDataMixin",
+    "SophisticatedStorageOpenersMixin",
+    "ServerGamePacketListenerItemLockMixin",
+    "PacketHandlerLegacyMixin",
+    "NetworkEventContextLegacyMixin",
+    "SlotSuppliedHandlerAccessor"
+  ],
+  "client": [
+    "AbstractContainerScreenAccessor",
+    "CraftingUpgradeTabMixin",
+    "GuiHelperTabBackgroundMixin",
+    "PositionedInventoryControlMixin",
+    "ScreenWidgetListsAccessor",
+    "SearchBoxMixin",
+    "SettingsTabBaseMixin",
+    "SettingsScreenMixin",
+    "SlotPositionMixin",
+    "StorageScreenBaseMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

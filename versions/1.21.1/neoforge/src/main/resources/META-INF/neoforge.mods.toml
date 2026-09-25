@@ -15,10 +15,13 @@ description = "${description}"
 [[mixins]]
 config = "${mod_id}.mixins.json"
 
+[[mixins]]
+config = "${mod_id}.sophisticated.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId = "neoforge"
 type = "required"
-versionRange = "[21.1.95,21.2)"
+versionRange = "[21.1.229,21.2)"
 ordering = "NONE"
 side = "BOTH"
 
@@ -49,3 +52,24 @@ type = "optional"
 versionRange = "[0,)"
 ordering = "AFTER"
 side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "sophisticatedcore"
+type = "optional"
+versionRange = "[1.4.90,2)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "sophisticatedbackpacks"
+type = "optional"
+versionRange = "[3.25.78,4)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "sophisticatedstorage"
+type = "optional"
+versionRange = "[1.5.91,2)"
+ordering = "AFTER"
+side = "BOTH"

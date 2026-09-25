@@ -1,4 +1,6 @@
 {
+  "tooltip.salts_inventory_update.window_control.sort_windows": "Sort into open containers",
+  "tooltip.salts_inventory_update.window_control.sort_windows.shift": "Force sort into open containers",
   "key.salts_inventory_update.character_window": "Character Window",
   "key.salts_inventory_update.jei_window": "Recipe Browser Window",
   "key.salts_inventory_update.mouse_focus": "Change Mouse Focus",

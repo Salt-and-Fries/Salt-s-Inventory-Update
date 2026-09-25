@@ -10,6 +10,8 @@
     "InventoryMenuMixin",
     "PlayerInventoryExpansionMixin",
     "server.ChestOpenersCounterMixin",
+    "accessor.PlayerEnderChestContainerAccessor",
+    "server.ChestMenuEnderChestMixin",
     "server.CraftingMenuMixin",
     "server.ServerPlayerInventoryExpansionMixin",
     "server.ServerPlayerMixin",

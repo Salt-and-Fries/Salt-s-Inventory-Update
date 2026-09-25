@@ -1,0 +1,17 @@
+// Run production sort-routing tests on every version's headless Fabric runtime.
+// Forge/NeoForge patches require a running mod loader; their shared source is built separately.
+gradle.projectsEvaluated {
+    ["1.20.1", "1.21.1", "1.21.11", "26.1.2", "26.2"].each { version ->
+        def p = gradle.rootProject.project(":${version}:fabric")
+        p.sourceSets.test.java.srcDir(gradle.rootProject.file("versions/${version}/tests"))
+        p.sourceSets.test.compileClasspath += p.sourceSets.main.compileClasspath
+        p.sourceSets.test.runtimeClasspath += p.sourceSets.main.runtimeClasspath
+        p.dependencies.add("testImplementation", "org.junit.jupiter:junit-jupiter:5.11.4")
+        p.dependencies.add("testRuntimeOnly", "org.junit.platform:junit-platform-launcher:1.11.4")
+        p.tasks.withType(Test).configureEach {
+            useJUnitPlatform()
+            workingDir(p.layout.buildDirectory.dir("sort-test-runtime").get().asFile)
+            doFirst { workingDir.mkdirs() }
+        }
+    }
+}

@@ -1,10 +1,9 @@
 package com.salts_inventory_update.network;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-
-import io.netty.handler.codec.DecoderException;
-import io.netty.handler.codec.EncoderException;
+import java.util.Set;
 
 import com.salts_inventory_update.platform.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -24,7 +23,8 @@ import com.salts_inventory_update.SaltsInventoryUpdate;
 import com.salts_inventory_update.protocol.DesktopProtocol;
 
 public final class DesktopPackets {
-    private static final int MAX_IDENTIFIER_LENGTH = 256;
+    private static final int MAX_ITEM_LIST_SIZE = DesktopProtocol.MAX_OPEN_SESSION_ITEMS;
+    private static final int MAX_IDENTIFIER_LENGTH = DesktopProtocol.MAX_IDENTIFIER_LENGTH;
     private static final int MAX_INPUT_NAME_LENGTH = 32;
     public static final int PLAYER_MENU_SESSION = 0;
     public static final int SPECIAL_GENERIC = 0;
@@ -38,43 +38,53 @@ public final class DesktopPackets {
     public static final int PIN_MODE_UNPINNED = 0;
     public static final int PIN_MODE_PINNED = 1;
     public static final int PIN_MODE_GHOST_PINNED = 2;
-    public static final int LINK_ACTION_LINK = 0;
-    public static final int LINK_ACTION_UNLINK = 1;
-    public static final int LINK_ACTION_CLEAR_ORIGIN = 2;
+    /** 26.2-local capability for authenticated, atomic multi-menu item gestures. */
+    public static final long CAP_MULTI_MENU_GESTURES = 1L << 4;
+    public static final long CAP_SORT_WINDOWS = 1L << 5;
+    public static final int MAX_GESTURE_SLOTS = 512;
+    public static final int MAX_BUNDLE_SELECTION_INDEX = DesktopProtocol.MAX_OPEN_SESSION_ITEMS - 1;
+    private static final int LINKED_SOURCE_MAX_KEY_LENGTH = DesktopProtocol.MAX_SOURCE_TEXT_LENGTH;
 
     private DesktopPackets() {
     }
 
     public static void registerPayloadTypes() {
-        PayloadTypeRegistry.playC2S().register(DesktopHelloPayload.TYPE, DesktopHelloPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopModePayload.TYPE, DesktopModePayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopReadyPayload.TYPE, DesktopReadyPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopClickPayload.TYPE, DesktopClickPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopQuickMovePayload.TYPE, DesktopQuickMovePayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopButtonPayload.TYPE, DesktopButtonPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopPlaceRecipePayload.TYPE, DesktopPlaceRecipePayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopJeiTransferPayload.TYPE, DesktopJeiTransferPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopRenamePayload.TYPE, DesktopRenamePayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopSessionPinPayload.TYPE, DesktopSessionPinPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopLinkSessionsPayload.TYPE, DesktopLinkSessionsPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopOpenLinkedSourcesPayload.TYPE, DesktopOpenLinkedSourcesPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopCustomPayload.TYPE, DesktopCustomPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(DesktopCarriedPayload.TYPE, DesktopCarriedPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(InventorySlotPurchasePayload.TYPE, InventorySlotPurchasePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopHelloPayload.TYPE, DesktopHelloPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopReadyPayload.TYPE, DesktopReadyPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopModePayload.TYPE, DesktopModePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopClickPayload.TYPE, DesktopClickPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopDragSlotsPayload.TYPE, DesktopDragSlotsPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopPickupAllPayload.TYPE, DesktopPickupAllPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopQuickMoveAllPayload.TYPE, DesktopQuickMoveAllPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopSortWindowsPayload.TYPE, DesktopSortWindowsPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopBundleSelectPayload.TYPE, DesktopBundleSelectPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopQuickMovePayload.TYPE, DesktopQuickMovePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopButtonPayload.TYPE, DesktopButtonPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopPlaceRecipePayload.TYPE, DesktopPlaceRecipePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopJeiTransferPayload.TYPE, DesktopJeiTransferPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopRenamePayload.TYPE, DesktopRenamePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopSessionPinPayload.TYPE, DesktopSessionPinPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopOpenLinkedSourcesPayload.TYPE, DesktopOpenLinkedSourcesPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopLinkPayload.TYPE, DesktopLinkPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopCustomPayload.TYPE, DesktopCustomPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopCarriedPayload.TYPE, DesktopCarriedPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(InventorySlotPurchasePayload.TYPE, InventorySlotPurchasePayload.CODEC);
 
-        PayloadTypeRegistry.playS2C().register(DesktopHelloAckPayload.TYPE, DesktopHelloAckPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(DesktopOpenSessionPayload.TYPE, DesktopOpenSessionPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(DesktopSlotPayload.TYPE, DesktopSlotPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(DesktopDataPayload.TYPE, DesktopDataPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(DesktopCarriedPayload.TYPE, DesktopCarriedPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(DesktopSessionClosedPayload.TYPE, DesktopSessionClosedPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(DesktopMerchantOffersPayload.TYPE, DesktopMerchantOffersPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(DesktopCustomPayload.TYPE, DesktopCustomPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(DesktopGhostRecipePayload.TYPE, DesktopGhostRecipePayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(InventoryExpansionSyncPayload.TYPE, InventoryExpansionSyncPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopHelloAckPayload.TYPE, DesktopHelloAckPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopPlayerSessionPayload.TYPE, DesktopPlayerSessionPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopOpenSessionPayload.TYPE, DesktopOpenSessionPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopSlotPayload.TYPE, DesktopSlotPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopDataPayload.TYPE, DesktopDataPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopCarriedPayload.TYPE, DesktopCarriedPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopMutationAckPayload.TYPE, DesktopMutationAckPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopSessionClosedPayload.TYPE, DesktopSessionClosedPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopMerchantOffersPayload.TYPE, DesktopMerchantOffersPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopCustomPayload.TYPE, DesktopCustomPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopGhostRecipePayload.TYPE, DesktopGhostRecipePayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(InventoryExpansionSyncPayload.TYPE, InventoryExpansionSyncPayload.CODEC);
     }
 
     public static Identifier id(String path) {
@@ -89,9 +99,9 @@ public final class DesktopPackets {
         return BuiltInRegistries.MENU.byId(id);
     }
 
-    private static void writeItemList(RegistryFriendlyByteBuf buf, List<ItemStack> stacks, int maxSize, String label) {
-        if (stacks.size() > maxSize) {
-            throw new EncoderException(label + " item list is too large: " + stacks.size());
+    private static void writeItemList(RegistryFriendlyByteBuf buf, List<ItemStack> stacks) {
+        if (stacks.size() > MAX_ITEM_LIST_SIZE) {
+            throw new IllegalArgumentException("Desktop item list is too large: " + stacks.size());
         }
         buf.writeVarInt(stacks.size());
         for (ItemStack stack : stacks) {
@@ -99,10 +109,10 @@ public final class DesktopPackets {
         }
     }
 
-    private static List<ItemStack> readItemList(RegistryFriendlyByteBuf buf, int maxSize, String label) {
+    private static List<ItemStack> readItemList(RegistryFriendlyByteBuf buf) {
         int size = buf.readVarInt();
-        if (size < 0 || size > maxSize || size > buf.readableBytes()) {
-            throw new DecoderException(label + " item list has an invalid size: " + size);
+        if (size < 0 || size > MAX_ITEM_LIST_SIZE) {
+            throw new IllegalArgumentException("Desktop item list is too large: " + size);
         }
         List<ItemStack> stacks = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
@@ -133,32 +143,100 @@ public final class DesktopPackets {
         return values;
     }
 
-    private static List<String> validatedForcedMenuIds(List<String> values) {
-        if (values == null || values.size() > DesktopProtocol.MAX_FORCED_MENU_IDS) {
-            throw new IllegalArgumentException("Invalid forced menu ID list");
+    private static void writeSlotReference(RegistryFriendlyByteBuf buf, DesktopSlotReference reference) {
+        buf.writeVarInt(reference.sessionId());
+        buf.writeLong(reference.sessionToken());
+        buf.writeVarInt(reference.stateId());
+        buf.writeVarInt(reference.slotIndex());
+    }
+
+    private static DesktopSlotReference readSlotReference(RegistryFriendlyByteBuf buf) {
+        return new DesktopSlotReference(buf.readVarInt(), buf.readLong(), buf.readVarInt(), buf.readVarInt());
+    }
+
+    private static void writeSessionReference(RegistryFriendlyByteBuf buf, DesktopSessionReference reference) {
+        buf.writeVarInt(reference.sessionId());
+        buf.writeLong(reference.sessionToken());
+        buf.writeVarInt(reference.stateId());
+    }
+
+    private static DesktopSessionReference readSessionReference(RegistryFriendlyByteBuf buf) {
+        return new DesktopSessionReference(buf.readVarInt(), buf.readLong(), buf.readVarInt());
+    }
+
+    private static void writeSlotReferences(RegistryFriendlyByteBuf buf, List<DesktopSlotReference> references, int minimum, int maximum) {
+        requireListSize("desktop gesture slots", references, minimum, maximum);
+        buf.writeVarInt(references.size());
+        for (DesktopSlotReference reference : references) {
+            writeSlotReference(buf, reference);
         }
-        java.util.LinkedHashSet<String> unique = new java.util.LinkedHashSet<>();
-        for (String value : values) {
-            if (value == null || value.isBlank() || value.length() > DesktopProtocol.MAX_IDENTIFIER_LENGTH || !unique.add(value)) {
-                throw new IllegalArgumentException("Invalid forced menu ID");
+    }
+
+    private static List<DesktopSlotReference> readSlotReferences(RegistryFriendlyByteBuf buf, int minimum, int maximum) {
+        int size = readBoundedListSize(buf, "desktop gesture slots", minimum, maximum);
+        List<DesktopSlotReference> references = new ArrayList<>(size);
+        for (int index = 0; index < size; index++) {
+            references.add(readSlotReference(buf));
+        }
+        return references;
+    }
+
+    private static void writeSessionReferences(RegistryFriendlyByteBuf buf, List<DesktopSessionReference> references, int minimum, int maximum) {
+        requireListSize("desktop gesture sessions", references, minimum, maximum);
+        buf.writeVarInt(references.size());
+        for (DesktopSessionReference reference : references) {
+            writeSessionReference(buf, reference);
+        }
+    }
+
+    private static List<DesktopSessionReference> readSessionReferences(RegistryFriendlyByteBuf buf, int minimum, int maximum) {
+        int size = readBoundedListSize(buf, "desktop gesture sessions", minimum, maximum);
+        List<DesktopSessionReference> references = new ArrayList<>(size);
+        for (int index = 0; index < size; index++) {
+            references.add(readSessionReference(buf));
+        }
+        return references;
+    }
+
+    private static int readBoundedListSize(RegistryFriendlyByteBuf buf, String name, int minimum, int maximum) {
+        int size = buf.readVarInt();
+        requireListSize(name, size, minimum, maximum);
+        return size;
+    }
+
+    private static void requireListSize(String name, List<?> values, int minimum, int maximum) {
+        if (values == null) {
+            throw new IllegalArgumentException(name + " cannot be null");
+        }
+        requireListSize(name, values.size(), minimum, maximum);
+    }
+
+    private static void requireListSize(String name, int size, int minimum, int maximum) {
+        if (size < minimum || size > maximum) {
+            throw new IllegalArgumentException(name + " must contain between " + minimum + " and " + maximum + " entries, got " + size);
+        }
+    }
+
+    private static void requireUniqueSlots(String name, List<DesktopSlotReference> references) {
+        Set<Long> identities = new HashSet<>();
+        for (DesktopSlotReference reference : references) {
+            long identity = ((long) reference.sessionId() << 32) ^ (reference.slotIndex() & 0xffffffffL);
+            if (!identities.add(identity)) {
+                throw new IllegalArgumentException(name + " contains a duplicate slot reference");
             }
         }
-        return List.copyOf(unique);
     }
 
-    public record MutationStamp(long connectionNonce, long sessionNonce, int expectedStateId) {
-        private MutationStamp(RegistryFriendlyByteBuf buf) {
-            this(buf.readLong(), buf.readLong(), buf.readVarInt());
-        }
-
-        private void write(RegistryFriendlyByteBuf buf) {
-            buf.writeLong(this.connectionNonce);
-            buf.writeLong(this.sessionNonce);
-            buf.writeVarInt(this.expectedStateId);
+    private static void requireUniqueSessions(String name, List<DesktopSessionReference> references) {
+        Set<Integer> identities = new HashSet<>();
+        for (DesktopSessionReference reference : references) {
+            if (!identities.add(reference.sessionId())) {
+                throw new IllegalArgumentException(name + " contains a duplicate session reference");
+            }
         }
     }
 
-    public record InventorySlotPurchasePayload(MutationStamp authorization) implements CustomPacketPayload {
+    public record InventorySlotPurchasePayload(long connectionNonce, long mutationId, long playerSessionToken, int stateId) implements CustomPacketPayload {
         public static final Type<InventorySlotPurchasePayload> TYPE = new Type<>(id("inventory_slot_purchase"));
         public static final StreamCodec<RegistryFriendlyByteBuf, InventorySlotPurchasePayload> CODEC = CustomPacketPayload.codec(
             InventorySlotPurchasePayload::write,
@@ -166,11 +244,20 @@ public final class DesktopPackets {
         );
 
         private InventorySlotPurchasePayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf));
+            this(buf.readLong(), buf.readVarLong(), buf.readLong(), buf.readVarInt());
+        }
+
+        public InventorySlotPurchasePayload {
+            if (mutationId <= 0L || playerSessionToken == 0L) {
+                throw new IllegalArgumentException("Invalid inventory slot purchase mutation");
+            }
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.mutationId);
+            buf.writeLong(this.playerSessionToken);
+            buf.writeVarInt(this.stateId);
         }
 
         @Override
@@ -179,7 +266,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record InventoryExpansionSyncPayload(long connectionNonce, long playerMenuNonce, int slotCount, List<ItemStack> items) implements CustomPacketPayload {
+    public record InventoryExpansionSyncPayload(int slotCount, List<ItemStack> items) implements CustomPacketPayload {
         public static final Type<InventoryExpansionSyncPayload> TYPE = new Type<>(id("inventory_expansion_sync"));
         public static final StreamCodec<RegistryFriendlyByteBuf, InventoryExpansionSyncPayload> CODEC = CustomPacketPayload.codec(
             InventoryExpansionSyncPayload::write,
@@ -187,22 +274,19 @@ public final class DesktopPackets {
         );
 
         private InventoryExpansionSyncPayload(RegistryFriendlyByteBuf buf) {
-            this(buf.readLong(), buf.readLong(), buf.readVarInt(), readItemList(buf, DesktopProtocol.MAX_EXPANSION_SLOTS, "Inventory expansion"));
+            this(buf.readVarInt(), readItemList(buf));
         }
 
         public InventoryExpansionSyncPayload {
-            if (connectionNonce == 0L || playerMenuNonce == 0L
-                || slotCount < 0 || slotCount > DesktopProtocol.MAX_EXPANSION_SLOTS || items.size() != slotCount) {
+            if (slotCount < 0 || slotCount > DesktopProtocol.MAX_EXPANSION_SLOTS || items.size() != slotCount) {
                 throw new IllegalArgumentException("Invalid inventory expansion snapshot: slots=" + slotCount + ", items=" + items.size());
             }
-            items = List.copyOf(items);
+            items = items.stream().map(ItemStack::copy).toList();
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            buf.writeLong(this.connectionNonce);
-            buf.writeLong(this.playerMenuNonce);
             buf.writeVarInt(this.slotCount);
-            writeItemList(buf, this.items, DesktopProtocol.MAX_EXPANSION_SLOTS, "Inventory expansion");
+            writeItemList(buf, this.items);
         }
 
         @Override
@@ -211,6 +295,56 @@ public final class DesktopPackets {
         }
     }
 
+    public record DesktopHelloPayload(int protocolVersion, long clientNonce, long capabilities, boolean uiEnabled, List<String> forcedMenuIds) implements CustomPacketPayload {
+        public static final Type<DesktopHelloPayload> TYPE = new Type<>(id("desktop_hello"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopHelloPayload> CODEC = CustomPacketPayload.codec(DesktopHelloPayload::write, DesktopHelloPayload::new);
+
+        private DesktopHelloPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readLong(), buf.readVarLong(), buf.readBoolean(), readLimitedStringList(buf, DesktopProtocol.MAX_FORCED_MENU_IDS, MAX_IDENTIFIER_LENGTH));
+        }
+
+        public DesktopHelloPayload {
+            forcedMenuIds = List.copyOf(forcedMenuIds);
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.protocolVersion);
+            buf.writeLong(this.clientNonce);
+            buf.writeVarLong(this.capabilities);
+            buf.writeBoolean(this.uiEnabled);
+            writeLimitedStringList(buf, this.forcedMenuIds, DesktopProtocol.MAX_FORCED_MENU_IDS, MAX_IDENTIFIER_LENGTH);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopHelloAckPayload(int protocolVersion, long clientNonce, long connectionNonce, long capabilities, boolean uiEnabled, long playerSessionToken) implements CustomPacketPayload {
+        public static final Type<DesktopHelloAckPayload> TYPE = new Type<>(id("desktop_hello_ack"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopHelloAckPayload> CODEC = CustomPacketPayload.codec(DesktopHelloAckPayload::write, DesktopHelloAckPayload::new);
+
+        private DesktopHelloAckPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readLong(), buf.readLong(), buf.readVarLong(), buf.readBoolean(), buf.readLong());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeVarInt(this.protocolVersion);
+            buf.writeLong(this.clientNonce);
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.capabilities);
+            buf.writeBoolean(this.uiEnabled);
+            buf.writeLong(this.playerSessionToken);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    /** Protocol-v1 sentinel, retained only so a legacy peer gets a clear rejection. */
     public record DesktopReadyPayload(boolean ready) implements CustomPacketPayload {
         public static final Type<DesktopReadyPayload> TYPE = new Type<>(id("desktop_ready"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopReadyPayload> CODEC = CustomPacketPayload.codec(
@@ -232,7 +366,264 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopClickPayload(MutationStamp authorization, int debugId, int sessionId, int slotIndex, int button, String inputName, ItemStack clientCarried) implements CustomPacketPayload {
+    public record DesktopModePayload(long connectionNonce, long sequence, boolean uiEnabled, List<String> forcedMenuIds) implements CustomPacketPayload {
+        public static final Type<DesktopModePayload> TYPE = new Type<>(id("desktop_mode"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopModePayload> CODEC = CustomPacketPayload.codec(DesktopModePayload::write, DesktopModePayload::new);
+
+        private DesktopModePayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readVarLong(), buf.readBoolean(), readLimitedStringList(buf, DesktopProtocol.MAX_FORCED_MENU_IDS, MAX_IDENTIFIER_LENGTH));
+        }
+
+        public DesktopModePayload {
+            forcedMenuIds = List.copyOf(forcedMenuIds);
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.sequence);
+            buf.writeBoolean(this.uiEnabled);
+            writeLimitedStringList(buf, this.forcedMenuIds, DesktopProtocol.MAX_FORCED_MENU_IDS, MAX_IDENTIFIER_LENGTH);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopPlayerSessionPayload(long connectionNonce, long playerSessionToken) implements CustomPacketPayload {
+        public static final Type<DesktopPlayerSessionPayload> TYPE = new Type<>(id("desktop_player_session"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopPlayerSessionPayload> CODEC = CustomPacketPayload.codec(DesktopPlayerSessionPayload::write, DesktopPlayerSessionPayload::new);
+
+        private DesktopPlayerSessionPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readLong());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(this.connectionNonce);
+            buf.writeLong(this.playerSessionToken);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopSlotReference(int sessionId, long sessionToken, int stateId, int slotIndex) {
+        public DesktopSlotReference {
+            if (sessionId < PLAYER_MENU_SESSION || sessionToken == 0L || stateId < 0 || slotIndex < 0 || slotIndex >= MAX_ITEM_LIST_SIZE) {
+                throw new IllegalArgumentException("Invalid desktop slot reference");
+            }
+        }
+    }
+
+    public record DesktopSessionReference(int sessionId, long sessionToken, int stateId) {
+        public DesktopSessionReference {
+            if (sessionId < PLAYER_MENU_SESSION || sessionToken == 0L || stateId < 0) {
+                throw new IllegalArgumentException("Invalid desktop session reference");
+            }
+        }
+    }
+
+    public record DesktopDragSlotsPayload(long connectionNonce, long mutationId, long playerSessionToken, int quickCraftType, List<DesktopSlotReference> slots) implements CustomPacketPayload {
+        public static final Type<DesktopDragSlotsPayload> TYPE = new Type<>(id("desktop_drag_slots"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopDragSlotsPayload> CODEC = CustomPacketPayload.codec(
+            DesktopDragSlotsPayload::write,
+            DesktopDragSlotsPayload::new
+        );
+
+        private DesktopDragSlotsPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readVarLong(), buf.readLong(), buf.readVarInt(), readSlotReferences(buf, 1, MAX_GESTURE_SLOTS));
+        }
+
+        public DesktopDragSlotsPayload {
+            if (mutationId <= 0L || playerSessionToken == 0L || quickCraftType < 0 || quickCraftType > 2) {
+                throw new IllegalArgumentException("Invalid desktop drag type: " + quickCraftType);
+            }
+            requireListSize("desktop drag slots", slots, 1, MAX_GESTURE_SLOTS);
+            slots = List.copyOf(slots);
+            requireUniqueSlots("desktop drag slots", slots);
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.mutationId);
+            buf.writeLong(this.playerSessionToken);
+            buf.writeVarInt(this.quickCraftType);
+            writeSlotReferences(buf, this.slots, 1, MAX_GESTURE_SLOTS);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopPickupAllPayload(
+        long connectionNonce,
+        long mutationId,
+        long playerSessionToken,
+        int anchorSessionId,
+        int anchorSlotIndex,
+        int button,
+        List<DesktopSessionReference> sources
+    ) implements CustomPacketPayload {
+        public static final Type<DesktopPickupAllPayload> TYPE = new Type<>(id("desktop_pickup_all"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopPickupAllPayload> CODEC = CustomPacketPayload.codec(
+            DesktopPickupAllPayload::write,
+            DesktopPickupAllPayload::new
+        );
+
+        private DesktopPickupAllPayload(RegistryFriendlyByteBuf buf) {
+            this(
+                buf.readLong(),
+                buf.readVarLong(),
+                buf.readLong(),
+                buf.readVarInt(),
+                buf.readVarInt(),
+                buf.readVarInt(),
+                readSessionReferences(buf, 1, DesktopProtocol.MAX_DESKTOP_SESSIONS + 1)
+            );
+        }
+
+        public DesktopPickupAllPayload {
+            if (mutationId <= 0L || playerSessionToken == 0L || anchorSessionId < PLAYER_MENU_SESSION || anchorSlotIndex < 0 || anchorSlotIndex >= MAX_ITEM_LIST_SIZE || (button != 0 && button != 1)) {
+                throw new IllegalArgumentException("Invalid desktop pickup-all request");
+            }
+            requireListSize("desktop pickup-all sessions", sources, 1, DesktopProtocol.MAX_DESKTOP_SESSIONS + 1);
+            sources = List.copyOf(sources);
+            requireUniqueSessions("desktop pickup-all sessions", sources);
+            if (sources.stream().noneMatch(source -> source.sessionId() == anchorSessionId)) {
+                throw new IllegalArgumentException("Desktop pickup-all sources do not include the anchor session");
+            }
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.mutationId);
+            buf.writeLong(this.playerSessionToken);
+            buf.writeVarInt(this.anchorSessionId);
+            buf.writeVarInt(this.anchorSlotIndex);
+            buf.writeVarInt(this.button);
+            writeSessionReferences(buf, this.sources, 1, DesktopProtocol.MAX_DESKTOP_SESSIONS + 1);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopSortWindowsPayload(
+        long connectionNonce, long mutationId, long playerSessionToken,
+        DesktopSessionReference source, List<DesktopSessionReference> destinations,
+        int focusedSessionId, boolean shift
+    ) implements CustomPacketPayload {
+        public static final Type<DesktopSortWindowsPayload> TYPE = new Type<>(id("desktop_sort_windows"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopSortWindowsPayload> CODEC =
+            CustomPacketPayload.codec(DesktopSortWindowsPayload::write, DesktopSortWindowsPayload::new);
+        private DesktopSortWindowsPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readVarLong(), buf.readLong(), readSessionReference(buf),
+                readSessionReferences(buf, 1, DesktopProtocol.MAX_DESKTOP_SESSIONS), buf.readVarInt(), buf.readBoolean());
+        }
+        public DesktopSortWindowsPayload {
+            if (mutationId <= 0 || playerSessionToken == 0 || source == null) throw new IllegalArgumentException("Invalid sort request");
+            requireListSize("sort destinations", destinations, 1, DesktopProtocol.MAX_DESKTOP_SESSIONS);
+            destinations = List.copyOf(destinations);
+            if (destinations.stream().map(DesktopSessionReference::sessionId).distinct().count() != destinations.size())
+                throw new IllegalArgumentException("Duplicate sort destinations");
+        }
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(connectionNonce); buf.writeVarLong(mutationId); buf.writeLong(playerSessionToken);
+            writeSessionReference(buf, source);
+            writeSessionReferences(buf, destinations, 1, DesktopProtocol.MAX_DESKTOP_SESSIONS);
+            buf.writeVarInt(focusedSessionId); buf.writeBoolean(shift);
+        }
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    public record DesktopQuickMoveAllPayload(
+        long connectionNonce,
+        long mutationId,
+        long playerSessionToken,
+        List<DesktopSlotReference> sources,
+        int targetKind,
+        DesktopSessionReference target
+    ) implements CustomPacketPayload {
+        public static final Type<DesktopQuickMoveAllPayload> TYPE = new Type<>(id("desktop_quick_move_all"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopQuickMoveAllPayload> CODEC = CustomPacketPayload.codec(
+            DesktopQuickMoveAllPayload::write,
+            DesktopQuickMoveAllPayload::new
+        );
+
+        private DesktopQuickMoveAllPayload(RegistryFriendlyByteBuf buf) {
+            this(
+                buf.readLong(),
+                buf.readVarLong(),
+                buf.readLong(),
+                readSlotReferences(buf, 1, MAX_GESTURE_SLOTS),
+                buf.readVarInt(),
+                readSessionReference(buf)
+            );
+        }
+
+        public DesktopQuickMoveAllPayload {
+            if (mutationId <= 0L || playerSessionToken == 0L || targetKind < QUICK_TARGET_DEFAULT || targetKind > QUICK_TARGET_HOTBAR || target == null) {
+                throw new IllegalArgumentException("Invalid desktop quick-move-all target");
+            }
+            requireListSize("desktop quick-move-all slots", sources, 1, MAX_GESTURE_SLOTS);
+            sources = List.copyOf(sources);
+            requireUniqueSlots("desktop quick-move-all slots", sources);
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.mutationId);
+            buf.writeLong(this.playerSessionToken);
+            writeSlotReferences(buf, this.sources, 1, MAX_GESTURE_SLOTS);
+            buf.writeVarInt(this.targetKind);
+            writeSessionReference(buf, this.target);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopBundleSelectPayload(long connectionNonce, long mutationId, long playerSessionToken, DesktopSlotReference target, int selectedItemIndex) implements CustomPacketPayload {
+        public static final Type<DesktopBundleSelectPayload> TYPE = new Type<>(id("desktop_bundle_select"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopBundleSelectPayload> CODEC = CustomPacketPayload.codec(
+            DesktopBundleSelectPayload::write,
+            DesktopBundleSelectPayload::new
+        );
+
+        private DesktopBundleSelectPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readVarLong(), buf.readLong(), readSlotReference(buf), buf.readVarInt());
+        }
+
+        public DesktopBundleSelectPayload {
+            if (mutationId <= 0L || playerSessionToken == 0L || target == null || selectedItemIndex < -1 || selectedItemIndex > MAX_BUNDLE_SELECTION_INDEX) {
+                throw new IllegalArgumentException("Invalid desktop bundle selection: " + selectedItemIndex);
+            }
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.mutationId);
+            buf.writeLong(this.playerSessionToken);
+            writeSlotReference(buf, this.target);
+            buf.writeVarInt(this.selectedItemIndex);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopClickPayload(long connectionNonce, long mutationId, long playerSessionToken, int sessionId, long sessionToken, int stateId, int debugId, int slotIndex, int button, String inputName, ItemStack clientCarried) implements CustomPacketPayload {
         public static final Type<DesktopClickPayload> TYPE = new Type<>(id("desktop_click"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopClickPayload> CODEC = CustomPacketPayload.codec(
             DesktopClickPayload::write,
@@ -241,7 +632,11 @@ public final class DesktopPackets {
 
         private DesktopClickPayload(RegistryFriendlyByteBuf buf) {
             this(
-                new MutationStamp(buf),
+                buf.readLong(),
+                buf.readVarLong(),
+                buf.readLong(),
+                buf.readVarInt(),
+                buf.readLong(),
                 buf.readVarInt(),
                 buf.readVarInt(),
                 buf.readVarInt(),
@@ -251,10 +646,21 @@ public final class DesktopPackets {
             );
         }
 
+        public DesktopClickPayload {
+            if (mutationId <= 0L || playerSessionToken == 0L || inputName == null || inputName.isBlank() || inputName.length() > MAX_INPUT_NAME_LENGTH) {
+                throw new IllegalArgumentException("Invalid desktop click input name");
+            }
+            clientCarried = clientCarried.copy();
+        }
+
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
-            buf.writeVarInt(this.debugId);
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.mutationId);
+            buf.writeLong(this.playerSessionToken);
             buf.writeVarInt(this.sessionId);
+            buf.writeLong(this.sessionToken);
+            buf.writeVarInt(this.stateId);
+            buf.writeVarInt(this.debugId);
             buf.writeVarInt(this.slotIndex);
             buf.writeVarInt(this.button);
             buf.writeUtf(this.inputName, MAX_INPUT_NAME_LENGTH);
@@ -267,7 +673,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopQuickMovePayload(MutationStamp sourceAuthorization, MutationStamp targetAuthorization, int sourceSessionId, int sourceSlotIndex, int targetKind, int targetSessionId) implements CustomPacketPayload {
+    public record DesktopQuickMovePayload(long connectionNonce, long mutationId, long playerSessionToken, int sourceSessionId, long sourceSessionToken, int sourceStateId, int sourceSlotIndex, int targetKind, int targetSessionId, long targetSessionToken, int targetStateId) implements CustomPacketPayload {
         public static final Type<DesktopQuickMovePayload> TYPE = new Type<>(id("desktop_quick_move"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopQuickMovePayload> CODEC = CustomPacketPayload.codec(
             DesktopQuickMovePayload::write,
@@ -275,16 +681,27 @@ public final class DesktopPackets {
         );
 
         private DesktopQuickMovePayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf), new MutationStamp(buf), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+            this(buf.readLong(), buf.readVarLong(), buf.readLong(), buf.readVarInt(), buf.readLong(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readLong(), buf.readVarInt());
+        }
+
+        public DesktopQuickMovePayload {
+            if (mutationId <= 0L || playerSessionToken == 0L) {
+                throw new IllegalArgumentException("Invalid desktop quick-move mutation id");
+            }
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.sourceAuthorization.write(buf);
-            this.targetAuthorization.write(buf);
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.mutationId);
+            buf.writeLong(this.playerSessionToken);
             buf.writeVarInt(this.sourceSessionId);
+            buf.writeLong(this.sourceSessionToken);
+            buf.writeVarInt(this.sourceStateId);
             buf.writeVarInt(this.sourceSlotIndex);
             buf.writeVarInt(this.targetKind);
             buf.writeVarInt(this.targetSessionId);
+            buf.writeLong(this.targetSessionToken);
+            buf.writeVarInt(this.targetStateId);
         }
 
         @Override
@@ -293,89 +710,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopHelloPayload(int protocolVersion, long clientNonce, long capabilities, boolean uiEnabled, List<String> forcedMenuIds) implements CustomPacketPayload {
-        public static final Type<DesktopHelloPayload> TYPE = new Type<>(id("desktop_hello"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopHelloPayload> CODEC = CustomPacketPayload.codec(
-            DesktopHelloPayload::write,
-            DesktopHelloPayload::new
-        );
-
-        private DesktopHelloPayload(RegistryFriendlyByteBuf buf) {
-            this(buf.readVarInt(), buf.readLong(), buf.readVarLong(), buf.readBoolean(), readLimitedStringList(buf, DesktopProtocol.MAX_FORCED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH));
-        }
-
-        public DesktopHelloPayload {
-            forcedMenuIds = validatedForcedMenuIds(forcedMenuIds);
-        }
-
-        private void write(RegistryFriendlyByteBuf buf) {
-            buf.writeVarInt(this.protocolVersion);
-            buf.writeLong(this.clientNonce);
-            buf.writeVarLong(this.capabilities);
-            buf.writeBoolean(this.uiEnabled);
-            writeLimitedStringList(buf, this.forcedMenuIds, DesktopProtocol.MAX_FORCED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH);
-        }
-
-        @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
-        }
-    }
-
-    public record DesktopHelloAckPayload(int protocolVersion, long echoedClientNonce, long connectionNonce, long capabilities, boolean uiEnabled) implements CustomPacketPayload {
-        public static final Type<DesktopHelloAckPayload> TYPE = new Type<>(id("desktop_hello_ack"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopHelloAckPayload> CODEC = CustomPacketPayload.codec(
-            DesktopHelloAckPayload::write,
-            DesktopHelloAckPayload::new
-        );
-
-        private DesktopHelloAckPayload(RegistryFriendlyByteBuf buf) {
-            this(buf.readVarInt(), buf.readLong(), buf.readLong(), buf.readVarLong(), buf.readBoolean());
-        }
-
-        private void write(RegistryFriendlyByteBuf buf) {
-            buf.writeVarInt(this.protocolVersion);
-            buf.writeLong(this.echoedClientNonce);
-            buf.writeLong(this.connectionNonce);
-            buf.writeVarLong(this.capabilities);
-            buf.writeBoolean(this.uiEnabled);
-        }
-
-        @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
-        }
-    }
-
-    public record DesktopModePayload(long connectionNonce, long sequence, boolean uiEnabled, List<String> forcedMenuIds) implements CustomPacketPayload {
-        public static final Type<DesktopModePayload> TYPE = new Type<>(id("desktop_mode"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopModePayload> CODEC = CustomPacketPayload.codec(
-            DesktopModePayload::write,
-            DesktopModePayload::new
-        );
-
-        private DesktopModePayload(RegistryFriendlyByteBuf buf) {
-            this(buf.readLong(), buf.readVarLong(), buf.readBoolean(), readLimitedStringList(buf, DesktopProtocol.MAX_FORCED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH));
-        }
-
-        public DesktopModePayload {
-            forcedMenuIds = validatedForcedMenuIds(forcedMenuIds);
-        }
-
-        private void write(RegistryFriendlyByteBuf buf) {
-            buf.writeLong(this.connectionNonce);
-            buf.writeVarLong(this.sequence);
-            buf.writeBoolean(this.uiEnabled);
-            writeLimitedStringList(buf, this.forcedMenuIds, DesktopProtocol.MAX_FORCED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH);
-        }
-
-        @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
-        }
-    }
-
-    public record DesktopButtonPayload(MutationStamp authorization, int sessionId, int buttonId) implements CustomPacketPayload {
+    public record DesktopButtonPayload(long connectionNonce, long mutationId, long playerSessionToken, int sessionId, long sessionToken, int stateId, int buttonId) implements CustomPacketPayload {
         public static final Type<DesktopButtonPayload> TYPE = new Type<>(id("desktop_button"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopButtonPayload> CODEC = CustomPacketPayload.codec(
             DesktopButtonPayload::write,
@@ -383,12 +718,22 @@ public final class DesktopPackets {
         );
 
         private DesktopButtonPayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf), buf.readVarInt(), buf.readVarInt());
+            this(buf.readLong(), buf.readVarLong(), buf.readLong(), buf.readVarInt(), buf.readLong(), buf.readVarInt(), buf.readVarInt());
+        }
+
+        public DesktopButtonPayload {
+            if (mutationId <= 0L || playerSessionToken == 0L) {
+                throw new IllegalArgumentException("Invalid desktop button mutation");
+            }
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.mutationId);
+            buf.writeLong(this.playerSessionToken);
             buf.writeVarInt(this.sessionId);
+            buf.writeLong(this.sessionToken);
+            buf.writeVarInt(this.stateId);
             buf.writeVarInt(this.buttonId);
         }
 
@@ -398,7 +743,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopPlaceRecipePayload(MutationStamp authorization, int sessionId, RecipeDisplayId recipeId, boolean useMaxItems) implements CustomPacketPayload {
+    public record DesktopPlaceRecipePayload(long connectionNonce, long mutationId, long playerSessionToken, int sessionId, long sessionToken, int stateId, RecipeDisplayId recipeId, boolean useMaxItems) implements CustomPacketPayload {
         public static final Type<DesktopPlaceRecipePayload> TYPE = new Type<>(id("desktop_place_recipe"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopPlaceRecipePayload> CODEC = CustomPacketPayload.codec(
             DesktopPlaceRecipePayload::write,
@@ -406,12 +751,22 @@ public final class DesktopPackets {
         );
 
         private DesktopPlaceRecipePayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf), buf.readVarInt(), RecipeDisplayId.STREAM_CODEC.decode(buf), buf.readBoolean());
+            this(buf.readLong(), buf.readVarLong(), buf.readLong(), buf.readVarInt(), buf.readLong(), buf.readVarInt(), RecipeDisplayId.STREAM_CODEC.decode(buf), buf.readBoolean());
+        }
+
+        public DesktopPlaceRecipePayload {
+            if (mutationId <= 0L || playerSessionToken == 0L || recipeId == null) {
+                throw new IllegalArgumentException("Invalid desktop recipe placement mutation");
+            }
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.mutationId);
+            buf.writeLong(this.playerSessionToken);
             buf.writeVarInt(this.sessionId);
+            buf.writeLong(this.sessionToken);
+            buf.writeVarInt(this.stateId);
             RecipeDisplayId.STREAM_CODEC.encode(buf, this.recipeId);
             buf.writeBoolean(this.useMaxItems);
         }
@@ -422,16 +777,32 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopJeiTransferPayload(MutationStamp authorization, int targetSessionId, Identifier recipeId, boolean maxTransfer) implements CustomPacketPayload {
+    public record DesktopJeiTransferPayload(long connectionNonce, long mutationId, long playerSessionToken, int targetSessionId, long targetSessionToken, int targetStateId, Identifier recipeId, boolean maxTransfer) implements CustomPacketPayload {
         public static final Type<DesktopJeiTransferPayload> TYPE = new Type<>(id("desktop_jei_transfer"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopJeiTransferPayload> CODEC = CustomPacketPayload.codec(
             DesktopJeiTransferPayload::write,
             DesktopJeiTransferPayload::new
         );
 
+        public DesktopJeiTransferPayload {
+            if (mutationId <= 0L
+                || playerSessionToken == 0L
+                || targetSessionId < PLAYER_MENU_SESSION
+                || targetSessionToken == 0L
+                || targetStateId < 0
+                || recipeId == null
+                || recipeId.toString().length() > MAX_IDENTIFIER_LENGTH) {
+                throw new IllegalArgumentException("Invalid desktop recipe id");
+            }
+        }
+
         private DesktopJeiTransferPayload(RegistryFriendlyByteBuf buf) {
             this(
-                new MutationStamp(buf),
+                buf.readLong(),
+                buf.readVarLong(),
+                buf.readLong(),
+                buf.readVarInt(),
+                buf.readLong(),
                 buf.readVarInt(),
                 Identifier.parse(buf.readUtf(MAX_IDENTIFIER_LENGTH)),
                 buf.readBoolean()
@@ -439,8 +810,12 @@ public final class DesktopPackets {
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.mutationId);
+            buf.writeLong(this.playerSessionToken);
             buf.writeVarInt(this.targetSessionId);
+            buf.writeLong(this.targetSessionToken);
+            buf.writeVarInt(this.targetStateId);
             buf.writeUtf(this.recipeId.toString(), MAX_IDENTIFIER_LENGTH);
             buf.writeBoolean(this.maxTransfer);
         }
@@ -451,7 +826,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopRenamePayload(MutationStamp authorization, int sessionId, String name) implements CustomPacketPayload {
+    public record DesktopRenamePayload(long connectionNonce, long mutationId, long playerSessionToken, int sessionId, long sessionToken, int stateId, String name) implements CustomPacketPayload {
         public static final Type<DesktopRenamePayload> TYPE = new Type<>(id("desktop_rename"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopRenamePayload> CODEC = CustomPacketPayload.codec(
             DesktopRenamePayload::write,
@@ -459,12 +834,22 @@ public final class DesktopPackets {
         );
 
         private DesktopRenamePayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf), buf.readVarInt(), buf.readUtf(50));
+            this(buf.readLong(), buf.readVarLong(), buf.readLong(), buf.readVarInt(), buf.readLong(), buf.readVarInt(), buf.readUtf(50));
+        }
+
+        public DesktopRenamePayload {
+            if (mutationId <= 0L || playerSessionToken == 0L || name == null) {
+                throw new IllegalArgumentException("Invalid desktop rename mutation");
+            }
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.mutationId);
+            buf.writeLong(this.playerSessionToken);
             buf.writeVarInt(this.sessionId);
+            buf.writeLong(this.sessionToken);
+            buf.writeVarInt(this.stateId);
             buf.writeUtf(this.name, 50);
         }
 
@@ -474,7 +859,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopCustomPayload(MutationStamp authorization, int sessionId, Identifier channel, byte[] data) implements CustomPacketPayload {
+    public record DesktopCustomPayload(long connectionNonce, long mutationId, long playerSessionToken, int sessionId, long sessionToken, int stateId, Identifier channel, byte[] data) implements CustomPacketPayload {
         public static final Type<DesktopCustomPayload> TYPE = new Type<>(id("desktop_custom"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopCustomPayload> CODEC = CustomPacketPayload.codec(
             DesktopCustomPayload::write,
@@ -483,19 +868,20 @@ public final class DesktopPackets {
 
         private DesktopCustomPayload(RegistryFriendlyByteBuf buf) {
             this(
-                new MutationStamp(buf),
+                buf.readLong(),
+                buf.readVarLong(),
+                buf.readLong(),
+                buf.readVarInt(),
+                buf.readLong(),
                 buf.readVarInt(),
                 Identifier.parse(buf.readUtf(MAX_IDENTIFIER_LENGTH)),
                 buf.readByteArray(DesktopProtocol.MAX_CUSTOM_DATA_BYTES)
             );
         }
 
-        public DesktopCustomPayload(int sessionId, Identifier channel, byte[] data) {
-            this(new MutationStamp(0L, 0L, 0), sessionId, channel, data);
-        }
-
         public DesktopCustomPayload {
-            if (channel == null || channel.toString().length() > MAX_IDENTIFIER_LENGTH) {
+            if (mutationId < 0L || (mutationId > 0L && playerSessionToken == 0L)
+                || channel == null || channel.toString().length() > MAX_IDENTIFIER_LENGTH) {
                 throw new IllegalArgumentException("Invalid desktop custom payload channel");
             }
             if (data == null || data.length > DesktopProtocol.MAX_CUSTOM_DATA_BYTES) {
@@ -504,14 +890,22 @@ public final class DesktopPackets {
             data = data.clone();
         }
 
+        public DesktopCustomPayload(int sessionId, Identifier channel, byte[] data) {
+            this(0L, 0L, 0L, sessionId, 0L, 0, channel, data);
+        }
+
         @Override
         public byte[] data() {
             return this.data.clone();
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.mutationId);
+            buf.writeLong(this.playerSessionToken);
             buf.writeVarInt(this.sessionId);
+            buf.writeLong(this.sessionToken);
+            buf.writeVarInt(this.stateId);
             buf.writeUtf(this.channel.toString(), MAX_IDENTIFIER_LENGTH);
             buf.writeByteArray(this.data);
         }
@@ -522,7 +916,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopCloseSessionPayload(MutationStamp authorization, int sessionId) implements CustomPacketPayload {
+    public record DesktopCloseSessionPayload(long connectionNonce, int sessionId, long sessionToken) implements CustomPacketPayload {
         public static final Type<DesktopCloseSessionPayload> TYPE = new Type<>(id("desktop_close_session"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopCloseSessionPayload> CODEC = CustomPacketPayload.codec(
             DesktopCloseSessionPayload::write,
@@ -530,12 +924,13 @@ public final class DesktopPackets {
         );
 
         private DesktopCloseSessionPayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf), buf.readVarInt());
+            this(buf.readLong(), buf.readVarInt(), buf.readLong());
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
+            buf.writeLong(this.connectionNonce);
             buf.writeVarInt(this.sessionId);
+            buf.writeLong(this.sessionToken);
         }
 
         @Override
@@ -544,7 +939,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopSessionPinPayload(MutationStamp authorization, int sessionId, int pinMode) implements CustomPacketPayload {
+    public record DesktopSessionPinPayload(long connectionNonce, int sessionId, long sessionToken, int pinMode) implements CustomPacketPayload {
         public static final Type<DesktopSessionPinPayload> TYPE = new Type<>(id("desktop_session_pin"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopSessionPinPayload> CODEC = CustomPacketPayload.codec(
             DesktopSessionPinPayload::write,
@@ -552,12 +947,13 @@ public final class DesktopPackets {
         );
 
         private DesktopSessionPinPayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf), buf.readVarInt(), buf.readVarInt());
+            this(buf.readLong(), buf.readVarInt(), buf.readLong(), buf.readVarInt());
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
+            buf.writeLong(this.connectionNonce);
             buf.writeVarInt(this.sessionId);
+            buf.writeLong(this.sessionToken);
             buf.writeVarInt(this.pinMode);
         }
 
@@ -567,7 +963,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopSessionVisibilityPayload(MutationStamp authorization, int sessionId, boolean visible) implements CustomPacketPayload {
+    public record DesktopSessionVisibilityPayload(long connectionNonce, int sessionId, long sessionToken, boolean visible) implements CustomPacketPayload {
         public static final Type<DesktopSessionVisibilityPayload> TYPE = new Type<>(id("desktop_session_visibility"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopSessionVisibilityPayload> CODEC = CustomPacketPayload.codec(
             DesktopSessionVisibilityPayload::write,
@@ -575,16 +971,13 @@ public final class DesktopPackets {
         );
 
         private DesktopSessionVisibilityPayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf), buf.readVarInt(), buf.readBoolean());
-        }
-
-        public DesktopSessionVisibilityPayload(int sessionId, boolean visible) {
-            this(new MutationStamp(0L, 0L, 0), sessionId, visible);
+            this(buf.readLong(), buf.readVarInt(), buf.readLong(), buf.readBoolean());
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
+            buf.writeLong(this.connectionNonce);
             buf.writeVarInt(this.sessionId);
+            buf.writeLong(this.sessionToken);
             buf.writeBoolean(this.visible);
         }
 
@@ -594,26 +987,51 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopLinkSessionsPayload(MutationStamp originAuthorization, MutationStamp targetAuthorization, int action) implements CustomPacketPayload {
-        public static final Type<DesktopLinkSessionsPayload> TYPE = new Type<>(id("desktop_link_sessions"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopLinkSessionsPayload> CODEC = CustomPacketPayload.codec(
-            DesktopLinkSessionsPayload::write,
-            DesktopLinkSessionsPayload::new
+    public record DesktopOpenLinkedSourcesPayload(long connectionNonce, int originSessionId, long originSessionToken) implements CustomPacketPayload {
+        public static final Type<DesktopOpenLinkedSourcesPayload> TYPE = new Type<>(id("desktop_open_linked_sources"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopOpenLinkedSourcesPayload> CODEC = CustomPacketPayload.codec(
+            DesktopOpenLinkedSourcesPayload::write,
+            DesktopOpenLinkedSourcesPayload::new
         );
 
-        private DesktopLinkSessionsPayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf), new MutationStamp(buf), buf.readVarInt());
+        private DesktopOpenLinkedSourcesPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readVarInt(), buf.readLong());
         }
 
-        public DesktopLinkSessionsPayload {
-            if (action < LINK_ACTION_LINK || action > LINK_ACTION_CLEAR_ORIGIN) {
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarInt(this.originSessionId);
+            buf.writeLong(this.originSessionToken);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopLinkPayload(long connectionNonce, int firstSessionId, long firstSessionToken, int secondSessionId, long secondSessionToken, int action) implements CustomPacketPayload {
+        public static final int ACTION_LINK = 1;
+        public static final int ACTION_DETACH = 2;
+        public static final Type<DesktopLinkPayload> TYPE = new Type<>(id("desktop_link"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopLinkPayload> CODEC = CustomPacketPayload.codec(DesktopLinkPayload::write, DesktopLinkPayload::new);
+
+        private DesktopLinkPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readVarInt(), buf.readLong(), buf.readVarInt(), buf.readLong(), buf.readVarInt());
+        }
+
+        public DesktopLinkPayload {
+            if (action != ACTION_LINK && action != ACTION_DETACH) {
                 throw new IllegalArgumentException("Invalid desktop link action: " + action);
             }
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.originAuthorization.write(buf);
-            this.targetAuthorization.write(buf);
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarInt(this.firstSessionId);
+            buf.writeLong(this.firstSessionToken);
+            buf.writeVarInt(this.secondSessionId);
+            buf.writeLong(this.secondSessionToken);
             buf.writeVarInt(this.action);
         }
 
@@ -623,38 +1041,16 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopOpenLinkedSourcesPayload(MutationStamp authorization) implements CustomPacketPayload {
-        public static final Type<DesktopOpenLinkedSourcesPayload> TYPE = new Type<>(id("desktop_open_linked_sources"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopOpenLinkedSourcesPayload> CODEC = CustomPacketPayload.codec(
-            DesktopOpenLinkedSourcesPayload::write,
-            DesktopOpenLinkedSourcesPayload::new
-        );
-
-        private DesktopOpenLinkedSourcesPayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf));
-        }
-
-        private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
-        }
-
-        @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
-        }
-    }
-
     public record DesktopOpenSessionPayload(
-        long connectionNonce,
         int sessionId,
-        long sessionNonce,
+        long sessionToken,
         int menuTypeId,
         int specialKind,
         int entityId,
         int columns,
         int stateId,
         boolean visible,
-        boolean transferSupported,
+        boolean recipeTransferSupported,
         String sourceKey,
         Component title,
         List<ItemStack> items,
@@ -669,7 +1065,6 @@ public final class DesktopPackets {
 
         private DesktopOpenSessionPayload(RegistryFriendlyByteBuf buf) {
             this(
-                buf.readLong(),
                 buf.readVarInt(),
                 buf.readLong(),
                 buf.readVarInt(),
@@ -679,21 +1074,38 @@ public final class DesktopPackets {
                 buf.readVarInt(),
                 buf.readBoolean(),
                 buf.readBoolean(),
-                buf.readUtf(DesktopProtocol.MAX_SOURCE_TEXT_LENGTH),
+                buf.readUtf(LINKED_SOURCE_MAX_KEY_LENGTH),
                 ComponentSerialization.STREAM_CODEC.decode(buf),
-                readItemList(buf, DesktopProtocol.MAX_OPEN_SESSION_ITEMS, "Desktop session"),
+                readItemList(buf),
                 ItemStack.OPTIONAL_STREAM_CODEC.decode(buf),
                 buf.readVarIntArray(DesktopProtocol.MAX_MENU_DATA_VALUES)
             );
         }
 
         public DesktopOpenSessionPayload {
-            if (sourceKey == null || sourceKey.length() > DesktopProtocol.MAX_SOURCE_TEXT_LENGTH
-                || items.size() > DesktopProtocol.MAX_OPEN_SESSION_ITEMS
-                || data.length > DesktopProtocol.MAX_MENU_DATA_VALUES) {
-                throw new IllegalArgumentException("Desktop session snapshot is too large: items=" + items.size() + ", data=" + data.length);
+            boolean generic = specialKind == SPECIAL_GENERIC;
+            if (sessionId <= PLAYER_MENU_SESSION
+                || sessionToken == 0L
+                || stateId < 0
+                || specialKind < SPECIAL_GENERIC
+                || specialKind > SPECIAL_LLAMA
+                || columns < 0
+                || columns > DesktopProtocol.MAX_MOUNT_COLUMNS
+                || sourceKey == null
+                || sourceKey.length() > LINKED_SOURCE_MAX_KEY_LENGTH
+                || title == null
+                || title.getString().length() > LINKED_SOURCE_MAX_KEY_LENGTH
+                || items == null
+                || items.size() > MAX_ITEM_LIST_SIZE
+                || carried == null
+                || data == null
+                || data.length > DesktopProtocol.MAX_MENU_DATA_VALUES
+                || (generic && (menuTypeId < 0 || menuTypeById(menuTypeId) == null || entityId != -1 || columns != 0))
+                || (!generic && (menuTypeId != -1 || entityId < 0))) {
+                throw new IllegalArgumentException("Invalid desktop open-session snapshot");
             }
-            items = List.copyOf(items);
+            items = items.stream().map(ItemStack::copy).toList();
+            carried = carried.copy();
             data = data.clone();
         }
 
@@ -703,19 +1115,18 @@ public final class DesktopPackets {
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            buf.writeLong(this.connectionNonce);
             buf.writeVarInt(this.sessionId);
-            buf.writeLong(this.sessionNonce);
+            buf.writeLong(this.sessionToken);
             buf.writeVarInt(this.menuTypeId);
             buf.writeVarInt(this.specialKind);
             buf.writeVarInt(this.entityId);
             buf.writeVarInt(this.columns);
             buf.writeVarInt(this.stateId);
             buf.writeBoolean(this.visible);
-            buf.writeBoolean(this.transferSupported);
-            buf.writeUtf(this.sourceKey, DesktopProtocol.MAX_SOURCE_TEXT_LENGTH);
+            buf.writeBoolean(this.recipeTransferSupported);
+            buf.writeUtf(this.sourceKey, LINKED_SOURCE_MAX_KEY_LENGTH);
             ComponentSerialization.STREAM_CODEC.encode(buf, this.title);
-            writeItemList(buf, this.items, DesktopProtocol.MAX_OPEN_SESSION_ITEMS, "Desktop session");
+            writeItemList(buf, this.items);
             ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, this.carried);
             buf.writeVarIntArray(this.data);
         }
@@ -726,7 +1137,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopSlotPayload(MutationStamp authorization, int sessionId, int slotIndex, int stateId, ItemStack stack) implements CustomPacketPayload {
+    public record DesktopSlotPayload(int sessionId, int slotIndex, int stateId, ItemStack stack) implements CustomPacketPayload {
         public static final Type<DesktopSlotPayload> TYPE = new Type<>(id("desktop_slot"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopSlotPayload> CODEC = CustomPacketPayload.codec(
             DesktopSlotPayload::write,
@@ -735,7 +1146,6 @@ public final class DesktopPackets {
 
         private DesktopSlotPayload(RegistryFriendlyByteBuf buf) {
             this(
-                new MutationStamp(buf),
                 buf.readVarInt(),
                 buf.readVarInt(),
                 buf.readVarInt(),
@@ -744,7 +1154,6 @@ public final class DesktopPackets {
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
             buf.writeVarInt(this.sessionId);
             buf.writeVarInt(this.slotIndex);
             buf.writeVarInt(this.stateId);
@@ -757,7 +1166,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopDataPayload(MutationStamp authorization, int sessionId, int dataSlot, int value) implements CustomPacketPayload {
+    public record DesktopDataPayload(int sessionId, int dataSlot, int value) implements CustomPacketPayload {
         public static final Type<DesktopDataPayload> TYPE = new Type<>(id("desktop_data"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopDataPayload> CODEC = CustomPacketPayload.codec(
             DesktopDataPayload::write,
@@ -765,11 +1174,10 @@ public final class DesktopPackets {
         );
 
         private DesktopDataPayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+            this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
             buf.writeVarInt(this.sessionId);
             buf.writeVarInt(this.dataSlot);
             buf.writeVarInt(this.value);
@@ -781,7 +1189,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopCarriedPayload(MutationStamp authorization, ItemStack carried) implements CustomPacketPayload {
+    public record DesktopCarriedPayload(long connectionNonce, long mutationId, long playerSessionToken, int stateId, ItemStack carried) implements CustomPacketPayload {
         public static final Type<DesktopCarriedPayload> TYPE = new Type<>(id("desktop_carried"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopCarriedPayload> CODEC = CustomPacketPayload.codec(
             DesktopCarriedPayload::write,
@@ -789,15 +1197,21 @@ public final class DesktopPackets {
         );
 
         private DesktopCarriedPayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf), ItemStack.OPTIONAL_STREAM_CODEC.decode(buf));
+            this(buf.readLong(), buf.readVarLong(), buf.readLong(), buf.readVarInt(), ItemStack.OPTIONAL_STREAM_CODEC.decode(buf));
         }
 
-        public DesktopCarriedPayload(ItemStack carried) {
-            this(new MutationStamp(0L, 0L, 0), carried);
+        public DesktopCarriedPayload {
+            if (mutationId < 0L || (mutationId > 0L && playerSessionToken == 0L)) {
+                throw new IllegalArgumentException("Invalid desktop carried mutation id");
+            }
+            carried = carried.copy();
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarLong(this.mutationId);
+            buf.writeLong(this.playerSessionToken);
+            buf.writeVarInt(this.stateId);
             ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, this.carried);
         }
 
@@ -807,7 +1221,43 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopGhostRecipePayload(MutationStamp authorization, int sessionId, RecipeDisplay recipeDisplay) implements CustomPacketPayload {
+    /** Releases the single shared-cursor mutation lane after all preceding authoritative syncs. */
+    public record DesktopMutationAckPayload(
+        long connectionNonce,
+        long playerSessionToken,
+        long mutationId,
+        boolean sequenceAccepted
+    ) implements CustomPacketPayload {
+        public static final Type<DesktopMutationAckPayload> TYPE = new Type<>(id("desktop_mutation_ack"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopMutationAckPayload> CODEC = CustomPacketPayload.codec(
+            DesktopMutationAckPayload::write,
+            DesktopMutationAckPayload::new
+        );
+
+        private DesktopMutationAckPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readLong(), buf.readVarLong(), buf.readBoolean());
+        }
+
+        public DesktopMutationAckPayload {
+            if (connectionNonce == 0L || playerSessionToken == 0L || mutationId <= 0L) {
+                throw new IllegalArgumentException("Invalid desktop mutation acknowledgement");
+            }
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(this.connectionNonce);
+            buf.writeLong(this.playerSessionToken);
+            buf.writeVarLong(this.mutationId);
+            buf.writeBoolean(this.sequenceAccepted);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopGhostRecipePayload(int sessionId, RecipeDisplay recipeDisplay) implements CustomPacketPayload {
         public static final Type<DesktopGhostRecipePayload> TYPE = new Type<>(id("desktop_ghost_recipe"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopGhostRecipePayload> CODEC = CustomPacketPayload.codec(
             DesktopGhostRecipePayload::write,
@@ -815,11 +1265,10 @@ public final class DesktopPackets {
         );
 
         private DesktopGhostRecipePayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf), buf.readVarInt(), RecipeDisplay.STREAM_CODEC.decode(buf));
+            this(buf.readVarInt(), RecipeDisplay.STREAM_CODEC.decode(buf));
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
             buf.writeVarInt(this.sessionId);
             RecipeDisplay.STREAM_CODEC.encode(buf, this.recipeDisplay);
         }
@@ -830,7 +1279,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopSessionClosedPayload(MutationStamp authorization, int sessionId) implements CustomPacketPayload {
+    public record DesktopSessionClosedPayload(int sessionId) implements CustomPacketPayload {
         public static final Type<DesktopSessionClosedPayload> TYPE = new Type<>(id("desktop_session_closed"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopSessionClosedPayload> CODEC = CustomPacketPayload.codec(
             DesktopSessionClosedPayload::write,
@@ -838,11 +1287,10 @@ public final class DesktopPackets {
         );
 
         private DesktopSessionClosedPayload(RegistryFriendlyByteBuf buf) {
-            this(new MutationStamp(buf), buf.readVarInt());
+            this(buf.readVarInt());
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
             buf.writeVarInt(this.sessionId);
         }
 
@@ -853,7 +1301,6 @@ public final class DesktopPackets {
     }
 
     public record DesktopMerchantOffersPayload(
-        MutationStamp authorization,
         int sessionId,
         MerchantOffers offers,
         int villagerLevel,
@@ -869,7 +1316,6 @@ public final class DesktopPackets {
 
         private DesktopMerchantOffersPayload(RegistryFriendlyByteBuf buf) {
             this(
-                new MutationStamp(buf),
                 buf.readVarInt(),
                 MerchantOffers.STREAM_CODEC.decode(buf),
                 buf.readVarInt(),
@@ -880,7 +1326,6 @@ public final class DesktopPackets {
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
-            this.authorization.write(buf);
             buf.writeVarInt(this.sessionId);
             MerchantOffers.STREAM_CODEC.encode(buf, this.offers);
             buf.writeVarInt(this.villagerLevel);

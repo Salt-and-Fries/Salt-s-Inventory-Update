@@ -1,0 +1,12 @@
+// Version-local test setup; run with -I versions/26.2/sort-tests.gradle.
+gradle.projectsEvaluated {
+    [":26.2:fabric"].each { path ->
+        def p = gradle.rootProject.project(path)
+        p.sourceSets.test.java.srcDir(gradle.rootProject.file("versions/26.2/tests"))
+        p.sourceSets.test.compileClasspath += p.sourceSets.main.compileClasspath
+        p.sourceSets.test.runtimeClasspath += p.sourceSets.main.runtimeClasspath
+        p.dependencies.add("testImplementation", "org.junit.jupiter:junit-jupiter:5.11.4")
+        p.dependencies.add("testRuntimeOnly", "org.junit.platform:junit-platform-launcher:1.11.4")
+        p.tasks.withType(Test).configureEach { useJUnitPlatform() }
+    }
+}

@@ -16,9 +16,8 @@ import net.minecraft.world.level.storage.ValueOutput;
 
 import com.salts_inventory_update.mixin.accessor.AbstractContainerMenuAccessor;
 import com.salts_inventory_update.network.DesktopPackets.InventoryExpansionSyncPayload;
-import com.salts_inventory_update.protocol.DesktopProtocol;
+import com.salts_inventory_update.client.DesktopContainerClient;
 import com.salts_inventory_update.server.DesktopContainerSessions;
-import com.salts_inventory_update.SaltsInventoryRuntime;
 
 public final class InventoryExpansion {
     public static final int VANILLA_MAIN_START = 9;
@@ -61,7 +60,8 @@ public final class InventoryExpansion {
         return (slot.container == player.getInventory()
             && slot.getContainerSlot() >= VANILLA_MAIN_START
             && slot.getContainerSlot() < VANILLA_MAIN_END)
-            || isExtraSlot(slot);
+            || (isExtraSlot(slot)
+                && slot.container == access(player).salts_inventory_update$getExtraInventory());
     }
 
     public static int storageOrder(Slot slot) {
@@ -156,7 +156,7 @@ public final class InventoryExpansion {
     }
 
     public static void ensurePlayerMenuCanReadSlotCount(net.minecraft.world.entity.player.Player player, int packetSlotCount) {
-        if (!SaltsInventoryRuntime.isEnabled()) {
+        if (!isTopologyNegotiated(player)) {
             return;
         }
 
@@ -208,6 +208,9 @@ public final class InventoryExpansion {
         net.minecraft.world.entity.player.Player source,
         boolean copyContents
     ) {
+        if (target instanceof ServerPlayer targetPlayer && source instanceof ServerPlayer sourcePlayer) {
+            DesktopContainerSessions.transferPlayerState(targetPlayer, sourcePlayer);
+        }
         InventoryExpansionAccess sourceAccess = access(source);
         InventoryExpansionAccess targetAccess = access(target);
         targetAccess.salts_inventory_update$setExtraSlotCount(sourceAccess.salts_inventory_update$getExtraSlotCount());
@@ -216,14 +219,12 @@ public final class InventoryExpansion {
     }
 
     public static void syncToClient(ServerPlayer player) {
-        if (DesktopContainerSessions.isPlayerNegotiated(player)
+        if (DesktopContainerSessions.isTopologyNegotiated(player)
             && ServerPlayNetworking.canSend(player, InventoryExpansionSyncPayload.TYPE)) {
             InventoryExpansionAccess access = access(player);
             ServerPlayNetworking.send(
                 player,
                 new InventoryExpansionSyncPayload(
-                    DesktopContainerSessions.connectionNonceFor(player),
-                    DesktopContainerSessions.playerMenuNonceFor(player),
                     access.salts_inventory_update$getExtraSlotCount(),
                     access.salts_inventory_update$getExtraInventory().snapshot()
                 )
@@ -232,10 +233,9 @@ public final class InventoryExpansion {
     }
 
     public static boolean tryPurchase(ServerPlayer player) {
-        if (!DesktopContainerSessions.isPlayerActive(player)) {
+        if (!DesktopContainerSessions.isGameplayActive(player)) {
             return false;
         }
-
         InventoryExpansionAccess access = access(player);
         int currentCount = access.salts_inventory_update$getExtraSlotCount();
         int cost = costForNextSlot(currentCount);
@@ -253,17 +253,17 @@ public final class InventoryExpansion {
     }
 
     public static boolean isGameplayActive(net.minecraft.world.entity.player.Player player) {
-        return player instanceof ServerPlayer serverPlayer
-            ? DesktopContainerSessions.isPlayerActive(serverPlayer)
-            : SaltsInventoryRuntime.isEnabled()
-                && SaltsInventoryRuntime.hasServerDesktopCapability(DesktopProtocol.CAP_INVENTORY_TOPOLOGY);
+        if (player instanceof ServerPlayer serverPlayer) {
+            return DesktopContainerSessions.isGameplayActive(serverPlayer);
+        }
+        return DesktopContainerClient.isGameplayActive() && DesktopContainerClient.isTopologyNegotiated();
     }
 
-    private static boolean isTopologyNegotiated(net.minecraft.world.entity.player.Player player) {
-        return player instanceof ServerPlayer serverPlayer
-            ? DesktopContainerSessions.isPlayerNegotiated(serverPlayer)
-            : SaltsInventoryRuntime.isServerDesktopAvailable()
-                && SaltsInventoryRuntime.hasServerDesktopCapability(DesktopProtocol.CAP_INVENTORY_TOPOLOGY);
+    public static boolean isTopologyNegotiated(net.minecraft.world.entity.player.Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            return DesktopContainerSessions.isTopologyNegotiated(serverPlayer);
+        }
+        return DesktopContainerClient.isTopologyNegotiated();
     }
 
     public record SavedExtraSlot(int slot, ItemStack stack) {

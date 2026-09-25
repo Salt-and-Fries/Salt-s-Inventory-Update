@@ -225,14 +225,12 @@ public final class InventoryExpansion {
     }
 
     public static void syncToClient(ServerPlayer player) {
-        if (DesktopContainerSessions.isPlayerNegotiated(player)
+        if (DesktopContainerSessions.isTopologyNegotiated(player)
             && ServerPlayNetworking.canSend(player, InventoryExpansionSyncPayload.TYPE)) {
             InventoryExpansionAccess access = access(player);
             ServerPlayNetworking.send(
                 player,
                 new InventoryExpansionSyncPayload(
-                    DesktopContainerSessions.connectionNonceFor(player),
-                    DesktopContainerSessions.playerMenuNonceFor(player),
                     access.salts_inventory_update$getExtraSlotCount(),
                     access.salts_inventory_update$getExtraInventory().snapshot()
                 )
@@ -241,7 +239,7 @@ public final class InventoryExpansion {
     }
 
     public static boolean tryPurchase(ServerPlayer player) {
-        if (!DesktopContainerSessions.isPlayerActive(player)) {
+        if (!DesktopContainerSessions.isGameplayActive(player)) {
             return false;
         }
 
@@ -263,14 +261,14 @@ public final class InventoryExpansion {
 
     public static boolean isGameplayActive(net.minecraft.world.entity.player.Player player) {
         return player instanceof ServerPlayer serverPlayer
-            ? DesktopContainerSessions.isPlayerActive(serverPlayer)
+            ? DesktopContainerSessions.isGameplayActive(serverPlayer)
             : SaltsInventoryRuntime.isEnabled()
                 && SaltsInventoryRuntime.hasServerDesktopCapability(DesktopProtocol.CAP_INVENTORY_TOPOLOGY);
     }
 
-    private static boolean isTopologyNegotiated(net.minecraft.world.entity.player.Player player) {
+    public static boolean isTopologyNegotiated(net.minecraft.world.entity.player.Player player) {
         return player instanceof ServerPlayer serverPlayer
-            ? DesktopContainerSessions.isPlayerNegotiated(serverPlayer)
+            ? DesktopContainerSessions.isTopologyNegotiated(serverPlayer)
             : SaltsInventoryRuntime.isServerDesktopAvailable()
                 && SaltsInventoryRuntime.hasServerDesktopCapability(DesktopProtocol.CAP_INVENTORY_TOPOLOGY);
     }

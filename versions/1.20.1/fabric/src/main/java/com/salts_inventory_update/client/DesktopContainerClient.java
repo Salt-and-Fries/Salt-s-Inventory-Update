@@ -6,6 +6,8 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import java.security.SecureRandom;
 import java.util.LinkedHashMap;
@@ -18,11 +20,18 @@ import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.network.DesktopPackets;
+import com.salts_inventory_update.network.DesktopMenuOpenDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopPacket;
 import com.salts_inventory_update.network.DesktopPackets.DesktopAuthenticatedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopButtonPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCarriedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopClickPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopDragSlotsPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopPickupAllPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopQuickMoveAllPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopSortWindowsPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopSlotReference;
+import com.salts_inventory_update.network.DesktopPackets.DesktopSessionReference;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
@@ -50,6 +59,7 @@ import com.salts_inventory_update.protocol.DesktopProtocol;
 
 public final class DesktopContainerClient {
     private static final int MODE_REFRESH_INTERVAL_TICKS = 100;
+    private static final long SUPPORTED_CAPABILITIES = DesktopProtocol.KNOWN_CAPABILITIES | DesktopPackets.CAP_MULTI_MENU_GESTURES | DesktopPackets.CAP_SORT_WINDOWS;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final DesktopConnectionState CONNECTION_STATE = new DesktopConnectionState();
     private static final Map<Integer, Long> SESSION_TOKENS = new LinkedHashMap<>();
@@ -58,6 +68,7 @@ public final class DesktopContainerClient {
     private static final Map<String, Long> SOURCE_GRANTS = new LinkedHashMap<>();
     private static final Map<String, Integer> SOURCE_SESSIONS = new LinkedHashMap<>();
     private static final Map<Integer, String> SESSION_SOURCE_KEYS = new LinkedHashMap<>();
+    private static final Map<Integer, MenuOpenData> PENDING_MENU_OPEN_DATA = new LinkedHashMap<>();
     private static long clientNonce;
     private static long playerMenuToken;
     private static long modeSequence;
@@ -132,8 +143,28 @@ public final class DesktopContainerClient {
             } else {
                 SESSION_SOURCE_KEYS.remove(payload.sessionId());
             }
+            MenuOpenData openingData = PENDING_MENU_OPEN_DATA.remove(payload.sessionId());
+            long authorizedToken = SESSION_TOKENS.getOrDefault(payload.sessionId(), 0L);
+            if (openingData != null && (openingData.sessionToken() != authorizedToken || openingData.menuTypeId() != payload.menuTypeId())) {
+                rejectServerProtocol("desktop menu opening data did not match its session");
+                return;
+            }
+            MenuType<?> menuType = DesktopPackets.menuTypeById(payload.menuTypeId());
+            if (menuType != null && DesktopMenuFactories.hasFactory(menuType) && openingData == null) {
+                rejectServerProtocol("desktop menu opening data was missing");
+                return;
+            }
             Minecraft client = Minecraft.getInstance();
-            InventoryDesktopScreen.openOrAddSession(client, DesktopContainerSession.create(client, payload), payload.visible());
+            InventoryDesktopScreen.openOrAddSession(
+                client,
+                DesktopContainerSession.create(
+                    client,
+                    payload,
+                    openingData == null ? new byte[0] : openingData.data(),
+                    openingData == null ? -1 : openingData.replacesSessionId()
+                ),
+                payload.visible()
+            );
         });
         register(DesktopSlotPayload.TYPE, DesktopSlotPayload::new, payload -> {
             if (payload.sessionId() > DesktopPackets.PLAYER_MENU_SESSION) {
@@ -278,7 +309,8 @@ public final class DesktopContainerClient {
                 payload.echoedClientNonce(),
                 payload.connectionNonce(),
                 payload.capabilities(),
-                payload.uiEnabled()
+                payload.uiEnabled(),
+                SUPPORTED_CAPABILITIES
             );
         if (!accepted) {
             CONNECTION_STATE.markIncompatible();
@@ -324,6 +356,7 @@ public final class DesktopContainerClient {
         SESSION_TOKENS.clear();
         SESSION_STATE_IDS.clear();
         PENDING_SOURCE_GRANTS.clear();
+        PENDING_MENU_OPEN_DATA.clear();
         SOURCE_GRANTS.clear();
         SOURCE_SESSIONS.clear();
         SESSION_SOURCE_KEYS.clear();
@@ -395,7 +428,7 @@ public final class DesktopContainerClient {
             boolean sent = sendRaw(new DesktopHelloPayload(
                 DesktopProtocol.VERSION,
                 clientNonce,
-                DesktopProtocol.KNOWN_CAPABILITIES,
+                SUPPORTED_CAPABILITIES,
                 SaltsInventoryRuntime.isConfiguredEnabled(),
                 forcedMenuIds
             ), "hello");
@@ -500,6 +533,24 @@ public final class DesktopContainerClient {
         );
     }
 
+    public static boolean canDispatchOptimisticMutationNow() {
+        return canSendDesktopPackets();
+    }
+
+    public static void acceptMenuOpenData(DesktopMenuOpenDataPayload payload, Minecraft client) {
+        if (!CONNECTION_STATE.authorizes(payload.connectionNonce(), DesktopProtocol.CAP_CUSTOM_WINDOWS, true)) {
+            return;
+        }
+        Long sessionToken = SESSION_TOKENS.get(payload.sessionId());
+        if (sessionToken == null || sessionToken.longValue() != payload.sessionToken()) {
+            rejectServerProtocol("desktop menu opening data was not authorized");
+            return;
+        }
+        PENDING_MENU_OPEN_DATA.put(payload.sessionId(), new MenuOpenData(
+            payload.sessionToken(), payload.menuTypeId(), payload.replacesSessionId(), payload.data()
+        ));
+    }
+
     private static boolean canUseServerSessionsRaw() {
         try {
             boolean hello = ClientPlayNetworking.canSend(DesktopHelloPayload.TYPE);
@@ -598,6 +649,56 @@ public final class DesktopContainerClient {
             targetSessionId
         );
         return send(new DesktopQuickMovePayload(sourceSessionId, sourceSlotIndex, targetKind, targetSessionId), "quick-move");
+    }
+
+    public record SlotTarget(int sessionId, int slotIndex) {
+    }
+
+    public static boolean dragSlots(int quickCraftType, List<SlotTarget> targets) {
+        if (targets.isEmpty() || !hasCapability(DesktopPackets.CAP_MULTI_MENU_GESTURES, true)) {
+            return false;
+        }
+        return send(new DesktopDragSlotsPayload(quickCraftType, targets.stream().map(DesktopContainerClient::slotReference).toList()), "drag-slots");
+    }
+
+    public static boolean pickupAll(int anchorSessionId, int anchorSlotIndex, int button, List<Integer> sourceSessions) {
+        if (!hasCapability(DesktopPackets.CAP_MULTI_MENU_GESTURES, true)) return false;
+        return send(new DesktopPickupAllPayload(
+            anchorSessionId,
+            anchorSlotIndex,
+            button,
+            sourceSessions.stream().map(DesktopContainerClient::sessionReference).toList()
+        ), "pickup-all");
+    }
+
+    public static boolean canSortWindows() {
+        return hasCapability(DesktopPackets.CAP_SORT_WINDOWS, true);
+    }
+
+    public static boolean sortWindows(int sourceId, List<Integer> destinations, int focusedId, boolean shift) {
+        if (!canSortWindows() || destinations.isEmpty() || tokenFor(sourceId) == 0L || stateIdFor(sourceId) < 0) return false;
+        List<Integer> ids = destinations.stream().distinct().toList();
+        if (ids.stream().anyMatch(id -> tokenFor(id) == 0L || stateIdFor(id) < 0)) return false;
+        return send(new DesktopSortWindowsPayload(sessionReference(sourceId),
+            ids.stream().map(DesktopContainerClient::sessionReference).toList(), focusedId, shift), "sort-windows");
+    }
+
+    public static boolean quickMoveSlots(List<SlotTarget> sources, int targetKind, int targetSessionId) {
+        if (sources.isEmpty() || !hasCapability(DesktopPackets.CAP_MULTI_MENU_GESTURES, true)) return false;
+        int target = targetKind == DesktopPackets.QUICK_TARGET_SESSION ? targetSessionId : DesktopPackets.PLAYER_MENU_SESSION;
+        return send(new DesktopQuickMoveAllPayload(
+            sources.stream().map(DesktopContainerClient::slotReference).toList(),
+            targetKind,
+            sessionReference(target)
+        ), "quick-move-all");
+    }
+
+    private static DesktopSlotReference slotReference(SlotTarget target) {
+        return new DesktopSlotReference(target.sessionId(), tokenFor(target.sessionId()), stateIdFor(target.sessionId()), target.slotIndex());
+    }
+
+    private static DesktopSessionReference sessionReference(int sessionId) {
+        return new DesktopSessionReference(sessionId, tokenFor(sessionId), stateIdFor(sessionId));
     }
 
     public static boolean clickButton(int sessionId, int buttonId) {
@@ -751,7 +852,7 @@ public final class DesktopContainerClient {
     }
 
     private static long requiredCapability(DesktopPacket payload, AuthTokens tokens) {
-        long required = 0L;
+        long required = payload instanceof DesktopSortWindowsPayload ? DesktopPackets.CAP_SORT_WINDOWS : 0L;
         if (payload instanceof DesktopPlaceRecipePayload || payload instanceof DesktopJeiTransferPayload) {
             required |= DesktopProtocol.CAP_RECIPE_TRANSFER;
         }
@@ -763,6 +864,9 @@ public final class DesktopContainerClient {
         }
         if (payload instanceof DesktopCustomPayload) {
             required |= DesktopProtocol.CAP_CUSTOM_WINDOWS;
+        }
+        if (payload instanceof DesktopDragSlotsPayload || payload instanceof DesktopPickupAllPayload || payload instanceof DesktopQuickMoveAllPayload) {
+            required |= DesktopPackets.CAP_MULTI_MENU_GESTURES;
         }
         if (payload instanceof DesktopOpenLinkedSourcesPayload) {
             required |= DesktopProtocol.CAP_CUSTOM_WINDOWS;
@@ -813,6 +917,8 @@ public final class DesktopContainerClient {
             secondary = value.secondSessionId();
         } else if (payload instanceof DesktopCarriedPayload || payload instanceof InventorySlotPurchasePayload) {
             primary = DesktopPackets.PLAYER_MENU_SESSION;
+        } else if (payload instanceof DesktopDragSlotsPayload || payload instanceof DesktopPickupAllPayload || payload instanceof DesktopQuickMoveAllPayload || payload instanceof DesktopSortWindowsPayload) {
+            // Every referenced menu carries its own token/state pair and is validated atomically by the server.
         } else if (!(payload instanceof DesktopOpenLinkedSourcesPayload)
         ) {
             return null;
@@ -856,5 +962,16 @@ public final class DesktopContainerClient {
         long secondaryToken,
         int secondaryStateId
     ) {
+    }
+
+    private record MenuOpenData(long sessionToken, int menuTypeId, int replacesSessionId, byte[] data) {
+        private MenuOpenData {
+            data = data.clone();
+        }
+
+        @Override
+        public byte[] data() {
+            return data.clone();
+        }
     }
 }
