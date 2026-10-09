@@ -1,0 +1,37 @@
+modLoader = "javafml"
+loaderVersion = "[12,13)"
+license = "${license}"
+
+[[mods]]
+modId = "${mod_id}"
+version = "${version}"
+displayName = "${mod_name}"
+displayURL = "https://salt-and-fries.github.io/Salt-s-Inventory-Update/"
+issueTrackerURL = "https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/issues"
+iconFile = "assets/salts_inventory_update/icon.png"
+authors = "Salt"
+description = "${description}"
+
+[[mixins]]
+config = "${mod_id}.mixins.json"
+
+[[dependencies.${mod_id}]]
+modId = "neoforge"
+type = "required"
+versionRange = "[26.3.0.22-beta,26.4)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "minecraft"
+type = "required"
+versionRange = "[${minecraft_version}]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "jei"
+type = "optional"
+versionRange = "[31.7.0,)"
+ordering = "AFTER"
+side = "CLIENT"

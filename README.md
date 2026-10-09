@@ -27,6 +27,10 @@ versions/
     common/
     fabric/
     neoforge/
+  26.3/
+    common/
+    fabric/
+    neoforge/
 ```
 
 The version and loader matrix is declared in [settings.gradle.kts](settings.gradle.kts). Dependency versions and mod metadata live in [build.gradle.kts](build.gradle.kts).
@@ -47,6 +51,8 @@ This keeps version API differences contained while still letting you share most 
 .\gradlew.bat build
 ```
 
-After a full `.\gradlew.bat build`, the ten verified Fabric/Forge/NeoForge jars and `SHA256SUMS.txt` are collected in `build/release/0.1.2`. The versioned directory is synchronized from scratch so stale artifacts cannot enter a release.
+For Minecraft 26.3 NeoForge, set `CI=true` before invoking Gradle so ModDevGradle uses its supported binary patch pipeline; the published 26.3 NeoForm source currently fails recompilation at `HolderSet.emptyNamed`. In PowerShell, run `$env:CI = 'true'; .\gradlew.bat :26.3:neoforge:build` for that target, or `$env:CI = 'true'; .\gradlew.bat build` for the full release.
+
+After a full build, the twelve verified Fabric/Forge/NeoForge jars and `SHA256SUMS.txt` are collected in `build/release/0.1.3`. The versioned directory is synchronized from scratch so stale artifacts cannot enter a release.
 
 For publishing, uncomment the `publishing` block in [build.gradle.kts](build.gradle.kts), add the CurseForge and Modrinth project IDs, then set `CURSEFORGE_TOKEN` and `MODRINTH_TOKEN` in your environment.

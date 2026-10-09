@@ -26,7 +26,6 @@ import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import org.lwjgl.glfw.GLFW;
 
 public final class NeoForgeClientPlatform {
     private static final int MOVEMENT_LOG_INTERVAL = 20;
@@ -39,6 +38,8 @@ public final class NeoForgeClientPlatform {
     private static Field minecraftGuiField;
     private static Method guiScreenMethod;
     private static Method windowHandleMethod;
+    private static Method legacyRawKeyMethod;
+    private static Method sdlRawKeyMethod;
     private static boolean movementInputWarningLogged;
     private static boolean recordMovementShapeLogged;
     private static boolean legacyMovementShapeLogged;
@@ -168,10 +169,20 @@ public final class NeoForgeClientPlatform {
         boolean down = keyMapping.isDown();
         try {
             InputConstants.Key key = KeyMappingHelper.getBoundKeyOf(keyMapping);
-            if (key.getType() == InputConstants.Type.KEYSYM && key.getValue() != InputConstants.UNKNOWN.getValue()) {
-                down = GLFW.glfwGetKey(windowHandle(minecraft), key.getValue()) != GLFW.GLFW_RELEASE;
+            if (key.getValue() != InputConstants.UNKNOWN.getValue()) {
+                if ("KEYBOARD".equals(key.getType().name())) {
+                    if (sdlRawKeyMethod == null) {
+                        sdlRawKeyMethod = InputConstants.class.getMethod("isKeyDown", int.class);
+                    }
+                    down = (boolean) sdlRawKeyMethod.invoke(null, key.getValue());
+                } else if ("KEYSYM".equals(key.getType().name())) {
+                    if (legacyRawKeyMethod == null) {
+                        legacyRawKeyMethod = Class.forName("org.lwjgl.glfw.GLFW").getMethod("glfwGetKey", long.class, int.class);
+                    }
+                    down = ((int) legacyRawKeyMethod.invoke(null, windowHandle(minecraft), key.getValue())) != 0;
+                }
             }
-        } catch (RuntimeException ignored) {
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
             DesktopDebug.trace("NeoForge movement raw key lookup failed mapping={} reason={}", keyMapping.getName(), ignored.toString());
         }
         keyMapping.setDown(down);

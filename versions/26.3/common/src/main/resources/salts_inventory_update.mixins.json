@@ -1,0 +1,38 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "accessor.AbstractContainerMenuAccessor",
+    "InventoryExpansionInventoryMixin",
+    "InventoryMenuMixin",
+    "PlayerInventoryExpansionMixin",
+    "ServerPlaceRecipeInventoryExpansionMixin",
+    "server.ChestOpenersCounterMixin",
+    "accessor.PlayerEnderChestContainerAccessor",
+    "server.ChestMenuEnderChestMixin",
+    "server.CraftingMenuMixin",
+    "server.ServerPlayerInventoryExpansionMixin",
+    "server.ServerPlayerMixin",
+    "server.ServerGamePacketListenerImplMixin"
+  ],
+  "client": [
+    "client.ClientPacketListenerInventoryExpansionMixin",
+    "client.GuiMixin",
+    "client.GuiMouseHandoffMixin",
+    "client.HudMixin",
+    "client.KeyboardHandlerMixin",
+    "client.MinecraftMixin",
+    "client.MinecraftInvoker",
+    "client.MenuScreensAccessor",
+    "client.MultiPlayerGameModeMixin",
+    "client.MouseHandlerAccessor",
+    "client.MouseHandlerHandoffMixin",
+    "client.RecipeBookComponentAccessor"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

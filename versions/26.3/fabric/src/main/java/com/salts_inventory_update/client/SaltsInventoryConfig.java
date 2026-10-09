@@ -1,0 +1,216 @@
+package com.salts_inventory_update.client;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.function.Consumer;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.salts_inventory_update.platform.loader.api.FabricLoader;
+
+import com.salts_inventory_update.SaltsInventoryUpdate;
+import com.salts_inventory_update.SaltsInventoryRuntime;
+import com.salts_inventory_update.debug.DesktopDebug;
+import com.salts_inventory_update.persistence.AtomicUtf8File;
+import com.salts_inventory_update.protocol.DesktopProtocol;
+
+public final class SaltsInventoryConfig {
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Path CONFIG_PATH = FabricLoader.getInstance()
+        .getConfigDir()
+        .resolve(SaltsInventoryUpdate.MOD_ID)
+        .resolve("config.json");
+    private static ConfigFile current;
+
+    private SaltsInventoryConfig() {
+    }
+
+    public static synchronized ConfigFile get() {
+        if (current == null) {
+            load();
+        }
+        return current;
+    }
+
+    public static synchronized ConfigFile load() {
+        ConfigFile loaded = null;
+        try {
+            String contents = AtomicUtf8File.read(
+                CONFIG_PATH,
+                DesktopProtocol.MAX_ENVELOPE_BYTES,
+                SaltsInventoryConfig::isValidConfigJson
+            ).orElse(null);
+            loaded = contents == null ? null : GSON.fromJson(contents, ConfigFile.class);
+        } catch (IOException | RuntimeException | StackOverflowError exception) {
+            DesktopDebug.warn("client config load failed path={} reason={}", CONFIG_PATH, exception.toString());
+        }
+
+        current = loaded == null ? new ConfigFile() : loaded.normalized();
+        applyRuntimeState(current);
+        save();
+        return current;
+    }
+
+    public static synchronized ConfigFile reload() {
+        current = null;
+        return load();
+    }
+
+    public static synchronized void update(Consumer<ConfigFile> updater) {
+        ConfigFile config = get();
+        updater.accept(config);
+        current = config.normalized();
+        applyRuntimeState(current);
+        save();
+    }
+
+    public static synchronized void save() {
+        try {
+            AtomicUtf8File.write(
+                CONFIG_PATH,
+                GSON.toJson(get().normalized()),
+                DesktopProtocol.MAX_ENVELOPE_BYTES,
+                SaltsInventoryConfig::isValidConfigJson
+            );
+        } catch (IOException | RuntimeException | StackOverflowError exception) {
+            DesktopDebug.warn("client config save failed path={} reason={}", CONFIG_PATH, exception.toString());
+        }
+    }
+
+    private static boolean isValidConfigJson(String contents) {
+        try {
+            return GSON.fromJson(contents, ConfigFile.class) != null;
+        } catch (RuntimeException | StackOverflowError exception) {
+            return false;
+        }
+    }
+
+    public static boolean isForcedContainerWindow(String menuId) {
+        return get().forcedContainerWindows.contains(menuId);
+    }
+
+    public static void setForcedContainerWindow(String menuId, boolean enabled) {
+        update(config -> {
+            if (enabled) {
+                config.forcedContainerWindows.add(menuId);
+            } else {
+                config.forcedContainerWindows.remove(menuId);
+            }
+        });
+    }
+
+    private static void applyRuntimeState(ConfigFile config) {
+        SaltsInventoryRuntime.setConfiguredEnabled(config.enableMod);
+        SaltsInventoryRuntime.setDetailedConsoleLogs(config.enableDetailedConsoleLogs);
+        SaltsInventoryRuntime.setForcedContainerWindowIds(config.forcedContainerWindows);
+    }
+
+    public static final class ConfigFile {
+        public boolean enableMod = true;
+        public boolean expandableInventory = false;
+        public boolean returnHotbarToInventory = false;
+        public boolean enableDetailedConsoleLogs = false;
+        public String windowOpeningStyle = WindowOpeningStyle.AROUND_INVENTORY.name();
+        public boolean openUnlocked = false;
+        public boolean allowResizing = false;
+        public boolean enableWindowSnapping = true;
+        public boolean resetLockedWindows = true;
+        public boolean enableGhostPins = false;
+        public boolean globalPins = false;
+        public boolean openInventoryWhenContainersAreOpened = false;
+        public boolean persistentWindows = false;
+        public boolean minimizableWindows = false;
+        public boolean hasSeenInstructionsWindow = false;
+        public double ghostWindowOpacity = 0.5D;
+        public double eHoldCloseAllSeconds = 0.5D;
+        public List<String> forcedContainerWindows = new ArrayList<>();
+
+        private ConfigFile normalized() {
+            this.windowOpeningStyle = WindowOpeningStyle.parse(this.windowOpeningStyle).name();
+            this.ghostWindowOpacity = clamp(this.ghostWindowOpacity, 0.15D, 0.90D);
+            this.eHoldCloseAllSeconds = clamp(roundToQuarter(this.eHoldCloseAllSeconds), 0.5D, 10.0D);
+            this.forcedContainerWindows = normalizeIds(this.forcedContainerWindows);
+            return this;
+        }
+
+        public WindowOpeningStyle windowOpeningStyle() {
+            return WindowOpeningStyle.parse(this.windowOpeningStyle);
+        }
+
+        public void setWindowOpeningStyle(WindowOpeningStyle style) {
+            this.windowOpeningStyle = (style == null ? WindowOpeningStyle.AROUND_INVENTORY : style).name();
+        }
+
+        public float ghostWindowOpacity() {
+            return (float) clamp(this.ghostWindowOpacity, 0.15D, 0.90D);
+        }
+
+        public long eHoldCloseAllMs() {
+            return Math.round(clamp(this.eHoldCloseAllSeconds, 0.5D, 10.0D) * 1000.0D);
+        }
+
+        public long eHoldOverlayDelayMs() {
+            return Math.max(0L, this.eHoldCloseAllMs() / 4L);
+        }
+
+        public void resetToDefaults() {
+            ConfigFile defaults = new ConfigFile();
+            this.enableMod = defaults.enableMod;
+            this.expandableInventory = defaults.expandableInventory;
+            this.returnHotbarToInventory = defaults.returnHotbarToInventory;
+            this.enableDetailedConsoleLogs = defaults.enableDetailedConsoleLogs;
+            this.windowOpeningStyle = defaults.windowOpeningStyle;
+            this.openUnlocked = defaults.openUnlocked;
+            this.allowResizing = defaults.allowResizing;
+            this.enableWindowSnapping = defaults.enableWindowSnapping;
+            this.resetLockedWindows = defaults.resetLockedWindows;
+            this.enableGhostPins = defaults.enableGhostPins;
+            this.globalPins = defaults.globalPins;
+            this.openInventoryWhenContainersAreOpened = defaults.openInventoryWhenContainersAreOpened;
+            this.persistentWindows = defaults.persistentWindows;
+            this.minimizableWindows = defaults.minimizableWindows;
+            this.hasSeenInstructionsWindow = defaults.hasSeenInstructionsWindow;
+            this.ghostWindowOpacity = defaults.ghostWindowOpacity;
+            this.eHoldCloseAllSeconds = defaults.eHoldCloseAllSeconds;
+            this.forcedContainerWindows = new ArrayList<>(defaults.forcedContainerWindows);
+        }
+
+        private static List<String> normalizeIds(List<String> ids) {
+            if (ids == null || ids.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            LinkedHashSet<String> normalized = new LinkedHashSet<>();
+            for (String id : ids) {
+                if (normalized.size() >= DesktopProtocol.MAX_FORCED_MENU_IDS) {
+                    break;
+                }
+                if (id == null) {
+                    continue;
+                }
+                String value = id.trim();
+                if (!value.isBlank() && value.length() <= DesktopProtocol.MAX_IDENTIFIER_LENGTH) {
+                    normalized.add(value);
+                }
+            }
+            ArrayList<String> sorted = new ArrayList<>(normalized);
+            Collections.sort(sorted);
+            return sorted;
+        }
+
+        private static double roundToQuarter(double value) {
+            return Math.round(value * 4.0D) / 4.0D;
+        }
+
+        private static double clamp(double value, double min, double max) {
+            if (Double.isNaN(value) || Double.isInfinite(value)) {
+                return min;
+            }
+            return Math.max(min, Math.min(max, value));
+        }
+    }
+}

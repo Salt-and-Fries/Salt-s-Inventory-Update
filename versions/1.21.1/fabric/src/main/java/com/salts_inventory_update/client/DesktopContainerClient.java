@@ -240,12 +240,7 @@ public final class DesktopContainerClient {
                 return;
             }
             DesktopDebug.trace("client payload carried stack={}", payload.carried());
-            InventoryDesktopScreen screen = InventoryDesktopScreen.current(context.client());
-            if (screen != null) {
-                screen.setSharedCarried(payload.carried());
-            } else if (context.client().player != null) {
-                context.client().player.inventoryMenu.setCarried(payload.carried().copy());
-            }
+            applyCarriedUpdate(context.client(), payload.stateId(), payload.carried());
         });
         ClientPlayNetworking.registerGlobalReceiver(DesktopMutationAckPayload.TYPE, (payload, context) ->
             acceptMutationAck(payload)
@@ -410,6 +405,26 @@ public final class DesktopContainerClient {
             payload.replacesSessionId(),
             payload.data().length
         );
+    }
+
+    static void applyCarriedUpdate(Minecraft minecraft, int stateId, ItemStack carried) {
+        if (minecraft.player == null) {
+            return;
+        }
+        var menu = minecraft.player.inventoryMenu;
+        if (!menu.slots.isEmpty()) {
+            // 1.21.1 increments the player-menu revision for vanilla cursor packets, but
+            // vanilla's cursor receiver does not apply it. Acknowledge the revision with
+            // an unchanged slot before the cursor can start another desktop mutation.
+            int slotIndex = Math.min(9, menu.slots.size() - 1);
+            menu.setItem(slotIndex, stateId, menu.getSlot(slotIndex).getItem().copy());
+        }
+        InventoryDesktopScreen screen = InventoryDesktopScreen.current(minecraft);
+        if (screen != null) {
+            screen.setSharedCarried(carried);
+        } else {
+            menu.setCarried(carried.copy());
+        }
     }
 
     public static boolean canSendDesktopPackets() {

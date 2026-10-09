@@ -8,14 +8,18 @@ Linked container reopening is now authorized by a bounded server-owned link grap
 
 This release adds a built-in Salt's Inventory Help window that introduces the desktop inventory workflow the first time a player opens a world with the mod installed. The same guide can be opened again with `/saltsinventory help`, includes formatted pages for controls and supported integrations, and is available across every supported Minecraft version and loader.
 
+The help window now gives a full tour of item gestures, window buttons, sorting behavior, optional integrations, and every config-screen option. Longer pages scroll within the window so the entire guide remains accessible at smaller UI sizes.
+
 This release also fixes Salt-managed text boxes so Creative search, Recipe Browser search, anvil renaming, Tom's Simple Storage fields, and add-on text boxes support normal single-line editing controls such as arrow keys, selection, copy, cut, paste, and select-all while typing.
 
 This release also fixes the Forge and NeoForge jar layout so the non-Fabric builds no longer ship Fabric API compatibility classes under `net.fabricmc`, preventing Java module/package export conflicts in modpacks that use Sinytra Connector or other mods that expose Fabric API packages.
 
-The former JEI-only desktop window is now a neutral Recipe Browser Window. JEI remains supported, REI is supported across the full version and loader matrix, and EMI is supported on Minecraft 1.21.1 Fabric and NeoForge. Shared browsing, favorites, recipe lookup, recipe transfer, and recipe-tree controls now use Salt-owned UI assets and behavior.
+The former JEI-only desktop window is now a neutral Recipe Browser Window. JEI remains supported, REI is supported on all targets through Minecraft 26.2, and EMI is supported on Minecraft 1.21.1 Fabric and NeoForge. Shared browsing, favorites, recipe lookup, recipe transfer, and recipe-tree controls now use Salt-owned UI assets and behavior.
 
 ## Supported Minecraft Versions And Loaders
 
+- Added separate Minecraft 26.3 Fabric and NeoForge builds, including SDL input support and the 26.3 inventory, item, and packet API updates. REI and Sophisticated integrations await compatible 26.3 releases.
+- Minecraft 26.3 NeoForge builds use ModDevGradle's binary patch mode (`CI=true`) while the published NeoForm source has a `HolderSet.emptyNamed` recompilation error.
 - Added the help window feature for Minecraft 26.2 on Fabric and NeoForge.
 - Ported the help window feature to Minecraft 26.1.2 on Fabric and NeoForge.
 - Ported the help window feature to Minecraft 1.21.11 on Fabric and NeoForge.
@@ -23,9 +27,9 @@ The former JEI-only desktop window is now a neutral Recipe Browser Window. JEI r
 - Ported the help window feature to Minecraft 1.20.1 on Fabric and Forge.
 - Ported persistent windows, linked windows, minimizable-window config, and automatic inventory-on-container-open behavior to every supported Minecraft version and loader.
 - Ported the desktop text box editing fix to every supported Minecraft version and loader.
-- Added sorting into open containers to all five supported Minecraft versions on Fabric and their Forge/NeoForge counterparts.
+- Added sorting into open containers to all six supported Minecraft versions on Fabric and the available Forge/NeoForge counterparts.
 - Added Sophisticated Storage and Sophisticated Backpacks desktop integration on 1.20.1 Forge and 1.21.1, 1.21.11, 26.1.2, and 26.2 NeoForge; Fabric continues to use their native screens.
-- Added REI recipe-browser support to every supported Minecraft version and loader.
+- Added REI recipe-browser support to every supported Minecraft version and loader through 26.2.
 - Added EMI recipe-browser support for Minecraft 1.21.1 on Fabric and NeoForge.
 - Documented that Minecraft 1.21.1 and earlier are the supported EMI version range, while newer Minecraft versions currently have no compatible EMI release.
 - Ported the shared recipe-browser UI, common textures, recipe transfer controls, favorites, REI tree windows, and window-control tooltips to every supported version and loader where the corresponding browser is available.
@@ -79,6 +83,7 @@ The former JEI-only desktop window is now a neutral Recipe Browser Window. JEI r
 
 - Fixed the affected legacy versions where left- and right-drag placement committed the opposite distribution from the on-screen preview, including drags involving Sophisticated windows.
 - Fixed rapid clicking over an empty slot so the first placement and pickup follow vanilla behavior instead of suppressing the placement.
+- Fixed Minecraft 26.3 Fabric window clicks by translating SDL mouse buttons to container-click buttons; left and right pickup, outside drops, double-click collection, Tom's Storage slots, and config scrollbars now use the correct input codes.
 
 ## Text Box Editing Controls
 
@@ -100,7 +105,7 @@ The former JEI-only desktop window is now a neutral Recipe Browser Window. JEI r
 - Added deterministic browser selection with source priority `EMI > REI > JEI` when more than one supported browser is installed.
 - Kept the existing JEI integration and adapted it to the neutral interface without changing the saved window-state key or the existing `H` keybind translation key.
 - Renamed player-facing references from `JEI Window` to `Recipe Browser Window` while preserving compatibility with existing config and layout data.
-- Added native REI plugins and loader metadata for Fabric, Forge, and NeoForge across the supported version matrix.
+- Added native REI plugins and loader metadata for Fabric, Forge, and NeoForge across targets through 26.2.
 - Added native EMI plugins for Minecraft 1.21.1 Fabric and NeoForge, including a guarded client bootstrap that remains inert when EMI is absent.
 - Kept recipe-browser mods optional so the game launches normally without JEI, REI, or EMI and pressing `H` cleanly does nothing.
 
@@ -227,7 +232,7 @@ The former JEI-only desktop window is now a neutral Recipe Browser Window. JEI r
 - Added functional harness coverage for pure desktop text editing operations, including cursor movement, Shift selection, select-all, copy, cut, paste, replacement typing, Backspace, Delete, paste filtering, max-length truncation, and Unicode-safe deletion.
 - Added functional coverage that confirms EMI wins the shared browser selection when it is installed and reports itself available.
 - Added source parity checks for browser entrypoints, optional runtime flags, EMI caching and compact tag layouts, recipe-widget tooltips, detached crafting results, player-menu state acknowledgements, and shared-menu finalization after container clicks.
-- Added 80 sorting regression cases across the five Minecraft versions, covering exact and tag matching, destination priority, full and duplicate storage, output-only extraction, and item-count preservation.
+- Added 114 sorting regression cases across the six Minecraft versions, covering exact and tag matching, destination priority, full and duplicate storage, output-only extraction, and item-count preservation.
 - Verified `compileJava`, `verifyNonFabricModJars`, and the full `build` task after the compatibility fix.
 - Verified the text-editing fix with `functionalTestCompile` across the supported version and loader matrix.
 - Verified the linked-window close backport with targeted compile coverage for Minecraft 1.20.1 Fabric, 1.20.1 Forge, 1.21.1 Fabric, and 1.21.1 NeoForge.
@@ -235,7 +240,9 @@ The former JEI-only desktop window is now a neutral Recipe Browser Window. JEI r
 - Smoke-tested NeoForge `runClient` on Minecraft 1.21.1, 1.21.11, 26.1.2, and 26.2 by launching the client, opening an existing world, closing the first-time help window, and opening the inventory.
 - Confirmed the NeoForge smoke-test logs contained no crash, exception, fatal error, build failure, or error markers, and that each tested client shut down normally.
 - Verified the legacy click fixes with consecutive first-click pickup and placement flows on Minecraft 1.20.1 and 1.21.1.
-- Rebuilt all ten supported version/loader targets after the sorting control, mounted-entity window, resize, and compact-menu fixes.
+- Verified Minecraft 26.3 Fabric left/right pickup and both drag distributions in an integrated world after the SDL button conversion.
+- Verified Minecraft 26.3 NeoForge in an integrated world: inventory and sort control rendered, item pickup and placement worked, and right-click split a 16-item stack into two stacks of 8.
+- Rebuilt all twelve supported version/loader targets after the sorting control, mounted-entity window, resize, compact-menu, and 26.3 port changes.
 - Verified in-game on 1.20.1 Forge that a narrowed inventory retains its width after closing and reopening, and on 1.21.1 NeoForge that a mounted chest-boat window opens and closes with the player inventory.
 
 ## Compatibility And Safety

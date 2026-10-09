@@ -20,14 +20,15 @@ plugins {
 }
 
 group = "com.salts_inventory_update"
-version = "0.1.2"
+version = "0.1.3"
 
 val modMenuVersions = mapOf(
     "1.20.1" to "7.2.2",
     "1.21.1" to "11.0.4",
     "1.21.11" to "17.0.0",
     "26.1.2" to "19.0.0-alpha.1",
-    "26.2" to "20.0.0-beta.4"
+    "26.2" to "20.0.0-beta.4",
+    "26.3" to "21.0.0"
 )
 
 val includeFunctionalTests = providers.gradleProperty("includeFunctionalTests")
@@ -159,6 +160,17 @@ prism {
         }
         neoforge {
             loaderVersion = "26.2.0.53-beta"
+        }
+    }
+
+    version("26.3") {
+        neoFormVersion = "26.3-1"
+        fabric {
+            loaderVersion = "0.19.5"
+            fabricApi("0.161.0+26.3")
+        }
+        neoforge {
+            loaderVersion = "26.3.0.22-beta"
         }
     }
 
@@ -385,6 +397,7 @@ subprojects {
     }
 
     val jeiVersions = mapOf(
+        "26.3" to "31.7.0.37",
         "26.2" to "30.3.0.24",
         "26.1.2" to "29.5.0.28",
         "1.21.11" to "27.4.0.22",
@@ -392,6 +405,7 @@ subprojects {
         "1.20.1" to "15.20.0.127"
     )
     val neoForgeJeiVersions = mapOf(
+        "26.3" to "31.7.0.40",
         "26.2" to "30.7.0.39",
         "1.21.11" to "27.13.0.43",
         "1.21.1" to "19.32.0.359"
@@ -574,7 +588,7 @@ gradle.projectsEvaluated {
 
     val collectModJars = tasks.register<Sync>("collectModJars") {
         group = "build"
-        description = "Collects the ten uploadable mod jars into a clean versioned release directory."
+        description = "Collects the twelve uploadable mod jars into a clean versioned release directory."
         dependsOn(loaderAssembleTasks)
         mustRunAfter(allProjectBuildTasks)
 
@@ -660,8 +674,8 @@ gradle.projectsEvaluated {
             val jars = releaseDirectory.listFiles { file ->
                 file.isFile && file.extension.equals("jar", ignoreCase = true)
             }?.sortedBy { it.name } ?: emptyList()
-            if (jars.size != 10) {
-                throw GradleException("Expected exactly 10 release jars in $releaseDirectory, found ${jars.size}")
+            if (jars.size != 12) {
+                throw GradleException("Expected exactly 12 release jars in $releaseDirectory, found ${jars.size}")
             }
 
             val expectedLoaders = mapOf(
@@ -669,50 +683,57 @@ gradle.projectsEvaluated {
                 "1.21.1" to mapOf("fabric" to null, "neoforge" to "[21.1.229,21.2)"),
                 "1.21.11" to mapOf("fabric" to null, "neoforge" to "[21.11.42,21.12)"),
                 "26.1.2" to mapOf("fabric" to null, "neoforge" to "[26.1.2.59-beta,26.1.3)"),
-                "26.2" to mapOf("fabric" to null, "neoforge" to "[26.2.0.53-beta,26.3)")
+                "26.2" to mapOf("fabric" to null, "neoforge" to "[26.2.0.53-beta,26.3)"),
+                "26.3" to mapOf("fabric" to null, "neoforge" to "[26.3.0.22-beta,26.4)")
             )
             val languageLoaderRanges = mapOf(
                 "1.20.1" to "[47,48)",
                 "1.21.1" to "[4.0.34,5)",
                 "1.21.11" to "[10,11)",
                 "26.1.2" to "[11,12)",
-                "26.2" to "[11,12)"
+                "26.2" to "[11,12)",
+                "26.3" to "[12,13)"
             )
             val packFormats = mapOf(
                 "1.20.1" to 15,
                 "1.21.1" to 34,
                 "1.21.11" to 75,
                 "26.1.2" to 84,
-                "26.2" to 88
+                "26.2" to 88,
+                "26.3" to 97
             )
-            val boundedPackFormatVersions = setOf("1.21.11", "26.1.2", "26.2")
+            val boundedPackFormatVersions = setOf("1.21.11", "26.1.2", "26.2", "26.3")
             val fabricLoaderMinimums = mapOf(
                 "1.20.1" to "0.16.10",
                 "1.21.1" to "0.16.10",
                 "1.21.11" to "0.19.2",
                 "26.1.2" to "0.19.2",
-                "26.2" to "0.19.3"
+                "26.2" to "0.19.3",
+                "26.3" to "0.19.5"
             )
             val javaRequirements = mapOf(
                 "1.20.1" to 17,
                 "1.21.1" to 21,
                 "1.21.11" to 21,
                 "26.1.2" to 25,
-                "26.2" to 25
+                "26.2" to 25,
+                "26.3" to 25
             )
             val javaMajors = mapOf(
                 "1.20.1" to 61,
                 "1.21.1" to 65,
                 "1.21.11" to 65,
                 "26.1.2" to 69,
-                "26.2" to 69
+                "26.2" to 69,
+                "26.3" to 69
             )
             val mixinCompatibility = mapOf(
                 "1.20.1" to "JAVA_17",
                 "1.21.1" to "JAVA_21",
                 "1.21.11" to "JAVA_21",
                 "26.1.2" to "JAVA_25",
-                "26.2" to "JAVA_25"
+                "26.2" to "JAVA_25",
+                "26.3" to "JAVA_25"
             )
 
             expectedLoaders.forEach { (minecraftVersion, loaders) ->

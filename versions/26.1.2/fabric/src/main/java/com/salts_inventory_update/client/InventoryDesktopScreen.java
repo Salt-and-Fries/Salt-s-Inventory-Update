@@ -1515,7 +1515,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         PendingQuickMoveAll delayedQuickMoveAll = this.pendingQuickMoveAll;
         if (!ItemStack.matches(this.sharedCarried, copy)) {
             DesktopDebug.trace("client carried desktop={} old={} new={}", this.desktopId, this.sharedCarried, copy);
-            this.clearSlotInteractionState("carried-sync");
+            // A reply to an earlier placement can arrive while the next click/drag is held.
+            // Keep that gesture when only the count changes; its preview and commit use the
+            // latest count. A different cursor item (or an empty cursor) invalidates it.
+            if (copy.isEmpty() || !ItemStack.isSameItemSameComponents(this.sharedCarried, copy)) {
+                this.clearSlotInteractionState("carried-sync");
+            }
         }
 
         this.sharedCarried = copy;
@@ -2833,20 +2838,26 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return;
         }
 
-        if (this.dragDistribution == null) {
-            this.dragDistribution = new DragDistribution(pending.button(), pending.quickCraftType());
+        DragDistribution drag = this.dragDistribution;
+        if (drag == null) {
+            // Movement inside the pressed slot is still an ordinary placement click.
+            if (SlotKey.of(hit).equals(SlotKey.of(pending.hit()))) {
+                return;
+            }
+            drag = new DragDistribution(pending.button(), pending.quickCraftType());
             if (this.canDragDistributeTo(pending.hit())) {
-                this.dragDistribution.add(pending.hit());
+                drag.add(pending.hit());
             }
         }
 
-        if (!this.canAddDragDistributionSlot(this.dragDistribution, hit)) {
+        if (!this.canAddDragDistributionSlot(drag, hit)) {
             DesktopDebug.trace("client pending drag hover ignored desktop={} x={} y={} reason=carried-limit carried={} hit={}", this.desktopId, mouseX, mouseY, this.sharedCarried, this.describeSlotHit(hit));
             return;
         }
 
-        this.dragDistribution.add(hit);
-        DesktopDebug.trace("client pending drag add desktop={} size={} hit={}", this.desktopId, this.dragDistribution.size(), this.describeSlotHit(hit));
+        drag.add(hit);
+        this.dragDistribution = drag;
+        DesktopDebug.trace("client pending drag add desktop={} size={} hit={}", this.desktopId, drag.size(), this.describeSlotHit(hit));
     }
 
     private void completePendingSlotClick() {
@@ -3043,6 +3054,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         for (SlotHit hit : drag.slots()) {
             if (this.canDragDistributeTo(hit)) {
                 targets.add(hit);
+                if (drag.quickCraftType() != AbstractContainerMenu.QUICKCRAFT_TYPE_CLONE
+                    && targets.size() >= this.sharedCarried.getCount()) {
+                    break;
+                }
             }
         }
         return targets;
@@ -3715,6 +3730,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         InventoryWindow window = this.windowAt(x, y);
+        if (window != null && !window.minimized && window.kind == WindowKind.INSTRUCTIONS) {
+            this.scrollInstructionsWindow(window, scrollY);
+            return true;
+        }
+
         if (window != null && !window.minimized && window.kind == WindowKind.RECIPE_BROWSER_VIEW) {
             this.scrollRecipeBrowserView(window, x, y, scrollX, scrollY);
             return true;
@@ -10001,17 +10021,29 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         graphics.text(this.font, page.title(), textX, textY, this.uiColor(COLOR_TEXT), false);
         graphics.fill(textX, textY + 13, panelX + panelWidth - INSTRUCTIONS_INNER_PADDING, textY + 14, this.uiColor(0xFF3F4652));
 
-        int lineY = textY + 22;
         int contentX = panelX + INSTRUCTIONS_INNER_PADDING;
-        int contentWidth = panelWidth - INSTRUCTIONS_INNER_PADDING * 2;
-        int navY = this.instructionsPreviousButtonRect(window).y();
+        int contentWidth = panelWidth - INSTRUCTIONS_INNER_PADDING * 2 - 7;
+        int contentTop = textY + 22;
+        int contentBottom = this.instructionsPreviousButtonRect(window).y() - INSTRUCTIONS_SECTION_GAP;
+        int viewportHeight = Math.max(1, contentBottom - contentTop);
+        int contentHeight = this.instructionsContentHeight(page, contentWidth);
+        int maxScroll = Math.max(0, contentHeight - viewportHeight);
+        window.instructionsScroll = clamp(window.instructionsScroll, 0, maxScroll);
+
+        graphics.enableScissor(contentX, contentTop, contentX + contentWidth, contentBottom);
+        int lineY = contentTop - window.instructionsScroll;
         for (InstructionsSection section : page.sections(recipeBrowserInstalled)) {
-            int sectionHeight = this.instructionsSectionHeight(section, contentWidth);
-            if (lineY + sectionHeight > navY - INSTRUCTIONS_SECTION_GAP) {
-                break;
-            }
             this.renderInstructionsSection(graphics, section, contentX, lineY, contentWidth);
-            lineY += sectionHeight + INSTRUCTIONS_SECTION_GAP;
+            lineY += this.instructionsSectionHeight(section, contentWidth) + INSTRUCTIONS_SECTION_GAP;
+        }
+        graphics.disableScissor();
+
+        if (maxScroll > 0) {
+            int trackX = panelX + panelWidth - INSTRUCTIONS_INNER_PADDING - 4;
+            int thumbHeight = Math.max(18, viewportHeight * viewportHeight / contentHeight);
+            int thumbY = contentTop + (viewportHeight - thumbHeight) * window.instructionsScroll / maxScroll;
+            graphics.fill(trackX, contentTop, trackX + 3, contentBottom, this.uiColor(0xFF323946));
+            graphics.fill(trackX, thumbY, trackX + 3, thumbY + thumbHeight, this.uiColor(COLOR_MUTED_TEXT));
         }
 
         if (pages.size() > 1) {
@@ -10037,6 +10069,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int nextPage = window.instructionsPage + button.direction();
         if (nextPage >= 0 && nextPage < pages.size()) {
             window.instructionsPage = nextPage;
+            window.instructionsScroll = 0;
         }
         return true;
     }
@@ -10045,8 +10078,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         List<InstructionsPage> pages = new ArrayList<>();
         pages.add(InstructionsPage.DESKTOP);
         pages.add(InstructionsPage.CONTROLS);
-        pages.add(InstructionsPage.WINDOWS);
+        pages.add(InstructionsPage.ITEMS);
+        pages.add(InstructionsPage.ARRANGE);
+        pages.add(InstructionsPage.BUTTONS);
+        pages.add(InstructionsPage.MORE_BUTTONS);
+        pages.add(InstructionsPage.SORT);
+        pages.add(InstructionsPage.SORT_SOURCES);
         pages.add(InstructionsPage.INVENTORY);
+        pages.add(InstructionsPage.SETTINGS_START);
+        pages.add(InstructionsPage.SETTINGS_LAYOUT);
+        pages.add(InstructionsPage.SETTINGS_PINS);
+        pages.add(InstructionsPage.SETTINGS_BEHAVIOR);
+        pages.add(InstructionsPage.SETTINGS_ADVANCED);
         if (this.isRecipeBrowserInstalled()) {
             pages.add(InstructionsPage.JEI);
         }
@@ -10077,6 +10120,25 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int desiredHeight = TOP_BAR_HEIGHT + WINDOW_CONTENT_PADDING * 2 + panelHeight;
         int maxHeight = Math.max(INSTRUCTIONS_WINDOW_HEIGHT, this.desktopHeight() - WINDOW_PLACEMENT_MARGIN * 2);
         return clamp(desiredHeight, INSTRUCTIONS_WINDOW_HEIGHT, maxHeight);
+    }
+
+    private int instructionsContentHeight(InstructionsPage page, int width) {
+        int height = 0;
+        for (InstructionsSection section : page.sections(this.isRecipeBrowserInstalled())) {
+            height += this.instructionsSectionHeight(section, width) + INSTRUCTIONS_SECTION_GAP;
+        }
+        return Math.max(0, height - INSTRUCTIONS_SECTION_GAP);
+    }
+
+    private void scrollInstructionsWindow(InventoryWindow window, double scrollY) {
+        List<InstructionsPage> pages = this.instructionsPages();
+        InstructionsPage page = pages.get(clamp(window.instructionsPage, 0, pages.size() - 1));
+        int panelWidth = window.width - WINDOW_CONTENT_PADDING * 2;
+        int contentWidth = panelWidth - INSTRUCTIONS_INNER_PADDING * 2 - 7;
+        int contentTop = window.contentY() + INSTRUCTIONS_INNER_PADDING + 22;
+        int contentBottom = this.instructionsPreviousButtonRect(window).y() - INSTRUCTIONS_SECTION_GAP;
+        int maxScroll = Math.max(0, this.instructionsContentHeight(page, contentWidth) - Math.max(1, contentBottom - contentTop));
+        window.instructionsScroll = clamp(window.instructionsScroll + (scrollY < 0.0 ? 24 : -24), 0, maxScroll);
     }
 
     private int instructionsSectionHeight(InstructionsSection section, int width) {
@@ -10251,9 +10313,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         renderSlotBackground(graphics, x, y);
         switch (page) {
             case DESKTOP -> renderNineSlice(graphics, WINDOW_TEXTURE, x + 3, y + 3, 12, 12);
-            case CONTROLS -> blitRegion(graphics, WINDOW_CONTROLS_TEXTURE, x + 3, y + 3, 0, 0, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_TEXTURE_WIDTH, CONTROL_TEXTURE_HEIGHT);
-            case WINDOWS -> blitRegion(graphics, WINDOW_CONTROLS_TEXTURE, x + 3, y + 3, 6 * CONTROL_SIZE, 0, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_TEXTURE_WIDTH, CONTROL_TEXTURE_HEIGHT);
-            case INVENTORY -> blitRegion(graphics, SLOT_TEXTURE, x, y, 0, 0, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE, SLOT_TEXTURE_WIDTH, SLOT_TEXTURE_HEIGHT);
+            case CONTROLS, BUTTONS, MORE_BUTTONS, SORT, SORT_SOURCES -> blitRegion(graphics, WINDOW_CONTROLS_TEXTURE, x + 3, y + 3, 0, 0, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_TEXTURE_WIDTH, CONTROL_TEXTURE_HEIGHT);
+            case ITEMS, INVENTORY -> blitRegion(graphics, SLOT_TEXTURE, x, y, 0, 0, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE, SLOT_TEXTURE_WIDTH, SLOT_TEXTURE_HEIGHT);
+            case ARRANGE, SETTINGS_START, SETTINGS_LAYOUT, SETTINGS_PINS, SETTINGS_BEHAVIOR, SETTINGS_ADVANCED -> blitRegion(graphics, WINDOW_CONTROLS_TEXTURE, x + 3, y + 3, 6 * CONTROL_SIZE, 0, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_SIZE, CONTROL_TEXTURE_WIDTH, CONTROL_TEXTURE_HEIGHT);
             case JEI -> graphics.centeredText(this.font, "J", x + INSTRUCTIONS_ICON_SIZE / 2, y + 5, this.uiColor(COLOR_TEXT));
             case TOMS_STORAGE -> graphics.centeredText(this.font, "T", x + INSTRUCTIONS_ICON_SIZE / 2, y + 5, this.uiColor(COLOR_TEXT));
         }
@@ -16442,121 +16504,151 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private enum InstructionsPage {
-        DESKTOP(
-            "Salt Desktop",
-            List.of(
-                InstructionsSection.text(
-                    "Welcome",
-                    "Welcome to the new and improved inventory experience!",
-                    "If you do not want to read this now, simply close this window."
-                ),
-                InstructionsSection.text(
-                    "What Changed",
-                    "Your inventory and opened containers now appear as windows.",
-                    "You can keep multiple windows open and move items between them for easier inventory management."
-                ),
-                InstructionsSection.text(
-                    "Open Again",
-                    "Use /saltsinventory help to open this window again at any time."
-                )
-            )
-        ),
-        CONTROLS(
-            "Main Controls",
-            List.of(
-                InstructionsSection.binds(
-                    "Open Windows",
-                    InstructionsLine.bind("E", "Open/Close Inventory"),
-                    InstructionsLine.bind("C", "Open/Close Armor and Crafting"),
-                    InstructionsLine.bind("H", "Open/Close Recipe Browser Window")
-                ),
-                InstructionsSection.binds(
-                    "Desktop Control",
-                    InstructionsLine.bind("Hold E", "Close all Salt windows"),
-                    InstructionsLine.mouseFocus("Give the mouse to camera control, or use the hotbar with no windows open"),
-                    InstructionsLine.bind("Esc", "Close the Salt desktop")
-                )
-            )
-        ),
-        WINDOWS(
-            "Window Controls",
-            List.of(
-                InstructionsSection.text(
-                    "Move And Arrange",
-                    "Unlock a window to drag it around the screen and place it wherever feels best.",
-                    "If resizing is enabled in settings, supported windows can be resized by dragging their bottom-right corner."
-                ),
-                InstructionsSection.binds(
-                    "Title Buttons",
-                    InstructionsLine.control(WindowControl.FOCUS, "Focus: Shift-clicked items move directly into the focused window when possible."),
-                    InstructionsLine.control(WindowControl.PIN, "Pin: Saves this window's position for the next time it opens. Click to pin or unpin."),
-                    InstructionsLine.control(WindowControl.LOCK, "Lock: Prevents the window from being moved or resized. Click to lock or unlock."),
-                    InstructionsLine.control(WindowControl.LINK, "Link: Select another highlighted window to make linked windows open and close together."),
-                    InstructionsLine.control(WindowControl.MINIMIZE, "Minimize: Collapses the window into a title bar to keep your screen less cluttered."),
-                    InstructionsLine.control(WindowControl.CLOSE, "Close: Closes the window.")
-                )
-            )
-        ),
-        INVENTORY(
-            "Inventory Tools",
-            List.of(
-                InstructionsSection.text(
-                    "Hotbar",
-                    "Move items in and out of your hotbar by dragging them between the hotbar and other inventory slots.",
-                    "Enable Return Hotbar to Inventory in settings to place it below Inventory and Creative and move the offhand slot into Character."
-                ),
-                InstructionsSection.text(
-                    "Expandable Inventory",
-                    "If enabled in settings, you can spend XP levels to purchase extra inventory slots.",
-                    "Purchased slots stay with your player and behave like normal inventory storage."
-                )
-            )
-        ),
-        JEI(
-            "Recipe Browser Window",
-            List.of(
-                InstructionsSection.binds(
-                    "Open And Search",
-                    InstructionsLine.bind("H", "Open the recipe browser as a Salt window"),
-                    InstructionsLine.text("Search ingredients, recipes, uses, favorites, and recent items.")
-                ),
-                InstructionsSection.binds(
-                    "Recipe Flow",
-                    InstructionsLine.binds(List.of("R", "U"), "Hover lookups for recipes and uses"),
-                    InstructionsLine.text("Move Items works with compatible Salt crafting windows.")
-                )
-            )
-        ),
-        TOMS_STORAGE(
-            "Tom's Simple Storage",
-            List.of(
-                InstructionsSection.text(
-                    "Terminals",
-                    "Storage and crafting terminals open as Salt windows.",
-                    "Terminal search, sorting, and recipes stay inside the window."
-                ),
-                InstructionsSection.text(
-                    "Supported Screens",
-                    "Filters, inventory links, level emitters, and filing cabinets",
-                    "use Salt layouts when Tom's Simple Storage is installed."
-                )
-            )
-        );
+        DESKTOP("Welcome", List.of(
+            InstructionsSection.text("Your inventory, as windows",
+                "Inventory, crafting, and containers can stay open together as movable windows.",
+                "Open several chests to move items between them without closing the desktop."),
+            InstructionsSection.text("Start here",
+                "Use Next to tour the controls and settings. Scroll longer pages for more details.",
+                "Run /saltsinventory help to reopen this guide; /saltsinventory config opens settings.")
+        )),
+        CONTROLS("Open and close", List.of(
+            InstructionsSection.binds("Default keys (rebind in Controls)",
+                InstructionsLine.bind("E", "Toggle the inventory window; while riding a storage entity, toggle its container with it."),
+                InstructionsLine.bind("C", "Toggle the Character window for armor, offhand, and crafting."),
+                InstructionsLine.bind("H", "Toggle the recipe browser window, if a browser is installed.")),
+            InstructionsSection.binds("Leave the desktop",
+                InstructionsLine.bind("Hold E", "Close all windows after the configured hold time."),
+                InstructionsLine.bind("Esc", "Close the desktop."),
+                InstructionsLine.mouseFocus("Switch between cursor and camera or hotbar control."))
+        )),
+        ITEMS("Move items", List.of(
+            InstructionsSection.text("Familiar slot controls",
+                "Left-click picks up or places a stack; right-click handles half a stack or places one item.",
+                "Drag left to divide a held stack; drag right to place one per slot. Double-click collects matching items across windows.",
+                "Shift-click quick-moves items toward the focused window when it can receive them."),
+            InstructionsSection.text("World and windows",
+                "Interact with a block to open its container beside your other windows.",
+                "Only visible, active windows accept normal item interactions.")
+        )),
+        ARRANGE("Arrange windows", List.of(
+            InstructionsSection.text("Move and resize",
+                "Unlock a window, then drag its title bar to move it.",
+                "With Allow Resizing on, drag the bottom-right corner of a supported unlocked window.",
+                "Window Snapping trims extra empty space when resizing ends."),
+            InstructionsSection.text("Keep your layout",
+                "Pin a window to remember its position. Lock it to prevent movement or resizing.",
+                "Container windows can remain open together for sorting and crafting.")
+        )),
+        BUTTONS("Window buttons", List.of(
+            InstructionsSection.binds("Title bar",
+                InstructionsLine.control(WindowControl.FOCUS, "Focus: target for eligible Shift-click transfers and force sorting."),
+                InstructionsLine.control(WindowControl.PIN, "Pin: cycle unpinned, pinned, and ghost pinned when enabled."),
+                InstructionsLine.control(WindowControl.LOCK, "Lock: prevent dragging and resizing; may reset position and size."),
+                InstructionsLine.control(WindowControl.ELLIPSIS, "More Controls: find buttons that do not fit on the title bar."))
+        )),
+        MORE_BUTTONS("More window buttons", List.of(
+            InstructionsSection.binds("Title bar or More Controls",
+                InstructionsLine.control(WindowControl.LINK, "Link: click this, then a highlighted window, to open and close them together."),
+                InstructionsLine.control(WindowControl.MINIMIZE, "Minimize: fold into a title bar when the setting is enabled."),
+                InstructionsLine.control(WindowControl.CLOSE, "Close: close this window and any linked windows.")),
+            InstructionsSection.text("Mounted storage",
+                "While riding a chest boat or another inventory entity, its window and your inventory open and close together.")
+        )),
+        SORT("Sort into open containers", List.of(
+            InstructionsSection.binds("The sort button",
+                InstructionsLine.control(WindowControl.SORT_WINDOWS, "Click on inventory or a container to sort its items into other open storage windows.")),
+            InstructionsSection.text("Normal click",
+                "Moves items only into storage already holding the same item type.",
+                "Unmatched items and anything that does not fit stay in the source."),
+            InstructionsSection.text("Hold Shift and click",
+                "Tries exact items, then shared item tags, then focused storage, then empty storage windows.",
+                "Full destinations are skipped; remaining items stay in the source.")
+        )),
+        SORT_SOURCES("What sorting moves", List.of(
+            InstructionsSection.text("Source slots",
+                "Inventory sorting uses main inventory slots, not hotbar, armor, offhand, or crafting.",
+                "A storage window sorts its own storage slots. Furnaces sort output only; brewing stands sort bottles, including during brewing."),
+            InstructionsSection.text("Destinations",
+                "Only other visible storage windows receive items. Minimized and ghost windows are ignored.",
+                "The inventory and processing windows never receive sorted items.")
+        )),
+        INVENTORY("Inventory and hotbar", List.of(
+            InstructionsSection.text("Character and hotbar",
+                "The Character window holds armor, offhand, and personal crafting slots.",
+                "Enable Return Hotbar to Inventory to place the hotbar below Inventory and Creative, and offhand in Character."),
+            InstructionsSection.text("Extra slots",
+                "Enable Expandable Inventory to show an add-slot button in Inventory or Creative.",
+                "Spend the displayed XP level cost to buy a slot; turning the option off only hides the button.")
+        )),
+        SETTINGS_START("Settings: essentials", List.of(
+            InstructionsSection.text("Open settings",
+                "Use /saltsinventory config or the mod-list Config button. Scroll the settings page for more options."),
+            InstructionsSection.text("Gameplay",
+                "Enable the Mod: switch between Salt windows and vanilla inventory screens.",
+                "Expandable Inventory: show the XP-priced add-slot control.",
+                "Return Hotbar to Inventory: move hotbar below inventory and offhand into Character.",
+                "Reset Defaults restores the settings shown on the config screen.")
+        )),
+        SETTINGS_LAYOUT("Settings: layout", List.of(
+            InstructionsSection.text("New windows",
+                "Window Opening Style: choose Top Outside, Around the Inventory, or Vintage Story placement.",
+                "Open Unlocked: new windows start movable unless a saved lock state exists."),
+            InstructionsSection.text("Geometry",
+                "Allow Resizing: resize supported unlocked windows.",
+                "Enable Window Snapping: trim unused space after a resize.",
+                "Reset Locked Windows: restore default position and size when locking.")
+        )),
+        SETTINGS_PINS("Settings: pins", List.of(
+            InstructionsSection.text("Pin options",
+                "Enable Ghost Pins: add a translucent preview mode to the Pin button.",
+                "Ghost Window Opacity: adjust how strongly those previews appear over the world.",
+                "Global Pins: share player and other non-block layouts across worlds; block containers keep local layouts."),
+            InstructionsSection.text("Ghost previews",
+                "A ghost preview is not an active container. Interact with its source to use it again.")
+        )),
+        SETTINGS_BEHAVIOR("Settings: behavior", List.of(
+            InstructionsSection.text("Opening and closing",
+                "Persistent Windows: hide on Esc or Hold E, then restore on the next opening; hold Esc to close all.",
+                "Minimizable Windows: show the Minimize title-bar control.",
+                "Open Inventory When Containers Are Opened: show inventory alongside visible containers.",
+                "E Hold Close-All Time: set the hold duration; the prompt appears after one quarter of it.")
+        )),
+        SETTINGS_ADVANCED("Settings: compatibility", List.of(
+            InstructionsSection.text("Modded menus",
+                "Force Containers as Windows: choose registered menu types that should use Salt windows.",
+                "Use Clear Forced in that list to remove your overrides.",
+                "Supported modded storage, such as Sophisticated Storage, can open beside vanilla containers."),
+            InstructionsSection.text("Troubleshooting",
+                "Enable Detailed Console Logs adds verbose desktop and network diagnostics.",
+                "Some features require Salt desktop support on the server.")
+        )),
+        JEI("Recipe browser", List.of(
+            InstructionsSection.binds("When JEI, REI, or EMI is installed",
+                InstructionsLine.bind("H", "Toggle the browser window."),
+                InstructionsLine.binds(List.of("R", "U"), "Look up recipes or uses for the item under the cursor.")),
+            InstructionsSection.text("Browse and craft",
+                "Search ingredients, recipes, uses, favorites, and recent items.",
+                "Move Items fills compatible Salt crafting windows when ingredients are available.")
+        )),
+        TOMS_STORAGE("Tom's Simple Storage", List.of(
+            InstructionsSection.text("When installed",
+                "Storage and crafting terminals appear as Salt windows.",
+                "Terminal search, sorting, and recipes stay inside the window."),
+            InstructionsSection.text("Other supported screens",
+                "Filters, inventory links, level emitters, and filing cabinets use Salt layouts.")
+        ));
 
         private final String title;
         private final List<InstructionsSection> sections;
         private static final List<InstructionsSection> CONTROLS_WITHOUT_JEI_SECTIONS = List.of(
-            InstructionsSection.binds(
-                "Open Windows",
-                InstructionsLine.bind("E", "Open/Close Inventory"),
-                InstructionsLine.bind("C", "Open/Close Armor and Crafting")
-            ),
-            InstructionsSection.binds(
-                "Desktop Control",
-                InstructionsLine.bind("Hold E", "Close all Salt windows"),
-                InstructionsLine.mouseFocus("Give the mouse to camera control, or use the hotbar with no windows open"),
-                InstructionsLine.bind("Esc", "Close the Salt desktop")
-            )
+            InstructionsSection.binds("Default keys (rebind in Controls)",
+                InstructionsLine.bind("E", "Toggle inventory; while riding storage, toggle its container with it."),
+                InstructionsLine.bind("C", "Toggle Character for armor, offhand, and crafting.")),
+            InstructionsSection.binds("Leave the desktop",
+                InstructionsLine.bind("Hold E", "Close all windows after the configured hold time."),
+                InstructionsLine.bind("Esc", "Close the desktop."),
+                InstructionsLine.mouseFocus("Switch between cursor and camera or hotbar control."))
         );
 
         InstructionsPage(String title, List<InstructionsSection> sections) {
@@ -16568,15 +16660,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return this.title;
         }
 
-        private List<InstructionsSection> sections() {
-            return this.sections;
-        }
-
         private List<InstructionsSection> sections(boolean recipeBrowserInstalled) {
-            if (this == CONTROLS && !recipeBrowserInstalled) {
-                return CONTROLS_WITHOUT_JEI_SECTIONS;
-            }
-            return this.sections();
+            return this == CONTROLS && !recipeBrowserInstalled ? CONTROLS_WITHOUT_JEI_SECTIONS : this.sections;
         }
     }
 
@@ -17758,6 +17843,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private final DesktopTextBoxState jeiSearchBox = new DesktopTextBoxState();
         private int jeiScrollRow;
         private int instructionsPage;
+        private int instructionsScroll;
         private RecipeBrowserMode jeiMode = RecipeBrowserMode.INGREDIENTS;
         private @Nullable RecipeBrowserEntry jeiFocusEntry;
         private String jeiSelectedRecipeCategoryUid = "";

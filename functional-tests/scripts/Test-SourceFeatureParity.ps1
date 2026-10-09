@@ -123,12 +123,26 @@ function Assert-NotMatches {
     }
 }
 
+function Get-Sha256 {
+    param([string] $Path)
+
+    $stream = [System.IO.File]::OpenRead($Path)
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return [System.BitConverter]::ToString($sha256.ComputeHash($stream))
+    } finally {
+        $sha256.Dispose()
+        $stream.Dispose()
+    }
+}
+
 $versions = @(
     '1.20.1',
     '1.21.1',
     '1.21.11',
     '26.1.2',
-    '26.2'
+    '26.2',
+    '26.3'
 )
 
 $loaderMatrix = @(
@@ -141,7 +155,9 @@ $loaderMatrix = @(
     @{ Version = '26.1.2'; Loader = 'fabric'; LoaderClass = 'SaltsInventoryUpdateFabric.java'; ClientClass = 'SaltsInventoryUpdateFabricClient.java'; Metadata = 'fabric.mod.json'; MetadataKind = 'fabric' },
     @{ Version = '26.1.2'; Loader = 'neoforge'; LoaderClass = 'SaltsInventoryUpdateNeoForge.java'; Metadata = 'META-INF/neoforge.mods.toml'; MetadataKind = 'toml' },
     @{ Version = '26.2'; Loader = 'fabric'; LoaderClass = 'SaltsInventoryUpdateFabric.java'; ClientClass = 'SaltsInventoryUpdateFabricClient.java'; Metadata = 'fabric.mod.json'; MetadataKind = 'fabric' },
-    @{ Version = '26.2'; Loader = 'neoforge'; LoaderClass = 'SaltsInventoryUpdateNeoForge.java'; Metadata = 'META-INF/neoforge.mods.toml'; MetadataKind = 'toml' }
+    @{ Version = '26.2'; Loader = 'neoforge'; LoaderClass = 'SaltsInventoryUpdateNeoForge.java'; Metadata = 'META-INF/neoforge.mods.toml'; MetadataKind = 'toml' },
+    @{ Version = '26.3'; Loader = 'fabric'; LoaderClass = 'SaltsInventoryUpdateFabric.java'; ClientClass = 'SaltsInventoryUpdateFabricClient.java'; Metadata = 'fabric.mod.json'; MetadataKind = 'fabric' },
+    @{ Version = '26.3'; Loader = 'neoforge'; LoaderClass = 'SaltsInventoryUpdateNeoForge.java'; Metadata = 'META-INF/neoforge.mods.toml'; MetadataKind = 'toml' }
 )
 
 $baseMenus = @(
@@ -244,9 +260,11 @@ foreach ($version in $versions) {
 
     Assert-Contains -Path $packets -Text 'PIN_MODE_GHOST_PINNED' -Label "$version packet pin modes"
     Assert-Contains -Path $packets -Text 'QUICK_TARGET_HOTBAR' -Label "$version quick move target"
-    Assert-Contains -Path $windowedClient -Text 'GLFW_KEY_C' -Label "$version character keybind"
+    $characterKey = if ($version -eq '26.3') { 'InputConstants.KEY_C' } else { 'GLFW_KEY_C' }
+    $mouseFocusDefault = if ($version -eq '26.3') { 'InputConstants.KEY_LALT' } else { 'GLFW_KEY_LEFT_ALT' }
+    Assert-Contains -Path $windowedClient -Text $characterKey -Label "$version character keybind"
     Assert-Contains -Path $windowedClient -Text '"key.salts_inventory_update.mouse_focus"' -Label "$version mouse focus keybind registration"
-    Assert-Contains -Path $windowedClient -Text 'GLFW_KEY_LEFT_ALT' -Label "$version mouse focus default key"
+    Assert-Contains -Path $windowedClient -Text $mouseFocusDefault -Label "$version mouse focus default key"
     Assert-Contains -Path $windowedClient -Text 'getBoundKeyOf(mouseFocusKey)' -Label "$version configurable mouse focus polling"
     Assert-Contains -Path $windowedClient -Text 'isKeyModifierActive(mouseFocusKey)' -Label "$version mouse focus modifier polling"
     Assert-Contains -Path $windowedClient -Text 'mouseFocusKey.isDefault() && isAltDown(minecraft)' -Label "$version default right Alt compatibility"
@@ -302,7 +320,8 @@ foreach ($version in $versions) {
         Assert-Matches -Path $server -Pattern '(?s)syncCarried\([^)]*\).{0,600}syncPlayerMenuState\(player\)' -Label "$version carried sync acknowledges player menu state"
     }
     if ($version -eq '1.21.1') {
-        Assert-Matches -Path $containerClient -Pattern '(?s)DesktopCarriedPayload\.TYPE.{0,800}CONNECTION\.authorizes\(payload\.connectionNonce\(\), 0L, false\).{0,300}payload\.playerSessionToken\(\) != playerSessionToken.{0,500}(?:setSharedCarried|inventoryMenu\.setCarried)\(payload\.carried\(\)' -Label "$version carried payload authenticates its player session before applying authoritative cursor state"
+        Assert-Matches -Path $containerClient -Pattern '(?s)DesktopCarriedPayload\.TYPE.{0,800}CONNECTION\.authorizes\(payload\.connectionNonce\(\), 0L, false\).{0,300}payload\.playerSessionToken\(\) != playerSessionToken.{0,500}applyCarriedUpdate\(context\.client\(\), payload\.stateId\(\), payload\.carried\(\)\)' -Label "$version carried payload authenticates its player session before applying authoritative cursor state"
+        Assert-Matches -Path $containerClient -Pattern '(?s)static void applyCarriedUpdate\(.{0,900}menu\.setItem\(slotIndex, stateId,.{0,400}screen\.setSharedCarried\(carried\)' -Label "$version acknowledges cursor-only revisions before the next desktop interaction"
     }
     Assert-Contains -Path $containerClient -Text 'MAX_DESKTOP_SESSIONS' -Label "$version client session aggregate cap"
     Assert-Contains -Path $stateStore -Text 'AtomicUtf8File' -Label "$version atomic state persistence"
@@ -334,7 +353,7 @@ foreach ($version in $versions) {
     $hotbarConfig = Join-Path $hotbarFabricRoot 'client\SaltsInventoryConfig.java'
     $hotbarConfigScreen = Join-Path $hotbarFabricRoot 'client\SaltsInventoryConfigScreen.java'
     $hotbarWindowedClient = Join-Path $hotbarFabricRoot 'client\WindowedInventoryClient.java'
-    $hotbarMixinClass = if ($version -eq '26.2') { 'HudMixin.java' } else { 'GuiMixin.java' }
+    $hotbarMixinClass = if ($version -in @('26.2', '26.3')) { 'HudMixin.java' } else { 'GuiMixin.java' }
     $hotbarHudMixin = Join-Path $hotbarFabricRoot "mixin\client\$hotbarMixinClass"
     $hotbarRenderMethod = switch ($version) {
         '1.20.1' { 'renderHotbar' }
@@ -403,7 +422,7 @@ Assert-Matches -Path $hotbarClient -Pattern '(?s)(?:usesInventoryWindowHotbar\(\
 
 $rootBuildScript = Join-Path $RepoRoot 'build.gradle.kts'
 $settingsScript = Join-Path $RepoRoot 'settings.gradle.kts'
-Assert-Contains -Path $rootBuildScript -Text 'version = "0.1.2"' -Label 'release version is 0.1.2'
+Assert-Contains -Path $rootBuildScript -Text 'version = "0.1.3"' -Label 'release version is 0.1.3'
 Assert-Contains -Path $rootBuildScript -Text 'org.jspecify:jspecify:1.0.0' -Label 'JSpecify is an explicit compile-only dependency'
 Assert-Contains -Path $rootBuildScript -Text '"**/compat/rei/SaltsReiClientPlugin.java"' -Label 'non-Fabric loaders exclude the Fabric REI entrypoint'
 Assert-NotContains -Path $rootBuildScript -Text '"**/compat/rei/**"' -Label 'non-Fabric loaders retain shared REI runtime support'
@@ -595,7 +614,7 @@ Assert-Matches -Path $desktopContainerClient -Pattern '(?s)queueMutation\("click
 Assert-Count -Path $desktopContainerClient -Text 'queueMutation("' -Expected 14 -Label '26.2 routes all item and menu mutations through one global client lane'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)private QuickMoveTarget quickMoveTarget\(.{0,900}this\.sessions\.contains\(focusedWindow\.session\).{0,250}!focusedWindow\.minimized.{0,150}!focusedWindow\.ghosted.{0,150}!focusedWindow\.persistentHidden' -Label '26.2 cross-window quick moves target only registered visible focused sessions'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)private void applyDragDistribution\((?:(?!\r?\n    private).)*List<DesktopContainerClient\.SlotTarget> targets = slots\.stream\(\)(?:(?!\r?\n    private).)*DesktopContainerClient\.dragSlots\(drag\.quickCraftType\(\), targets\)' -Label '26.2 non-legacy mixed-window drags use one authenticated cross-session batch'
-Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)private @Nullable DragDistribution activeDragPreview\((?:(?!\r?\n    private).)*this\.dragDistribution\.size\(\) == 0' -Label '26.2 drag preview is visible from the first accepted slot'
+Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)private @Nullable DragDistribution activeDragPreview\((?:(?!\r?\n    private).)*this\.dragDistribution\.size\(\) == 0' -Label '26.2 an activated drag preview remains visible while revisiting its targets'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)public void texturelessSlot\((?:(?!\r?\n        @Override).)*DragSlotPreview dragPreview = InventoryDesktopScreen\.this\.dragSlotPreview\(slot\)(?:(?!\r?\n        @Override).)*if \(dragPreview != null\)(?:(?!\r?\n        @Override).)*renderItemStack\(' -Label 'Sophisticated textureless slots render live drag previews before acknowledgement'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)PendingPickupAll delayedPickupAll = this\.pendingPickupAll;.{0,1000}this\.pendingPickupAll = delayedPickupAll;\s*this\.dispatchPendingPickupAll\("carried-sync"\);' -Label '26.2 double-click collection waits for the first click carried synchronization'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)private List<Integer> visiblePickupAllSessions\((?:(?!\r?\n    private).)*sourceSessions\.add\(window\.session\.sessionId\(\)\)(?:(?!\r?\n    private).)*sourceSessions\.add\(DesktopPackets\.PLAYER_MENU_SESSION\)' -Label '26.2 pickup-all includes visible detached containers and the player inventory'
@@ -709,6 +728,11 @@ if ((Test-Path -LiteralPath $sophisticatedMixinConfig -PathType Leaf) -and (Test
 }
 
 foreach ($version in $versions) {
+    if ($version -eq '26.3') {
+        $fabricMetadata = Join-Path $RepoRoot 'versions\26.3\fabric\src\main\resources\fabric.mod.json'
+        Assert-NotContains -Path $fabricMetadata -Text 'rei_client' -Label '26.3 omits REI until a compatible release exists'
+        continue
+    }
     $runtimeRei = Join-Path $RepoRoot "versions\$version\fabric\src\main\java\com\salts_inventory_update\compat\rei\RuntimeReiRecipeBrowserAccess.java"
     Assert-File -Path $runtimeRei -Label "$version shared REI runtime access retained" | Out-Null
 
@@ -725,7 +749,7 @@ $emiNeoForgePlugin = Join-Path $RepoRoot 'versions\1.21.1\neoforge\src\main\java
 $emiFabricMetadata = Join-Path $RepoRoot 'versions\1.21.1\fabric\src\main\resources\fabric.mod.json'
 $emiClientStartup = Join-Path $RepoRoot 'versions\1.21.1\fabric\src\main\java\com\salts_inventory_update\client\WindowedInventoryClient.java'
 Assert-Contains -Path $versionDifferences -Text 'Minecraft 1.21.1 and earlier versions support EMI integration.' -Label 'EMI version boundary is documented'
-Assert-Contains -Path $versionDifferences -Text 'available on every Forge and NeoForge target that Salt builds' -Label 'Sophisticated loader/version boundary is documented'
+Assert-Contains -Path $versionDifferences -Text 'the 26.3 NeoForge build will add this integration when Sophisticated publishes for 26.3' -Label 'Sophisticated loader/version boundary is documented'
 Assert-Contains -Path $versionDifferences -Text 'single Salt frame' -Label 'Sophisticated single-frame composition is documented'
 Assert-Contains -Path $versionDifferences -Text 'Every Fabric target continues to use the complete native Sophisticated screens' -Label 'Fabric Sophisticated behavior is documented as unchanged'
 Assert-Contains -Path $versionDifferences -Text 'Decoration Table is intentionally excluded' -Label 'Sophisticated Decoration Table exclusion is documented'
@@ -772,6 +796,7 @@ $packFormats = @{
     '1.21.11' = 75
     '26.1.2' = 84
     '26.2' = 88
+    '26.3' = 97
 }
 $mixinLevels = @{
     '1.20.1' = 'JAVA_17'
@@ -779,12 +804,13 @@ $mixinLevels = @{
     '1.21.11' = 'JAVA_21'
     '26.1.2' = 'JAVA_25'
     '26.2' = 'JAVA_25'
+    '26.3' = 'JAVA_25'
 }
 $canonicalHotbarDescription = 'Places the hotbar below the player inventory and creative windows and the offhand slot in the character window. The normal HUD hotbar is hidden while any Salt window is open.'
 foreach ($version in $versions) {
     $commonResources = Join-Path $RepoRoot "versions\$version\common\src\main\resources"
     Assert-Contains -Path (Join-Path $commonResources 'pack.mcmeta') -Text "`"pack_format`": $($packFormats[$version])" -Label "$version exact pack format"
-    if ($version -in @('1.21.11', '26.1.2', '26.2')) {
+    if ($version -in @('1.21.11', '26.1.2', '26.2', '26.3')) {
         Assert-Contains -Path (Join-Path $commonResources 'pack.mcmeta') -Text "`"min_format`": $($packFormats[$version])" -Label "$version exact minimum pack format"
         Assert-Contains -Path (Join-Path $commonResources 'pack.mcmeta') -Text "`"max_format`": $($packFormats[$version])" -Label "$version exact maximum pack format"
     }
@@ -838,6 +864,7 @@ $nonFabricRanges = @{
     '1.21.11' = @{ Loader = 'neoforge'; LanguageRange = '[10,11)'; ModRange = '[21.11.42,21.12)'; File = 'neoforge.mods.toml' }
     '26.1.2' = @{ Loader = 'neoforge'; LanguageRange = '[11,12)'; ModRange = '[26.1.2.59-beta,26.1.3)'; File = 'neoforge.mods.toml' }
     '26.2' = @{ Loader = 'neoforge'; LanguageRange = '[11,12)'; ModRange = '[26.2.0.53-beta,26.3)'; File = 'neoforge.mods.toml' }
+    '26.3' = @{ Loader = 'neoforge'; LanguageRange = '[12,13)'; ModRange = '[26.3.0.22-beta,26.4)'; File = 'neoforge.mods.toml' }
 }
 foreach ($version in $versions) {
     $range = $nonFabricRanges[$version]
@@ -897,9 +924,15 @@ foreach ($version in $versions) {
     Assert-Contains -Path $lifecycleConfig -Text 'accessor.PlayerEnderChestContainerAccessor' -Label "$version registers ender physical source accessor"
     Assert-NotMatches -Path $gestureScreen -Pattern 'handleSlotMouseClicked\(slotHit, event, doubleClick\)' -Label "$version ordinary slot clicks preserve previous-slot double-click identity"
     $gestureServer = Join-Path $RepoRoot "versions\$version\fabric\src\main\java\com\salts_inventory_update\server\DesktopContainerSessions.java"
+    Assert-Matches -Path $gestureScreen -Pattern '(?s)public void setSharedCarried\(.{0,1000}if \(copy\.isEmpty\(\) \|\| !ItemStack\.isSameItemSame(?:Tags|Components)\(this\.sharedCarried, copy\)\) \{\s*this\.clearSlotInteractionState\("carried-sync"\)' -Label "$version cursor count replies preserve held slot gestures"
+    Assert-Matches -Path $gestureScreen -Pattern '(?s)private List<SlotHit> previewDragTargets\(.{0,600}targets\.size\(\) >= this\.sharedCarried\.getCount\(\)' -Label "$version drag targets follow the authoritative remaining count"
+    Assert-Matches -Path $gestureScreen -Pattern '(?s)private void updateDragDistribution\(.{0,1600}if \(drag == null\) \{.{0,200}if \(SlotKey\.of\(hit\)\.equals\(SlotKey\.of\(pending\.hit\(\)\)\)\) \{\s*return;' -Label "$version movement inside the starting slot preserves ordinary clicks"
+    Assert-Matches -Path $gestureScreen -Pattern '(?s)private void updateDragDistribution\(.{0,2200}drag\.add\(hit\);\s*this\.dragDistribution = drag;' -Label "$version drag activation waits until the next target is accepted"
+    Assert-Contains -Path $gestureServer -Text 'preparePickupAllCarried(player, sessions,' -Label "$version double-click pickup resolves the authoritative cursor"
     Assert-Matches -Path $gestureServer -Pattern '(?s)private static void clickMenu\(.{0,1000}DesktopMenuSlots\.slot\(menu, slotIndex\) == null' -Label "$version server clicks accept validated logical upgrade slots"
     Assert-Matches -Path $gestureServer -Pattern '(?s)private static ItemStack serverSlotStack\(.{0,250}DesktopMenuSlots\.slot\(menu, slotIndex\)' -Label "$version server slot snapshots include upgrade slots"
-    Assert-Matches -Path $gestureScreen -Pattern '(?s)if \(vanillaDoubleClick && event\.button\(\) == GLFW\.GLFW_MOUSE_BUTTON_LEFT && !isCraftingResultSlot\(hit\)\) \{.{0,1800}this\.dispatchPickupAll\(hit\);' -Label "$version double-click dispatches authenticated cross-window collection"
+    $leftMouseButton = if ($version -eq '26.3') { 'InputConstants\.MOUSE_BUTTON_LEFT' } else { 'GLFW\.GLFW_MOUSE_BUTTON_LEFT' }
+    Assert-Matches -Path $gestureScreen -Pattern "(?s)if \(vanillaDoubleClick && event\.button\(\) == $leftMouseButton && !isCraftingResultSlot\(hit\)\) \{.{0,1800}this\.dispatchPickupAll\(hit\);" -Label "$version double-click dispatches authenticated cross-window collection"
 }
 
 # Sort-to-open-containers must remain available on every supported version/loader.
@@ -931,15 +964,17 @@ foreach ($version in $versions) {
     Assert-Contains -Path $sortLang -Text '"Force sort into open containers"' -Label "$version Shift sort tooltip"
     $sortAtlas = Join-Path $RepoRoot "versions\$version\common\src\main\resources\assets\salts_inventory_update\textures\gui\window_controls.png"
     if (Assert-File -Path $sortAtlas -Label "$version sort atlas") {
-        if ((Get-FileHash -LiteralPath $sortAtlas).Hash -ne (Get-FileHash -LiteralPath $sortAtlasReference).Hash) {
+        if ((Get-Sha256 -Path $sortAtlas) -ne (Get-Sha256 -Path $sortAtlasReference)) {
             Add-Failure "$version sort atlas differs from the 26.2 reference"
         } else {
             Write-Host "PASS $version sort atlas matches 26.2" -ForegroundColor Green
         }
     }
-    $sortLoader = if ($version -eq '1.20.1') { 'forge' } else { 'neoforge' }
-    $sortCompat = Join-Path $RepoRoot "versions\$version\$sortLoader\src\main\java\com\salts_inventory_update\compat\sophisticated\SophisticatedCoreCompat.java"
-    Assert-Contains -Path $sortCompat -Text 'DesktopSortSlots.registerStorage(menuType,' -Label "$version $sortLoader Sophisticated sort storage slots"
+    if ($version -ne '26.3') {
+        $sortLoader = if ($version -eq '1.20.1') { 'forge' } else { 'neoforge' }
+        $sortCompat = Join-Path $RepoRoot "versions\$version\$sortLoader\src\main\java\com\salts_inventory_update\compat\sophisticated\SophisticatedCoreCompat.java"
+        Assert-Contains -Path $sortCompat -Text 'DesktopSortSlots.registerStorage(menuType,' -Label "$version $sortLoader Sophisticated sort storage slots"
+    }
 }
 
 if ($failures.Count -gt 0) {

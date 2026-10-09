@@ -1,6 +1,6 @@
 # Salt Desktop Window API v2
 
-Targets: Fabric 1.20.1, 1.21.1, 1.21.11, 26.1.2, and 26.2; Forge 1.20.1; NeoForge 1.21.1, 1.21.11, 26.1.2, and 26.2.
+Targets: Fabric 1.20.1, 1.21.1, 1.21.11, 26.1.2, 26.2, and 26.3; Forge 1.20.1; NeoForge 1.21.1, 1.21.11, 26.1.2, 26.2, and 26.3.
 
 Salt's Inventory Update can host mod containers inside its movable desktop windows. The desktop engine still owns sessions, carried stacks, hotbar interaction, placement, lock/pin/ghost pin, resizing, and multi-window behavior. Mods provide a window definition and, when needed, server-side opt-in/payload handlers.
 
@@ -14,6 +14,7 @@ The examples in this document use the 26.x API spelling. Most API concepts are s
 | --- | --- | --- | --- | --- | --- |
 | 26.1.2 | Fabric, NeoForge | `Identifier` | `ContainerInput` | `net.minecraft.client.input.*` | Yes |
 | 26.2 | Fabric, NeoForge | `Identifier` | `ContainerInput` | `net.minecraft.client.input.*` | Yes |
+| 26.3 | Fabric | `Identifier` | `ContainerInput` | `net.minecraft.client.input.*` | Yes |
 | 1.21.11 | Fabric, NeoForge | `Identifier` | `ClickType` | `net.minecraft.client.input.*` | Yes |
 | 1.21.1 | Fabric, NeoForge | `ResourceLocation` | `ClickType` | `com.salts_inventory_update.client.input.*` | Yes |
 | 1.20.1 | Fabric, Forge | `ResourceLocation` | `ClickType` | `com.salts_inventory_update.client.input.*` | Raw byte payloads only |
@@ -224,10 +225,10 @@ If the cropped texture does not include slot backgrounds, use `renderSlot(...)` 
 
 `DesktopInputContext` adds:
 
-- `shiftDown()`, `ctrlDown()`, `altDown()`, `mouseButtonDown(button)`
+- `shiftDown()`, `ctrlDown()`, `altDown()`, `mouseButtonDown(button)` (`26.3` uses SDL mouse button IDs, such as `InputConstants.MOUSE_BUTTON_LEFT`)
 - `sendMenuButton(buttonId)`
 - `sendRename(name)`
-- `clickSlot(menuSlotId, button, ContainerInput)` on `26.1.2` and `26.2`
+- `clickSlot(menuSlotId, button, ContainerInput)` on `26.1.2`, `26.2`, and `26.3` (`button` uses container values: `0` primary, `1` secondary)
 - `clickSlot(menuSlotId, button, ClickType)` on `1.20.1`, `1.21.1`, and `1.21.11`
 - `quickMoveSlot(menuSlotId)`
 - `toggleRecipeBook()`, `setRecipeBookSearch(search)`

@@ -22,6 +22,8 @@ The current runtime matrix covers every supported version and loader pair:
 
 ## Test Types
 
+The headless click regressions run with `-I functional-tests/sort-tests.gradle` and the Fabric `test` tasks. `DesktopSlotGesturesTest` checks replies arriving during held clicks/drags and verifies that left/right placement clicks become drags only after reaching another accepted slot, including across windows. `DesktopPickupAllTest` checks native anchor pickup and slot restrictions, and the 1.21.1 `DesktopCursorRevisionTest` exercises the vanilla cursor packets and the desktop revision acknowledgement, including counter wraparound.
+
 There are three layers:
 
 1. Static source parity checks in `scripts/Test-SourceFeatureParity.ps1`.
