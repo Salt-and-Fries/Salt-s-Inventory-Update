@@ -6,14 +6,16 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import com.salts_inventory_update.protocol.DesktopProtocol;
 
-/** NeoForge transport; deliberately not registered by the Fabric packet bootstrap. */
+/** Session-authenticated opening data transport for client menu reconstruction. */
 public record DesktopMenuOpenDataPayload(
     long connectionNonce,
     int sessionId,
     long sessionToken,
     int menuTypeId,
     int replacesSessionId,
-    byte[] data
+    byte[] data,
+    int[] companionOwnerIds,
+    boolean metadataOnly
 ) implements CustomPacketPayload {
     public static final Type<DesktopMenuOpenDataPayload> TYPE = new Type<>(DesktopPackets.id("desktop_menu_open_data"));
     public static final StreamCodec<RegistryFriendlyByteBuf, DesktopMenuOpenDataPayload> CODEC = CustomPacketPayload.codec(
@@ -28,7 +30,9 @@ public record DesktopMenuOpenDataPayload(
             buf.readLong(),
             buf.readVarInt(),
             buf.readVarInt() - 1,
-            readData(buf)
+            readData(buf),
+            readOwners(buf),
+            buf.readBoolean()
         );
     }
 
@@ -45,12 +49,38 @@ public record DesktopMenuOpenDataPayload(
             || data.length > DesktopProtocol.MAX_CUSTOM_DATA_BYTES) {
             throw new IllegalArgumentException("Invalid desktop menu opening data");
         }
+        if (companionOwnerIds == null || companionOwnerIds.length > DesktopProtocol.MAX_DESKTOP_SESSIONS) {
+            throw new IllegalArgumentException("Invalid companion owners");
+        }
+        java.util.Set<Integer> owners = new java.util.HashSet<>();
+        for (int owner : companionOwnerIds) {
+            if (owner <= DesktopPackets.PLAYER_MENU_SESSION || owner == sessionId || !owners.add(owner)) {
+                throw new IllegalArgumentException("Invalid companion owner identity");
+            }
+        }
+        if (metadataOnly && companionOwnerIds.length == 0) throw new IllegalArgumentException("Empty companion ownership update");
         data = data.clone();
+        companionOwnerIds = companionOwnerIds.clone();
     }
 
     @Override
     public byte[] data() {
         return this.data.clone();
+    }
+
+    public DesktopMenuOpenDataPayload(long connectionNonce, int sessionId, long sessionToken,
+        int menuTypeId, int replacesSessionId, byte[] data) {
+        this(connectionNonce, sessionId, sessionToken, menuTypeId, replacesSessionId, data, new int[0], false);
+    }
+
+    @Override public int[] companionOwnerIds() { return companionOwnerIds.clone(); }
+
+    private static int[] readOwners(RegistryFriendlyByteBuf buf) {
+        int count = buf.readVarInt();
+        DesktopProtocol.requireCount("companion owners", count, DesktopProtocol.MAX_DESKTOP_SESSIONS);
+        int[] owners = new int[count];
+        for (int i = 0; i < count; i++) owners[i] = buf.readVarInt();
+        return owners;
     }
 
     private static byte[] readData(RegistryFriendlyByteBuf buf) {
@@ -69,6 +99,9 @@ public record DesktopMenuOpenDataPayload(
         buf.writeVarInt(this.replacesSessionId + 1);
         buf.writeVarInt(this.data.length);
         buf.writeBytes(this.data);
+        buf.writeVarInt(this.companionOwnerIds.length);
+        for (int owner : this.companionOwnerIds) buf.writeVarInt(owner);
+        buf.writeBoolean(this.metadataOnly);
     }
 
     @Override

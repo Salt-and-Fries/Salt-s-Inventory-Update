@@ -27,5 +27,8 @@ public interface DesktopServerSessionContext<T extends AbstractContainerMenu, S>
         this.sendToClient(channel, com.salts_inventory_update.api.desktop.DesktopPayloadCodecs.encode(this.player().registryAccess(), codec, payload));
     }
 
+    /** Acquires once per parent lifetime and actual inventory identity. Empty means unavailable or unauthorized. */
+    java.util.Optional<DesktopCompanionLease> acquireCompanion(DesktopCompanionSpec spec);
+
     void broadcastChanges();
 }

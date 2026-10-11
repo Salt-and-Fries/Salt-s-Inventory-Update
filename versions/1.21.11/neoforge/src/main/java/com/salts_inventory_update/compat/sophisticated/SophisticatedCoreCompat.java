@@ -6,7 +6,7 @@ import java.util.List;
 import com.salts_inventory_update.api.server.desktop.DesktopServerPayloadContext;
 import com.salts_inventory_update.client.DesktopContainerClient;
 import com.salts_inventory_update.internal.desktop.DesktopItemSourceLocks;
-import com.salts_inventory_update.internal.desktop.DesktopMenuSlots;
+import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
 import com.salts_inventory_update.network.DesktopMenuOpenDataPayload;
 import com.salts_inventory_update.platform.fabric.api.client.networking.v1.ClientPlayNetworking;
 import com.salts_inventory_update.server.DesktopContainerSessions;
@@ -38,7 +38,7 @@ import net.p3pp3rf1y.sophisticatedcore.upgrades.tank.TankUpgradeContainer;
 
 /** Shared Core adapters installed only after at least one supported Sophisticated mod is present. */
 public final class SophisticatedCoreCompat {
-    private static final DesktopMenuSlots.GesturePolicy MAIN_MENU_GESTURE_POLICY = new DesktopMenuSlots.GesturePolicy() {
+    private static final DesktopMenuBindings.GesturePolicy MAIN_MENU_GESTURE_POLICY = new DesktopMenuBindings.GesturePolicy() {
         @Override
         public boolean canQuickCraft(AbstractContainerMenu menu, net.minecraft.world.inventory.Slot slot, ItemStack carried) {
             return StorageContainerMenuBase.canItemQuickReplace(slot, carried);
@@ -108,7 +108,7 @@ public final class SophisticatedCoreCompat {
             return sophisticatedPhysicalIndex(slot);
         }
     };
-    private static final DesktopMenuSlots.GesturePolicy SETTINGS_MENU_GESTURE_POLICY = new DesktopMenuSlots.GesturePolicy() {
+    private static final DesktopMenuBindings.GesturePolicy SETTINGS_MENU_GESTURE_POLICY = new DesktopMenuBindings.GesturePolicy() {
         @Override
         public boolean canQuickCraft(AbstractContainerMenu menu, net.minecraft.world.inventory.Slot slot, ItemStack carried) {
             return false;
@@ -175,15 +175,12 @@ public final class SophisticatedCoreCompat {
     }
 
     public static void initializeClient() {
-        ClientPlayNetworking.registerGlobalReceiver(DesktopMenuOpenDataPayload.TYPE, (payload, context) ->
-            DesktopContainerClient.acceptMenuOpenData(payload, context.client())
-        );
     }
 
     public static void registerMainMenu(MenuType<?> menuType) {
         com.salts_inventory_update.internal.desktop.DesktopSortSlots.registerStorage(menuType,
             (menu, slot) -> MAIN_MENU_GESTURE_POLICY.allowsTargetedQuickMoveSource(menu, slot));
-        DesktopMenuSlots.register(
+        DesktopMenuBindings.register(
             menuType,
             menu -> ((StorageContainerMenuBase<?>) menu).getTotalSlotsNumber(),
             true,
@@ -217,7 +214,7 @@ public final class SophisticatedCoreCompat {
     }
 
     public static void registerSettingsMenu(MenuType<?> menuType) {
-        DesktopMenuSlots.register(
+        DesktopMenuBindings.register(
             menuType,
             menu -> ((SettingsContainerMenu<?>) menu).getNumberOfSlots(),
             true,
@@ -255,11 +252,11 @@ public final class SophisticatedCoreCompat {
         storage.initializeContents(storage.getStateId(), seed, storage.getCarried().copy());
     }
 
-    public static DesktopMenuSlots.GesturePolicy mainMenuGesturePolicy() {
+    public static DesktopMenuBindings.GesturePolicy mainMenuGesturePolicy() {
         return MAIN_MENU_GESTURE_POLICY;
     }
 
-    public static DesktopMenuSlots.GesturePolicy settingsMenuGesturePolicy() {
+    public static DesktopMenuBindings.GesturePolicy settingsMenuGesturePolicy() {
         return SETTINGS_MENU_GESTURE_POLICY;
     }
 
@@ -334,7 +331,7 @@ public final class SophisticatedCoreCompat {
         int slotId,
         Runnable action
     ) {
-        if (slotId < 0 || slotId >= DesktopMenuSlots.size(context.menu())) {
+        if (slotId < 0 || slotId >= DesktopMenuBindings.size(context.menu())) {
             return;
         }
         runOfficial(context, action);
@@ -345,10 +342,10 @@ public final class SophisticatedCoreCompat {
         int slotId,
         Runnable action
     ) {
-        if (slotId < 0 || slotId >= DesktopMenuSlots.size(context.menu())) {
+        if (slotId < 0 || slotId >= DesktopMenuBindings.size(context.menu())) {
             return;
         }
-        if (DesktopItemSourceLocks.isSlotLocked(context.player(), DesktopMenuSlots.slot(context.menu(), slotId))) {
+        if (DesktopItemSourceLocks.isSlotLocked(context.player(), DesktopMenuBindings.slot(context.menu(), slotId))) {
             context.broadcastChanges();
             return;
         }

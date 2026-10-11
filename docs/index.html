@@ -1,1705 +1,319 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Salt Desktop API Interactive Guide</title>
-  <style>
-:root {
-  color-scheme: light;
-  --bg: #eef2f4;
-  --surface: #fbfcfb;
-  --surface-strong: #ffffff;
-  --ink: #151719;
-  --muted: #5c6570;
-  --line: #cbd3d8;
-  --line-strong: #23282d;
-  --green: #2f8a57;
-  --green-soft: #e0f1e7;
-  --blue: #2f6f9f;
-  --blue-soft: #e4eef8;
-  --amber: #b4741f;
-  --amber-soft: #fff0d4;
-  --red: #a64242;
-  --red-soft: #f8e4e4;
-  --code: #1f2428;
-  --shadow: rgba(20, 24, 28, 0.14);
-  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  margin: 0;
-  color: var(--ink);
-  background:
-    linear-gradient(90deg, rgba(47, 111, 159, 0.08) 1px, transparent 1px),
-    linear-gradient(rgba(47, 138, 87, 0.08) 1px, transparent 1px),
-    var(--bg);
-  background-size: 22px 22px;
-}
-
-a {
-  color: var(--blue);
-}
-
-.skip-link {
-  position: absolute;
-  left: 16px;
-  top: -48px;
-  z-index: 20;
-  padding: 10px 12px;
-  color: var(--ink);
-  background: var(--amber-soft);
-  border: 2px solid var(--line-strong);
-  transition: top 0.15s ease;
-}
-
-.skip-link:focus {
-  top: 16px;
-}
-
-.hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 420px;
-  gap: 28px;
-  padding: 34px clamp(18px, 4vw, 56px);
-  background: var(--surface);
-  border-bottom: 4px solid var(--line-strong);
-  box-shadow: 0 5px 0 var(--shadow);
-}
-
-.eyebrow,
-.chapter-kicker {
-  margin: 0 0 8px;
-  color: var(--green);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-h1 {
-  max-width: 780px;
-  margin: 0;
-  font-size: clamp(2.2rem, 5vw, 4.6rem);
-  line-height: 0.95;
-  letter-spacing: 0;
-}
-
-h2,
-h3,
-h4 {
-  letter-spacing: 0;
-}
-
-.lead {
-  max-width: 760px;
-  margin: 16px 0 0;
-  color: var(--muted);
-  font-size: 1.08rem;
-  line-height: 1.55;
-}
-
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.button,
-button.copy-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  padding: 8px 12px;
-  color: var(--ink);
-  background: var(--surface-strong);
-  border: 2px solid var(--line-strong);
-  box-shadow: 3px 3px 0 var(--line-strong);
-  font-weight: 750;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.button.primary {
-  background: var(--green-soft);
-}
-
-.button:hover,
-.button:focus,
-button.copy-button:hover,
-button.copy-button:focus {
-  background: var(--amber-soft);
-  outline: none;
-}
-
-.system-map {
-  align-self: center;
-  display: grid;
-  gap: 10px;
-  padding: 18px;
-  background: var(--blue-soft);
-  border: 3px solid var(--line-strong);
-  box-shadow: 5px 5px 0 var(--line-strong);
-}
-
-.map-layer {
-  padding: 14px;
-  background: var(--surface-strong);
-  border: 2px solid var(--line-strong);
-}
-
-.map-layer strong,
-.map-layer span {
-  display: block;
-}
-
-.map-layer span {
-  margin-top: 4px;
-  color: var(--muted);
-}
-
-.map-salt {
-  background: var(--green-soft);
-}
-
-.map-session {
-  margin-left: 22px;
-  background: #f7f8f8;
-}
-
-.map-mod {
-  margin-left: 44px;
-  background: var(--amber-soft);
-}
-
-.guide-shell {
-  display: grid;
-  grid-template-columns: 310px minmax(0, 1fr);
-  gap: 22px;
-  max-width: 1580px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-.nav-panel {
-  position: sticky;
-  top: 16px;
-  align-self: start;
-  max-height: calc(100vh - 32px);
-  overflow: auto;
-  padding: 14px;
-  background: var(--surface);
-  border: 3px solid var(--line-strong);
-  box-shadow: 4px 4px 0 var(--line-strong);
-}
-
-.search-box label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 0.82rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.search-box input {
-  width: 100%;
-  min-height: 40px;
-  padding: 9px 10px;
-  color: var(--ink);
-  background: var(--surface-strong);
-  border: 2px solid var(--line-strong);
-  font: inherit;
-}
-
-.search-box input:focus {
-  outline: 3px solid var(--amber-soft);
-}
-
-.search-status {
-  min-height: 20px;
-  margin: 8px 0 12px;
-  color: var(--muted);
-  font-size: 0.88rem;
-}
-
-.chapter-nav {
-  display: grid;
-  gap: 8px;
-}
-
-.nav-chapter {
-  border: 2px solid var(--line);
-  background: var(--surface-strong);
-}
-
-.nav-chapter > a,
-.nav-section {
-  display: block;
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.nav-chapter > a {
-  padding: 9px 10px;
-  font-weight: 800;
-}
-
-.nav-section {
-  padding: 6px 10px 6px 20px;
-  color: var(--muted);
-  border-top: 1px solid var(--line);
-  font-size: 0.92rem;
-}
-
-.nav-chapter a:hover,
-.nav-chapter a:focus,
-.nav-chapter a.active {
-  background: var(--green-soft);
-  color: var(--ink);
-  outline: none;
-}
-
-.guide-content {
-  min-width: 0;
-  display: grid;
-  gap: 24px;
-}
-
-.chapter {
-  padding: clamp(18px, 3vw, 30px);
-  background: var(--surface);
-  border: 3px solid var(--line-strong);
-  box-shadow: 5px 5px 0 var(--line-strong);
-  scroll-margin-top: 18px;
-}
-
-.chapter[hidden],
-.guide-section[hidden] {
-  display: none;
-}
-
-.chapter-heading {
-  padding-bottom: 14px;
-  border-bottom: 2px solid var(--line);
-}
-
-.chapter h2 {
-  margin: 0 0 10px;
-  font-size: clamp(1.8rem, 4vw, 3.2rem);
-  line-height: 1.02;
-}
-
-.chapter h3 {
-  margin: 28px 0 10px;
-  font-size: clamp(1.25rem, 2vw, 1.65rem);
-}
-
-.chapter h4 {
-  margin: 0 0 8px;
-  font-size: 1rem;
-}
-
-.chapter p,
-.chapter li,
-.chapter td {
-  color: var(--muted);
-  line-height: 1.62;
-}
-
-.chapter p {
-  margin: 0 0 14px;
-}
-
-.chapter ul,
-.chapter ol {
-  margin: 8px 0 0;
-  padding-left: 22px;
-}
-
-.guide-section {
-  scroll-margin-top: 18px;
-}
-
-.heading-match {
-  display: inline;
-  background: var(--amber-soft);
-  box-shadow: 0 0 0 3px var(--amber-soft);
-}
-
-.api-parts,
-.pill-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 14px 0 0;
-}
-
-.api-chip,
-.pill-row span {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 4px 8px;
-  color: var(--ink);
-  background: var(--blue-soft);
-  border: 1px solid var(--blue);
-  font-family: "Cascadia Mono", "Consolas", monospace;
-  font-size: 0.82rem;
-}
-
-.api-chip {
-  cursor: pointer;
-}
-
-.api-chip:hover,
-.api-chip:focus {
-  background: var(--green-soft);
-  outline: 2px solid var(--line-strong);
-}
-
-.split {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.7fr);
-  gap: 18px;
-}
-
-.definition-list,
-.reference-grid,
-.check-grid {
-  display: grid;
-  gap: 10px;
-}
-
-.definition-list div,
-.reference-grid div,
-.check-grid label,
-details {
-  padding: 13px;
-  background: var(--surface-strong);
-  border: 2px solid var(--line-strong);
-}
-
-.definition-list strong,
-.definition-list span {
-  display: block;
-}
-
-.definition-list span {
-  margin-top: 4px;
-  color: var(--muted);
-}
-
-.steps {
-  counter-reset: step;
-  display: grid;
-  gap: 10px;
-  padding-left: 0;
-  list-style: none;
-}
-
-.steps li {
-  position: relative;
-  min-height: 42px;
-  padding: 10px 12px 10px 48px;
-  background: var(--surface-strong);
-  border: 2px solid var(--line-strong);
-}
-
-.steps li::before {
-  counter-increment: step;
-  content: counter(step);
-  position: absolute;
-  left: 10px;
-  top: 10px;
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  color: var(--ink);
-  background: var(--green-soft);
-  border: 2px solid var(--line-strong);
-  font-weight: 850;
-}
-
-.check-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.check-grid label {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  color: var(--muted);
-}
-
-.check-grid input {
-  margin-top: 5px;
-}
-
-table {
-  width: 100%;
-  margin: 16px 0;
-  border-collapse: collapse;
-  background: var(--surface-strong);
-  border: 3px solid var(--line-strong);
-}
-
-th,
-td {
-  padding: 10px 12px;
-  text-align: left;
-  vertical-align: top;
-  border: 1px solid var(--line);
-}
-
-th {
-  color: var(--ink);
-  background: var(--green-soft);
-  border-bottom: 3px solid var(--line-strong);
-}
-
-code {
-  padding: 0.1em 0.3em;
-  color: var(--code);
-  background: #f0f2f3;
-  border: 1px solid var(--line);
-  font-family: "Cascadia Mono", "Consolas", monospace;
-  font-size: 0.92em;
-}
-
-.code-wrap {
-  position: relative;
-  margin: 16px 0;
-}
-
-pre {
-  overflow: auto;
-  margin: 0;
-  padding: 44px 16px 16px;
-  color: #f4f7f8;
-  background: var(--code);
-  border: 3px solid var(--line-strong);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-}
-
-pre code {
-  padding: 0;
-  color: inherit;
-  background: transparent;
-  border: 0;
-  font-size: 0.88rem;
-  line-height: 1.55;
-}
-
-button.copy-button {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  min-height: 28px;
-  padding: 4px 8px;
-  box-shadow: none;
-  font-size: 0.78rem;
-}
-
-.version-tabs {
-  margin: 16px 0;
-}
-
-.tab-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.tab-list button {
-  min-height: 34px;
-  padding: 7px 10px;
-  color: var(--ink);
-  background: var(--surface-strong);
-  border: 2px solid var(--line-strong);
-  font: inherit;
-  font-weight: 760;
-  cursor: pointer;
-}
-
-.tab-list button[aria-selected="true"] {
-  background: var(--green-soft);
-}
-
-.tab-panel[hidden] {
-  display: none;
-}
-
-.size-map {
-  display: grid;
-  grid-template-columns: minmax(112px, 0.13fr) minmax(96px, 0.1fr) minmax(260px, 1fr) minmax(96px, 0.1fr);
-  min-height: 120px;
-  margin: 16px 0;
-  background: var(--surface-strong);
-  border: 3px solid var(--line-strong);
-}
-
-.size-map span {
-  display: grid;
-  place-items: center;
-  min-width: 0;
-  padding: 8px 10px;
-  text-align: center;
-  overflow-wrap: anywhere;
-  border-right: 2px solid var(--line-strong);
-  font-weight: 800;
-}
-
-.size-map span:last-child {
-  border-right: 0;
-}
-
-.size-title {
-  background: var(--blue-soft);
-}
-
-.size-pad {
-  background: var(--amber-soft);
-}
-
-.size-content {
-  background: var(--green-soft);
-}
-
-details summary {
-  color: var(--ink);
-  font-weight: 800;
-  cursor: pointer;
-}
-
-details p {
-  margin: 10px 0 0;
-}
-
-.reference-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.no-results {
-  padding: 18px;
-  background: var(--red-soft);
-  border: 3px solid var(--red);
-  color: var(--ink);
-  font-weight: 800;
-}
-
-@media (max-width: 1120px) {
-  .hero,
-  .guide-shell,
-  .split {
-    grid-template-columns: 1fr;
-  }
-
-  .nav-panel {
-    position: static;
-    max-height: none;
-  }
-
-  .chapter-nav {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 760px) {
-  .hero {
-    padding: 24px 16px;
-  }
-
-  .guide-shell {
-    padding: 16px;
-  }
-
-  .chapter-nav,
-  .check-grid,
-  .reference-grid,
-  .size-map {
-    grid-template-columns: 1fr;
-  }
-
-  .size-map span {
-    border-right: 0;
-    border-bottom: 2px solid var(--line-strong);
-  }
-
-  .size-map span:last-child {
-    border-bottom: 0;
-  }
-
-  table {
-    display: block;
-    overflow-x: auto;
-  }
-}
-
-@media print {
-  body {
-    background: #ffffff;
-  }
-
-  .hero-actions,
-  .nav-panel,
-  .copy-button,
-  .tab-list {
-    display: none;
-  }
-
-  .hero,
-  .guide-shell {
-    display: block;
-    padding: 0;
-  }
-
-  .hero,
-  .chapter {
-    box-shadow: none;
-    border-color: #000000;
-    break-inside: avoid;
-  }
-
-  .tab-panel[hidden] {
-    display: block;
-  }
-
-  pre {
-    white-space: pre-wrap;
-  }
-}
-
-  </style>
-</head>
-<body>
-  <a class="skip-link" href="#guide-content">Skip to guide</a>
-
-  <header class="hero">
-    <div class="hero-copy">
-      <p class="eyebrow">Salt's Inventory Update</p>
-      <h1>Desktop API Interactive Guide</h1>
-      <p class="lead">
-        A chaptered guide for modders adapting Minecraft container menus to Salt's movable desktop windows.
-      </p>
-      <div class="hero-actions" aria-label="Guide actions">
-        <a class="button primary" href="#chapter-start">Start</a>
-        <a class="button" href="markdown/desktop_window_api.md">Markdown Reference</a>
-        <a class="button" href="markdown/api_todo.md">API ToDo</a>
-      </div>
-    </div>
-    <div class="system-map" aria-label="Salt desktop integration model">
-      <div class="map-layer map-salt">
-        <strong>Salt Desktop</strong>
-        <span>frame, focus, placement, carried stack</span>
-      </div>
-      <div class="map-layer map-session">
-        <strong>Server Session</strong>
-        <span>menu, slots, data, payloads</span>
-      </div>
-      <div class="map-layer map-mod">
-        <strong>Mod Definition</strong>
-        <span>rendering, widgets, custom input</span>
-      </div>
-    </div>
-  </header>
-
-  <div class="guide-shell">
-    <aside class="nav-panel" aria-label="Guide navigation">
-      <div class="search-box">
-        <label for="guide-search">Search guide</label>
-        <input id="guide-search" type="search" placeholder="slot id, payload, furnace..." autocomplete="off">
-        <p id="search-status" class="search-status" aria-live="polite"></p>
-      </div>
-      <nav id="chapter-nav" class="chapter-nav"></nav>
-    </aside>
-
-    <main id="guide-content" class="guide-content">
-      <section class="chapter" id="chapter-start" data-title="Start Here" data-api="AbstractContainerMenu,DesktopWindowDefinition,DesktopServerWindowHandler,DesktopRenderContext,DesktopInputContext">
-        <div class="chapter-heading">
-          <p class="chapter-kicker">Chapter 1</p>
-          <h2>Start Here</h2>
-          <p>
-            Salt turns full-screen Minecraft inventory screens into desktop windows. Your mod does not create a new
-            screen. It registers a window definition for the menu that Salt already captures or that your server handler
-            opts into.
-          </p>
-          <div class="api-parts"></div>
-        </div>
-
-        <section class="guide-section" id="start-mental-model">
-          <h3>Mental Model</h3>
-          <div class="split">
-            <div>
-              <p>
-                Salt owns the desktop shell: window frame, focus, movement, pinning, ghost previews, carried stack sync,
-                hotbar and offhand handling, and normal slot click routing.
-              </p>
-              <p>
-                Your integration owns the inside of one window: its title, content size, widgets, real slot positions,
-                fake item entries, custom input, tooltips, and any session-scoped payloads.
-              </p>
-            </div>
-            <div class="definition-list" aria-label="Ownership summary">
-              <div><strong>Salt handles</strong><span>desktop lifecycle, placement, item click protocol</span></div>
-              <div><strong>Menu handles</strong><span>server inventory state, slot validation, data slots</span></div>
-              <div><strong>Your code handles</strong><span>layout, custom controls, payloads, optional state</span></div>
-            </div>
-          </div>
-        </section>
-
-        <section class="guide-section" id="start-decision-path">
-          <h3>Decision Path</h3>
-          <ol class="steps">
-            <li><strong>Does the feature use a real server menu?</strong> If not, keep it outside Salt or build a custom session model first.</li>
-            <li><strong>Are the displayed items real slots?</strong> Use Salt slot routing for real slots and virtual entries for fake items.</li>
-            <li><strong>Does the screen send custom packets?</strong> Convert screen-global packets to Salt session payloads.</li>
-            <li><strong>Does the texture include player inventory?</strong> Crop the machine area and do not draw duplicated player inventory.</li>
-          </ol>
-        </section>
-
-        <section class="guide-section" id="start-what-to-build">
-          <h3>What You Usually Build</h3>
-          <pre><code class="language-java">public final class MyCompat {
-    public static void initClient() {
-        SaltsInventoryDesktopApi.registerClientWindow(MyMenus.MY_MENU, new MyWindow());
-    }
-
-    public static void initServer() {
-        SaltsInventoryDesktopApi.registerServerWindow(MyMenus.MY_MENU, new MyServerWindow());
-    }
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Salt Desktop API · 0.1.4</title><style>
+:root{color-scheme:light dark;font-family:system-ui,sans-serif;--bg:#f3f5f4;--surface:#fff;--ink:#202b2c;--muted:#526365;--line:#ccd8d4;--accent:#26734e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);line-height:1.65}
+a{color:var(--accent);text-underline-offset:3px}header{border-bottom:1px solid var(--line);padding:24px max(24px,calc((100vw - 1250px)/2));background:var(--surface)}header p{margin:0;color:var(--muted)}header strong{font-size:24px}header .links{display:flex;gap:24px;margin-top:12px}
+.layout{display:grid;grid-template-columns:240px minmax(0,920px);gap:36px;max-width:1250px;padding:32px 24px;margin:auto}nav{position:sticky;top:24px;align-self:start}nav label{font-weight:600}nav input{width:100%;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);margin:8px 0 20px}nav a{display:block;padding:7px 0;text-decoration:none;color:var(--muted)}nav a:hover{color:var(--accent)}main{min-width:0;padding:24px 32px;background:var(--surface);border:1px solid var(--line);border-radius:10px}h1{line-height:1.2;font-size:36px;margin-top:0}h2{font-size:25px;margin-top:44px;line-height:1.3;scroll-margin-top:24px}h3{font-size:19px;margin-top:28px}p{margin:16px 0}li{margin:8px 0}code{font-family:Consolas,monospace;font-size:.92em;background:var(--bg);padding:2px 4px;border-radius:3px}pre{background:#182326;color:#e0efe7;padding:20px;border-radius:7px;overflow:auto;line-height:1.5}pre code{background:none;padding:0}section[hidden]{display:none}footer{margin:36px 0 12px;color:var(--muted);font-size:14px}
+.table-scroll{overflow-x:auto;margin:20px 0}table{width:100%;border-collapse:collapse;font-size:.92em}th,td{text-align:left;vertical-align:top;border:1px solid var(--line);padding:10px 12px}th{background:var(--bg)}td code{overflow-wrap:anywhere}
+@media(prefers-color-scheme:dark){:root{--bg:#151d20;--surface:#1d282b;--ink:#e1ebe7;--muted:#a2b9ad;--line:#354943;--accent:#83c7a2}}
+@media(max-width:850px){.layout{display:block;padding:16px}nav{position:static;margin-bottom:20px}nav .toc{display:none}main{padding:20px}h1{font-size:29px}}
+@media print{nav,header .links{display:none}.layout{display:block;max-width:none}main{border:0;padding:0}pre{white-space:pre-wrap}section[hidden]{display:block}}
+</style></head><body>
+<header><strong>Salt's Inventory Update</strong><p>Optional desktop integration · API 4 · Release 0.1.4</p><div class="links"><a href="markdown/desktop_window_api.md">Markdown reference</a><a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/tree/master/api-examples">Developer examples</a></div></header>
+<div class="layout"><nav aria-label="Guide navigation"><label for="search">Find a topic</label><input id="search" type="search" placeholder="Search the guide…"><div class="toc"><a href="#public-api-and-0-1-4-changes">Public API and 0.1.4 changes</a><a href="#start-with-the-examples">Start with the examples</a><a href="#compile-against-salt-without-requiring-it">Compile against Salt without requiring it</a><a href="#minecraft-specific-types">Minecraft-specific types</a><a href="#optional-provider-discovery">Optional provider discovery</a><a href="#register-a-menu-backed-window">Register a menu-backed window</a><a href="#open-a-client-only-view">Open a client-only view</a><a href="#render-intricate-interfaces">Render intricate interfaces</a><a href="#geometry-and-viewport-fallback">Geometry and viewport fallback</a><a href="#definition-defaults-and-callback-failures">Definition defaults and callback failures</a><a href="#computed-inventory-gesture-presentation">Computed inventory gesture presentation</a><a href="#native-widgets-popups-and-accessibility">Native widgets, popups and accessibility</a><a href="#input-focus-and-window-constraints">Input, focus and window constraints</a><a href="#lifecycle-persistence-and-threads">Lifecycle, persistence and threads</a><a href="#server-actions-and-authority">Server actions and authority</a><a href="#shared-inventory-companions-and-original-surface-controls">Shared inventory companions and original-surface controls</a><a href="#diagnostics-and-verification">Diagnostics and verification</a></div></nav><main><h1 id="heading-salt-desktop-api-0-1-4">Salt Desktop API — 0.1.4</h1>
+<p>Salt&#x27;s Inventory Update hosts mod UIs as independent desktop windows. API version <strong>5</strong> supports menu-backed windows and client-only views. Salt remains an optional installation: your normal mod and UI run without it, while Salt discovers your integration providers when installed.</p>
+<p>There are no adapters for the earlier public API. Build your integration for the exact Minecraft version, loader and mappings you support. The supported matrix is Fabric on 1.20.1, 1.21.1, 1.21.11, 26.1.2, 26.2 and 26.3; Forge on 1.20.1; NeoForge on the other five versions.</p>
+<section class="chapter" id="public-api-and-0-1-4-changes">
+<h2 id="heading-public-api-and-0-1-4-changes">Public API and 0.1.4 changes</h2>
+<p>All packages below begin with <code>com.salts_inventory_update</code>. The shared contracts have no native Minecraft dependency; the other contracts are compiled for each Minecraft target. Source links use 26.3 as the current reference. For an older target, read the same package under that version&#x27;s <code>fabric/src/main/java</code> directory; Forge/NeoForge builds share those API sources.</p>
+<div class="table-scroll"><table><thead><tr><th scope="col">Package</th><th scope="col">Public entry points and purpose</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/tree/master/versions/common/src/main/java/com/salts_inventory_update/api/integration"><code>api.integration</code></a></td><td><code>DesktopIntegration</code>, <code>DesktopIntegrationContext</code>, <code>DesktopDiagnostics</code>: optional discovery, phase selection and structured diagnostics.</td></tr>
+<tr><td><a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/tree/master/versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/desktop"><code>api.desktop</code></a></td><td><code>DesktopMenuBindings</code>: common slot/source/gesture registration. <code>DesktopPayloadCodecs</code>: typed payload encoding/decoding on 1.21.1 and newer.</td></tr>
+<tr><td><a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/tree/master/versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/server/desktop"><code>api.server.desktop</code></a></td><td><code>DesktopServerApi</code>, session/payload contexts and handlers, and recipe-transfer requests/decisions/validators. Safe to reference from the common provider.</td></tr>
+<tr><td><a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/tree/master/versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop"><code>api.client.desktop</code></a></td><td><code>DesktopClientApi</code>, <code>DesktopMenuFactories</code>, window definitions/contexts, native rendering, presentation regions, resizing and matcher contracts. Load through the client provider.</td></tr>
+<tr><td><a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/tree/master/versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/widget"><code>api.client.desktop.widget</code></a></td><td>Text editing, buttons, grids, virtual items and scrollbar helpers. Shared <code>DesktopScrollState</code> supplies scrolling/virtualization calculations.</td></tr>
+<tr><td><a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/tree/master/versions/common/src/main/java/com/salts_inventory_update/api/client/desktop">Shared window contracts</a></td><td><code>DesktopWindowHandle</code> and <code>DesktopWindowOptions</code>: instance lifetime and permitted window controls. Keep their use inside the optional integration even though these two contracts have no native GUI dependency.</td></tr>
+</tbody></table></div>
+<p>The 0.1.4 public surface changes are:</p>
+<ul>
+<li>The combined <code>SaltsInventoryDesktopApi</code> was removed. Register common/server behavior with <code>DesktopServerApi</code> and client behavior with <code>DesktopClientApi</code>.</li>
+<li><code>DesktopWindowDefinition&lt;T, S&gt;</code> now accepts any model type. Contexts expose <code>model()</code> in place of <code>menu()</code>, with <code>inventoryAvailable()</code> separating menu-backed windows from client-only views.</li>
+<li>Former internal helpers are public contracts: <code>DesktopMenuBindings</code>, <code>DesktopMenuFactories</code>, <code>DesktopWindowPresentation</code>, <code>DesktopWindowRegion</code> and <code>DesktopNativeRenderContext</code>. The old internal types were removed.</li>
+<li>Use <code>sendPayload</code> in place of <code>sendCustomPayload</code>. Matchers must declare their supported menu types for capture negotiation. Duplicate registration now fails; window replacement is explicit.</li>
+<li>New optional discovery, client views/handles, keyboard ownership, modal routing, pointer capture/cancellation, overlay/external-region rendering, clips/transforms, free resizing and storage ownership hooks are described below. There are no old API aliases.</li>
+</ul>
+</section>
+<section class="chapter" id="start-with-the-examples">
+<h2 id="heading-start-with-the-examples">Start with the examples</h2>
+<p>The <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/tree/master/api-examples/ui/src/main/java/example/desktop">example sources</a> demonstrate:</p>
+<ul>
+<li><code>SimpleMachineWindow</code>: one original machine frame, zero host insets, custom real-slot artwork, computed gesture previews, synchronized progress, session-scoped buttons and a management menu. <code>MachineTransferHandler</code> implements server-authorized smelting recipe transfer.</li>
+<li><code>TerminalWindow</code>: a stepped surface with transparent top corners, protruding tabs, a 10,000-row virtual catalog, search, independent scroll state, nested clips, custom slot previews, resizing, tooltips, selection dragging, an attached inspector and a declared modal popup. Virtual entries use a custom server action, rather than invented slots.</li>
+<li><code>ClientOnlyWindow</code>: native <code>EditBox</code>/<code>Button</code> widgets, instance-owned routing, Tab/Shift-Tab traversal, semantic labels, narration, inactive hover and capture cancellation. <code>StyledPreferencesWindow</code> reuses those widgets with custom manager-routed decoration.</li>
+</ul>
+<p>The example backends contain no Salt references. Register their menu types through your usual loader setup and call <code>ExampleMenus.bind(...)</code> there. Keep your original screens registered. The provider classes supply the optional desktop presentation. The sample catalog selection demonstrates authenticated server actions; connect actual withdrawals to your own storage and permission checks.</p>
+<p>Run <code>./gradlew verifyApiExamples</code> to compile these integrations against all twelve actual loader/version classpaths. Generated sources under each loader&#x27;s <code>build/generated/api-examples</code> account for native Minecraft name, graphics and input differences. They are excluded from the shipped mod jars. See <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/blob/master/api-examples/README.md">the examples README</a> for setup.</p>
+</section>
+<section class="chapter" id="compile-against-salt-without-requiring-it">
+<h2 id="heading-compile-against-salt-without-requiring-it">Compile against Salt without requiring it</h2>
+<p>Use Salt as a <strong>compile-only</strong> mod dependency. Do not bundle its jar, copy its API classes into your mod, or list it as a required runtime dependency. The full matching Salt jar provides the public API; there is no separate runtime API mod.</p>
+<p>For a local build, use the matching artifact from <code>build/release/0.1.4</code>, or the matching project&#x27;s development output. Keep Minecraft mappings consistent. Pre-26 Fabric consumers should let Loom remap the production mod dependency; ForgeGradle consumers should use their usual deobfuscated mod dependency configuration. Modern ModDev consumers must also use the appropriate development mappings. A plain unmapped production jar is not interchangeable with a development jar.</p>
+<p>A Fabric project using Loom can use:</p>
+<pre><code class="language-kotlin">dependencies {
+    modCompileOnly(files(&quot;libs/salts_inventory_update-&lt;minecraft&gt;-Fabric-0.1.4.jar&quot;))
+    // Add the same matching jar to a local runtime only when testing Salt-present behavior.
 }</code></pre>
-          <p>
-            A simple storage menu might only need real slot positions. A furnace-like machine usually also needs a
-            cropped background, progress textures, and a recipe-book button. A terminal often needs virtual entries and
-            custom payloads.
-          </p>
-        </section>
-      </section>
-
-      <section class="chapter" id="chapter-triage" data-title="Compatibility Triage" data-api="AbstractContainerMenu,Slot,DesktopVirtualItem,DesktopPayloadCodecs,DesktopServerPayloadHandler">
-        <div class="chapter-heading">
-          <p class="chapter-kicker">Chapter 2</p>
-          <h2>Compatibility Triage</h2>
-          <p>
-            Triage decides whether a menu can become a Salt desktop window now, needs rework, or should stay on its
-            original screen until the API grows.
-          </p>
-          <div class="api-parts"></div>
-        </div>
-
-        <section class="guide-section" id="triage-showstoppers">
-          <h3>Showstoppers</h3>
-          <div class="check-grid">
-            <label><input type="checkbox"> Important state only exists in the client <code>Screen</code>.</label>
-            <label><input type="checkbox"> Fake item entries are treated like real <code>Slot</code>s.</label>
-            <label><input type="checkbox"> Packets assume there is one active screen.</label>
-            <label><input type="checkbox"> Buttons mutate server state without a menu button or Salt payload.</label>
-            <label><input type="checkbox"> Renderer hardcodes player inventory and machine UI together.</label>
-            <label><input type="checkbox"> Custom drag or quick-move behavior bypasses vanilla menu clicks.</label>
-          </div>
-          <p>
-            If any box applies, write the compat layer around that behavior first. Unknown modded menus should keep
-            opening their original screens until the integration is explicit.
-          </p>
-        </section>
-
-        <section class="guide-section" id="triage-patterns">
-          <h3>Pick A Pattern</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Menu shape</th>
-                <th>Use</th>
-                <th>Avoid</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Plain slot grid</td>
-                <td><code>renderSlot</code>, <code>slotAt</code>, fixed or storage-grid resize</td>
-                <td>Drawing a duplicate player inventory</td>
-              </tr>
-              <tr>
-                <td>Machine or furnace-like</td>
-                <td>Cropped background, <code>texturelessSlot</code>, progress textures</td>
-                <td>Copying the whole vanilla screen texture</td>
-              </tr>
-              <tr>
-                <td>Terminal with fake entries</td>
-                <td><code>DesktopVirtualItem</code>, custom payloads, search widgets</td>
-                <td>Returning <code>DesktopSlotHit</code> for non-slots</td>
-              </tr>
-              <tr>
-                <td>Screen with custom controls</td>
-                <td>Widget helpers, menu buttons, typed payloads</td>
-                <td>Global packets that do not name the Salt session</td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
-
-        <section class="guide-section" id="triage-rework">
-          <h3>Rework Checklist</h3>
-          <ol class="steps">
-            <li>Extract the machine/container UI from the old <code>Screen</code> renderer.</li>
-            <li>Move client-only UI state into the desktop state object or synced data.</li>
-            <li>Replace screen-global packets with Salt payloads for session-specific actions.</li>
-            <li>Return real menu slot ids from <code>slotAt</code>.</li>
-            <li>Test normal click, shift-click, drag distribution, double-click, carried stacks, ghost pin, and reopen.</li>
-          </ol>
-        </section>
-      </section>
-
-      <section class="chapter" id="chapter-registration" data-title="Registration" data-api="SaltsInventoryDesktopApi,DesktopWindowDefinitionFactory,DesktopWindowMatcher,DesktopWindowLookupContext,DesktopServerWindowHandler">
-        <div class="chapter-heading">
-          <p class="chapter-kicker">Chapter 3</p>
-          <h2>Registration</h2>
-          <p>
-            Client registration describes how a menu looks. Server registration decides whether Salt may capture that
-            menu as a live desktop session.
-          </p>
-          <div class="api-parts"></div>
-        </div>
-
-        <section class="guide-section" id="registration-basic">
-          <h3>Basic Registration</h3>
-          <pre><code class="language-java">public static void initClient() {
-    MenuType&lt;MyMenu&gt; menu = findMenu("other_mod:my_menu");
-    if (menu != null) {
-        SaltsInventoryDesktopApi.registerClientWindow(menu, new MyWindow());
-    }
-}
-
-public static void initServer() {
-    MenuType&lt;MyMenu&gt; menu = findMenu("other_mod:my_menu");
-    if (menu != null) {
-        SaltsInventoryDesktopApi.registerServerWindow(menu, new MyServerWindow());
-    }
-}</code></pre>
-          <p>
-            Register both sides for a captured modded menu. A client-only definition can exist, but it does not make an
-            unknown server menu desktop-managed by itself.
-          </p>
-        </section>
-
-        <section class="guide-section" id="registration-predicates">
-          <h3>Predicate Registration</h3>
-          <pre><code class="language-java">SaltsInventoryDesktopApi.registerClientWindowPredicate(
-    Identifier.fromNamespaceAndPath("my_mod", "dynamic_storage"),
-    100,
-    context -&gt; context.sourceKey().startsWith("block:"),
-    context -&gt; new DynamicStorageWindow()
-);</code></pre>
-          <p>
-            Use predicates when one <code>MenuType</code> has multiple layouts or when the source key decides which
-            desktop window should be used.
-          </p>
-        </section>
-
-        <section class="guide-section" id="registration-optional-compat">
-          <h3>Optional Compat</h3>
-          <pre><code class="language-java">private static @Nullable MenuType&lt;?&gt; findMenu(String id) {
-    Identifier key = Identifier.tryParse(id);
-    return key == null ? null : BuiltInRegistries.MENU.getOptional(key).orElse(null);
-}</code></pre>
-          <p>
-            Keep optional mod references guarded. Prefer registry ids, optional entrypoints, or small reflection helpers
-            over hard class references in always-loaded code.
-          </p>
-        </section>
-      </section>
-
-      <section class="chapter" id="chapter-client-window" data-title="Client Window" data-api="DesktopWindowDefinition,DesktopWindowSetupContext,DesktopWindowContext,DesktopRenderContext,DesktopResizePolicy,CompoundTag">
-        <div class="chapter-heading">
-          <p class="chapter-kicker">Chapter 4</p>
-          <h2>Client Window</h2>
-          <p>
-            The client definition is the render and input adapter. It should describe the content area, not re-create
-            Minecraft's full screen.
-          </p>
-          <div class="api-parts"></div>
-        </div>
-
-        <section class="guide-section" id="client-lifecycle">
-          <h3>Lifecycle Hooks</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Hook</th>
-                <th>Use for</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><code>createState</code></td><td>Search text, selected tab, scroll row, animation state.</td></tr>
-              <tr><td><code>title</code></td><td>Window title based on the menu or local state.</td></tr>
-              <tr><td><code>defaultSize</code></td><td>Full Salt window size, including title bar and padding.</td></tr>
-              <tr><td><code>render</code></td><td>Slots, textures, text, widgets, virtual items.</td></tr>
-              <tr><td><code>slotAt</code></td><td>Real menu slot hitboxes only.</td></tr>
-              <tr><td><code>saveLocalState</code></td><td>Local UI state that should survive reopen.</td></tr>
-            </tbody>
-          </table>
-        </section>
-
-        <section class="guide-section" id="client-minimal-window">
-          <h3>Minimal Slot Window</h3>
-          <pre><code class="language-java">public final class MyWindow implements DesktopWindowDefinition&lt;MyMenu, MyWindow.State&gt; {
-    public static final class State {
-        int scroll;
-    }
-
+<p>For a project using named development output, <code>compileOnly(files(...))</code> can reference the matching loader, version-common and shared-common class directories. See this repository&#x27;s <code>compileApiExamples</code> tasks for an executable example. The loader&#x27;s remapping/deobfuscation configuration remains part of your own build; Salt does not publish an invented Maven coordinate.</p>
+<h3 id="heading-fabric">Fabric</h3>
+<p>Leave Salt out of <code>fabric.mod.json</code>&#x27;s <code>depends</code>. An optional <code>suggests</code> entry is allowed. Do not put the Salt providers in <code>main</code> or <code>client</code> entrypoints; those run even when Salt is absent. Salt reads the descriptor below from the owning <code>ModContainer</code> after your registries exist.</p>
+<h3 id="heading-forge-1-20-1">Forge 1.20.1</h3>
+<p>Leave Salt out of mandatory dependencies in <code>META-INF/mods.toml</code>. If you declare it for ordering/version information, use <code>mandatory=false</code> with <code>modId=&quot;salts_inventory_update&quot;</code>. Do not annotate the provider with <code>@Mod</code> or subscribe it as an ordinary automatic event subscriber. Salt scans the loaded mod files and runs common registration before server startup, or during client initialization.</p>
+<h3 id="heading-neoforge">NeoForge</h3>
+<p>Leave Salt out of required dependencies in <code>META-INF/neoforge.mods.toml</code>. Optional metadata can use <code>type=&quot;optional&quot;</code> and <code>modId=&quot;salts_inventory_update&quot;</code>. Do not register the provider as a normal mod entrypoint/event subscriber. Salt reads each owning mod file&#x27;s contents, using the supported NeoForge file SPI for that version. Client registration runs on the loader&#x27;s queued client setup; dedicated servers select only the common provider.</p>
+</section>
+<section class="chapter" id="minecraft-specific-types">
+<h2 id="heading-minecraft-specific-types">Minecraft-specific types</h2>
+<p>The following native types differ between targets. <code>CharacterEvent</code>, <code>KeyEvent</code> and <code>MouseButtonEvent</code> use the package shown in the event column.</p>
+<div class="table-scroll"><table><thead><tr><th scope="col">Minecraft</th><th scope="col">Identifier type</th><th scope="col"><code>nativeGraphics()</code></th><th scope="col">Event package</th><th scope="col"><code>clickSlot</code> action type</th><th scope="col">Payload codecs</th></tr></thead><tbody>
+<tr><td>1.20.1</td><td><code>ResourceLocation</code></td><td><code>GuiGraphics</code></td><td><code>com.salts_inventory_update.client.input</code></td><td><code>ClickType</code></td><td>Raw bytes</td></tr>
+<tr><td>1.21.1</td><td><code>ResourceLocation</code></td><td><code>GuiGraphics</code></td><td><code>com.salts_inventory_update.client.input</code></td><td><code>ClickType</code></td><td>Raw bytes or <code>StreamCodec</code></td></tr>
+<tr><td>1.21.11</td><td><code>Identifier</code></td><td><code>GuiGraphics</code></td><td><code>net.minecraft.client.input</code></td><td><code>ClickType</code></td><td>Raw bytes or <code>StreamCodec</code></td></tr>
+<tr><td>26.1.2 / 26.2 / 26.3</td><td><code>Identifier</code></td><td><code>GuiGraphicsExtractor</code></td><td><code>net.minecraft.client.input</code></td><td><code>ContainerInput</code></td><td>Raw bytes or <code>StreamCodec</code></td></tr>
+</tbody></table></div>
+<p>On <strong>26.3</strong>, native mouse events and <code>mouseButtonDown(...)</code> use SDL mouse button ids, such as <code>InputConstants.MOUSE_BUTTON_LEFT</code>. <code>clickSlot(...)</code> retains container button conventions: for a pickup, primary is <code>0</code> and secondary is <code>1</code>. Translate the event button before sending a slot click; do not forward the SDL id directly. Other container actions have their own button meanings. Earlier targets use their native pre-SDL mouse constants.</p>
+<p>See the version adaptations in the example compilation tasks for native event construction and widget calls. These source differences require a build for each target.</p>
+</section>
+<section class="chapter" id="optional-provider-discovery">
+<h2 id="heading-optional-provider-discovery">Optional provider discovery</h2>
+<p>Ship a UTF-8 properties file at exactly:</p>
+<pre><code class="language-properties"># META-INF/salts_inventory_update.integration.properties
+modId=my_mod
+apiVersion=5
+common=my.mod.salt.MyCommonIntegration
+client=my.mod.salt.MyClientIntegration
+# Optional prerequisites, evaluated before resolving either provider class:
+# requires=another_mod,optional_ui_library</code></pre>
+<p><code>modId</code> must match the descriptor&#x27;s owning loader mod. <code>common</code> and <code>client</code> can be omitted independently. Each specified class implements <code>DesktopIntegration</code>, with an accessible no-argument constructor:</p>
+<pre><code class="language-java">public final class MyCommonIntegration implements DesktopIntegration {
     @Override
-    public State createState(DesktopWindowSetupContext&lt;MyMenu&gt; context) {
-        return new State();
-    }
-
-    @Override
-    public DesktopWindowSize defaultSize(DesktopWindowSetupContext&lt;MyMenu&gt; context) {
-        return DesktopWindowSize.of(8 + 9 * 18 + 8, 16 + 8 + 3 * 18 + 8);
-    }
-
-    @Override
-    public void render(DesktopRenderContext&lt;MyMenu, State&gt; context) {
-        int x = context.contentX();
-        int y = context.contentY();
-        for (int i = 0; i &lt; 27; i++) {
-            context.renderSlot(i, x + i % 9 * 18, y + i / 9 * 18);
-        }
+    public void register(DesktopIntegrationContext context) {
+        DesktopServerApi.registerWindow(MyMenus.MACHINE, new MyMachineServerHandler());
     }
 }</code></pre>
-        </section>
-
-        <section class="guide-section" id="client-size-map">
-          <h3>Window Size vs Content Size</h3>
-          <div class="size-map" aria-label="Window and content size diagram">
-            <span class="size-title">title bar</span>
-            <span class="size-pad">padding</span>
-            <span class="size-content">contentX/Y, contentWidth/Height</span>
-            <span class="size-pad">padding</span>
-          </div>
-          <p>
-            Start drawing at <code>context.contentX()</code> and <code>context.contentY()</code>. Return a
-            <code>defaultSize</code> large enough for title bar, padding, and content. In current examples that is
-            usually <code>8 + contentWidth + 8</code> wide and <code>16 + 8 + contentHeight + 8</code> tall.
-          </p>
-        </section>
-      </section>
-
-      <section class="chapter" id="chapter-slots-input" data-title="Slots And Input" data-api="DesktopSlotHit,DesktopSlotContext,DesktopInputContext,Slot,DesktopTextBoxState,DesktopWidgets,DesktopVirtualItem">
-        <div class="chapter-heading">
-          <p class="chapter-kicker">Chapter 5</p>
-          <h2>Slots And Input</h2>
-          <p>
-            Normal item movement should flow through Salt's slot routing. Custom UI controls should consume input only
-            when they actually handled it.
-          </p>
-          <div class="api-parts"></div>
-        </div>
-
-        <section class="guide-section" id="slots-real">
-          <h3>Real Slot Routing</h3>
-          <pre><code class="language-java">@Override
-public DesktopSlotHit slotAt(DesktopSlotContext&lt;MyMenu, State&gt; context, double mouseX, double mouseY) {
-    int x = context.contentX();
-    int y = context.contentY();
-
-    DesktopSlotHit input = context.hitSlot(0, x + 56, y + 17, mouseX, mouseY);
-    if (input != null) return input;
-
-    return context.hitSlot(1, x + 116, y + 35, mouseX, mouseY);
-}</code></pre>
-          <p>
-            Return the index into <code>menu.slots</code>, not visual order. If you think in container slot indexes, use
-            <code>containerSlot(...)</code>, <code>containerSlotHit(...)</code>, and <code>menuSlotId(...)</code>.
-          </p>
-        </section>
-
-        <section class="guide-section" id="slots-rendering">
-          <h3>Slot Rendering Choices</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Helper</th>
-                <th>Use when</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><code>renderSlot(id, x, y)</code></td><td>Salt should draw slot background, item, hover, and drag preview.</td></tr>
-              <tr><td><code>slot(slot, x, y)</code></td><td>You already resolved the <code>Slot</code> object.</td></tr>
-              <tr><td><code>texturelessSlot(id, x, y)</code></td><td>Your background already contains slot art.</td></tr>
-              <tr><td><code>slotBackground(x, y)</code></td><td>You want Salt's slot art but need custom item rendering order.</td></tr>
-            </tbody>
-          </table>
-        </section>
-
-        <section class="guide-section" id="slots-text-input">
-          <h3>Text Input</h3>
-          <pre><code class="language-java">public static final class State {
-    final DesktopTextBoxState search = new DesktopTextBoxState();
-}
-
-@Override
-public void render(DesktopRenderContext&lt;MyMenu, State&gt; context) {
-    DesktopWidgets.renderTextBox(context, context.state().search, context.contentX(), context.contentY(), 120);
-}
-
-@Override
-public boolean mouseClicked(DesktopInputContext&lt;MyMenu, State&gt; context, MouseButtonEvent event, boolean doubleClick) {
-    return DesktopWidgets.clickTextBox(context.state().search, event, context.contentX(), context.contentY(), 120);
-}
-
-@Override
-public boolean wantsTextInput(DesktopWindowContext&lt;MyMenu, State&gt; context) {
-    return DesktopWidgets.wantsTextInput(context.state().search);
-}</code></pre>
-          <p>
-            Always implement <code>wantsTextInput</code> for focused text boxes. That tells Salt to suppress movement
-            and normal UI hotkeys while the player is typing.
-          </p>
-        </section>
-
-        <section class="guide-section" id="slots-virtual">
-          <h3>Virtual Items</h3>
-          <pre><code class="language-java">List&lt;DesktopVirtualItem&gt; visible = entries.stream()
-    .map(entry -&gt; new DesktopVirtualItem(entry.stack(), entry.count()))
-    .toList();
-
-DesktopWidgets.renderVirtualItemGrid(context, visible, firstIndex, gridX, gridY, columns, rows);
-
-int index = DesktopWidgets.virtualItemIndexAt(
-    event.x(), event.y(), gridX, gridY, columns, rows, firstIndex, visible.size()
-);
-if (index &gt;= 0) {
-    context.sendPayload(PULL_CHANNEL, new PullPayload(index), PullPayload.CODEC);
-    return true;
-}</code></pre>
-          <p>
-            Virtual entries are not slots. Do not return <code>DesktopSlotHit</code> for them.
-          </p>
-        </section>
-      </section>
-
-      <section class="chapter" id="chapter-server-payloads" data-title="Server And Payloads" data-api="DesktopServerWindowHandler,DesktopServerSessionContext,DesktopServerApi,DesktopPayloadCodecs,StreamCodec,RegistryFriendlyByteBuf">
-        <div class="chapter-heading">
-          <p class="chapter-kicker">Chapter 6</p>
-          <h2>Server And Payloads</h2>
-          <p>
-            Server handlers opt menus into capture and keep custom session behavior synchronized. Payloads are for
-            custom actions that vanilla slot clicks and menu buttons cannot express.
-          </p>
-          <div class="api-parts"></div>
-        </div>
-
-        <section class="guide-section" id="server-handler">
-          <h3>Server Handler</h3>
-          <pre><code class="language-java">public final class MyServerWindow implements DesktopServerWindowHandler&lt;MyMenu, MyServerWindow.State&gt; {
-    public static final class State {
-        long lastHash;
-    }
-
-    @Override
-    public State createState(DesktopServerSessionContext&lt;MyMenu, State&gt; context) {
-        return new State();
-    }
-
-    @Override
-    public void tick(DesktopServerSessionContext&lt;MyMenu, State&gt; context) {
-        long hash = context.menu().contentHash();
-        if (hash != context.state().lastHash) {
-            context.state().lastHash = hash;
-            context.broadcastChanges();
-        }
-    }
-}</code></pre>
-          <p>
-            Hidden ghost sessions still tick and validate through the desktop session manager. <code>closed</code> means
-            the live session is really ending, not just becoming a ghost preview.
-          </p>
-          <p>
-            <code>broadcastChanges()</code> requests a coalesced synchronization flush after the outermost callback; it
-            never recursively invokes <code>tick</code>. Custom menus override <code>validateTransfer</code> to opt into
-            recipe-browser Move Items using a server-resolved recipe and a bounded <code>DesktopTransferDecision</code>.
-            The binary-compatible default is unsupported, so the transfer control remains disabled until a server
-            validator is present.
-          </p>
-        </section>
-
-        <section class="guide-section" id="payloads-typed-raw">
-          <h3>Typed And Raw Payloads</h3>
-          <div class="version-tabs" data-tabs>
-            <div class="tab-list" role="tablist" aria-label="Payload examples">
-              <button type="button" data-target="typed-payload">26.x and 1.21.x typed</button>
-              <button type="button" data-target="raw-payload">1.20.1 raw</button>
-            </div>
-            <div class="tab-panel" data-panel="typed-payload">
-              <pre><code class="language-java">public record ModePayload(int mode) {
-    public static final StreamCodec&lt;RegistryFriendlyByteBuf, ModePayload&gt; CODEC =
-        StreamCodec.composite(ByteBufCodecs.INT, ModePayload::mode, ModePayload::new);
-}
-
-SaltsInventoryDesktopApi.registerServerPayload(MyMenus.MY_MENU, MY_CHANNEL, ModePayload.CODEC, (context, payload) -&gt; {
-    context.menu().setMode(payload.mode());
-    context.broadcastChanges();
-});
-
-context.sendPayload(MY_CHANNEL, new ModePayload(2), ModePayload.CODEC);</code></pre>
-            </div>
-            <div class="tab-panel" data-panel="raw-payload">
-              <pre><code class="language-java">SaltsInventoryDesktopApi.registerServerPayload(MyMenus.MY_MENU, MY_CHANNEL, context -&gt; {
-    byte[] data = context.data();
-    int mode = decodeMode(data);
-    context.menu().setMode(mode);
-    context.broadcastChanges();
-});
-
-context.sendPayload(MY_CHANNEL, encodeMode(2));</code></pre>
-            </div>
-          </div>
-          <p>
-            Keep payloads small and session-scoped. Salt's networking layer is designed around a 32 KiB cap.
-          </p>
-        </section>
-
-        <section class="guide-section" id="payloads-when">
-          <h3>When To Use Payloads</h3>
-          <ul>
-            <li>Use normal slot clicks for real inventory slots.</li>
-            <li>Use <code>sendMenuButton</code> for vanilla-style menu buttons.</li>
-            <li>Use payloads for selected tabs, terminal actions, custom sort modes, fake entries, and special server commands.</li>
-          </ul>
-        </section>
-      </section>
-
-      <section class="chapter" id="chapter-ui-patterns" data-title="UI Patterns" data-api="DesktopRenderContext,DesktopWidgets,RecipeBookComponent,DesktopResizePolicy,DesktopWindowSize">
-        <div class="chapter-heading">
-          <p class="chapter-kicker">Chapter 7</p>
-          <h2>UI Patterns</h2>
-          <p>
-            These examples cover common layouts: cropped machine textures, recipe-book buttons, resizing, and desktop
-            window behavior that Salt inherits automatically.
-          </p>
-          <div class="api-parts"></div>
-        </div>
-
-        <section class="guide-section" id="patterns-cropped-background">
-          <h3>Cropped Furnace-Like Background</h3>
-          <pre><code class="language-java">private static final Identifier MY_SCREEN_TEXTURE =
-    Identifier.fromNamespaceAndPath("my_mod", "textures/gui/my_machine.png");
-private static final int TEXTURE_WIDTH = 256;
-private static final int TEXTURE_HEIGHT = 256;
-private static final int MACHINE_WIDTH = 176;
-private static final int MACHINE_HEIGHT = 84;
-
-@Override
-public DesktopWindowSize defaultSize(DesktopWindowSetupContext&lt;MyMenu&gt; context) {
-    return DesktopWindowSize.of(8 + MACHINE_WIDTH + 8, 16 + 8 + MACHINE_HEIGHT + 8);
-}
-
-@Override
-public void render(DesktopRenderContext&lt;MyMenu, State&gt; context) {
-    int x = context.contentX();
-    int y = context.contentY();
-
-    context.texture(MY_SCREEN_TEXTURE, x, y, 0, 0,
-        MACHINE_WIDTH, MACHINE_HEIGHT,
-        MACHINE_WIDTH, MACHINE_HEIGHT,
-        TEXTURE_WIDTH, TEXTURE_HEIGHT);
-
-    context.texturelessSlot(0, x + 56, y + 17);
-    context.texturelessSlot(1, x + 56, y + 53);
-    context.texturelessSlot(2, x + 116, y + 35);
-}</code></pre>
-          <p>
-            Use <code>texturelessSlot</code> only when your cropped texture already has slot backgrounds. Otherwise use
-            <code>renderSlot</code> or draw <code>slotBackground</code> first.
-          </p>
-        </section>
-
-        <section class="guide-section" id="patterns-recipe-book">
-          <h3>Recipe Book</h3>
-          <pre><code class="language-java">@Override
-public RecipeBookComponent&lt;?&gt; createRecipeBook(DesktopWindowContext&lt;MyMenu, State&gt; context) {
-    return MyClientReflect.createRecipeBook(context.menu());
-}
-
-@Override
-public boolean mouseClicked(DesktopInputContext&lt;MyMenu, State&gt; context, MouseButtonEvent event, boolean doubleClick) {
-    if (recipeButton.contains(event.x(), event.y())) {
-        context.toggleRecipeBook();
-        return true;
-    }
-    return false;
-}</code></pre>
-          <p>
-            On <code>1.20.1</code> and <code>1.21.1</code>, return raw <code>RecipeBookComponent</code> instead of
-            <code>RecipeBookComponent&lt;?&gt;</code>.
-          </p>
-        </section>
-
-        <section class="guide-section" id="patterns-resizing">
-          <h3>Resize And Snap</h3>
-          <pre><code class="language-java">@Override
-public DesktopResizePolicy resizePolicy(DesktopWindowContext&lt;MyMenu, State&gt; context) {
-    return DesktopResizePolicy.STORAGE_GRID;
-}
-
-@Override
-public DesktopWindowSize snapSize(DesktopWindowContext&lt;MyMenu, State&gt; context) {
-    int columns = Math.max(1, context.contentWidth() / 18);
-    int rows = Math.max(1, context.contentHeight() / 18);
-    return DesktopWindowSize.of(8 + columns * 18 + 8, 16 + 8 + rows * 18 + 8);
-}</code></pre>
-          <p>
-            Use fixed windows for functional machine UIs. Use storage-grid resizing only when the window can add or
-            remove visible rows or columns cleanly.
-          </p>
-        </section>
-
-        <section class="guide-section" id="patterns-inherited">
-          <h3>Inherited Desktop Behavior</h3>
-          <div class="pill-row">
-            <span>lock</span>
-            <span>pin</span>
-            <span>ghost pin</span>
-            <span>placement</span>
-            <span>carried stack</span>
-            <span>hotbar</span>
-            <span>shift-click</span>
-            <span>tooltips</span>
-          </div>
-          <p>
-            Do not rebuild these features in your definition. Add hooks such as <code>ghosted()</code> only for local
-            visual state or preview-specific effects.
-          </p>
-        </section>
-      </section>
-
-      <section class="chapter" id="chapter-troubleshooting" data-title="Troubleshooting" data-api="DesktopDebug,DesktopSlotHit,DesktopServerWindowHandler,DesktopPayloadCodecs">
-        <div class="chapter-heading">
-          <p class="chapter-kicker">Chapter 8</p>
-          <h2>Troubleshooting</h2>
-          <p>
-            Most integration failures come from missing server support, wrong slot ids, global packets, or rendering the
-            old screen unchanged.
-          </p>
-          <div class="api-parts"></div>
-        </div>
-
-        <section class="guide-section" id="troubleshooting-common">
-          <h3>Common Failure Modes</h3>
-          <div class="accordion-set">
-            <details>
-              <summary>Window does not open in Salt</summary>
-              <p>
-                Confirm the menu type was found, the client definition registered, and the server handler or payload
-                handler registered for unknown modded menus. Unknown menus fall back to their original screen.
-              </p>
-            </details>
-            <details>
-              <summary>Clicking a slot moves the wrong item</summary>
-              <p>
-                Check that <code>slotAt</code> returns the menu slot id. Container slot indexes and visual slot order are
-                not always the same thing.
-              </p>
-            </details>
-            <details>
-              <summary>Payload never reaches the server</summary>
-              <p>
-                Verify the payload channel id, codec/raw encoding, server registration, and that the action belongs to
-                the same menu type as the captured session.
-              </p>
-            </details>
-            <details>
-              <summary>Player inventory appears twice</summary>
-              <p>
-                Crop the machine portion of the texture and remove player inventory slots from the custom render path.
-                Salt already handles player inventory and hotbar interaction.
-              </p>
-            </details>
-            <details>
-              <summary>Typing also moves the player</summary>
-              <p>
-                Implement <code>wantsTextInput</code> and return true while a text box is focused.
-              </p>
-            </details>
-          </div>
-        </section>
-
-        <section class="guide-section" id="troubleshooting-debug-checklist">
-          <h3>Debug Checklist</h3>
-          <ol class="steps">
-            <li>Log the menu registry id and slot count when registering.</li>
-            <li>Render temporary labels for menu slot ids while aligning hitboxes.</li>
-            <li>Test one slot click before adding custom widgets.</li>
-            <li>Test one payload before adding complex state syncing.</li>
-            <li>Compare behavior with the original screen for shift-click and result slots.</li>
-          </ol>
-        </section>
-      </section>
-
-      <section class="chapter" id="chapter-reference" data-title="Reference" data-api="DesktopWindowContext,DesktopRenderContext,DesktopInputContext,DesktopWidgets,SaltsInventoryDesktopApi">
-        <div class="chapter-heading">
-          <p class="chapter-kicker">Chapter 9</p>
-          <h2>Reference</h2>
-          <p>
-            Keep this chapter nearby once the integration works. It summarizes the API surface and version differences.
-          </p>
-          <div class="api-parts"></div>
-        </div>
-
-        <section class="guide-section" id="reference-contexts">
-          <h3>Context Quick Reference</h3>
-          <div class="reference-grid">
-            <div>
-              <h4>DesktopWindowContext</h4>
-              <p><code>menu</code>, <code>sessionId</code>, <code>state</code>, <code>contentX/Y</code>, <code>containerSlot</code>, <code>menuSlotId</code></p>
-            </div>
-            <div>
-              <h4>DesktopRenderContext</h4>
-              <p><code>fill</code>, <code>text</code>, <code>texture</code>, <code>sprite</code>, <code>slot</code>, <code>texturelessSlot</code>, <code>virtualItem</code></p>
-            </div>
-            <div>
-              <h4>DesktopInputContext</h4>
-              <p><code>sendMenuButton</code>, <code>clickSlot</code>, <code>quickMoveSlot</code>, <code>sendPayload</code>, <code>toggleRecipeBook</code></p>
-            </div>
-            <div>
-              <h4>DesktopWidgets</h4>
-              <p>Text boxes, icon buttons, text buttons, scrollbars, dropdowns, virtual item grids.</p>
-            </div>
-          </div>
-        </section>
-
-        <section class="guide-section" id="reference-version-summary">
-          <h3>Version Summary</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Band</th>
-                <th>Important differences</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td>26.1.2, 26.2, and 26.3</td><td><code>Identifier</code>, <code>ContainerInput</code>, typed payload helpers.</td></tr>
-              <tr><td>1.21.11</td><td><code>Identifier</code>, <code>ClickType</code>, typed payload helpers.</td></tr>
-              <tr><td>1.21.1</td><td><code>ResourceLocation</code>, Salt compatibility input package, raw <code>RecipeBookComponent</code>.</td></tr>
-              <tr><td>1.20.1</td><td><code>ResourceLocation</code>, raw byte payloads only.</td></tr>
-            </tbody>
-          </table>
-        </section>
-      </section>
-
-      <p id="no-results" class="no-results" hidden>No matching chapters or sections.</p>
-    </main>
-  </div>
-
-  <script>
-(function () {
-  "use strict";
-
-  const chapters = Array.from(document.querySelectorAll(".chapter"));
-  const nav = document.getElementById("chapter-nav");
-  const searchInput = document.getElementById("guide-search");
-  const searchStatus = document.getElementById("search-status");
-  const noResults = document.getElementById("no-results");
-  const navLinks = new Map();
-
-  function slug(text) {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-  }
-
-  function normalize(text) {
-    return (text || "").toLowerCase().replace(/\s+/g, " ").trim();
-  }
-
-  function ensureId(element, prefix) {
-    if (!element.id) {
-      element.id = `${prefix}-${slug(element.textContent)}`;
-    }
-    return element.id;
-  }
-
-  function buildApiParts() {
-    chapters.forEach((chapter) => {
-      const api = (chapter.dataset.api || "")
-        .split(",")
-        .map((part) => part.trim())
-        .filter(Boolean);
-      const holder = chapter.querySelector(".api-parts");
-      if (!holder || api.length === 0) {
-        return;
-      }
-
-      const label = document.createElement("span");
-      label.className = "api-chip";
-      label.textContent = "API parts";
-      label.setAttribute("aria-hidden", "true");
-      holder.appendChild(label);
-
-      api.forEach((part) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "api-chip";
-        button.textContent = part;
-        button.addEventListener("click", () => {
-          searchInput.value = part;
-          applySearch();
-          searchInput.focus();
-        });
-        holder.appendChild(button);
-      });
-    });
-  }
-
-  function buildNavigation() {
-    chapters.forEach((chapter, chapterIndex) => {
-      const title = chapter.dataset.title || chapter.querySelector("h2").textContent.trim();
-      const chapterId = ensureId(chapter, `chapter-${chapterIndex + 1}`);
-      const group = document.createElement("div");
-      group.className = "nav-chapter";
-
-      const chapterLink = document.createElement("a");
-      chapterLink.href = `#${chapterId}`;
-      chapterLink.textContent = title;
-      group.appendChild(chapterLink);
-      navLinks.set(chapterId, chapterLink);
-
-      chapter.querySelectorAll(".guide-section h3").forEach((heading, sectionIndex) => {
-        const section = heading.closest(".guide-section");
-        const sectionId = ensureId(section, `${chapterId}-section-${sectionIndex + 1}`);
-        const sectionLink = document.createElement("a");
-        sectionLink.href = `#${sectionId}`;
-        sectionLink.className = "nav-section";
-        sectionLink.textContent = heading.textContent.trim();
-        group.appendChild(sectionLink);
-        navLinks.set(sectionId, sectionLink);
-      });
-
-      nav.appendChild(group);
-    });
-  }
-
-  function wrapCodeBlocks() {
-    document.querySelectorAll("pre").forEach((pre) => {
-      if (pre.parentElement && pre.parentElement.classList.contains("code-wrap")) {
-        return;
-      }
-
-      const wrapper = document.createElement("div");
-      wrapper.className = "code-wrap";
-      pre.parentNode.insertBefore(wrapper, pre);
-      wrapper.appendChild(pre);
-
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "copy-button";
-      button.textContent = "Copy";
-      button.addEventListener("click", () => copyCode(button, pre));
-      wrapper.appendChild(button);
-    });
-  }
-
-  async function copyCode(button, pre) {
-    const text = pre.textContent;
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.setAttribute("readonly", "");
-        textArea.style.position = "fixed";
-        textArea.style.left = "-9999px";
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        textArea.remove();
-      }
-      button.textContent = "Copied";
-      setTimeout(() => {
-        button.textContent = "Copy";
-      }, 1400);
-    } catch (error) {
-      button.textContent = "Failed";
-      setTimeout(() => {
-        button.textContent = "Copy";
-      }, 1400);
-    }
-  }
-
-  function setupTabs() {
-    document.querySelectorAll("[data-tabs]").forEach((tabs, tabGroupIndex) => {
-      const buttons = Array.from(tabs.querySelectorAll(".tab-list button"));
-      const panels = Array.from(tabs.querySelectorAll(".tab-panel"));
-      const groupId = `tabs-${tabGroupIndex}`;
-
-      buttons.forEach((button, index) => {
-        const target = button.dataset.target;
-        const panel = panels.find((candidate) => candidate.dataset.panel === target);
-        const buttonId = `${groupId}-tab-${index}`;
-        const panelId = `${groupId}-panel-${index}`;
-        button.id = buttonId;
-        button.setAttribute("role", "tab");
-        button.setAttribute("aria-controls", panelId);
-        button.setAttribute("aria-selected", index === 0 ? "true" : "false");
-        if (panel) {
-          panel.id = panelId;
-          panel.setAttribute("role", "tabpanel");
-          panel.setAttribute("aria-labelledby", buttonId);
-          panel.hidden = index !== 0;
-        }
-
-        button.addEventListener("click", () => {
-          buttons.forEach((other) => other.setAttribute("aria-selected", "false"));
-          panels.forEach((otherPanel) => {
-            otherPanel.hidden = true;
-          });
-          button.setAttribute("aria-selected", "true");
-          if (panel) {
-            panel.hidden = false;
-          }
-        });
-      });
-    });
-  }
-
-  function textMatches(element, query) {
-    return normalize(element.textContent).includes(query);
-  }
-
-  function setHeadingMatches(root, query) {
-    root.querySelectorAll("h2, h3").forEach((heading) => {
-      heading.classList.toggle("heading-match", query.length > 0 && textMatches(heading, query));
-    });
-  }
-
-  function applySearch() {
-    const query = normalize(searchInput.value);
-    let visibleChapters = 0;
-    let visibleSections = 0;
-
-    chapters.forEach((chapter) => {
-      const sections = Array.from(chapter.querySelectorAll(".guide-section"));
-      const chapterHeadingMatch = textMatches(chapter.querySelector(".chapter-heading"), query);
-      let chapterHasVisibleSection = false;
-
-      sections.forEach((section) => {
-        const sectionVisible = !query || chapterHeadingMatch || textMatches(section, query);
-        section.hidden = !sectionVisible;
-        if (sectionVisible) {
-          chapterHasVisibleSection = true;
-          visibleSections += 1;
-        }
-      });
-
-      const chapterVisible = !query || chapterHeadingMatch || chapterHasVisibleSection;
-      chapter.hidden = !chapterVisible;
-      if (chapterVisible) {
-        visibleChapters += 1;
-      }
-
-      const chapterLink = navLinks.get(chapter.id);
-      if (chapterLink) {
-        chapterLink.closest(".nav-chapter").hidden = !chapterVisible;
-      }
-
-      sections.forEach((section) => {
-        const link = navLinks.get(section.id);
-        if (link) {
-          link.hidden = section.hidden || chapter.hidden;
-        }
-      });
-
-      setHeadingMatches(chapter, query);
-    });
-
-    noResults.hidden = visibleChapters !== 0;
-    if (!query) {
-      searchStatus.textContent = "";
-    } else {
-      searchStatus.textContent = visibleChapters === 0
-        ? "No matches"
-        : `${visibleChapters} chapter${visibleChapters === 1 ? "" : "s"}, ${visibleSections} section${visibleSections === 1 ? "" : "s"}`;
-    }
-  }
-
-  function setupSearch() {
-    searchInput.addEventListener("input", applySearch);
-    window.addEventListener("keydown", (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        searchInput.focus();
-        searchInput.select();
-      }
-      if (event.key === "Escape" && document.activeElement === searchInput) {
-        searchInput.value = "";
-        applySearch();
-      }
-    });
-  }
-
-  function setupActiveNavigation() {
-    if (!("IntersectionObserver" in window)) {
-      return;
-    }
-
-    const observed = [
-      ...chapters,
-      ...Array.from(document.querySelectorAll(".guide-section"))
-    ];
-
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-
-      if (!visible) {
-        return;
-      }
-
-      navLinks.forEach((link) => link.classList.remove("active"));
-      const link = navLinks.get(visible.target.id);
-      if (link) {
-        link.classList.add("active");
-      }
-    }, {
-      rootMargin: "-15% 0px -70% 0px",
-      threshold: [0.1, 0.4, 0.7]
-    });
-
-    observed.forEach((element) => observer.observe(element));
-  }
-
-  function setupDetailsHash() {
-    document.querySelectorAll("details").forEach((details, index) => {
-      if (!details.id) {
-        details.id = `troubleshooting-${index + 1}`;
-      }
-    });
-  }
-
-  buildApiParts();
-  buildNavigation();
-  wrapCodeBlocks();
-  setupTabs();
-  setupSearch();
-  setupDetailsHash();
-  setupActiveNavigation();
-})();
-
-  </script>
-</body>
-</html>
+<p>The client provider registers <code>DesktopClientApi</code> definitions. Keep every Salt type reference inside these lazily discovered classes or classes they load. Your normal entrypoint must not instantiate the provider, store a Salt type in a field, inherit from a Salt class, or use a provider class literal. A client annotation alone does not make Salt optional.</p>
+<p>The descriptor is the bridge: without Salt, nobody resolves the provider classes. The JVM can load your ordinary mod while their bytecode remains in its jar. On a dedicated server, Salt never resolves the <code>client</code> class. Put native GUI classes and client API imports exclusively in the client provider&#x27;s dependency tree.</p>
+<p>Common registration runs once per process, after mod registries exist, at client initialization or the first server-starting event. Client registration follows common registration. World restarts do not repeat registration. Providers run in deterministic mod-id order; use <code>requires</code> for prerequisites, not an assumed provider ordering. <code>DesktopIntegrationContext.phase()</code> identifies the selected phase and <code>isModLoaded(...)</code> can gate additional integrations.</p>
+<p>Salt refuses an incompatible <code>apiVersion</code>, malformed/oversized descriptor, unknown descriptor key or absent prerequisite before class resolution. The descriptor is limited to 16 KiB and accepts only <code>modId</code>, <code>apiVersion</code>, <code>common</code>, <code>client</code> and <code>requires</code>. A failed common provider also prevents its client provider from running. Registered API entries are rolled back if the provider fails, including restoring deliberate window replacements. Keep other changes to your mod&#x27;s hooks explicit: registration rollback covers Salt&#x27;s registries, not arbitrary side effects in your code.</p>
+</section>
+<section class="chapter" id="register-a-menu-backed-window">
+<h2 id="heading-register-a-menu-backed-window">Register a menu-backed window</h2>
+<p>Register a common/server handler and a client definition for the same menu type:</p>
+<pre><code class="language-java">// Common provider
+DesktopServerApi.registerWindow(MyMenus.MACHINE, new MyServerHandler());
+
+// Client provider
+DesktopClientApi.registerWindow(MyMenus.MACHINE, new MyWindow());</code></pre>
+<p><code>DesktopWindowDefinition&lt;T, S&gt;</code> supplies UI behavior. <code>T</code> is your menu/model; <code>S</code> is per-window UI state returned by <code>createState</code>. A definition may be reused by many windows. Put mutable selection, native widgets, scroll and drag state in <code>S</code>, not in the shared definition or static fields. <code>DesktopServerWindowHandler&lt;T, S&gt;</code> supplies independent server state and lifecycle callbacks per session.</p>
+<p>Duplicate <code>registerWindow</code> calls are errors with diagnostics. Use <code>replaceWindow</code> to deliberately override an existing definition/handler. Payload channels, view ids, factory registrations and menu bindings also reject duplicate registrations.</p>
+<p>A registered renderer is announced to the server in the bounded handshake/mode capability list. Automatic capture of a modded menu requires common support and client renderer support. If a provider is missing, fails or has incompatible metadata, the menu stays on its normal UI. Vanilla desktop menus keep their existing handling. An explicit user force-enable override remains an intentional generic capture override.</p>
+<p>For conditional support, override the server handler&#x27;s pure <code>supports(player, menu)</code> query. Returning false preserves the original UI for that instance. The client can use <code>registerMatcher(id, priority, menuTypes, matcher, factory)</code> for families of layouts. Declare the exact menu types; the matcher/factory must cover every automatically captured instance of those types. Mirror unsupported variants in the server eligibility check. Direct definitions take precedence; higher-priority matchers run first.</p>
+<h3 id="heading-menus-with-opening-data">Menus with opening data</h3>
+<p>If your client menu constructor needs additional data, register both sides:</p>
+<pre><code class="language-java">// Common provider: called when Salt captures normal menu opening.
+DesktopServerApi.registerOpeningData(MyMenus.TERMINAL,
+    (player, menu, buffer) -&gt; buffer.writeVarInt(menu.catalogSeed()));
+
+// Client provider: reconstruct the same logical menu and slot topology.
+DesktopMenuFactories.register(MyMenus.TERMINAL,
+    (minecraft, player, containerId, bytes) -&gt; MyMenus.decodeTerminal(containerId, player, bytes));</code></pre>
+<p>The opening-data transport works on Fabric, Forge and NeoForge. Data is session-authenticated, defensively copied and limited to 32 KiB. Release any buffer you create. Reject invalid/trailing data. Mark menus that require these bytes through <code>DesktopMenuBindings.register(..., true)</code> as shown below. Registered opening writers must produce the data their factories require; capture falls back when required opening transport/data is unavailable. Preserve original non-Salt menu opening too. Salt&#x27;s snapshot validation requires the reconstructed slot count to agree with the server; a factory cannot substitute a different inventory.</p>
+<h3 id="heading-nonstandard-slots-and-storage">Nonstandard slots and storage</h3>
+<p><code>DesktopMenuBindings</code> is a common registration contract for menus with dynamic slots, transfer-backed slots or custom storage ownership. Its <code>SlotAccess</code> identifies logical slot ids and can override <code>isPlayerInventorySlot(menu, slot, inventory)</code> for inventory wrappers. Salt can then identify container content without assuming player inventory coordinates or a 4x9 rectangle.</p>
+<p>For an otherwise conventional menu that requires opening data, register this once from the common provider:</p>
+<pre><code class="language-java">DesktopMenuBindings.register(MyMenus.TERMINAL,
+    menu -&gt; menu.slots.size(), true);</code></pre>
+<p>The registration overloads add <code>SourceKeyResolver</code>, <code>SnapshotPreparer</code>, then <code>GesturePolicy</code>; omit unused hooks or pass <code>null</code>. A custom <code>SlotAccess</code> implements <code>size(menu)</code> and can override <code>slot(menu, logicalId)</code> and player-inventory ownership. Its defaults use the native menu slots and <code>slot.container == inventory</code>.</p>
+<div class="table-scroll"><table><thead><tr><th scope="col">Binding hook</th><th scope="col">Responsibility</th></tr></thead><tbody>
+<tr><td><code>SourceKeyResolver.resolve(player, menu, openingData)</code></td><td>Return a stable source key for the real container/storage. The supplied opening bytes are copied. Returning <code>null</code> leaves source selection to Salt.</td></tr>
+<tr><td><code>SnapshotPreparer.prepare(menu, items)</code></td><td>Materialize dynamic logical slots before snapshot validation.</td></tr>
+<tr><td><code>GesturePolicy.canQuickCraft</code>, <code>quickCraftPlaceCount</code>, <code>quickCraftMaxStackSize</code></td><td>Describe drag eligibility, distribution and storage limits.</td></tr>
+<tr><td><code>allowsPickupAll</code>, <code>allowsPickupAllAnchor</code></td><td>Control which slots supply items and which visible slot can start the gesture.</td></tr>
+<tr><td><code>repeatedQuickMoveLimit</code>, <code>useNativeQuickMove</code>, <code>allowsTargetedQuickMoveSource</code></td><td>Bound repeated transfers and select menu-specific quick-move behavior.</td></tr>
+<tr><td><code>physicalOwner</code>, <code>physicalIndex</code></td><td>Identify the backing storage object and index, even when different menus use different slot wrappers. Owner comparison uses object identity.</td></tr>
+</tbody></table></div>
+<p>Both sides must use the same logical topology. Return the same stable physical owner object/index for slots backed by the same storage to prevent duplicate transfers across windows. These hooks supplement menu/slot restrictions and server validity checks. A binding is shared by menu type, so inspect the supplied menu when behavior varies by instance.</p>
+<p>Virtual catalog entries are presentation data. Render them with <code>virtualItem</code> or <code>DesktopVirtualItem</code>; handle them with your own hit testing and server actions. Do not create real slots merely to represent counts, recipes or remote entries.</p>
+</section>
+<section class="chapter" id="open-a-client-only-view">
+<h2 id="heading-open-a-client-only-view">Open a client-only view</h2>
+<p>Client-only views use ordinary mod models and do not create a menu:</p>
+<pre><code class="language-java">DesktopClientApi.registerView(PREFERENCES, PreferencesModel.class, new PreferencesWindow());
+var handle = DesktopClientApi.openView(PREFERENCES, &quot;main&quot;, model, Component.literal(&quot;Preferences&quot;));</code></pre>
+<p>Different nonblank instance keys create independent windows. Reusing a key with the same model object focuses that instance, preserving its state. Reusing it with a different object is an error. A non-null model must match the class registered by <code>registerView</code>. <code>openView</code> returns an empty optional when no view is registered or the desktop is unavailable; your mod can open its original UI then. Install an ordinary mod-owned callback from the client provider, as <code>ExampleUiHooks</code> demonstrates, so normal code contains no Salt references.</p>
+<p>The context exposes <code>model()</code>, <code>state()</code>, geometry and <code>windowHandle()</code>. The handle&#x27;s UUID identifies this particular window lifetime. <code>focus()</code> reopens/unminimizes an existing instance when another modal does not own focus; <code>close()</code> disposes it permanently. Stale handles return false. Handles are invalidated before <code>closed</code>, preventing recursive close actions. Opening a replacement with the same key gives a new lifetime/UUID.</p>
+<p>For client-only views, <code>inventoryAvailable()</code> is false, the session id is <code>Integer.MIN_VALUE</code>, slot lists are empty and the carried stack is empty. Menu buttons, rename, slot/quick-move actions and payload sends return false; typed payloads are denied before encoding. These views do not select an inventory transfer target.</p>
+</section>
+<section class="chapter" id="render-intricate-interfaces">
+<h2 id="heading-render-intricate-interfaces">Render intricate interfaces</h2>
+<p><code>DesktopRenderContext</code> supplies text, fills, textures, sprites, item/virtual-item rendering, real slots, tooltips and entity previews. Sizes describe the complete surface, including its declared insets; <code>contentX/Y/Width/Height</code> derive from those insets. Salt&#x27;s default presentation uses its frame. A mod-owned surface can use zero insets and draw the whole interface. Default callbacks use absolute scaled GUI coordinates. Region coordinates are window-relative.</p>
+<p>The surface overhaul is in progress. The implemented surface contracts are described here; resource-reload/accessibility hooks, complete gesture presentation, consumer examples and native acceptance are still tracked in <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/blob/master/API-SURFACE-0.1.4-PLAN.md">the implementation record</a>.</p>
+<p>Override <code>surface(context)</code> to return a <code>DesktopWindowSurface</code>. <code>DesktopWindowSurface.SALT</code> supplies the normal appearance. <code>modOwned(regions)</code> supplies zero insets, explicit hit regions and preserved dimensions. Salt then adds no frame, backing fill, title, controls or resize decoration, and disables its native title/grip hit targets. Window title metadata remains available. Normal callback contexts expose the committed snapshot through <code>surface()</code>.</p>
+<p><code>prepareLayout(context)</code> receives a candidate surface whose insets already apply to its content geometry. Position native widgets there. Salt then samples the final pure <code>surface(...)</code>, advanced regions and decoration queries and commits their immutable results together. Queries may run in both layout stages; rendering/hit testing use the completed snapshot rather than rerunning those queries. Keep painting and input based on that prepared geometry.</p>
+<p>Regions independently declare visual, interactive and placement participation. <code>withRole(...)</code> assigns <code>CONTENT</code>, <code>MOVE</code>, a directional resize role, <code>SLOT</code>, <code>CONTROL</code> or <code>POPUP</code>. Controls, slots and popups take priority over movement/resizing; background content has lower priority. Among declared regions of equal priority, the later region wins. Actual slots also prevent move/resize interception. An undeclared cutout can expose an underlying window; modality still blocks background interaction independently of shape. Image alpha alone never selects a hit target.</p>
+<p>For styled Salt-managed chrome, return a <code>DesktopWindowDecoration</code> from <code>decoration(context)</code>. Its <code>metrics()</code> defines title/control/grip geometry, and its <code>render(context, controls)</code> paints all chrome using your assets or draw calls. Each immutable <code>DesktopControlState</code> supplies its kind, bounds, hover/press/enable/selection state. Salt routes the controls using those same bounds and adds no default decoration when a renderer is supplied. Use <code>DesktopChromeMetrics.contentInsets(padding)</code> and <code>DesktopInsets.surfaceSize(...)</code> to keep surface and content sizes consistent.</p>
+<p>Use <code>nativeGraphics()</code> to delegate appropriate parts of existing renderers and Minecraft/mod widgets. <code>rawGraphics()</code> exposes Salt&#x27;s version bridge and <code>context.gesture()</code> supplies immutable computed slot/cursor presentation data. Native types differ by Minecraft version: <code>GuiGraphics</code> on 1.20.1/1.21.1/1.21.11 and <code>GuiGraphicsExtractor</code> on the 26.x targets. Compile against the matching target instead of assuming one native binary fits all versions.</p>
+<p><code>withClip(x, y, width, height, draw)</code> and <code>withTransform(x, y, scale, draw)</code> restore the parent scissor/pose in <code>finally</code>, including nested scopes. Clip dimensions must be nonnegative; transform positions must be finite and scale finite/positive. Clip coordinates follow the current native render pose. Apply the matching inverse transform in hit testing. <code>DesktopScrollState</code> provides bounded pixel scrolling, uniform-row virtualization, visible ranges/overscan and the corresponding row hit test. It does not own your model, variable-height layout or fetching policy. Existing helpers include text editing, buttons, slot/virtual grids and scrollbars; arbitrary trees, tabs and animations may use your own UI framework.</p>
+<p>An optional <code>DesktopWindowPresentation</code> adds:</p>
+<ul>
+<li><code>renderBehindFrame</code>: attached decorations beneath the Salt frame.</li>
+<li><code>desiredWindowSize</code>: native layout-driven size updates.</li>
+<li><code>externalRegions</code>: visual, interactive and position-constraining areas independently. Transient popups can remain interactive without changing window placement bounds.</li>
+<li><code>updateTooltipState</code>: hover activity notification, including inactive notifications for obscured native controls.</li>
+<li><code>cancelPointer</code>: cancellation without a release/commit when capture is lost.</li>
+</ul>
+<p><code>renderOverlay</code> belongs to the main definition and runs above that window&#x27;s content/frame, below windows later in the stack. External controls and popups must report their hit regions. Return real slots from <code>slotAt</code> only when the visible area represents those slots; arbitrary virtual hit targets stay in your own input callbacks. Avoid duplicate native and Salt slot-click handling.</p>
+<p>Implement <code>DesktopWindowPresentation</code> alongside your <code>DesktopWindowDefinition</code>. Its <code>externalRegions</code> query must be side-effect free. <code>DesktopWindowRegion</code> accepts negative window-relative positions, nonnegative dimensions and independent <code>visual</code>, <code>interactive</code> and <code>constrainsWindow</code> flags. The <code>visual</code>, <code>interactive</code> and <code>visualAndInteractive</code> factories constrain placement; <code>transientVisualAndInteractive</code> creates a popup that does not. Use <code>updateTooltipState(..., active)</code> to clear native hover state when the window loses tooltip ownership.</p>
+<p>Reuse your content/widgets, adapting position, focus, rendering and input ownership. Do not replace the game&#x27;s active screen from a hosted render callback or blindly delegate a whole container screen that assumes <code>player.containerMenu</code>, one global cursor or native player-inventory placement. Per-version native behavior outside these hooks requires an explicit adapter. The examples and existing Tom&#x27;s/Sophisticated integrations demonstrate supported patterns; they are evidence for those patterns, not proof that every UI framework can be hosted unchanged.</p>
+</section>
+<section class="chapter" id="geometry-and-viewport-fallback">
+<h2 id="heading-geometry-and-viewport-fallback">Geometry and viewport fallback</h2>
+<p>All surface/content sizes and regions use scaled GUI pixels, not framebuffer pixels. <code>windowX/Y</code> are screen-space origins; regions are relative to that origin. <code>contentX/Y</code> add the committed left/top insets. Content dimensions subtract both opposite insets and clamp at zero. <code>DesktopInsets.ZERO</code> imposes no padding. Mod-owned surfaces may deliberately declare their own insets. Default/minimum/maximum/snap sizes all describe the whole surface.</p>
+<p><code>DesktopInsets.surfaceSize(contentWidth, contentHeight)</code> adds insets with checked arithmetic. <code>contentWidth(surfaceWidth)</code> and <code>contentHeight(surfaceHeight)</code> subtract them and allow a zero-size interior. <code>surfaceTransform()</code> and <code>contentTransform()</code> provide translation/scale helpers: <code>screenX/Y</code>, exact <code>localX/Y</code> inverses and <code>pixelX/Y</code> rounded with <code>Math.round</code>. Native drawing uses its target&#x27;s float transform; use integer translation and integral positive scale for crisp pixel art. Region rectangles are half-open on right/bottom. Negative region origins support attachments; negative dimensions and arithmetic overflow are rejected.</p>
+<p>The surface&#x27;s alpha, declared visual regions, pointer regions and placement constraints are independent. Salt does not sample image alpha. Declare a transparent cutout as absent from the visual/hit shape when clicks should reach another desktop window. A transparent visual corner may still have an interactive region when the owner must block input there. Shape never bypasses modal or world-input rules. Declaring a region does not draw or scissor it; your renderer owns its actual pixels.</p>
+<p><code>CLAMP</code> fits the surface to the viewport and requires your renderer to adapt to the resulting size; it may reduce below an author minimum when the viewport is smaller. <code>PRESERVE</code> retains unscaled dimensions and may overflow; it preserves access to the base window&#x27;s top edge where possible. <code>ADAPT</code> also preserves pixels and calls <code>surfaceUnavailable(context)</code> once per unavailable surface/viewport size, including placement-constraining attachments. Select a compact internal layout, new desired size or another policy there. The default callback leaves the dimensions preserved. A newly fitting layout resets that notification. No policy scales textures automatically or silently hands a detached authenticated session to an unrelated native screen.</p>
+<p>Use <code>environmentChanged(context, environment)</code> to react to GUI scale or viewport changes. Client-only ordinary UI hooks can choose their normal screen when <code>openView</code> is unavailable. For menu-backed content, implement a compact view or deliberate overflow in the same authenticated model. A fallback that opens a new native menu must follow your mod&#x27;s normal server-authorized opening flow. Do not assign <code>minecraft.screen</code> or <code>player.containerMenu</code> to bypass it.</p>
+<p><code>TerminalWindow</code> demonstrates <code>ADAPT</code>: a small viewport reduces the virtual catalog&#x27;s dimensions and hides the inspector attachment while retaining its state. It keeps a readable 160×120 minimum and reserves room for the protruding tabs. Below that minimum it deliberately retains unscaled dimensions. Its inventory/menu topology never changes when selecting the compact layout.</p>
+<p>Author minimum sizes take precedence over an inconsistent author maximum; provide <code>maxSize &gt;= minSize</code> to avoid that normalization. Salt applies author limits on initial/restored geometry, desired-size updates, handle resize, dragging and snapping. Preservation policies retain dimensions rather than shrinking to make attachments fit. <code>FIXED</code> disallows user resize; a provider may still update its desired size for an internal mode change.</p>
+</section>
+<section class="chapter" id="definition-defaults-and-callback-failures">
+<h2 id="heading-definition-defaults-and-callback-failures">Definition defaults and callback failures</h2>
+<p>A definition can override only the capabilities it needs. <code>createState</code> returns null by default; <code>title</code> returns <code>originalTitle</code>; <code>defaultSize</code> uses the setup context&#x27;s dimensions; <code>minSize</code> is 64×48; <code>maxSize</code>, <code>snapSize</code>, <code>decoration</code>, <code>createRecipeBook</code> and <code>slotAt</code> return null. <code>resizePolicy</code> is <code>FIXED</code>, <code>options</code> enables all seven permissions, <code>surface</code> is Salt&#x27;s normal surface, <code>popups</code> is empty and <code>layoutRevision</code> is an empty string. <code>modal</code> and <code>wantsTextInput</code> are false. Input, tooltip, traversal and dismissal callbacks return false; other notification/render/persistence callbacks do nothing. Default narration supplies the metadata title.</p>
+<p>Setup defaults for a client-only view are a 240×160 surface and 256×192 nominal content hints. Return your own surface dimensions when those hints do not describe your UI. Setup hints are not mandatory padding or an author minimum. Menu-backed setup dimensions depend on the captured menu; choose explicit dimensions when preserving original artwork.</p>
+<p><code>surface</code> and custom decoration <code>metrics</code> must be non-null; null popup/attachment lists are treated as empty. Prefer the documented defaults rather than relying on defensive normalization of malformed queries. Definitions and their queries run on the client thread. Callback exceptions produce structured diagnostics; an initialization failure rejects that window, input failures are treated as unhandled and rendering failures skip that callback. A failure before a layout commits retains its previous surface/region snapshot; Salt cannot undo native widget changes made in <code>prepareLayout</code>. Salt does not roll back mutations you made in your model or server handler. Validate before mutation and handle operation-specific errors in your own UI. Closed lifetimes suppress subsequent rendering/input/model callbacks; <code>closed</code> is the final definition notification.</p>
+</section>
+<section class="chapter" id="computed-inventory-gesture-presentation">
+<h2 id="heading-computed-inventory-gesture-presentation">Computed inventory gesture presentation</h2>
+<p><code>DesktopGestureSnapshot</code> contains <code>id</code>, <code>phase</code> (<code>NONE</code>, <code>PENDING</code>, <code>DISTRIBUTING</code>), native pointer <code>button</code>, container <code>quickCraftType</code>, nullable <code>ownerInstanceId</code>, immutable <code>slots</code>, computed <code>carriedPreview</code>, nullable <code>carriedCountText</code>, and <code>pointerCaptured</code>. It belongs to the current callback, not a mutable menu transaction. Stack accessors return copies. <code>slot(sessionId, menuSlotId)</code> resolves a preview by authenticated session and logical id; null means no affected preview for that slot.</p>
+<p>Each <code>DesktopSlotPreview</code> contains <code>sessionId</code>, <code>menuSlotId</code>, a computed <code>displayStack</code>, nullable <code>countText</code>, <code>eligible</code>, <code>selected</code> and <code>hovered</code>. Distribution counts include current target contents, capacity, Salt&#x27;s configured slot policies and global selected target count. Targets may belong to several windows/sessions. A non-participating window sees phase <code>NONE</code>; it must not paint another owner&#x27;s targets as its own. Use the actual slot stack when no preview exists. <code>OriginalSlotArtwork</code> is the complete custom-rendering example; it never mutates a slot or the shared carried stack.</p>
+<p><code>gestureChanged(context, DesktopGestureEvent)</code> reports a stable gesture id and <code>STARTED</code>, <code>UPDATED</code>, <code>COMPLETED</code> or <code>CANCELLED</code> with a reason. A terminal callback observes cleared pending presentation. Completion means the pointer gesture ended; server authorization/reconciliation still determines the inventory result. Cancellation covers discarded pending clicks, invalid targets, owner disposal/hiding/minimization/ghosting and surface-mode changes. Salt handles releases consumed by its inventory routing. Clear your own transient native previews from terminal callbacks or read the new snapshot; global mouse polling is unnecessary. Custom native widget capture is independently exposed by <code>pointerCaptured()</code> and the presentation&#x27;s <code>cancelPointer</code> hook.</p>
+<p>Keep the original menu slot topology and backing storage when omitting player inventory/hotbar visuals. Bind ownership through <code>DesktopMenuBindings</code>; hidden player-owned slots remain in the menu and are presented through Salt&#x27;s shared inventory. A logical id need not equal a physical container index. Dynamic wrappers supply a current resolver and slot snapshot. Hidden real slots cannot be returned as clickable targets. Virtual entries have no real logical slot; use authenticated mod payloads with server-owned quantity and permission checks instead.</p>
+</section>
+<section class="chapter" id="native-widgets-popups-and-accessibility">
+<h2 id="heading-native-widgets-popups-and-accessibility">Native widgets, popups and accessibility</h2>
+<p><code>DesktopWidgetHost</code> is an optional per-instance router for existing <code>AbstractWidget</code>s. <code>add(id, widget, semanticLabel[, cancellation])</code> rejects duplicate/blank ids, reused widget instances and null arguments. Position widgets in <code>prepareLayout</code>; paint with <code>host.render(context)</code> and delegate mouse/key/character methods. <code>focusNext(forward)</code> cycles visible active widgets; wire it from the definition&#x27;s <code>focusNext</code> callback, used for unconsumed Tab/Shift-Tab. Hidden or disabled widgets lose focus and captured input before routing/rendering/narration; cancellation is delivered once. <code>clearFocus</code>, nullable <code>focusedId</code>, <code>hoverActive</code>, <code>cancelPointer</code> and <code>narrate(output)</code> manage their corresponding local state. The cancellation hook must clear custom drag state without executing a release action. Cancel capture before replacing an internal widget set. Native widgets still own caret, selection, button actions and focus artwork.</p>
+<p>Override <code>narrate(context, NarrationElementOutput)</code> to describe the hosted view and its focused controls. The default narrates <code>title(context)</code> even without visible host chrome. Salt delegates narration to the modal/keyboard owner. <code>host.narrate</code> preserves the native widget&#x27;s title, role and value, then adds your semantic label as a hint. Supply meaningful titles/labels and visible focus cues for custom controls. <code>ClientOnlyWindow</code> demonstrates both keyboard routing and narration; mod-owned surfaces retain the same accessibility hooks.</p>
+<p><code>popups(context)</code> returns immutable descriptors in bottom-to-top order within this owner. <code>DesktopPopup(id, regions, modal, dismissOnOutside, dismissOnEscape, dismissOnFocusLoss)</code> rejects blank ids; duplicate ids in one layout are errors. Regions become transient <code>POPUP</code> roles and do not constrain window placement. The integration still paints and routes the popup&#x27;s widgets in its owner group. <code>context.popups()</code> exposes the committed list. Popup modality is desktop-wide while its owner is active; hidden/minimized/ghosted owners cannot block input.</p>
+<p><code>dismissPopup(context, id, reason)</code> receives <code>OUTSIDE_PRESS</code>, <code>ESCAPE</code> or <code>FOCUS_LOST</code>. Return true after removing it from the model and next paint; Salt cancels pointer capture and commits the new hit layout. A modal popup consumes an outside press even if dismissal is declined. A nonmodal dismissal lets normal routing continue. Escape checks the last declared popup first, before owner key input. Dismiss flags select requests, not forced mutation of your model. Close nested subview tasks/subscriptions yourself when dismissing them. Persistent panels use placement-constraining surface/external regions; popup descriptors are transient but remain owned by that window.</p>
+<p>Before replacing an internal view, tab layout or set of real slot targets, call <code>windowHandle().cancelInput()</code> on the client thread. It cancels that owner&#x27;s pointer capture, window drag/resize and any slot gesture involving it; other participating owners receive the same terminal cancellation. An unrelated owner&#x27;s slot gesture remains intact. If called during a handled press, Salt does not capture the replacement view for that old press. It returns false for a closed lifetime and does not undo actions already sent to the server. Cancel or close the old subview&#x27;s own asynchronous subscriptions separately.</p>
+</section>
+<section class="chapter" id="input-focus-and-window-constraints">
+<h2 id="heading-input-focus-and-window-constraints">Input, focus and window constraints</h2>
+<p>Mouse presses go to the topmost hovered window or modal owner. A handled API press captures subsequent drag/release events for that owner, even outside its rectangle. Mouse motion reaches the capture owner or hovered window. Capture is cancelled on hide, ghost, minimize, removal and modality changes; <code>cancelPointer</code> must clear pending gestures without committing them.</p>
+<p>Keyboard and character input go to one active API keyboard owner. <code>keyboardFocusChanged</code> reports ownership transitions. <code>keyboardFocused()</code> differs from <code>focused()</code>: the latter is the selected inventory transfer target. Opening/clicking a client-only view does not redirect Shift-click transfers. A focused editor returning <code>wantsTextInput=true</code> suppresses desktop shortcuts and movement. Forward key press/release and character events to the appropriate native widget; it still owns its internal caret/selection. Release events clear movement key state.</p>
+<p><code>modal(context)</code> is a pure query. An active modal stays on top and blocks pointer, keyboard, hotbar/world and inventory interaction behind it. It also takes keyboard ownership. Minimized, hidden and ghost windows cannot hold modality. Consume Escape in your callback to dismiss an internal modal panel; otherwise Escape closes a closable modal owner.</p>
+<p>Use <code>DesktopWindowOptions</code> to allow moving, minimizing, pinning, ghosting, user closing, locking and management menus independently. Unsupported controls are hidden. Constraints apply when restoring saved state and during desktop updates. An owner&#x27;s permanent handle close and world/session teardown can dispose a view even if user closing is disabled.</p>
+<p><code>DesktopResizePolicy.FIXED</code> disables interactive resize, <code>FREE</code> permits arbitrary resizing and <code>STORAGE_GRID</code> uses grid-oriented resizing. Sizes describe the surface including its declared insets. Supply <code>defaultSize</code>, <code>minSize</code>, optional <code>maxSize</code> and <code>snapSize</code> for your layout. Defaults are a 64×48 minimum, no integration-specific maximum and all seven window options enabled. Your layout must honor these dimensions and update child geometry after moving/resizing; side-region placement may constrain what fits on a small desktop.</p>
+<p>Handles expose <code>state()</code>, <code>available(action)</code>, <code>request(action)</code>, <code>moveTo(x, y)</code> and <code>resizeTo(width, height)</code>. Requests use <code>DesktopWindowAction</code> for focus, user close, minimize/restore, pin/unpin, ghost/unghost, lock/unlock and <code>MANAGEMENT_MENU</code>. Right-click an explicit <code>MOVE</code> region to open the desktop management menu. A custom button may call <code>request(MANAGEMENT_MENU)</code>. Salt anchors the menu to its ellipsis control when present, otherwise to the surface&#x27;s upper-right edge, and keeps it in the viewport without reserving host padding. Escape dismisses this menu before reaching the window&#x27;s key callback or closing its owner. Parameterized movement/resizing use their own methods; <code>request(MOVE)</code> and <code>request(RESIZE)</code> return false. <code>windowStateChanged(context, snapshot)</code> observes changed state. User actions honor permissions, modal ownership and stale handles. Permanent owner <code>close()</code> remains separate from user-close permission.</p>
+</section>
+<section class="chapter" id="lifecycle-persistence-and-threads">
+<h2 id="heading-lifecycle-persistence-and-threads">Lifecycle, persistence and threads</h2>
+<p>Client render/input/tick/lifecycle callbacks and view handle operations run on the client main thread. Common provider registration runs on the selected client/server initialization thread. Server session/payload callbacks run on the server thread. Marshal asynchronous model results to the appropriate main thread before touching a menu, window or widget. Do not retain a callback context or native graphics object beyond that callback.</p>
+<p><code>windowHandle().schedule(action)</code> may be called from a background thread; it queues an update and suppresses it if the window has closed before execution. <code>context.tasks()</code> supplies a lifetime-owned <code>DesktopWindowTasks</code> scope. <code>watch(stage, success, failure)</code> observes shared work without cancelling the shared stage; closing the returned subscription suppresses its results. <code>submit(executor, work, success, failure)</code> owns its work and supplies a cooperative cancellation predicate. Completion callbacks run through the owner on the client thread. Disposal closes the scope and suppresses queued/late results. Do not capture a live callback context in a worker; capture your mod-owned model or immutable request data instead.</p>
+<p>Start lifetime-scoped asynchronous observations in <code>opened</code> or later. Initial environment/preparation callbacks run before the window is open; updates scheduled for a not-yet-open lifetime may be suppressed. A subview replacement should close its own subscriptions while retaining the parent window&#x27;s task scope.</p>
+<p><code>createState</code> runs for each instance; the initial <code>environmentChanged</code> notification precedes surface preparation; <code>opened</code> follows creation/restoration. <code>moved</code>, <code>resized</code>, transfer-focus and keyboard-focus callbacks track desktop changes. Tick/animation callbacks continue per visible, non-minimized window. Ghosting retains the instance/state and emits <code>ghosted</code>/<code>unghosted</code>; it disables interaction and inventory actions. <code>closed</code> runs once on permanent disposal, including owner/world changes. The final closed-state notification precedes <code>closed</code>; preparation/render/input observers stop after disposal, including reentrant close from a callback. Release native resources and pending jobs there.</p>
+<p><code>loadLocalState</code>/<code>saveLocalState</code> use a per-window <code>CompoundTag</code> for UI preferences. Geometry/pins use Salt&#x27;s existing window-state partitioning. Client view identity includes view id and instance key. Menu-backed source keys identify real sources; avoid assigning identical source keys to distinct containers. Persist filters, selected tabs and layout preferences, not authoritative stacks or server authorization tokens. Reopening the same retained instance preserves its state; reconstructing one creates new state then loads local preferences.</p>
+<p><code>layoutRevision(context)</code> defaults to the empty string and is limited to 256 characters. Change it when saved geometry/local preferences no longer fit your UI schema. Salt stores its revision separately from your preferences; mismatches discard the old local tag and reset to the instance&#x27;s initial size before loading fresh preferences. Keep this revision per integration/layout, not tied to arbitrary runtime data.</p>
+<p><code>DesktopWindowEnvironment(viewportWidth, viewportHeight, guiScale, resourceRevision)</code> is delivered initially and when it changes. Resource reload increments <code>resourceRevision</code> and re-prepares retained windows on the client thread. Re-resolve your cached assets/styles when it changes; native texture ids use the reloaded resources. Salt cannot reconstruct arbitrary mod-specific cached renderer objects. Layout queries must be side-effect free except <code>prepareLayout</code>, and one completed layout supplies the surface, regions, popup descriptors and decoration metrics used by both paint and hit tests.</p>
+<p>Within a window group the order is underlays, surface/chrome, content/slots/widgets and its overlay/attachments. Later window groups cover earlier groups. Native render strata separate groups. Desktop management popups, shared cursor and tooltips are final desktop stages; a per-window overlay does not paint over later owners. Render callbacks may not replace the active screen or retain native graphics beyond the callback.</p>
+</section>
+<section class="chapter" id="server-actions-and-authority">
+<h2 id="heading-server-actions-and-authority">Server actions and authority</h2>
+<p>Use context helpers rather than sending another window&#x27;s vanilla container packet. Menu buttons, slot clicks and custom payloads include Salt&#x27;s connection/session authorization, state and ordered mutation handling. Each same-type menu has its own session and state. Salt checks capabilities, menu validity, visibility, state freshness, player state and rate/size bounds before dispatching authorized custom actions.</p>
+<p>Register a channel with <code>DesktopServerApi.registerPayload</code> and send using <code>DesktopInputContext.sendPayload</code>. Raw bytes work on every target. Newer targets also provide registry-aware typed codecs through <code>DesktopPayloadCodecs</code>; decoding rejects oversized/trailing input. Server payload contexts expose the authenticated player, menu, per-session state and source key, plus <code>sendToClient</code> and <code>broadcastChanges</code>.</p>
+<p>Client replies arrive in the definition&#x27;s <code>customPayload(context, channel, data)</code> callback for that session. Server window handlers have <code>createState</code>, <code>opened</code>, <code>tick</code>, <code>closed</code>, <code>visibilityChanged</code> and <code>pinChanged</code> callbacks. Recipe-browser transfers stay disabled for custom menus until <code>validateTransfer</code> returns an allowed <code>DesktopTransferDecision</code> based on the server-resolved recipe and real destination slots. The <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/blob/master/docs/markdown/recipe_transfer_api.md">recipe-transfer reference</a> gives signatures, request/session fields, construction rules, limits and a consumer pattern.</p>
+<p>Initialize every field used by your menu&#x27;s full synchronization before that first write. Server <code>createState</code> runs before the synchronizer is installed; <code>opened</code> follows installation and its initial full synchronization. Menu construction or <code>createState</code> can initialize those values. A first <code>tick</code> or <code>opened</code> callback is too late for values serialized during opening. This matters for native mod synchronization as well as Salt&#x27;s slot/data snapshot.</p>
+<p>Your handler must validate operation-specific permissions, indexes, quantities and storage state. Treat virtual-entry ids/counts as requests, never as authoritative stacks. Preserve backing inventory rules, <code>mayPlace</code>/<code>mayPickup</code>, source locks and cursor reconciliation. Use <code>reject(reason)</code> for a diagnostic on a mod-specific refusal, then return from your handler. Its reason is limited to 512 characters. It records a warning; it does not abort execution, undo mutations or send an error reply by itself. Send your own response if your UI needs one. If a native handler needs a temporary active-menu assumption, adapt it explicitly; a context does not make the player&#x27;s global menu point at this detached session.</p>
+<h3 id="heading-transport-and-capture-bounds">Transport and capture bounds</h3>
+<div class="table-scroll"><table><thead><tr><th scope="col">Field</th><th scope="col">Limit</th></tr></thead><tbody>
+<tr><td>Opening data or custom payload body</td><td>32 KiB</td></tr>
+<tr><td>Client-advertised supported menu ids</td><td>1,024</td></tr>
+<tr><td>Explicit force-enabled menu ids</td><td>256</td></tr>
+<tr><td>Wire identifier text</td><td>256 characters</td></tr>
+<tr><td>Source text</td><td>512 characters</td></tr>
+<tr><td>Desktop container sessions</td><td>16</td></tr>
+<tr><td>Items in an opening snapshot</td><td>8,192</td></tr>
+<tr><td>Menu data values</td><td>4,096</td></tr>
+<tr><td>Protocol envelope</td><td>1 MiB</td></tr>
+</tbody></table></div>
+<p>The session/slot limits govern real menus, not the length of your virtual catalog. Keep large catalogs in your mod&#x27;s model and use bounded paging/synchronization through your own actions. Salt&#x27;s capability lists are separate from force overrides; do not use force capture as a substitute for registering a renderer.</p>
+</section>
+<section class="chapter" id="shared-inventory-companions-and-original-surface-controls">
+<h2 id="heading-shared-inventory-companions-and-original-surface-controls">Shared inventory companions and original-surface controls</h2>
+<p>Use a real server menu for an inventory companion. A client-only view cannot supply server authorization, a backing inventory, slot permissions or a shared inventory cursor. The <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/tree/master/api-examples/ui/src/main/java/example/companion">complete consumer sources</a> implement a main machine window and a nine-slot tool inventory. Their ordinary menus and source model contain no Salt references. The <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/tree/master/api-examples/companion-demo">standalone demonstration</a> supplies normal loader registration and fallback screens.</p>
+<h3 id="heading-source-identity">Source identity</h3>
+<p><code>DesktopInventoryIdentity.reference(Object inventory)</code> requires a non-null, stable backing inventory or source object. Equality uses <code>==</code>, including when two objects have identical <code>equals()</code> values. Reconstructing the identity around that same object deduplicates it. Creating a new wrapper object on every acquisition does not. For capability/resource-handler wrappers, use the stable underlying inventory owner, not the transient wrapper.</p>
+<p><code>DesktopInventoryIdentity.persistent(String namespace, UUID sourceId)</code> requires a nonblank namespace of at most 128 characters and a non-null server-assigned UUID identifying the actual source. Equality compares namespace and UUID values. Use this when a mod reconstructs wrappers around a persistent inventory. Persist the UUID on the source; a copied/new tool must receive a new UUID. Neither the item type, menu type, display title, inventory position nor player identity alone identifies a tool. <code>equals(Object)</code> and <code>hashCode()</code> follow these identity rules. Keys are scoped to one player&#x27;s current desktop connection, so authorization is never inherited from another player or connection.</p>
+<p>Two main windows using the same actual Network Tool acquire one companion. Two different tools acquire two companions. A persistent identity does not grant permission or prove that a replacement object is the original inventory: the source authorization guard must independently verify that.</p>
+<h3 id="heading-construct-and-acquire-a-real-inventory-session">Construct and acquire a real inventory session</h3>
+<p><code>DesktopCompanionSpec(DesktopInventoryIdentity identity, MenuProvider provider, Predicate&lt;ServerPlayer&gt; authorization)</code> rejects null arguments. Its record accessors return those three values. The provider must construct a registered <code>AbstractContainerMenu</code> whose slots directly access the real inventory and retain its native restrictions and bookkeeping. It must not create a copied server <code>SimpleContainer</code>, proxy another window&#x27;s slots or depend on another parent menu remaining open. A synchronized client menu replica is normal and required; it is not authoritative storage.</p>
+<p>Register the companion&#x27;s server handler using <code>DesktopServerApi.registerWindow</code>, its renderer using <code>DesktopClientApi.registerWindow</code>, and its client factory using <code>DesktopMenuFactories.register</code> when opening data is needed. Register <code>DesktopServerApi.registerOpeningData</code> to serialize the actual source information your client factory needs. Both sides must advertise support for the companion menu. Salt does not use force capture as permission, manufacture a menu type or register a vanilla fallback screen for you.</p>
+<p>Acquire from the parent&#x27;s <code>DesktopServerWindowHandler.opened</code> or <code>tick</code> callback:</p>
+<pre><code class="language-java">// In a registered DesktopServerWindowHandler&lt;CompanionMainMenu, ...&gt; callback:
+ToolInventorySource source = parent.menu().tool;
+var lease = parent.acquireCompanion(new DesktopCompanionSpec(
+    DesktopInventoryIdentity.reference(source.inventory),
+    new SimpleMenuProvider((id, inventory, player) -&gt;
+        new ToolInventoryMenu(id, inventory, source),
+        Component.literal(&quot;Network Tool upgrades&quot;)),
+    player -&gt; source.authorized(player)));</code></pre>
+<p>The distributed <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/blob/master/api-examples/ui/src/main/java/example/companion/CompanionCommonIntegration.java">common provider</a> includes imports, registration, opening serialization and a complete callback implementation. The <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/blob/master/api-examples/ui/src/main/java/example/companion/CompanionClientIntegration.java">client provider</a> includes strict decoding and both window definitions. All associated source files are compiled by <code>verifyApiExamples</code> on every supported target.</p>
+<p><code>DesktopServerSessionContext.acquireCompanion(DesktopCompanionSpec)</code> returns <code>Optional&lt;DesktopCompanionLease&gt;</code>. It is available only for a live independent parent after its first snapshot has been sent. It returns empty before <code>opened</code>, for unsupported menus, inactive desktops, invalid parents/sources or the sixteen-session cap. Acquisition cannot evict a parent to make room. A companion cannot itself acquire another companion; cyclic/nested companion ownership is intentionally unsupported. Invalid opening data or a throwing provider is an integration error and can throw; the partially opened companion is cleaned up. Keep your normal tool UI available when Salt is absent or acquisition is unavailable.</p>
+<p>Acquisition is idempotent for a parent lifetime plus inventory identity: an existing association returns the same live ownership object. A new parent reuses the existing companion session without reconstructing its menu, invoking its provider again, resetting its state or changing its position. An association released while another parent retains the companion can be acquired again, creating a new lease to the same companion. After final disposal, acquisition creates a new menu/window lifetime.</p>
+<p>The first acquisition supplies that lifetime&#x27;s menu, title and opening data. All owners using the identity must describe the same backing inventory and compatible slot rules. Repeated acquisition of an existing parent association retains its original specification/guard; it is not a way to replace them. Release and reacquire an association when its captured authorization requirements change. Each owner&#x27;s guard is checked independently, and at least one valid owner must remain; the companion menu&#x27;s own <code>stillValid</code> must also remain true.</p>
+<p>The source guard runs on acquisition, server ticks and inventory authorization. Capture the exact source incarnation, backing inventory and required permissions; verify that the tool still exists at the authorized location or through your own stable locator. Checking only a title, item type or UUID of a replaceable object is insufficient. A false or throwing guard releases that parent&#x27;s authorization. Permission loss, removal or replacement that invalidates all guards disposes the companion. A world change closes the old world&#x27;s desktop sessions and expires their ownership references, including portable menus whose own validity check would otherwise remain true. A source moved or replaced by another operation can invalidate a gesture before its next authorized mutation. Your custom server payload handlers still validate their own quantities, operation permissions and backend transactions.</p>
+<h3 id="heading-ownership-and-teardown">Ownership and teardown</h3>
+<p>Every operation on <code>DesktopCompanionLease</code>, including its getters, uses the server main thread. <code>sessionId()</code> returns the companion&#x27;s genuine authenticated desktop session ID. IDs are connection-local routing addresses, not persistent identity and not authorization tokens. <code>isOpen()</code> reports whether this parent association and companion lifetime are still registered; an external invalidation is reflected when the guard is checked, no later than the next server tick. <code>close()</code> releases only this parent&#x27;s association. Repeated release is harmless. Do not call it from a client callback or a worker thread.</p>
+<p>Closing the parent automatically releases its lease before integration teardown callbacks; consumers do not need a mandatory <code>closed</code> cleanup hook for this. When a second owner remains, the companion&#x27;s own menu/token stays valid and receives a small ownership metadata update. Closing the last owner closes the companion once, invalidates all leases and its client handle, cancels interaction and delivers its normal <code>closed</code> callback. Disconnect/desktop session teardown clears the ownership registry. World changes and invalid menu/source authorization also dispose it. Release leases early if a parent changes its associated tool; acquisition alone does not release a lease for another inventory identity.</p>
+<p>Dimension travel invalidates old-world client handles and cancels queued inventory intents, including while the desktop is hidden. It preserves the existing connection negotiation and mutation sequence; the new world may open fresh sessions through the same connection. Disconnect ends that connection as well. A late old-window action cannot restore a disposed lifetime.</p>
+<p><code>DesktopWindowContext.companion()</code> identifies an authenticated companion. <code>companionOwnerSessionIds()</code> returns an immutable current list of parent session IDs, or an empty list on independent windows/views. <code>visible()</code> and <code>DesktopWindowState.visible()</code> report eligible contents: disposed, hidden, minimized and ghosted windows return false. Retain handles or immutable snapshots; do not retain callback contexts, server session contexts, live slot previews or authorization tokens.</p>
+<h3 id="heading-inventory-routing-and-cursor-conservation">Inventory routing and cursor conservation</h3>
+<p>Use the companion&#x27;s own <code>DesktopSlotContext.menuSlotHit</code>/<code>containerSlotHit</code> and <code>DesktopInputContext</code> slot/transfer methods. Its <code>containerSlots</code>, <code>menuSlot</code>, <code>menuSlotId</code>, <code>sessionId</code>, computed gesture preview and <code>carriedStack</code> refer to its own menu. Pickup/place, Shift-click, quick-craft dragging, cancellation, pickup-all and permitted custom actions use the existing authenticated session routing. Its lifetime is independent of whichever parent opened first.</p>
+<p>Slot <code>mayPlace</code>, <code>mayPickup</code>, activity, maximum stack size and the integration&#x27;s <code>DesktopMenuBindings.GesturePolicy</code> remain authoritative. Native quick-move bookkeeping can be retained through that policy. For custom resource-handler slots, register <code>physicalOwner(menu, slot)</code> and <code>physicalIndex(menu, slot)</code> for the actual backing storage. Equivalent representations must return the same owner object by reference and index. This lets Salt deduplicate physical slots across transfer/drag scans; a dummy vanilla container or unique wrapper per representation cannot safely identify physical storage. The <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/blob/master/docs/markdown/desktop_window_api.md#nonstandard-slots-and-storage">inventory routing chapter</a> describes the other binding methods.</p>
+<p>Recipe-transfer source discovery also checks companion authorization before using its inventory, even when the native menu&#x27;s <code>stillValid</code> still returns true and the next lifecycle tick has not run. A revoked owner&#x27;s guard cannot contribute items through another window&#x27;s recipe transfer; another valid owner can keep that same companion usable.</p>
+<p>There is one canonical server cursor on the player inventory menu. Companion acquisition and metadata updates do not settle it, replace it or create a second cursor. When a desktop menu is removed, Salt clears only that menu&#x27;s copied cursor before invoking native <code>removed</code>, preserving the canonical cursor and avoiding double settlement. Parent closure cancels a pending desktop inventory gesture; already authorized mutations remain committed and the remaining cursor can be placed normally. Final companion disposal cancels its input and retains the canonical cursor. Minecraft&#x27;s ordinary disconnect/world/player teardown retains its own normal cursor settlement behavior.</p>
+<h3 id="heading-drag-only-presentation-visibility-and-focus">Drag-only presentation, visibility and focus</h3>
+<p>Supply <code>DesktopWindowSurface.modOwned(...)</code> and draw your own frame/title. <code>DesktopWindowOptions.DRAG_ONLY</code> is <code>(true, false, false, false, false, false, false)</code> for movable, minimizable, pinnable, ghostable, closable, lockable and management-menu permissions. A companion&#x27;s manager policy enforces this even if a renderer accidentally returns broader options. Resize is also denied. There are no native title controls, title menu, independent close/pin/minimize/ghost/lock actions or keyboard shortcuts that bypass the policy. <code>available</code>/<code>request</code> and <code>moveTo</code> validate the same policy and current modal/lifetime state. <code>DesktopWindowHandle.close()</code> returns false for a companion: release a server lease, close its parents or let teardown dispose it. Ordinary independent window handles retain permanent owner-driven close.</p>
+<p>On initial opening, the companion tries the right, left, below and above sides of the first eligible owner, in that order, with a four-GUI-pixel gap. It selects a side that fits the viewport before falling back to the declared viewport policy. It enters the normal stack just below that owner and does not open an extra player inventory, select an inventory-transfer target or take keyboard focus. Subsequent associations do not reposition or promote it. A user click may focus/promote it normally. Its overlay and artwork belong to that window group and respect foreground windows and modal blocking.</p>
+<p>An owner is eligible when its lifetime is open and its contents are neither minimized, ghosted nor persistently hidden. At least one eligible owner keeps the companion visible. If all owners become unavailable, the companion hides, loses focus/capture and cancels its gestures while keeping its menu and position. Restoring an eligible owner restores the companion without selecting it. An independent owner can be minimized while another still keeps the companion visible. A companion cannot independently restore itself while all parents are unavailable. Desktop-modal windows/popups block companion input just as they block other windows.</p>
+<p>If a parent closes during an inventory gesture, Salt cancels the pending gesture and preserves the shared cursor. A companion&#x27;s window drag may continue when another visible owner remains; losing the last eligible owner cancels that drag too. Server final release/invalidation cancels all companion input and invalidates its handle. Auto-opening or ownership updates do not call <code>focus</code>; consumers should also avoid doing so from their <code>opened</code> callback.</p>
+<h3 id="heading-manager-controls-inside-original-artwork">Manager controls inside original artwork</h3>
+<p><code>DesktopSurfaceControl(DesktopWindowControl control, DesktopWindowBounds bounds)</code> accepts <code>CLOSE</code>, <code>PIN</code>, <code>MINIMIZE</code> and <code>ELLIPSIS</code>. Its accessors return the kind and immutable surface-relative rectangle. <code>DesktopWindowBounds(x, y, width, height)</code> requires positive dimensions and checked coordinates. The manager rejects duplicate kinds and overlapping rectangles during layout preparation, retaining the prior committed geometry on a failed preparation. Declare controls through <code>DesktopWindowDefinition.managementControls(context)</code>; the default is an empty list. They are opt-in and used only on mod-owned surfaces.</p>
+<p><code>renderManagementControls(DesktopRenderContext&lt;T,S&gt;, List&lt;DesktopControlState&gt;)</code> paints the controls after that window&#x27;s original content and before the next window. It is also called for a minimized mod-owned window so the consumer can paint its original collapsed title and Restore button. The default does nothing; declaring controls requires drawing them. Salt adds no backing fill, title, frame, shadow, padding or control textures. The <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/blob/master/api-examples/ui/src/main/java/example/companion/CompanionMainWindow.java">main-window example</a> defines 11×11 controls, original texture dimensions, gaps, title-space measurement, all rendering states and native slot hits.</p>
+<p><code>DesktopControlState(control, bounds, hovered, pressed, enabled, selected, keyboardFocused)</code> is an immutable paint snapshot; its bounds are absolute GUI pixels, already translated from the committed surface geometry. The six-argument constructor defaults <code>keyboardFocused</code> to false for ordinary decoration renderers. <code>hovered</code> respects topmost routing; <code>pressed</code> tracks the owning press until release/cancellation; <code>enabled</code> reflects live action permissions/modality; <code>selected</code> means pinned, minimized or the management menu open; <code>keyboardFocused</code> exposes manager keyboard traversal. Reading/mutating a detached snapshot cannot change permissions. A stale handle returns false for actions; it cannot revive a window.</p>
+<p>Close routes <code>USER_CLOSE</code>, Pin routes <code>PIN</code>/<code>UNPIN</code>, Minimize routes <code>MINIMIZE</code>/<code>RESTORE</code>, and More routes <code>MANAGEMENT_MENU</code>. Action permissions are checked again on release/activation. Title controls outrank MOVE regions. The manager supplies translated hover tooltips, including Unpin/Restore labels, anchors More to its declared rectangle and supplies narration for keyboard-focused controls. Alt+F10 enters enabled management controls directly, before native widgets consume keys, so controls remain accessible even when a native widget host wraps its own traversal. Escape leaves control focus. Unconsumed Tab/Shift-Tab also traverses enabled controls in declaration order after the integration&#x27;s native widget traversal. Enter/Space activates the focused control; traversal leaves the control set at its ends, allowing your <code>focusNext</code> hook to continue. Modal blocking and disposal cancel access.</p>
+<p><code>DesktopWindowOptions(movable, minimizable, pinnable, ghostable, closable, lockable, managementMenu)</code> independently restricts those behaviors, including keyboard/actions/context menus. <code>DEFAULT</code> enables all seven; the five-argument constructor retains ordinary-window defaults for lock/menu behavior. Forbidden native commands are removed from the management menu. Minimized mod-owned contents are not rendered, but their declared controls remain clickable so Restore can work. Rendering a collapsed original title is the integration&#x27;s responsibility; Salt does not draw one for you.</p>
+<p>Reserve the actual control rectangles before laying out your original title, search box or tabs. Compute the first control&#x27;s x-coordinate, subtract the title&#x27;s starting x and desired gap, and use <code>fontWidth</code>/<code>trimToWidth</code>; the complete example demonstrates this. Alternatively reposition controls or an original widget at layout preparation. Retain your original GUI-pixel tab width/height, visible borders, padding and hit rectangles. Draw the existing texture at its original source/destination dimensions, declare its real visual/hit regions and choose PRESERVE or ADAPT for small viewports. GUI scale multiplies GUI pixels at the framebuffer; Salt does not force a tab&#x27;s scaling or replace its texture.</p>
+<h3 id="heading-matching-the-controls-on-salts-vanilla-windows">Matching the controls on Salts vanilla windows</h3>
+<p>These are the standard Salts controls used on vanilla Minecraft container windows. <strong>All permitted controls should either be stretched out into the complete expanded row, or compressed to the ellipsis (<code>…</code>, More) and <code>X</code> (Close).</strong> Expanded means separate buttons at their original size; do not stretch the button artwork. This is a two-state decision. There are no intermediate three/four/five-button compression stages, shrinking icons, reduced gaps or controls removed one at a time. Window permissions still apply: omit a forbidden More or Close, and show no management controls on a drag-only companion.</p>
+<p>The standard expanded order, from left to right, is Sort (when eligible), Focus, Pin, Lock, Link, Minimize, Close. Minimize appears when the desktop&#x27;s minimizable-windows setting and the window&#x27;s permission allow it. Sort appears only for an eligible inventory/storage source with negotiated sorting support. Filter unsupported controls before measuring the row. Pin/Unpin, Lock/Unlock and Minimize/Restore retain their positions when their state changes. The expanded native row does not include More; the compact row is More followed by Close. During compression, Sort, Focus, Pin, Lock, Link and Minimize move into More together, in that same order, subject to their permissions. Close remains in the title row and is not duplicated inside More. Temporarily disabled actions, such as modal-blocked controls, retain their committed geometry and use the public enabled state; they are not a new compression stage.</p>
+<p>For <code>DesktopChromeMetrics.SALT</code>, use 11×11-GUI-pixel buttons, a 3-pixel gap, a 2-pixel <strong>extra</strong> right inset and a 4-pixel top inset. The title starts at x=6, its text y=5, and its separation from the control row is 6 pixels. The default title bar is 16 pixels high. Measure the current full, untruncated title with the current font, including the component&#x27;s styling, before deciding whether to compress. Recompute on width, title, font/resource, options or eligible-control changes; do not use a fixed title character count or framebuffer pixels.</p>
+<p>Let <code>W</code> be the window width, <code>T</code> the measured full title width, and <code>n</code> the number of permitted expanded buttons. The reserved control width is <code>C(n) = n * (11 + 3) + 2</code>, which is the public <code>DesktopChromeMetrics.SALT.controlsWidth(n)</code>. Keep the expanded row when <code>W &gt;= 6 + T + 6 + C(n)</code>; compress the whole row when <code>W &lt; 6 + T + 6 + C(n)</code>. Exact equality stays expanded. There is no separate fixed minimum title-space threshold before compression: preserving the <strong>whole title</strong> with the whole expanded row determines the threshold. For five buttons the required width is <code>T + 84</code>; for six it is <code>T + 98</code>; with Sort making seven it is <code>T + 112</code>. For example, a measured 60-pixel title and six buttons stay expanded at width 158, and switch to More/Close at width 157.</p>
+<p>After choosing the row, let <code>k</code> be its actual button count and <code>i</code> its zero-based left-to-right index. The window-relative bounds are <code>x = W - (k - i) * 14 - 2</code>, <code>y = 4</code>, <code>width = 11</code>, <code>height = 11</code>. Draw and hit-test these same bounds. The extra right inset includes a separate trailing 3-pixel control gap: the rightmost Close starts at <code>W - 16</code> and ends at <code>W - 5</code>, leaving <strong>5 pixels total</strong> to the window edge, not 2. Compact More starts at <code>W - 30</code>. At width 176, the six-button expanded x positions are 90, 104, 118, 132, 146, 160; the compact positions are 146 and 160. These formulas preserve Close&#x27;s location when switching modes.</p>
+<p>The remaining title width is <code>max(0, W - 6 - 6 - C(k))</code>. With both compact buttons, <code>C(2)=30</code>, so the title gets <code>max(0, W - 42)</code>. Salts then keeps the full title if it fits, otherwise shortens it with the literal <code>...</code> suffix. Its minimum title text is the first character plus <code>...</code>, or just <code>...</code> for an empty title. Standard vanilla-window sizing reserves at least <code>42 + fontWidth(minimumTitleText)</code> for that compact title/row, together with the window&#x27;s content minimum. A mod-owned surface must supply a suitable <code>minSize</code> or adapted layout itself. Do not let the minimum suffix overlap controls when a custom title band is narrower than that minimum; clip it to the measured title area or adapt the layout.</p>
+<p>For an integration-owned title with native widgets occupying space, apply the same calculation to the <strong>usable title band</strong>. Let <code>L</code> be the actual title-text start and <code>R</code> its available right boundary after reserving native widget/tab/slot hit areas. Expanded fits when <code>R - L &gt;= T + 6 + C(n)</code>; control x becomes <code>R - (k - i) * 14 - 2</code>. Use the original title area&#x27;s y origin plus 4 for the buttons and reserve the title/control separation before painting text. Never overlap a native slot or widget to manufacture space. Preserve the original frame, bottom-border joins, tab dimensions and artwork; those remain consumer layout/artwork responsibilities. Reposition the row or choose a compact/adapted layout when the usable band is too small.</p>
+<p>Automatic selection and complete native control ordering are supplied for Salt-managed chrome, including custom <code>DesktopWindowDecoration</code> renderers, through their committed <code>DesktopControlState</code> rectangles. The standard is the complete available button list, or More and Close when that list cannot fit. <strong>Pin, Minimize, More, Close is not the standard expanded row.</strong> More replaces the other management buttons during compression; it is not an additional button in the native expanded row.</p>
+<p>A mod-owned surface supplies its own row selection and <code>DesktopSurfaceControl</code> bounds; there is currently no public automatic control-layout helper. The current API only accepts Pin, Minimize, More and Close as manager-routed surface controls. This is a capability limit, not an alternate standard layout: it prevents that mechanism alone from displaying the full native expanded button list. Do not attempt to register Focus, Lock, Link or Sort as <code>DesktopSurfaceControl</code> values. The distributed <code>CompanionMainWindow</code> is a fixed, consumer-positioned demonstration of the supported subset, not an example of full native button ordering or responsive compression. Consumers requiring the complete standard row can use Salt-managed decoration and its public control states; the mod-owned surface-control mechanism would need additional API support to expose every native button directly.</p>
+<h3 id="heading-versioning-threading-and-verification">Versioning, threading and verification</h3>
+<p>The public integration descriptor now uses <code>apiVersion=5</code>; the wire protocol is version 4 because authenticated opening/ownership metadata changed. Recompile consumers against the matching game/loader API5 artifact and update the descriptor explicitly. No mixed-protocol compatibility layer is supplied. Salt remains compile-only and optional; common providers must not resolve client classes on a dedicated server, and ordinary loader entrypoints must not reference either Salt provider. The standalone jar has no required Salt dependency and includes no Salt classes.</p>
+<p>Client layout, rendering, input, handles and widget mutation use the client main thread. Server acquisition, release, guards, menu creation and server callbacks use the server main thread. <code>DesktopWindowHandle.schedule</code> remains the thread-safe way to enqueue a lifetime-checked client update. Do asynchronous backend work using immutable inputs and marshal validated results onto the appropriate main thread before inventory mutation.</p>
+<p>Resource reload re-prepares retained surfaces and controls and delivers the new resource revision; re-resolve consumer caches there. The demonstration retains original 176-GUI-pixel texture/slot dimensions through GUI scales 2/3/4. Constrained viewports may require the consumer to select a compact layout through ADAPT; preserving native pixels does not guarantee that several full windows fit beside one another. Native/runtime acceptance evidence is maintained in <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/blob/master/API-COMPANIONS-0.1.4-PLAN.md">the companion implementation audit</a>. Compilation and headless routing tests are separate from actual inventory/network/lifecycle and rendered-image proof.</p>
+</section>
+<section class="chapter" id="diagnostics-and-verification">
+<h2 id="heading-diagnostics-and-verification">Diagnostics and verification</h2>
+<p><code>DesktopDiagnostics.snapshot()</code> returns an immutable list of recent structured events with level (<code>INFO</code>, <code>WARNING</code>, <code>ERROR</code>), owner, operation, message and optional cause. <code>listen(...)</code> subscribes and returns an <code>AutoCloseable</code> subscription; close it when your debug view closes. Listeners run on the reporting thread, so marshal updates before touching client UI. Salt also logs these events. History is bounded to 256 entries. Check discovery/API mismatch, registration conflicts, eligibility/opening-data failures, callback exceptions and action refusals when a window does not work.</p>
+<p>Automated proof in this repository covers an external-style mod compiled against the API and run with Salt removed from its runtime classpath, Salt-present phased discovery, dedicated-server client-class resolution traps, registration rollback, client-only action denial, unique/stale handles, focus/modality, external regions, custom inventory ownership, capture negotiation and packet bounds. Existing sort, transfer, gesture and protocol tests remain part of verification.</p>
+<p>API5 companion acceptance gates are tracked in <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/blob/master/API-COMPANIONS-0.1.4-PLAN.md">the companion verification record</a>. The <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/blob/master/API-SURFACE-0.1.4-PLAN.md">surface API verification record</a> covers the earlier completed API4 work. Earlier API test totals and old screenshots are historical evidence. Compilation, assertions, clean process exit and visual fidelity are assessed separately. The <a href="https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/blob/master/docs/markdown/api_reference.md">public signature reference</a> lists the current consumer declarations; this guide specifies behavior and ownership.</p>
+<pre><code class="language-powershell">$env:CI = &#x27;true&#x27;  # supported NeoForge binary patch pipeline
+./gradlew verifyApiExamples :common:test
+./gradlew -I functional-tests/sort-tests.gradle :1.20.1:fabric:test :1.21.1:fabric:test :1.21.11:fabric:test :26.1.2:fabric:test :26.2:fabric:test :26.3:fabric:test
+./gradlew -PincludeFunctionalTests=true functionalTestCompile
+./gradlew build</code></pre>
+<p>Run your own mod with Salt absent and present, and on a dedicated server, before shipping. Test multiple instances, cursor/slot restrictions, persistence, resize, clips, modal input, native widgets and your mod&#x27;s real permission/storage behavior. Headless tests establish routing and contract behavior; visual/native-framework behavior still needs an in-game pass for that integration.</p>
+</section>
+<footer>Examples establish specific supported patterns. Test your own native framework and storage behavior in-game before shipping.</footer></main></div>
+<script>
+const search = document.querySelector('#search');
+const sections = [...document.querySelectorAll('.chapter')];
+search.addEventListener('input', () => { const query = search.value.trim().toLowerCase(); for (const section of sections) section.hidden = query !== '' && !section.textContent.toLowerCase().includes(query); });
+document.querySelectorAll('nav a').forEach(link => link.addEventListener('click', () => { search.value = ''; for (const section of sections) section.hidden = false; }));
+</script></body></html>

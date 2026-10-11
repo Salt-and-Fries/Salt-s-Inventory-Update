@@ -2,10 +2,10 @@ package com.salts_inventory_update.compat.sophisticated;
 
 import io.netty.buffer.Unpooled;
 
-import com.salts_inventory_update.api.desktop.SaltsInventoryDesktopApi;
-import com.salts_inventory_update.client.DesktopMenuFactories;
+import com.salts_inventory_update.api.client.desktop.DesktopClientApi;
+import com.salts_inventory_update.api.client.desktop.DesktopMenuFactories;
 import com.salts_inventory_update.compat.sophisticated.client.SophisticatedHostedScreenDefinition;
-import com.salts_inventory_update.internal.desktop.DesktopMenuSlots;
+import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
 import com.salts_inventory_update.server.DesktopContainerSessions;
 
 import net.minecraft.core.BlockPos;
@@ -63,19 +63,19 @@ public final class SophisticatedStorageCompat {
             fromOpeningData(minecraft, data, buffer -> LimitedBarrelSettingsContainerMenu.fromBuffer(id, player.getInventory(), buffer))
         );
 
-        SaltsInventoryDesktopApi.registerClientWindow(
+        DesktopClientApi.registerWindow(
             storage,
             new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.STANDARD, StorageScreen::constructScreen)
         );
-        SaltsInventoryDesktopApi.registerClientWindow(
+        DesktopClientApi.registerWindow(
             limited,
             new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.LIMITED_BARREL, LimitedBarrelScreen::new)
         );
-        SaltsInventoryDesktopApi.registerClientWindow(
+        DesktopClientApi.registerWindow(
             settings,
             new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.SETTINGS, StorageSettingsScreen::constructScreen)
         );
-        SaltsInventoryDesktopApi.registerClientWindow(
+        DesktopClientApi.registerWindow(
             limitedSettings,
             new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.LIMITED_BARREL_SETTINGS, LimitedBarrelSettingsScreen::new)
         );
@@ -83,7 +83,7 @@ public final class SophisticatedStorageCompat {
 
     private static void registerMain(MenuType<?> menuType) {
         SophisticatedCoreCompat.registerMainMenu(menuType);
-        DesktopMenuSlots.register(
+        DesktopMenuBindings.register(
             menuType,
             menu -> ((StorageContainerMenuBase<?>) menu).getTotalSlotsNumber(),
             true,
@@ -95,7 +95,7 @@ public final class SophisticatedStorageCompat {
 
     private static void registerSettings(MenuType<?> menuType) {
         SophisticatedCoreCompat.registerSettingsMenu(menuType);
-        DesktopMenuSlots.register(
+        DesktopMenuBindings.register(
             menuType,
             menu -> ((SettingsContainerMenu<?>) menu).getNumberOfSlots(),
             true,

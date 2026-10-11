@@ -80,7 +80,7 @@ public abstract class StorageScreenBaseMixin implements SophisticatedScreenAcces
     )
     private int salts_inventory_update$renderSingletonHostedQuickCraft(Set<?> slots) {
         int size = slots.size();
-        return size == 1 && SophisticatedHostedScreenBridge.isHostedQuickCraftPreview() ? 2 : size;
+        return SophisticatedHostedScreenBridge.hostedTargetCount(size);
     }
 
     @Inject(method = "handleInventoryMouseClick", at = @At("HEAD"), cancellable = true, remap = false)

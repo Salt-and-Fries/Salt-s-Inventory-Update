@@ -101,7 +101,7 @@ import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.inventory.InventoryExpansionAccess;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopMenuOpenDataPayload;
-import com.salts_inventory_update.internal.desktop.DesktopMenuSlots;
+import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
 import com.salts_inventory_update.internal.desktop.DesktopSortSlots;
 import com.salts_inventory_update.internal.desktop.DesktopItemSourceLocks;
 import com.salts_inventory_update.internal.desktop.DesktopSessionSynchronizer;
@@ -339,6 +339,7 @@ public final class DesktopContainerSessions {
         }
 
         sessions.setForcedMenuIds(payload.forcedMenuIds());
+        sessions.setSupportedMenuIds(payload.supportedMenuIds());
         long connectionNonce = nextNonce();
         sessions.playerMenuToken = nextNonce();
         boolean uiEnabled = payload.uiEnabled();
@@ -393,6 +394,7 @@ public final class DesktopContainerSessions {
             return;
         }
         sessions.setForcedMenuIds(payload.forcedMenuIds());
+        sessions.setSupportedMenuIds(payload.supportedMenuIds());
         boolean topologyEnabled = sessions.hasCapability(DesktopProtocol.CAP_INVENTORY_TOPOLOGY, false);
         InventoryExpansion.setTopologyEnabled(player, topologyEnabled);
         if (!uiEnabled) {
@@ -621,24 +623,6 @@ public final class DesktopContainerSessions {
         } else {
             transition = null;
         }
-        byte[] openingData;
-        Consumer<FriendlyByteBuf> openingDataWriter = OPENING_DATA_WRITER.get();
-        if (openingDataWriter == null) {
-            openingData = new byte[0];
-        } else {
-            FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
-            try {
-                openingDataWriter.accept(buffer);
-                int length = buffer.readableBytes();
-                if (length <= 0 || length > DesktopProtocol.MAX_CUSTOM_DATA_BYTES) {
-                    throw new IllegalArgumentException("Opening data length out of bounds: " + length);
-                }
-                openingData = new byte[length];
-                buffer.getBytes(buffer.readerIndex(), openingData);
-            } finally {
-                buffer.release();
-            }
-        }
         String sourceKey = forcedSourceKey == null ? sourceKeyForProvider(player, provider) : forcedSourceKey;
         if (sourceKey == null) {
             sourceKey = PENDING_USE_TARGETS.get(player.connection);
@@ -668,13 +652,42 @@ public final class DesktopContainerSessions {
             menu.removed(player);
             return null;
         }
-        if (DesktopMenuSlots.requiresOpeningData(menu)
+        byte[] openingData;
+        DesktopServerApi.OpeningDataWriter<AbstractContainerMenu> apiWriter = DesktopServerApi.findOpeningDataWriter(menu.getType());
+        Consumer<FriendlyByteBuf> explicitWriter = OPENING_DATA_WRITER.get();
+        Consumer<FriendlyByteBuf> openingDataWriter = explicitWriter != null ? explicitWriter
+            : apiWriter == null ? null : buffer -> apiWriter.write(player, menu, buffer);
+        try {
+            if (openingDataWriter == null) {
+                openingData = new byte[0];
+            } else {
+                FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+                try {
+                    openingDataWriter.accept(buffer);
+                    int length = buffer.readableBytes();
+                    if (length <= 0 || length > DesktopProtocol.MAX_CUSTOM_DATA_BYTES) {
+                        throw new IllegalArgumentException("Opening data length out of bounds: " + length);
+                    }
+                    openingData = new byte[length];
+                    buffer.getBytes(buffer.readerIndex(), openingData);
+                } finally {
+                    buffer.release();
+                }
+            }
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                String.valueOf(menu.getType()), "opening-data", "Opening data writer failed; using normal UI", failure);
+            menu.removed(player);
+            return null;
+        }
+        if ((DesktopMenuBindings.requiresOpeningData(menu) || DesktopServerApi.findOpeningDataWriter(menu.getType()) != null)
             && (openingData.length == 0 || !ServerPlayNetworking.canSend(player, DesktopMenuOpenDataPayload.TYPE))) {
             menu.removed(player);
             return null;
         }
         if (sourceKey == null) {
-            sourceKey = DesktopMenuSlots.sourceKey(player, menu, openingData);
+            sourceKey = DesktopMenuBindings.sourceKey(player, menu, openingData);
         }
         if (!menu.stillValid(player)) {
             menu.setCarried(ItemStack.EMPTY);
@@ -770,6 +783,167 @@ public final class DesktopContainerSessions {
         return DesktopPackets.SPECIAL_HORSE;
     }
 
+    private static java.util.Optional<com.salts_inventory_update.api.server.desktop.DesktopCompanionLease> acquireCompanion(
+        ServerPlayer player, PlayerSessions sessions, Session owner,
+        com.salts_inventory_update.api.server.desktop.DesktopCompanionSpec spec
+    ) {
+        requireCompanionThread(player);
+        java.util.Objects.requireNonNull(spec, "spec");
+        if (PLAYERS.get(player.connection) != sessions || sessions.sessions.get(owner.sessionId) != owner
+            || sessions.sessionWorld != player.level() || owner.companion != null || !owner.initialSnapshotSent || !sessions.isReady() || !owner.menu.stillValid(player)
+            || !companionAuthorized(player, spec)) return java.util.Optional.empty();
+        Companion entry = sessions.companions.get(spec.identity());
+        if (entry != null && !validCompanion(player, sessions, entry.session)) entry = null;
+        if (entry != null) {
+            CompanionOwnership existing = entry.owners.get(owner.sessionId);
+            if (existing != null) return java.util.Optional.of(existing);
+            CompanionOwnership ownership = new CompanionOwnership(player, sessions, entry, owner, spec);
+            entry.owners.put(owner.sessionId, ownership);
+            sendCompanionOwners(player, sessions, entry.session, true);
+            return java.util.Optional.of(ownership);
+        }
+        // A companion must never evict a parent at the session cap.
+        if (sessions.sessions.size() >= MAX_SESSIONS) return java.util.Optional.empty();
+        AbstractContainerMenu menu = spec.provider().createMenu(nextSessionId(player), player.getInventory(), player);
+        if (menu == null) return java.util.Optional.empty();
+        try {
+            if (!isDesktopSupportedMenu(player, menu) || !menu.stillValid(player)
+                || !companionAuthorized(player, spec)) {
+                menu.setCarried(ItemStack.EMPTY);
+                menu.removed(player);
+                return java.util.Optional.empty();
+            }
+            DesktopServerApi.OpeningDataWriter<AbstractContainerMenu> writer = DesktopServerApi.findOpeningDataWriter(menu.getType());
+            byte[] data = encodeOpeningData(player, writer == null ? null : buffer -> writer.write(player, menu, buffer));
+            if (DesktopMenuBindings.requiresOpeningData(menu) && data.length == 0) {
+                throw new IllegalArgumentException("Companion menu requires registered opening data");
+            }
+            Session session = new Session(menu.containerId, menu, spec.provider().getDisplayName(),
+                DesktopPackets.SPECIAL_GENERIC, -1, 0, DesktopPackets.menuTypeId(menu.getType()),
+                "companion:" + java.util.UUID.randomUUID(), data, -1);
+            entry = new Companion(spec.identity(), session, player.level());
+            session.companion = entry;
+            CompanionOwnership ownership = new CompanionOwnership(player, sessions, entry, owner, spec);
+            entry.owners.put(owner.sessionId, ownership);
+            sessions.companions.put(spec.identity(), entry);
+            sessions.initialize(player, session);
+            if (sessions.sessions.get(session.sessionId) != session) return java.util.Optional.empty();
+            return java.util.Optional.of(ownership);
+        } catch (RuntimeException failure) {
+            Session initialized = sessions.sessions.get(menu.containerId);
+            if (initialized != null) sessions.close(player, initialized.sessionId, true);
+            else { menu.setCarried(ItemStack.EMPTY); menu.removed(player); }
+            throw failure;
+        }
+    }
+
+    private static void requireCompanionThread(ServerPlayer player) {
+        if (player.level().getServer() == null || !player.level().getServer().isSameThread()) {
+            throw new IllegalStateException("Use companion ownership on the server main thread");
+        }
+    }
+
+    private static boolean companionAuthorized(ServerPlayer player,
+        com.salts_inventory_update.api.server.desktop.DesktopCompanionSpec spec) {
+        try { return spec.authorization().test(player); }
+        catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                "companion", "authorization", "Companion authorization failed; releasing ownership", failure);
+            return false;
+        }
+    }
+
+    /** Recipe source discovery must recheck companion guards before the next lifecycle tick. */
+    private static boolean companionTransferAuthorized(ServerPlayer player, PlayerSessions sessions, Session session) {
+        Companion entry = session.companion;
+        if (entry == null) return true;
+        if (entry.world != player.level() || sessions.sessions.get(session.sessionId) != session) return false;
+        for (CompanionOwnership ownership : List.copyOf(entry.owners.values())) {
+            if (!ownership.released && ownership.owner.menu.stillValid(player)
+                && companionAuthorized(player, ownership.spec)
+                && !ownership.released && sessions.sessions.get(ownership.owner.sessionId) == ownership.owner
+                && sessions.sessions.get(session.sessionId) == session) return true;
+        }
+        return false;
+    }
+
+    private static boolean validCompanion(ServerPlayer player, PlayerSessions sessions, Session session) {
+        Companion entry = session.companion;
+        if (entry == null) return true;
+        if (entry.world != player.level()) {
+            sessions.close(player, session.sessionId, true);
+            return false;
+        }
+        for (CompanionOwnership ownership : List.copyOf(entry.owners.values())) {
+            if (sessions.sessions.get(ownership.owner.sessionId) != ownership.owner
+                || !ownership.owner.menu.stillValid(player) || !companionAuthorized(player, ownership.spec)) {
+                ownership.close();
+            }
+        }
+        return sessions.sessions.get(session.sessionId) == session && !entry.owners.isEmpty();
+    }
+
+    private static void sendCompanionOwners(ServerPlayer player, PlayerSessions sessions, Session session, boolean metadataOnly) {
+        if (session.companion == null) return;
+        send(player, new DesktopMenuOpenDataPayload(sessions.connectionState.connectionNonce(), session.sessionId,
+            session.sessionToken, session.menuTypeId, -1, session.openingData,
+            session.companion.owners.keySet().stream().mapToInt(Integer::intValue).toArray(), metadataOnly));
+    }
+
+    private static final class Companion {
+        private final com.salts_inventory_update.api.desktop.DesktopInventoryIdentity identity;
+        private final Session session;
+        private final net.minecraft.world.level.Level world;
+        private final LinkedHashMap<Integer, CompanionOwnership> owners = new LinkedHashMap<>();
+        private Companion(com.salts_inventory_update.api.desktop.DesktopInventoryIdentity identity, Session session, net.minecraft.world.level.Level world) {
+            this.identity = identity;
+            this.session = session;
+            this.world = world;
+        }
+    }
+
+    private static final class CompanionOwnership implements com.salts_inventory_update.api.server.desktop.DesktopCompanionLease {
+        private final ServerPlayer player;
+        private final PlayerSessions sessions;
+        private final Companion companion;
+        private final Session owner;
+        private final com.salts_inventory_update.api.server.desktop.DesktopCompanionSpec spec;
+        private boolean released;
+        private CompanionOwnership(ServerPlayer player, PlayerSessions sessions, Companion companion, Session owner,
+            com.salts_inventory_update.api.server.desktop.DesktopCompanionSpec spec) {
+            this.player = player; this.sessions = sessions; this.companion = companion; this.owner = owner; this.spec = spec;
+        }
+        @Override public int sessionId() { requireCompanionThread(player); return companion.session.sessionId; }
+        @Override public boolean isOpen() {
+            requireCompanionThread(player);
+            return !released && PLAYERS.get(player.connection) == sessions
+                && sessions.sessions.get(owner.sessionId) == owner
+                && sessions.sessions.get(companion.session.sessionId) == companion.session;
+        }
+        @Override public void close() {
+            requireCompanionThread(player);
+            if (released) return;
+            released = true;
+            if (!companion.owners.remove(owner.sessionId, this)) return;
+            if (companion.owners.isEmpty()) sessions.close(player, companion.session.sessionId, true);
+            else if (sessions.sessions.get(companion.session.sessionId) == companion.session) {
+                sendCompanionOwners(player, sessions, companion.session, true);
+            }
+        }
+    }
+
+    private static byte[] encodeOpeningData(ServerPlayer player, Consumer<FriendlyByteBuf> writer) {
+        if (writer == null) return new byte[0];
+        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            writer.accept(buffer);
+            int length = buffer.readableBytes();
+            if (length <= 0 || length > DesktopProtocol.MAX_CUSTOM_DATA_BYTES) throw new IllegalArgumentException("Opening data length");
+            byte[] data = new byte[length]; buffer.getBytes(buffer.readerIndex(), data); return data;
+        } finally { buffer.release(); }
+    }
+
     private static boolean isDesktopSupportedMenu(ServerPlayer player, AbstractContainerMenu menu) {
         MenuType<?> type = menu.getType();
         ResourceLocation key = BuiltInRegistries.MENU.getKey(type);
@@ -783,7 +957,7 @@ public final class DesktopContainerSessions {
             return true;
         }
 
-        if (DesktopServerApi.hasWindowSupport(type)) {
+        if (DesktopServerApi.supportsWindow(player, menu) && key != null && sessions != null && sessions.supportedMenuIds.contains(key)) {
             return true;
         }
 
@@ -870,7 +1044,8 @@ public final class DesktopContainerSessions {
     private static void tick(MinecraftServer server) {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             PlayerSessions sessions = existingSessions(player);
-            if (sessions != null && sessions.isReady()) {
+            if (sessions != null && (sessions.isReady()
+                || sessions.sessionWorld != null && sessions.sessionWorld != player.level())) {
                 sessions.tick(player);
             }
         }
@@ -940,11 +1115,11 @@ public final class DesktopContainerSessions {
         IdentityHashMap<Object, Set<Integer>> physical = new IdentityHashMap<>();
         for (DesktopSlotReference reference : payload.slots()) {
             AbstractContainerMenu menu = authorizedMenu(player, sessions, reference.sessionId(), reference.sessionToken(), reference.stateId());
-            Slot slot = menu == null ? null : DesktopMenuSlots.slot(menu, reference.slotIndex());
+            Slot slot = menu == null ? null : DesktopMenuBindings.slot(menu, reference.slotIndex());
             if (slot == null || DesktopItemSourceLocks.isSlotLocked(player, slot) || !slot.isActive()
-                || !slot.mayPlace(carried) || !menu.canDragTo(slot) || !DesktopMenuSlots.canQuickCraft(menu, slot, carried)) return;
-            Object owner = DesktopMenuSlots.physicalOwner(menu, slot);
-            int index = DesktopMenuSlots.physicalIndex(menu, slot);
+                || !slot.mayPlace(carried) || !menu.canDragTo(slot) || !DesktopMenuBindings.canQuickCraft(menu, slot, carried)) return;
+            Object owner = DesktopMenuBindings.physicalOwner(menu, slot);
+            int index = DesktopMenuBindings.physicalIndex(menu, slot);
             if (!physical.computeIfAbsent(owner, ignored -> new HashSet<>()).add(index)) return;
             targets.add(new GestureSlot(menu, slot));
         }
@@ -953,8 +1128,8 @@ public final class DesktopContainerSessions {
             Slot slot = target.slot();
             ItemStack existing = slot.getItem();
             int existingCount = existing.isEmpty() ? 0 : existing.getCount();
-            int placement = DesktopMenuSlots.quickCraftPlaceCount(target.menu(), slot, targets.size(), payload.quickCraftType(), carried);
-            int maximum = DesktopMenuSlots.quickCraftMaxStackSize(target.menu(), slot, carried);
+            int placement = DesktopMenuBindings.quickCraftPlaceCount(target.menu(), slot, targets.size(), payload.quickCraftType(), carried);
+            int maximum = DesktopMenuBindings.quickCraftMaxStackSize(target.menu(), slot, carried);
             int inserted = Math.max(0, Math.min(maximum - existingCount, placement));
             if (payload.quickCraftType() != AbstractContainerMenu.QUICKCRAFT_TYPE_CLONE) inserted = Math.min(inserted, remaining);
             if (inserted <= 0) continue;
@@ -992,14 +1167,14 @@ public final class DesktopContainerSessions {
         }
         for (int pass = 0; pass < 2 && carried.getCount() < carried.getMaxStackSize(); pass++) {
             for (AbstractContainerMenu menu : menus) {
-                List<Slot> slots = new ArrayList<>(DesktopMenuSlots.all(menu));
+                List<Slot> slots = new ArrayList<>(DesktopMenuBindings.all(menu));
                 if (payload.button() != 0) java.util.Collections.reverse(slots);
                 for (Slot slot : slots) {
                     if (carried.getCount() >= carried.getMaxStackSize()) break;
                     ItemStack source = slot.getItem();
                     if (DesktopItemSourceLocks.isSlotLocked(player, slot) || !slot.isActive() || source.isEmpty()
                         || !slot.mayPickup(player) || !ItemStack.isSameItemSameTags(carried, source)
-                        || !DesktopMenuSlots.allowsPickupAll(menu, carried, slot)) continue;
+                        || !DesktopMenuBindings.allowsPickupAll(menu, carried, slot)) continue;
                     if (pass == 0 && source.getCount() == source.getMaxStackSize()) continue;
                     int amount = Math.min(source.getCount(), carried.getMaxStackSize() - carried.getCount());
                     ItemStack taken = slot.safeTake(source.getCount(), amount, player);
@@ -1016,11 +1191,11 @@ public final class DesktopContainerSessions {
     ) {
         ItemStack carried = player.inventoryMenu.getCarried().copy();
         if (!carried.isEmpty()) return carried;
-        Slot anchor = DesktopMenuSlots.slot(menu, slotIndex);
+        Slot anchor = DesktopMenuBindings.slot(menu, slotIndex);
         if (button != 0 || anchor == null || !menu.stillValid(player)
             || !anchor.isActive() || !anchor.hasItem() || !anchor.mayPickup(player)
             || DesktopItemSourceLocks.isSlotLocked(player, anchor)
-            || !DesktopMenuSlots.allowsPickupAllAnchor(menu, anchor.getItem(), anchor)) {
+            || !DesktopMenuBindings.allowsPickupAllAnchor(menu, anchor.getItem(), anchor)) {
             return ItemStack.EMPTY;
         }
         // A fast place-then-double-click can reach the server with an empty cursor.
@@ -1043,7 +1218,7 @@ public final class DesktopContainerSessions {
         List<Slot> sourceSlots = inventory ? mainInventorySlots(player) : containerSlots(sourceMenu, player).stream()
             .filter(slot -> DesktopSortSlots.sourceSlot(sourceMenu, slot)).toList();
         Set<Object> owners = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
-        for (Slot slot : sourceSlots) owners.add(DesktopMenuSlots.physicalOwner(sourceMenu, slot));
+        for (Slot slot : sourceSlots) owners.add(DesktopMenuBindings.physicalOwner(sourceMenu, slot));
         List<SortDestination> destinations = new ArrayList<>();
         Set<String> sourceKeys = new HashSet<>();
         if (source.session() != null && !source.session().sourceKey.isBlank()) sourceKeys.add(source.session().sourceKey);
@@ -1057,8 +1232,8 @@ public final class DesktopContainerSessions {
             List<Slot> slots = containerSlots(target.menu(), player).stream()
                 .filter(slot -> DesktopSortSlots.storageSlot(target.menu(), slot))
                 .filter(slot -> slot.isActive()).toList();
-            if (slots.isEmpty() || slots.stream().anyMatch(slot -> owners.contains(DesktopMenuSlots.physicalOwner(target.menu(), slot)))) continue;
-            for (Slot slot : slots) owners.add(DesktopMenuSlots.physicalOwner(target.menu(), slot));
+            if (slots.isEmpty() || slots.stream().anyMatch(slot -> owners.contains(DesktopMenuBindings.physicalOwner(target.menu(), slot)))) continue;
+            for (Slot slot : slots) owners.add(DesktopMenuBindings.physicalOwner(target.menu(), slot));
             destinations.add(new SortDestination(target, slots, slots.stream().map(slot -> slot.getItem().copy()).toList()));
         }
         // Capture sources as well: output callbacks must not introduce new work into this action.
@@ -1068,8 +1243,8 @@ public final class DesktopContainerSessions {
         for (Slot slot : sourceSlots) {
             if (!slot.hasItem() || !slot.isActive() || !slot.mayPickup(player)
                 || DesktopItemSourceLocks.isSlotLocked(player, slot)
-                || !DesktopMenuSlots.allowsTargetedQuickMoveSource(sourceMenu, slot)
-                || DesktopMenuSlots.repeatedQuickMoveLimit(sourceMenu, slot, slot.getItem()) <= 0
+                || !DesktopMenuBindings.allowsTargetedQuickMoveSource(sourceMenu, slot)
+                || DesktopMenuBindings.repeatedQuickMoveLimit(sourceMenu, slot, slot.getItem()) <= 0
                 || !rememberPhysicalSlot(seen, sourceMenu, slot)) continue;
             sources.add(new SlotSource(source.sessionId(), sourceMenu, slot, source.session()));
             snapshots.add(slot.getItem().copy());
@@ -1157,7 +1332,7 @@ public final class DesktopContainerSessions {
         if (target == null) return;
         for (DesktopSlotReference source : payload.sources()) {
             AbstractContainerMenu menu = authorizedMenu(player, sessions, source.sessionId(), source.sessionToken(), source.stateId());
-            Slot slot = menu == null ? null : DesktopMenuSlots.slot(menu, source.slotIndex());
+            Slot slot = menu == null ? null : DesktopMenuBindings.slot(menu, source.slotIndex());
             if (slot == null || DesktopItemSourceLocks.isSlotLocked(player, slot)) return;
         }
         for (DesktopSlotReference source : payload.sources()) {
@@ -1172,12 +1347,13 @@ public final class DesktopContainerSessions {
         long token,
         int stateId
     ) {
+        if (sessions.sessionWorld != null && sessions.sessionWorld != player.level()) return null;
         if (sessionId == DesktopPackets.PLAYER_MENU_SESSION) {
             return token == sessions.playerMenuToken && stateId == player.inventoryMenu.getStateId() ? player.inventoryMenu : null;
         }
         Session session = sessions.sessions.get(sessionId);
         return session != null && session.sessionToken == token && session.menu.getStateId() == stateId
-            && session.visibleToClient && session.menu.stillValid(player) ? session.menu : null;
+            && session.visibleToClient && validCompanion(player, sessions, session) && session.menu.stillValid(player) ? session.menu : null;
     }
 
     private record GestureSlot(AbstractContainerMenu menu, Slot slot) {
@@ -1451,7 +1627,7 @@ public final class DesktopContainerSessions {
             return;
         }
 
-        if (!session.menu.stillValid(player)) {
+        if (!validCompanion(player, sessions, session) || !session.menu.stillValid(player)) {
             DesktopDebug.log("server button invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
             sessions.close(player, session.sessionId, true);
             return;
@@ -1506,7 +1682,7 @@ public final class DesktopContainerSessions {
             DesktopDebug.trace("server recipe place dropped player={} session={} recipe={} reason=spectator", player.getName().getString(), payload.sessionId(), payload.recipeId());
             return;
         }
-        if (!session.menu.stillValid(player)) {
+        if (!validCompanion(player, sessions, session) || !session.menu.stillValid(player)) {
             DesktopDebug.log("server recipe place invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
             sessions.close(player, session.sessionId, true);
             return;
@@ -1650,7 +1826,7 @@ public final class DesktopContainerSessions {
             DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=hidden", player.getName().getString(), targetSessionId);
             return null;
         }
-        if (!session.menu.stillValid(player)) {
+        if (!validCompanion(player, sessions, session) || !session.menu.stillValid(player)) {
             DesktopDebug.log("server JEI transfer invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
             sessions.close(player, session.sessionId, true);
             return null;
@@ -1879,8 +2055,9 @@ public final class DesktopContainerSessions {
         for (Slot slot : player.inventoryMenu.slots) {
             addJeiTransferSourceSlot(player, slots, slot, targetRecipeSlots);
         }
-        for (Session session : sessions.sessions.values()) {
-            if (!session.visibleToClient || !session.menu.stillValid(player)) {
+        for (Session session : List.copyOf(sessions.sessions.values())) {
+            if (sessions.sessions.get(session.sessionId) != session || !session.visibleToClient
+                || !companionTransferAuthorized(player, sessions, session) || !session.menu.stillValid(player)) {
                 continue;
             }
             for (Slot slot : session.menu.slots) {
@@ -2211,7 +2388,7 @@ public final class DesktopContainerSessions {
             return;
         }
 
-        if (!session.menu.stillValid(player)) {
+        if (!validCompanion(player, sessions, session) || !session.menu.stillValid(player)) {
             DesktopDebug.log("server rename invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
             sessions.close(player, session.sessionId, true);
             return;
@@ -2248,7 +2425,7 @@ public final class DesktopContainerSessions {
             return;
         }
 
-        if (!session.menu.stillValid(player)) {
+        if (!validCompanion(player, sessions, session) || !session.menu.stillValid(player)) {
             DesktopDebug.log("server custom invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
             sessions.close(player, session.sessionId, true);
             return;
@@ -2365,7 +2542,7 @@ public final class DesktopContainerSessions {
                 DesktopDebug.trace("server quick move dropped player={} session={} reason=hidden", player.getName().getString(), sessionId);
                 return null;
             }
-            if (!session.menu.stillValid(player)) {
+            if (!validCompanion(player, sessions, session) || !session.menu.stillValid(player)) {
                 DesktopDebug.log("server quick move invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
                 sessions.close(player, session.sessionId, true);
                 return null;
@@ -2373,7 +2550,7 @@ public final class DesktopContainerSessions {
             menu = session.menu;
         }
 
-        Slot slot = DesktopMenuSlots.slot(menu, slotIndex);
+        Slot slot = DesktopMenuBindings.slot(menu, slotIndex);
         if (slot == null) {
             DesktopDebug.trace("server quick move dropped player={} session={} slot={} reason=out-of-range", player.getName().getString(), sessionId, slotIndex);
             return null;
@@ -2884,8 +3061,8 @@ public final class DesktopContainerSessions {
         Object expectedOwner,
         int expectedIndex
     ) {
-        return DesktopMenuSlots.physicalOwner(menu, slot) == expectedOwner
-            && DesktopMenuSlots.physicalIndex(menu, slot) == expectedIndex;
+        return DesktopMenuBindings.physicalOwner(menu, slot) == expectedOwner
+            && DesktopMenuBindings.physicalIndex(menu, slot) == expectedIndex;
     }
 
     private static int saturatingAdd(int first, int second) {
@@ -2915,8 +3092,8 @@ public final class DesktopContainerSessions {
         private QuickMoveTargetPlan(AbstractContainerMenu menu, Slot slot, ItemStack before) {
             this.menu = menu;
             this.slot = slot;
-            this.physicalOwner = DesktopMenuSlots.physicalOwner(menu, slot);
-            this.physicalIndex = DesktopMenuSlots.physicalIndex(menu, slot);
+            this.physicalOwner = DesktopMenuBindings.physicalOwner(menu, slot);
+            this.physicalIndex = DesktopMenuBindings.physicalIndex(menu, slot);
             this.before = before.copy();
             this.expected = before.copy();
         }
@@ -2978,8 +3155,8 @@ public final class DesktopContainerSessions {
         AbstractContainerMenu menu,
         Slot slot
     ) {
-        Object owner = DesktopMenuSlots.physicalOwner(menu, slot);
-        int index = DesktopMenuSlots.physicalIndex(menu, slot);
+        Object owner = DesktopMenuBindings.physicalOwner(menu, slot);
+        int index = DesktopMenuBindings.physicalIndex(menu, slot);
         return rememberPhysicalSlot(slots, owner, index);
     }
 
@@ -3104,7 +3281,7 @@ public final class DesktopContainerSessions {
 
     private static void clickMenu(int debugId, ServerPlayer player, PlayerSessions sessions, AbstractContainerMenu menu, int slotIndex, int button, ClickType input, ItemStack clientCarried) {
         if (slotIndex != AbstractContainerMenu.SLOT_CLICKED_OUTSIDE
-            && DesktopMenuSlots.slot(menu, slotIndex) == null) {
+            && DesktopMenuBindings.slot(menu, slotIndex) == null) {
             DesktopDebug.trace("server click ignored id={} player={} menu={} slot={} reason=out-of-range", debugId, player.getName().getString(), menu.containerId, slotIndex);
             return;
         }
@@ -3171,7 +3348,7 @@ public final class DesktopContainerSessions {
     }
 
     private static ItemStack serverSlotStack(AbstractContainerMenu menu, int slotIndex) {
-        Slot slot = DesktopMenuSlots.slot(menu, slotIndex);
+        Slot slot = DesktopMenuBindings.slot(menu, slotIndex);
         if (slot == null) {
             return ItemStack.EMPTY;
         }
@@ -3303,6 +3480,9 @@ public final class DesktopContainerSessions {
     }
 
     private static void closeSessionFromClient(ServerPlayer player, DesktopCloseSessionPayload payload) {
+        PlayerSessions companionSessions = PLAYERS.get(player);
+        Session companionSession = companionSessions == null ? null : companionSessions.sessions.get(payload.sessionId());
+        if (companionSession != null && companionSession.companion != null) return;
         PlayerSessions sessions = existingSessions(player);
         if (sessions == null || !sessions.controlRate.tryConsume(System.nanoTime())) {
             return;
@@ -3323,6 +3503,7 @@ public final class DesktopContainerSessions {
             return;
         }
 
+        if (session.companion != null) return;
         session.ghostPinned = payload.pinMode() == DesktopPackets.PIN_MODE_GHOST_PINNED;
         DesktopDebug.trace("server pin player={} session={} ghostPinned={}", player.getName().getString(), payload.sessionId(), session.ghostPinned);
         session.dispatchPinChanged(player, sessions);
@@ -3345,7 +3526,7 @@ public final class DesktopContainerSessions {
             return;
         }
 
-        if (!session.menu.stillValid(player)) {
+        if (!validCompanion(player, sessions, session) || !session.menu.stillValid(player)) {
             DesktopDebug.log("server visibility invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
             sessions.rememberDormantGhost(player, session, "visibility-invalid");
             sessions.close(player, session.sessionId, true);
@@ -3489,12 +3670,15 @@ public final class DesktopContainerSessions {
 
     private static final class PlayerSessions {
         private final LinkedHashMap<Integer, Session> sessions = new LinkedHashMap<>();
+        private net.minecraft.world.level.@Nullable Level sessionWorld;
+        private final Map<com.salts_inventory_update.api.desktop.DesktopInventoryIdentity, Companion> companions = new LinkedHashMap<>();
         private final LinkedHashMap<String, DormantGhostSource> dormantGhostSources = new LinkedHashMap<>();
         private final LinkedHashMap<Long, SourceGrant> sourceGrants = new LinkedHashMap<>();
         private final Map<String, Long> sourceGrantTokensByKey = new HashMap<>();
         private final BoundedLinkGraph<Long> sourceLinks = new BoundedLinkGraph<>();
         private final DesktopConnectionState connectionState = new DesktopConnectionState();
         private Set<ResourceLocation> forcedMenuIds = Set.of();
+        private Set<ResourceLocation> supportedMenuIds = Set.of();
         private int nextSessionId = 1;
         private int dormantGhostProbeTicks;
         private long playerMenuToken;
@@ -3565,6 +3749,7 @@ public final class DesktopContainerSessions {
             this.connectionState.reset();
             this.playerMenuToken = 0L;
             this.forcedMenuIds = Set.of();
+            this.supportedMenuIds = Set.of();
             this.replacingPlayer = false;
             this.nextSessionId = 1;
             this.dormantGhostProbeTicks = 0;
@@ -3582,6 +3767,20 @@ public final class DesktopContainerSessions {
                 }
             }
             this.forcedMenuIds = Set.copyOf(validated);
+        }
+
+        private void setSupportedMenuIds(List<String> requestedIds) {
+            HashSet<ResourceLocation> validated = new HashSet<>();
+            for (String requestedId : requestedIds) {
+                if (validated.size() >= DesktopProtocol.MAX_SUPPORTED_MENU_IDS) {
+                    break;
+                }
+                ResourceLocation id = ResourceLocation.tryParse(requestedId);
+                if (id != null && BuiltInRegistries.MENU.containsKey(id)) {
+                    validated.add(id);
+                }
+            }
+            this.supportedMenuIds = Set.copyOf(validated);
         }
 
         private void add(ServerPlayer player, Session session) {
@@ -3608,6 +3807,8 @@ public final class DesktopContainerSessions {
         }
 
         private void initialize(ServerPlayer player, Session session) {
+            if (this.sessionWorld != null && this.sessionWorld != player.level()) this.closeAll(player, true);
+            this.sessionWorld = player.level();
             this.sessions.put(session.sessionId, session);
             session.initializeServerHandler(player, this);
             session.menu.setCarried(player.inventoryMenu.getCarried().copy());
@@ -3666,6 +3867,15 @@ public final class DesktopContainerSessions {
                 return;
             }
 
+            if (session.companion != null) {
+                this.companions.remove(session.companion.identity, session.companion);
+                for (CompanionOwnership ownership : session.companion.owners.values()) ownership.released = true;
+                session.companion.owners.clear();
+            }
+            for (Companion companion : List.copyOf(this.companions.values())) {
+                CompanionOwnership ownership = companion.owners.get(sessionId);
+                if (ownership != null) ownership.close();
+            }
             DesktopDebug.log("server session close player={} session={} title={} notify={}", player.getName().getString(), sessionId, session.title.getString(), notifyClient);
             session.dispatchClosed(player, this);
             // Session menus mirror the cursor owned by player.inventoryMenu.
@@ -3688,8 +3898,14 @@ public final class DesktopContainerSessions {
         }
 
         private void tick(ServerPlayer player) {
+            if (this.sessionWorld != null && this.sessionWorld != player.level()) {
+                this.closeAll(player, true);
+                this.sessionWorld = player.level();
+                return;
+            }
             for (Session session : List.copyOf(this.sessions.values())) {
-                if (!session.menu.stillValid(player)) {
+                if (this.sessions.get(session.sessionId) != session) continue;
+                if (!validCompanion(player, this, session) || !session.menu.stillValid(player)) {
                     DesktopDebug.log("server session invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
                     this.rememberDormantGhost(player, session, "invalid");
                     this.close(player, session.sessionId, true);
@@ -3884,6 +4100,7 @@ public final class DesktopContainerSessions {
         private final byte[] openingData;
         private final int replacesSessionId;
         private boolean initialSnapshotSent;
+        private @Nullable Companion companion;
         private long sourceGrantToken;
         private boolean ghostPinned;
         private boolean visibleToClient = true;
@@ -4080,8 +4297,8 @@ public final class DesktopContainerSessions {
                 menu,
                 slot,
                 session,
-                DesktopMenuSlots.physicalOwner(menu, slot),
-                DesktopMenuSlots.physicalIndex(menu, slot)
+                DesktopMenuBindings.physicalOwner(menu, slot),
+                DesktopMenuBindings.physicalIndex(menu, slot)
             );
         }
     }
@@ -4279,6 +4496,10 @@ public final class DesktopContainerSessions {
         PlayerSessions sessions,
         Session session
     ) implements DesktopServerSessionContext<AbstractContainerMenu, Object> {
+        @Override public java.util.Optional<com.salts_inventory_update.api.server.desktop.DesktopCompanionLease> acquireCompanion(
+            com.salts_inventory_update.api.server.desktop.DesktopCompanionSpec spec) {
+            return DesktopContainerSessions.acquireCompanion(player, sessions, session, spec);
+        }
         @Override
         public AbstractContainerMenu menu() {
             return this.session.menu;
@@ -4326,6 +4547,10 @@ public final class DesktopContainerSessions {
         Session session,
         DesktopCustomPayload payload
     ) implements DesktopServerPayloadContext<AbstractContainerMenu> {
+        @Override public java.util.Optional<com.salts_inventory_update.api.server.desktop.DesktopCompanionLease> acquireCompanion(
+            com.salts_inventory_update.api.server.desktop.DesktopCompanionSpec spec) {
+            return DesktopContainerSessions.acquireCompanion(player, sessions, session, spec);
+        }
         @Override
         public AbstractContainerMenu menu() {
             return this.session.menu;
@@ -4391,14 +4616,16 @@ public final class DesktopContainerSessions {
             DesktopDebug.log("server send initial player={} session={} title={} slots={} data={}", this.player.getName().getString(), this.session.sessionId, this.session.title.getString(), stacks.size(), dataSlots.length);
             ItemStack canonicalCarried = this.canonicalCarried(menu);
             PlayerSessions sessions = existingSessions(this.player);
-            if (!this.session.initialSnapshotSent && sessions != null && this.session.openingData.length > 0) {
+            if (!this.session.initialSnapshotSent && sessions != null && (this.session.openingData.length > 0 || this.session.companion != null)) {
                 send(this.player, new DesktopMenuOpenDataPayload(
                     sessions.connectionState.connectionNonce(),
                     this.session.sessionId,
                     this.session.sessionToken,
                     this.session.menuTypeId,
                     this.session.replacesSessionId,
-                    this.session.openingData
+                    this.session.openingData,
+                    this.session.companion == null ? new int[0]
+                        : this.session.companion.owners.keySet().stream().mapToInt(Integer::intValue).toArray(), false
                 ));
             }
             send(this.player, new DesktopOpenSessionPayload(

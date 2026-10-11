@@ -9,7 +9,32 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
-public interface DesktopRenderContext<T extends AbstractContainerMenu, S> extends DesktopWindowContext<T, S> {
+public interface DesktopRenderContext<T, S> extends DesktopWindowContext<T, S>, DesktopNativeRenderContext {
+
+    /** Native graphics for existing Minecraft/mod renderers. Valid only during this callback. */
+    net.minecraft.client.gui.GuiGraphicsExtractor nativeGraphics();
+
+    /** Nested scissor scope using the current native render pose; always restores the parent clip. */
+    default void withClip(int x, int y, int width, int height, Runnable draw) {
+        if (width < 0 || height < 0) throw new IllegalArgumentException("Negative clip dimensions");
+        rawGraphics().enableScissor(x, y, Math.addExact(x, width), Math.addExact(y, height));
+        try { draw.run(); } finally { rawGraphics().disableScissor(); }
+    }
+
+    /** Scoped translation/scale for nested layouts. Hit testing must use corresponding coordinates. */
+    default void withTransform(float x, float y, float scale, Runnable draw) {
+        if (!Float.isFinite(x) || !Float.isFinite(y) || !Float.isFinite(scale) || scale <= 0) {
+            throw new IllegalArgumentException("Transform must be finite with positive scale");
+        }
+        var pose = rawGraphics().pose();
+        pose.pushMatrix();
+        try {
+            pose.translate(x, y);
+            pose.scale(scale, scale);
+            draw.run();
+        } finally { pose.popMatrix(); }
+    }
+
     int mouseX();
 
     int mouseY();
@@ -39,10 +64,6 @@ public interface DesktopRenderContext<T extends AbstractContainerMenu, S> extend
     void virtualItem(ItemStack stack, long count, int x, int y);
 
     void slot(int menuSlotId, int x, int y);
-
-    default void renderSlot(int menuSlotId, int x, int y) {
-        this.slot(menuSlotId, x, y);
-    }
 
     void slot(Slot slot, int x, int y);
 

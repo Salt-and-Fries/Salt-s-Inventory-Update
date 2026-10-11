@@ -22,7 +22,7 @@ import net.p3pp3rf1y.sophisticatedcore.network.PacketHandler;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
 import com.salts_inventory_update.api.client.desktop.DesktopInputContext;
-import com.salts_inventory_update.api.desktop.SaltsInventoryDesktopApi;
+import com.salts_inventory_update.api.server.desktop.DesktopServerApi;
 import com.salts_inventory_update.api.server.desktop.DesktopServerPayloadContext;
 import com.salts_inventory_update.compat.sophisticated.client.SophisticatedHostedScreenBridge;
 import com.salts_inventory_update.protocol.DesktopProtocol;
@@ -42,7 +42,7 @@ public final class SophisticatedLegacyMessageBridge {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static void register(net.minecraft.world.inventory.MenuType<?> menuType) {
-        SaltsInventoryDesktopApi.registerServerPayload(
+        DesktopServerApi.registerPayload(
             (net.minecraft.world.inventory.MenuType) menuType,
             CHANNEL,
             SophisticatedLegacyMessageBridge::handleServer

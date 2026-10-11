@@ -27,6 +27,7 @@ public final class SaltsInventoryUpdateForge {
         SaltsInventoryUpdate.init("Forge " + VersionInfo.MINECRAFT_VERSION);
         DesktopPackets.registerPayloadTypes();
         DesktopContainerSessions.initialize();
+        com.salts_inventory_update.integration.DesktopIntegrationBootstrap.initialize();
         TomsStorageServerCompat.initialize();
         SophisticatedCompatBootstrap.initialize(modBus);
 

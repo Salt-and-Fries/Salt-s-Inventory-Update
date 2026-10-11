@@ -2,7 +2,7 @@ package com.salts_inventory_update.protocol;
 
 /** Mapping-independent desktop protocol contract shared by every game version. */
 public final class DesktopProtocol {
-    public static final int VERSION = 2;
+    public static final int VERSION = 4;
     public static final int HELLO_TIMEOUT_TICKS = 100;
 
     public static final long CAP_INVENTORY_TOPOLOGY = 1L;
@@ -23,6 +23,7 @@ public final class DesktopProtocol {
     public static final int MAX_MENU_DATA_VALUES = 4_096;
     public static final int MAX_MOUNT_COLUMNS = 5;
     public static final int MAX_FORCED_MENU_IDS = 256;
+    public static final int MAX_SUPPORTED_MENU_IDS = 1024;
     public static final int MAX_IDENTIFIER_LENGTH = 256;
 
     public static final int MAX_RECIPE_SLOTS = 128;

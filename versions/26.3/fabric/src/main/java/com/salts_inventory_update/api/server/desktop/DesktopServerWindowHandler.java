@@ -5,6 +5,9 @@ import org.jspecify.annotations.Nullable;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
 public interface DesktopServerWindowHandler<T extends AbstractContainerMenu, S> {
+    /** Pure per-instance eligibility check before capture; false leaves the normal screen in charge. */
+    default boolean supports(net.minecraft.server.level.ServerPlayer player, T menu) { return true; }
+
     default @Nullable S createState(DesktopServerSessionContext<T, S> context) {
         return null;
     }
@@ -26,8 +29,7 @@ public interface DesktopServerWindowHandler<T extends AbstractContainerMenu, S> 
 
     /**
      * Validates a recipe-browser transfer for a custom menu using a recipe
-     * resolved by the server. Existing handlers remain binary compatible and
-     * transfers stay disabled until the handler explicitly allows one.
+     * resolved by the server. Transfers stay disabled until the handler explicitly allows one.
      */
     default DesktopTransferDecision validateTransfer(DesktopTransferRequest<T, S> request) {
         return DesktopTransferDecision.unsupported();

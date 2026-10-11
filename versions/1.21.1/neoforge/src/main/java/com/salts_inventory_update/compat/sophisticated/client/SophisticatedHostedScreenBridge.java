@@ -8,7 +8,9 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 import com.salts_inventory_update.api.client.desktop.DesktopInputContext;
-import com.salts_inventory_update.client.InternalDesktopRenderContext.QuickCraftPreview;
+import com.salts_inventory_update.api.client.desktop.DesktopGestureSnapshot;
+import com.salts_inventory_update.api.client.desktop.DesktopGesturePhase;
+import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
 import com.salts_inventory_update.compat.sophisticated.mixin.AbstractContainerScreenAccessor;
 
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -18,6 +20,12 @@ import net.minecraft.world.inventory.Slot;
 
 /** Thread-confined routing scope used while an official Sophisticated screen is hosted by Salt. */
 public final class SophisticatedHostedScreenBridge {
+    private static final ThreadLocal<Integer> HOSTED_TARGET_COUNT = new ThreadLocal<>();
+    public static int hostedTargetCount(int fallback) {
+        Integer count = HOSTED_TARGET_COUNT.get();
+        return count == null ? fallback : Math.max(2, count);
+    }
+
     private static final ThreadLocal<@Nullable DesktopInputContext<?, ?>> INPUT = new ThreadLocal<>();
     private static final ThreadLocal<@Nullable RenderScope> RENDERING = new ThreadLocal<>();
     private static final ThreadLocal<Boolean> SALT_TAB_BACKGROUNDS = new ThreadLocal<>();
@@ -78,12 +86,13 @@ public final class SophisticatedHostedScreenBridge {
     }
 
     /** Applies Salt's cross-window drag preview to native slot extraction without retaining native input state. */
-    public static void withQuickCraftPreview(
+    public static void withGesture(
         AbstractContainerScreen<?> screen,
-        @Nullable QuickCraftPreview preview,
+        int sessionId,
+        @Nullable DesktopGestureSnapshot preview,
         Runnable action
     ) {
-        if (preview == null) {
+        if (preview == null || preview.phase() != DesktopGesturePhase.DISTRIBUTING) {
             action.run();
             return;
         }
@@ -95,10 +104,18 @@ public final class SophisticatedHostedScreenBridge {
         int previousType = access.salts_inventory_update$quickCraftingType();
         int previousRemainder = access.salts_inventory_update$quickCraftingRemainder();
         Boolean previousHostedPreview = HOSTED_QUICK_CRAFT_PREVIEW.get();
+        Integer previousTargetCount = HOSTED_TARGET_COUNT.get();
+        HOSTED_TARGET_COUNT.set((int) preview.slots().stream().filter(slot -> slot.selected() && slot.eligible()).count());
         quickCraftSlots.clear();
-        quickCraftSlots.addAll(preview.targetSlots());
+        for (var slot : preview.slots()) {
+            if (slot.sessionId() == sessionId && slot.selected() && slot.eligible()) {
+                Slot nativeSlot = DesktopMenuBindings.slot(screen.getMenu(), slot.menuSlotId());
+                if (nativeSlot != null) quickCraftSlots.add(nativeSlot);
+            }
+        }
         access.salts_inventory_update$setQuickCrafting(true);
-        access.salts_inventory_update$setQuickCraftingType(preview.type());
+        access.salts_inventory_update$setQuickCraftingType(preview.quickCraftType());
+        access.salts_inventory_update$setQuickCraftingRemainder(preview.carriedCountText() == null ? preview.carriedPreview().getCount() : 0);
         HOSTED_QUICK_CRAFT_PREVIEW.set(Boolean.TRUE);
         try {
             action.run();
@@ -108,6 +125,7 @@ public final class SophisticatedHostedScreenBridge {
             access.salts_inventory_update$setQuickCrafting(previousQuickCrafting);
             access.salts_inventory_update$setQuickCraftingType(previousType);
             access.salts_inventory_update$setQuickCraftingRemainder(previousRemainder);
+            if (previousTargetCount == null) HOSTED_TARGET_COUNT.remove(); else HOSTED_TARGET_COUNT.set(previousTargetCount);
             if (previousHostedPreview == null) {
                 HOSTED_QUICK_CRAFT_PREVIEW.remove();
             } else {

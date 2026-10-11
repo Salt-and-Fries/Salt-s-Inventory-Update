@@ -4,7 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
 
-public interface DesktopInputContext<T extends AbstractContainerMenu, S> extends DesktopWindowContext<T, S> {
+public interface DesktopInputContext<T, S> extends DesktopWindowContext<T, S> {
     boolean shiftDown();
 
     boolean ctrlDown();
@@ -27,7 +27,5 @@ public interface DesktopInputContext<T extends AbstractContainerMenu, S> extends
 
     boolean sendPayload(ResourceLocation channel, byte[] data);
 
-    default boolean sendCustomPayload(ResourceLocation channel, byte[] data) {
-        return this.sendPayload(channel, data);
-    }
+
 }

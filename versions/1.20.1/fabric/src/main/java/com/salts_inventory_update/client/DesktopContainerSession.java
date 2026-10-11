@@ -1,5 +1,7 @@
 package com.salts_inventory_update.client;
 
+import com.salts_inventory_update.api.client.desktop.DesktopMenuFactories;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +24,7 @@ import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
 import com.salts_inventory_update.internal.desktop.DesktopItemSourceLocks;
-import com.salts_inventory_update.internal.desktop.DesktopMenuSlots;
+import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
 
 public final class DesktopContainerSession {
     private final int sessionId;
@@ -41,6 +43,7 @@ public final class DesktopContainerSession {
     private final int contentHeight;
     private final DesktopItemSourceLocks.Lease sourceLock;
     private boolean closed;
+    private int[] companionOwnerIds = new int[0];
 
     private DesktopContainerSession(
         int sessionId,
@@ -83,9 +86,9 @@ public final class DesktopContainerSession {
 
         AbstractContainerMenu menu = createMenu(minecraft, payload, player, openingData);
         List<ItemStack> items = payload.items();
-        DesktopMenuSlots.prepareSnapshot(menu, items);
-        if (items.size() != DesktopMenuSlots.size(menu)) {
-            throw new IllegalArgumentException("Desktop session slot snapshot mismatch: expected=" + DesktopMenuSlots.size(menu) + ", actual=" + items.size());
+        DesktopMenuBindings.prepareSnapshot(menu, items);
+        if (items.size() != DesktopMenuBindings.size(menu)) {
+            throw new IllegalArgumentException("Desktop session slot snapshot mismatch: expected=" + DesktopMenuBindings.size(menu) + ", actual=" + items.size());
         }
         menu.initializeContents(payload.stateId(), items, payload.carried());
         int[] data = payload.data();
@@ -141,6 +144,10 @@ public final class DesktopContainerSession {
             || specialKind == DesktopPackets.SPECIAL_CAMEL
             || specialKind == DesktopPackets.SPECIAL_LLAMA;
     }
+
+    public int[] companionOwnerIds() { return companionOwnerIds.clone(); }
+    public boolean isCompanion() { return companionOwnerIds.length > 0; }
+    public void setCompanionOwners(int[] owners) { companionOwnerIds = owners.clone(); }
 
     public int sessionId() {
         return this.sessionId;
@@ -215,7 +222,7 @@ public final class DesktopContainerSession {
     }
 
     public void updateSlot(int slotIndex, int stateId, ItemStack stack) {
-        if (slotIndex >= 0 && slotIndex < DesktopMenuSlots.size(this.menu)) {
+        if (slotIndex >= 0 && slotIndex < DesktopMenuBindings.size(this.menu)) {
             this.menu.setItem(slotIndex, stateId, stack);
         }
     }
@@ -243,8 +250,8 @@ public final class DesktopContainerSession {
 
     private static List<Slot> findContainerSlots(AbstractContainerMenu menu, Inventory playerInventory) {
         List<Slot> slots = new ArrayList<>();
-        for (Slot slot : DesktopMenuSlots.all(menu)) {
-            if (slot.container != playerInventory) {
+        for (Slot slot : DesktopMenuBindings.all(menu)) {
+            if (!DesktopMenuBindings.isPlayerInventorySlot(menu, slot, playerInventory)) {
                 slots.add(slot);
             }
         }

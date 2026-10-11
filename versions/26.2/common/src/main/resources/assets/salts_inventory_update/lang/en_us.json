@@ -67,5 +67,8 @@
   "tooltip.salts_inventory_update.window_control.link": "Link",
   "tooltip.salts_inventory_update.inventory_slot.add": "Add inventory slot",
   "tooltip.salts_inventory_update.inventory_slot.cost": "Cost: %s levels",
-  "tooltip.salts_inventory_update.inventory_slot.have": "You have: %s levels"
+  "tooltip.salts_inventory_update.inventory_slot.have": "You have: %s levels",
+  "narration.salts_inventory_update.management_control": "Press Enter or Space to activate. Press Tab to move to the next control.",
+  "tooltip.salts_inventory_update.window_control.restore": "Restore",
+  "tooltip.salts_inventory_update.window_control.unpin": "Unpin"
 }

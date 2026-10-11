@@ -1,0 +1,20 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="MIT"
+[[mods]]
+modId="companion_example"
+version="1.0.0"
+displayName="Salt API Inventory Companion Example"
+description="Standalone optional API5 consumer with real nine-slot tool inventories and original UI artwork. Use only in a disposable demonstration world."
+[[dependencies.companion_example]]
+modId="minecraft"
+type="required"
+versionRange="[26.3]"
+ordering="NONE"
+side="BOTH"
+[[dependencies.companion_example]]
+modId="neoforge"
+type="required"
+versionRange="[26.3,)"
+ordering="NONE"
+side="BOTH"

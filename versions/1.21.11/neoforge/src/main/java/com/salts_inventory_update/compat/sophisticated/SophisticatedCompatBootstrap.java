@@ -32,7 +32,6 @@ public final class SophisticatedCompatBootstrap {
             return;
         }
 
-        PayloadTypeRegistry.clientboundPlay().register(DesktopMenuOpenDataPayload.TYPE, DesktopMenuOpenDataPayload.CODEC);
         modBus.addListener((FMLCommonSetupEvent event) -> event.enqueueWork(() -> initializeSide(false, backpacks, storage)));
         modBus.addListener((FMLClientSetupEvent event) -> event.enqueueWork(() -> initializeSide(true, backpacks, storage)));
     }

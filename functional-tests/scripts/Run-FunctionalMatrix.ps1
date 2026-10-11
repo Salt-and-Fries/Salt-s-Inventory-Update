@@ -1,17 +1,20 @@
 param(
     [switch] $Runtime,
     [int] $TimeoutSeconds = 180,
-    [string] $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+    [string] $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
+    [string] $ResultsDir = ''
 )
 
 $ErrorActionPreference = 'Stop'
 
-$resultsDir = Join-Path $RepoRoot 'functional-tests\results'
+if ([string]::IsNullOrWhiteSpace($ResultsDir)) {
+    $ResultsDir = Join-Path $RepoRoot 'functional-tests\results'
+}
 New-Item -ItemType Directory -Force -Path $resultsDir | Out-Null
 
 & (Join-Path $PSScriptRoot 'Test-SourceFeatureParity.ps1') -RepoRoot $RepoRoot
-if ($LASTEXITCODE -ne 0) {
-    throw "Test-SourceFeatureParity.ps1 failed with exit code $LASTEXITCODE"
+if (-not $?) {
+    throw "Test-SourceFeatureParity.ps1 failed"
 }
 
 function Invoke-FunctionalClientRun {
@@ -133,7 +136,9 @@ try {
         @{ Version = '26.1.2'; Loader = 'fabric'; Task = ':26.1.2:fabric:runClient' },
         @{ Version = '26.1.2'; Loader = 'neoforge'; Task = ':26.1.2:neoforge:runClient' },
         @{ Version = '26.2'; Loader = 'fabric'; Task = ':26.2:fabric:runClient' },
-        @{ Version = '26.2'; Loader = 'neoforge'; Task = ':26.2:neoforge:runClient' }
+        @{ Version = '26.2'; Loader = 'neoforge'; Task = ':26.2:neoforge:runClient' },
+        @{ Version = '26.3'; Loader = 'fabric'; Task = ':26.3:fabric:runClient' },
+        @{ Version = '26.3'; Loader = 'neoforge'; Task = ':26.3:neoforge:runClient' }
     )
 
     foreach ($entry in $matrix) {

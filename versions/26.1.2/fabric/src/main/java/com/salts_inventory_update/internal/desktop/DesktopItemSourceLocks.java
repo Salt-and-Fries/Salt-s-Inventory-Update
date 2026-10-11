@@ -1,5 +1,7 @@
 package com.salts_inventory_update.internal.desktop;
 
+import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
+
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -195,7 +197,7 @@ public final class DesktopItemSourceLocks {
     ) {
         Slot clicked = slotIndex == AbstractContainerMenu.SLOT_CLICKED_OUTSIDE
             ? null
-            : DesktopMenuSlots.slot(menu, slotIndex);
+            : DesktopMenuBindings.slot(menu, slotIndex);
         if (isSlotLocked(player, clicked)) {
             return true;
         }

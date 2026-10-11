@@ -49,6 +49,7 @@ public final class DesktopPackets {
     }
 
     public static void registerPayloadTypes() {
+        PayloadTypeRegistry.clientboundPlay().register(DesktopMenuOpenDataPayload.TYPE, DesktopMenuOpenDataPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopHelloPayload.TYPE, DesktopHelloPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopReadyPayload.TYPE, DesktopReadyPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopModePayload.TYPE, DesktopModePayload.CODEC);
@@ -295,16 +296,21 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopHelloPayload(int protocolVersion, long clientNonce, long capabilities, boolean uiEnabled, List<String> forcedMenuIds) implements CustomPacketPayload {
+    public record DesktopHelloPayload(int protocolVersion, long clientNonce, long capabilities, boolean uiEnabled, List<String> forcedMenuIds, List<String> supportedMenuIds) implements CustomPacketPayload {
         public static final Type<DesktopHelloPayload> TYPE = new Type<>(id("desktop_hello"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopHelloPayload> CODEC = CustomPacketPayload.codec(DesktopHelloPayload::write, DesktopHelloPayload::new);
 
         private DesktopHelloPayload(RegistryFriendlyByteBuf buf) {
-            this(buf.readVarInt(), buf.readLong(), buf.readVarLong(), buf.readBoolean(), readLimitedStringList(buf, DesktopProtocol.MAX_FORCED_MENU_IDS, MAX_IDENTIFIER_LENGTH));
+            this(buf.readVarInt(), buf.readLong(), buf.readVarLong(), buf.readBoolean(),
+                readLimitedStringList(buf, DesktopProtocol.MAX_FORCED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH),
+                readLimitedStringList(buf, DesktopProtocol.MAX_SUPPORTED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH));
         }
 
         public DesktopHelloPayload {
+            DesktopProtocol.requireCount("forced menu ids", forcedMenuIds.size(), DesktopProtocol.MAX_FORCED_MENU_IDS);
+            DesktopProtocol.requireCount("supported menu ids", supportedMenuIds.size(), DesktopProtocol.MAX_SUPPORTED_MENU_IDS);
             forcedMenuIds = List.copyOf(forcedMenuIds);
+            supportedMenuIds = List.copyOf(supportedMenuIds);
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
@@ -312,13 +318,11 @@ public final class DesktopPackets {
             buf.writeLong(this.clientNonce);
             buf.writeVarLong(this.capabilities);
             buf.writeBoolean(this.uiEnabled);
-            writeLimitedStringList(buf, this.forcedMenuIds, DesktopProtocol.MAX_FORCED_MENU_IDS, MAX_IDENTIFIER_LENGTH);
+            writeLimitedStringList(buf, this.forcedMenuIds, DesktopProtocol.MAX_FORCED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH);
+            writeLimitedStringList(buf, this.supportedMenuIds, DesktopProtocol.MAX_SUPPORTED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH);
         }
 
-        @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
-        }
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
     public record DesktopHelloAckPayload(int protocolVersion, long clientNonce, long connectionNonce, long capabilities, boolean uiEnabled, long playerSessionToken) implements CustomPacketPayload {
@@ -366,29 +370,32 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopModePayload(long connectionNonce, long sequence, boolean uiEnabled, List<String> forcedMenuIds) implements CustomPacketPayload {
+    public record DesktopModePayload(long connectionNonce, long sequence, boolean uiEnabled, List<String> forcedMenuIds, List<String> supportedMenuIds) implements CustomPacketPayload {
         public static final Type<DesktopModePayload> TYPE = new Type<>(id("desktop_mode"));
         public static final StreamCodec<RegistryFriendlyByteBuf, DesktopModePayload> CODEC = CustomPacketPayload.codec(DesktopModePayload::write, DesktopModePayload::new);
 
         private DesktopModePayload(RegistryFriendlyByteBuf buf) {
-            this(buf.readLong(), buf.readVarLong(), buf.readBoolean(), readLimitedStringList(buf, DesktopProtocol.MAX_FORCED_MENU_IDS, MAX_IDENTIFIER_LENGTH));
+            this(buf.readLong(), buf.readVarLong(), buf.readBoolean(),
+                readLimitedStringList(buf, DesktopProtocol.MAX_FORCED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH),
+                readLimitedStringList(buf, DesktopProtocol.MAX_SUPPORTED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH));
         }
 
         public DesktopModePayload {
+            DesktopProtocol.requireCount("forced menu ids", forcedMenuIds.size(), DesktopProtocol.MAX_FORCED_MENU_IDS);
+            DesktopProtocol.requireCount("supported menu ids", supportedMenuIds.size(), DesktopProtocol.MAX_SUPPORTED_MENU_IDS);
             forcedMenuIds = List.copyOf(forcedMenuIds);
+            supportedMenuIds = List.copyOf(supportedMenuIds);
         }
 
         private void write(RegistryFriendlyByteBuf buf) {
             buf.writeLong(this.connectionNonce);
             buf.writeVarLong(this.sequence);
             buf.writeBoolean(this.uiEnabled);
-            writeLimitedStringList(buf, this.forcedMenuIds, DesktopProtocol.MAX_FORCED_MENU_IDS, MAX_IDENTIFIER_LENGTH);
+            writeLimitedStringList(buf, this.forcedMenuIds, DesktopProtocol.MAX_FORCED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH);
+            writeLimitedStringList(buf, this.supportedMenuIds, DesktopProtocol.MAX_SUPPORTED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH);
         }
 
-        @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
-        }
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
     public record DesktopPlayerSessionPayload(long connectionNonce, long playerSessionToken) implements CustomPacketPayload {

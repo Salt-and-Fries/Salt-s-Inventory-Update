@@ -1,5 +1,7 @@
 package com.salts_inventory_update.client;
 
+import com.salts_inventory_update.api.client.desktop.DesktopMenuFactories;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,7 +28,7 @@ import net.minecraft.world.item.ItemStack;
 
 import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.internal.desktop.DesktopItemSourceLocks;
-import com.salts_inventory_update.internal.desktop.DesktopMenuSlots;
+import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopOpenSessionPayload;
@@ -49,6 +51,7 @@ public final class DesktopContainerSession {
     private final int contentHeight;
     private final DesktopItemSourceLocks.Lease sourceLock;
     private boolean closed;
+    private int[] companionOwnerIds = new int[0];
 
     private DesktopContainerSession(
         int sessionId,
@@ -99,8 +102,8 @@ public final class DesktopContainerSession {
 
         AbstractContainerMenu menu = createMenu(minecraft, payload, player, openingData);
         List<ItemStack> items = payload.items();
-        DesktopMenuSlots.prepareSnapshot(menu, items);
-        int logicalSlots = DesktopMenuSlots.size(menu);
+        DesktopMenuBindings.prepareSnapshot(menu, items);
+        int logicalSlots = DesktopMenuBindings.size(menu);
         if (items.size() != logicalSlots) {
             throw new IllegalArgumentException(
                 "Desktop session slot snapshot mismatch: session="
@@ -112,7 +115,7 @@ public final class DesktopContainerSession {
             );
         }
         menu.initializeContents(payload.stateId(), items, payload.carried());
-        int initializedLogicalSlots = DesktopMenuSlots.size(menu);
+        int initializedLogicalSlots = DesktopMenuBindings.size(menu);
         if (items.size() != initializedLogicalSlots) {
             throw new IllegalArgumentException(
                 "Desktop session slot snapshot mismatch after initialization: session="
@@ -247,6 +250,10 @@ public final class DesktopContainerSession {
         DesktopDebug.detail("SIU_MOUNT_DIAG " + message, args);
     }
 
+    public int[] companionOwnerIds() { return companionOwnerIds.clone(); }
+    public boolean isCompanion() { return companionOwnerIds.length > 0; }
+    public void setCompanionOwners(int[] owners) { companionOwnerIds = owners.clone(); }
+
     public int sessionId() {
         return this.sessionId;
     }
@@ -317,7 +324,7 @@ public final class DesktopContainerSession {
     }
 
     public void updateSlot(int slotIndex, int stateId, ItemStack stack) {
-        if (slotIndex >= 0 && slotIndex < DesktopMenuSlots.size(this.menu)) {
+        if (slotIndex >= 0 && slotIndex < DesktopMenuBindings.size(this.menu)) {
             this.menu.setItem(slotIndex, stateId, stack);
         }
     }
@@ -345,8 +352,8 @@ public final class DesktopContainerSession {
 
     private static List<Slot> findContainerSlots(AbstractContainerMenu menu, Inventory playerInventory) {
         List<Slot> slots = new ArrayList<>();
-        for (Slot slot : DesktopMenuSlots.all(menu)) {
-            if (slot.container != playerInventory) {
+        for (Slot slot : DesktopMenuBindings.all(menu)) {
+            if (!DesktopMenuBindings.isPlayerInventorySlot(menu, slot, playerInventory)) {
                 slots.add(slot);
             }
         }

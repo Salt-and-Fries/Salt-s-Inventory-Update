@@ -131,6 +131,29 @@ import org.lwjgl.glfw.GLFW;
 import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.api.client.desktop.DesktopInputContext;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowHandle;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowOptions;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowPresentation;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowRegion;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowSurface;
+import com.salts_inventory_update.api.client.desktop.DesktopSurfaceMode;
+import com.salts_inventory_update.api.client.desktop.DesktopHitRole;
+import com.salts_inventory_update.api.client.desktop.DesktopViewportPolicy;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowAction;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowState;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowTasks;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowBounds;
+import com.salts_inventory_update.api.client.desktop.DesktopChromeMetrics;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowDecoration;
+import com.salts_inventory_update.api.client.desktop.DesktopControlState;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowControl;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowEnvironment;
+import com.salts_inventory_update.api.client.desktop.DesktopGestureEvent;
+import com.salts_inventory_update.api.client.desktop.DesktopGesturePhase;
+import com.salts_inventory_update.api.client.desktop.DesktopGestureSnapshot;
+import com.salts_inventory_update.api.client.desktop.DesktopSlotPreview;
+import com.salts_inventory_update.api.client.desktop.DesktopPopup;
+import com.salts_inventory_update.api.client.desktop.DesktopNativeRenderContext;
 import com.salts_inventory_update.api.client.desktop.DesktopRenderContext;
 import com.salts_inventory_update.api.client.desktop.DesktopResizePolicy;
 import com.salts_inventory_update.api.client.desktop.DesktopSlotContext;
@@ -143,7 +166,7 @@ import com.salts_inventory_update.api.client.desktop.DesktopWindowSize;
 import com.salts_inventory_update.api.client.desktop.widget.DesktopTextBoxState;
 import com.salts_inventory_update.api.client.desktop.widget.DesktopWidgets;
 import com.salts_inventory_update.api.desktop.DesktopPayloadCodecs;
-import com.salts_inventory_update.api.desktop.SaltsInventoryDesktopApi;
+import com.salts_inventory_update.api.client.desktop.DesktopClientApi;
 import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserAccess;
 import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserBridge;
 import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserEntry;
@@ -159,7 +182,7 @@ import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserView;
 import com.salts_inventory_update.compat.toms_storage.TomsStorageCompat;
 import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.internal.desktop.DesktopItemSourceLocks;
-import com.salts_inventory_update.internal.desktop.DesktopMenuSlots;
+import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
 import com.salts_inventory_update.internal.desktop.DesktopSortSlots;
 import com.salts_inventory_update.mixin.client.MenuScreensAccessor;
 import com.salts_inventory_update.mixin.client.RecipeBookComponentAccessor;
@@ -170,6 +193,7 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPa
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public final class InventoryDesktopScreen extends Screen implements MenuAccess {
+    private static long apiResourceRevision;
     private static final boolean JEI_TRANSFER_DEBUG = Boolean.getBoolean("salts_inventory_update.jeiTransferDebug");
     private static final int TOP_BAR_HEIGHT = 16;
     static final int SLOT_SIZE = 18;
@@ -889,6 +913,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final List<WindowControl> POPUP_CONTROLS_WITH_MINIMIZE = List.of(WindowControl.FOCUS, WindowControl.PIN, WindowControl.LOCK, WindowControl.LINK, WindowControl.MINIMIZE);
 
     private static @Nullable InventoryDesktopScreen singleton;
+    private @Nullable InventoryWindow apiKeyboardFocusWindow;
+    private @Nullable InventoryWindow apiLastModalWindow;
     private static final Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> VANILLA_SCREEN_CONSTRUCTORS = new LinkedHashMap<>();
     private static final Set<MenuType<?>> FORCED_CONTAINER_SCREENS = new HashSet<>();
     private static Field menuScreensField;
@@ -925,6 +951,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private int resizeStartMouseY;
     private int resizeStartWidth;
     private int resizeStartHeight;
+    private int resizeStartWindowX;
+    private int resizeStartWindowY;
+    private DesktopHitRole surfaceResizeRole = DesktopHitRole.RESIZE_SOUTH_EAST;
     private @Nullable InventoryWindow scrollingCreativeWindow;
     private @Nullable InventoryWindow scrollingJeiWindow;
     private @Nullable InventoryWindow draggingJeiRecipeLayoutWindow;
@@ -941,6 +970,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable InventoryWindow apiPointerCaptureWindow;
     private int apiPointerCaptureButton = -1;
     private @Nullable Slot dragStartSlot;
+    private long apiGestureSequence;
+    private long apiGestureId;
+    private @Nullable InventoryWindow apiGestureOwner;
+    private java.util.Set<InventoryWindow> apiGestureObservers;
     private @Nullable PendingSlotClick pendingSlotClick;
     private @Nullable DragDistribution dragDistribution;
     private @Nullable SlotKey lastClickedSlotKey;
@@ -1001,6 +1034,572 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     static @Nullable DesktopContainerSession sessionForNetworking(Minecraft minecraft, int sessionId) {
         InventoryDesktopScreen screen = current(minecraft);
         return screen == null ? null : screen.session(sessionId);
+    }
+
+    /** Called by the public client API; client-only models never bind an inventory menu. */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static @Nullable DesktopWindowHandle openApiView(
+        Minecraft minecraft, String key, Object model, Component title, DesktopWindowDefinition definition
+    ) {
+        if (!minecraft.isSameThread()) throw new IllegalStateException("Open desktop views on the client main thread");
+        if (!SaltsInventoryRuntime.isEnabled() || minecraft.player == null) return null;
+        InventoryDesktopScreen screen = getOrCreate(minecraft);
+        for (InventoryWindow existing : screen.windows) {
+            if (key.equals(existing.apiViewKey)) {
+                if (existing.apiModel != model) throw new IllegalStateException("View instance key already belongs to another model: " + key);
+                var handle = screen.apiWindowHandle(existing);
+                handle.focus();
+                return handle;
+            }
+        }
+        var setup = new DesktopWindowSetupContext(minecraft, model, title, Integer.MIN_VALUE, key,
+            List.of(), 240, 160, 256, 192);
+        DesktopWindowSize size;
+        try { size = java.util.Objects.requireNonNull(definition.defaultSize(setup), "defaultSize"); }
+        catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                key, "create-view", "View size callback failed", failure);
+            return null;
+        }
+        InventoryWindow window = new InventoryWindow(WindowKind.CLIENT_API, title, 0, 0, size.width(), size.height());
+        window.apiModel = model;
+        window.apiViewKey = key;
+        if (!screen.initializeApiWindow(window, definition, setup)) return null;
+        screen.placeOrRestoreWindow(window, WindowPlacement.CENTER);
+        screen.windows.add(window);
+        screen.hotbarOnly = false;
+        screen.showIfNeeded(minecraft);
+        screen.apiOpened(window);
+        screen.setFocusedWindow(window);
+        screen.handleWindowOpened(window, "api-view-add");
+        return screen.apiWindowHandle(window);
+    }
+
+    private boolean beginSurfaceInteraction(InventoryWindow window, MouseButtonEvent event, boolean doubleClick) {
+        if (window.apiDefinition == null || this.surfaceControlAt(window, event.x(), event.y()) != null) return false;
+        DesktopHitRole role = window.apiSurface.hitRole(window.x, window.y, window.width, window.height, event.x(), event.y());
+        if (role == DesktopHitRole.MOVE && event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            return this.requestApiWindowAction(window, DesktopWindowAction.MANAGEMENT_MENU);
+        }
+        if (role == DesktopHitRole.CONTROL || role == DesktopHitRole.POPUP) {
+            if (this.apiMouseClicked(window, event, doubleClick)) this.captureApiPointer(window, event);
+            this.commitApiSurface(window);
+            return true;
+        }
+        if (event.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT || window.slotAt(this, event.x(), event.y()) != null) return false;
+        if (role == DesktopHitRole.MOVE && this.apiActionAvailable(window, DesktopWindowAction.MOVE)) {
+            this.cancelApiPointerCapture(null);
+            this.clearSlotInteractionState("surface-move");
+            this.movingWindow = window;
+            this.resizingWindow = null;
+            this.moveOffsetX = (int) event.x() - window.x;
+            this.moveOffsetY = (int) event.y() - window.y;
+            return true;
+        }
+        if (role.resizing() && this.apiActionAvailable(window, DesktopWindowAction.RESIZE)) {
+            this.cancelApiPointerCapture(null);
+            this.clearSlotInteractionState("surface-resize");
+            this.resizingWindow = window;
+            this.movingWindow = null;
+            this.resizeStartMouseX = (int) event.x();
+            this.resizeStartMouseY = (int) event.y();
+            this.resizeStartWindowX = window.x;
+            this.resizeStartWindowY = window.y;
+            this.resizeStartWidth = window.width;
+            this.resizeStartHeight = window.height;
+            this.surfaceResizeRole = role;
+            return true;
+        }
+        return false;
+    }
+
+    /** Reload listeners marshal here on the client thread; worlds do not repeat provider registration. */
+    public static void resourcesReloaded() {
+        apiResourceRevision++;
+        if (singleton == null) return;
+        for (InventoryWindow window : List.copyOf(singleton.windows)) {
+            try {
+                singleton.notifyApiEnvironment(window);
+                singleton.commitApiSurface(window);
+            } catch (RuntimeException failure) {
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                    com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                    window.debugName(), "resource-reload", "Resource callback failed", failure);
+            }
+        }
+    }
+
+    private DesktopWindowEnvironment currentApiEnvironment() {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.getWindow() == null) {
+            return new DesktopWindowEnvironment(Math.max(0, this.width), Math.max(0, this.height), 1, apiResourceRevision);
+        }
+        var viewport = client.getWindow();
+        return new DesktopWindowEnvironment(viewport.getGuiScaledWidth(), viewport.getGuiScaledHeight(),
+            viewport.getGuiScale(), apiResourceRevision);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void notifyApiEnvironment(InventoryWindow window) {
+        if (window.apiDefinition == null || window.apiDisposed) return;
+        DesktopWindowEnvironment environment = this.currentApiEnvironment();
+        if (environment.equals(window.apiEnvironment)) return;
+        if (window.apiEnvironment != null) this.cancelApiInput(window, "environment-change");
+        if (window.apiDisposed) return;
+        window.apiEnvironment = environment;
+        ((DesktopWindowDefinition) window.apiDefinition).environmentChanged(
+            this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), environment);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private String apiLayoutRevision(InventoryWindow window) {
+        String revision = java.util.Objects.requireNonNull(((DesktopWindowDefinition) window.apiDefinition)
+            .layoutRevision(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE)), "layoutRevision");
+        if (revision.length() > 256) throw new IllegalArgumentException("Layout revision exceeds 256 characters");
+        return revision;
+    }
+
+    @Override
+    protected void updateNarrationState(net.minecraft.client.gui.narration.NarrationElementOutput output) {
+        InventoryWindow owner = this.apiModalWindow();
+        if (owner == null) owner = this.apiKeyboardFocusWindow;
+        if (owner == null || owner.apiDisposed || owner.persistentHidden || owner.minimized || owner.ghosted || owner.apiDefinition == null) {
+            super.updateNarrationState(output);
+            return;
+        }
+        this.apiNarrate(owner, output);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void apiNarrate(InventoryWindow owner, net.minecraft.client.gui.narration.NarrationElementOutput output) {
+        try {
+            if (owner.apiControlFocus != null) {
+                output.add(net.minecraft.client.gui.narration.NarratedElementType.TITLE,
+                    this.managementControlLabel(owner, WindowControl.valueOf(owner.apiControlFocus.name())));
+                output.add(net.minecraft.client.gui.narration.NarratedElementType.USAGE,
+                    Component.translatable("narration.salts_inventory_update.management_control"));
+                return;
+            }
+            ((DesktopWindowDefinition) owner.apiDefinition).narrate(
+                this.apiContext(owner, null, Integer.MIN_VALUE, Integer.MIN_VALUE), output);
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                owner.debugName(), "narration", "Narration callback failed", failure);
+        }
+    }
+
+    private @Nullable InventoryWindow gestureWindow(SlotHit hit) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
+            if (window.containerMenu() == hit.menu() && window.sessionId() == hit.sessionId()) return window;
+        }
+        return null;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void publishApiGesture(DesktopGestureEvent.Outcome outcome, String reason) {
+        if (this.apiGestureId == 0) return;
+        if (this.apiGestureObservers == null) this.apiGestureObservers = new java.util.HashSet<>();
+        List<SlotHit> hits = this.dragDistribution != null ? this.dragDistribution.slots()
+            : this.pendingSlotClick == null ? List.of() : List.of(this.pendingSlotClick.hit());
+        for (SlotHit hit : hits) {
+            InventoryWindow window = this.gestureWindow(hit);
+            if (window != null && window.apiDefinition != null && !window.apiClosedDelivered) this.apiGestureObservers.add(window);
+        }
+        DesktopGestureEvent event = new DesktopGestureEvent(this.apiGestureId, outcome, reason);
+        List<InventoryWindow> observers = List.copyOf(this.apiGestureObservers);
+        boolean terminal = outcome == DesktopGestureEvent.Outcome.COMPLETED || outcome == DesktopGestureEvent.Outcome.CANCELLED;
+        if (terminal) { this.apiGestureId = 0; this.apiGestureOwner = null; this.apiGestureObservers.clear(); }
+        for (InventoryWindow window : observers) {
+            if (window.apiClosedDelivered) continue;
+            try { ((DesktopWindowDefinition) window.apiDefinition).gestureChanged(
+                this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), event); }
+            catch (RuntimeException failure) {
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                    com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                    window.debugName(), "gesture", "Gesture observer failed", failure);
+            }
+        }
+    }
+
+    private boolean apiGestureQuery;
+
+    private DesktopGestureSnapshot apiGestureSnapshot(InventoryWindow window, int mouseX, int mouseY) {
+        boolean captured = this.apiPointerCaptureWindow == window && !window.apiDisposed;
+        List<SlotHit> hits = this.dragDistribution != null ? this.dragDistribution.slots()
+            : this.pendingSlotClick == null ? List.of() : List.of(this.pendingSlotClick.hit());
+        boolean participates = window.containerMenu() != null && hits.stream().anyMatch(hit -> hit.menu() == window.containerMenu());
+        ItemStack carried = window.kind == WindowKind.CLIENT_API ? ItemStack.EMPTY : this.sharedCarried;
+        if (!participates || this.apiGestureId == 0) return new DesktopGestureSnapshot(0, DesktopGesturePhase.NONE,
+            -1, -1, null, List.of(), carried, null, captured);
+        DragDistribution drag = this.activeDragPreview();
+        List<SlotHit> targets = drag == null ? List.of() : this.previewDragTargets(drag);
+        SlotHit hovered = null;
+        boolean alreadyQuerying = this.apiGestureQuery;
+        this.apiGestureQuery = true;
+        try {
+            if (!alreadyQuerying && this.windowAt(mouseX, mouseY) == window) hovered = window.slotAt(this, mouseX, mouseY);
+        } finally { this.apiGestureQuery = alreadyQuerying; }
+        List<SlotHit> previewHits = new ArrayList<>(hits);
+        if (hovered != null && !previewHits.contains(hovered)) previewHits.add(hovered);
+        List<DesktopSlotPreview> previews = new ArrayList<>();
+        for (SlotHit hit : previewHits) {
+            boolean eligible = this.canDragDistributeTo(hit);
+            boolean selected = drag != null && targets.contains(hit);
+            DragSlotPreview preview = selected ? this.dragSlotPreview(hit, drag.quickCraftType(), targets.size()) : null;
+            previews.add(new DesktopSlotPreview(hit.sessionId(), hit.slotId(),
+                preview == null ? hit.slot().getItem() : preview.stack(), preview == null ? null : preview.countText(),
+                eligible, selected, hovered != null && hovered.slot() == hit.slot() && hovered.sessionId() == hit.sessionId()));
+        }
+        DragCarriedPreview cursor = this.dragCarriedPreview();
+        int button = this.pendingSlotClick != null ? this.pendingSlotClick.button() : drag.button();
+        int type = this.pendingSlotClick != null ? this.pendingSlotClick.quickCraftType() : drag.quickCraftType();
+        return new DesktopGestureSnapshot(this.apiGestureId, drag == null ? DesktopGesturePhase.PENDING : DesktopGesturePhase.DISTRIBUTING,
+            button, type, this.apiGestureOwner == null ? null : this.apiGestureOwner.apiInstanceId,
+            previews, cursor.stack(), cursor.countText(), captured);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean dismissApiPopup(InventoryWindow window, DesktopPopup popup, DesktopPopup.Dismissal reason) {
+        if (window.apiDisposed || window.apiDefinition == null) return false;
+        try {
+            boolean dismissed = ((DesktopWindowDefinition) window.apiDefinition).dismissPopup(
+                this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), popup.id(), reason);
+            if (dismissed && !window.apiDisposed) {
+                this.cancelApiPointerCapture(window);
+                this.commitApiSurface(window);
+            }
+            return dismissed;
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "popup-dismiss", "Popup dismissal failed", failure);
+            return false;
+        }
+    }
+
+    private boolean dismissApiOutsidePress(double mouseX, double mouseY) {
+        List<InventoryWindow> owners = List.copyOf(this.windows);
+        for (int index = owners.size() - 1; index >= 0; index--) {
+            InventoryWindow owner = owners.get(index);
+            if (owner.apiDisposed || owner.persistentHidden || owner.minimized || owner.ghosted || owner.apiPopups == null) continue;
+            List<DesktopPopup> popups = owner.apiPopups;
+            for (int popupIndex = popups.size() - 1; popupIndex >= 0; popupIndex--) {
+                DesktopPopup popup = popups.get(popupIndex);
+                if (popup.contains(owner.x, owner.y, mouseX, mouseY) && this.windowAt(mouseX, mouseY) == owner) return false;
+                if (popup.dismissOnOutside()) this.dismissApiPopup(owner, popup, DesktopPopup.Dismissal.OUTSIDE_PRESS);
+                if (popup.modal()) return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean dismissApiEscape(InventoryWindow window) {
+        if (window.apiPopups == null) return false;
+        for (int index = window.apiPopups.size() - 1; index >= 0; index--) {
+            DesktopPopup popup = window.apiPopups.get(index);
+            if (popup.dismissOnEscape()) return this.dismissApiPopup(window, popup, DesktopPopup.Dismissal.ESCAPE);
+            if (popup.modal()) return true;
+        }
+        return false;
+    }
+
+    private DesktopWindowState apiWindowState(InventoryWindow window) {
+        return new DesktopWindowState(window.apiInstanceId, !window.apiDisposed && this.windows.contains(window),
+            window.x, window.y, window.width, window.height, window.minimized,
+            window.pinMode != PinMode.UNPINNED, window.ghosted, window.locked,
+            window == this.apiKeyboardFocusWindow, window.focused,
+            !window.apiDisposed && this.windows.contains(window) && !window.minimized && !window.ghosted
+                && !window.persistentHidden && !window.companionHidden);
+    }
+
+    /** Authenticated metadata update; it retains the menu, widgets, position and input lifetime. */
+    public void updateCompanionOwners(int sessionId, int[] ownerIds) {
+        for (DesktopContainerSession session : this.sessions) {
+            if (session.sessionId() == sessionId && session.isCompanion()) {
+                session.setCompanionOwners(ownerIds);
+                this.updateCompanionVisibility();
+                return;
+            }
+        }
+    }
+
+    private boolean isCompanion(InventoryWindow window) {
+        return window.session != null && window.session.isCompanion();
+    }
+
+    private @Nullable InventoryWindow eligibleCompanionOwner(InventoryWindow companion) {
+        if (!this.isCompanion(companion)) return null;
+        for (int id : companion.session.companionOwnerIds()) {
+            for (InventoryWindow owner : this.windows) {
+                if (owner.session != null && owner.session.sessionId() == id
+                    && !owner.apiDisposed && !owner.minimized && !owner.ghosted && !owner.persistentHidden) return owner;
+            }
+        }
+        return null;
+    }
+
+    private void updateCompanionVisibility() {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
+            if (!this.isCompanion(window)) continue;
+            boolean hidden = this.eligibleCompanionOwner(window) == null;
+            if (window.companionHidden == hidden) continue;
+            window.companionHidden = hidden;
+            if (hidden) {
+                this.cancelApiInput(window);
+                this.clearPopupStateFor(window);
+                if (window == this.apiKeyboardFocusWindow) this.setApiKeyboardFocus(null);
+                if (window.focused) { window.focused = false; this.apiFocusChanged(window, false); }
+            }
+            this.notifyApiWindowState(window);
+        }
+    }
+
+    private Component managementControlLabel(InventoryWindow window, WindowControl control) {
+        if (control == WindowControl.MINIMIZE && window.minimized) {
+            return Component.translatable("tooltip.salts_inventory_update.window_control.restore");
+        }
+        if (control == WindowControl.PIN && window.apiSurface.mode() == DesktopSurfaceMode.MOD_OWNED
+            && window.pinMode != PinMode.UNPINNED) {
+            return Component.translatable("tooltip.salts_inventory_update.window_control.unpin");
+        }
+        return control.tooltip();
+    }
+
+    private DesktopWindowAction surfaceControlAction(InventoryWindow window, DesktopWindowControl control) {
+        return switch (control) {
+            case CLOSE -> DesktopWindowAction.USER_CLOSE;
+            case PIN -> window.pinMode == PinMode.UNPINNED ? DesktopWindowAction.PIN : DesktopWindowAction.UNPIN;
+            case MINIMIZE -> window.minimized ? DesktopWindowAction.RESTORE : DesktopWindowAction.MINIMIZE;
+            case ELLIPSIS -> DesktopWindowAction.MANAGEMENT_MENU;
+            default -> throw new IllegalArgumentException("Unsupported surface control: " + control);
+        };
+    }
+
+    private com.salts_inventory_update.api.client.desktop.@Nullable DesktopSurfaceControl surfaceControlAt(
+        InventoryWindow window, double mouseX, double mouseY) {
+        if (window.apiSurface.mode() != DesktopSurfaceMode.MOD_OWNED || window.companionHidden
+            || window.persistentHidden || window.ghosted || window.apiDisposed) return null;
+        for (var control : window.apiSurfaceControls) {
+            var bounds = control.bounds();
+            if (contains(mouseX, mouseY, window.x + bounds.x(), window.y + bounds.y(), bounds.width(), bounds.height())) return control;
+        }
+        return null;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void renderSurfaceControls(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        if (window.apiDefinition == null || window.apiSurfaceControls.isEmpty()
+            || window.apiSurface.mode() != DesktopSurfaceMode.MOD_OWNED || window.ghosted) return;
+        List<DesktopControlState> states = new ArrayList<>();
+        boolean active = this.windowAt(mouseX, mouseY) == window;
+        for (var control : window.apiSurfaceControls) {
+            var local = control.bounds();
+            var bounds = new DesktopWindowBounds(window.x + local.x(), window.y + local.y(), local.width(), local.height());
+            boolean hovered = active && contains(mouseX, mouseY, bounds.x(), bounds.y(), bounds.width(), bounds.height());
+            boolean selected = switch (control.control()) {
+                case PIN -> window.pinMode != PinMode.UNPINNED;
+                case MINIMIZE -> window.minimized;
+                case ELLIPSIS -> this.popupWindow == window;
+                default -> false;
+            };
+            states.add(new DesktopControlState(control.control(), bounds, hovered,
+                this.pressedControlWindow == window && this.pressedControl != null
+                    && this.pressedControl.name().equals(control.control().name()),
+                this.apiActionAvailable(window, this.surfaceControlAction(window, control.control())), selected,
+                window == this.apiKeyboardFocusWindow && control.control() == window.apiControlFocus));
+        }
+        try {
+            ((DesktopWindowDefinition) window.apiDefinition).renderManagementControls(
+                this.apiContext(window, graphics, mouseX, mouseY), List.copyOf(states));
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "surface-controls", "Control rendering failed", failure);
+        }
+    }
+
+    private boolean surfaceControlKeyboard(InventoryWindow window, KeyEvent event) {
+        if (window.apiSurfaceControls.isEmpty() || window.apiSurface.mode() != DesktopSurfaceMode.MOD_OWNED) return false;
+        if (event.isEscape() && window.apiControlFocus != null) { window.apiControlFocus = null; return true; }
+        if (event.key() == InputConstants.KEY_F10 && event.hasAltDown()) {
+            window.apiControlFocus = window.apiSurfaceControls.stream().map(c -> c.control())
+                .filter(c -> this.apiActionAvailable(window, this.surfaceControlAction(window, c))).findFirst().orElse(null);
+            return window.apiControlFocus != null;
+        }
+        if (event.key() == InputConstants.KEY_TAB) {
+            List<DesktopWindowControl> controls = window.apiSurfaceControls.stream().map(c -> c.control())
+                .filter(c -> this.apiActionAvailable(window, this.surfaceControlAction(window, c))).toList();
+            if (controls.isEmpty()) { window.apiControlFocus = null; return false; }
+            int index = controls.indexOf(window.apiControlFocus);
+            int next = index < 0 ? (event.hasShiftDown() ? controls.size() - 1 : 0)
+                : index + (event.hasShiftDown() ? -1 : 1);
+            if (next < 0 || next >= controls.size()) { window.apiControlFocus = null; return false; }
+            window.apiControlFocus = controls.get(next);
+            return true;
+        }
+        if (window.apiControlFocus != null && (event.key() == InputConstants.KEY_RETURN || event.key() == InputConstants.KEY_SPACE)) {
+            return this.requestApiWindowAction(window, this.surfaceControlAction(window, window.apiControlFocus));
+        }
+        return false;
+    }
+
+    private boolean apiActionAvailable(InventoryWindow window, DesktopWindowAction action) {
+        java.util.Objects.requireNonNull(action, "action");
+        if (window.apiDisposed || !this.windows.contains(window) || window.companionHidden) return false;
+        if (this.isCompanion(window) && action != DesktopWindowAction.FOCUS && action != DesktopWindowAction.MOVE) return false;
+        InventoryWindow modal = this.apiModalWindow();
+        if (modal != null && modal != window) return false;
+        DesktopWindowOptions options = this.apiOptions(window);
+        if (window.apiDisposed) return false;
+        return switch (action) {
+            case FOCUS -> true;
+            case MANAGEMENT_MENU -> options.managementMenu();
+            case USER_CLOSE -> options.closable();
+            case MINIMIZE -> options.minimizable() && SaltsInventoryConfig.get().minimizableWindows
+                && !window.minimized && !window.ghosted;
+            case RESTORE -> options.minimizable() && !window.ghosted && (window.minimized || window.persistentHidden);
+            case PIN -> options.pinnable() && window.pinMode == PinMode.UNPINNED;
+            case UNPIN -> options.pinnable() && window.pinMode != PinMode.UNPINNED;
+            case GHOST -> options.pinnable() && options.ghostable()
+                && SaltsInventoryConfig.get().enableGhostPins && !window.ghosted;
+            case UNGHOST -> options.ghostable() && window.ghosted;
+            case MOVE -> options.movable() && !window.locked && !window.minimized && !window.ghosted;
+            case RESIZE -> this.canResizeWindow(window);
+            case LOCK -> options.lockable() && !window.locked;
+            case UNLOCK -> options.lockable() && window.locked;
+        };
+    }
+
+    private boolean requestApiWindowAction(InventoryWindow window, DesktopWindowAction action) {
+        if (!this.apiActionAvailable(window, action)) return false;
+        switch (action) {
+            case MOVE, RESIZE -> { return false; }
+            case FOCUS -> { return this.apiWindowHandle(window).focus(); }
+            case USER_CLOSE -> this.closeWindow(window, "api-user-close");
+            case MANAGEMENT_MENU -> this.activateControl(window, WindowControl.ELLIPSIS);
+            case MINIMIZE -> this.activateControl(window, WindowControl.MINIMIZE);
+            case RESTORE -> {
+                window.minimized = false;
+                this.openExistingLinkedWindow(window);
+                this.clampWindowIntoDesktop(window);
+            }
+            case PIN -> window.pinMode = PinMode.PINNED;
+            case UNPIN -> {
+                window.pinMode = PinMode.UNPINNED;
+                if (window.ghosted) this.promoteGhostWindow(window);
+            }
+            case GHOST -> {
+                window.pinMode = PinMode.GHOST_PINNED;
+                this.clearSlotInteractionState("api-ghost");
+                this.demoteGhostWindow(window, true);
+            }
+            case UNGHOST -> this.promoteGhostWindow(window);
+            case LOCK, UNLOCK -> this.activateControl(window, WindowControl.LOCK);
+        }
+        if (this.windows.contains(window)) {
+            this.saveWindowState(window);
+            this.notifyApiWindowState(window);
+        }
+        return true;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void notifyApiWindowState(InventoryWindow window) {
+        if (window.apiDefinition == null || window.apiClosedDelivered) return;
+        DesktopWindowState state = this.apiWindowState(window);
+        if (state.equals(window.apiLastState)) return;
+        window.apiLastState = state;
+        try {
+            ((DesktopWindowDefinition) window.apiDefinition).windowStateChanged(
+                this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), state);
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "window-state", "State observer failed", failure);
+        }
+    }
+
+    private DesktopWindowHandle apiWindowHandle(InventoryWindow window) {
+        return new DesktopWindowHandle() {
+            @Override public UUID instanceId() { return window.apiInstanceId; }
+            @Override public boolean isOpen() { return !window.apiDisposed && InventoryDesktopScreen.this.windows.contains(window); }
+            private void requireThread() {
+                if (!Minecraft.getInstance().isSameThread()) throw new IllegalStateException("Use desktop handles on the client main thread");
+            }
+            @Override public boolean focus() {
+                requireThread();
+                if (!isOpen() || window.companionHidden) return false;
+                InventoryWindow modal = InventoryDesktopScreen.this.apiModalWindow();
+                if (modal != null && modal != window) return false;
+                InventoryDesktopScreen.this.openExistingLinkedWindow(window);
+                window.minimized = false;
+                InventoryDesktopScreen.this.bringToFront(window);
+                InventoryDesktopScreen.this.setFocusedWindow(window);
+                InventoryDesktopScreen.this.showIfNeeded(Minecraft.getInstance());
+                return true;
+            }
+            @Override public DesktopWindowState state() { requireThread(); return InventoryDesktopScreen.this.apiWindowState(window); }
+            @Override public boolean available(DesktopWindowAction action) {
+                requireThread(); return InventoryDesktopScreen.this.apiActionAvailable(window, action);
+            }
+            @Override public boolean request(DesktopWindowAction action) {
+                requireThread(); return InventoryDesktopScreen.this.requestApiWindowAction(window, action);
+            }
+            @Override public boolean moveTo(int x, int y) {
+                requireThread();
+                if (!InventoryDesktopScreen.this.apiActionAvailable(window, DesktopWindowAction.MOVE)) return false;
+                window.x = x; window.y = y;
+                InventoryDesktopScreen.this.clampWindowIntoDesktop(window);
+                InventoryDesktopScreen.this.apiMoved(window);
+                InventoryDesktopScreen.this.commitApiSurface(window);
+                InventoryDesktopScreen.this.saveWindowState(window);
+                InventoryDesktopScreen.this.notifyApiWindowState(window);
+                return true;
+            }
+            @Override public boolean resizeTo(int width, int height) {
+                requireThread();
+                if (width <= 0 || height <= 0) throw new IllegalArgumentException("Surface size must be positive");
+                if (!InventoryDesktopScreen.this.apiActionAvailable(window, DesktopWindowAction.RESIZE)) return false;
+                DesktopWindowSize maximum = InventoryDesktopScreen.this.apiMaxSize(window);
+                width = Math.max(InventoryDesktopScreen.this.minResizableWidth(window), width);
+                height = Math.max(InventoryDesktopScreen.this.minResizableHeight(window), height);
+                if (maximum != null) { width = Math.min(width, maximum.width()); height = Math.min(height, maximum.height()); }
+                InventoryDesktopScreen.this.applyInternalWindowSize(window, DesktopWindowSize.of(width, height));
+                InventoryDesktopScreen.this.snapResizableWindow(window);
+                InventoryDesktopScreen.this.commitApiSurface(window);
+                InventoryDesktopScreen.this.saveWindowState(window);
+                InventoryDesktopScreen.this.notifyApiWindowState(window);
+                return true;
+            }
+            @Override public boolean cancelInput() {
+                requireThread();
+                if (!isOpen()) return false;
+                InventoryDesktopScreen.this.cancelApiInput(window);
+                return true;
+            }
+            @Override public boolean schedule(Runnable action) {
+                java.util.Objects.requireNonNull(action, "action");
+                if (window.apiDisposed) return false;
+                Minecraft.getInstance().execute(() -> {
+                    if (!isOpen()) return;
+                    try { action.run(); }
+                    catch (RuntimeException failure) {
+                        com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                            com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                            window.debugName(), "async-update", "Model update failed", failure);
+                    }
+                });
+                return true;
+            }
+            @Override public boolean close() {
+                requireThread();
+                if (!isOpen() || InventoryDesktopScreen.this.isCompanion(window)) return false;
+                InventoryDesktopScreen.this.closeWindow(window, "api-handle-close", true);
+                return true;
+            }
+        };
     }
 
     public static boolean isSingleton(InventoryDesktopScreen screen) {
@@ -1114,9 +1713,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         DesktopWindowDefinition furnaceDefinition = new FurnaceDesktopWindowDefinition();
-        SaltsInventoryDesktopApi.replaceClientWindow((MenuType) MenuType.FURNACE, furnaceDefinition);
-        SaltsInventoryDesktopApi.replaceClientWindow((MenuType) MenuType.BLAST_FURNACE, furnaceDefinition);
-        SaltsInventoryDesktopApi.replaceClientWindow((MenuType) MenuType.SMOKER, furnaceDefinition);
+        DesktopClientApi.replaceWindow((MenuType) MenuType.FURNACE, furnaceDefinition);
+        DesktopClientApi.replaceWindow((MenuType) MenuType.BLAST_FURNACE, furnaceDefinition);
+        DesktopClientApi.replaceWindow((MenuType) MenuType.SMOKER, furnaceDefinition);
         internalApiDefinitionsRegistered = true;
     }
 
@@ -1564,9 +2163,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 this.exitLinkMode("session-remove");
                 this.saveWindowState(window, false);
                 this.clearPopupStateFor(window);
-                if (window.apiDefinition instanceof InternalDesktopWindowDefinition) {
-                    this.apiClosed(window);
-                }
+                this.apiClosed(window);
                 this.windows.remove(window);
                 removedWindow = true;
             }
@@ -1608,7 +2205,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     public void refreshInventoryWindowLayout() {
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.kind == WindowKind.INVENTORY) {
                 this.clampInventoryWindowSize(window);
             } else if (window.kind == WindowKind.CREATIVE) {
@@ -1622,7 +2219,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int previousReservedHeight = returnHotbarWasEnabled ? INVENTORY_HOTBAR_RESERVED_HEIGHT : 0;
         int reservedHeight = SaltsInventoryConfig.get().returnHotbarToInventory ? INVENTORY_HOTBAR_RESERVED_HEIGHT : 0;
         int heightDelta = reservedHeight - previousReservedHeight;
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.kind == WindowKind.INVENTORY) {
                 int maxWidth = Math.max(SLOT_SIZE + WINDOW_CONTENT_PADDING * 2, this.desktopWidth() - WINDOW_PLACEMENT_MARGIN * 2);
                 int maxHeight = Math.max(this.minResizableHeight(window), this.desktopHeight() - WINDOW_PLACEMENT_MARGIN * 2);
@@ -1701,11 +2298,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return this.activeCreativeSearchWindow() != null
             || this.activeJeiSearchWindow() != null
             || this.activeAnvilEditWindow() != null
+            || this.apiModalWindow() != null
             || this.apiWantsTextInput();
     }
 
     @Override
     public void removed() {
+        this.setApiKeyboardFocus(null);
         if (this.minecraft != null) {
             WindowedInventoryClient.setCameraMouseGrab(this.minecraft, false);
             WindowedInventoryClient.syncMovementKeys(this.minecraft, false);
@@ -1762,7 +2361,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             && System.currentTimeMillis() - this.pendingQuickMoveAll.queuedAtMs() > PENDING_QUICK_MOVE_ALL_TIMEOUT_MS) {
             this.cancelPendingQuickMoveAll("timeout");
         }
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             this.trySendPendingAnvilName(window);
         }
 
@@ -1818,15 +2417,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.renderDesktopHotbarAffordances(graphics, uiMouseX, uiMouseY);
             graphics.nextStratum();
         }
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.persistentHidden) {
                 continue;
             }
+            graphics.nextStratum();
             this.renderAttachedRecipeBook(graphics, window, uiMouseX, uiMouseY, tickProgress);
             this.renderWindow(graphics, window, uiMouseX, uiMouseY, tickProgress);
+            this.renderApiOverlay(graphics, window, uiMouseX, uiMouseY);
             this.renderLinkModeHighlight(graphics, window);
         }
 
+        graphics.nextStratum();
         this.renderControlPopup(graphics, uiMouseX, uiMouseY);
         if (!this.cameraControl) {
             this.updateBundleHover(this.slotAt(mouseX, mouseY));
@@ -1861,15 +2463,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void extractGhostRenderState(GuiGraphicsExtractor graphics) {
         float tickProgress = this.minecraft == null ? 0.0F : this.minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        for (InventoryWindow window : this.windows) {
-            if (window.ghosted && !window.persistentHidden) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
+            if (window.ghosted && !window.persistentHidden && !window.companionHidden) {
                 this.renderWindow(graphics, window, Integer.MIN_VALUE, Integer.MIN_VALUE, tickProgress);
             }
         }
     }
 
     private void tickWindowAnimations() {
-        for (InventoryWindow window : this.windows) {
+        this.updateCompanionVisibility();
+        this.enforceApiModal();
+        for (InventoryWindow window : List.copyOf(this.windows)) {
+            this.enforceApiOptions(window);
             if (window.persistentHidden) {
                 continue;
             }
@@ -1892,6 +2497,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        this.enforceApiModal();
+        if (this.dismissApiOutsidePress(event.x(), event.y())) return true;
         DesktopDebug.trace(
             "client mouse down desktop={} button={} double={} x={} y={} carried={} hotbarOnly={} windows={} hover={}",
             this.desktopId,
@@ -1974,14 +2581,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         if (window != null) {
             this.bringToFront(window);
+            if (!window.ghosted) this.setApiKeyboardFocus(window.apiDefinition == null ? null : window);
             if (window.ghosted) {
                 if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
                     this.promoteGhostWindow(window);
                 }
                 return true;
             }
+            if (this.beginSurfaceInteraction(window, event, doubleClick)) return true;
             WindowControl control = titleControl;
             if (control != null) {
+                if (this.surfaceControlAt(window, event.x(), event.y()) != null) {
+                    window.apiControlFocus = DesktopWindowControl.valueOf(control.name());
+                }
                 if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
                     this.pressedControlWindow = window;
                     this.pressedControl = control;
@@ -2006,6 +2618,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 this.resizeStartMouseY = (int) event.y();
                 this.resizeStartWidth = window.width;
                 this.resizeStartHeight = window.height;
+                this.resizeStartWindowX = window.x;
+                this.resizeStartWindowY = window.y;
+                this.surfaceResizeRole = DesktopHitRole.RESIZE_SOUTH_EAST;
                 DesktopDebug.trace("client resize start desktop={} window={} width={} height={}", this.desktopId, window.debugName(), window.width, window.height);
                 return true;
             }
@@ -2013,7 +2628,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             boolean creativeTitleWidgetClick = window.kind == WindowKind.CREATIVE
                 && (this.creativeSearchBoxContains(window, event.x(), event.y()) || this.creativeTabPageButtonAt(window, event.x(), event.y()) != null);
             boolean jeiTitleWidgetClick = window.kind == WindowKind.JEI && this.jeiDefaultTabButtonContains(window, event.x(), event.y());
-            if (!window.locked && window.isTopBar(event.x(), event.y()) && !creativeTitleWidgetClick && !jeiTitleWidgetClick) {
+            if (!window.locked && this.apiOptions(window).movable() && window.isTopBar(event.x(), event.y()) && !creativeTitleWidgetClick && !jeiTitleWidgetClick) {
                 this.movingWindow = window;
                 this.resizingWindow = null;
                 this.scrollingJeiWindow = null;
@@ -2049,7 +2664,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 return this.instructionsMouseClicked(window, event);
             }
 
-            if (!(window.apiDefinition instanceof InternalDesktopWindowDefinition)
+            if (!(window.apiDefinition instanceof DesktopWindowPresentation)
                 && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT
                 && this.storageScrollbarContains(window, event.x(), event.y())) {
                 this.scrollingStorageWindow = window;
@@ -2071,10 +2686,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
 
             if (this.apiMouseClicked(window, event, doubleClick)) {
-                if (window.apiDefinition instanceof InternalDesktopWindowDefinition) {
-                    this.captureApiPointer(window, event);
-                    this.clampInternalWindowRegions(window);
-                }
+                this.captureApiPointer(window, event);
+                this.clampInternalWindowRegions(window);
                 return true;
             }
 
@@ -2159,7 +2772,24 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     @Override
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void mouseMoved(double x, double y) {
+        this.enforceApiModal();
+        InventoryWindow window = this.apiPointerCaptureWindow != null ? this.apiPointerCaptureWindow : this.windowAt(x, y);
+        if (window != null && window.apiDefinition != null && !window.minimized && !window.ghosted && !window.persistentHidden && !window.companionHidden) {
+            try {
+                ((DesktopWindowDefinition) window.apiDefinition).mouseMoved(this.apiContext(window, null, (int) x, (int) y), x, y);
+            } catch (RuntimeException failure) {
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                    com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                    window.debugName(), "mouseMoved", "Window pointer callback failed", failure);
+            }
+        }
+    }
+
+    @Override
     public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        this.enforceApiModal();
         if (this.cameraControl) {
             return true;
         }
@@ -2196,12 +2826,27 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             int minHeight = this.minResizableHeight(window);
             int maxWidth = Math.max(minWidth, this.desktopWidth() - window.x);
             int maxHeight = Math.max(minHeight, this.desktopHeight() - window.y);
-            window.width = clamp(this.resizeStartWidth + (int) event.x() - this.resizeStartMouseX, minWidth, maxWidth);
-            window.height = clamp(this.resizeStartHeight + (int) event.y() - this.resizeStartMouseY, minHeight, maxHeight);
+            DesktopWindowSize maxSize = this.apiMaxSize(window);
+            if (maxSize != null) {
+                maxWidth = Math.max(minWidth, Math.min(maxWidth, maxSize.width()));
+                maxHeight = Math.max(minHeight, Math.min(maxHeight, maxSize.height()));
+            }
+            if (window.apiSurface.viewportPolicy() != DesktopViewportPolicy.CLAMP) {
+                maxWidth = maxSize == null ? Integer.MAX_VALUE : Math.max(minWidth, maxSize.width());
+                maxHeight = maxSize == null ? Integer.MAX_VALUE : Math.max(minHeight, maxSize.height());
+            }
+            DesktopWindowBounds resized = new DesktopWindowBounds(this.resizeStartWindowX, this.resizeStartWindowY,
+                this.resizeStartWidth, this.resizeStartHeight).resizeGesture(this.surfaceResizeRole,
+                (int) event.x() - this.resizeStartMouseX, (int) event.y() - this.resizeStartMouseY,
+                minWidth, minHeight, maxWidth, maxHeight);
+            window.x = resized.x(); window.y = resized.y();
+            window.width = resized.width(); window.height = resized.height();
             if (this.isResizableStorageWindow(window)) {
                 this.clampStorageScroll(window);
             }
             this.constrainResizedWindowIntoDesktop(window, minWidth, minHeight);
+            this.apiResized(window);
+            this.commitApiSurface(window);
             return true;
         }
 
@@ -2231,6 +2876,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (this.movingWindow != null) {
             this.movingWindow.x = clamp((int) event.x() - this.moveOffsetX, 0, Math.max(0, this.desktopWidth() - this.movingWindow.width));
             this.movingWindow.y = clamp((int) event.y() - this.moveOffsetY, 0, Math.max(0, this.desktopHeight() - TOP_BAR_HEIGHT));
+            this.apiMoved(this.movingWindow);
+            this.commitApiSurface(this.movingWindow);
             this.clampInternalWindowRegions(this.movingWindow);
             return true;
         }
@@ -2250,6 +2897,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
+        this.enforceApiModal();
         DesktopDebug.trace(
             "client mouse up desktop={} button={} x={} y={} carried={} pending={} drag={}",
             this.desktopId,
@@ -2416,7 +3064,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             doubleClick,
             vanillaDoubleClick,
             creativePlayerSlot,
-            this.isShiftHeld(),
+            this.slotShiftHeld(event),
             this.sharedCarried,
             this.describeSlotHit(hit)
         );
@@ -2434,7 +3082,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         if (vanillaDoubleClick
             && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT
-            && this.isShiftHeld()
+            && this.slotShiftHeld(event)
             && clickedSlotKey.equals(this.lastQuickMovedSlotKey)
             && !this.lastQuickMoved.isEmpty()) {
             DesktopDebug.trace("client slot mouse branch shift-double-move desktop={} hit={} lastQuickMoved={}", this.desktopId, this.describeSlotHit(hit), this.lastQuickMoved);
@@ -2442,7 +3090,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
-        if (this.shouldQuickMove()) {
+        if (this.slotShiftHeld(event)) {
             DesktopDebug.trace("client slot mouse branch quick-move desktop={} hit={}", this.desktopId, this.describeSlotHit(hit));
             this.rememberLastQuickMoved(hit);
             this.quickMoveSlot(hit);
@@ -2452,7 +3100,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.clearLastQuickMoved();
 
         if (vanillaDoubleClick && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && !isCraftingResultSlot(hit)) {
-            if (!DesktopMenuSlots.allowsPickupAllAnchor(hit.menu(), this.sharedCarried, hit.slot())) {
+            if (!DesktopMenuBindings.allowsPickupAllAnchor(hit.menu(), this.sharedCarried, hit.slot())) {
                 DesktopDebug.trace(
                     "client pickup-all anchor rejected desktop={} hit={}",
                     this.desktopId,
@@ -2519,7 +3167,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (anchor == null
             || this.minecraft != null && this.minecraft.player != null
                 && DesktopItemSourceLocks.isSlotLocked(this.minecraft.player, anchor.slot())
-            || anchor != null && !DesktopMenuSlots.allowsPickupAllAnchor(
+            || anchor != null && !DesktopMenuBindings.allowsPickupAllAnchor(
                 anchor.menu(), this.sharedCarried, anchor.slot()
             )) {
             DesktopDebug.trace("client pickup-all delayed cancelled desktop={} anchor={} reason=invalid-or-locked-{}", this.desktopId, pending.anchor(), reason);
@@ -2540,7 +3188,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void dispatchPickupAll(SlotHit anchor) {
-        if (!DesktopMenuSlots.allowsPickupAllAnchor(anchor.menu(), this.sharedCarried, anchor.slot())) {
+        if (!DesktopMenuBindings.allowsPickupAllAnchor(anchor.menu(), this.sharedCarried, anchor.slot())) {
             DesktopDebug.trace(
                 "client pickup-all dropped desktop={} anchorSession={} anchorSlot={} reason=anchor-policy",
                 this.desktopId,
@@ -2590,7 +3238,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 && window.session != null
                 && !window.minimized
                 && !window.ghosted
-                && !window.persistentHidden
+                && !window.persistentHidden && !window.companionHidden
                 && window.session.sessionId() != anchor.sessionId()
                 && this.hasPickupAllContainerCandidate(window.containerMenu(), this.sharedCarried)) {
                 sourceSessions.add(window.session.sessionId());
@@ -2623,16 +3271,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return false;
         }
         Inventory playerInventory = this.minecraft.player.getInventory();
-        for (Slot slot : DesktopMenuSlots.all(menu)) {
-            if (excludePlayerInventorySlots && slot.container == playerInventory
+        for (Slot slot : DesktopMenuBindings.all(menu)) {
+            if (excludePlayerInventorySlots && DesktopMenuBindings.isPlayerInventorySlot(menu, slot, playerInventory)
                 || DesktopItemSourceLocks.isSlotLocked(this.minecraft.player, slot)
                 || !slot.isActive()
                 || slot.isFake()
                 || !slot.hasItem()
                 || !slot.mayPickup(this.minecraft.player)
                 || !ItemStack.isSameItemSameComponents(carried, slot.getItem())
-                || !DesktopMenuSlots.canQuickCraft(menu, slot, carried)
-                || !DesktopMenuSlots.allowsPickupAll(menu, carried, slot)) {
+                || !DesktopMenuBindings.canQuickCraft(menu, slot, carried)
+                || !DesktopMenuBindings.allowsPickupAll(menu, carried, slot)) {
                 continue;
             }
             return true;
@@ -2810,9 +3458,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return false;
         }
 
+        this.publishApiGesture(DesktopGestureEvent.Outcome.CANCELLED, "replaced");
+        this.apiGestureId = ++this.apiGestureSequence;
+        this.apiGestureOwner = this.gestureWindow(hit);
         this.pendingSlotClick = new PendingSlotClick(hit, event.button(), quickCraftType);
         this.dragDistribution = null;
         this.dragStartSlot = hit.slot();
+        this.publishApiGesture(DesktopGestureEvent.Outcome.STARTED, "press");
         DesktopDebug.trace("client pending slot click desktop={} hit={} button={} quickCraftType={} carried={}", this.desktopId, this.describeSlotHit(hit), event.button(), quickCraftType, this.sharedCarried);
         return true;
     }
@@ -2857,13 +3509,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         drag.add(hit);
         this.dragDistribution = drag;
+        this.publishApiGesture(DesktopGestureEvent.Outcome.UPDATED, "targets");
         DesktopDebug.trace("client pending drag add desktop={} size={} hit={}", this.desktopId, drag.size(), this.describeSlotHit(hit));
     }
 
     private void completePendingSlotClick() {
         PendingSlotClick pending = this.pendingSlotClick;
         DragDistribution drag = this.dragDistribution;
-        this.clearPendingSlotClick();
+        this.clearPendingSlotClick(true, "release");
         if (pending == null) {
             return;
         }
@@ -2885,10 +3538,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
-    private void clearPendingSlotClick() {
+    private void clearPendingSlotClick() { this.clearPendingSlotClick(false, "cancelled"); }
+
+    private void clearPendingSlotClick(boolean completed, String reason) {
         this.pendingSlotClick = null;
         this.dragDistribution = null;
         this.dragStartSlot = null;
+        this.publishApiGesture(completed ? DesktopGestureEvent.Outcome.COMPLETED : DesktopGestureEvent.Outcome.CANCELLED, reason);
     }
 
     private boolean canDragDistributeTo(SlotHit hit) {
@@ -2906,7 +3562,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             || slot.isFake()
             || !slot.mayPlace(this.sharedCarried)
             || !hit.menu().canDragTo(slot)
-            || !DesktopMenuSlots.canQuickCraft(hit.menu(), slot, this.sharedCarried)) {
+            || !DesktopMenuBindings.canQuickCraft(hit.menu(), slot, this.sharedCarried)) {
             return false;
         }
 
@@ -2990,12 +3646,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             || slot.isFake()
             || !slot.mayPlace(carried)
             || !hit.menu().canDragTo(slot)
-            || !DesktopMenuSlots.canQuickCraft(hit.menu(), slot, carried)) {
+            || !DesktopMenuBindings.canQuickCraft(hit.menu(), slot, carried)) {
             return 0;
         }
 
         ItemStack existing = slot.getItem();
-        int max = DesktopMenuSlots.quickCraftMaxStackSize(hit.menu(), slot, carried);
+        int max = DesktopMenuBindings.quickCraftMaxStackSize(hit.menu(), slot, carried);
         if (existing.isEmpty()) {
             return Math.max(0, max);
         }
@@ -3085,8 +3741,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable DragSlotPreview dragSlotPreview(SlotHit hit, int quickCraftType, int targetCount) {
         ItemStack existing = hit.slot().getItem();
         int existingCount = existing.isEmpty() ? 0 : existing.getCount();
-        int max = DesktopMenuSlots.quickCraftMaxStackSize(hit.menu(), hit.slot(), this.sharedCarried);
-        int previewCount = DesktopMenuSlots.quickCraftPlaceCount(
+        int max = DesktopMenuBindings.quickCraftMaxStackSize(hit.menu(), hit.slot(), this.sharedCarried);
+        int previewCount = DesktopMenuBindings.quickCraftPlaceCount(
             hit.menu(),
             hit.slot(),
             targetCount,
@@ -3158,7 +3814,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void notifyRecipeBooksSlotClicked(SlotHit hit) {
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.recipeBook != null && window.recipeBook.isVisible() && window.containerMenu() == hit.menu()) {
                 window.recipeBook.slotClicked(hit.slot());
             }
@@ -3268,13 +3924,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable SlotHit slotHit(SlotKey key) {
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             AbstractContainerMenu menu = window.containerMenu();
-            if (menu == null || window.sessionId() != key.sessionId() || key.slotId() < 0 || key.slotId() >= DesktopMenuSlots.size(menu)) {
+            if (menu == null || window.sessionId() != key.sessionId() || key.slotId() < 0 || key.slotId() >= DesktopMenuBindings.size(menu)) {
                 continue;
             }
 
-            Slot slot = DesktopMenuSlots.slot(menu, key.slotId());
+            Slot slot = DesktopMenuBindings.slot(menu, key.slotId());
             if (slot != null) {
                 return new SlotHit(slot, key.slotId(), slot.x, slot.y, menu, window.sessionId());
             }
@@ -3282,14 +3938,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         if (key.sessionId() == DesktopPackets.PLAYER_MENU_SESSION) {
             AbstractContainerMenu menu = this.playerMenu();
-            if (key.slotId() >= 0 && key.slotId() < DesktopMenuSlots.size(menu)) {
-                Slot slot = DesktopMenuSlots.slot(menu, key.slotId());
+            if (key.slotId() >= 0 && key.slotId() < DesktopMenuBindings.size(menu)) {
+                Slot slot = DesktopMenuBindings.slot(menu, key.slotId());
                 if (slot != null) {
                     return new SlotHit(slot, key.slotId(), slot.x, slot.y, menu, DesktopPackets.PLAYER_MENU_SESSION);
                 }
             }
         }
         return null;
+    }
+
+    private boolean slotShiftHeld(MouseButtonEvent event) {
+        return event.hasShiftDown();
     }
 
     private boolean shouldQuickMove() {
@@ -3383,20 +4043,20 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         );
         List<SlotHit> matchingHits = new ArrayList<>();
         LinkedHashSet<SlotKey> matchingKeys = new LinkedHashSet<>();
-        for (Slot slot : DesktopMenuSlots.all(anchor.menu())) {
+        for (Slot slot : DesktopMenuBindings.all(anchor.menu())) {
             if (slot == null
                 || DesktopItemSourceLocks.isSlotLocked(this.minecraft.player, slot)
-                || !DesktopMenuSlots.isSamePhysicalInventory(anchor.menu(), anchor.slot(), anchor.menu(), slot)
+                || !DesktopMenuBindings.isSamePhysicalInventory(anchor.menu(), anchor.slot(), anchor.menu(), slot)
                 || !slot.isActive()
                 || slot.isFake()
                 || !slot.mayPickup(this.minecraft.player)
                 || !slot.hasItem()
                 || !ItemStack.isSameItemSameComponents(stack, slot.getItem())
-                || DesktopMenuSlots.repeatedQuickMoveLimit(anchor.menu(), slot, stack) <= 0) {
+                || DesktopMenuBindings.repeatedQuickMoveLimit(anchor.menu(), slot, stack) <= 0) {
                 continue;
             }
 
-            int slotId = DesktopMenuSlots.indexOf(anchor.menu(), slot);
+            int slotId = DesktopMenuBindings.indexOf(anchor.menu(), slot);
             SlotKey key = new SlotKey(anchor.sessionId(), slotId);
             if (slotId >= 0 && matchingKeys.add(key)) {
                 matchingHits.add(new SlotHit(slot, slotId, slot.x, slot.y, anchor.menu(), anchor.sessionId()));
@@ -3441,8 +4101,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             DesktopDebug.trace("client quick move blocked desktop={} sourceSession={} sourceSlot={} reason=locked-item-source", this.desktopId, hit.sessionId(), hit.slotId());
             return;
         }
-        if (!DesktopMenuSlots.allowsTargetedQuickMoveSource(hit.menu(), hit.slot())
-            && !DesktopMenuSlots.useNativeQuickMove(hit.menu())) {
+        if (!DesktopMenuBindings.allowsTargetedQuickMoveSource(hit.menu(), hit.slot())
+            && !DesktopMenuBindings.useNativeQuickMove(hit.menu())) {
             DesktopDebug.trace(
                 "client quick move blocked desktop={} sourceSession={} sourceSlot={} reason=source-disallows-quick-move",
                 this.desktopId,
@@ -3472,7 +4132,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private QuickMoveTarget quickMoveTarget(SlotHit hit) {
         int targetKind = DesktopPackets.QUICK_TARGET_DEFAULT;
         int targetSessionId = DesktopPackets.PLAYER_MENU_SESSION;
-        if (!DesktopMenuSlots.allowsTargetedQuickMoveSource(hit.menu(), hit.slot())) {
+        if (!DesktopMenuBindings.allowsTargetedQuickMoveSource(hit.menu(), hit.slot())) {
             return new QuickMoveTarget(targetKind, targetSessionId);
         }
         InventoryWindow focusedWindow = this.focusedWindow();
@@ -3493,11 +4153,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean hasVisibleInventoryWindow() {
-        for (InventoryWindow window : this.windows) {
-            if (window.kind == WindowKind.INVENTORY && !window.minimized && !window.ghosted && !window.persistentHidden) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
+            if (window.kind == WindowKind.INVENTORY && !window.minimized && !window.ghosted && !window.persistentHidden && !window.companionHidden) {
                 return true;
             }
-            if (window.kind == WindowKind.CREATIVE && !window.minimized && !window.ghosted && !window.persistentHidden) {
+            if (window.kind == WindowKind.CREATIVE && !window.minimized && !window.ghosted && !window.persistentHidden && !window.companionHidden) {
                 CreativeModeTab selectedTab = this.selectedCreativeTab(window);
                 if (selectedTab != null && this.isCreativeInventoryTab(selectedTab)) {
                     return true;
@@ -3714,10 +4374,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @Override
     public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
+        this.enforceApiModal();
         this.cancelPendingPickupAll("mouse-scroll");
         this.cancelPendingQuickMoveAll("mouse-scroll");
         if (this.cameraControl) {
-            return this.scrollHotbar(scrollY);
+            return this.apiModalWindow() == null && this.scrollHotbar(scrollY);
         }
 
         if (this.isLinkModeActive()) {
@@ -3794,7 +4455,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         if (window != null
-            && !(window.apiDefinition instanceof InternalDesktopWindowDefinition)
+            && !(window.apiDefinition instanceof DesktopWindowPresentation)
             && !window.minimized
             && this.isResizableStorageWindow(window)) {
             SlotGridLayout layout = this.storageLayout(window, this.storageSlotCount(window));
@@ -3806,17 +4467,29 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
         }
 
-        return this.scrollHotbar(scrollY);
+        return this.apiModalWindow() == null && this.scrollHotbar(scrollY);
     }
 
     @Override
     public boolean keyPressed(KeyEvent event) {
         this.cancelPendingPickupAll("key-press");
         this.cancelPendingQuickMoveAll("key-press");
+        this.enforceApiModal();
+        if (event.isEscape() && this.popupWindow != null) {
+            this.popupWindow = null;
+            this.pressedControlWindow = null;
+            this.pressedControl = null;
+            this.pressedControlInPopup = false;
+            return true;
+        }
+        if (this.apiKeyPressed(event)) return true;
+        InventoryWindow modal = this.apiModalWindow();
+        if (modal != null) {
+            if (event.isEscape() && this.apiOptions(modal).closable()) this.closeWindow(modal, "modal-escape");
+            return true;
+        }
+        if (!event.isEscape() && this.apiWantsTextInput()) return true;
         if (event.isEscape()) {
-            if (this.internalApiKeyPressed(event)) {
-                return true;
-            }
             if (SaltsInventoryConfig.get().persistentWindows
                 && InventoryKeyHoldController.handleInventoryKeyAction(this.minecraft, GLFW.GLFW_PRESS, event)) {
                 return true;
@@ -3872,9 +4545,6 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
-        if (this.apiKeyPressed(event)) {
-            return true;
-        }
 
         if (this.minecraft.options.keyInventory.matches(event)) {
             return InventoryKeyHoldController.handleInventoryKeyAction(this.minecraft, GLFW.GLFW_PRESS, event);
@@ -4238,7 +4908,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable InventoryWindow topmostCreativeWindow() {
         for (int i = this.windows.size() - 1; i >= 0; i--) {
             InventoryWindow window = this.windows.get(i);
-            if (window.kind == WindowKind.CREATIVE && !window.minimized && !window.ghosted && !window.persistentHidden) {
+            if (window.kind == WindowKind.CREATIVE && !window.minimized && !window.ghosted && !window.persistentHidden && !window.companionHidden) {
                 return window;
             }
         }
@@ -4262,7 +4932,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void refreshVisibleCreativeWindows() {
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.kind == WindowKind.CREATIVE) {
                 this.clampCreativeScroll(window, window.creativeScrollRow);
             }
@@ -4271,6 +4941,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @Override
     public boolean charTyped(CharacterEvent event) {
+        this.enforceApiModal();
+        if (this.apiCharTyped(event)) return true;
+        if (this.apiModalWindow() != null || this.apiWantsTextInput()) return true;
         if (this.isLinkModeActive()) {
             return true;
         }
@@ -4307,7 +4980,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         InventoryWindow window = this.activeAnvilEditWindow();
         if (window == null) {
-            return this.apiCharTyped(event);
+            return false;
         }
         if (!event.isAllowedChatCharacter()) {
             return true;
@@ -4326,6 +4999,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @Override
     public boolean keyReleased(KeyEvent event) {
+        this.enforceApiModal();
+        this.syncMovementKey(event, false);
+        if (this.apiKeyReleased(event) || this.apiModalWindow() != null || this.apiWantsTextInput()) return true;
         if (this.isLinkModeActive()) {
             if (this.minecraft.options.keyInventory.matches(event)) {
                 return InventoryKeyHoldController.handleInventoryKeyAction(this.minecraft, GLFW.GLFW_RELEASE, event);
@@ -4368,7 +5044,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean hasStandaloneWindow(WindowKind kind) {
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.kind == kind && window.session == null && window.legacyMenu == null) {
                 return true;
             }
@@ -4410,7 +5086,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void showWindow(WindowKind kind) {
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.kind == kind && window.session == null && window.legacyMenu == null) {
                 if (window.persistentHidden) {
                     this.promotePersistentWindow(window);
@@ -4613,7 +5289,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
 
             transitionReplacedSession = replaced;
-            for (InventoryWindow window : this.windows) {
+            for (InventoryWindow window : List.copyOf(this.windows)) {
                 if (window.session == replaced) {
                     transitionState = WindowTransitionState.capture(window);
                     break;
@@ -4669,7 +5345,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         boolean replacedWindow = false;
         for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.session != null && window.session.sessionId() == session.sessionId()) {
-                if (transitionState == null && window.apiDefinition instanceof InternalDesktopWindowDefinition) {
+                if (transitionState == null && window.apiDefinition instanceof DesktopWindowPresentation) {
                     transitionState = WindowTransitionState.capture(window);
                 }
                 this.saveWindowState(window);
@@ -4687,7 +5363,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         if (transitionReplacedSession == null) {
             this.sessions.add(session);
-            this.clearSlotInteractionState("session-add");
+            if (!session.isCompanion()) this.clearSlotInteractionState("session-add");
         }
         session.setCarried(this.sharedCarried);
         if (session.specialKind() == DesktopPackets.SPECIAL_CAMEL || session.specialKind() == DesktopPackets.SPECIAL_LLAMA) {
@@ -4827,12 +5503,27 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             window.focused = false;
             window.minimized = false;
         }
-        if (!window.ghosted) {
+        if (!window.ghosted && !session.isCompanion()) {
             this.openInventoryWindowForContainerIfConfigured(window);
         }
         this.windows.add(window);
+        if (session.isCompanion()) {
+            window.minimized = false; window.ghosted = false; window.locked = false; window.pinMode = PinMode.UNPINNED;
+            InventoryWindow owner = this.eligibleCompanionOwner(window);
+            if (owner != null) {
+                var placed = com.salts_inventory_update.layout.CompanionPlacement.beside(
+                    new DesktopWindowBounds(owner.x, owner.y, owner.width, owner.height),
+                    window.width, window.height, this.desktopWidth(), this.desktopHeight());
+                window.x = placed.x(); window.y = placed.y();
+                this.clampWindowIntoDesktop(window);
+                this.windows.remove(window);
+                this.windows.add(this.windows.indexOf(owner), window);
+            }
+            this.updateCompanionVisibility();
+        }
         this.apiOpened(window);
-        if (window.ghosted) {
+        if (session.isCompanion()) { this.notifyApiWindowState(window); }
+        else if (window.ghosted) {
             this.closeIfEmpty();
         } else {
             this.setFocusedWindow(window);
@@ -4881,11 +5572,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private @Nullable InventoryWindow riddenEntityWindow() {
         InventoryWindow hidden = null;
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (!this.isRidingEntityWindow(window)) {
                 continue;
             }
-            if (!window.persistentHidden && !window.ghosted) {
+            if (!window.persistentHidden && !window.companionHidden && !window.ghosted) {
                 return window;
             }
             hidden = window;
@@ -4936,7 +5627,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             contentWidth,
             contentHeight
         );
-        DesktopWindowDefinition<?, ?> definition = SaltsInventoryDesktopApi.findDefinition(context);
+        DesktopWindowDefinition<?, ?> definition = DesktopClientApi.findDefinition(context);
         boolean tomMenu = isTomStorageMenu(menuKey);
         if (definition != null || tomMenu) {
             DesktopDebug.log(
@@ -5100,9 +5791,88 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         try {
             return definition.defaultSize(setup);
         } catch (RuntimeException exception) {
-            DesktopDebug.warn("client api default size failed desktop={} menu={} reason={}", this.desktopId, setup.menu().getType(), exception.toString());
+            DesktopDebug.warn("client api default size failed desktop={} menu={} reason={}", this.desktopId, setup.sourceKey(), exception.toString());
             return DesktopWindowSize.of(defaultWidth, defaultHeight);
         }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void commitApiSurface(InventoryWindow window) {
+        if (window.apiDefinition == null || window.apiDisposed) return;
+        DesktopWindowSurface surface = java.util.Objects.requireNonNull(
+            ((DesktopWindowDefinition) window.apiDefinition).surface(
+                this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE)), "surface");
+        if (window.apiDisposed) return;
+        ApiContext candidate = new ApiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE, surface);
+        ((DesktopWindowDefinition) window.apiDefinition).prepareLayout(candidate);
+        if (window.apiDisposed) return;
+        surface = java.util.Objects.requireNonNull(
+            ((DesktopWindowDefinition) window.apiDefinition).surface(candidate), "prepared surface");
+        if (window.apiDisposed) return;
+        if (window.apiDefinition instanceof DesktopWindowPresentation presentation) {
+            List<DesktopWindowRegion> regions = presentation.externalRegions(candidate);
+            if (window.apiDisposed) return;
+            if (regions != null && !regions.isEmpty()) surface = surface.withRegions(regions);
+        }
+        List<com.salts_inventory_update.api.client.desktop.DesktopSurfaceControl> declaredControls =
+            ((DesktopWindowDefinition) window.apiDefinition).managementControls(candidate);
+        List<com.salts_inventory_update.api.client.desktop.DesktopSurfaceControl> surfaceControls =
+            surface.mode() == DesktopSurfaceMode.MOD_OWNED && declaredControls != null ? List.copyOf(declaredControls) : List.of();
+        java.util.Set<DesktopWindowControl> controlKinds = new java.util.HashSet<>();
+        for (var control : surfaceControls) {
+            if (!controlKinds.add(control.control())) throw new IllegalArgumentException("Duplicate management control: " + control.control());
+            var bounds = control.bounds();
+            for (var other : surfaceControls) {
+                if (other == control) continue;
+                var b = other.bounds();
+                if (bounds.x() < b.x() + b.width() && bounds.x() + bounds.width() > b.x()
+                    && bounds.y() < b.y() + b.height() && bounds.y() + bounds.height() > b.y()) {
+                    throw new IllegalArgumentException("Overlapping management controls");
+                }
+            }
+            surface = surface.withRegions(List.of(new DesktopWindowRegion(bounds.x(), bounds.y(), bounds.width(), bounds.height(),
+                true, true, true, DesktopHitRole.CONTROL)));
+        }
+        List<DesktopPopup> declaredPopups = ((DesktopWindowDefinition) window.apiDefinition).popups(candidate);
+        if (window.apiDisposed) return;
+        List<DesktopPopup> popups = declaredPopups == null ? List.of() : List.copyOf(declaredPopups);
+        java.util.Set<String> popupIds = new java.util.HashSet<>();
+        for (DesktopPopup popup : popups) {
+            if (!popupIds.add(popup.id())) throw new IllegalArgumentException("Duplicate popup id: " + popup.id());
+            surface = surface.withRegions(popup.regions());
+        }
+        DesktopWindowDecoration decoration = surface.mode() == DesktopSurfaceMode.MOD_OWNED ? null
+            : ((DesktopWindowDefinition) window.apiDefinition).decoration(candidate);
+        if (window.apiDisposed) return;
+        DesktopChromeMetrics chrome = decoration == null ? DesktopChromeMetrics.SALT
+            : java.util.Objects.requireNonNull(decoration.metrics(), "decoration metrics");
+        if (window.apiDisposed) return;
+        if (this.windows.contains(window) && window.apiSurface.mode() != surface.mode()) {
+            this.cancelApiInput(window, "surface-mode-change");
+        }
+        if (window.apiDisposed) return;
+        window.apiSurface = surface;
+        window.apiPopups = popups;
+        window.apiSurfaceControls = surfaceControls;
+        if (!controlKinds.contains(window.apiControlFocus)
+            || window.apiControlFocus != null && !this.apiActionAvailable(window, this.surfaceControlAction(window, window.apiControlFocus))) {
+            window.apiControlFocus = null;
+        }
+        window.apiDecoration = decoration;
+        window.apiChrome = chrome;
+        if (surface.viewportPolicy() == DesktopViewportPolicy.ADAPT) {
+            WindowBounds bounds = this.visibleWindowBounds(window);
+            int viewportWidth = this.desktopWidth(), viewportHeight = this.desktopHeight();
+            if (viewportWidth > 0 && viewportHeight > 0
+                && (bounds.width() > viewportWidth || bounds.height() > viewportHeight)) {
+                String key = bounds.width() + "x" + bounds.height() + "@" + viewportWidth + "x" + viewportHeight;
+                if (!key.equals(window.apiUnavailableKey)) {
+                    window.apiUnavailableKey = key;
+                    ((DesktopWindowDefinition) window.apiDefinition).surfaceUnavailable(
+                        this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
+                }
+            } else window.apiUnavailableKey = "";
+        } else window.apiUnavailableKey = "";
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -5114,45 +5884,72 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         try {
+            window.apiInitialSize = DesktopWindowSize.of(window.width, window.height);
+            window.apiTasks = new DesktopWindowTasks(this.apiWindowHandle(window));
             window.apiState = definition.createState(setup);
+            this.notifyApiEnvironment(window);
+            this.commitApiSurface(window);
             return true;
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api state failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "state", "Window callback failed", exception);
             window.apiState = null;
+            if (window.apiTasks != null) window.apiTasks.close();
             return false;
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void apiLoadLocalState(InventoryWindow window, CompoundTag tag) {
+        if (window.apiClosedDelivered || window.apiDisposed) return;
         if (window.kind == WindowKind.JEI) {
             window.jeiDefaultTabUid = tag.getStringOr("jeiDefaultTab", "");
         }
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        if (window.apiDefinition == null) {
             return;
         }
 
         try {
+            String revision = this.apiLayoutRevision(window);
+            if (!revision.equals(tag.getStringOr("salts:layout_revision", ""))) {
+                if (window.apiInitialSize != null) {
+                    window.width = window.apiInitialSize.width();
+                    window.height = window.apiInitialSize.height();
+                    this.apiResized(window);
+                }
+                tag = new CompoundTag();
+            }
             ((DesktopWindowDefinition) window.apiDefinition).loadLocalState(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), tag);
+            this.commitApiSurface(window);
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api loadLocalState failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "loadLocalState", "Window callback failed", exception);
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private CompoundTag apiSaveLocalState(InventoryWindow window) {
+        if (window.apiClosedDelivered || window.apiDisposed) return new CompoundTag();
         CompoundTag tag = new CompoundTag();
         if (window.kind == WindowKind.JEI && !window.jeiDefaultTabUid.isEmpty()) {
             tag.putString("jeiDefaultTab", window.jeiDefaultTabUid);
         }
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        if (window.apiDefinition == null) {
             return tag;
         }
 
         try {
             ((DesktopWindowDefinition) window.apiDefinition).saveLocalState(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), tag);
+            tag.putString("salts:layout_revision", this.apiLayoutRevision(window));
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api saveLocalState failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "saveLocalState", "Window callback failed", exception);
         }
         return tag;
     }
@@ -5206,7 +6003,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return switch (window.kind) {
             case INVENTORY -> this.inventoryVirtualSlotCount();
             case CONTAINER -> window.containerSlots().size();
-            case CHARACTER, CREATIVE, JEI, RECIPE_BROWSER_VIEW, INSTRUCTIONS -> 0;
+            case CHARACTER, CREATIVE, JEI, CLIENT_API, RECIPE_BROWSER_VIEW, INSTRUCTIONS -> 0;
         };
     }
 
@@ -5263,6 +6060,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             int minHeight = this.minResizableHeight(window);
             int maxWidth = Math.max(minWidth, this.desktopWidth() - window.x);
             int maxHeight = Math.max(minHeight, this.desktopHeight() - window.y);
+            DesktopWindowSize maxSize = this.apiMaxSize(window);
+            if (maxSize != null) {
+                maxWidth = Math.max(minWidth, Math.min(maxWidth, maxSize.width()));
+                maxHeight = Math.max(minHeight, Math.min(maxHeight, maxSize.height()));
+            }
+            if (window.apiSurface.viewportPolicy() != DesktopViewportPolicy.CLAMP) {
+                maxWidth = maxSize == null ? Integer.MAX_VALUE : Math.max(minWidth, maxSize.width());
+                maxHeight = maxSize == null ? Integer.MAX_VALUE : Math.max(minHeight, maxSize.height());
+            }
             int targetWidth = snapSize == null ? window.width : snapSize.width();
             int targetHeight = snapSize == null ? window.height : snapSize.height();
             window.width = clamp(targetWidth, Math.max(minWidth, minSize.width()), maxWidth);
@@ -5324,7 +6130,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             && !window.ghosted
             && !window.locked
             && !window.minimized
-            && (window.kind == WindowKind.RECIPE_BROWSER_VIEW || this.isResizableStorageWindow(window));
+            && (window.kind == WindowKind.RECIPE_BROWSER_VIEW || this.apiResizePolicy(window) == DesktopResizePolicy.FREE || this.isResizableStorageWindow(window));
     }
 
     private boolean isResizableStorageWindow(InventoryWindow window) {
@@ -5426,7 +6232,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return this.recipeBrowserViewMinWidth(window.title);
         }
         if (window.apiDefinition != null) {
-            return Math.max(this.apiMinSize(window).width(), this.minimumTitleBarWidth(window.title));
+            int minimum = this.apiMinSize(window).width();
+            return window.apiSurface.mode() == DesktopSurfaceMode.MOD_OWNED ? minimum
+                : Math.max(minimum, this.minimumTitleBarWidth(window.title));
         }
         if (window.kind == WindowKind.INVENTORY && SaltsInventoryConfig.get().returnHotbarToInventory) {
             return Math.max(WINDOW_CONTENT_PADDING * 2 + INVENTORY_HOTBAR_WIDTH, this.minimumTitleBarWidth(window.title));
@@ -5680,9 +6488,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int sourceId = source.kind == WindowKind.INVENTORY || source.kind == WindowKind.CREATIVE
             ? DesktopPackets.PLAYER_MENU_SESSION : source.session.sessionId();
         List<Integer> destinations = new ArrayList<>();
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window == source || window.kind != WindowKind.CONTAINER || window.session == null
-                || !this.sessions.contains(window.session) || window.minimized || window.ghosted || window.persistentHidden) continue;
+                || !this.sessions.contains(window.session) || window.minimized || window.ghosted || window.persistentHidden || window.companionHidden) continue;
             AbstractContainerMenu menu = window.containerMenu();
             if (menu != null && DesktopSortSlots.isStorage(menu))
                 destinations.add(window.session.sessionId());
@@ -5700,7 +6508,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private List<WindowControl> popupControls(InventoryWindow window) {
         List<WindowControl> controls = SaltsInventoryConfig.get().minimizableWindows ? POPUP_CONTROLS_WITH_MINIMIZE : POPUP_CONTROLS;
-        return this.sortControls(window, controls);
+        return this.sortControls(window, controls).stream().filter(control -> this.apiControlAllowed(window, control)).toList();
     }
 
     private static int rowsForSlots(int slotCount, int columns) {
@@ -5757,7 +6565,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable WindowBounds internalWindowPlacementFootprint(InventoryWindow window) {
-        List<InternalDesktopWindowRegion> regions = this.apiExternalRegions(window);
+        List<DesktopWindowRegion> regions = this.apiExternalRegions(window);
         if (regions.isEmpty()) {
             return null;
         }
@@ -5767,7 +6575,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int right = window.width;
         int bottom = window.height;
         boolean external = false;
-        for (InternalDesktopWindowRegion region : regions) {
+        for (DesktopWindowRegion region : regions) {
             if (region == null
                 || !region.constrainsWindow()
                 || (!region.visual() && !region.interactive())
@@ -5814,7 +6622,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private WindowPlacement defaultPlacement(InventoryWindow window) {
         return switch (window.kind) {
-            case INVENTORY, CREATIVE, RECIPE_BROWSER_VIEW, INSTRUCTIONS -> WindowPlacement.CENTER;
+            case INVENTORY, CREATIVE, CLIENT_API, RECIPE_BROWSER_VIEW, INSTRUCTIONS -> WindowPlacement.CENTER;
             case CHARACTER -> WindowPlacement.BOTTOM_LEFT;
             case JEI -> WindowPlacement.TOP_RIGHT;
             case CONTAINER -> WindowPlacement.CONTAINER;
@@ -5837,6 +6645,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 clamp(RECIPE_BROWSER_VIEW_DEFAULT_HEIGHT, this.minResizableHeight(window), Math.max(this.minResizableHeight(window), this.desktopHeight() - WINDOW_PLACEMENT_MARGIN * 2))
             );
             case INSTRUCTIONS -> DesktopWindowSize.of(INSTRUCTIONS_WINDOW_WIDTH, this.instructionsWindowHeight());
+            case CLIENT_API -> DesktopWindowSize.of(window.width, window.height);
             case CONTAINER -> this.defaultContainerWindowSize(window);
         };
     }
@@ -5978,13 +6787,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void clampWindowIntoDesktop(InventoryWindow window, int placementMargin) {
         window.x = this.clampedWindowX(window.x, window.width);
-        window.y = this.clampedWindowY(window.y, window.minimized ? TOP_BAR_HEIGHT : window.height);
+        window.y = this.clampedWindowY(window.y, window.minimized ? window.apiChrome.titleBarHeight() : window.height);
         WindowBounds bounds = this.visibleWindowBounds(window);
         int minX = placementMargin;
         int minY = placementMargin;
         int maxRight = this.desktopWidth() - placementMargin;
         int maxBottom = this.desktopHeight() - placementMargin;
-        boolean preserveInternalBase = this.hasInternalExternalRegions(window);
+        boolean preserveInternalBase = this.hasInternalExternalRegions(window)
+            || window.apiSurface.viewportPolicy() != DesktopViewportPolicy.CLAMP;
         if (preserveInternalBase && bounds.width() > Math.max(0, maxRight - minX)) {
             window.x = clamp(window.x, minX, Math.max(minX, maxRight - window.width));
             bounds = this.visibleWindowBounds(window);
@@ -5999,7 +6809,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
         }
         if (preserveInternalBase && bounds.height() > Math.max(0, maxBottom - minY)) {
-            int visibleHeight = window.minimized ? TOP_BAR_HEIGHT : window.height;
+            int visibleHeight = window.minimized ? window.apiChrome.titleBarHeight() : window.height;
             window.y = clamp(window.y, minY, Math.max(minY, maxBottom - visibleHeight));
         } else {
             if (bounds.y() < minY) {
@@ -6038,9 +6848,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void clampInitialWindowSize(InventoryWindow window) {
         if (window.apiDefinition != null) {
-            DesktopWindowSize minSize = this.apiMinSize(window);
-            window.width = Math.max(window.width, minSize.width());
-            window.height = Math.max(window.height, minSize.height());
+            DesktopWindowSize size = this.boundedApiSize(window, DesktopWindowSize.of(window.width, window.height));
+            window.width = size.width(); window.height = size.height();
+            if (window.apiSurface.viewportPolicy() == DesktopViewportPolicy.CLAMP) {
+                window.width = Math.min(window.width, Math.max(1, this.desktopWidth()));
+                window.height = Math.min(window.height, Math.max(1, this.desktopHeight()));
+            }
+            return;
         }
 
         if (!this.isResizableStorageWindow(window)) {
@@ -6195,8 +7009,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private WindowBounds inventoryPlacementAnchor() {
         WindowKind inventoryKind = this.activeInventoryPlacementKind();
-        for (InventoryWindow window : this.windows) {
-            if (window.kind == inventoryKind && !window.ghosted && !window.persistentHidden) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
+            if (window.kind == inventoryKind && !window.ghosted && !window.persistentHidden && !window.companionHidden) {
                 return this.visibleWindowBounds(window);
             }
         }
@@ -6338,7 +7152,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private int blockingWindowBottom(int x, int y, int windowWidth, int windowHeight) {
         WindowBounds candidate = new WindowBounds(x, y, windowWidth, windowHeight);
         int bottom = -1;
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             WindowBounds bounds = this.visibleWindowBounds(window);
             if (candidate.intersectsWithGap(bounds, WINDOW_PLACEMENT_GAP)) {
                 bottom = Math.max(bottom, bounds.bottom());
@@ -6380,7 +7194,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (reservedBounds != null && candidate.intersectsWithGap(reservedBounds, WINDOW_PLACEMENT_GAP)) {
             return false;
         }
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (candidate.intersectsWithGap(this.visibleWindowBounds(window), WINDOW_PLACEMENT_GAP)) {
                 return false;
             }
@@ -6392,7 +7206,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int x = window.x;
         int y = window.y;
         int right = window.x + window.width;
-        int bottom = window.y + (window.minimized ? TOP_BAR_HEIGHT : window.height);
+        int bottom = window.y + (window.minimized ? window.apiChrome.titleBarHeight() : window.height);
         if (window.kind == WindowKind.CREATIVE && !window.minimized) {
             int tabsX = creativeContentX(window) + CREATIVE_TAB_X_OFFSET;
             int tabsRight = tabsX + CREATIVE_TAB_WIDTH * CREATIVE_TABS_PER_ROW;
@@ -6435,7 +7249,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 bottom = Math.max(bottom, tabsY + stationTabsHeight);
             }
         }
-        for (InternalDesktopWindowRegion region : this.apiExternalRegions(window)) {
+        for (DesktopWindowRegion region : this.apiExternalRegions(window)) {
             if (region == null
                 || !region.constrainsWindow()
                 || (!region.visual() && !region.interactive())
@@ -6455,6 +7269,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void closeIfEmpty() {
+        this.updateCompanionVisibility();
         if (this.hasInteractiveWindows()) {
             return;
         }
@@ -6544,6 +7359,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.dragStartSlot = null;
         this.pendingPickupAll = null;
         this.pendingQuickMoveAll = null;
+        this.publishApiGesture(DesktopGestureEvent.Outcome.CANCELLED, reason);
     }
 
     private void showIfNeeded(Minecraft minecraft) {
@@ -6575,8 +7391,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean hasInteractiveWindows() {
-        for (InventoryWindow window : this.windows) {
-            if (!window.ghosted && !window.persistentHidden) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
+            if (!window.ghosted && !window.persistentHidden && !window.companionHidden) {
                 return true;
             }
         }
@@ -6585,8 +7401,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private boolean hasOnlyGhostWindows() {
         boolean hasGhostWindow = false;
-        for (InventoryWindow window : this.windows) {
-            if (window.ghosted && !window.persistentHidden) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
+            if (window.ghosted && !window.persistentHidden && !window.companionHidden) {
                 hasGhostWindow = true;
             }
         }
@@ -6616,7 +7432,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable InventoryWindow windowForStateKey(String key) {
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             String windowKey = this.linkKey(window);
             if (key.equals(windowKey)) {
                 return window;
@@ -6912,6 +7728,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void hideWindowPersistently(InventoryWindow window, String reason) {
+        if (!this.apiOptions(window).closable()) return;
+        if (window == this.apiKeyboardFocusWindow) this.setApiKeyboardFocus(null);
         this.rememberCreativeWindow(window);
         this.saveWindowState(window, false);
         this.clearPopupStateFor(window);
@@ -6931,7 +7749,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean hasPersistentHiddenStandaloneWindow(WindowKind kind) {
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.kind == kind && window.session == null && window.legacyMenu == null && window.persistentHidden) {
                 return true;
             }
@@ -6947,7 +7765,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         DesktopDebug.log("client persistent restore desktop={} windows={} sessions={}", this.desktopId, this.windows.size(), this.sessions.size());
         InventoryWindow focusedWindow = null;
         for (InventoryWindow window : List.copyOf(this.windows)) {
-            if (!window.persistentHidden) {
+            if (!window.persistentHidden && !window.companionHidden) {
                 continue;
             }
             if (window.session != null) {
@@ -6965,7 +7783,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean hasPersistentHiddenWindows() {
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.persistentHidden) {
                 return true;
             }
@@ -7008,12 +7826,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void clearForOwnerChange(String reason) {
+        this.setApiKeyboardFocus(null);
+        this.apiLastModalWindow = null;
         DesktopDebug.log("client clear desktop={} reason={} windows={} sessions={}", this.desktopId, reason, this.windows.size(), this.sessions.size());
         this.exitLinkMode(reason);
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             this.rememberCreativeWindow(window);
             this.saveWindowState(window);
             this.closeRecipeBrowserView(window);
+            this.apiClosed(window);
         }
         this.windows.clear();
         for (DesktopContainerSession session : this.sessions) {
@@ -7055,6 +7876,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void activateControl(InventoryWindow window, WindowControl control, boolean fromPopup) {
+        if (!this.apiControlAllowed(window, control) || window.apiDisposed || !this.windows.contains(window)
+            || (this.apiModalWindow() != null && this.apiModalWindow() != window)) return;
+        if (window.apiSurface.mode() == DesktopSurfaceMode.MOD_OWNED && control == WindowControl.PIN) {
+            this.requestApiWindowAction(window, window.pinMode == PinMode.UNPINNED ? DesktopWindowAction.PIN : DesktopWindowAction.UNPIN);
+            return;
+        }
         DesktopDebug.log("client control desktop={} window={} control={}", this.desktopId, window.debugName(), control);
         switch (control) {
             case SORT_WINDOWS -> this.sortIntoOpenWindows(window);
@@ -7072,6 +7899,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 window.minimized = !window.minimized;
                 if (window.minimized) {
                     this.cancelApiPointerCapture(window);
+                    if (window == this.apiKeyboardFocusWindow) this.setApiKeyboardFocus(null);
                     this.clearSlotInteractionState("window-minimize");
                 } else {
                     this.clampWindowIntoDesktop(window);
@@ -7088,7 +7916,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 }
             }
             case PIN -> {
-                window.pinMode = window.pinMode.next(SaltsInventoryConfig.get().enableGhostPins);
+                window.pinMode = window.pinMode.next(SaltsInventoryConfig.get().enableGhostPins && this.apiOptions(window).ghostable());
                 if (window.pinMode != PinMode.GHOST_PINNED && window.ghosted) {
                     this.promoteGhostWindow(window);
                 } else {
@@ -7130,7 +7958,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void unminimizeWindows() {
         boolean changed = false;
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.minimized) {
                 window.minimized = false;
                 changed = true;
@@ -7143,7 +7971,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean shouldUseCursorWorldTarget() {
-        return !this.cameraControl
+        return this.apiModalWindow() == null && !this.cameraControl
             && (this.hasWindows() || this.hotbarOnly)
             && this.minecraft != null
             && this.minecraft.player != null
@@ -7214,10 +8042,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void closeWindow(InventoryWindow window, String reason, boolean forcePermanent) {
+        if (this.isCompanion(window)) return; // Its server ownership, rather than desktop user cleanup, owns disposal.
         if (!this.windows.contains(window)) {
             return;
         }
 
+        if (!forcePermanent && !this.apiOptions(window).closable()) return;
         this.closeLinkedWindows(window, reason, forcePermanent);
         this.exitLinkMode("window-close");
         this.updateBundleHover(null);
@@ -7234,7 +8064,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.movingWindow = this.movingWindow == window ? null : this.movingWindow;
         this.resizingWindow = this.resizingWindow == window ? null : this.resizingWindow;
 
-        if (!forcePermanent && window.pinMode == PinMode.GHOST_PINNED && SaltsInventoryConfig.get().enableGhostPins) {
+        if (window == this.apiKeyboardFocusWindow) this.setApiKeyboardFocus(null);
+        if (!forcePermanent && this.apiOptions(window).ghostable() && window.pinMode == PinMode.GHOST_PINNED && SaltsInventoryConfig.get().enableGhostPins) {
             this.demoteGhostWindow(window, true);
             DesktopDebug.log("client window ghost desktop={} window={} reason={}", this.desktopId, window.debugName(), reason);
             this.closeIfEmpty();
@@ -7258,6 +8089,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void demoteGhostWindow(InventoryWindow window, boolean notifyServer) {
+        if (window == this.apiKeyboardFocusWindow) this.setApiKeyboardFocus(null);
         this.cancelApiPointerCapture(window);
         window.ghosted = true;
         window.minimized = false;
@@ -7308,7 +8140,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable InventoryWindow windowForSession(int sessionId) {
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.session != null && window.session.sessionId() == sessionId) {
                 return window;
             }
@@ -7316,10 +8148,77 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return null;
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void setApiKeyboardFocus(@Nullable InventoryWindow next) {
+        if (next == this.apiKeyboardFocusWindow) return;
+        InventoryWindow previous = this.apiKeyboardFocusWindow;
+        this.apiKeyboardFocusWindow = next;
+        if (previous != null && previous.apiPopups != null) {
+            for (DesktopPopup popup : List.copyOf(previous.apiPopups)) {
+                if (popup.dismissOnFocusLoss()) this.dismissApiPopup(previous, popup, DesktopPopup.Dismissal.FOCUS_LOST);
+            }
+        }
+        for (InventoryWindow window : new InventoryWindow[]{previous, next}) {
+            if (window == null || window.apiDefinition == null) continue;
+            try {
+                ((DesktopWindowDefinition) window.apiDefinition).keyboardFocusChanged(
+                    this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), window == next);
+            } catch (RuntimeException failure) {
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                    com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                    window.debugName(), "keyboard-focus", "Keyboard focus callback failed", failure);
+            }
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private DesktopWindowOptions apiOptions(InventoryWindow window) {
+        if (this.isCompanion(window)) return DesktopWindowOptions.DRAG_ONLY;
+        if (window.apiClosedDelivered || window.apiDisposed) return DesktopWindowOptions.DEFAULT;
+        if (window.apiDefinition == null) return DesktopWindowOptions.DEFAULT;
+        try {
+            return java.util.Objects.requireNonNull(((DesktopWindowDefinition) window.apiDefinition)
+                .options(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE)));
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "options", "Window options callback failed", failure);
+            return new DesktopWindowOptions(false, false, false, false, true);
+        }
+    }
+
+    private void enforceApiOptions(InventoryWindow window) {
+        if (window.apiDefinition == null) return;
+        DesktopWindowOptions options = this.apiOptions(window);
+        if (!options.movable()) window.locked = true;
+        else if (!options.lockable()) window.locked = false;
+        if (!options.minimizable()) window.minimized = false;
+        if (!options.pinnable()) window.pinMode = PinMode.UNPINNED;
+        if (!options.ghostable() && window.pinMode == PinMode.GHOST_PINNED) window.pinMode = PinMode.PINNED;
+        if (!options.ghostable() && window.ghosted) this.promoteGhostWindow(window);
+    }
+
+    private boolean apiControlAllowed(InventoryWindow window, WindowControl control) {
+        if (this.isCompanion(window)) return false;
+        DesktopWindowOptions options = this.apiOptions(window);
+        return switch (control) {
+            case CLOSE -> options.closable();
+            case MINIMIZE -> options.minimizable();
+            case PIN -> options.pinnable();
+            case LOCK -> options.lockable();
+            case FOCUS, LINK, SORT_WINDOWS -> window.kind != WindowKind.CLIENT_API;
+            case ELLIPSIS -> options.managementMenu();
+        };
+    }
+
     private void setFocusedWindow(@Nullable InventoryWindow focusedWindow) {
-        for (InventoryWindow window : this.windows) {
+        InventoryWindow modal = this.apiModalWindow();
+        if (modal != null && modal != focusedWindow) return;
+        this.setApiKeyboardFocus(focusedWindow != null && focusedWindow.apiDefinition != null ? focusedWindow : null);
+        if (focusedWindow != null && focusedWindow.kind == WindowKind.CLIENT_API) return;
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             boolean oldFocused = window.focused;
-            boolean newFocused = !window.ghosted && !window.persistentHidden && window == focusedWindow;
+            boolean newFocused = !window.ghosted && !window.persistentHidden && !window.companionHidden && window == focusedWindow;
             window.focused = newFocused;
             if (oldFocused != newFocused) {
                 this.apiFocusChanged(window, newFocused);
@@ -7332,6 +8231,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void bringToFront(InventoryWindow window) {
+        InventoryWindow modal = this.apiModalWindow();
+        if (modal != null && modal != window) return;
         if (this.windows.remove(window)) {
             this.windows.add(window);
         }
@@ -7340,11 +8241,48 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private @Nullable InventoryWindow apiModalWindow() {
+        List<InventoryWindow> snapshot = List.copyOf(this.windows);
+        for (int i = snapshot.size() - 1; i >= 0; i--) {
+            InventoryWindow window = snapshot.get(i);
+            if (window.apiDefinition == null || window.minimized || window.ghosted || window.persistentHidden || window.companionHidden || window.apiDisposed) continue;
+            if (window.apiPopups != null && window.apiPopups.stream().anyMatch(DesktopPopup::modal)) return window;
+            try {
+                if (((DesktopWindowDefinition) window.apiDefinition).modal(
+                    this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE))) return window;
+            } catch (RuntimeException failure) {
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                    com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                    window.debugName(), "modal", "Modal query failed", failure);
+            }
+        }
+        return null;
+    }
+
+    private void enforceApiModal() {
+        InventoryWindow modal = this.apiModalWindow();
+        if (modal != this.apiLastModalWindow) {
+            this.apiLastModalWindow = modal;
+            this.clearTransientInteractionState("api-modal-change");
+        }
+        if (modal != null) {
+            this.cameraControl = false;
+            this.stopWorldAttack();
+            this.stopWorldUse();
+            if (this.windows.remove(modal)) this.windows.add(modal);
+            this.setApiKeyboardFocus(modal);
+        }
+    }
+
     private @Nullable InventoryWindow windowAt(double mouseX, double mouseY) {
+        InventoryWindow modal = this.apiModalWindow();
+        if (modal != null) return modal;
         for (int i = this.windows.size() - 1; i >= 0; i--) {
             InventoryWindow window = this.windows.get(i);
-            if (!window.persistentHidden
-                && (window.contains(mouseX, mouseY) || this.apiExternalRegionContains(window, mouseX, mouseY))) {
+            if (!window.persistentHidden && !window.companionHidden
+                && (this.surfaceControlAt(window, mouseX, mouseY) != null
+                    || window.contains(mouseX, mouseY) || this.apiExternalRegionContains(window, mouseX, mouseY))) {
                 return window;
             }
         }
@@ -7353,17 +8291,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable SlotHit slotAt(double mouseX, double mouseY) {
+        InventoryWindow modal = this.apiModalWindow();
+        if (modal != null) return modal.slotAt(this, mouseX, mouseY);
         for (int i = this.windows.size() - 1; i >= 0; i--) {
             InventoryWindow window = this.windows.get(i);
-            if (!window.persistentHidden && !window.minimized && !window.ghosted) {
+            if (!window.persistentHidden && !window.companionHidden && !window.minimized && !window.ghosted) {
                 SlotHit hit = window.slotAt(this, mouseX, mouseY);
                 if (hit != null) {
                     return hit;
                 }
             }
-            if (!window.persistentHidden
+            if (!window.persistentHidden && !window.companionHidden
                 && (window.contains(mouseX, mouseY)
-                    || window.apiDefinition instanceof InternalDesktopWindowDefinition
+                    || window.apiDefinition instanceof DesktopWindowPresentation
                         && this.apiExternalRegionOccludes(window, mouseX, mouseY))) {
                 return null;
             }
@@ -7431,11 +8371,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void renderWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY, float tickProgress) {
-        if (window.persistentHidden) {
+        if (window.persistentHidden || window.companionHidden || window.apiDisposed) {
             return;
         }
 
-        int visibleHeight = window.minimized ? TOP_BAR_HEIGHT : window.height;
+        boolean saltDecoration = window.apiSurface.mode() == DesktopSurfaceMode.SALT;
+
+        int visibleHeight = window.minimized ? window.apiChrome.titleBarHeight() : window.height;
         TitleBarLayout titleLayout = this.titleBarLayout(window);
         CreativeModeTab selectedCreativeTab = window.kind == WindowKind.CREATIVE && !window.minimized ? this.selectedCreativeTab(window) : null;
         boolean ghosted = window.ghosted;
@@ -7463,32 +8405,41 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             if (!window.minimized) {
                 this.renderInternalApiBehindFrame(graphics, window, mouseX, mouseY);
             }
+            if (window.apiDisposed) return;
 
-            if (ghosted) {
-                this.renderGhostBackdrop(graphics, window, visibleHeight);
-            } else {
-                renderNineSlice(graphics, WINDOW_TEXTURE, window.x, window.y, window.width, visibleHeight);
-            }
-            graphics.text(this.font, titleLayout.displayTitle(), window.x + TITLE_LEFT_PADDING, window.y + 5, this.uiColor(COLOR_WINDOW_TITLE), false);
-            if (this.shouldRenderJeiIngredientTabs(window, ghosted)) {
-                this.renderJeiDefaultTabButton(graphics, window, mouseX, mouseY);
-            }
-            if (selectedCreativeTab != null && !ghosted) {
-                this.renderCreativeTabPageButtons(graphics, window, titleLayout, mouseX, mouseY);
-            }
-            if (selectedCreativeTab != null && !ghosted && this.isCreativeSearchTab(selectedCreativeTab)) {
-                this.renderCreativeSearchBox(graphics, window, titleLayout);
-            }
-            if (!ghosted) {
-                this.renderControls(graphics, window, titleLayout, mouseX, mouseY);
+            if (saltDecoration && window.apiDecoration == null) {
+                if (ghosted) {
+                    this.renderGhostBackdrop(graphics, window, visibleHeight);
+                } else {
+                    renderNineSlice(graphics, WINDOW_TEXTURE, window.x, window.y, window.width, visibleHeight);
+                }
+                graphics.text(this.font, titleLayout.displayTitle(), window.x + TITLE_LEFT_PADDING, window.y + 5, this.uiColor(COLOR_WINDOW_TITLE), false);
+                if (this.shouldRenderJeiIngredientTabs(window, ghosted)) {
+                    this.renderJeiDefaultTabButton(graphics, window, mouseX, mouseY);
+                }
+                if (selectedCreativeTab != null && !ghosted) {
+                    this.renderCreativeTabPageButtons(graphics, window, titleLayout, mouseX, mouseY);
+                }
+                if (selectedCreativeTab != null && !ghosted && this.isCreativeSearchTab(selectedCreativeTab)) {
+                    this.renderCreativeSearchBox(graphics, window, titleLayout);
+                }
+                if (!ghosted) {
+                    this.renderControls(graphics, window, titleLayout, mouseX, mouseY);
+                }
             }
 
+            if (saltDecoration && window.apiDecoration != null) {
+                this.renderApiDecoration(graphics, window, titleLayout, mouseX, mouseY);
+            }
+            if (window.apiDisposed) return;
             if (window.minimized) {
+                this.renderSurfaceControls(graphics, window, mouseX, mouseY);
                 return;
             }
 
             switch (window.kind) {
                 case INVENTORY -> this.renderInventoryWindow(graphics, window, mouseX, mouseY);
+                case CLIENT_API -> this.renderApiWindow(graphics, window, mouseX, mouseY);
                 case CONTAINER -> this.renderContainerWindow(graphics, window, mouseX, mouseY);
                 case CHARACTER -> this.renderCharacterWindow(graphics, window, mouseX, mouseY);
                 case CREATIVE -> this.renderCreativeWindow(graphics, window, mouseX, mouseY);
@@ -7497,7 +8448,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 case INSTRUCTIONS -> this.renderInstructionsWindow(graphics, window, mouseX, mouseY);
             }
 
-            if (!ghosted) {
+            this.renderSurfaceControls(graphics, window, mouseX, mouseY);
+            if (!ghosted && saltDecoration && window.apiDecoration == null) {
                 this.renderResizeGrip(graphics, window, mouseX, mouseY);
             }
             if (selectedCreativeTab != null && !ghosted) {
@@ -7516,8 +8468,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int mouseX,
         int mouseY
     ) {
-        if (!(window.apiDefinition instanceof InternalDesktopWindowDefinition internalDefinition)
-            || window.containerMenu() == null) {
+        if (window.apiClosedDelivered || window.apiDisposed) return;
+        if (!(window.apiDefinition instanceof DesktopWindowPresentation internalDefinition)
+           ) {
             return;
         }
         try {
@@ -7532,12 +8485,24 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void renderApiOverlay(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        if (window.apiDefinition == null || window.minimized || window.apiDisposed) return;
+        try {
+            ((DesktopWindowDefinition) window.apiDefinition).renderOverlay(this.apiContext(window, graphics, mouseX, mouseY));
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "render-overlay", "Overlay callback failed", failure);
+        }
+    }
+
     private void renderLinkModeHighlight(GuiGraphicsExtractor graphics, InventoryWindow window) {
         if (!this.isLinkModeActive() || window.persistentHidden || this.linkKey(window) == null) {
             return;
         }
 
-        int visibleHeight = window.minimized ? TOP_BAR_HEIGHT : window.height;
+        int visibleHeight = window.minimized ? window.apiChrome.titleBarHeight() : window.height;
         if (this.isLinkOrigin(window)) {
             graphics.fill(window.x, window.y, window.x + window.width, window.y + visibleHeight, LINK_MODE_ORIGIN_FILL);
             graphics.outline(window.x - 1, window.y - 1, window.width + 2, visibleHeight + 2, LINK_MODE_ORIGIN_OUTLINE);
@@ -7559,7 +8524,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable RecipeBookComponent<?> visibleRecipeBook(InventoryWindow window) {
-        if (window.persistentHidden || window.minimized || window.ghosted || window.recipeBook == null || !window.recipeBook.isVisible()) {
+        if (window.persistentHidden || window.companionHidden || window.minimized || window.ghosted || window.recipeBook == null || !window.recipeBook.isVisible()) {
             return null;
         }
 
@@ -7876,6 +8841,36 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return (currentGuiTint >>> 24) / 255.0F;
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void renderApiDecoration(GuiGraphicsExtractor graphics, InventoryWindow window,
+                                      TitleBarLayout layout, int mouseX, int mouseY) {
+        if (window.apiClosedDelivered || window.apiDisposed) return;
+        List<DesktopControlState> controls = new ArrayList<>();
+        boolean active = this.windowAt(mouseX, mouseY) == window;
+        InventoryWindow modal = this.apiModalWindow();
+        for (ControlRect rect : layout.controls()) {
+            boolean hovered = active && rect.contains(mouseX, mouseY);
+            controls.add(new DesktopControlState(DesktopWindowControl.valueOf(rect.control().name()),
+                new DesktopWindowBounds(rect.x(), rect.y(), rect.width(), rect.height()), hovered,
+                hovered && this.pressedControlWindow == window && this.pressedControl == rect.control(),
+                modal == null || modal == window, this.isControlActive(window, rect.control())));
+        }
+        if (this.canResizeWindow(window) && window.apiChrome.resizeGripSize() > 0) {
+            int size = window.apiChrome.resizeGripSize();
+            int x = window.x + window.width - size - 1, y = window.y + window.height - size - 1;
+            controls.add(new DesktopControlState(DesktopWindowControl.RESIZE_GRIP,
+                new DesktopWindowBounds(x, y, size, size), active && contains(mouseX, mouseY, x, y, size, size),
+                this.resizingWindow == window, modal == null || modal == window, false));
+        }
+        try {
+            window.apiDecoration.render(this.apiContext(window, graphics, mouseX, mouseY), List.copyOf(controls));
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "decoration", "Decoration renderer failed", failure);
+        }
+    }
+
     private void renderControls(GuiGraphicsExtractor graphics, InventoryWindow window, TitleBarLayout layout, int mouseX, int mouseY) {
         for (ControlRect rect : layout.controls()) {
             this.renderControlButton(graphics, window, rect.control(), rect.x(), rect.y(), mouseX, mouseY);
@@ -7944,11 +8939,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private TitleBarLayout titleBarLayout(InventoryWindow window) {
         Component titleBarTitle = this.titleBarTitle(window);
-        List<WindowControl> fullControls = this.sortControls(window, this.fullTitleControls());
-        boolean compact = TITLE_LEFT_PADDING + TITLE_TO_CONTROLS_GAP + this.font.width(titleBarTitle)
-            + controlsWidth(fullControls) > window.width;
-        List<WindowControl> controls = compact ? COMPACT_TITLE_CONTROLS : fullControls;
-        int availableTitleWidth = Math.max(0, window.width - TITLE_LEFT_PADDING - TITLE_TO_CONTROLS_GAP - controlsWidth(controls));
+        List<WindowControl> fullControls = this.sortControls(window, this.fullTitleControls()).stream()
+            .filter(control -> this.apiControlAllowed(window, control)).toList();
+        boolean compact = window.apiChrome.titleLeftPadding() + TITLE_TO_CONTROLS_GAP + this.font.width(titleBarTitle)
+            + window.apiChrome.controlsWidth(fullControls.size()) > window.width;
+        List<WindowControl> controls = compact ? COMPACT_TITLE_CONTROLS.stream()
+            .filter(control -> this.apiControlAllowed(window, control)).toList() : fullControls;
+        int availableTitleWidth = Math.max(0, window.width - window.apiChrome.titleLeftPadding()
+            - TITLE_TO_CONTROLS_GAP - window.apiChrome.controlsWidth(controls.size()));
         String title = this.truncatedTitle(titleBarTitle.getString(), availableTitleWidth);
         return new TitleBarLayout(title, this.controlRects(window, controls), compact);
     }
@@ -8000,7 +8998,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private @Nullable Component apiTitle(InventoryWindow window) {
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        if (window.apiClosedDelivered || window.apiDisposed) return null;
+        if (window.apiDefinition == null) {
             return null;
         }
 
@@ -8009,27 +9008,50 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return ((DesktopWindowDefinition) window.apiDefinition).title(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api title failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "title", "Window callback failed", exception);
             return null;
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private DesktopWindowSize apiMinSize(InventoryWindow window) {
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        if (window.apiClosedDelivered || window.apiDisposed) return DesktopWindowSize.of(Math.max(1, window.width), Math.max(1, window.height));
+        if (window.apiDefinition == null) {
             return DesktopWindowSize.of(Math.max(1, window.width), Math.max(1, window.height));
         }
 
         try {
-            return ((DesktopWindowDefinition) window.apiDefinition).minSize(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
+            return java.util.Objects.requireNonNull(((DesktopWindowDefinition) window.apiDefinition).minSize(
+                this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE)), "minSize");
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api min size failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "min", "Window callback failed", exception);
+            return DesktopWindowSize.of(Math.max(1, window.width), Math.max(1, window.height));
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private @Nullable DesktopWindowSize apiMaxSize(InventoryWindow window) {
+        if (window.apiClosedDelivered || window.apiDisposed) return null;
+        if (window.apiDefinition == null) return null;
+        try {
+            return ((DesktopWindowDefinition) window.apiDefinition).maxSize(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "maxSize", "Window size callback failed", failure);
             return DesktopWindowSize.of(Math.max(1, window.width), Math.max(1, window.height));
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private @Nullable DesktopResizePolicy apiResizePolicy(InventoryWindow window) {
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        if (window.apiClosedDelivered || window.apiDisposed) return DesktopResizePolicy.FIXED;
+        if (window.apiDefinition == null) {
             return null;
         }
 
@@ -8037,13 +9059,17 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return ((DesktopWindowDefinition) window.apiDefinition).resizePolicy(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api resize policy failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "resize", "Window callback failed", exception);
             return DesktopResizePolicy.FIXED;
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private @Nullable DesktopWindowSize apiSnapSize(InventoryWindow window) {
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        if (window.apiClosedDelivered || window.apiDisposed) return null;
+        if (window.apiDefinition == null) {
             return null;
         }
 
@@ -8051,40 +9077,62 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return ((DesktopWindowDefinition) window.apiDefinition).snapSize(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api snap size failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "snap", "Window callback failed", exception);
             return null;
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void apiOpened(InventoryWindow window) {
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        this.enforceApiOptions(window);
+        if (window.apiDefinition == null) {
             return;
         }
 
         try {
             ((DesktopWindowDefinition) window.apiDefinition).opened(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
+            if (!window.apiDisposed) {
+                this.commitApiSurface(window);
+                this.notifyApiWindowState(window);
+            }
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api opened failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "opened", "Window callback failed", exception);
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void apiClosed(InventoryWindow window) {
+        if (window.apiDisposed) return;
+        window.apiDisposed = true;
+        if (window.apiTasks != null) window.apiTasks.close();
         this.cancelApiPointerCapture(window);
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        this.windows.remove(window);
+        if (window == this.apiKeyboardFocusWindow) this.setApiKeyboardFocus(null);
+        if (window.apiDefinition == null) {
             return;
         }
 
+        this.notifyApiWindowState(window);
+        window.apiClosedDelivered = true;
         try {
             ((DesktopWindowDefinition) window.apiDefinition).closed(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api closed failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "closed", "Window callback failed", exception);
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void apiMoved(InventoryWindow window) {
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        if (window.apiClosedDelivered || window.apiDisposed) return;
+        if (window.apiDefinition == null) {
             return;
         }
 
@@ -8092,12 +9140,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             ((DesktopWindowDefinition) window.apiDefinition).moved(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api moved failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "moved", "Window callback failed", exception);
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void apiResized(InventoryWindow window) {
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        if (window.apiClosedDelivered || window.apiDisposed) return;
+        if (window.apiDefinition == null) {
             return;
         }
 
@@ -8105,12 +9157,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             ((DesktopWindowDefinition) window.apiDefinition).resized(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api resized failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "resized", "Window callback failed", exception);
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void apiFocusChanged(InventoryWindow window, boolean focused) {
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        if (window.apiClosedDelivered || window.apiDisposed) return;
+        if (window.apiDefinition == null) {
             return;
         }
 
@@ -8118,12 +9174,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             ((DesktopWindowDefinition) window.apiDefinition).focusChanged(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), focused);
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api focusChanged failed desktop={} window={} focused={} reason={}", this.desktopId, window.debugName(), focused, exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "focusChanged", "Window callback failed", exception);
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void apiGhosted(InventoryWindow window) {
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        if (window.apiClosedDelivered || window.apiDisposed) return;
+        if (window.apiDefinition == null) {
             return;
         }
 
@@ -8131,12 +9191,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             ((DesktopWindowDefinition) window.apiDefinition).ghosted(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api ghosted failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "ghosted", "Window callback failed", exception);
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void apiUnghosted(InventoryWindow window) {
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        if (window.apiClosedDelivered || window.apiDisposed) return;
+        if (window.apiDefinition == null) {
             return;
         }
 
@@ -8144,34 +9208,49 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             ((DesktopWindowDefinition) window.apiDefinition).unghosted(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api unghosted failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "unghosted", "Window callback failed", exception);
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean apiTick(InventoryWindow window) {
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        if (window.apiClosedDelivered || window.apiDisposed) return true;
+        if (window.apiDefinition == null) {
             return false;
         }
 
         try {
+            this.notifyApiEnvironment(window);
+            if (window.apiDisposed || !this.windows.contains(window)) return true;
             ((DesktopWindowDefinition) window.apiDefinition).tick(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
-            if (window.apiDefinition instanceof InternalDesktopWindowDefinition internalDefinition) {
+            if (!this.windows.contains(window)) return true;
+            if (window.apiDefinition instanceof DesktopWindowPresentation internalDefinition) {
                 DesktopWindowSize desired = internalDefinition.desiredWindowSize(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
                 if (desired != null) {
                     this.applyInternalWindowSize(window, desired);
                 }
+                this.commitApiSurface(window);
                 this.clampInternalWindowRegions(window);
+            } else {
+                this.commitApiSurface(window);
             }
+            this.notifyApiWindowState(window);
             return true;
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api tick failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "tick", "Window callback failed", exception);
             return false;
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean apiAppendTooltip(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
-        if (window.apiDefinition == null || window.containerMenu() == null || window.minimized) {
+        if (window.apiClosedDelivered || window.apiDisposed) return false;
+        if (window.apiDefinition == null || window.minimized) {
             return false;
         }
 
@@ -8179,6 +9258,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return ((DesktopWindowDefinition) window.apiDefinition).appendTooltip(this.apiContext(window, graphics, mouseX, mouseY), mouseX, mouseY);
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api tooltip failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "tooltip", "Window callback failed", exception);
             return false;
         }
     }
@@ -8190,8 +9272,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int mouseY,
         boolean active
     ) {
-        if (!(window.apiDefinition instanceof InternalDesktopWindowDefinition internalDefinition)
-            || window.containerMenu() == null) {
+        if (!(window.apiDefinition instanceof DesktopWindowPresentation internalDefinition)
+           ) {
             return;
         }
 
@@ -8200,7 +9282,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 this.apiContext(window, null, mouseX, mouseY),
                 mouseX,
                 mouseY,
-                active && !window.minimized && !window.persistentHidden && !window.ghosted
+                active && !window.minimized && !window.persistentHidden && !window.companionHidden && !window.ghosted
             );
         } catch (RuntimeException exception) {
             DesktopDebug.warn(
@@ -8213,26 +9295,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private List<InternalDesktopWindowRegion> apiExternalRegions(InventoryWindow window) {
-        if (!(window.apiDefinition instanceof InternalDesktopWindowDefinition internalDefinition)
-            || window.containerMenu() == null
-            || window.minimized) {
-            return List.of();
-        }
-
-        try {
-            List<InternalDesktopWindowRegion> regions = internalDefinition.externalRegions(
-                this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE)
-            );
-            return regions == null ? List.of() : regions;
-        } catch (RuntimeException exception) {
-            DesktopDebug.warn("client internal api external regions failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
-            return List.of();
-        }
+    private List<DesktopWindowRegion> apiExternalRegions(InventoryWindow window) {
+        return window.minimized ? List.of() : window.apiSurface.regions();
     }
 
     private boolean apiExternalRegionContains(InventoryWindow window, double mouseX, double mouseY) {
-        for (InternalDesktopWindowRegion region : this.apiExternalRegions(window)) {
+        for (DesktopWindowRegion region : this.apiExternalRegions(window)) {
             if (region != null && region.interactive() && region.contains(window.x, window.y, mouseX, mouseY)) {
                 return true;
             }
@@ -8241,7 +9309,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean apiExternalRegionOccludes(InventoryWindow window, double mouseX, double mouseY) {
-        for (InternalDesktopWindowRegion region : this.apiExternalRegions(window)) {
+        for (DesktopWindowRegion region : this.apiExternalRegions(window)) {
             if (region != null
                 && (region.visual() || region.interactive())
                 && region.contains(window.x, window.y, mouseX, mouseY)) {
@@ -8252,7 +9320,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean hasInternalExternalRegions(InventoryWindow window) {
-        for (InternalDesktopWindowRegion region : this.apiExternalRegions(window)) {
+        for (DesktopWindowRegion region : this.apiExternalRegions(window)) {
             if (region != null
                 && region.constrainsWindow()
                 && (region.visual() || region.interactive())
@@ -8271,6 +9339,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void constrainResizedWindowIntoDesktop(InventoryWindow window, int minWidth, int minHeight) {
+        if (window.apiSurface.viewportPolicy() != DesktopViewportPolicy.CLAMP) {
+            this.clampWindowIntoDesktop(window, 0);
+            return;
+        }
         if (!this.hasInternalExternalRegions(window)) {
             return;
         }
@@ -8294,7 +9366,22 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.clampWindowIntoDesktop(window, 0);
     }
 
+    private void cancelApiInput(InventoryWindow window) {
+        this.cancelApiInput(window, "author-layout-change");
+    }
+
+    private void cancelApiInput(InventoryWindow window, String reason) {
+        window.apiInputRevision++;
+        this.cancelApiPointerCapture(window);
+        if (this.apiGestureOwner == window
+            || this.apiGestureObservers != null && this.apiGestureObservers.contains(window))
+            this.clearSlotInteractionState(reason);
+        if (this.movingWindow == window) this.movingWindow = null;
+        if (this.resizingWindow == window) this.resizingWindow = null;
+    }
+
     private void captureApiPointer(InventoryWindow window, MouseButtonEvent event) {
+        if (window.apiDisposed || window.apiPressCaptureRevision != window.apiInputRevision) return;
         if (this.apiPointerCaptureWindow != null) {
             this.cancelApiPointerCapture(this.apiPointerCaptureWindow);
         }
@@ -8305,11 +9392,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private boolean isApiPointerCaptureValid(InventoryWindow window) {
         return this.windows.contains(window)
-            && !window.persistentHidden
+            && !window.persistentHidden && !window.companionHidden
             && !window.minimized
             && !window.ghosted
             && window.apiDefinition != null
-            && window.containerMenu() != null;
+            && (this.apiModalWindow() == null || this.apiModalWindow() == window);
     }
 
     private void clearApiPointerCapture(@Nullable InventoryWindow window) {
@@ -8328,15 +9415,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         InventoryWindow capturedWindow = this.apiPointerCaptureWindow;
         boolean validCapture = this.isApiPointerCaptureValid(capturedWindow);
         this.clearApiPointerCapture(capturedWindow);
-        if (validCapture) {
+        if (!capturedWindow.apiClosedDelivered) {
             this.apiCancelPointer(capturedWindow);
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void apiCancelPointer(InventoryWindow window) {
-        if (!(window.apiDefinition instanceof InternalDesktopWindowDefinition internalDefinition)
-            || window.containerMenu() == null) {
+        if (!(window.apiDefinition instanceof DesktopWindowPresentation internalDefinition)
+           ) {
             return;
         }
         try {
@@ -8350,156 +9437,191 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean apiMouseClicked(InventoryWindow window, MouseButtonEvent event, boolean doubleClick) {
-        if (window.apiDefinition == null || window.containerMenu() == null || window.minimized) {
+        if (window.apiClosedDelivered || window.apiDisposed) return false;
+        if (window.apiDefinition == null || window.minimized) {
             return false;
         }
 
         try {
-            return ((DesktopWindowDefinition) window.apiDefinition).mouseClicked(this.apiContext(window, null, (int) event.x(), (int) event.y()), event, doubleClick);
+            window.apiPressCaptureRevision = window.apiInputRevision;
+            boolean handled = ((DesktopWindowDefinition) window.apiDefinition).mouseClicked(this.apiContext(window, null, (int) event.x(), (int) event.y()), event, doubleClick);
+            if (!window.apiDisposed) {
+                this.commitApiSurface(window);
+                this.notifyApiWindowState(window);
+            }
+            return handled;
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api mouseClicked failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "mouseClicked", "Window callback failed", exception);
             return false;
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean apiMouseReleased(InventoryWindow window, MouseButtonEvent event) {
-        if (window.apiDefinition == null || window.containerMenu() == null || window.minimized) {
+        if (window.apiClosedDelivered || window.apiDisposed) return false;
+        if (window.apiDefinition == null || window.minimized) {
             return false;
         }
 
         try {
-            return ((DesktopWindowDefinition) window.apiDefinition).mouseReleased(this.apiContext(window, null, (int) event.x(), (int) event.y()), event);
+            boolean handled = ((DesktopWindowDefinition) window.apiDefinition).mouseReleased(this.apiContext(window, null, (int) event.x(), (int) event.y()), event);
+            if (!window.apiDisposed) {
+                this.commitApiSurface(window);
+                this.notifyApiWindowState(window);
+            }
+            return handled;
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api mouseReleased failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "mouseReleased", "Window callback failed", exception);
             return false;
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean apiMouseDragged(InventoryWindow window, MouseButtonEvent event, double dx, double dy) {
-        if (window.apiDefinition == null || window.containerMenu() == null || window.minimized) {
+        if (window.apiClosedDelivered || window.apiDisposed) return false;
+        if (window.apiDefinition == null || window.minimized) {
             return false;
         }
 
         try {
-            return ((DesktopWindowDefinition) window.apiDefinition).mouseDragged(this.apiContext(window, null, (int) event.x(), (int) event.y()), event, dx, dy);
+            boolean handled = ((DesktopWindowDefinition) window.apiDefinition).mouseDragged(this.apiContext(window, null, (int) event.x(), (int) event.y()), event, dx, dy);
+            if (!window.apiDisposed) {
+                this.commitApiSurface(window);
+                this.notifyApiWindowState(window);
+            }
+            return handled;
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api mouseDragged failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "mouseDragged", "Window callback failed", exception);
             return false;
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean apiMouseScrolled(InventoryWindow window, double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (window.apiDefinition == null || window.containerMenu() == null || window.minimized) {
+        if (window.apiClosedDelivered || window.apiDisposed) return false;
+        if (window.apiDefinition == null || window.minimized) {
             return false;
         }
 
         try {
-            return ((DesktopWindowDefinition) window.apiDefinition).mouseScrolled(this.apiContext(window, null, (int) mouseX, (int) mouseY), mouseX, mouseY, scrollX, scrollY);
+            boolean handled = ((DesktopWindowDefinition) window.apiDefinition).mouseScrolled(this.apiContext(window, null, (int) mouseX, (int) mouseY), mouseX, mouseY, scrollX, scrollY);
+            if (!window.apiDisposed) {
+                this.commitApiSurface(window);
+                this.notifyApiWindowState(window);
+            }
+            return handled;
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api mouseScrolled failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "mouseScrolled", "Window callback failed", exception);
             return false;
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean apiKeyPressed(KeyEvent event) {
-        for (int i = this.windows.size() - 1; i >= 0; i--) {
-            InventoryWindow window = this.windows.get(i);
-            if (window.apiDefinition == null
-                || window.containerMenu() == null
-                || window.minimized
-                || window.ghosted
-                || (window.persistentHidden && window.apiDefinition instanceof InternalDesktopWindowDefinition)) {
-                continue;
-            }
-
-            try {
-                if (((DesktopWindowDefinition) window.apiDefinition).keyPressed(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), event)) {
-                    return true;
+        InventoryWindow window = this.apiKeyboardFocusWindow;
+        if (window == null || !this.windows.contains(window) || window.apiDefinition == null
+            || window.minimized || window.ghosted || window.persistentHidden || window.companionHidden) return false;
+        try {
+            if (event != null && event.isEscape() && this.dismissApiEscape(window)) return true;
+            if (event != null && event.key() == InputConstants.KEY_F10 && event.hasAltDown()
+                && this.surfaceControlKeyboard(window, event)) return true;
+            if (event != null && window.apiControlFocus != null) {
+                if (this.surfaceControlKeyboard(window, event)) return true;
+                if (event.key() == InputConstants.KEY_TAB) {
+                    return ((DesktopWindowDefinition) window.apiDefinition).focusNext(
+                        this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), !event.hasShiftDown());
                 }
-            } catch (RuntimeException exception) {
-                DesktopDebug.warn("client api keyPressed failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
             }
+            boolean handled = ((DesktopWindowDefinition) window.apiDefinition).keyPressed(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), event);
+            if (!handled && !window.apiDisposed && event != null && event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_TAB) {
+                handled = ((DesktopWindowDefinition) window.apiDefinition).focusNext(
+                    this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), !event.hasShiftDown());
+            }
+            if (!handled && !window.apiDisposed && event != null) handled = this.surfaceControlKeyboard(window, event);
+            if (!window.apiDisposed) {
+                this.commitApiSurface(window);
+                this.notifyApiWindowState(window);
+            }
+            return handled;
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "keyPressed", "Window input callback failed", failure);
+            return false;
         }
-        return false;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private boolean internalApiKeyPressed(KeyEvent event) {
-        for (int i = this.windows.size() - 1; i >= 0; i--) {
-            InventoryWindow window = this.windows.get(i);
-            if (!(window.apiDefinition instanceof InternalDesktopWindowDefinition)
-                || window.containerMenu() == null
-                || window.minimized
-                || window.ghosted
-                || window.persistentHidden) {
-                continue;
+    private boolean apiKeyReleased(KeyEvent event) {
+        InventoryWindow window = this.apiKeyboardFocusWindow;
+        if (window == null || !this.windows.contains(window) || window.apiDefinition == null
+            || window.minimized || window.ghosted || window.persistentHidden || window.companionHidden) return false;
+        try {
+            boolean handled = ((DesktopWindowDefinition) window.apiDefinition).keyReleased(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), event);
+            if (!window.apiDisposed) {
+                this.commitApiSurface(window);
+                this.notifyApiWindowState(window);
             }
-
-            try {
-                if (((DesktopWindowDefinition) window.apiDefinition).keyPressed(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), event)) {
-                    return true;
-                }
-            } catch (RuntimeException exception) {
-                DesktopDebug.warn("client internal api keyPressed failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
-            }
+            return handled;
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "keyReleased", "Window input callback failed", failure);
+            return false;
         }
-        return false;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean apiCharTyped(CharacterEvent event) {
-        for (int i = this.windows.size() - 1; i >= 0; i--) {
-            InventoryWindow window = this.windows.get(i);
-            if (window.apiDefinition == null
-                || window.containerMenu() == null
-                || window.minimized
-                || window.ghosted
-                || (window.persistentHidden && window.apiDefinition instanceof InternalDesktopWindowDefinition)) {
-                continue;
+        InventoryWindow window = this.apiKeyboardFocusWindow;
+        if (window == null || !this.windows.contains(window) || window.apiDefinition == null
+            || window.minimized || window.ghosted || window.persistentHidden || window.companionHidden) return false;
+        try {
+            boolean handled = ((DesktopWindowDefinition) window.apiDefinition).charTyped(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), event);
+            if (!window.apiDisposed) {
+                this.commitApiSurface(window);
+                this.notifyApiWindowState(window);
             }
-
-            try {
-                if (((DesktopWindowDefinition) window.apiDefinition).charTyped(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), event)) {
-                    return true;
-                }
-            } catch (RuntimeException exception) {
-                DesktopDebug.warn("client api charTyped failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
-            }
+            return handled;
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "charTyped", "Window input callback failed", failure);
+            return false;
         }
-        return false;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean apiWantsTextInput() {
-        for (int i = this.windows.size() - 1; i >= 0; i--) {
-            InventoryWindow window = this.windows.get(i);
-            if (window.apiDefinition == null
-                || window.containerMenu() == null
-                || window.minimized
-                || window.ghosted
-                || (window.persistentHidden && window.apiDefinition instanceof InternalDesktopWindowDefinition)) {
-                continue;
-            }
-
-            try {
-                if (((DesktopWindowDefinition) window.apiDefinition).wantsTextInput(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE))) {
-                    return true;
-                }
-            } catch (RuntimeException exception) {
-                DesktopDebug.warn("client api wantsTextInput failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
-            }
+        InventoryWindow window = this.apiKeyboardFocusWindow;
+        if (window == null || !this.windows.contains(window) || window.apiDefinition == null
+            || window.minimized || window.ghosted || window.persistentHidden || window.companionHidden) return false;
+        try {
+            return ((DesktopWindowDefinition) window.apiDefinition).wantsTextInput(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "wantsTextInput", "Window input callback failed", failure);
+            return false;
         }
-        return false;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void applyCustomPayload(DesktopCustomPayload payload) {
         InventoryWindow window = this.windowForSession(payload.sessionId());
-        if (window == null || window.apiDefinition == null || window.containerMenu() == null) {
+        if (window == null || window.apiDefinition == null) {
             if (isTomStorageDesktopChannel(payload.channel())) {
                 DesktopDebug.warn(
                     "Tom's Storage desktop custom payload dropped desktop={} session={} channel={} bytes={} reason=no-api-window window={} api={} menu={}",
@@ -8551,6 +9673,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             ((DesktopWindowDefinition) window.apiDefinition).customPayload(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), payload.channel(), payload.data());
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api custom payload failed desktop={} window={} channel={} reason={}", this.desktopId, window.debugName(), payload.channel(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "custom", "Window callback failed", exception);
             if (isTomStorageDesktopChannel(payload.channel())) {
                 TomsStorageCompat.warn(
                     "client custom payload failed session={} window={} channel={} reason={}",
@@ -8585,17 +9710,22 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private List<ControlRect> controlRects(InventoryWindow window, List<WindowControl> controls) {
+        controls = controls.stream().filter(control -> this.apiControlAllowed(window, control)).toList();
         List<ControlRect> rects = new ArrayList<>();
         for (int i = 0; i < controls.size(); i++) {
             int fromRight = controls.size() - i;
-            int x = window.x + window.width - fromRight * CONTROL_SIZE - fromRight * CONTROL_GAP - CONTROL_RIGHT_EXTRA_INSET;
-            rects.add(new ControlRect(controls.get(i), x, window.y + CONTROL_TOP_INSET));
+            int x = window.x + window.width - fromRight * window.apiChrome.controlWidth()
+                - fromRight * window.apiChrome.controlGap() - window.apiChrome.controlRightInset();
+            rects.add(new ControlRect(controls.get(i), x, window.y + window.apiChrome.controlTopInset(),
+                window.apiChrome.controlWidth(), window.apiChrome.controlHeight()));
         }
 
         return List.copyOf(rects);
     }
 
     private @Nullable WindowControl titleBarControlAt(InventoryWindow window, double mouseX, double mouseY) {
+        var surfaceControl = this.surfaceControlAt(window, mouseX, mouseY);
+        if (surfaceControl != null) return WindowControl.valueOf(surfaceControl.control().name());
         if (!window.isTopBar(mouseX, mouseY)) {
             return null;
         }
@@ -8603,11 +9733,27 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return this.titleBarLayout(window).controlAt(mouseX, mouseY);
     }
 
+    private DesktopWindowSize boundedApiSize(InventoryWindow window, DesktopWindowSize desired) {
+        int minimumWidth = this.minResizableWidth(window), minimumHeight = this.minResizableHeight(window);
+        DesktopWindowSize maximum = this.apiMaxSize(window);
+        int width = Math.max(minimumWidth, desired.width()), height = Math.max(minimumHeight, desired.height());
+        if (maximum != null) {
+            width = Math.min(width, Math.max(minimumWidth, maximum.width()));
+            height = Math.min(height, Math.max(minimumHeight, maximum.height()));
+        }
+        return DesktopWindowSize.of(width, height);
+    }
+
     private void applyInternalWindowSize(InventoryWindow window, DesktopWindowSize desired) {
+        if (window.apiDefinition != null) desired = this.boundedApiSize(window, desired);
         int maxWidth = Math.max(1, this.desktopWidth());
         int maxHeight = Math.max(1, this.desktopHeight());
-        int width = clamp(Math.max(desired.width(), this.minimumTitleBarWidth(window.title)), 1, maxWidth);
-        int height = clamp(desired.height(), 1, maxHeight);
+        int requestedWidth = window.apiSurface.mode() == DesktopSurfaceMode.SALT
+            ? Math.max(desired.width(), this.minimumTitleBarWidth(window.title)) : desired.width();
+        int width = window.apiSurface.viewportPolicy() != DesktopViewportPolicy.CLAMP
+            ? requestedWidth : clamp(requestedWidth, 1, maxWidth);
+        int height = window.apiSurface.viewportPolicy() != DesktopViewportPolicy.CLAMP
+            ? desired.height() : clamp(desired.height(), 1, maxHeight);
         if (window.width == width && window.height == height) {
             return;
         }
@@ -8631,8 +9777,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void applyInitialInternalWindowSize(InventoryWindow window) {
-        if (!(window.apiDefinition instanceof InternalDesktopWindowDefinition internalDefinition)
-            || window.containerMenu() == null) {
+        if (!(window.apiDefinition instanceof DesktopWindowPresentation internalDefinition)
+           ) {
             return;
         }
 
@@ -8719,16 +9865,24 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable PopupRect popupRect(InventoryWindow window) {
-        ControlRect ellipsis = this.titleBarLayout(window).controlRect(WindowControl.ELLIPSIS);
-        if (ellipsis == null) {
-            return null;
+        // Management remains available even when the surface has no native title controls.
+        ControlRect ellipsis = window.apiSurface.mode() == DesktopSurfaceMode.SALT
+            ? this.titleBarLayout(window).controlRect(WindowControl.ELLIPSIS) : null;
+        if (ellipsis == null && window.apiSurface.mode() == DesktopSurfaceMode.MOD_OWNED) {
+            for (var control : window.apiSurfaceControls) {
+                if (control.control() != DesktopWindowControl.ELLIPSIS) continue;
+                var b = control.bounds();
+                ellipsis = new ControlRect(WindowControl.ELLIPSIS, window.x + b.x(), window.y + b.y(), b.width(), b.height());
+            }
         }
-
         List<WindowControl> controls = this.popupControls(window);
         int width = CONTROL_POPUP_PADDING * 2 + controls.size() * CONTROL_SIZE + Math.max(0, controls.size() - 1) * CONTROL_GAP;
         int height = CONTROL_POPUP_PADDING * 2 + CONTROL_SIZE;
-        int x = clamp(ellipsis.x() + CONTROL_SIZE - width, 0, Math.max(0, this.desktopWidth() - width));
-        int y = ellipsis.y() + CONTROL_SIZE + 2;
+        int anchorRight = ellipsis == null ? window.x + window.width : ellipsis.x() + ellipsis.width();
+        int anchorBottom = ellipsis == null ? window.y + Math.min(window.height, CONTROL_SIZE)
+            : ellipsis.y() + ellipsis.height();
+        int x = clamp(anchorRight - width, 0, Math.max(0, this.desktopWidth() - width));
+        int y = anchorBottom + 2;
         if (y + height > this.desktopHeight()) {
             y = Math.max(0, window.y - height - 2);
         }
@@ -8741,7 +9895,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int x = popupRect.x() + CONTROL_POPUP_PADDING;
         int y = popupRect.y() + CONTROL_POPUP_PADDING;
         for (WindowControl control : this.popupControls(window)) {
-            rects.add(new ControlRect(control, x, y));
+            rects.add(new ControlRect(control, x, y, CONTROL_SIZE, CONTROL_SIZE));
             x += CONTROL_SIZE + CONTROL_GAP;
         }
 
@@ -11590,7 +12744,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         for (Slot slot : playerMenu.slots) {
             this.addJeiTransferAvailableStack(stacks, seen, slot, DesktopPackets.PLAYER_MENU_SESSION, target.sessionId(), targetRecipeSlots);
         }
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.session == null || window.ghosted) {
                 continue;
             }
@@ -12715,7 +13869,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean renderApiWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
-        if (window.apiDefinition == null || window.containerMenu() == null) {
+        if (window.apiClosedDelivered || window.apiDisposed) return true;
+        if (window.apiDefinition == null) {
             return false;
         }
 
@@ -12740,6 +13895,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api render failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "render", "Window callback failed", exception);
             return false;
         }
     }
@@ -12806,6 +13964,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private @Nullable SlotHit apiSlotAt(InventoryWindow window, double mouseX, double mouseY) {
+        if (window.apiClosedDelivered || window.apiDisposed) return null;
         if (window.apiDefinition == null || window.containerMenu() == null) {
             return null;
         }
@@ -12815,6 +13974,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             apiHit = ((DesktopWindowDefinition) window.apiDefinition).slotAt(this.apiContext(window, null, (int) mouseX, (int) mouseY), mouseX, mouseY);
         } catch (RuntimeException exception) {
             DesktopDebug.warn("client api slotAt failed desktop={} window={} reason={}", this.desktopId, window.debugName(), exception.toString());
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "slotAt", "Window callback failed", exception);
             return null;
         }
         if (apiHit == null) {
@@ -12823,7 +13985,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         AbstractContainerMenu menu = window.containerMenu();
         int slotId = apiHit.menuSlotId();
-        Slot slot = DesktopMenuSlots.slot(menu, slotId);
+        Slot slot = DesktopMenuBindings.slot(menu, slotId);
         if (slot == null) {
             DesktopDebug.warn("client api slotAt ignored desktop={} window={} slot={} reason=out-of-range", this.desktopId, window.debugName(), slotId);
             return null;
@@ -15746,7 +16908,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private void extractHoveredTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         InventoryWindow hoveredWindow = this.windowAt(mouseX, mouseY);
         boolean tooltipEligible = this.sharedCarried.isEmpty();
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             this.apiUpdateTooltipState(window, mouseX, mouseY, tooltipEligible && window == hoveredWindow);
         }
 
@@ -15924,7 +17086,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     : hit.control().tooltip();
                 graphics.setTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
             } else {
-                graphics.setTooltipForNextFrame(this.font, hit.control().tooltip(), mouseX, mouseY);
+                graphics.setTooltipForNextFrame(this.font, this.managementControlLabel(hit.window(), hit.control()), mouseX, mouseY);
             }
         }
         return true;
@@ -15987,8 +17149,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable InventoryWindow focusedWindow() {
-        for (InventoryWindow window : this.windows) {
-            if (window.focused && !window.persistentHidden) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
+            if (window.focused && !window.persistentHidden && !window.companionHidden) {
                 return window;
             }
         }
@@ -16257,7 +17419,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             session.setCarried(this.sharedCarried);
         }
 
-        for (InventoryWindow window : this.windows) {
+        for (InventoryWindow window : List.copyOf(this.windows)) {
             if (window.legacyMenu != null) {
                 window.legacyMenu.setCarried(this.sharedCarried.copy());
             }
@@ -16398,8 +17560,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private static List<Slot> findContainerSlots(AbstractContainerMenu menu, Inventory playerInventory) {
         List<Slot> slots = new ArrayList<>();
-        for (Slot slot : menu.slots) {
-            if (slot.container != playerInventory) {
+        for (Slot slot : DesktopMenuBindings.all(menu)) {
+            if (!DesktopMenuBindings.isPlayerInventorySlot(menu, slot, playerInventory)) {
                 slots.add(slot);
             }
         }
@@ -16499,6 +17661,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         CHARACTER,
         CREATIVE,
         JEI,
+        CLIENT_API,
         RECIPE_BROWSER_VIEW,
         INSTRUCTIONS
     }
@@ -17045,9 +18208,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
     }
 
-    private record ControlRect(WindowControl control, int x, int y) {
+    private record ControlRect(WindowControl control, int x, int y, int width, int height) {
         private boolean contains(double mouseX, double mouseY) {
-            return InventoryDesktopScreen.contains(mouseX, mouseY, this.x, this.y, CONTROL_SIZE, CONTROL_SIZE);
+            return InventoryDesktopScreen.contains(mouseX, mouseY, this.x, this.y, this.width, this.height);
         }
     }
 
@@ -17065,18 +18228,26 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return new ApiContext(window, graphics, mouseX, mouseY);
     }
 
-    private final class ApiContext<T extends AbstractContainerMenu, S>
-        implements DesktopRenderContext<T, S>, DesktopSlotContext<T, S>, DesktopInputContext<T, S>, InternalDesktopRenderContext {
+    private final class ApiContext<T, S>
+        implements DesktopRenderContext<T, S>, DesktopSlotContext<T, S>, DesktopInputContext<T, S>, DesktopNativeRenderContext {
         private final InventoryWindow window;
         private final @Nullable GuiGraphicsExtractor graphics;
         private final int mouseX;
         private final int mouseY;
 
+        private final @Nullable DesktopWindowSurface candidateSurface;
+
         private ApiContext(InventoryWindow window, @Nullable GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+            this(window, graphics, mouseX, mouseY, null);
+        }
+
+        private ApiContext(InventoryWindow window, @Nullable GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+                           @Nullable DesktopWindowSurface candidateSurface) {
             this.window = window;
             this.graphics = graphics;
             this.mouseX = mouseX;
             this.mouseY = mouseY;
+            this.candidateSurface = candidateSurface;
         }
 
         private GuiGraphicsExtractor graphics() {
@@ -17091,20 +18262,21 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return this.graphics();
         }
 
+        private DesktopGestureSnapshot cachedGesture;
+        @Override public DesktopGestureSnapshot gesture() {
+            if (this.cachedGesture == null) this.cachedGesture = InventoryDesktopScreen.this.apiGestureSnapshot(this.window, this.mouseX, this.mouseY);
+            return this.cachedGesture;
+        }
+
+        @Override public List<DesktopPopup> popups() { return this.window.apiPopups == null ? List.of() : this.window.apiPopups; }
+
+        @Override public boolean pointerCaptured() {
+            return InventoryDesktopScreen.this.apiPointerCaptureWindow == this.window && !this.window.apiDisposed;
+        }
+
         @Override
-        public @Nullable QuickCraftPreview quickCraftPreview() {
-            DragDistribution drag = InventoryDesktopScreen.this.activeDragPreview();
-            if (drag == null) {
-                return null;
-            }
-            List<SlotHit> targets = InventoryDesktopScreen.this.previewDragTargets(drag);
-            if (targets.isEmpty()) {
-                return null;
-            }
-            return new QuickCraftPreview(
-                drag.quickCraftType(),
-                targets.stream().map(SlotHit::slot).toList()
-            );
+        public net.minecraft.client.gui.GuiGraphicsExtractor nativeGraphics() {
+            return this.graphics();
         }
 
         @Override
@@ -17113,8 +18285,45 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         @Override
-        public T menu() {
-            return (T) this.window.containerMenu();
+        public T model() {
+            return (T) (this.window.kind == WindowKind.CLIENT_API ? this.window.apiModel : this.window.containerMenu());
+        }
+
+        @Override
+        public boolean inventoryAvailable() {
+            return this.window.kind != WindowKind.CLIENT_API && this.window.containerMenu() != null
+                && !this.window.ghosted && !this.window.persistentHidden && !this.window.companionHidden
+                && InventoryDesktopScreen.this.windows.contains(this.window);
+        }
+
+        @Override
+        public DesktopWindowEnvironment environment() {
+            return this.window.apiEnvironment == null ? InventoryDesktopScreen.this.currentApiEnvironment() : this.window.apiEnvironment;
+        }
+
+        @Override
+        public DesktopWindowSurface surface() { return this.candidateSurface == null ? this.window.apiSurface : this.candidateSurface; }
+
+        @Override public DesktopWindowTasks tasks() {
+            if (this.window.apiTasks == null) this.window.apiTasks = new DesktopWindowTasks(this.windowHandle());
+            return this.window.apiTasks;
+        }
+
+        @Override
+        public boolean visible() {
+            return InventoryDesktopScreen.this.apiWindowState(this.window).visible();
+        }
+
+        @Override public boolean companion() { return InventoryDesktopScreen.this.isCompanion(this.window); }
+
+        @Override public java.util.List<Integer> companionOwnerSessionIds() {
+            return this.window.session == null ? List.of()
+                : java.util.Arrays.stream(this.window.session.companionOwnerIds()).boxed().toList();
+        }
+
+        @Override
+        public DesktopWindowHandle windowHandle() {
+            return InventoryDesktopScreen.this.apiWindowHandle(this.window);
         }
 
         @Override
@@ -17129,7 +18338,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         @Override
         public String sourceKey() {
-            return this.window.session == null ? "" : this.window.session.sourceKey();
+            return this.window.apiViewKey != null ? this.window.apiViewKey : this.window.session == null ? "" : this.window.session.sourceKey();
         }
 
         @Override
@@ -17164,27 +18373,32 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         @Override
         public int contentX() {
-            return this.window.contentX();
+            return this.window.x + this.surface().insets().left();
         }
 
         @Override
         public int contentY() {
-            return this.window.contentY();
+            return this.window.y + this.surface().insets().top();
         }
 
         @Override
         public int contentWidth() {
-            return Math.max(0, this.window.width - WINDOW_CONTENT_PADDING * 2);
+            return this.surface().insets().contentWidth(this.window.width);
         }
 
         @Override
         public int contentHeight() {
-            return Math.max(0, this.window.height - TOP_BAR_HEIGHT - WINDOW_CONTENT_PADDING * 2);
+            return this.surface().insets().contentHeight(this.window.height);
         }
 
         @Override
         public boolean focused() {
             return this.window.focused;
+        }
+
+        @Override
+        public boolean keyboardFocused() {
+            return this.window == InventoryDesktopScreen.this.apiKeyboardFocusWindow;
         }
 
         @Override
@@ -17199,7 +18413,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         @Override
         public ItemStack carriedStack() {
-            return InventoryDesktopScreen.this.sharedCarried.copy();
+            return this.inventoryAvailable() ? InventoryDesktopScreen.this.sharedCarried.copy() : ItemStack.EMPTY;
         }
 
         @Override
@@ -17221,7 +18435,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         @Override
         public @Nullable Slot menuSlot(int menuSlotId) {
             AbstractContainerMenu menu = this.window.containerMenu();
-            return menu == null ? null : DesktopMenuSlots.slot(menu, menuSlotId);
+            return menu == null ? null : DesktopMenuBindings.slot(menu, menuSlotId);
         }
 
         @Override
@@ -17233,7 +18447,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         @Override
         public int menuSlotId(Slot slot) {
             AbstractContainerMenu menu = this.window.containerMenu();
-            return menu == null ? -1 : DesktopMenuSlots.indexOf(menu, slot);
+            return menu == null ? -1 : DesktopMenuBindings.indexOf(menu, slot);
         }
 
         @Override
@@ -17473,12 +18687,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         @Override
         public boolean sendMenuButton(int buttonId) {
-            return DesktopContainerClient.clickButton(this.sessionId(), buttonId);
+            return this.inventoryAvailable() && DesktopContainerClient.clickButton(this.sessionId(), buttonId);
         }
 
         @Override
         public boolean sendRename(String name) {
-            return DesktopContainerClient.renameAnvil(this.sessionId(), name);
+            return this.inventoryAvailable() && DesktopContainerClient.renameAnvil(this.sessionId(), name);
         }
 
         @Override
@@ -17507,7 +18721,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         @Override
         public boolean toggleRecipeBook() {
-            return InventoryDesktopScreen.this.toggleRecipeBook(this.window);
+            return this.inventoryAvailable() && InventoryDesktopScreen.this.toggleRecipeBook(this.window);
         }
 
         @Override
@@ -17527,11 +18741,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         @Override
         public boolean sendPayload(Identifier channel, byte[] data) {
-            return DesktopContainerClient.sendCustomPayload(this.sessionId(), channel, data);
+            return this.inventoryAvailable() && DesktopContainerClient.sendCustomPayload(this.sessionId(), channel, data);
         }
 
         @Override
         public <P> boolean sendPayload(Identifier channel, P payload, StreamCodec<? super RegistryFriendlyByteBuf, P> codec) {
+            if (!this.inventoryAvailable()) return false;
             LocalPlayer player = InventoryDesktopScreen.this.player();
             return player != null && this.sendPayload(channel, DesktopPayloadCodecs.encode(player.registryAccess(), codec, payload));
         }
@@ -17545,7 +18760,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         @Override
         public void render(DesktopRenderContext<AbstractFurnaceMenu, Void> context) {
-            AbstractFurnaceMenu menu = context.menu();
+            AbstractFurnaceMenu menu = context.model();
             int contentX = context.windowX() + FURNACE_CONTENT_MARGIN;
             int contentY = context.windowY() + TOP_BAR_HEIGHT + FURNACE_CONTENT_MARGIN;
             this.renderSlot(context, FURNACE_INPUT_SLOT, contentX + FURNACE_INPUT_X, contentY + FURNACE_INPUT_Y);
@@ -17628,7 +18843,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         @Override
         public @Nullable RecipeBookComponent<?> createRecipeBook(DesktopWindowContext<AbstractFurnaceMenu, Void> context) {
-            return createFurnaceRecipeBook(context.menu());
+            return createFurnaceRecipeBook(context.model());
         }
 
         @Override
@@ -17873,6 +19088,25 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private int recipeBookSyntheticHeight = Integer.MIN_VALUE;
         private @Nullable DesktopWindowDefinition<?, ?> apiDefinition;
         private @Nullable Object apiState;
+        private @Nullable Object apiModel;
+        private @Nullable String apiViewKey;
+        private final UUID apiInstanceId = UUID.randomUUID();
+        private volatile boolean apiDisposed;
+        private boolean apiClosedDelivered;
+        private DesktopWindowState apiLastState;
+        private long apiInputRevision;
+        private long apiPressCaptureRevision;
+        private String apiUnavailableKey = "";
+        private DesktopWindowEnvironment apiEnvironment;
+        private DesktopWindowSize apiInitialSize;
+        private List<DesktopPopup> apiPopups = List.of();
+        private List<com.salts_inventory_update.api.client.desktop.DesktopSurfaceControl> apiSurfaceControls = List.of();
+        private @Nullable DesktopWindowControl apiControlFocus;
+        private boolean companionHidden;
+        private DesktopWindowTasks apiTasks;
+        private DesktopWindowSurface apiSurface = DesktopWindowSurface.SALT;
+        private DesktopChromeMetrics apiChrome = DesktopChromeMetrics.SALT;
+        private @Nullable DesktopWindowDecoration apiDecoration;
 
         private InventoryWindow(WindowKind kind, Component title, int x, int y, int width, int height) {
             this(kind, title, x, y, width, height, null, null, List.of(), 0, 0);
@@ -17924,6 +19158,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     case CHARACTER -> "local:character";
                     case JEI -> "local:jei";
                     case INSTRUCTIONS -> "local:instructions";
+                    case CLIENT_API -> this.apiViewKey;
                     case CONTAINER, RECIPE_BROWSER_VIEW -> null;
                 };
             }
@@ -17934,15 +19169,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         private int contentX() {
-            return this.x + WINDOW_CONTENT_PADDING;
+            return this.x + this.apiSurface.insets().left();
         }
 
         private int contentY() {
-            return this.y + TOP_BAR_HEIGHT + WINDOW_CONTENT_PADDING;
+            return this.y + this.apiSurface.insets().top();
         }
 
         private boolean contains(double mouseX, double mouseY) {
-            int visibleHeight = this.minimized ? TOP_BAR_HEIGHT : this.height;
+            if (this.apiDefinition != null && this.apiSurface.mode() == DesktopSurfaceMode.MOD_OWNED) {
+                return !this.minimized && this.apiSurface.hitRole(this.x, this.y, this.width, this.height,
+                    mouseX, mouseY) != DesktopHitRole.NONE;
+            }
+            int visibleHeight = this.minimized ? this.apiChrome.titleBarHeight() : this.height;
             if (InventoryDesktopScreen.contains(mouseX, mouseY, this.x, this.y, this.width, visibleHeight)) {
                 return true;
             }
@@ -17989,18 +19228,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         private boolean isTopBar(double mouseX, double mouseY) {
-            return InventoryDesktopScreen.contains(mouseX, mouseY, this.x, this.y, this.width, TOP_BAR_HEIGHT);
+            return this.apiSurface.mode() == DesktopSurfaceMode.SALT
+                && InventoryDesktopScreen.contains(mouseX, mouseY, this.x, this.y, this.width, this.apiChrome.titleBarHeight());
         }
 
         private boolean resizeGripAt(double mouseX, double mouseY) {
-            return !this.minimized
+            return this.apiSurface.mode() == DesktopSurfaceMode.SALT && !this.minimized
                 && InventoryDesktopScreen.contains(
                     mouseX,
                     mouseY,
-                    this.x + this.width - RESIZE_GRIP_SIZE - 1,
-                    this.y + this.height - RESIZE_GRIP_SIZE - 1,
-                    RESIZE_GRIP_SIZE,
-                    RESIZE_GRIP_SIZE
+                    this.x + this.width - this.apiChrome.resizeGripSize() - 1,
+                    this.y + this.height - this.apiChrome.resizeGripSize() - 1,
+                    this.apiChrome.resizeGripSize(),
+                    this.apiChrome.resizeGripSize()
                 );
         }
 
@@ -18037,7 +19277,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         private int sessionId() {
-            return this.session == null ? LEGACY_MENU_SESSION : this.session.sessionId();
+            return this.kind == WindowKind.CLIENT_API ? Integer.MIN_VALUE : this.session == null ? LEGACY_MENU_SESSION : this.session.sessionId();
         }
 
         private EnchantmentBookState enchantmentBookState() {

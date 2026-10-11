@@ -13,14 +13,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.MenuType;
-import org.lwjgl.glfw.GLFW;
 
 import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.SaltsInventoryUpdate;
 import com.salts_inventory_update.VersionInfo;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowLookupContext;
 import com.salts_inventory_update.api.client.desktop.widget.DesktopTextBoxState;
-import com.salts_inventory_update.api.desktop.SaltsInventoryDesktopApi;
+import com.salts_inventory_update.api.client.desktop.DesktopClientApi;
 import com.salts_inventory_update.client.SaltsInventoryConfig;
 import com.salts_inventory_update.client.WindowOpeningStyle;
 import com.salts_inventory_update.client.WindowedInventoryClient;
@@ -106,8 +105,8 @@ public final class FunctionalTestHarness {
         recorder.check(
             "keybind.mouse_focus_default_alt",
             WindowedInventoryClient.mouseFocusKey() != null
-                && WindowedInventoryClient.mouseFocusKey().getDefaultKey().getType() == InputConstants.Type.KEYSYM
-                && WindowedInventoryClient.mouseFocusKey().getDefaultKey().getValue() == GLFW.GLFW_KEY_LEFT_ALT
+                && WindowedInventoryClient.mouseFocusKey().getDefaultKey().getType() == InputConstants.getKey("key.keyboard.left.alt").getType()
+                && WindowedInventoryClient.mouseFocusKey().getDefaultKey().getValue() == InputConstants.getKey("key.keyboard.left.alt").getValue()
         );
     }
 
@@ -247,7 +246,7 @@ public final class FunctionalTestHarness {
             176,
             166
         );
-        return SaltsInventoryDesktopApi.findDefinition(context) != null;
+        return DesktopClientApi.findDefinition(context) != null;
     }
 
     private static boolean roundTrips(MenuType<?> menuType) {

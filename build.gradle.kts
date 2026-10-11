@@ -9,6 +9,7 @@ import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.Exec
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.testing.Test
 import org.gradle.language.jvm.tasks.ProcessResources
@@ -20,7 +21,7 @@ plugins {
 }
 
 group = "com.salts_inventory_update"
-version = "0.1.3"
+version = "0.1.4"
 
 val modMenuVersions = mapOf(
     "1.20.1" to "7.2.2",
@@ -565,6 +566,79 @@ subprojects {
 }
 
 gradle.projectsEvaluated {
+    val exampleCompiles = subprojects
+        .filter { it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
+        .map { loaderProject ->
+            val gameVersion = loaderProject.parent!!.name
+            val legacyInput = gameVersion in setOf("1.20.1", "1.21.1")
+            val legacyGraphics = legacyInput || gameVersion == "1.21.11"
+            val generated = loaderProject.layout.buildDirectory.dir("generated/api-examples")
+            val prepare = loaderProject.tasks.register<Sync>("prepareApiExamples") {
+                from(rootProject.file("api-examples/ui/src/main/java"))
+                into(generated)
+                filter { line: String ->
+                    var adapted = line
+                    if (legacyInput) adapted = adapted.replace("Identifier", "ResourceLocation")
+                    if (gameVersion == "1.20.1") adapted = adapted.replace("ResourceLocation.parse(", "ResourceLocation.tryParse(")
+                    if (legacyGraphics) adapted = adapted.replace(".extractRenderState(", ".render(")
+                    if (legacyInput) {
+                        adapted = adapted.replace("net.minecraft.client.input.", "com.salts_inventory_update.client.input.")
+                            .replace("edit.mouseClicked(event, doubleClick)", "edit.mouseClicked(event.x(), event.y(), event.button())")
+                            .replace("edit.mouseDragged(event, dx, dy)", "edit.mouseDragged(event.x(), event.y(), event.button(), dx, dy)")
+                            .replace("edit.keyPressed(event)", "edit.keyPressed(event.key(), event.scancode(), event.modifiers())")
+                            .replace("edit.charTyped(event)", "edit.charTyped(event.codepoint(), event.modifiers())")
+                            .replace("tag.getStringOr(\"query\", \"\")", "tag.getString(\"query\")")
+                            .replace("recipe.placementInfo().ingredients()", "recipe.getIngredients()")
+                            .replace("ingredients.get(0).items().map(Holder::value).map(Item::getDefaultInstance)", "java.util.Arrays.stream(ingredients.get(0).getItems()).map(ItemStack::copy)")
+                    }
+                    if (gameVersion != "26.3") adapted = adapted.replace("InputConstants.MOUSE_BUTTON_LEFT", "0")
+                    adapted
+                }
+            }
+            loaderProject.tasks.register<JavaCompile>("compileApiExamples") {
+                group = "verification"
+                description = "Compiles the external UI integration examples against this loader's actual API and Minecraft classes."
+                dependsOn(prepare, loaderProject.tasks.named("classes"))
+                source(generated)
+                val main = loaderProject.extensions.getByType<SourceSetContainer>().named("main").get()
+                classpath = main.compileClasspath + main.output
+                destinationDirectory.set(loaderProject.layout.buildDirectory.dir("classes/api-examples"))
+                javaCompiler.set(loaderProject.tasks.named<JavaCompile>("compileJava").flatMap { it.javaCompiler })
+                options.encoding = "UTF-8"
+            }
+        }
+    tasks.register("verifyApiExamples") {
+        group = "verification"
+        description = "Compiles machine, terminal and client-only integrations on all twelve supported targets."
+        dependsOn(exampleCompiles)
+    }
+
+    val companionDemoProject = project(":26.3:neoforge")
+    val companionDemoClasses = companionDemoProject.layout.buildDirectory.dir("classes/companion-demo")
+    val compileCompanionDemo = companionDemoProject.tasks.register<JavaCompile>("compileCompanionDemo") {
+        group = "verification"
+        description = "Compiles the standalone optional companion consumer without bundling Salt."
+        dependsOn(companionDemoProject.tasks.named("compileApiExamples"))
+        source(rootProject.file("api-examples/companion-demo/src/main/java"))
+        val main = companionDemoProject.extensions.getByType<SourceSetContainer>().named("main").get()
+        classpath = main.compileClasspath + main.output + files(companionDemoProject.layout.buildDirectory.dir("classes/api-examples"))
+        destinationDirectory.set(companionDemoClasses)
+        javaCompiler.set(companionDemoProject.tasks.named<JavaCompile>("compileJava").flatMap { it.javaCompiler })
+        options.encoding = "UTF-8"
+    }
+    companionDemoProject.tasks.register<Jar>("companionDemoJar") {
+        group = "verification"
+        description = "Packages the standalone API5 inventory companion demonstration for NeoForge 26.3."
+        dependsOn(compileCompanionDemo)
+        archiveFileName.set("companion-example-26.3-NeoForge-api5.jar")
+        destinationDirectory.set(rootProject.layout.buildDirectory.dir("api-examples"))
+        from(companionDemoClasses)
+        from(companionDemoProject.layout.buildDirectory.dir("classes/api-examples")) {
+            include("example/companion/**", "example/desktop/OriginalSlotArtwork.class")
+        }
+        from(rootProject.file("api-examples/companion-demo/src/main/resources"))
+    }
+
     tasks.register("functionalTestCompile") {
         group = "verification"
         description = "Compiles every loader/version with the shared functional test harness. Use -PincludeFunctionalTests=true."
@@ -757,7 +831,12 @@ gradle.projectsEvaluated {
                             entry.endsWith(".pdn", ignoreCase = true) ||
                                 entry.startsWith("org/jspecify/") ||
                                 entry.contains("/functionaltest/") ||
-                                entry.contains("FunctionalTestHarness")
+                                entry.contains("FunctionalTestHarness") ||
+                                entry.startsWith("example/") ||
+                                entry.endsWith("/SaltsInventoryDesktopApi.class") ||
+                                entry == "com/salts_inventory_update/internal/desktop/DesktopMenuSlots.class" ||
+                                entry == "com/salts_inventory_update/client/DesktopMenuFactories.class" ||
+                                entry.startsWith("com/salts_inventory_update/client/InternalDesktop")
                         }
                         if (forbidden.isNotEmpty()) {
                             throw GradleException("${jarFile.name} contains forbidden release entries: ${forbidden.take(20)}")
@@ -769,7 +848,17 @@ gradle.projectsEvaluated {
                             "assets/salts_inventory_update/icon.png",
                             "LICENSE_salts_inventory_update",
                             "pack.mcmeta",
-                            "salts_inventory_update.mixins.json"
+                            "salts_inventory_update.mixins.json",
+                            "com/salts_inventory_update/api/integration/DesktopIntegration.class",
+                            "com/salts_inventory_update/api/integration/DesktopIntegrationContext.class",
+                            "com/salts_inventory_update/api/integration/DesktopDiagnostics.class",
+                            "com/salts_inventory_update/integration/DesktopIntegrationBootstrap.class",
+                            "com/salts_inventory_update/api/client/desktop/DesktopClientApi.class",
+                            "com/salts_inventory_update/api/client/desktop/DesktopWindowPresentation.class",
+                            "com/salts_inventory_update/api/client/desktop/DesktopWindowHandle.class",
+                            "com/salts_inventory_update/api/client/desktop/DesktopMenuFactories.class",
+                            "com/salts_inventory_update/api/server/desktop/DesktopServerApi.class",
+                            "com/salts_inventory_update/api/desktop/DesktopMenuBindings.class"
                         )
                         val missing = required - entries
                         if (missing.isNotEmpty()) {
@@ -926,6 +1015,7 @@ gradle.projectsEvaluated {
     rootCheck.configure {
         dependsOn(sourceFeatureParity)
         dependsOn(verifyReleaseBundle)
+        dependsOn("verifyApiExamples")
     }
 
     val rootBuild = tasks.findByName("build")?.let { tasks.named("build") } ?: tasks.register("build") {
@@ -936,5 +1026,6 @@ gradle.projectsEvaluated {
         dependsOn(allProjectBuildTasks)
         dependsOn(sourceFeatureParity)
         dependsOn(writeReleaseChecksums)
+        dependsOn("verifyApiExamples")
     }
 }

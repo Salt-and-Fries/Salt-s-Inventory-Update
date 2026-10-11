@@ -21,5 +21,8 @@ public interface DesktopServerSessionContext<T extends AbstractContainerMenu, S>
 
     void sendToClient(ResourceLocation channel, byte[] data);
 
+    /** Acquires once per parent lifetime and actual inventory identity. Empty means unavailable or unauthorized. */
+    java.util.Optional<DesktopCompanionLease> acquireCompanion(DesktopCompanionSpec spec);
+
     void broadcastChanges();
 }

@@ -1,5 +1,7 @@
 package com.salts_inventory_update.server;
 
+import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
+
 import java.lang.reflect.*;
 import java.util.*;
 import net.minecraft.SharedConstants;
@@ -144,6 +146,20 @@ class SortWindowsTest {
         TestMenu duplicate = new TestMenu(1); duplicate.slots.set(0, source.slots.get(0));
         sort(source, List.of(duplicate), true, 1); assertEquals(5, source.total());
     }
+    @Test void distinctRepresentationsOfOnePhysicalSlotCannotDuplicateTransfers() throws Exception {
+        TestMenu source = new TestMenu(1).put(0, Items.IRON_INGOT, 12);
+        TestMenu target = new TestMenu(1).put(0, Items.IRON_INGOT, 60);
+        TestMenu alias = new TestMenu(1);
+        alias.slots.set(0, new Slot(target.storage, 0, 100, 100));
+        assertNotSame(target.slots.get(0), alias.slots.get(0));
+        sort(source, List.of(target, alias), true, 1);
+        assertEquals(64, target.total()); assertEquals(8, source.total());
+        TestMenu selfAlias = new TestMenu(1);
+        selfAlias.slots.set(0, new Slot(source.storage, 0, 200, 200));
+        sort(source, List.of(selfAlias), true, 1);
+        assertEquals(8, source.total(), "Separate Slot objects cannot transfer into their own physical source");
+    }
+
     @Test void largeStorageDoesNotExhaustTransactionBudget() throws Exception {
         TestMenu source = new TestMenu(36);
         for (int i = 0; i < 36; i++) source.put(i, Items.DIRT, 64);
@@ -234,9 +250,9 @@ class SortWindowsTest {
         ItemStack carried = new ItemStack(Items.DIRT, 32);
         int preview = AbstractContainerMenu.getQuickCraftPlaceCount(new HashSet<>(menu.slots), type, carried);
         assertEquals(expected, preview);
-        assertEquals(preview, com.salts_inventory_update.internal.desktop.DesktopMenuSlots.quickCraftPlaceCount(
+        assertEquals(preview, com.salts_inventory_update.api.desktop.DesktopMenuBindings.quickCraftPlaceCount(
             menu, menu.slots.get(0), 3, type, carried));
-        var defaultPolicy = new com.salts_inventory_update.internal.desktop.DesktopMenuSlots.GesturePolicy() {};
+        var defaultPolicy = new com.salts_inventory_update.api.desktop.DesktopMenuBindings.GesturePolicy() {};
         assertEquals(preview, defaultPolicy.quickCraftPlaceCount(menu, menu.slots.get(0), 3, type, carried));
     }
 

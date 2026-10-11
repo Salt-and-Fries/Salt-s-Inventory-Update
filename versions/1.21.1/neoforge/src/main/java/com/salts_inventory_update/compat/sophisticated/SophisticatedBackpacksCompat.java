@@ -6,10 +6,10 @@ import java.util.HexFormat;
 
 import io.netty.buffer.Unpooled;
 
-import com.salts_inventory_update.api.desktop.SaltsInventoryDesktopApi;
-import com.salts_inventory_update.client.DesktopMenuFactories;
+import com.salts_inventory_update.api.client.desktop.DesktopClientApi;
+import com.salts_inventory_update.api.client.desktop.DesktopMenuFactories;
 import com.salts_inventory_update.compat.sophisticated.client.SophisticatedHostedScreenDefinition;
-import com.salts_inventory_update.internal.desktop.DesktopMenuSlots;
+import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -36,7 +36,7 @@ public final class SophisticatedBackpacksCompat {
 
         SophisticatedCoreCompat.registerMainMenu(backpack);
         SophisticatedCoreCompat.registerSettingsMenu(settings);
-        DesktopMenuSlots.register(
+        DesktopMenuBindings.register(
             backpack,
             menu -> ((StorageContainerMenuBase<?>) menu).getTotalSlotsNumber(),
             true,
@@ -44,7 +44,7 @@ public final class SophisticatedBackpacksCompat {
             SophisticatedCoreCompat::prepareMainMenuSnapshot,
             SophisticatedCoreCompat.mainMenuGesturePolicy()
         );
-        DesktopMenuSlots.register(
+        DesktopMenuBindings.register(
             settings,
             menu -> ((SettingsContainerMenu<?>) menu).getNumberOfSlots(),
             true,
@@ -79,11 +79,11 @@ public final class SophisticatedBackpacksCompat {
         DesktopMenuFactories.register(settings, (minecraft, player, containerId, data) ->
             fromOpeningData(minecraft, data, buffer -> BackpackSettingsContainerMenu.fromBuffer(containerId, player.getInventory(), buffer))
         );
-        SaltsInventoryDesktopApi.registerClientWindow(
+        DesktopClientApi.registerWindow(
             backpack,
             new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.STANDARD, BackpackScreen::constructScreen)
         );
-        SaltsInventoryDesktopApi.registerClientWindow(
+        DesktopClientApi.registerWindow(
             settings,
             new SophisticatedHostedScreenDefinition<>(
                 SophisticatedHostedScreenDefinition.LayoutKind.SETTINGS,

@@ -23,10 +23,10 @@ import com.salts_inventory_update.api.client.desktop.DesktopWindowSetupContext;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowSize;
 import com.salts_inventory_update.api.client.desktop.widget.DesktopWidgets;
 import com.salts_inventory_update.client.DesktopContainerClient;
-import com.salts_inventory_update.client.InternalDesktopRenderContext;
-import com.salts_inventory_update.client.InternalDesktopWindowDefinition;
-import com.salts_inventory_update.client.InternalDesktopWindowRegion;
-import com.salts_inventory_update.internal.desktop.DesktopMenuSlots;
+import com.salts_inventory_update.api.client.desktop.DesktopNativeRenderContext;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowPresentation;
+import com.salts_inventory_update.api.client.desktop.DesktopWindowRegion;
+import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
 
 import net.minecraft.client.Minecraft;
 import com.salts_inventory_update.client.gui.GuiGraphicsExtractor;
@@ -63,7 +63,7 @@ import net.p3pp3rf1y.sophisticatedcore.common.gui.UpgradeContainerBase;
  * owner, but its background, title, player inventory, and complete render pass are never hosted.
  */
 public final class SophisticatedHostedScreenDefinition<T extends AbstractContainerMenu>
-    implements DesktopWindowDefinition<T, SophisticatedHostedScreenDefinition.State>, InternalDesktopWindowDefinition {
+    implements DesktopWindowDefinition<T, SophisticatedHostedScreenDefinition.State>, DesktopWindowPresentation {
     private static final int SALT_HORIZONTAL_CHROME = 16;
     private static final int SALT_VERTICAL_CHROME = 32;
     private static final int SLOT = DesktopWidgets.SLOT_SIZE;
@@ -104,7 +104,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
     @Override
     public State createState(DesktopWindowSetupContext<T> context) {
         AbstractContainerScreen<?> screen = this.factory.create(
-            context.menu(),
+            context.model(),
             context.minecraft().player.getInventory(),
             context.originalTitle()
         );
@@ -115,14 +115,14 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
             throw new IllegalStateException("Sophisticated screen mixin was not applied to " + screen.getClass().getName());
         }
         State state = new State(this.kind, screen, access, width, height);
-        state.captureNativeGeometry(context.menu());
+        state.captureNativeGeometry(context.model());
         state.access.disableNativeInventoryScrollPanel();
         return state;
     }
 
     @Override
     public DesktopWindowSize defaultSize(DesktopWindowSetupContext<T> context) {
-        if (this.kind == LayoutKind.STANDARD && context.menu() instanceof StorageContainerMenuBase<?> storage) {
+        if (this.kind == LayoutKind.STANDARD && context.model() instanceof StorageContainerMenuBase<?> storage) {
             int rows = Math.max(1, storage.getNumberOfRows());
             int columns = Math.max(1, (storage.getNumberOfStorageInventorySlots() + rows - 1) / rows);
             int visibleRows = defaultVisibleRows(context, rows);
@@ -131,7 +131,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
             int contentHeight = standardContentHeight(visibleRows);
             return saltSize(contentWidth, contentHeight);
         }
-        if (context.menu() instanceof SettingsContainerMenu<?> settings) {
+        if (context.model() instanceof SettingsContainerMenu<?> settings) {
             if (this.kind == LayoutKind.LIMITED_BARREL_SETTINGS) {
                 return saltSize(MIN_CONTENT_WIDTH, 92);
             }
@@ -165,7 +165,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
             MIN_VISIBLE_ROWS,
             Math.round((context.contentHeight() + STANDARD_HEADER_RAISE - TOOLBAR_HEIGHT - TOOLBAR_GAP) / (float) SLOT)
         );
-        int storageSlotCount = context.menu() instanceof StorageContainerMenuBase<?> storage
+        int storageSlotCount = context.model() instanceof StorageContainerMenuBase<?> storage
             ? allStorageSlots(context.state(), storage).size()
             : context.containerSlots().size();
         int availableWidth = Math.max(SLOT, context.contentWidth() - inventoryControlWidth);
@@ -226,7 +226,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
     }
 
     @Override
-    public List<InternalDesktopWindowRegion> externalRegions(DesktopWindowContext<?, ?> context) {
+    public List<DesktopWindowRegion> externalRegions(DesktopWindowContext<?, ?> context) {
         if (!(context.state() instanceof State state)) {
             return List.of();
         }
@@ -264,7 +264,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
             state.screen.resize(width, height);
             state.screenWidth = width;
             state.screenHeight = height;
-            state.captureNativeGeometry(context.menu());
+            state.captureNativeGeometry(context.model());
             state.access.disableNativeInventoryScrollPanel();
         }
         state.screen.tick();
@@ -273,7 +273,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
 
     @Override
     public void renderBehindFrame(DesktopRenderContext<?, ?> context) {
-        if (!(context instanceof InternalDesktopRenderContext internal)) {
+        if (!(context instanceof DesktopNativeRenderContext internal)) {
             return;
         }
         updateLayout(context);
@@ -320,7 +320,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
 
     @Override
     public void render(DesktopRenderContext<T, State> context) {
-        if (!(context instanceof InternalDesktopRenderContext internal)) {
+        if (!(context instanceof DesktopNativeRenderContext internal)) {
             return;
         }
         updateLayout(context);
@@ -352,9 +352,10 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
         graphics.pose().pushMatrix();
         graphics.pose().translate(screenLeft(state.screen), screenTop(state.screen));
         try {
-            SophisticatedHostedScreenBridge.withQuickCraftPreview(
+            SophisticatedHostedScreenBridge.withGesture(
                 state.screen,
-                internal.quickCraftPreview(),
+                context.sessionId(),
+                context.gesture(),
                 () -> {
                     for (PlacedSlot placed : layout.slots) {
                         if (!replacesSlot(state.access, placed.slot)) {
@@ -428,7 +429,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
 
     @Override
     public boolean appendTooltip(DesktopRenderContext<T, State> context, int mouseX, int mouseY) {
-        if (!(context instanceof InternalDesktopRenderContext internal)) {
+        if (!(context instanceof DesktopNativeRenderContext internal)) {
             return false;
         }
         updateLayout(context);
@@ -677,7 +678,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
             return false;
         }
         if (event.isEscape() && !(screen instanceof SettingsScreen) && screen.getFocused() == null) {
-            if (!(context.menu() instanceof StorageContainerMenuBase<?> storage) || storage.isFirstLevelStorage()) {
+            if (!(context.model() instanceof StorageContainerMenuBase<?> storage) || storage.isFirstLevelStorage()) {
                 return false;
             }
         }
@@ -719,7 +720,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
 
     @Override
     public void customPayload(DesktopWindowContext<T, State> context, Identifier channel, byte[] data) {
-        SophisticatedHostedScreenPayloads.apply(context.minecraft(), context.menu(), channel, data);
+        SophisticatedHostedScreenPayloads.apply(context.minecraft(), context.model(), channel, data);
     }
 
     private void updateLayout(DesktopWindowContext<?, ?> context) {
@@ -727,7 +728,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
             return;
         }
         state.access.disableNativeInventoryScrollPanel();
-        state.refreshNativeGeometry((AbstractContainerMenu) context.menu());
+        state.refreshNativeGeometry((AbstractContainerMenu) context.model());
         hidePlayerSlots(state);
         Layout layout = switch (this.kind) {
             case STANDARD -> standardLayout(context, state);
@@ -740,7 +741,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
     }
 
     private static Layout standardLayout(DesktopWindowContext<?, ?> context, State state) {
-        if (!(context.menu() instanceof StorageContainerMenuBase<?> menu)
+        if (!(context.model() instanceof StorageContainerMenuBase<?> menu)
             || !(state.screen instanceof StorageScreenBase<?> storageScreen)) {
             return Layout.empty(context);
         }
@@ -806,7 +807,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
     }
 
     private static Layout fixedStorageLayout(DesktopWindowContext<?, ?> context, State state, boolean limited) {
-        if (!(context.menu() instanceof StorageContainerMenuBase<?> menu)) {
+        if (!(context.model() instanceof StorageContainerMenuBase<?> menu)) {
             return Layout.empty(context);
         }
         List<PlacedSlot> placed = new ArrayList<>();
@@ -849,7 +850,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
     }
 
     private static Layout settingsLayout(DesktopWindowContext<?, ?> context, State state, boolean limited) {
-        if (!(context.menu() instanceof SettingsContainerMenu<?> menu) || !(state.screen instanceof SettingsScreen screen)) {
+        if (!(context.model() instanceof SettingsContainerMenu<?> menu) || !(state.screen instanceof SettingsScreen screen)) {
             return Layout.empty(context);
         }
         for (Slot slot : menu.getStorageInventorySlots()) {
@@ -1208,7 +1209,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
         }
         visual.addAll(rightTabFrames(context, widgetPlacement.components.sideTabs()));
 
-        List<InternalDesktopWindowRegion> external = new ArrayList<>();
+        List<DesktopWindowRegion> external = new ArrayList<>();
         Set<RectKey> seen = new LinkedHashSet<>();
         for (Rect2i rect : unionExternalRects(
             context,
@@ -1222,7 +1223,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
             }
             RectKey key = new RectKey(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
             if (seen.add(key)) {
-                external.add(InternalDesktopWindowRegion.visualAndInteractive(
+                external.add(DesktopWindowRegion.visualAndInteractive(
                     rect.getX() - context.windowX(),
                     rect.getY() - context.windowY(),
                     rect.getWidth(),
@@ -1237,7 +1238,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
                 }
                 RectKey key = new RectKey(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
                 if (seen.add(key)) {
-                    external.add(InternalDesktopWindowRegion.transientVisualAndInteractive(
+                    external.add(DesktopWindowRegion.transientVisualAndInteractive(
                         rect.getX() - context.windowX(),
                         rect.getY() - context.windowY(),
                         rect.getWidth(),
@@ -1434,7 +1435,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
                     bodyY,
                     main.size()
                 );
-                SophisticatedLimitedBarrelRendering.renderCapacityBars(state.screen, context.menu(), graphics, bodyX, bodyY);
+                SophisticatedLimitedBarrelRendering.renderCapacityBars(state.screen, (AbstractContainerMenu) context.model(), graphics, bodyX, bodyY);
             }
         }
         for (PlacedSlot placed : layout.slots) {
@@ -1975,7 +1976,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
         private @Nullable UpgradeInventoryControlBase nativeInventoryControlOwner;
         private boolean legacyScrollbarGutterMigrationPending;
         private @Nullable Layout layout;
-        private List<InternalDesktopWindowRegion> externalRegions = List.of();
+        private List<DesktopWindowRegion> externalRegions = List.of();
 
         private State(
             LayoutKind kind,
@@ -2016,7 +2017,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
             this.originalWidgets.clear();
             this.originalInventoryControls.clear();
             this.hostedInventoryControls.clear();
-            int size = DesktopMenuSlots.size(menu);
+            int size = DesktopMenuBindings.size(menu);
             for (int slotId = 0; slotId < size; slotId++) {
                 Slot slot;
                 try {
@@ -2043,7 +2044,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
          */
         private void refreshNativeGeometry(AbstractContainerMenu menu) {
             Set<Slot> active = Collections.newSetFromMap(new IdentityHashMap<>());
-            int size = DesktopMenuSlots.size(menu);
+            int size = DesktopMenuBindings.size(menu);
             for (int slotId = 0; slotId < size; slotId++) {
                 Slot slot;
                 try {
@@ -2146,7 +2147,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
         List<Rect2i> inventoryControls,
         List<Rect2i> interactive,
         List<Rect2i> visual,
-        List<InternalDesktopWindowRegion> externalRegions
+        List<DesktopWindowRegion> externalRegions
     ) {
         private static Layout empty(DesktopWindowContext<?, ?> context) {
             Rect2i body = new Rect2i(

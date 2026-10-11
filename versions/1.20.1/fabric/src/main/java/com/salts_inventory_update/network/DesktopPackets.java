@@ -224,51 +224,32 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopHelloPayload(
-        int protocolVersion,
-        long clientNonce,
-        long capabilities,
-        boolean uiEnabled,
-        List<String> forcedMenuIds
-    ) implements DesktopPacket {
+    public record DesktopHelloPayload(int protocolVersion, long clientNonce, long capabilities, boolean uiEnabled, List<String> forcedMenuIds, List<String> supportedMenuIds) implements DesktopPacket {
         public static final ResourceLocation TYPE = DesktopPackets.id("desktop_hello");
 
         public DesktopHelloPayload(FriendlyByteBuf buf) {
-            this(
-                buf.readVarInt(),
-                buf.readLong(),
-                buf.readLong(),
-                buf.readBoolean(),
-                readLimitedStringList(
-                    buf,
-                    DesktopProtocol.MAX_FORCED_MENU_IDS,
-                    DesktopProtocol.MAX_IDENTIFIER_LENGTH
-                )
-            );
+            this(buf.readVarInt(), buf.readLong(), buf.readLong(), buf.readBoolean(),
+                readLimitedStringList(buf, DesktopProtocol.MAX_FORCED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH),
+                readLimitedStringList(buf, DesktopProtocol.MAX_SUPPORTED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH));
         }
 
         public DesktopHelloPayload {
+            DesktopProtocol.requireCount("forced menu ids", forcedMenuIds.size(), DesktopProtocol.MAX_FORCED_MENU_IDS);
+            DesktopProtocol.requireCount("supported menu ids", supportedMenuIds.size(), DesktopProtocol.MAX_SUPPORTED_MENU_IDS);
             forcedMenuIds = List.copyOf(forcedMenuIds);
+            supportedMenuIds = List.copyOf(supportedMenuIds);
         }
 
-        @Override
-        public ResourceLocation id() {
-            return TYPE;
-        }
-
-        @Override
-        public void write(FriendlyByteBuf buf) {
+        @Override public void write(FriendlyByteBuf buf) {
             buf.writeVarInt(this.protocolVersion);
             buf.writeLong(this.clientNonce);
             buf.writeLong(this.capabilities);
             buf.writeBoolean(this.uiEnabled);
-            writeLimitedStringList(
-                buf,
-                this.forcedMenuIds,
-                DesktopProtocol.MAX_FORCED_MENU_IDS,
-                DesktopProtocol.MAX_IDENTIFIER_LENGTH
-            );
+            writeLimitedStringList(buf, this.forcedMenuIds, DesktopProtocol.MAX_FORCED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH);
+            writeLimitedStringList(buf, this.supportedMenuIds, DesktopProtocol.MAX_SUPPORTED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH);
         }
+
+        @Override public ResourceLocation id() { return TYPE; }
     }
 
     public record DesktopSlotReference(int sessionId, long sessionToken, int stateId, int slotIndex) {
@@ -360,48 +341,31 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopModePayload(
-        long connectionNonce,
-        long sequence,
-        boolean uiEnabled,
-        List<String> forcedMenuIds
-    ) implements DesktopPacket {
+    public record DesktopModePayload(long connectionNonce, long sequence, boolean uiEnabled, List<String> forcedMenuIds, List<String> supportedMenuIds) implements DesktopPacket {
         public static final ResourceLocation TYPE = DesktopPackets.id("desktop_mode");
 
         public DesktopModePayload(FriendlyByteBuf buf) {
-            this(
-                buf.readLong(),
-                buf.readVarLong(),
-                buf.readBoolean(),
-                readLimitedStringList(
-                    buf,
-                    DesktopProtocol.MAX_FORCED_MENU_IDS,
-                    DesktopProtocol.MAX_IDENTIFIER_LENGTH
-                )
-            );
+            this(buf.readLong(), buf.readVarLong(), buf.readBoolean(),
+                readLimitedStringList(buf, DesktopProtocol.MAX_FORCED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH),
+                readLimitedStringList(buf, DesktopProtocol.MAX_SUPPORTED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH));
         }
 
         public DesktopModePayload {
+            DesktopProtocol.requireCount("forced menu ids", forcedMenuIds.size(), DesktopProtocol.MAX_FORCED_MENU_IDS);
+            DesktopProtocol.requireCount("supported menu ids", supportedMenuIds.size(), DesktopProtocol.MAX_SUPPORTED_MENU_IDS);
             forcedMenuIds = List.copyOf(forcedMenuIds);
+            supportedMenuIds = List.copyOf(supportedMenuIds);
         }
 
-        @Override
-        public ResourceLocation id() {
-            return TYPE;
-        }
-
-        @Override
-        public void write(FriendlyByteBuf buf) {
+        @Override public void write(FriendlyByteBuf buf) {
             buf.writeLong(this.connectionNonce);
             buf.writeVarLong(this.sequence);
             buf.writeBoolean(this.uiEnabled);
-            writeLimitedStringList(
-                buf,
-                this.forcedMenuIds,
-                DesktopProtocol.MAX_FORCED_MENU_IDS,
-                DesktopProtocol.MAX_IDENTIFIER_LENGTH
-            );
+            writeLimitedStringList(buf, this.forcedMenuIds, DesktopProtocol.MAX_FORCED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH);
+            writeLimitedStringList(buf, this.supportedMenuIds, DesktopProtocol.MAX_SUPPORTED_MENU_IDS, DesktopProtocol.MAX_IDENTIFIER_LENGTH);
         }
+
+        @Override public ResourceLocation id() { return TYPE; }
     }
 
     public record DesktopAuthenticatedPayload(

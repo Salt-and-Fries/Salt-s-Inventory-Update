@@ -1,5 +1,7 @@
 package com.salts_inventory_update.internal.desktop;
 
+import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
+
 import java.util.*;
 import java.util.function.BiPredicate;
 import net.minecraft.world.inventory.*;
@@ -28,7 +30,7 @@ public final class DesktopSortSlots {
         return isStorage(menu) && (adapter == null || adapter.test(menu, slot));
     }
     public static boolean sourceSlot(AbstractContainerMenu menu, Slot slot) {
-        int index = DesktopMenuSlots.indexOf(menu, slot);
+        int index = DesktopMenuBindings.indexOf(menu, slot);
         if (menu instanceof AbstractFurnaceMenu) return index == 2;
         if (menu instanceof BrewingStandMenu) return index >= 0 && index < 3;
         return storageSlot(menu, slot);

@@ -4,7 +4,7 @@ import com.salts_inventory_update.platform.fabric.api.client.event.lifecycle.v1.
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.inventory.MenuType;
 
-import com.salts_inventory_update.api.desktop.SaltsInventoryDesktopApi;
+import com.salts_inventory_update.api.client.desktop.DesktopClientApi;
 import com.salts_inventory_update.compat.toms_storage.TomsStorageCompat;
 
 public final class TomsStorageClientCompat {
@@ -48,7 +48,7 @@ public final class TomsStorageClientCompat {
     private static boolean register(String menuId, TomsStorageDesktopWindows.Definition definition) {
         MenuType menuType = TomsStorageCompat.menu(menuId);
         if (menuType != null) {
-            SaltsInventoryDesktopApi.replaceClientWindow(menuType, definition);
+            DesktopClientApi.replaceWindow(menuType, definition);
             TomsStorageCompat.info(
                 "client definition registered menuId={} registryKey={} menuType={} definition={} desktopScreenOverride=false",
                 menuId,

@@ -2,7 +2,7 @@ package com.salts_inventory_update.compat.sophisticated;
 
 import io.netty.buffer.Unpooled;
 
-import com.salts_inventory_update.api.desktop.SaltsInventoryDesktopApi;
+import com.salts_inventory_update.api.server.desktop.DesktopServerApi;
 import com.salts_inventory_update.api.server.desktop.DesktopServerPayloadHandler;
 import com.salts_inventory_update.api.server.desktop.DesktopTypedServerPayloadHandler;
 
@@ -41,7 +41,7 @@ final class SophisticatedPayloadRegistration {
                 buffer.release();
             }
         };
-        SaltsInventoryDesktopApi.registerServerPayload(
+        DesktopServerApi.registerPayload(
             (MenuType<AbstractContainerMenu>) menuType,
             channel,
             exactHandler

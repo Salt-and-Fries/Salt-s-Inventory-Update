@@ -8,6 +8,17 @@ public final class SaltsInventoryUpdate {
     public static final String MOD_NAME = "Salt's Inventory Update";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_NAME);
 
+    static {
+        com.salts_inventory_update.api.integration.DesktopDiagnostics.listen(event -> {
+            String detail = "[desktop-api] " + event.owner() + " " + event.operation() + ": " + event.message();
+            switch (event.level()) {
+                case INFO -> LOGGER.info(detail);
+                case WARNING -> LOGGER.warn(detail, event.cause());
+                case ERROR -> LOGGER.error(detail, event.cause());
+            }
+        });
+    }
+
     private SaltsInventoryUpdate() {
     }
 

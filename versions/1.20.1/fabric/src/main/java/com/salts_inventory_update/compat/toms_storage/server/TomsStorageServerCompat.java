@@ -15,7 +15,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 
-import com.salts_inventory_update.api.desktop.SaltsInventoryDesktopApi;
+import com.salts_inventory_update.api.server.desktop.DesktopServerApi;
 import com.salts_inventory_update.api.server.desktop.DesktopServerPayloadContext;
 import com.salts_inventory_update.api.server.desktop.DesktopServerSessionContext;
 import com.salts_inventory_update.api.server.desktop.DesktopServerWindowHandler;
@@ -72,9 +72,9 @@ public final class TomsStorageServerCompat {
             return false;
         }
 
-        SaltsInventoryDesktopApi.registerServerWindow(menuType, new ServerWindowHandler());
-        SaltsInventoryDesktopApi.registerServerPayload(menuType, TomsStorageCompat.NBT_CHANNEL, TomsStorageServerCompat::handleNbt);
-        SaltsInventoryDesktopApi.registerServerPayload(menuType, TomsStorageCompat.TERMINAL_ACTION_CHANNEL, TomsStorageServerCompat::handleTerminalAction);
+        DesktopServerApi.registerWindow(menuType, new ServerWindowHandler());
+        DesktopServerApi.registerPayload(menuType, TomsStorageCompat.NBT_CHANNEL, TomsStorageServerCompat::handleNbt);
+        DesktopServerApi.registerPayload(menuType, TomsStorageCompat.TERMINAL_ACTION_CHANNEL, TomsStorageServerCompat::handleTerminalAction);
         DesktopDebug.log(
             "Tom's Storage server compat handlers registered menuId={} registryKey={} menuType={}",
             menuId,

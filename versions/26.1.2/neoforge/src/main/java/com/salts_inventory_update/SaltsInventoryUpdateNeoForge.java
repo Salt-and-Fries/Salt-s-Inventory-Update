@@ -18,6 +18,7 @@ public final class SaltsInventoryUpdateNeoForge {
         DesktopPackets.registerPayloadTypes();
         SophisticatedCompatBootstrap.initialize(modBus);
         DesktopContainerSessions.initialize();
+        com.salts_inventory_update.integration.DesktopIntegrationBootstrap.initialize();
         TomsStorageServerCompat.initialize();
 
         NeoForgePlatform.initializeClient(modBus);

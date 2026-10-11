@@ -3,6 +3,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 .kotlin/
 .idea/
+.codex-remote-attachments/
 *.iml
 *.ipr
 *.iws

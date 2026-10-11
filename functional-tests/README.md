@@ -19,6 +19,7 @@ The current runtime matrix covers every supported version and loader pair:
 | `1.21.11` | `fabric`, `neoforge` |
 | `26.1.2` | `fabric`, `neoforge` |
 | `26.2` | `fabric`, `neoforge` |
+| `26.3` | `fabric`, `neoforge` |
 
 ## Test Types
 
@@ -40,7 +41,7 @@ File:
 functional-tests/scripts/Test-SourceFeatureParity.ps1
 ```
 
-This script checks that every version keeps the same declared feature surface, then checks every loader entrypoint and metadata file in the ten-pair matrix.
+This script checks that every version keeps the same declared feature surface, then checks every loader entrypoint and metadata file in the twelve-pair matrix.
 
 ### Desktop Menu Coverage
 
@@ -372,9 +373,9 @@ These verify that built-in desktop API definitions were registered for furnace-s
 
 | Exact test name | What it verifies |
 | --- | --- |
-| `api_definition.furnace` | `SaltsInventoryDesktopApi.findDefinition(...)` returns a definition for `MenuType.FURNACE`. |
-| `api_definition.blast_furnace` | `SaltsInventoryDesktopApi.findDefinition(...)` returns a definition for `MenuType.BLAST_FURNACE`. |
-| `api_definition.smoker` | `SaltsInventoryDesktopApi.findDefinition(...)` returns a definition for `MenuType.SMOKER`. |
+| `api_definition.furnace` | `DesktopClientApi.findDefinition(...)` returns a definition for `MenuType.FURNACE`. |
+| `api_definition.blast_furnace` | `DesktopClientApi.findDefinition(...)` returns a definition for `MenuType.BLAST_FURNACE`. |
+| `api_definition.smoker` | `DesktopClientApi.findDefinition(...)` returns a definition for `MenuType.SMOKER`. |
 
 ### Runtime Suite: `desktop-packets`
 
@@ -418,7 +419,7 @@ Compile only through Gradle:
 Launch every client in the full Fabric + Forge/NeoForge matrix and wait for the in-client harness summary:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\functional-tests\scripts\Run-FunctionalMatrix.ps1 -Runtime -TimeoutSeconds 240
+powershell -ExecutionPolicy Bypass -File .\functional-tests\scripts\Run-FunctionalMatrix.ps1 -Runtime -TimeoutSeconds 240 -ResultsDir .\build\functional-runtime-results
 ```
 
 Run one client directly:
@@ -449,3 +450,11 @@ functional-tests/scripts/Test-SourceFeatureParity.ps1
 ```
 
 Prefer tests that use public mod APIs, stable Minecraft classes, or reflection over version-specific implementation details. If a feature only exists in newer versions, guard it the same way `CRAFTER_3x3` is guarded.
+
+## API 4 contract verification
+
+`DesktopApiViewsTest` exercises the production arbitrary-model contexts, inventory capability denial, keyboard ownership, modal hit routing, external regions, unique/stale handles and disposal callbacks. `DesktopApiContractTest` exercises the real capture gate, renderer advertisement/rollback, conditional menu eligibility, custom inventory wrappers and hello/mode codec bounds. Both run on every version with the existing `sort-tests.gradle` headless harness.
+
+Shared common tests compile an external-style optional mod against the integration API, run it with Salt absent, discover it with Salt present, and trap forbidden dedicated-server client class resolution. `DesktopScrollStateTest` checks fractional hit/render consistency, shrinking models and overflow-safe virtual ranges.
+
+`./gradlew verifyApiExamples` additionally compiles the external machine/terminal/native-preferences sources against all twelve production loader classpaths. These checks establish contract and routing behavior; native framework rendering and real storage permissions need an in-game integration pass.

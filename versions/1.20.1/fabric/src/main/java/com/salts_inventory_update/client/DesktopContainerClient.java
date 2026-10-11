@@ -1,5 +1,7 @@
 package com.salts_inventory_update.client;
 
+import com.salts_inventory_update.api.client.desktop.DesktopMenuFactories;
+
 import com.salts_inventory_update.platform.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
@@ -58,6 +60,7 @@ import com.salts_inventory_update.protocol.DesktopConnectionState;
 import com.salts_inventory_update.protocol.DesktopProtocol;
 
 public final class DesktopContainerClient {
+    private static Object lastDesktopLevel;
     private static final int MODE_REFRESH_INTERVAL_TICKS = 100;
     private static final long SUPPORTED_CAPABILITIES = DesktopProtocol.KNOWN_CAPABILITIES | DesktopPackets.CAP_MULTI_MENU_GESTURES | DesktopPackets.CAP_SORT_WINDOWS;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
@@ -74,6 +77,7 @@ public final class DesktopContainerClient {
     private static long modeSequence;
     private static Boolean lastModeSent;
     private static List<String> lastForcedMenuIdsSent;
+    private static List<String> lastSupportedMenuIdsSent;
     private static int modeRefreshTicks;
     private static net.minecraft.world.entity.player.Player topologyPlayer;
     private static Object connectionIdentity;
@@ -86,6 +90,8 @@ public final class DesktopContainerClient {
     }
 
     public static void initializeNetworking() {
+        register(DesktopMenuOpenDataPayload.TYPE, DesktopMenuOpenDataPayload::new,
+            payload -> acceptMenuOpenData(payload, Minecraft.getInstance()));
         DesktopDebug.probe("client desktop networking initialize start");
         register(DesktopHelloAckPayload.TYPE, DesktopHelloAckPayload::new, DesktopContainerClient::handleHelloAck);
         register(DesktopSessionAuthorizationPayload.TYPE, DesktopSessionAuthorizationPayload::new, payload -> {
@@ -155,16 +161,11 @@ public final class DesktopContainerClient {
                 return;
             }
             Minecraft client = Minecraft.getInstance();
-            InventoryDesktopScreen.openOrAddSession(
-                client,
-                DesktopContainerSession.create(
-                    client,
-                    payload,
-                    openingData == null ? new byte[0] : openingData.data(),
-                    openingData == null ? -1 : openingData.replacesSessionId()
-                ),
-                payload.visible()
-            );
+            DesktopContainerSession session = DesktopContainerSession.create(client, payload,
+                openingData == null ? new byte[0] : openingData.data(),
+                openingData == null ? -1 : openingData.replacesSessionId());
+            if (openingData != null) session.setCompanionOwners(openingData.companionOwnerIds());
+            InventoryDesktopScreen.openOrAddSession(client, session, payload.visible());
         });
         register(DesktopSlotPayload.TYPE, DesktopSlotPayload::new, payload -> {
             if (payload.sessionId() > DesktopPackets.PLAYER_MENU_SESSION) {
@@ -365,6 +366,7 @@ public final class DesktopContainerClient {
         modeSequence = 0L;
         lastModeSent = null;
         lastForcedMenuIdsSent = null;
+        lastSupportedMenuIdsSent = null;
         modeRefreshTicks = 0;
         topologyPlayer = null;
         connectionIdentity = null;
@@ -381,6 +383,19 @@ public final class DesktopContainerClient {
     }
 
     public static void tick(Minecraft minecraft) {
+        if (lastDesktopLevel != null && lastDesktopLevel != minecraft.level) {
+            InventoryDesktopScreen.reset(minecraft);
+            // Dimension travel ends window lifetimes, not the authenticated connection.
+            // Keep the player token and monotonic mutation sequence, including any sent acknowledgement.
+            SESSION_TOKENS.clear();
+            PENDING_MENU_OPEN_DATA.clear();
+            SESSION_STATE_IDS.clear();
+            PENDING_SOURCE_GRANTS.clear();
+            SOURCE_GRANTS.clear();
+            SOURCE_SESSIONS.clear();
+            SESSION_SOURCE_KEYS.clear();
+        }
+        lastDesktopLevel = minecraft.level;
         Object currentConnection = minecraft.getConnection();
         if (currentConnection == null) {
             if (connectionIdentity != null) {
@@ -425,18 +440,20 @@ public final class DesktopContainerClient {
             clientNonce = nextNonce();
             CONNECTION_STATE.begin(clientNonce, minecraft.level.getGameTime());
             List<String> forcedMenuIds = configuredForcedMenuIds();
+            List<String> supportedMenuIds = com.salts_inventory_update.api.client.desktop.DesktopClientApi.supportedMenuIds();
             boolean sent = sendRaw(new DesktopHelloPayload(
                 DesktopProtocol.VERSION,
                 clientNonce,
                 SUPPORTED_CAPABILITIES,
                 SaltsInventoryRuntime.isConfiguredEnabled(),
-                forcedMenuIds
+                forcedMenuIds, supportedMenuIds
             ), "hello");
             if (!sent) {
                 CONNECTION_STATE.reset();
                 clientNonce = 0L;
             } else {
                 lastForcedMenuIdsSent = forcedMenuIds;
+                lastSupportedMenuIdsSent = supportedMenuIds;
             }
         }
         boolean expired = CONNECTION_STATE.expireIfNecessary(minecraft.level.getGameTime(), channelsAvailable);
@@ -463,6 +480,7 @@ public final class DesktopContainerClient {
             InventoryExpansion.setTopologyEnabled(minecraft.player, topologyEnabled);
             boolean desiredMode = SaltsInventoryRuntime.isConfiguredEnabled();
             List<String> forcedMenuIds = configuredForcedMenuIds();
+            List<String> supportedMenuIds = com.salts_inventory_update.api.client.desktop.DesktopClientApi.supportedMenuIds();
             modeRefreshTicks++;
             InventoryExpansion.setGameplayEnabled(
                 minecraft.player,
@@ -471,18 +489,20 @@ public final class DesktopContainerClient {
             if (lastModeSent == null
                 || lastModeSent.booleanValue() != desiredMode
                 || !forcedMenuIds.equals(lastForcedMenuIdsSent)
+                || !supportedMenuIds.equals(lastSupportedMenuIdsSent)
                 || modeRefreshTicks >= MODE_REFRESH_INTERVAL_TICKS) {
                 long sequence = modeSequence++;
                 DesktopModePayload mode = new DesktopModePayload(
                     CONNECTION_STATE.connectionNonce(),
                     sequence,
                     desiredMode,
-                    forcedMenuIds
+                    forcedMenuIds, supportedMenuIds
                 );
                 if (sendRaw(mode, desiredMode ? "mode-enabled" : "mode-disabled")
                     && CONNECTION_STATE.updateMode(CONNECTION_STATE.connectionNonce(), sequence, desiredMode)) {
                     lastModeSent = desiredMode;
                     lastForcedMenuIdsSent = forcedMenuIds;
+                lastSupportedMenuIdsSent = supportedMenuIds;
                     modeRefreshTicks = 0;
                     InventoryExpansion.setGameplayEnabled(
                         minecraft.player,
@@ -546,8 +566,15 @@ public final class DesktopContainerClient {
             rejectServerProtocol("desktop menu opening data was not authorized");
             return;
         }
+        if (payload.metadataOnly()) {
+            Long token = SESSION_TOKENS.get(payload.sessionId());
+            if (token == null || token.longValue() != payload.sessionToken()) return;
+            InventoryDesktopScreen screen = InventoryDesktopScreen.current(client);
+            if (screen != null) screen.updateCompanionOwners(payload.sessionId(), payload.companionOwnerIds());
+            return;
+        }
         PENDING_MENU_OPEN_DATA.put(payload.sessionId(), new MenuOpenData(
-            payload.sessionToken(), payload.menuTypeId(), payload.replacesSessionId(), payload.data()
+            payload.sessionToken(), payload.menuTypeId(), payload.replacesSessionId(), payload.data(), payload.companionOwnerIds()
         ));
     }
 
@@ -964,9 +991,10 @@ public final class DesktopContainerClient {
     ) {
     }
 
-    private record MenuOpenData(long sessionToken, int menuTypeId, int replacesSessionId, byte[] data) {
+    private record MenuOpenData(long sessionToken, int menuTypeId, int replacesSessionId, byte[] data, int[] companionOwnerIds) {
         private MenuOpenData {
             data = data.clone();
+            companionOwnerIds = companionOwnerIds.clone();
         }
 
         @Override

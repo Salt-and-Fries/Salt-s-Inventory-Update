@@ -14,6 +14,7 @@ public final class SaltsInventoryUpdateNeoForge {
         SaltsInventoryUpdate.init("NeoForge " + VersionInfo.MINECRAFT_VERSION);
         DesktopPackets.registerPayloadTypes();
         DesktopContainerSessions.initialize();
+        com.salts_inventory_update.integration.DesktopIntegrationBootstrap.initialize();
         TomsStorageServerCompat.initialize();
         NeoForgePlatform.initializeClient(modBus);
     }

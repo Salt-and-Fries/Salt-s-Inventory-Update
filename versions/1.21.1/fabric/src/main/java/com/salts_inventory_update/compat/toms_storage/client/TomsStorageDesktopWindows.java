@@ -198,15 +198,15 @@ public final class TomsStorageDesktopWindows {
         @Override
         public void tick(DesktopWindowContext<AbstractContainerMenu, TerminalState> context) {
             TerminalState state = context.state();
-            state.sorting = TomsStorageReflect.intField(context.menu(), "sorting", state.sorting);
-            state.modes = TomsStorageReflect.intField(context.menu(), "modes", state.modes);
-            state.searchType = TomsStorageReflect.intField(context.menu(), "searchType", state.searchType);
+            state.sorting = TomsStorageReflect.intField(context.model(), "sorting", state.sorting);
+            state.modes = TomsStorageReflect.intField(context.model(), "modes", state.modes);
+            state.searchType = TomsStorageReflect.intField(context.model(), "searchType", state.searchType);
             if (!state.keepSearchRestored) {
                 state.keepSearchRestored = true;
                 if ((normalizedSearchType(state.searchType) & 2) != 0 && state.pendingKeptSearch != null) {
                     state.search = state.pendingKeptSearch;
                     state.scrollRow = 0;
-                    TomsStorageReflect.setField(context.menu(), "search", state.search);
+                    TomsStorageReflect.setField(context.model(), "search", state.search);
                     DesktopDebug.trace(
                         "Tom's Storage restored kept search session={} key={} search='{}'",
                         context.sessionId(),
@@ -228,7 +228,7 @@ public final class TomsStorageDesktopWindows {
 
         @Override
         public @Nullable RecipeBookComponent createRecipeBook(DesktopWindowContext<AbstractContainerMenu, TerminalState> context) {
-            return this.crafting ? TomsStorageClientReflect.createCraftingTerminalRecipeBook(context.menu()) : null;
+            return this.crafting ? TomsStorageClientReflect.createCraftingTerminalRecipeBook(context.model()) : null;
         }
 
         @Override
@@ -496,7 +496,7 @@ public final class TomsStorageDesktopWindows {
             context.state().entries.clear();
             context.state().entries.addAll(snapshot.entries());
             context.state().truncated = snapshot.truncated();
-            TomsStorageReflect.syncTerminalClientItems(context.menu(), snapshot.entries());
+            TomsStorageReflect.syncTerminalClientItems(context.model(), snapshot.entries());
             if (context.recipeBookVisible()) {
                 context.refreshRecipeBook();
             }
@@ -806,12 +806,12 @@ public final class TomsStorageDesktopWindows {
             context.slot(0, x, y);
             int bx = context.contentX() + PAD;
             int by = y;
-            renderCycleButton(context, bx, by, priorityIcon(context.menu()), false);
+            renderCycleButton(context, bx, by, priorityIcon(context.model()), false);
             renderCycleButton(context, bx + 18, by, TomsStorageCompat.id("icons/add"), false);
             renderCycleButton(context, bx + 36, by, TomsStorageCompat.id("icons/deny"), false);
-            renderCycleButton(context, bx + 54, by, sideIcon(context.menu()), false);
-            renderCycleButton(context, bx + 72, by, TomsStorageCompat.id(skip(context.menu()) ? "icons/skip_inv" : "icons/include_inv"), skip(context.menu()));
-            renderCycleButton(context, bx + 90, by, TomsStorageCompat.id(keepLast(context.menu()) ? "icons/keep_last_1" : "icons/keep_last_off"), keepLast(context.menu()));
+            renderCycleButton(context, bx + 54, by, sideIcon(context.model()), false);
+            renderCycleButton(context, bx + 72, by, TomsStorageCompat.id(skip(context.model()) ? "icons/skip_inv" : "icons/include_inv"), skip(context.model()));
+            renderCycleButton(context, bx + 90, by, TomsStorageCompat.id(keepLast(context.model()) ? "icons/keep_last_1" : "icons/keep_last_off"), keepLast(context.model()));
             renderCycleButton(context, bx + 108, by, TomsStorageCompat.id("icons/deny"), false);
         }
 
@@ -829,12 +829,12 @@ public final class TomsStorageDesktopWindows {
                 return false;
             }
             switch (index) {
-                case 0 -> context.sendMenuButton((((TomsStorageReflect.enumOrdinalField(context.menu(), "priority", 2) + 1) % 5) << 3));
+                case 0 -> context.sendMenuButton((((TomsStorageReflect.enumOrdinalField(context.model(), "priority", 2) + 1) % 5) << 3));
                 case 1 -> context.sendMenuButton(1);
                 case 2 -> context.sendMenuButton(2);
-                case 3 -> context.sendMenuButton((((TomsStorageReflect.enumOrdinalField(context.menu(), "side", 0) + 1) % 6) << 3) | 3);
-                case 4 -> context.sendMenuButton((skip(context.menu()) ? 0 : 1) << 3 | 4);
-                case 5 -> context.sendMenuButton((keepLast(context.menu()) ? 0 : 1) << 3 | 5);
+                case 3 -> context.sendMenuButton((((TomsStorageReflect.enumOrdinalField(context.model(), "side", 0) + 1) % 6) << 3) | 3);
+                case 4 -> context.sendMenuButton((skip(context.model()) ? 0 : 1) << 3 | 4);
+                case 5 -> context.sendMenuButton((keepLast(context.model()) ? 0 : 1) << 3 | 5);
                 case 6 -> context.sendMenuButton(7);
                 default -> {
                     return false;
@@ -859,8 +859,8 @@ public final class TomsStorageDesktopWindows {
         public void render(DesktopRenderContext<AbstractContainerMenu, LevelEmitterState> context) {
             int x = context.contentX() + PAD;
             int y = context.contentY() + PAD;
-            int count = TomsStorageReflect.intField(context.menu(), "count", 0);
-            boolean lessThan = TomsStorageReflect.booleanField(context.menu(), "lessThan", false);
+            int count = TomsStorageReflect.intField(context.model(), "count", 0);
+            boolean lessThan = TomsStorageReflect.booleanField(context.model(), "lessThan", false);
             context.slot(0, x, y + 24);
             context.text(Component.literal(lessThan ? "Emit below" : "Emit above"), x + 28, y + 10, 0x404040, false);
             context.fill(x + 28, y + 25, x + 112, y + 38, 0xFF8F8F8F);
@@ -889,7 +889,7 @@ public final class TomsStorageDesktopWindows {
             int x = context.contentX() + PAD;
             int y = context.contentY() + PAD;
             if (buttonHit(event, x + 116, y + 24, BUTTON, BUTTON)) {
-                sendLevelEmitter(context, TomsStorageReflect.intField(context.menu(), "count", 0), !TomsStorageReflect.booleanField(context.menu(), "lessThan", false));
+                sendLevelEmitter(context, TomsStorageReflect.intField(context.model(), "count", 0), !TomsStorageReflect.booleanField(context.model(), "lessThan", false));
                 return true;
             }
             for (int i = 0; i < 4; i++) {
@@ -901,8 +901,8 @@ public final class TomsStorageDesktopWindows {
                 };
                 int bx = x + 28 + i * 24;
                 if (buttonHit(event, bx, y + 46, 22, 14)) {
-                    int count = Math.max(0, TomsStorageReflect.intField(context.menu(), "count", 0) + value);
-                    sendLevelEmitter(context, count, TomsStorageReflect.booleanField(context.menu(), "lessThan", false));
+                    int count = Math.max(0, TomsStorageReflect.intField(context.model(), "count", 0) + value);
+                    sendLevelEmitter(context, count, TomsStorageReflect.booleanField(context.model(), "lessThan", false));
                     return true;
                 }
             }
@@ -926,7 +926,7 @@ public final class TomsStorageDesktopWindows {
             InventoryLinkState state = context.state();
             int x = context.contentX() + PAD;
             int y = context.contentY() + PAD;
-            context.text(Component.literal("Beacon " + TomsStorageReflect.intField(context.menu(), "beaconLvl", 0)), x, y, 0x404040, false);
+            context.text(Component.literal("Beacon " + TomsStorageReflect.intField(context.model(), "beaconLvl", 0)), x, y, 0x404040, false);
             state.nameBox.text(state.name);
             state.nameBox.focused(state.nameFocused);
             DesktopWidgets.renderTextBox(context, state.nameBox, x, y + 14, 106);
@@ -1080,8 +1080,8 @@ public final class TomsStorageDesktopWindows {
             int x = context.contentX() + 28;
             int y = context.contentY() + PAD;
             renderToggleColumn(context, context.contentX() + PAD, y, new ResourceLocation[] {
-                TomsStorageCompat.id(TomsStorageReflect.booleanField(context.menu(), "allowList", false) ? "icons/allow" : "icons/deny"),
-                TomsStorageCompat.id(TomsStorageReflect.booleanField(context.menu(), "matchNBT", false) ? "icons/match_tag_on" : "icons/match_tag_off")
+                TomsStorageCompat.id(TomsStorageReflect.booleanField(context.model(), "allowList", false) ? "icons/allow" : "icons/deny"),
+                TomsStorageCompat.id(TomsStorageReflect.booleanField(context.model(), "matchNBT", false) ? "icons/match_tag_on" : "icons/match_tag_off")
             });
             for (int i = 0; i < 9; i++) {
                 context.slot(i, x + i % 3 * SLOT, y + i / 3 * SLOT);
@@ -1105,11 +1105,11 @@ public final class TomsStorageDesktopWindows {
         public boolean mouseClicked(DesktopInputContext<AbstractContainerMenu, Void> context, MouseButtonEvent event, boolean doubleClick) {
             int index = buttonIndex(event, context.contentX() + PAD, context.contentY() + PAD, 2);
             if (index == 0) {
-                context.sendMenuButton((1 << 1) | (TomsStorageReflect.booleanField(context.menu(), "allowList", false) ? 0 : 1));
+                context.sendMenuButton((1 << 1) | (TomsStorageReflect.booleanField(context.model(), "allowList", false) ? 0 : 1));
                 return true;
             }
             if (index == 1) {
-                context.sendMenuButton(TomsStorageReflect.booleanField(context.menu(), "matchNBT", false) ? 0 : 1);
+                context.sendMenuButton(TomsStorageReflect.booleanField(context.model(), "matchNBT", false) ? 0 : 1);
                 return true;
             }
             return false;
@@ -1143,7 +1143,7 @@ public final class TomsStorageDesktopWindows {
         public void render(DesktopRenderContext<AbstractContainerMenu, TagFilterState> context) {
             int x = context.contentX() + PAD;
             int y = context.contentY() + PAD;
-            renderCycleButton(context, x, y, TomsStorageCompat.id(TomsStorageReflect.booleanField(context.menu(), "allowList", false) ? "icons/allow" : "icons/deny"), false);
+            renderCycleButton(context, x, y, TomsStorageCompat.id(TomsStorageReflect.booleanField(context.model(), "allowList", false) ? "icons/allow" : "icons/deny"), false);
             context.slot(0, x, y + 22);
             renderTagList(context, context.state().availableTags, context.state().selectedAvailable, x + 28, y, 66, 64);
             renderCycleButton(context, x + 98, y + 12, TomsStorageCompat.id("icons/add"), false);
@@ -1162,7 +1162,7 @@ public final class TomsStorageDesktopWindows {
             int x = context.contentX() + PAD;
             int y = context.contentY() + PAD;
             if (buttonHit(event, x, y, BUTTON, BUTTON)) {
-                context.sendMenuButton(TomsStorageReflect.booleanField(context.menu(), "allowList", false) ? 0 : 1);
+                context.sendMenuButton(TomsStorageReflect.booleanField(context.model(), "allowList", false) ? 0 : 1);
                 return true;
             }
             if (buttonHit(event, x + 98, y + 12, BUTTON, BUTTON) && state.selectedAvailable != null) {
@@ -1221,7 +1221,7 @@ public final class TomsStorageDesktopWindows {
                     context.slot(row * 9 + col, x + col * SLOT, y + row * SLOT);
                 }
             }
-            int max = Math.max(0, Math.max(0, context.menu().slots.size() - 36) / 9 - 5);
+            int max = Math.max(0, Math.max(0, context.model().slots.size() - 36) / 9 - 5);
             renderScrollbar(context, x + 9 * SLOT + 6, y, 5 * SLOT, context.state().scrollRow, max);
         }
 
@@ -1240,7 +1240,7 @@ public final class TomsStorageDesktopWindows {
 
         @Override
         public boolean mouseScrolled(DesktopInputContext<AbstractContainerMenu, FilingCabinetState> context, double mouseX, double mouseY, double scrollX, double scrollY) {
-            int max = Math.max(0, Math.max(0, context.menu().slots.size() - 36) / 9 - 5);
+            int max = Math.max(0, Math.max(0, context.model().slots.size() - 36) / 9 - 5);
             if (max <= 0) {
                 return false;
             }
@@ -1362,10 +1362,10 @@ public final class TomsStorageDesktopWindows {
     }
 
     private static void sendTerminalSettings(DesktopInputContext<AbstractContainerMenu, TerminalState> context, TerminalState state) {
-        TomsStorageReflect.setIntField(context.menu(), "sorting", state.sorting);
-        TomsStorageReflect.setIntField(context.menu(), "searchType", state.searchType);
-        TomsStorageReflect.setIntField(context.menu(), "modes", state.modes);
-        TomsStorageReflect.setField(context.menu(), "search", state.search);
+        TomsStorageReflect.setIntField(context.model(), "sorting", state.sorting);
+        TomsStorageReflect.setIntField(context.model(), "searchType", state.searchType);
+        TomsStorageReflect.setIntField(context.model(), "modes", state.modes);
+        TomsStorageReflect.setField(context.model(), "search", state.search);
         syncKeptSearchMemory(context, state);
         CompoundTag tag = new CompoundTag();
         CompoundTag child = new CompoundTag();
@@ -1404,7 +1404,7 @@ public final class TomsStorageDesktopWindows {
         if (sourceKey != null && !sourceKey.isBlank()) {
             return "source:" + sourceKey;
         }
-        return "menu:" + context.menu().getType() + ":" + context.originalTitle().getString();
+        return "menu:" + context.model().getType() + ":" + context.originalTitle().getString();
     }
 
     private static String terminalSearchMemoryKey(DesktopWindowContext<AbstractContainerMenu, TerminalState> context) {
@@ -1412,7 +1412,7 @@ public final class TomsStorageDesktopWindows {
         if (sourceKey != null && !sourceKey.isBlank()) {
             return "source:" + sourceKey;
         }
-        return "menu:" + context.menu().getType() + ":" + context.originalTitle().getString();
+        return "menu:" + context.model().getType() + ":" + context.originalTitle().getString();
     }
 
     private static @Nullable List<Component> terminalControlTooltip(DesktopRenderContext<AbstractContainerMenu, TerminalState> context, TerminalState state, int mouseX, int mouseY, int x, int y) {

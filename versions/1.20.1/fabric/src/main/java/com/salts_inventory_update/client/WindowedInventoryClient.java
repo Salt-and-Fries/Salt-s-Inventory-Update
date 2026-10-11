@@ -69,6 +69,13 @@ public final class WindowedInventoryClient {
             )
         );
 
+        com.salts_inventory_update.platform.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
+            DesktopClientResources.install(client);
+            com.salts_inventory_update.integration.DesktopIntegrationBootstrap.load(
+                com.salts_inventory_update.api.integration.DesktopIntegrationContext.Phase.COMMON);
+            com.salts_inventory_update.integration.DesktopIntegrationBootstrap.load(
+                com.salts_inventory_update.api.integration.DesktopIntegrationContext.Phase.CLIENT);
+        });
         InventoryDesktopScreen.registerInternalApiDefinitions();
         TomsStorageClientCompat.initialize();
         InventoryDesktopScreen.registerContainerScreens();

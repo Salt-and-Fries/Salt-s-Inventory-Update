@@ -209,6 +209,130 @@ final class DesktopSlotGesturesTest {
         assertEquals(2, invoke(drag, "size"));
     }
 
+    @Test
+    void computedPreviewMatchesDistributionWithoutMutatingMenuOrReturnedStacks() throws Exception {
+        InventoryDesktopScreen screen = screen(16);
+        TestMenu menu = new TestMenu(2);
+        List<?> hits = window(screen, menu, 5, 10);
+        Object owner = ((List<?>) get(screen, "windows")).get(0);
+        installObserver(owner, new ArrayList<>());
+        press(screen, hits.get(0));
+        hover(screen, hits.get(1), 2.0);
+        var snapshot = (com.salts_inventory_update.api.client.desktop.DesktopGestureSnapshot)
+            invoke(screen, "apiGestureSnapshot", owner, 0, 0);
+        assertEquals(com.salts_inventory_update.api.client.desktop.DesktopGesturePhase.DISTRIBUTING, snapshot.phase());
+        assertEquals(2, snapshot.slots().size());
+        assertEquals(8, snapshot.slot(5, 0).displayStack().getCount());
+        assertEquals(8, snapshot.slot(5, 1).displayStack().getCount());
+        snapshot.slot(5, 0).displayStack().setCount(99);
+        assertEquals(8, snapshot.slot(5, 0).displayStack().getCount());
+        assertTrue(menu.slots.get(0).getItem().isEmpty());
+        assertTrue(menu.slots.get(1).getItem().isEmpty());
+        snapshot.carriedPreview().setCount(99);
+        assertNotEquals(99, snapshot.carriedPreview().getCount());
+        assertThrows(UnsupportedOperationException.class, () -> snapshot.slots().clear());
+    }
+
+    @Test
+    void cancellationClearsPresentationAndEndsEachObservedGestureOnce() throws Exception {
+        InventoryDesktopScreen screen = screen(16);
+        List<?> hits = window(screen, new TestMenu(2), 5, 10);
+        Object owner = ((List<?>) get(screen, "windows")).get(0);
+        List<com.salts_inventory_update.api.client.desktop.DesktopGestureEvent> events = new ArrayList<>();
+        installObserver(owner, events);
+        press(screen, hits.get(0));
+        hover(screen, hits.get(1), 2.0);
+        long id = events.get(0).id();
+        invoke(screen, "clearSlotInteractionState", "window-minimize");
+        invoke(screen, "clearSlotInteractionState", "duplicate-cleanup");
+        assertEquals(List.of(
+            com.salts_inventory_update.api.client.desktop.DesktopGestureEvent.Outcome.STARTED,
+            com.salts_inventory_update.api.client.desktop.DesktopGestureEvent.Outcome.UPDATED,
+            com.salts_inventory_update.api.client.desktop.DesktopGestureEvent.Outcome.CANCELLED),
+            events.stream().map(com.salts_inventory_update.api.client.desktop.DesktopGestureEvent::outcome).toList());
+        assertTrue(events.stream().allMatch(event -> event.id() == id));
+        var cleared = (com.salts_inventory_update.api.client.desktop.DesktopGestureSnapshot)
+            invoke(screen, "apiGestureSnapshot", owner, 0, 0);
+        assertEquals(com.salts_inventory_update.api.client.desktop.DesktopGesturePhase.NONE, cleared.phase());
+        assertTrue(cleared.slots().isEmpty());
+    }
+
+    @Test
+    void aCompletedInputGestureHasAnObservableTerminalEventAndNoLingeringPreview() throws Exception {
+        InventoryDesktopScreen screen = screen(16);
+        List<?> hits = window(screen, new TestMenu(1), 5, 10);
+        Object owner = ((List<?>) get(screen, "windows")).get(0);
+        List<com.salts_inventory_update.api.client.desktop.DesktopGestureEvent> events = new ArrayList<>();
+        installObserver(owner, events);
+        press(screen, hits.get(0));
+        invoke(screen, "clearPendingSlotClick", true, "release");
+        invoke(screen, "clearPendingSlotClick");
+        assertEquals(2, events.size());
+        assertEquals(com.salts_inventory_update.api.client.desktop.DesktopGestureEvent.Outcome.COMPLETED, events.get(1).outcome());
+        assertEquals(events.get(0).id(), events.get(1).id());
+        var cleared = (com.salts_inventory_update.api.client.desktop.DesktopGestureSnapshot)
+            invoke(screen, "apiGestureSnapshot", owner, 0, 0);
+        assertEquals(com.salts_inventory_update.api.client.desktop.DesktopGesturePhase.NONE, cleared.phase());
+    }
+
+    @Test
+    void hoveredUnselectedSlotIsPresentedAndSlotQueriesCanReadGestureState() throws Exception {
+        InventoryDesktopScreen screen = screen(16);
+        List<?> hits = window(screen, new TestMenu(2), 5, 10);
+        Object owner = ((List<?>) get(screen, "windows")).get(0);
+        installObserver(owner, new ArrayList<>());
+        press(screen, hits.get(0));
+        int x = (int) invoke(hits.get(1), "x") + 2;
+        int y = (int) invoke(hits.get(1), "y") + 2;
+        var snapshot = (com.salts_inventory_update.api.client.desktop.DesktopGestureSnapshot)
+            invoke(screen, "apiGestureSnapshot", owner, x, y);
+        var hovered = snapshot.slot(5, 1);
+        assertNotNull(hovered);
+        assertTrue(hovered.hovered());
+        assertFalse(hovered.selected());
+        assertTrue(hovered.eligible());
+    }
+
+    @Test
+    void changingAnUnrelatedSubviewDoesNotCancelAnotherOwnersGesture() throws Exception {
+        InventoryDesktopScreen screen = screen(16);
+        List<?> firstHits = window(screen, new TestMenu(1), 5, 10);
+        window(screen, new TestMenu(1), 6, 100);
+        List<?> owners = (List<?>) get(screen, "windows");
+        List<com.salts_inventory_update.api.client.desktop.DesktopGestureEvent> events = new ArrayList<>();
+        installObserver(owners.get(0), events);
+        installObserver(owners.get(1), new ArrayList<>());
+        press(screen, firstHits.get(0));
+        Object pending = get(screen, "pendingSlotClick");
+        invoke(screen, "cancelApiInput", owners.get(1));
+        assertSame(pending, get(screen, "pendingSlotClick"));
+        invoke(screen, "cancelApiInput", owners.get(0));
+        assertNull(get(screen, "pendingSlotClick"));
+        assertEquals(com.salts_inventory_update.api.client.desktop.DesktopGestureEvent.Outcome.CANCELLED,
+            events.get(events.size() - 1).outcome());
+        assertEquals("author-layout-change", events.get(events.size() - 1).reason());
+    }
+
+    private static void installObserver(Object owner,
+            List<com.salts_inventory_update.api.client.desktop.DesktopGestureEvent> events) throws Exception {
+        set(owner, "apiInstanceId", java.util.UUID.randomUUID());
+        set(owner, "apiDefinition", new com.salts_inventory_update.api.client.desktop.DesktopWindowDefinition<TestMenu, Object>() {
+            public void gestureChanged(com.salts_inventory_update.api.client.desktop.DesktopWindowContext<TestMenu, Object> context,
+                    com.salts_inventory_update.api.client.desktop.DesktopGestureEvent event) { events.add(event); }
+            public com.salts_inventory_update.api.client.desktop.DesktopSlotHit slotAt(
+                    com.salts_inventory_update.api.client.desktop.DesktopSlotContext<TestMenu, Object> context,
+                    double mouseX, double mouseY) {
+                context.gesture(); // A consumer may use gesture state when deciding slot visibility.
+                for (int id = 0; id < context.model().slots.size(); id++) {
+                    var slot = context.model().slots.get(id);
+                    var hit = context.menuSlotHit(id, context.contentX() + slot.x, context.contentY() + slot.y, mouseX, mouseY);
+                    if (hit != null) return hit;
+                }
+                return null;
+            }
+        });
+    }
+
     private static List<?> window(InventoryDesktopScreen screen, TestMenu menu, int sessionId, int x) throws Exception {
         DesktopContainerSession session = (DesktopContainerSession) unsafe.allocateInstance(DesktopContainerSession.class);
         set(session, "menu", menu);
@@ -216,6 +340,7 @@ final class DesktopSlotGesturesTest {
         set(session, "containerSlots", List.copyOf(menu.slots));
         Class<?> windowClass = Class.forName(InventoryDesktopScreen.class.getName() + "$InventoryWindow");
         Object window = unsafe.allocateInstance(windowClass);
+        set(window, "apiSurface", com.salts_inventory_update.api.client.desktop.DesktopWindowSurface.SALT);
         Class<?> kindClass = Class.forName(InventoryDesktopScreen.class.getName() + "$WindowKind");
         Object containerKind = java.util.Arrays.stream(kindClass.getEnumConstants())
             .filter(kind -> ((Enum<?>) kind).name().equals("CONTAINER")).findFirst().orElseThrow();

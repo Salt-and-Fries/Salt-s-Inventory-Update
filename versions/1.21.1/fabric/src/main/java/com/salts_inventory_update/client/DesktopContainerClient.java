@@ -1,5 +1,7 @@
 package com.salts_inventory_update.client;
 
+import com.salts_inventory_update.api.client.desktop.DesktopMenuFactories;
+
 import com.salts_inventory_update.platform.fabric.api.client.networking.v1.ClientPlayNetworking;
 import java.security.SecureRandom;
 import java.util.ArrayDeque;
@@ -62,6 +64,7 @@ import com.salts_inventory_update.protocol.DesktopConnectionState;
 import com.salts_inventory_update.protocol.DesktopProtocol;
 
 public final class DesktopContainerClient {
+    private static Object lastDesktopLevel;
     private static final int MODE_RESEND_INTERVAL_TICKS = 100;
     private static final int MAX_QUEUED_MUTATIONS = 256;
     private static final int MAX_ANVIL_NAME_LENGTH = 50;
@@ -84,11 +87,14 @@ public final class DesktopContainerClient {
     private static @Nullable InFlightMutation inFlightMutation;
     private static boolean mutationQueueBlocked;
     private static java.util.List<String> requestedForcedMenuIds = java.util.List.of();
+    private static java.util.List<String> requestedSupportedMenuIds = java.util.List.of();
 
     private DesktopContainerClient() {
     }
 
     public static void initializeNetworking() {
+        ClientPlayNetworking.registerGlobalReceiver(DesktopMenuOpenDataPayload.TYPE, (payload, context) ->
+            acceptMenuOpenData(payload, context.client()));
         ClientPlayNetworking.registerGlobalReceiver(DesktopHelloAckPayload.TYPE, (payload, context) -> {
             if (payload.playerSessionToken() == 0L
                 || (payload.capabilities() & DesktopPackets.CAP_MULTI_MENU_GESTURES) == 0L
@@ -198,6 +204,7 @@ public final class DesktopContainerClient {
                         session.containerSlots().size()
                     );
                 }
+                if (menuOpenData != null) session.setCompanionOwners(menuOpenData.companionOwnerIds);
                 InventoryDesktopScreen.openOrAddSession(context.client(), session, payload.visible());
                 sessionHandedOff = true;
                 if (diagnostic) {
@@ -305,6 +312,15 @@ public final class DesktopContainerClient {
     }
 
     public static void tick(Minecraft minecraft) {
+        if (lastDesktopLevel != null && lastDesktopLevel != minecraft.level) {
+            InventoryDesktopScreen.reset(minecraft);
+            // Dimension travel ends window lifetimes, not the authenticated connection.
+            // Keep the player token and monotonic mutation sequence, including any sent acknowledgement.
+            discardPendingMutations("world-change");
+            SESSION_TOKENS.clear();
+            PENDING_MENU_OPEN_DATA.clear();
+        }
+        lastDesktopLevel = minecraft.level;
         Object currentConnection = minecraft.getConnection();
         if (minecraft.player == null || minecraft.level == null) {
             if (currentConnection == null) {
@@ -342,8 +358,9 @@ public final class DesktopContainerClient {
             CONNECTION.begin(clientNonce, minecraft.level.getGameTime());
             requestedUiEnabled = SaltsInventoryRuntime.isConfiguredEnabled();
             requestedForcedMenuIds = forcedMenuIds();
+            requestedSupportedMenuIds = com.salts_inventory_update.api.client.desktop.DesktopClientApi.supportedMenuIds();
             helloSent = send(
-                new DesktopHelloPayload(DesktopProtocol.VERSION, clientNonce, SUPPORTED_CAPABILITIES, requestedUiEnabled, requestedForcedMenuIds),
+                new DesktopHelloPayload(DesktopProtocol.VERSION, clientNonce, SUPPORTED_CAPABILITIES, requestedUiEnabled, requestedForcedMenuIds, requestedSupportedMenuIds),
                 "hello"
             );
             if (helloSent) {
@@ -365,14 +382,16 @@ public final class DesktopContainerClient {
 
         boolean desiredUi = SaltsInventoryRuntime.isConfiguredEnabled();
         java.util.List<String> desiredForcedMenuIds = forcedMenuIds();
+        java.util.List<String> desiredSupportedMenuIds = com.salts_inventory_update.api.client.desktop.DesktopClientApi.supportedMenuIds();
         boolean periodicResend = ++modeResendTicks >= MODE_RESEND_INTERVAL_TICKS;
-        if (desiredUi != requestedUiEnabled || !desiredForcedMenuIds.equals(requestedForcedMenuIds) || periodicResend) {
+        if (desiredUi != requestedUiEnabled || !desiredForcedMenuIds.equals(requestedForcedMenuIds) || !desiredSupportedMenuIds.equals(requestedSupportedMenuIds) || periodicResend) {
             long nextSequence = ++modeSequence;
             long nonce = CONNECTION.connectionNonce();
-            if (send(new DesktopModePayload(nonce, nextSequence, desiredUi, desiredForcedMenuIds), "mode")) {
+            if (send(new DesktopModePayload(nonce, nextSequence, desiredUi, desiredForcedMenuIds, desiredSupportedMenuIds), "mode")) {
                 CONNECTION.updateMode(nonce, nextSequence, desiredUi);
                 requestedUiEnabled = desiredUi;
                 requestedForcedMenuIds = desiredForcedMenuIds;
+                requestedSupportedMenuIds = desiredSupportedMenuIds;
                 modeResendTicks = 0;
             }
         }
@@ -389,6 +408,13 @@ public final class DesktopContainerClient {
             DesktopDebug.trace("client opening data ignored session={} reason=inactive-or-invalid", payload.sessionId());
             return;
         }
+        if (payload.metadataOnly()) {
+            Long token = SESSION_TOKENS.get(payload.sessionId());
+            if (token == null || token.longValue() != payload.sessionToken()) return;
+            InventoryDesktopScreen screen = InventoryDesktopScreen.current(minecraft);
+            if (screen != null) screen.updateCompanionOwners(payload.sessionId(), payload.companionOwnerIds());
+            return;
+        }
         if (PENDING_MENU_OPEN_DATA.size() >= DesktopProtocol.MAX_DESKTOP_SESSIONS
             && !PENDING_MENU_OPEN_DATA.containsKey(payload.sessionId())) {
             rejectIncompatible(minecraft, "The server exceeded the pending desktop opening-data limit.");
@@ -396,7 +422,7 @@ public final class DesktopContainerClient {
         }
         PENDING_MENU_OPEN_DATA.put(
             payload.sessionId(),
-            new MenuOpenData(payload.sessionToken(), payload.menuTypeId(), payload.replacesSessionId(), payload.data())
+            new MenuOpenData(payload.sessionToken(), payload.menuTypeId(), payload.replacesSessionId(), payload.data(), payload.companionOwnerIds())
         );
         DesktopDebug.trace(
             "client opening data accepted session={} menuType={} replaces={} bytes={}",
@@ -1198,6 +1224,7 @@ public final class DesktopContainerClient {
         incompatibilityShown = false;
         requestedUiEnabled = false;
         requestedForcedMenuIds = java.util.List.of();
+        requestedSupportedMenuIds = java.util.List.of();
         playerSessionToken = 0L;
         modeSequence = -1L;
         modeResendTicks = 0;
@@ -1302,9 +1329,10 @@ public final class DesktopContainerClient {
         }
     }
 
-    private record MenuOpenData(long sessionToken, int menuTypeId, int replacesSessionId, byte[] data) {
+    private record MenuOpenData(long sessionToken, int menuTypeId, int replacesSessionId, byte[] data, int[] companionOwnerIds) {
         private MenuOpenData {
             data = data.clone();
+            companionOwnerIds = companionOwnerIds.clone();
         }
     }
 }
