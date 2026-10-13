@@ -4,6 +4,8 @@
 
 Salt's Inventory Update reworks Minecraft inventory management into a flexible desktop-style interface. Instead of every container taking over the whole screen and repeating your player inventory underneath it, inventories open as separate movable windows that can stay on screen together.
 
+The core mod works independently. Install the matching optional **Salt's Inventory Compatibility** extension to enable the supported Tom's Simple Storage, recipe-browser, Mod Menu, Applied Energistics 2 and Forge/NeoForge Sophisticated integrations. AE2 windows use the artwork and supported views of the installed AE2 release. Supported third-party mods remain optional; the extension requires the same Minecraft/loader target and core version.
+
 ![mutiple chests open at one time](https://cdn.modrinth.com/data/cached_images/933d2a9239a50fee4eb8e202b122e51c3ce839f0.png)
 
 ## Desktop-Style Inventory Windows

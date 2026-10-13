@@ -59,6 +59,7 @@ public final class NeoForgeClientPlatform {
         }
         initialized = true;
 
+        registerResourceReloadListener(modBus);
         modBus.addListener(KeyBindingHelper::onRegisterKeyMappings);
         modBus.addListener(KeyMappingHelper::onRegisterKeyMappings);
         modBus.addListener(NeoForgeClientPlatform::onClientSetup);
@@ -67,6 +68,41 @@ public final class NeoForgeClientPlatform {
         NeoForge.EVENT_BUS.addListener(ClientCommandRegistrationCallback.EVENT::onRegisterClientCommands);
         NeoForge.EVENT_BUS.addListener(NeoForgeClientPlatform::onMovementInputUpdate);
         registerConfigScreen();
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static void registerResourceReloadListener(IEventBus modBus) {
+        // NeoForge changed the event name and added keyed listeners after 1.21.1.
+        // Register on the mod bus before Minecraft freezes the reload listener list.
+        try {
+            Class eventType;
+            try {
+                eventType = Class.forName("net.neoforged.neoforge.client.event.AddClientReloadListenersEvent");
+            } catch (ClassNotFoundException legacy) {
+                eventType = Class.forName("net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent");
+            }
+            modBus.addListener(eventType, event -> {
+                net.minecraft.server.packs.resources.ResourceManagerReloadListener listener = manager ->
+                    Minecraft.getInstance().execute(InventoryDesktopScreen::resourcesReloaded);
+                try {
+                    for (Method method : event.getClass().getMethods()) {
+                        if (method.getName().equals("addListener") && method.getParameterCount() == 2) {
+                            method.invoke(event, WindowedInventoryClient.id("desktop_resources"), listener);
+                            return;
+                        }
+                        if (method.getName().equals("registerReloadListener") && method.getParameterCount() == 1) {
+                            method.invoke(event, listener);
+                            return;
+                        }
+                    }
+                    throw new IllegalStateException("Unsupported NeoForge resource reload event " + event.getClass().getName());
+                } catch (ReflectiveOperationException error) {
+                    throw new IllegalStateException("Could not register desktop resource reload listener", error);
+                }
+            });
+        } catch (ClassNotFoundException error) {
+            throw new IllegalStateException("NeoForge client resource reload event is unavailable", error);
+        }
     }
 
     private static void registerConfigScreen() {

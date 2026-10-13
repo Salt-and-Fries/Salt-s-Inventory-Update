@@ -1,0 +1,11 @@
+{
+  "includes": ["../../terminals/terminal.json"],
+  "desktop": {
+    "width": 195,
+    "height": 133,
+    "resize": "grid",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  }
+}

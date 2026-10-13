@@ -1,0 +1,23 @@
+{
+  "includes": ["../sky_chest.json"],
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.ae2.SkyChest",
+        "color": "#d6dfcf"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    }
+  },
+  "desktop": {
+    "width": 176,
+    "height": 96,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  }
+}

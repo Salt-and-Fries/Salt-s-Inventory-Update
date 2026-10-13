@@ -6,9 +6,9 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import com.salts_inventory_update.client.input.CharacterEvent;
-import com.salts_inventory_update.client.input.KeyEvent;
-import com.salts_inventory_update.client.input.MouseButtonEvent;
+import com.salts_inventory_update.api.client.input.CharacterEvent;
+import com.salts_inventory_update.api.client.input.KeyEvent;
+import com.salts_inventory_update.api.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import com.salts_inventory_update.api.client.desktop.DesktopRenderContext;
 

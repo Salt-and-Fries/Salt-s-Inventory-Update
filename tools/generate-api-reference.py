@@ -82,7 +82,8 @@ for root in SOURCES:
         if path.stem in {'DesktopChromeMetrics', 'DesktopSurfaceControl'}:
             lines += ['[Standard control placement and compression](desktop_window_api.md#matching-the-controls-on-salts-vanilla-windows) specifies ordering, full-title fit thresholds, the expanded-or-More/Close policy, trailing gap/right inset, title minimum and the supported mod-owned control subset.', '']
         lines += ['```java']
-        lines += [line for line in source.splitlines() if line.startswith('import ')]
+        lines += [line for line in source.splitlines() if line.startswith('import ')
+                  and not re.match(r'import (?:static )?com\.salts_inventory_update\.(?!api\.)', line)]
         lines += [header + ' {']
         lines += inventory(source, masked, opening, end, match[1] == 'interface', match[1] == 'enum', '    ', record_constructor(header))
         lines += ['}', '```', '']

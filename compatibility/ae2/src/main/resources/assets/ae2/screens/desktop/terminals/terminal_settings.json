@@ -1,0 +1,13 @@
+{
+  "includes": ["../../terminals/terminal_settings.json"],
+  "generatedBackground": { "width": 220, "height": 216 },
+  "palette": { "MUTED_TEXT_COLOR": "#6b6a79" },
+  "desktop": {
+    "width": 220,
+    "height": 216,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 0
+  }
+}

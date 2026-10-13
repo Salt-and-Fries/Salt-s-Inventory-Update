@@ -1,0 +1,1 @@
+{"class":"appeng/client/gui/ICompositeWidget","fields":[],"fieldChanges":[],"methods":[{"name":"cancelPointer","desc":"()V","access":1,"exceptions":[],"maxStack":0,"maxLocals":1,"instructions":[{"type":8,"op":-1,"label":"o0"},{"type":0,"op":177},{"type":8,"op":-1,"label":"o1"}],"handlers":[],"visibleAnnotations":[],"invisibleAnnotations":[]}],"changes":[],"removedMethods":[]}

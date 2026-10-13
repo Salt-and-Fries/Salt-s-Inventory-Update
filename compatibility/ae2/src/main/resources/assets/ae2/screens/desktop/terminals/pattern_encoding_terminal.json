@@ -1,0 +1,11 @@
+{
+  "includes": ["../../terminals/pattern_encoding_terminal.json"],
+  "desktop": {
+    "width": 195,
+    "height": 214,
+    "resize": "grid",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 89
+  }
+}

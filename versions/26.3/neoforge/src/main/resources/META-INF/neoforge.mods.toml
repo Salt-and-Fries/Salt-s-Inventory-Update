@@ -28,10 +28,3 @@ type = "required"
 versionRange = "[${minecraft_version}]"
 ordering = "NONE"
 side = "BOTH"
-
-[[dependencies.${mod_id}]]
-modId = "jei"
-type = "optional"
-versionRange = "[31.7.0,)"
-ordering = "AFTER"
-side = "CLIENT"

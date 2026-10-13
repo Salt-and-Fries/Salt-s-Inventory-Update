@@ -6,8 +6,6 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.jar.Manifest;
 
-import com.salts_inventory_update.compat.toms_storage.server.TomsStorageServerCompat;
-import com.salts_inventory_update.compat.sophisticated.SophisticatedCompatBootstrap;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.platform.ForgePlatform;
 import com.salts_inventory_update.server.DesktopContainerSessions;
@@ -28,8 +26,8 @@ public final class SaltsInventoryUpdateForge {
         DesktopPackets.registerPayloadTypes();
         DesktopContainerSessions.initialize();
         com.salts_inventory_update.integration.DesktopIntegrationBootstrap.initialize();
-        TomsStorageServerCompat.initialize();
-        SophisticatedCompatBootstrap.initialize(modBus);
+
+
 
         ForgePlatform.initializeClient(modBus);
     }

@@ -1,0 +1,58 @@
+// Opt-in test launcher. Removes every project implementation output from the
+// game classpath and loads the remapped production mods from an isolated mods directory.
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    def core = root.project(':1.21.1:fabric')
+    def extension = root.project(':compatibility:1.21.1:fabric')
+    def qa = core.sourceSets.create('gameplayQa')
+    qa.java.srcDir(root.file('functional-tests/src/main/java'))
+    qa.java.srcDir(root.file('functional-tests/packaged-java'))
+    qa.java.include('**/InWorldGameplayHarness*.java', '**/GameplayQaInitializer.java')
+    qa.resources.srcDir(root.file('functional-tests/packaged-resources'))
+    qa.compileClasspath += core.sourceSets.main.compileClasspath + core.sourceSets.main.output
+    core.tasks.named(qa.compileJavaTaskName).configure { dependsOn(core.tasks.named('classes')) }
+    def includeExtension = root.providers.gradleProperty('qaExtension').map { it.toBoolean() }.getOrElse(false)
+    def scenario = includeExtension ? 'extension-empty' : 'core'
+    def run = core.tasks.named('runClient').get()
+    core.tasks.register('runPackagedGameplay', JavaExec) {
+        group = 'verification'
+        description = 'Runs disposable in-world QA against production JARs; project implementation directories are excluded.'
+        dependsOn(core.tasks.named(qa.classesTaskName), core.tasks.named('remapJar'))
+        if (includeExtension) dependsOn(extension.tasks.named('remapJar'))
+        dependsOn(run.taskDependencies.getDependencies(run).findAll { it.name != 'runClient' })
+        javaLauncher.set(run.javaLauncher)
+        mainClass.set(run.mainClass)
+        def folder = core.layout.buildDirectory.dir("runtime-smoke/packaged-$scenario").get().asFile
+        workingDir = folder
+        environment('SIU_GAMEPLAY_TESTS', 'true')
+        environment('SIU_FUNCTIONAL_TESTS', 'false')
+        environment('SIU_QA_SCENARIO', scenario)
+        environment('SIU_FUNCTIONAL_TEST_LOADER', 'fabric')
+        environment('SIU_QA_OUTPUT', root.file("build/gameplay-qa/packaged-$scenario/1.21.1-fabric").absolutePath)
+        doFirst {
+            if (root.providers.gradleProperty('includeFunctionalTests').map { it.toBoolean() }.getOrElse(false)) {
+                throw new GradleException('Packaged QA requires production JARs without functional test sources; omit includeFunctionalTests.')
+            }
+            def projectPrefix = root.projectDir.canonicalPath + File.separator
+            classpath = run.classpath.filter { f ->
+                def path = f.canonicalPath
+                // Retain mapped Minecraft/loader caches; omit all project source outputs and API dev jars.
+                !path.startsWith(projectPrefix) || path.contains(File.separator + '.gradle' + File.separator)
+            } + qa.output
+            args = run.args
+            jvmArgs = run.jvmArgs.findAll { !it.startsWith('-Dfabric.classPathGroups=') }
+            systemProperties(run.systemProperties.findAll { k,v -> k != 'fabric.classPathGroups' })
+            systemProperty('fabric.classPathGroups', qa.output.files.collect { it.absolutePath }.join(File.pathSeparator))
+            def mods = new File(folder, 'mods')
+            mods.mkdirs()
+            // This folder is dedicated to this exact test combination.
+            mods.listFiles().findAll { it.name.endsWith('.jar') }.each { it.delete() }
+            [core, includeExtension ? extension : null].findAll { it != null }.each { module ->
+                def artifact = module.tasks.named('remapJar').get().archiveFile.get().asFile
+                root.copy { from(artifact); into(mods) }
+            }
+            println('PACKAGED_QA_MODS=' + mods.listFiles().collect { it.name }.sort())
+            println('PACKAGED_QA_PROJECT_CLASSPATH=' + classpath.files.findAll { it.canonicalPath.startsWith(projectPrefix) && !it.canonicalPath.contains(File.separator + '.gradle' + File.separator) })
+        }
+    }
+}

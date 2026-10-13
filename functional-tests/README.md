@@ -2,6 +2,9 @@
 
 This directory contains the shared functional-test setup for Salt's Inventory Update across every supported Minecraft version and loader.
 
+For disposable in-world interaction checks, native framebuffer evidence and production-JAR
+launches, see [GAMEPLAY-QA.md](GAMEPLAY-QA.md). Those results are separate from startup smoke checks.
+
 Normal builds do not include this harness. It is only compiled when Gradle is run with:
 
 ```powershell
@@ -23,7 +26,7 @@ The current runtime matrix covers every supported version and loader pair:
 
 ## Test Types
 
-The headless click regressions run with `-I functional-tests/sort-tests.gradle` and the Fabric `test` tasks. `DesktopSlotGesturesTest` checks replies arriving during held clicks/drags and verifies that left/right placement clicks become drags only after reaching another accepted slot, including across windows. `DesktopPickupAllTest` checks native anchor pickup and slot restrictions, and the 1.21.1 `DesktopCursorRevisionTest` exercises the vanilla cursor packets and the desktop revision acknowledgement, including counter wraparound.
+The headless click regressions now run automatically in the normal root build and each core Fabric `test` task. The legacy `-I functional-tests/sort-tests.gradle` invocation remains supported. `DesktopSlotGesturesTest` checks replies arriving during held clicks/drags and verifies that left/right placement clicks become drags only after reaching another accepted slot, including across windows. `DesktopPickupAllTest` checks native anchor pickup and slot restrictions, and the 1.21.1 `DesktopCursorRevisionTest` exercises the vanilla cursor packets and the desktop revision acknowledgement, including counter wraparound. `DesktopRecipeProviderTest` covers the standalone browser fallback, provider priority/removal and registration rollback; each compatibility Fabric test task runs `OptionalIntegrationBootstrapTest` for absent targets and failure isolation.
 
 There are three layers:
 
@@ -432,6 +435,51 @@ $env:SIU_FUNCTIONAL_TEST_LOADER = 'neoforge'
 ```
 
 ## Known Boundary
+
+The AE2 migration has an opt-in native screenshot atlas on NeoForge 26.1.2,
+26.2, 26.3 and 1.21.1, and Fabric/Forge 1.20.1. The capture baseline uses each installed AE2 release's native design:
+
+```powershell
+.\functional-tests\scripts\Run-GameplayQa.ps1 -Minecraft 1.20.1 -Loader fabric -Scenario ae2-atlas
+```
+
+Use `-AtlasMenu wireless_access_point` to isolate one native menu. The harness
+normalizes underscores only in the run-directory profile and keeps the native
+registry ID intact. Atlas code is excluded from production JARs; attempting to
+package a JAR with `includeAe2AtlasQa=true` fails deliberately. Captures and
+geometry reports go under `build/gameplay-qa/ae2-atlas`.
+
+For a focused capture, `tools/compare-ae2-atlas.py --match-labels` matches its
+unique presentation label to the full reference even when the capture index
+changes. It retains the full reference presentation count and reports every
+uncaptured reference view as missing; a focused pass cannot prove full UI fidelity.
+The catalog's native focus ID is `patternaccessterminal`. Deferred plot setup
+errors now write `failed.txt`, allowing the harness to fail immediately instead
+of waiting for its timeout with an unfinished fixture.
+
+The focused CPU lifecycle profile submits a real AE2 crafting job, holds its
+execution, waits for the desktop client to receive active state, clicks Cancel
+through the desktop, and verifies both client idle state and authoritative
+server cancellation. It repeats the cycle and never assigns client status fields.
+AE2 19 and 26 use native suspension; AE2 15 temporarily removes the disposable
+fixture's assembler and restores it after cancellation.
+Use the separate output profile so the regular atlas evidence is retained:
+
+```powershell
+.\functional-tests\scripts\Run-GameplayQa.ps1 -Minecraft 26.3 -Loader neoforge -Scenario ae2-atlas -AtlasMenu craftingcpu -CpuLifecycle
+```
+
+A pass requires `atlas/cpu-lifecycle.json` as well as the gameplay summary.
+The same profile has passed on all six available native targets, with five
+gameplay records and two verified job/cancel cycles each. The lifecycle helper and all other atlas classes remain excluded from release JARs.
+
+Atlas coverage follows native version features. AE2 19/26 require all 90 named
+presentations and 40 unique native menu types; AE2 15 requires all 76 named
+presentations and 39 types across 40 fixtures. Its combined chest, larger
+sky-chest inventory and absence of key-type selection are expected native
+differences. The gate verifies every expected label, screenshot and geometry,
+rejects duplicates, and checks the actual upstream feature classes. Cross-version
+pixel comparisons are diagnostics, not a requirement to copy newer AE2 artwork.
 
 This is not a pixel-perfect UI automation suite. It does not replace a small visual pass for rendered layout, mouse dragging, resizing, ghost pins, and manual item movement. It is meant to catch common cross-version and cross-loader breakages quickly before doing any heavier manual pass.
 

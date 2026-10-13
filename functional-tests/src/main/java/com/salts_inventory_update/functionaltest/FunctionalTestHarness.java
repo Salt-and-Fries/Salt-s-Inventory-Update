@@ -23,9 +23,9 @@ import com.salts_inventory_update.api.client.desktop.DesktopClientApi;
 import com.salts_inventory_update.client.SaltsInventoryConfig;
 import com.salts_inventory_update.client.WindowOpeningStyle;
 import com.salts_inventory_update.client.WindowedInventoryClient;
-import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserAccess;
-import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserBridge;
-import com.salts_inventory_update.compat.recipebrowser.RecipeBrowserSource;
+import com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserAccess;
+import com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge;
+import com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserSource;
 import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.platform.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -41,6 +41,10 @@ public final class FunctionalTestHarness {
     }
 
     public static synchronized void tryInitialize() {
+        if ("true".equalsIgnoreCase(System.getenv("SIU_GAMEPLAY_TESTS"))) {
+            InWorldGameplayHarness.initialize();
+            return;
+        }
         if (!isEnabled() || initialized) {
             return;
         }
@@ -73,6 +77,7 @@ public final class FunctionalTestHarness {
             runTest("config-normalization", recorder, FunctionalTestHarness::testConfigNormalization);
             runTest("desktop-menu-screens", recorder, FunctionalTestHarness::testDesktopMenuScreens);
             runTest("desktop-api-definitions", recorder, FunctionalTestHarness::testDesktopApiDefinitions);
+            runTest("compatibility-registrations", recorder, FunctionalTestHarness::testCompatibilityRegistrations);
             runTest("desktop-packets", recorder, FunctionalTestHarness::testDesktopPackets);
             runTest("desktop-text-editing", recorder, FunctionalTestHarness::testDesktopTextEditing);
             runTest("inventory-expansion", recorder, FunctionalTestHarness::testInventoryExpansion);
@@ -111,12 +116,18 @@ public final class FunctionalTestHarness {
     }
 
     private static void testRecipeBrowserIntegration(ResultRecorder recorder) {
-        if (!FabricLoader.getInstance().isModLoaded("emi")) {
+        FabricLoader loader = FabricLoader.getInstance();
+        if (!loader.isModLoaded("salts_inventory_compat")) {
             return;
         }
         RecipeBrowserAccess access = RecipeBrowserBridge.access();
-        recorder.check("recipe_browser.emi_selected", access.source() == RecipeBrowserSource.EMI);
-        recorder.check("recipe_browser.emi_available", access.isAvailable());
+        if (loader.isModLoaded("emi")) {
+            recorder.check("recipe_browser.emi_selected", access.source().id().equals("emi"));
+            recorder.check("recipe_browser.emi_available", access.isAvailable());
+        } else if (loader.isModLoaded("roughlyenoughitems")) {
+            recorder.check("recipe_browser.rei_selected", access.source().id().equals("roughlyenoughitems"));
+            recorder.check("recipe_browser.rei_available", access.isAvailable());
+        }
     }
 
     private static void testConfigNormalization(ResultRecorder recorder) {
@@ -168,6 +179,36 @@ public final class FunctionalTestHarness {
         for (String menuName : List.of("FURNACE", "BLAST_FURNACE", "SMOKER")) {
             MenuType<?> menuType = menuType(menuName);
             recorder.check("api_definition." + menuName.toLowerCase(Locale.ROOT), menuType != null && hasClientDefinition(menuType));
+        }
+    }
+
+    private static void testCompatibilityRegistrations(ResultRecorder recorder) {
+        FabricLoader loader = FabricLoader.getInstance();
+        if (!loader.isModLoaded("salts_inventory_compat")) return;
+        if (loader.isModLoaded("modmenu")) {
+            try {
+                Class<?> modMenu = Class.forName("com.terraformersmc.modmenu.ModMenu");
+                recorder.check("compatibility.modmenu.core_config_factory",
+                    Boolean.TRUE.equals(modMenu.getMethod("hasConfigScreen", String.class).invoke(null, "salts_inventory_update")));
+            } catch (ReflectiveOperationException failure) {
+                throw new IllegalStateException("Could not query Mod Menu's public config registration", failure);
+            }
+        }
+        java.util.Set<String> announced = java.util.Set.copyOf(DesktopClientApi.supportedMenuIds());
+        for (String target : List.of("sophisticatedbackpacks", "sophisticatedstorage", "toms_storage")) {
+            if (!loader.isModLoaded(target)) continue;
+            if (target.startsWith("sophisticated") && loaderLabel().equals("fabric")) continue;
+            int expected = target.equals("sophisticatedbackpacks") ? 2 : target.equals("sophisticatedstorage") ? 4 : 8;
+            long count = announced.stream().filter(id -> id.startsWith(target + ":")).count();
+            recorder.check("compatibility." + target + ".client_menu_count", count == expected);
+            if (target.equals("toms_storage")) continue; // Server registration is deferred until a world starts.
+            for (MenuType<?> type : net.minecraft.core.registries.BuiltInRegistries.MENU) {
+                var id = net.minecraft.core.registries.BuiltInRegistries.MENU.getKey(type);
+                if (id != null && id.getNamespace().equals(target) && announced.contains(id.toString())) {
+                    recorder.check("compatibility." + id + ".server",
+                        com.salts_inventory_update.api.server.desktop.DesktopServerApi.hasWindowSupport(type));
+                }
+            }
         }
     }
 

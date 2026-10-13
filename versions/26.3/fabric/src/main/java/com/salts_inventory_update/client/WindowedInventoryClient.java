@@ -17,7 +17,6 @@ import org.lwjgl.sdl.SDLMouse;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
 import com.salts_inventory_update.SaltsInventoryRuntime;
-import com.salts_inventory_update.compat.toms_storage.client.TomsStorageClientCompat;
 import com.salts_inventory_update.mixin.client.MouseHandlerAccessor;
 
 public final class WindowedInventoryClient {
@@ -68,7 +67,7 @@ public final class WindowedInventoryClient {
                 com.salts_inventory_update.api.integration.DesktopIntegrationContext.Phase.CLIENT);
         });
         InventoryDesktopScreen.registerInternalApiDefinitions();
-        TomsStorageClientCompat.initialize();
+
         InventoryDesktopScreen.registerContainerScreens();
         DesktopContainerClient.initializeNetworking();
         registerClientCommands();

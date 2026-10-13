@@ -1,0 +1,11 @@
+{
+  "includes": ["../wireless_access_point.json"],
+  "desktop": {
+    "width": 176,
+    "height": 92,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 76
+  }
+}

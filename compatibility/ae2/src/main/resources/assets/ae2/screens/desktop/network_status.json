@@ -1,0 +1,14 @@
+{
+  "includes": ["../network_status.json"],
+  "widgets": {
+    "export_grid": { "left": 8, "top": 157, "width": 100, "height": 20 }
+  },
+  "desktop": {
+    "width": 195,
+    "height": 181,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 0
+  }
+}

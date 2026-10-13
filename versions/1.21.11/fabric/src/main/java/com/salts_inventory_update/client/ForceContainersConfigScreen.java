@@ -5,7 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import net.minecraft.client.gui.GuiGraphics;
-import com.salts_inventory_update.client.gui.GuiGraphicsExtractor;
+import com.salts_inventory_update.api.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;

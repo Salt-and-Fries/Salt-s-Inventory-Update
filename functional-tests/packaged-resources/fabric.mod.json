@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "salts_gameplay_qa",
+  "version": "1.0.0",
+  "name": "Salt's disposable gameplay QA",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.salts_inventory_update.functionaltest.GameplayQaInitializer"]
+  },
+  "depends": {"fabricloader": ">=0.16.10", "minecraft": "1.21.1", "salts_inventory_update": "0.1.4"}
+}

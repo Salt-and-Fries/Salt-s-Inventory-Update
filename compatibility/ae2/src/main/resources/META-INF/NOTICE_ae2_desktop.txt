@@ -1,0 +1,10 @@
+AE2 desktop compatibility additions originate in Salt's AE2 API test fork.
+https://github.com/Salt-and-Fries/Applied-Energistics-2-Salts-inventory-api-test/tree/c9b815ec067a65515d16dcc1188ff6e61ca16270
+Adapted additions are distributed under LGPL-3.0-or-later.
+Corresponding adapted source is in compatibility/ae2 in the Salt inventory repository.
+Native AE2 implementation classes and textures are supplied by the separate AE2 mod.
+
+AE2 15 desktop CPU fallbacks include seven small pixel regions from unmodified
+Applied Energistics 2 26.3.1-alpha (LGPL-3.0-or-later), with their source coordinates
+and SHA-256 digests recorded in ae2-legacy-cpu-art.json. Ordinary native textures
+and all native implementation classes remain in the installed upstream mod.

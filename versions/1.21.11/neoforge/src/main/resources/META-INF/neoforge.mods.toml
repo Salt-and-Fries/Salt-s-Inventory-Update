@@ -15,9 +15,6 @@ description = "${description}"
 [[mixins]]
 config = "${mod_id}.mixins.json"
 
-[[mixins]]
-config = "${mod_id}.sophisticated.mixins.json"
-
 [[dependencies.${mod_id}]]
 modId = "neoforge"
 type = "required"
@@ -30,46 +27,4 @@ modId = "minecraft"
 type = "required"
 versionRange = "[${minecraft_version}]"
 ordering = "NONE"
-side = "BOTH"
-
-[[dependencies.${mod_id}]]
-modId = "jei"
-type = "optional"
-versionRange = "[27.4.0,)"
-ordering = "AFTER"
-side = "CLIENT"
-
-[[dependencies.${mod_id}]]
-modId = "roughlyenoughitems"
-type = "optional"
-versionRange = "[0,)"
-ordering = "AFTER"
-side = "CLIENT"
-
-[[dependencies.${mod_id}]]
-modId = "emi"
-type = "optional"
-versionRange = "[0,)"
-ordering = "AFTER"
-side = "CLIENT"
-
-[[dependencies.${mod_id}]]
-modId = "sophisticatedcore"
-type = "optional"
-versionRange = "[1.4.97,2)"
-ordering = "AFTER"
-side = "BOTH"
-
-[[dependencies.${mod_id}]]
-modId = "sophisticatedbackpacks"
-type = "optional"
-versionRange = "[3.25.84,4)"
-ordering = "AFTER"
-side = "BOTH"
-
-[[dependencies.${mod_id}]]
-modId = "sophisticatedstorage"
-type = "optional"
-versionRange = "[1.5.102,2)"
-ordering = "AFTER"
 side = "BOTH"

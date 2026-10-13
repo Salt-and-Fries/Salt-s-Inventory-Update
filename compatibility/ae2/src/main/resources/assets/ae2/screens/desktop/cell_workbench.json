@@ -1,0 +1,11 @@
+{
+  "includes": ["../cell_workbench.json"],
+  "desktop": {
+    "width": 176,
+    "height": 162,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  }
+}

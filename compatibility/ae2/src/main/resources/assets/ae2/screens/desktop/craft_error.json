@@ -1,0 +1,20 @@
+{
+  "includes": ["../craft_error.json"],
+  "text": {
+    "errorText": {
+      "position": { "left": 110, "top": 22 },
+      "align": "CENTER",
+      "maxWidth": 200,
+      "color": "ERROR"
+    }
+  },
+  "slots": { "MISSING_INGREDIENT": { "left": 101, "top": 44 } },
+  "desktop": {
+    "width": 219,
+    "height": 87,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 0
+  }
+}

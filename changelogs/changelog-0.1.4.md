@@ -1,8 +1,70 @@
 # Salt's Inventory Update 0.1.4 Changelog
 
-This update overhauls the public API so other mods can integrate intricate interfaces while retaining their original artwork, widgets and inventory behavior. Integrations can remain optional: the adopting mod can load and use its normal screens without Salt installed. The update also adds shared real-inventory companion windows and manager-routed controls inside mod-owned title areas.
+This update separates Salt's Inventory Update into an independent inventory framework and an optional Salt's Inventory Compatibility mod. It also overhauls the public API so other mods can integrate intricate interfaces while retaining their original artwork, widgets and inventory behavior, adds shared real-inventory companion windows and manager-routed controls, and brings the AE2 desktop integration into the optional extension.
 
 The final public integration API is **version 5** and the desktop wire protocol is **version 4**. Salt clients and servers must use matching protocol versions. External integrations must rebuild for the matching Minecraft/loader artifact and declare `apiVersion=5`; older public API entrypoints and compatibility aliases are not retained.
+
+## Core And Compatibility Separation
+
+- Preserved the existing Prism multi-version structure: Core remains under `versions/<Minecraft>/<loader>`, and the extension lives under `compatibility/versions/<Minecraft>/<loader>` with independent metadata, entrypoints, conditional mixins and production packaging.
+- Core keeps `salts_inventory_update` and owns inventory expansion, vanilla desktop windows, configuration, persistence, networking/security, public API and external-provider discovery. It has no dependency on the extension or its third-party integration targets.
+- Added the optional `salts_inventory_compat` mod, requiring the exact matching Core version. Install matching artifacts for the same Minecraft version and loader to activate supported integrations; third-party mods remain optional.
+- Migrated Tom's Simple Storage, JEI, REI, EMI, Fabric Mod Menu and the supported Forge/NeoForge Sophisticated Core, Backpacks and Storage implementations into separate integration packages. Their plugins, conditional mixins, event handlers and integration-specific resources now belong to the extension.
+- Preserved configuration files, generic recipe-window persistence keys and desktop protocol identifiers. The provider-neutral recipe browser contract and no-provider fallback stay in Core, while third-party runtime implementations live in the extension.
+- Extension compilers receive only the matching Core public API JAR, tracked as a Gradle input so API changes trigger recompilation. Core implementation classes are absent from that compiler classpath. Core is a separate development-runtime mod and is never shaded, nested or copied into the extension.
+- Added build gates for imports, fully qualified calls, reflective names, encoded native patches, class constant pools, metadata and archive contents. Integration hooks cannot target private Core classes or bypass the API through reflection, access wideners or mixins.
+- Isolated optional initialization by target presence and supported ABI, with lazy class resolution, transactional rollback and failure isolation so one unavailable integration does not prevent unrelated integrations from registering.
+
+## Public API Additions For Extension Consumers
+
+- Promoted recipe-browser models and `RecipeBrowserAccess`/`RecipeBrowserBridge` into `api.client.recipebrowser`. External providers can install and clear their backend with a namespaced source and priority; Core handles provider selection and the empty fallback.
+- Added the generalized native player-inventory quick-move policy and storage-slot registration so integrations can retain native transfer behavior without importing Core menu helpers.
+- Added `DesktopSessions` for authenticated native menu transitions, serialized opening-data capture, session-targeted payloads, active routing sessions, source identities and native ownership queries.
+- Added guarded session-context `carriedStack`/`setCarriedStack` access for the canonical player cursor. Native action consumers commit the shared cursor before broadcasting; detached cursor copies are cleared to prevent duplicate settlement.
+- Added `DesktopItemSources` for stable item-backed inventory identity and lifetime-scoped protection, plus `DesktopSynchronization` for retaining the active desktop synchronizer during native installation.
+- Added `DesktopEnvironment` lifecycle, mod-presence, diagnostics and transactional registration hooks; client mutation readiness, configuration-screen factories and integration help registration; and supported payload-limit/theme-asset constants.
+- Moved legacy graphics/input wrappers into supported `api.client.gui` and `api.client.input` packages and exposed native mouse-button normalization. Legacy consumers must update the moved imports and recompile; API version 5 and wire version 4 remain unchanged by the split.
+- Expanded the generated signature reference to 86 public types and documented the new contracts as reusable third-party extension points rather than privileged bundled-integration access.
+
+## Applied Energistics 2 Desktop Integration
+
+- Ported the reviewed sibling fork's desktop additions into the extension while preserving unmodified installed upstream AE2 implementations. The reference repository and its built JAR remained read-only throughout the session.
+- Added reviewed native adapters for AE2 15.4.11 on Fabric/Forge 1.20.1, AE2 19.2.18 on NeoForge 1.21.1, AE2 26.1.13-beta on NeoForge 26.1.2, AE2 26.2.1-alpha on NeoForge 26.2 and AE2 26.3.1-alpha on NeoForge 26.3.
+- All twelve extension artifacts include the shared desktop additions. Native AE2 support is not claimed for Fabric 1.21.1/1.21.11/26.1.2/26.2/26.3 or NeoForge 1.21.11 because no reviewed upstream input was available for those targets. Other integrations remain available.
+- Retained native screens, repositories, slot rendering/input, menu factories, opening serializers, packet registries/codecs and action allowlists. Verified instruction deltas attach desktop behavior to AE2 only; release JARs contain no native `appeng` implementation copies, upstream AE2 JARs or Core implementation classes.
+- Imported the fork's 42 desktop screen profiles byte-for-byte and its 59 added translation keys, with provenance and LGPL notices. Ordinary screen documents and native textures come from the installed AE2 release, preserving resource-pack overrides.
+- Added lifetime-addressed native updates and early-update queues, authenticated desktop actions, scoped menu reconstruction/navigation, detached menu cleanup, desktop management controls and shared toolbox companions tied to the original inventory's stack identity.
+- Preserved native packet validation and bounded transport, including action/update allowlists, buffer ownership, trailing-byte checks and ordinary AE2 GUI synchronization. Crafting CPU desktop state uses a separate five-byte public session payload rather than changing ordinary AE2 `GuiSync` decoding.
+- Added initial server-authoritative CPU state delivery and job/cancel updates. Disconnect cleanup releases receivers, queued updates and discarded menu/toolbox lifetimes.
+- Each target uses its own upstream UI design: Minecraft 1.21.1 follows AE2 19, and 26.3 follows AE2 26.3. Older targets retain their native features and artwork instead of acquiring later ordinary AE2 behavior merely for screenshot parity.
+- Preserved AE2 15's native knife/condenser geometry, larger 36-slot sky chest, combined chest menu and absence of newer key-type subviews. Added only the documented desktop adaptations needed for window controls, navigation, frame contours and the older CPU presentation.
+
+## Runtime And Legacy UI Fixes
+
+- Restored missing legacy 1.21.1 expansion capability state, corrected Tom's terminal cursor commits and fixed late NeoForge resource-listener registration found by in-world testing.
+- Resent serialized opening data for every full 1.20.1 menu snapshot so reconstructed client menus retain their required native host/context; session replacement metadata is applied only on the initial opening.
+- Corrected duplicate Sophisticated bindings, repeated-world Tom's registration and the Forge extension refmap identity. Forge development launches explicitly load the separate Core mixin configuration.
+- Corrected live cursor-session validation to use the existing active session owner, preserving guarded native cursor actions on Forge 1.20.1.
+- Fixed AE2 15 ME Chest and terminal bottom corners by leaving the final native footer rows for the footer pass. Plain terminals recognize their 97-pixel source footer and extend the native 176-pixel footer caps/center across the actual terminal width, removing the scrollbar-side border seam.
+- Matched legacy pattern mode-tab bounds to the native 22-by-22 artwork, with 21-pixel shared-border spacing and the final tab aligned to the footer. Ordinary styles and custom bounds are preserved.
+- Removed the crafting CPU selector's protruding lower join by finishing its shared rail after attachment and buffered-widget rendering. These visual corrections affect only the shared 1.20.1 compatibility adapter and its mapped native contracts; modern UI artwork is unchanged.
+
+## Independent Builds, Reports And Session Verification
+
+- The normal root `./gradlew build` or `.\gradlew.bat build` automatically builds both mods for all twelve targets and collects 24 correctly remapped production JARs. Individual Core and compatibility module builds remain available.
+- Release paths are `dist/core/salts_inventory_update-<Minecraft>-<Loader>-0.1.4.jar` and `dist/compatibility/salts_inventory_compat-<Minecraft>-<Loader>-0.1.4.jar`, with `SHA256SUMS.txt` in both directories. Root distribution preparation and exact-output synchronization prevent stale, development, sources, intermediate, API/ABI and QA artifacts from being distributed. The legacy `build/release/0.1.4` bundle remains Core-only.
+- Retained Prism's loader toolchains and separate publishing configuration. Modern NeoForge builds use the supported binary-patch pipeline without requiring `CI=true`, and prevent cross-loader artifact-cache reuse on affected targets.
+- Added separation/extension guides, native version/ABI audits, reproducible resource/delta tools, portable merge regressions and a disposable-world gameplay harness. Atlas coverage verifies labels, geometry, controls, native menu counts and actual version-specific subview availability; missing supported views fail validation. QA classes and observer mixins are excluded from production packaging.
+- Final normal root build passed: **849 JUnit tests across 114 suite reports, zero failures, errors or skipped tests**, plus **16 portable instruction-merge regressions**. API examples, source parity, compiler isolation, native symbol/stack validation and all 24 production archive boundary checks passed.
+- Core-only in-world gameplay passed all twelve targets. Extension-without-targets and JEI, EMI, REI/Mod Menu, Tom's Storage and Sophisticated gameplay profiles passed their recorded scenarios. Separate production-artifact Core-only and paired Fabric 1.21.1 launches also passed using an independent QA mod.
+- All six available native AE2 targets passed the four-menu gameplay profile: 312 records per AE2 15 loader and 319 per newer target. All six passed initial CPU delivery and two real crafting job/cancel cycles, including server cancellation and client idle resynchronization.
+- Full native UI atlases passed: 76 presentations across 39 native menus/40 fixtures on each AE2 15 loader, and 90 presentations across 40 native menus on each AE2 19/26 target. Fresh final Fabric/Forge legacy runs passed after the four highlighted visual fixes.
+- Produced a Core/Compatibility QA report and two grouped design reviews instead of duplicating a PDF for each Minecraft release: a 96-page modern review, including native version variations, and a 78-page legacy review with a clickable 40-container index. Regenerated the legacy review from fresh runtime captures after correcting the highlighted areas, rendered every page and checked source hashes, margins and links. The approved modern review remained unchanged.
+- The final legacy correction changed only the two 1.20.1 compatibility production JARs; the other 22 release JAR hashes remained unchanged. Integrity checks also confirmed the reference HEAD, clean status, all 4,862 tracked-file hashes and reference JAR hash were unchanged.
+
+These session totals supersede the earlier build counts below. Detailed architecture, executed scenarios and coverage limits are documented in the [separation guide](../docs/markdown/jar-separation.md), [separation validation report](../docs/markdown/jar-separation-validation.md), [AE2 guide](../compatibility/ae2/README.md) and [AE2 validation report](../docs/markdown/ae2-extension-validation.md). Generated review PDFs are local artifacts under `output/pdf`, including `ae2-legacy-design-review-fixed.pdf` as the corrected legacy review.
+
+The following sections retain the earlier API and companion work included in the same release.
 
 ## Public API And Optional Integration
 
@@ -79,7 +141,7 @@ The final public integration API is **version 5** and the desktop wire protocol 
 
 ## Documentation, Examples And Control Layout Rules
 
-- Updated the Markdown guide, HTML documentation, README, API follow-up intake and generated public signature reference together. The current reference covers 64 public types.
+- Updated the Markdown guide, HTML documentation, README, API follow-up intake and generated public signature reference together. The current reference covers 86 public types after the separation extensions.
 - Documented constructors/methods, defaults, identity and ownership rules, thread requirements, inventory routing, focus, teardown, optional loading, version differences and integration responsibilities.
 - Added complete compilable machine, virtual terminal, native preferences, styled-decoration and shared-companion examples for all twelve supported targets.
 - Added a standalone optional NeoForge 26.3 companion consumer with original textures, ordinary fallback screens, two main windows sharing one real nine-slot tool inventory and another distinct tool inventory. It bundles no Salt classes and does not require Salt.
@@ -90,7 +152,7 @@ The final public integration API is **version 5** and the desktop wire protocol 
 - Corrected the guide so the fixed Pin/Minimize/More/Close example is not presented as the standard expanded native row. Public-reference links retain this clarification when documentation is regenerated.
 - Documented that original bottom-border joins, protruding tabs and native artwork/layout alignment remain the integration's responsibility; Salt does not force replacement textures or tab scaling.
 
-## Builds And Verification
+## Earlier API And Companion Verification
 
 - Kept the supported matrix unchanged: Fabric on 1.20.1, 1.21.1, 1.21.11, 26.1.2, 26.2 and 26.3; Forge on 1.20.1; NeoForge on the other five versions.
 - Verified all twelve target builds, shared consumer examples, functional harness compilation, source feature parity, release packaging and checksums.
@@ -106,7 +168,8 @@ The final public integration API is **version 5** and the desktop wire protocol 
 - Companion ownership is scoped to a player's desktop connection, with a sixteen-session cap and no nested/cyclic companion graph. Persistent identity never substitutes for source authorization.
 - Consumers own their real persisted inventory, stable source locator, permissions and native screen/menu assumptions. The demonstration's source inventories are intentionally ephemeral.
 - `PRESERVE` retains GUI pixels and can clip multiple large windows in a small viewport. Consumers choose an adapted layout when needed.
-- Final native visual/network acceptance used NeoForge 26.3. Dedicated acceptance covered common-only startup and actual menu/backend behavior with a FakePlayer; it did not connect a real remote client. Authenticated desktop packet routing was demonstrated by integrated clients.
-- This update supplies the API and examples; it does not ship a completed API5 AE integration or claim automatic adaptation of every mod screen.
+- Earlier companion visual/network acceptance used NeoForge 26.3. Dedicated acceptance covered common-only startup and actual menu/backend behavior with a FakePlayer; it did not connect a real remote client. Subsequent separation/AE2 evidence is recorded above and in the linked reports.
+- AE2 native gameplay checks used development game launchers with unmodified upstream AE2. Production archives passed remapping/bytecode/resource audits, but fresh installed-launcher AE2 gameplay, dedicated servers, multiplayer, latency/reconnect/dimension scenarios and arbitrary modpacks remain unverified.
+- The extension ships the reviewed API5 AE2 integration on the six listed native targets; it does not claim automatic adaptation of every mod screen or native AE2 support where no upstream input was available. Native version artwork/feature differences and live screenshot content do not imply raw cross-version pixel identity.
 
 See the [API guide](../docs/markdown/desktop_window_api.md), [public signature reference](../docs/markdown/api_reference.md), [recipe-transfer reference](../docs/markdown/recipe_transfer_api.md), [runnable companion example](../api-examples/companion-demo/README.md) and [final companion verification report](../API-COMPANIONS-0.1.4-PLAN.md) for the complete contracts and evidence.

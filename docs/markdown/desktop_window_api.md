@@ -4,6 +4,8 @@ Salt's Inventory Update hosts mod UIs as independent desktop windows. API versio
 
 There are no adapters for the earlier public API. Build your integration for the exact Minecraft version, loader and mappings you support. The supported matrix is Fabric on 1.20.1, 1.21.1, 1.21.11, 26.1.2, 26.2 and 26.3; Forge on 1.20.1; NeoForge on the other five versions.
 
+Core and the optional compatibility extension are independent JARs. The extension uses this same API as any other consumer. The [separation guide](jar-separation.md) documents recipe providers, native menu/session hooks, item-backed inventories, lifecycle callbacks and integration help pages. On legacy targets, the public graphics and input wrappers now live in `api.client.gui` and `api.client.input`; consumers must use these supported packages instead of the former implementation packages. Native Minecraft input/rendering types on newer targets remain unchanged.
+
 ## Public API and 0.1.4 changes
 
 All packages below begin with `com.salts_inventory_update`. The shared contracts have no native Minecraft dependency; the other contracts are compiled for each Minecraft target. Source links use 26.3 as the current reference. For an older target, read the same package under that version's `fabric/src/main/java` directory; Forge/NeoForge builds share those API sources.

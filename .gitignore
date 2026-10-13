@@ -1,5 +1,6 @@
 .gradle/
 build/
+dist/
 !gradle/wrapper/gradle-wrapper.jar
 .kotlin/
 .idea/
@@ -14,3 +15,7 @@ run/
 .DS_Store
 /functional-tests/results/backup-*/
 /versions/*/*/logs/
+/compatibility/versions/*/*/logs/
+/tmp/pdfs/
+/output/pdf/
+/tools/__pycache__/

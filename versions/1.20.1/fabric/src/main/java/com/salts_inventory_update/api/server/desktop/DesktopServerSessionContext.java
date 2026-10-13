@@ -24,5 +24,17 @@ public interface DesktopServerSessionContext<T extends AbstractContainerMenu, S>
     /** Acquires once per parent lifetime and actual inventory identity. Empty means unavailable or unauthorized. */
     java.util.Optional<DesktopCompanionLease> acquireCompanion(DesktopCompanionSpec spec);
 
+    /** Returns a copy of the authenticated player's shared desktop cursor.
+     * Available only on the server thread while this session is alive. */
+    default net.minecraft.world.item.ItemStack carriedStack() {
+        throw new UnsupportedOperationException("Shared cursor access is not supported by this context");
+    }
+
+    /** Commits a native menu action's cursor to the desktop and clears detached
+     * menu copies. Call broadcastChanges() after completing the action. */
+    default void setCarriedStack(net.minecraft.world.item.ItemStack stack) {
+        throw new UnsupportedOperationException("Shared cursor access is not supported by this context");
+    }
+
     void broadcastChanges();
 }

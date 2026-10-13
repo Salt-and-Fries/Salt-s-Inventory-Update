@@ -1,0 +1,11 @@
+{
+  "includes": ["../priority.json"],
+  "desktop": {
+    "width": 176,
+    "height": 125,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 0
+  }
+}

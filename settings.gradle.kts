@@ -49,4 +49,46 @@ prism {
         fabric()
         forge()
     }
+    mod("compatibility") {
+        version("26.1.2") {
+            common()
+            fabric()
+            neoforge()
+        }
+        version("26.2") {
+            common()
+            fabric()
+            neoforge()
+        }
+        version("26.3") {
+            common()
+            fabric()
+            neoforge()
+        }
+        version("1.21.11") {
+            common()
+            fabric()
+            neoforge()
+        }
+        version("1.21.1") {
+            common()
+            fabric()
+            neoforge()
+        }
+        version("1.20.1") {
+            common()
+            fabric()
+            forge()
+        }
+    }
+
 }
+
+// Keep core project paths stable; the optional mod has its own source tree.
+for (gameVersion in listOf("1.20.1", "1.21.1", "1.21.11", "26.1.2", "26.2", "26.3")) {
+    project(":compatibility:$gameVersion").projectDir = file("compatibility/versions/$gameVersion")
+    for (loader in listOf("common", "fabric", if (gameVersion == "1.20.1") "forge" else "neoforge")) {
+        project(":compatibility:$gameVersion:$loader").projectDir = file("compatibility/versions/$gameVersion/$loader")
+    }
+}
+project(":compatibility").projectDir = file("compatibility")

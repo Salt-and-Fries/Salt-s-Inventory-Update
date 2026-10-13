@@ -1,0 +1,19 @@
+{
+  "includes": ["../common/palette.json"],
+  "generatedBackground": { "width": 68, "height": 80 },
+  "slots": { "STORAGE": { "left": 8, "top": 21, "grid": "BREAK_AFTER_3COLS" } },
+  "text": {
+    "dialog_title": {
+      "text": { "translate": "gui.ae2.DesktopPanel.toolbox" },
+      "position": { "left": 8, "top": 6 }
+    }
+  },
+  "desktop": {
+    "width": 68,
+    "height": 80,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 0
+  }
+}

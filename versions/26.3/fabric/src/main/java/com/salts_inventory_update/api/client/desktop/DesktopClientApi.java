@@ -24,6 +24,25 @@ public final class DesktopClientApi {
     private static final Map<Identifier, ViewRegistration<?, ?>> VIEWS = new LinkedHashMap<>();
     private static final List<PredicateRegistration> PREDICATES = new ArrayList<>();
 
+    /** Readiness for an optimistic mutation. Pending acknowledgements must settle first. */
+    public static boolean canDispatchOptimisticMutationNow() {
+        return com.salts_inventory_update.client.DesktopContainerClient.canDispatchOptimisticMutationNow();
+    }
+    public static net.minecraft.client.gui.screens.Screen createConfigScreen(net.minecraft.client.gui.screens.Screen parent) {
+        return com.salts_inventory_update.client.WindowedInventoryClient.createConfigScreen(parent);
+    }
+    public static void onClientStarted(java.util.function.Consumer<net.minecraft.client.Minecraft> action) {
+        com.salts_inventory_update.platform.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STARTED.register(action::accept);
+    }
+
+    private static final Map<Identifier, DesktopHelpPage> HELP_PAGES = new LinkedHashMap<>();
+    public static synchronized void registerHelpPage(Identifier id, DesktopHelpPage page) {
+        Objects.requireNonNull(id); Objects.requireNonNull(page);
+        if (HELP_PAGES.putIfAbsent(id, page) != null) throw DesktopRegistrationScope.conflict("Help page already registered for " + id);
+        DesktopRegistrationScope.onRollback(() -> { synchronized (DesktopClientApi.class) { HELP_PAGES.remove(id, page); } });
+    }
+    public static synchronized List<DesktopHelpPage> helpPages() { return List.copyOf(HELP_PAGES.values()); }
+
     private DesktopClientApi() {
     }
 

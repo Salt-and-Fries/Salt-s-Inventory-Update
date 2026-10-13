@@ -10,7 +10,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.Options;
-import com.salts_inventory_update.client.gui.GuiGraphicsExtractor;
+import com.salts_inventory_update.api.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.ResourceLocation;
@@ -18,8 +18,6 @@ import org.lwjgl.glfw.GLFW;
 
 import com.salts_inventory_update.SaltsInventoryUpdate;
 import com.salts_inventory_update.SaltsInventoryRuntime;
-import com.salts_inventory_update.compat.emi.EmiRecipeBrowserBootstrap;
-import com.salts_inventory_update.compat.toms_storage.client.TomsStorageClientCompat;
 import com.salts_inventory_update.mixin.client.MouseHandlerAccessor;
 
 public final class WindowedInventoryClient {
@@ -38,7 +36,7 @@ public final class WindowedInventoryClient {
 
     public static void initialize() {
         SaltsInventoryConfig.load();
-        EmiRecipeBrowserBootstrap.initialize();
+
         characterWindowKey = KeyBindingHelper.registerKeyBinding(
             new KeyMapping(
                 "key.salts_inventory_update.character_window",
@@ -72,7 +70,7 @@ public final class WindowedInventoryClient {
                 com.salts_inventory_update.api.integration.DesktopIntegrationContext.Phase.CLIENT);
         });
         InventoryDesktopScreen.registerInternalApiDefinitions();
-        TomsStorageClientCompat.initialize();
+
         InventoryDesktopScreen.registerContainerScreens();
         DesktopContainerClient.initializeNetworking();
         registerClientCommands();

@@ -1,0 +1,11 @@
+{
+  "includes": ["../energy_level_emitter.json"],
+  "desktop": {
+    "width": 176,
+    "height": 95,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  }
+}

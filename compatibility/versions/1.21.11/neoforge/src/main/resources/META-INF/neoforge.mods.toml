@@ -1,0 +1,89 @@
+modLoader = "javafml"
+loaderVersion = "[10,11)"
+license = "${license}"
+
+[[mods]]
+modId = "${mod_id}"
+version = "${version}"
+displayName = "${mod_name}"
+displayURL = "https://salt-and-fries.github.io/Salt-s-Inventory-Update/"
+issueTrackerURL = "https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/issues"
+logoFile = "assets/salts_inventory_update/icon.png"
+authors = "Salt"
+description = "${description}"
+
+[[mixins]]
+config = "${mod_id}.sophisticated.mixins.json"
+
+[[dependencies.${mod_id}]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.11.42,21.12)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "minecraft"
+type = "required"
+versionRange = "[${minecraft_version}]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "salts_inventory_update"
+type = "required"
+versionRange = "[${version}]"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "jei"
+type = "optional"
+versionRange = "[27.4.0,)"
+ordering = "AFTER"
+side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "roughlyenoughitems"
+type = "optional"
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "emi"
+type = "optional"
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "sophisticatedcore"
+type = "optional"
+versionRange = "[1.4.97,2)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "sophisticatedbackpacks"
+type = "optional"
+versionRange = "[3.25.84,4)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "sophisticatedstorage"
+type = "optional"
+versionRange = "[1.5.102,2)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[mixins]]
+config = "${mod_id}.ae2.mixins.json"
+
+[[dependencies.${mod_id}]]
+modId = "ae2"
+type = "optional"
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"

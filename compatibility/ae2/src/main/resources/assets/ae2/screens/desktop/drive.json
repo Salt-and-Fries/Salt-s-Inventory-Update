@@ -1,0 +1,14 @@
+{
+  "includes": ["../drive.json"],
+  "slots": {
+    "STORAGE_CELL": { "left": 71, "top": 16, "grid": "BREAK_AFTER_2COLS" }
+  },
+  "desktop": {
+    "width": 176,
+    "height": 112,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  }
+}

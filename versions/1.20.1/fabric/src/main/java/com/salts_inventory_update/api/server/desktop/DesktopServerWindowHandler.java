@@ -8,6 +8,9 @@ public interface DesktopServerWindowHandler<T extends AbstractContainerMenu, S> 
     /** Pure per-instance eligibility check before capture; false leaves the normal screen in charge. */
     default boolean supports(net.minecraft.server.level.ServerPlayer player, T menu) { return true; }
 
+    /** Route player inventory quick-move through this menu (e.g. virtual storage). */
+    default boolean usesNativePlayerInventoryQuickMove(T menu) { return false; }
+
     default @Nullable S createState(DesktopServerSessionContext<T, S> context) {
         return null;
     }

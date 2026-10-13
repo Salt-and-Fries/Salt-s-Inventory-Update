@@ -2,9 +2,9 @@ package com.salts_inventory_update.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import com.salts_inventory_update.client.gui.GuiGraphicsExtractor;
+import com.salts_inventory_update.api.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
-import com.salts_inventory_update.client.input.KeyEvent;
+import com.salts_inventory_update.api.client.input.KeyEvent;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 

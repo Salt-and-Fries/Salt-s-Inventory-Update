@@ -1,0 +1,11 @@
+{
+  "includes": ["../qnb.json"],
+  "desktop": {
+    "width": 176,
+    "height": 77,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  }
+}

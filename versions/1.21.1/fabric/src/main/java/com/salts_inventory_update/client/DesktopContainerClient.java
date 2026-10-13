@@ -114,6 +114,8 @@ public final class DesktopContainerClient {
             modeSequence = -1L;
             modeResendTicks = 0;
             SaltsInventoryRuntime.setServerDesktopAvailable(true);
+            // Inventory topology must be installed before expanded vanilla packets arrive.
+            SaltsInventoryRuntime.setServerDesktopCapabilities(payload.capabilities());
             if (context.client().player != null) {
                 InventoryExpansion.appendMissingMenuSlots(context.client().player.inventoryMenu, context.client().player);
             }
@@ -1218,6 +1220,7 @@ public final class DesktopContainerClient {
     private static void resetConnection() {
         resetMutationQueue("connection-reset");
         CONNECTION.reset();
+        SaltsInventoryRuntime.setServerDesktopCapabilities(0L);
         SESSION_TOKENS.clear();
         PENDING_MENU_OPEN_DATA.clear();
         helloSent = false;
@@ -1237,6 +1240,7 @@ public final class DesktopContainerClient {
         incompatibilityShown = true;
         blockMutationQueue("protocol-incompatible", false);
         CONNECTION.markIncompatible();
+        SaltsInventoryRuntime.setServerDesktopCapabilities(0L);
         SaltsInventoryRuntime.setServerDesktopAvailable(false);
         Component message = Component.literal(reason);
         if (minecraft.player != null) {

@@ -10,8 +10,16 @@ import net.minecraft.world.inventory.*;
 public final class DesktopSortSlots {
     private static final Map<MenuType<?>, BiPredicate<AbstractContainerMenu, Slot>> STORAGE = new HashMap<>();
     private DesktopSortSlots() {}
-    public static void registerStorage(MenuType<?> type, BiPredicate<AbstractContainerMenu, Slot> slots) {
-        STORAGE.put(type, slots);
+    public static synchronized void registerStorage(MenuType<?> type, BiPredicate<AbstractContainerMenu, Slot> slots) {
+        java.util.Objects.requireNonNull(type); java.util.Objects.requireNonNull(slots);
+        var previous = STORAGE.put(type, slots);
+        com.salts_inventory_update.integration.DesktopRegistrationScope.onRollback(() -> {
+            synchronized (DesktopSortSlots.class) {
+                if (STORAGE.get(type) != slots) return;
+                if (previous == null) STORAGE.remove(type);
+                else STORAGE.put(type, previous);
+            }
+        });
     }
     public static boolean isStorage(AbstractContainerMenu menu) {
         return menu instanceof ChestMenu || menu instanceof ShulkerBoxMenu

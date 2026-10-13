@@ -1,0 +1,11 @@
+{
+  "includes": ["../craft_confirm.json"],
+  "desktop": {
+    "width": 238,
+    "height": 206,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 0
+  }
+}

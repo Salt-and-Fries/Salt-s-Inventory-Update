@@ -1,0 +1,355 @@
+// Prism supplies the loader toolchains, metadata expansion and production remapping.
+// Compatibility compilation sees ONLY Salt's public API, never core implementation classes.
+import org.gradle.api.tasks.bundling.Jar
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
+import org.gradle.api.tasks.Sync
+
+gradle.projectsEvaluated {
+    def root = rootProject
+    def loaders = ['fabric', 'forge', 'neoforge']
+    def coreTargets = root.subprojects.findAll { !it.path.startsWith(':compatibility:') && it.name in loaders }
+    def extensionTargets = root.subprojects.findAll { it.path.startsWith(':compatibility:') && it.name in loaders }
+
+    // NeoForm's binary-patch cache can reuse output from another loader build.
+    // AE2 requires the actual selected loader ABI on these modern targets.
+    root.subprojects.findAll { it.name == 'neoforge' && it.parent?.name in ['26.2', '26.3'] }.each { target ->
+        target.tasks.matching { it.name == 'createMinecraftArtifacts' }.configureEach { enableCache.set(false) }
+    }
+
+    // NeoForm 26.2/26.3's published sources fail recompilation at HolderSet.emptyNamed.
+    // Use MDG's supported binary-patch artifact task for this target, without requiring CI=true.
+    root.subprojects.findAll { it.parent?.name in ['26.2', '26.3'] }.each { target ->
+        target.tasks.matching { it.name == 'createMinecraftArtifacts' }.configureEach {
+            if (target.name == 'neoforge') enableCache.set(false)
+            disableRecompilation.set(true)
+            gameSourcesArtifact.set(null as org.gradle.api.file.RegularFile)
+            gameJarWithSourcesArtifact.set(null as org.gradle.api.file.RegularFile)
+        }
+    }
+
+    // Run the existing mapped-game headless regression suite in normal builds.
+    coreTargets.findAll { it.name == 'fabric' }.each { target ->
+        target.sourceSets.test.java.srcDir(root.file("versions/${target.parent.name}/tests"))
+        target.sourceSets.test.java.srcDir(root.file('functional-tests/src/test/java'))
+        target.sourceSets.test.compileClasspath += target.sourceSets.main.compileClasspath
+        target.sourceSets.test.runtimeClasspath += target.sourceSets.main.runtimeClasspath
+        target.dependencies.add('testImplementation', 'org.junit.jupiter:junit-jupiter:5.11.4')
+        target.dependencies.add('testRuntimeOnly', 'org.junit.platform:junit-platform-launcher:1.11.4')
+        target.tasks.withType(Test).configureEach {
+            useJUnitPlatform()
+            workingDir(target.layout.buildDirectory.dir('sort-test-runtime').get().asFile)
+            doFirst { workingDir.mkdirs() }
+        }
+    }
+
+    extensionTargets.each { extension ->
+        // Loader-independent AE2 additions live here. Native AE2 implementations
+        // remain in the optional upstream JAR and are never copied into this output.
+        extension.sourceSets.main.java.srcDir(root.file('compatibility/ae2/src/main/java'))
+        extension.sourceSets.main.resources.srcDir(root.file('compatibility/ae2/src/main/resources'))
+        def ae2NativeSource = root.file("compatibility/ae2/versions/${extension.parent.name}/${extension.name}/src/main/java")
+        if (ae2NativeSource.isDirectory()) extension.sourceSets.main.java.srcDir(ae2NativeSource)
+        def ae2VersionSource = root.file("compatibility/ae2/versions/${extension.parent.name}/common/src/main/java")
+        if (ae2VersionSource.isDirectory()) extension.sourceSets.main.java.srcDir(ae2VersionSource)
+        def ae2VersionResources = root.file("compatibility/ae2/versions/${extension.parent.name}/common/src/main/resources")
+        if (ae2VersionResources.isDirectory()) extension.sourceSets.main.resources.srcDir(ae2VersionResources)
+        def ae2NativeResources = root.file("compatibility/ae2/versions/${extension.parent.name}/${extension.name}/src/main/resources")
+        if (ae2NativeResources.isDirectory()) extension.sourceSets.main.resources.srcDir(ae2NativeResources)
+        def ae2NativeTests = root.file("compatibility/ae2/versions/${extension.parent.name}/${extension.name}/src/test/java")
+        def atlasQa = root.providers.gradleProperty('includeAe2AtlasQa').map { it.toBoolean() }.getOrElse(false)
+        def atlasSource = root.file("functional-tests/ae2/${extension.parent.name}/${extension.name}/src/main")
+        if (!atlasSource.isDirectory() && extension.parent.name == '1.20.1')
+            atlasSource = root.file('functional-tests/ae2/1.20.1/common/src/main')
+        if (!atlasSource.isDirectory() && extension.name == 'neoforge'
+                && extension.parent.name in ['26.1.2', '26.2'])
+            atlasSource = root.file('functional-tests/ae2/26.3/neoforge/src/main')
+        if (atlasQa && atlasSource.isDirectory()) {
+            extension.sourceSets.main.java.srcDir(root.file('functional-tests/ae2/shared/src/main/java'))
+            if (extension.parent.name == '26.1.2') {
+                def preparedAtlas = extension.layout.buildDirectory.dir('ae2-atlas-sources')
+                def prepareAtlas = extension.tasks.register('prepareAe2AtlasQa', Sync) {
+                    from(new File(atlasSource, 'java'))
+                    into(preparedAtlas)
+                    filter { line -> line.replace('.gui.screen()', '.screen')
+                            .replace('.gui.setScreen(', '.setScreen(')
+                            .replace('mc.gui.hud.getChat()', 'mc.gui.getChat()')
+                            .replace('Screenshot.grab(mc, false);', 'Screenshot.grab(mc.gameDirectory, mc.getMainRenderTarget(), ignored -> {});') }
+                }
+                extension.sourceSets.main.java.srcDir(preparedAtlas)
+                extension.tasks.named('compileJava').configure { dependsOn(prepareAtlas) }
+            } else {
+                extension.sourceSets.main.java.srcDir(new File(atlasSource, 'java'))
+            }
+            extension.sourceSets.main.resources.srcDir(new File(atlasSource, 'resources'))
+        }
+        if (atlasSource.isDirectory()) {
+            extension.tasks.withType(Jar).configureEach {
+                if (atlasQa) doFirst { throw new GradleException('AE2 atlas QA is a runClient profile; build distributable JARs without includeAe2AtlasQa.') }
+                exclude('com/salts_inventory_update/compat/ae2/qa/**')
+                exclude('com/salts_inventory_update/compat/ae2/nativeview/NativeAtlasHooks*')
+                exclude('salts_inventory_compat.ae2-atlas.mixins.json')
+            }
+            extension.tasks.named('processResources').configure {
+                inputs.property('includeAe2AtlasQa', atlasQa)
+                doLast {
+                    if (atlasQa) {
+                        if (extension.name == 'fabric') {
+                            def metadata = new File(destinationDir, 'fabric.mod.json')
+                            def values = new groovy.json.JsonSlurper().parse(metadata)
+                            values.mixins.add('salts_inventory_compat.ae2-atlas.mixins.json')
+                            metadata.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(values))
+                        } else {
+                            def metadata = new File(destinationDir, extension.name == 'forge' ? 'META-INF/mods.toml' : 'META-INF/neoforge.mods.toml')
+                            metadata.append('\n[[mixins]]\nconfig = "salts_inventory_compat.ae2-atlas.mixins.json"\n')
+                        }
+                    } else {
+                        extension.delete(new File(destinationDir, 'salts_inventory_compat.ae2-atlas.mixins.json'))
+                    }
+                }
+            }
+            if (extension.name == 'forge' && atlasQa) {
+                extension.extensions.getByName('mixin').config('salts_inventory_compat.ae2-atlas.mixins.json')
+            }
+        }
+        def ae2NativeVersions = ['26.3': 'PDPQ4WfW', '26.2': 'XC5aMAdH', '26.1.2': 'nVSxZcom', '1.21.1': 'KDnFUmMm']
+        def ae2GuideVersions = ['26.3': 'VD5BRwvu', '26.2': 'HqNROlBJ', '26.1.2': 'Vvte0XiA', '1.21.1': 'hFpGwC6q']
+        if (extension.parent.name == '1.20.1') {
+            // Published AE2 15 uses intermediary (Fabric) or SRG (Forge) names.
+            // Let the selected loader toolchain supply its normal named input;
+            // this is compile-only and never an extension packaging input.
+            extension.tasks.register('writeAe2NativeClasspath') {
+                group = 'verification'
+                def output = extension.layout.buildDirectory.file('ae2-api/native-classpath.txt')
+                outputs.file(output)
+                inputs.files(extension.sourceSets.main.compileClasspath)
+                doLast {
+                    output.get().asFile.parentFile.mkdirs()
+                    output.get().asFile.text = extension.sourceSets.main.compileClasspath.files.collect { it.absolutePath }.join('\n') + '\n'
+                }
+            }
+        }
+        def legacyAe2 = extension.parent.name == '1.20.1' && extension.name in ['fabric', 'forge']
+        if ((extension.parent.name in ae2NativeVersions && extension.name == 'neoforge') || legacyAe2) {
+            def upstream
+            if (legacyAe2) {
+                upstream = extension.sourceSets.main.compileClasspath.filter {
+                    it.name.startsWith('ae2-') && it.name.endsWith('.jar')
+                }
+            } else {
+                upstream = extension.configurations.maybeCreate('ae2NativeUpstream')
+                upstream.canBeConsumed = false
+                upstream.canBeResolved = true
+                extension.dependencies.add(upstream.name, "maven.modrinth:ae2:${ae2NativeVersions[extension.parent.name]}")
+            }
+            def tooling = extension.configurations.maybeCreate('ae2NativeTooling')
+            tooling.canBeConsumed = false
+            tooling.canBeResolved = true
+            ['org.ow2.asm:asm:9.10.1', 'org.ow2.asm:asm-tree:9.10.1', 'org.ow2.asm:asm-analysis:9.10.1', 'com.google.code.gson:gson:2.14.0'].each {
+                extension.dependencies.add(tooling.name, it)
+            }
+            def toolClasses = extension.layout.buildDirectory.dir('ae2-patch-tools')
+            def compileTools = extension.tasks.register('compileAe2PatchTools', JavaCompile) {
+                source(root.file('tools/BuildAe2Abi.java'))
+                source(root.file('tools/VerifyAe2NativeSymbols.java'))
+                source(root.file('compatibility/ae2/src/main/java/com/salts_inventory_update/compat/ae2/mixin/NativeInstructionCodec.java'))
+                source(root.file('compatibility/ae2/src/main/java/com/salts_inventory_update/compat/ae2/mixin/NativeClassPatch.java'))
+                classpath = tooling
+                destinationDirectory.set(toolClasses)
+                javaCompiler.set(extension.tasks.named('compileJava', JavaCompile).flatMap { it.javaCompiler })
+            }
+            def declarations = extension.layout.buildDirectory.file('ae2-api/ae2-desktop-declarations.jar')
+            def patches = new File(ae2NativeResources, 'ae2-native-patches')
+            def prepareAbi = extension.tasks.register('prepareAe2DesktopAbi', JavaExec) {
+                dependsOn(compileTools)
+                inputs.files(upstream)
+                inputs.dir(patches)
+                outputs.file(declarations)
+                classpath = extension.files(toolClasses) + tooling
+                mainClass.set('BuildAe2Abi')
+                javaLauncher.set(extension.extensions.getByType(JavaToolchainService).launcherFor(extension.java.toolchain))
+                doFirst {
+                    declarations.get().asFile.parentFile.mkdirs()
+                    args(upstream.singleFile.absolutePath, patches.absolutePath, declarations.get().asFile.absolutePath)
+                }
+            }
+            // Declarations have throwing method stubs. No native AE2 implementation
+            // or resources can become extension JAR inputs through this dependency.
+            if (legacyAe2) {
+                // The loader owns remapping of the original AE2 input. Compile
+                // against its patched declarations first, excluding the original
+                // from javac so inherited/new methods cannot resolve inconsistently.
+                extension.tasks.named('compileJava', JavaCompile).configure {
+                    classpath = extension.files(declarations).builtBy(prepareAbi) +
+                            extension.sourceSets.main.compileClasspath.filter {
+                                !(it.name.startsWith('ae2-') && it.name.endsWith('.jar'))
+                            }
+                }
+            } else extension.dependencies.add('compileOnly', extension.files(declarations).builtBy(prepareAbi))
+            def verifyNativeSymbols = extension.tasks.register('verifyAe2NativeSymbols', JavaExec) {
+                group = 'verification'
+                description = 'Resolves native AE2 member references, including lambda and constant bootstrap handles.'
+                dependsOn(compileTools, extension.tasks.named('classes'))
+                classpath = extension.files(toolClasses) + tooling
+                mainClass.set('VerifyAe2NativeSymbols')
+                javaLauncher.set(extension.extensions.getByType(JavaToolchainService).launcherFor(extension.java.toolchain))
+                doFirst {
+                    // Inspect real native definitions. The throwing ABI is a
+                    // compile input and cannot satisfy original patch hashes.
+                    def nativeClasspath = extension.sourceSets.main.compileClasspath.files.findAll {
+                        it.canonicalFile != declarations.get().asFile.canonicalFile &&
+                                (it.isDirectory() || it.name.endsWith('.jar'))
+                    }
+                    setArgs([patches.absolutePath] + nativeClasspath.collect { it.absolutePath } +
+                            [upstream.singleFile.absolutePath] + extension.sourceSets.main.output.classesDirs.files.collect { it.absolutePath })
+                }
+            }
+            extension.tasks.named('check').configure { dependsOn(verifyNativeSymbols) }
+            if (legacyAe2) extension.tasks.named('check').configure { dependsOn(prepareAbi) }
+            if (!legacyAe2 && root.providers.gradleProperty('includeAe2Runtime').map { it.toBoolean() }.getOrElse(false)) {
+                extension.dependencies.add('runtimeOnly', "maven.modrinth:ae2:${ae2NativeVersions[extension.parent.name]}")
+                extension.dependencies.add('runtimeOnly', "maven.modrinth:guideme:${ae2GuideVersions[extension.parent.name]}")
+            }
+        }
+        def core = root.project(":${extension.parent.name}:${extension.name}")
+        def apiJar = core.tasks.register('publicApiJar', Jar) {
+            dependsOn(core.tasks.named('classes'))
+            archiveClassifier = 'api-dev'
+            destinationDirectory = core.layout.buildDirectory.dir('api')
+            from(core.sourceSets.main.output) { include('com/salts_inventory_update/api/**') }
+        }
+        extension.sourceSets.main.compileClasspath += extension.files(apiJar.flatMap { it.archiveFile }).builtBy(apiJar)
+        // Separate mod on the development runtime; never added to include, shadow or jar inputs.
+        extension.sourceSets.main.runtimeClasspath += core.sourceSets.main.output
+        extension.tasks.withType(JavaCompile).configureEach { dependsOn(apiJar) }
+        if (ae2NativeTests.isDirectory()) {
+            extension.sourceSets.test.java.srcDir(ae2NativeTests)
+            extension.sourceSets.test.compileClasspath += extension.sourceSets.main.compileClasspath
+            extension.sourceSets.test.runtimeClasspath += extension.sourceSets.main.runtimeClasspath
+            if (extension.parent.name == '1.20.1') {
+                extension.sourceSets.test.runtimeClasspath += extension.files(extension.provider {
+                    extension.sourceSets.main.compileClasspath.files.findAll { it.name.startsWith('ae2-') && it.name.endsWith('.jar') }
+                })
+            }
+            extension.dependencies.add('testImplementation', 'org.junit.jupiter:junit-jupiter:5.11.4')
+            extension.dependencies.add('testRuntimeOnly', 'org.junit.platform:junit-platform-launcher:1.11.4')
+            extension.tasks.withType(Test).configureEach { useJUnitPlatform() }
+        }
+        if (extension.name in ['forge', 'neoforge']) {
+            def loader = extension.extensions.findByName(extension.name == 'forge' ? 'legacyForge' : 'neoForge')
+            loader.mods.maybeCreate('salts_inventory_update').sourceSet(core.sourceSets.main)
+        }
+        if (extension.name == 'fabric') {
+            extension.sourceSets.test.java.srcDir(root.file('compatibility/tests'))
+            extension.sourceSets.test.compileClasspath += extension.sourceSets.main.compileClasspath
+            extension.sourceSets.test.runtimeClasspath += extension.sourceSets.main.runtimeClasspath
+            extension.dependencies.add('testImplementation', 'org.junit.jupiter:junit-jupiter:5.11.4')
+            extension.dependencies.add('testRuntimeOnly', 'org.junit.platform:junit-platform-launcher:1.11.4')
+            extension.tasks.withType(Test).configureEach { useJUnitPlatform() }
+        }
+    }
+
+    // Isolated smoke profiles cannot accidentally pick up mods from an existing development instance.
+    if (root.providers.gradleProperty('saltsSmokeRun').map { it.toBoolean() }.getOrElse(false)) {
+        def profile = root.providers.gradleProperty('saltsSmokeProfile').getOrElse('default')
+        if (!(profile ==~ /[a-z0-9-]+/)) throw new GradleException('saltsSmokeProfile must use lowercase letters, digits and hyphens')
+        (coreTargets + extensionTargets).each { target ->
+            if (target.name == 'fabric') {
+                target.extensions.findByName('loom').runs.configureEach {
+                    if (name == 'client') runDir = "build/runtime-smoke/$profile"
+                }
+            } else {
+                def nativeLoader = target.extensions.findByName(target.name == 'forge' ? 'legacyForge' : 'neoForge')
+                nativeLoader.runs.configureEach {
+                    if (name == 'client') gameDirectory.set(target.layout.buildDirectory.dir("runtime-smoke/$profile"))
+                }
+            }
+            target.tasks.withType(JavaExec).configureEach {
+                if (name == 'runClient') {
+                    workingDir = target.layout.buildDirectory.dir("runtime-smoke/$profile").get().asFile
+                    doFirst { workingDir.mkdirs() }
+                }
+            }
+        }
+    }
+
+    def verifySources = root.tasks.register('verifyModuleSources', Exec) {
+        group = 'verification'
+        description = 'Rejects compatibility imports/reflection into core internals and core references to integrations.'
+        commandLine('python', root.file('tools/verify-module-boundaries.py'), '--sources')
+    }
+    def verifyAe2Merge = root.tasks.register('verifyAe2InstructionMerge', Exec) {
+        group = 'verification'
+        description = 'Checks independent native/integration branch labels and legacy pose scaling.'
+        commandLine('python', root.file('tools/test-ae2-delta-merge.py'))
+    }
+    def verifyClasspaths = root.tasks.register('verifyApiCompileClasspaths', Exec) {
+        group = 'verification'
+        description = 'Confirms every compatibility compiler classpath excludes core implementation classes.'
+        dependsOn(extensionTargets.collect { it.tasks.named('compileJava') })
+        def manifest = root.layout.buildDirectory.file('api-compile-classpaths.txt')
+        doFirst {
+            def entries = extensionTargets.collectMany { it.sourceSets.main.compileClasspath.files.toList() }.unique().sort { it.absolutePath }
+            manifest.get().asFile.text = entries.collect { it.absolutePath }.join('\n') + '\n'
+        }
+        commandLine('python', root.file('tools/verify-module-boundaries.py'), '--classpath-manifest', manifest.get().asFile)
+    }
+    (coreTargets + extensionTargets).each { target ->
+        target.tasks.named('check').configure { dependsOn(verifySources) }
+    }
+    extensionTargets.each { target -> target.tasks.named('check').configure { dependsOn(verifyAe2Merge) } }
+
+    def prepareDist = root.tasks.register('prepareDistribution', Delete) {
+        delete(root.file('dist'))
+        doFirst {
+            def intended = new File(root.projectDir.canonicalFile, 'dist')
+            if (root.file('dist').canonicalFile != intended)
+                throw new GradleException('Distribution cleanup must stay inside this workspace.')
+        }
+    }
+    // Clearing happens before any work in a root release build, including failed builds.
+    root.allprojects.each { p -> p.tasks.configureEach { task ->
+        if (task.name != 'prepareDistribution') task.mustRunAfter(prepareDist)
+    } }
+    def productionJar = { target ->
+        target.tasks.named(target.tasks.findByName('remapJar') != null ? 'remapJar' : 'jar', AbstractArchiveTask)
+    }
+    def distribute = root.tasks.register('distributeMods', Sync) {
+        group = 'build'
+        description = 'Synchronizes current production core and extension jars into separate dist directories.'
+        dependsOn(prepareDist)
+        dependsOn(verifyClasspaths)
+        dependsOn((coreTargets + extensionTargets).collect { it.tasks.named('build') })
+        into(root.file('dist'))
+        duplicatesStrategy = DuplicatesStrategy.FAIL
+        coreTargets.each { target -> from(productionJar(target).flatMap { it.archiveFile }) { into('core') } }
+        extensionTargets.each { target -> from(productionJar(target).flatMap { it.archiveFile }) { into('compatibility') } }
+    }
+    def verifyJars = root.tasks.register('verifyModuleJars', Exec) {
+        group = 'verification'
+        description = 'Checks production bytecode boundaries, artifact contents and mod dependency direction.'
+        dependsOn(distribute)
+        commandLine('python', root.file('tools/verify-module-boundaries.py'), '--jars')
+    }
+    def checksums = root.tasks.register('writeModuleChecksums') {
+        group = 'build'
+        dependsOn(verifyJars)
+        doLast {
+            ['core', 'compatibility'].each { kind ->
+                def folder = root.file("dist/$kind")
+                def lines = folder.listFiles().findAll { it.name.endsWith('.jar') }.sort { it.name }.collect { artifact ->
+                    def hash = java.security.MessageDigest.getInstance('SHA-256').digest(artifact.bytes).encodeHex()
+                    "$hash  ${artifact.name}"
+                }
+                new File(folder, 'SHA256SUMS.txt').text = lines.join('\n') + '\n'
+            }
+        }
+    }
+    root.tasks.named('build').configure { dependsOn(checksums) }
+    root.tasks.named('check').configure { dependsOn(verifySources, verifyAe2Merge) }
+    def rootClean = root.tasks.findByName('clean') != null ? root.tasks.named('clean') : root.tasks.register('clean', Delete) {
+        group = 'build'
+        delete(root.layout.buildDirectory)
+        dependsOn(root.subprojects.findAll { it.tasks.findByName('clean') != null }.collect { it.tasks.named('clean') })
+    }
+    rootClean.configure { dependsOn(prepareDist) }
+}

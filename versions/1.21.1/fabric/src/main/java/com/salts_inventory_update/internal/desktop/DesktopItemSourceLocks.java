@@ -72,7 +72,14 @@ public final class DesktopItemSourceLocks {
         if (menuType == null || resolver == null) {
             throw new IllegalArgumentException("Desktop item source registration must be complete");
         }
-        RESOLVERS.put(menuType, resolver);
+        Resolver previous = RESOLVERS.put(menuType, resolver);
+        com.salts_inventory_update.integration.DesktopRegistrationScope.onRollback(() -> {
+            synchronized (DesktopItemSourceLocks.class) {
+                if (RESOLVERS.get(menuType) != resolver) return;
+                if (previous == null) RESOLVERS.remove(menuType);
+                else RESOLVERS.put(menuType, previous);
+            }
+        });
     }
 
     public static Lease acquire(Player player, AbstractContainerMenu menu) {

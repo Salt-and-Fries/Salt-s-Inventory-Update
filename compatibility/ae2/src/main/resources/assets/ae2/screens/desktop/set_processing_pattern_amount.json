@@ -1,0 +1,11 @@
+{
+  "includes": ["../set_processing_pattern_amount.json"],
+  "desktop": {
+    "width": 176,
+    "height": 107,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 0
+  }
+}

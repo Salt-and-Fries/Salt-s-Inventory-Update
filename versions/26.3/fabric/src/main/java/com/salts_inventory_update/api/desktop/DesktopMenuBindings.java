@@ -18,6 +18,11 @@ import net.minecraft.world.item.ItemStack;
 public final class DesktopMenuBindings {
     private static final Map<MenuType<?>, Access> ACCESS = new LinkedHashMap<>();
 
+    /** Declares slots eligible for storage sorting on both client and server. */
+    public static void registerStorage(MenuType<?> type, java.util.function.BiPredicate<AbstractContainerMenu, Slot> slots) {
+        com.salts_inventory_update.internal.desktop.DesktopSortSlots.registerStorage(type, slots);
+    }
+
     private DesktopMenuBindings() {
     }
 

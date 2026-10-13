@@ -39,12 +39,6 @@ public final class DesktopProtocol {
     public static final int MAX_LINK_NODES = 128;
     public static final int MAX_LINK_EDGES = 512;
 
-    public static final int MAX_TOMS_COMPRESSED_BYTES = 30 * 1024;
-    public static final int MAX_TOMS_DECOMPRESSED_BYTES = 2 * 1024 * 1024;
-    public static final int MAX_TOMS_DEPTH = 64;
-    public static final int MAX_TOMS_NODES = 4_096;
-    public static final int MAX_TOMS_STRING_BYTES = 8 * 1024;
-    public static final int MAX_TOMS_PRIMITIVE_ARRAY_BYTES = 128 * 1024;
 
     private DesktopProtocol() {
     }

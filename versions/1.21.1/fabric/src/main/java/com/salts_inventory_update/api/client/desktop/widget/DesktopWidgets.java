@@ -4,9 +4,9 @@ import java.util.List;
 
 import org.lwjgl.glfw.GLFW;
 
-import com.salts_inventory_update.client.input.CharacterEvent;
-import com.salts_inventory_update.client.input.KeyEvent;
-import com.salts_inventory_update.client.input.MouseButtonEvent;
+import com.salts_inventory_update.api.client.input.CharacterEvent;
+import com.salts_inventory_update.api.client.input.KeyEvent;
+import com.salts_inventory_update.api.client.input.MouseButtonEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;

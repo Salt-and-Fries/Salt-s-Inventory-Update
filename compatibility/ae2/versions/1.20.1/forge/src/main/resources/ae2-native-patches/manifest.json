@@ -1,0 +1,458 @@
+{
+  "mappings": {
+    "appeng/client/gui/DesktopChrome": "com/salts_inventory_update/compat/ae2/nativeview/NativeDesktopChrome",
+    "appeng/client/gui/DesktopContentActions": "com/salts_inventory_update/compat/ae2/nativeview/NativeContentActions",
+    "appeng/client/gui/DesktopContentRegistry": "com/salts_inventory_update/compat/ae2/nativeview/NativeContentRegistry",
+    "appeng/client/gui/DesktopSlotPresentation": "com/salts_inventory_update/compat/ae2/client/DesktopSlotPresentation",
+    "appeng/client/gui/me/networktool/ToolboxCompanionScreen": "com/salts_inventory_update/compat/ae2/nativeview/ToolboxCompanionScreen",
+    "appeng/client/gui/style/DesktopFrameEdges": "com/salts_inventory_update/compat/ae2/nativeview/style/DesktopFrameEdges",
+    "appeng/client/gui/style/DesktopLayoutStyle": "com/salts_inventory_update/compat/ae2/nativeview/style/DesktopLayoutStyle",
+    "appeng/client/integration/salts/AEManagementControls": "com/salts_inventory_update/compat/ae2/nativeview/AEManagementControls",
+    "appeng/client/integration/salts/AEWindow": "com/salts_inventory_update/compat/ae2/nativeview/AEWindow",
+    "appeng/client/integration/salts/SaltsClientIntegration": "com/salts_inventory_update/compat/ae2/nativeview/AE2ClientIntegration",
+    "appeng/core/network/clientbound/DesktopMenuUpdatePacket": "com/salts_inventory_update/compat/ae2/menu/DesktopMenuUpdatePacket",
+    "appeng/core/network/clientbound/MenuOpeningDataPacket": "com/salts_inventory_update/compat/ae2/menu/MenuOpeningDataPacket",
+    "appeng/integration/modules/salts/SaltsCommonIntegration": "com/salts_inventory_update/compat/ae2/server/AE2ServerIntegration",
+    "appeng/menu/DesktopMenuPackets": "com/salts_inventory_update/compat/ae2/menu/DesktopMenuPackets",
+    "appeng/menu/MenuOpeningData": "com/salts_inventory_update/compat/ae2/menu/MenuOpeningData",
+    "appeng/menu/MenuPacketScope": "com/salts_inventory_update/compat/ae2/nativeview/NativeMenuPacketScope"
+  },
+  "classes": [
+    {
+      "class": "appeng/core/sync/packets/FillCraftingGridFromRecipePacket",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "fork grid-size bound with native integer encoding"
+    },
+    {
+      "class": "appeng/core/sync/packets/MEInventoryUpdatePacket",
+      "fields": 0,
+      "methods": 2,
+      "changes": 0,
+      "scope": "decoded packet views; native codec and ordinary dispatch unchanged"
+    },
+    {
+      "class": "appeng/core/sync/packets/CraftConfirmPlanPacket",
+      "fields": 0,
+      "methods": 1,
+      "changes": 0,
+      "scope": "decoded packet views; native codec and ordinary dispatch unchanged"
+    },
+    {
+      "class": "appeng/core/sync/packets/CraftingStatusPacket",
+      "fields": 0,
+      "methods": 1,
+      "changes": 0,
+      "scope": "decoded packet views; native codec and ordinary dispatch unchanged"
+    },
+    {
+      "class": "appeng/core/sync/packets/NetworkStatusPacket",
+      "fields": 0,
+      "methods": 1,
+      "changes": 0,
+      "scope": "decoded packet views; native codec and ordinary dispatch unchanged"
+    },
+    {
+      "class": "appeng/core/sync/packets/PatternAccessTerminalPacket",
+      "fields": 0,
+      "methods": 6,
+      "changes": 0,
+      "scope": "decoded packet views; native codec and ordinary dispatch unchanged"
+    },
+    {
+      "class": "appeng/menu/AEBaseMenu",
+      "fields": 3,
+      "methods": 9,
+      "changes": 5,
+      "scope": "menu lifetimes, detached slots and native action transport"
+    },
+    {
+      "class": "appeng/client/gui/WidgetContainer",
+      "fields": 8,
+      "methods": 29,
+      "changes": 10,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/ICompositeWidget",
+      "fields": 0,
+      "methods": 1,
+      "changes": 0,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/widgets/Scrollbar",
+      "fields": 1,
+      "methods": 2,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/init/client/InitScreens",
+      "fields": 1,
+      "methods": 3,
+      "changes": 2,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/widgets/VerticalButtonBar",
+      "fields": 3,
+      "methods": 16,
+      "changes": 2,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/widgets/TabButton",
+      "fields": 1,
+      "methods": 2,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/widgets/IconButton",
+      "fields": 3,
+      "methods": 4,
+      "changes": 2,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/widgets/AECheckbox",
+      "fields": 2,
+      "methods": 9,
+      "changes": 1,
+      "scope": "hosted checkbox rendering and label/tooltip contract"
+    },
+    {
+      "class": "appeng/client/gui/widgets/ProgressBar",
+      "fields": 1,
+      "methods": 1,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/AESubScreen",
+      "fields": 0,
+      "methods": 1,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/implementations/AESubScreen",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/implementations/CellWorkbenchScreen",
+      "fields": 0,
+      "methods": 2,
+      "changes": 0,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/implementations/DriveScreen",
+      "fields": 0,
+      "methods": 1,
+      "changes": 0,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/implementations/InterfaceScreen",
+      "fields": 0,
+      "methods": 1,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/implementations/MolecularAssemblerScreen",
+      "fields": 0,
+      "methods": 3,
+      "changes": 0,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/implementations/PatternProviderScreen",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/implementations/WirelessAccessPointScreen",
+      "fields": 0,
+      "methods": 3,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/common/TerminalSettingsScreen",
+      "fields": 0,
+      "methods": 1,
+      "changes": 3,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/crafting/AbstractTableRenderer",
+      "fields": 0,
+      "methods": 2,
+      "changes": 3,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/crafting/CraftConfirmScreen",
+      "fields": 0,
+      "methods": 2,
+      "changes": 0,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/crafting/CraftConfirmTableRenderer",
+      "fields": 0,
+      "methods": 1,
+      "changes": 0,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/crafting/CraftErrorScreen",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/crafting/CraftingCPUScreen",
+      "fields": 0,
+      "methods": 6,
+      "changes": 4,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/crafting/CraftingStatusScreen",
+      "fields": 2,
+      "methods": 8,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/items/CraftingEncodingPanel",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/items/EncodingModePanel",
+      "fields": 0,
+      "methods": 2,
+      "changes": 0,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/items/PatternEncodingTermScreen",
+      "fields": 0,
+      "methods": 2,
+      "changes": 2,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/items/ProcessingEncodingPanel",
+      "fields": 0,
+      "methods": 0,
+      "changes": 2,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/items/SmithingTableEncodingPanel",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/items/StonecuttingEncodingPanel",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/networktool/NetworkStatusScreen",
+      "fields": 0,
+      "methods": 4,
+      "changes": 3,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/style/ScreenStyle",
+      "fields": 1,
+      "methods": 3,
+      "changes": 0,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/style/StyleManager",
+      "fields": 1,
+      "methods": 2,
+      "changes": 2,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/style/TerminalStyle",
+      "fields": 1,
+      "methods": 3,
+      "changes": 3,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/widgets/AETextField",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/widgets/CPUSelectionList",
+      "fields": 3,
+      "methods": 7,
+      "changes": 5,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/widgets/ServerSettingToggleButton",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/widgets/SettingToggleButton",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/menu/me/crafting/CraftingCPUMenu",
+      "fields": 4,
+      "methods": 0,
+      "changes": 2,
+      "scope": "crafting status synchronization"
+    },
+    {
+      "class": "appeng/items/contents/NetworkToolMenuHost",
+      "fields": 0,
+      "methods": 1,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/menu/MenuOpener",
+      "fields": 1,
+      "methods": 3,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/menu/ToolboxMenu",
+      "fields": 0,
+      "methods": 1,
+      "changes": 0,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/menu/implementations/FormationPlaneMenu",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/menu/implementations/SetStockAmountMenu",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/menu/me/common/MEStorageMenu",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/menu/me/crafting/CraftAmountMenu",
+      "fields": 0,
+      "methods": 0,
+      "changes": 2,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/menu/me/crafting/CraftConfirmMenu",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/menu/me/items/CraftingTermMenu",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/menu/slot/FakeSlot",
+      "fields": 0,
+      "methods": 0,
+      "changes": 1,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/menu/implementations/MenuTypeBuilder",
+      "fields": 0,
+      "methods": 2,
+      "changes": 3,
+      "scope": "native opening/factory bridges and server menu capture"
+    },
+    {
+      "class": "appeng/client/gui/me/patternaccess/PatternAccessTermScreen",
+      "fields": 0,
+      "methods": 4,
+      "changes": 6,
+      "scope": "desktop catalog layout and native slot-action routing"
+    },
+    {
+      "class": "appeng/client/gui/AEBaseScreen",
+      "fields": 22,
+      "methods": 77,
+      "changes": 14,
+      "scope": "desktop screen layout/input contract"
+    },
+    {
+      "class": "appeng/client/gui/me/common/MEStorageScreen",
+      "fields": 0,
+      "methods": 8,
+      "changes": 12,
+      "scope": "desktop screen layout/input contract"
+    }
+  ],
+  "nativeTarget": "1.20.1-forge",
+  "clientPortComplete": true,
+  "terminalKeyboardPortComplete": true,
+  "pointerPortComplete": true,
+  "scope": "API-only AE2 15 desktop integration; native cut-footer and joined-panel rendering",
+  "nativeNamespace": "named",
+  "catalogLayoutAndInputPending": false,
+  "nativeLinkStatusUnavailable": true,
+  "cpuRendererPortPending": false,
+  "nativeVisibleContainerQuickMoveUnavailable": true,
+  "runtimeValidationPending": false,
+  "uiBaseline": "installed-native-version",
+  "nativeClassesUnavailable": [
+    "appeng/client/gui/implementations/KeyTypeSelectionScreen$KeyTypeCheckboxes",
+    "appeng/client/gui/widgets/AE2Button"
+  ]
+}

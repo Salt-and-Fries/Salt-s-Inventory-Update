@@ -1,5 +1,10 @@
 # Sophisticated compatibility validation — 2026-09-08
 
+These historical results predate the independent-JAR refactor. See the
+[current separation validation](../docs/markdown/jar-separation-validation.md)
+for checks executed on the new artifacts; the older gameplay results below
+must not be treated as validation of the split JARs.
+
 Status: in progress. Build/source checks are not a claim of complete gameplay coverage.
 
 ## Verified

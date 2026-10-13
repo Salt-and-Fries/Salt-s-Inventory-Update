@@ -23,6 +23,7 @@ plugins {
 group = "com.salts_inventory_update"
 version = "0.1.4"
 
+
 val modMenuVersions = mapOf(
     "1.20.1" to "7.2.2",
     "1.21.1" to "11.0.4",
@@ -93,7 +94,7 @@ fun SourceSet.addFunctionalTestSourceDir() {
 }
 
 fun SourceSet.addFabricModMenuSourceDir() {
-    val sourceDir = rootProject.file("versions/fabric-modmenu/src/main/java")
+    val sourceDir = rootProject.file("compatibility/fabric-modmenu/src/main/java")
     val currentDirs = java.srcDirs.map { it.canonicalFile }.toMutableSet()
     if (currentDirs.add(sourceDir.canonicalFile)) {
         java.srcDir(sourceDir)
@@ -160,7 +161,7 @@ prism {
             fabricApi("0.153.0+26.2")
         }
         neoforge {
-            loaderVersion = "26.2.0.53-beta"
+            loaderVersion = "26.2.0.90"
         }
     }
 
@@ -171,7 +172,7 @@ prism {
             fabricApi("0.161.0+26.3")
         }
         neoforge {
-            loaderVersion = "26.3.0.22-beta"
+            loaderVersion = "26.3.0.76"
         }
     }
 
@@ -204,13 +205,106 @@ prism {
             loaderVersion = "47.4.0"
         }
     }
+    mod("compatibility") {
+        metadata {
+            modId = "salts_inventory_compat"
+            name = "Salt's Inventory Compatibility"
+            description = "Optional third-party inventory and recipe-browser integrations for Salt's Inventory Update. Requires the matching core mod."
+            license = "MIT AND LGPL-3.0-or-later"
+        }
+        version("26.1.2") {
+            fabric {
+                loaderVersion = "0.19.2"
+                fabricApi("0.149.0+26.1.2")
+            }
+            neoforge {
+                loaderVersion = "26.1.2.59-beta"
+            }
+        }
+
+        version("26.2") {
+            fabric {
+                loaderVersion = "0.19.3"
+                fabricApi("0.153.0+26.2")
+            }
+            neoforge {
+                loaderVersion = "26.2.0.90"
+            }
+        }
+
+        version("26.3") {
+            neoFormVersion = "26.3-1"
+            fabric {
+                loaderVersion = "0.19.5"
+                fabricApi("0.161.0+26.3")
+            }
+            neoforge {
+                loaderVersion = "26.3.0.76"
+            }
+        }
+
+        version("1.21.11") {
+            fabric {
+                loaderVersion = "0.19.2"
+                fabricApi("0.141.4+1.21.11")
+            }
+            neoforge {
+                loaderVersion = "21.11.42"
+            }
+        }
+
+        version("1.21.1") {
+            fabric {
+                loaderVersion = "0.16.10"
+                fabricApi("0.116.1+1.21.1")
+            }
+            neoforge {
+                loaderVersion = "21.1.229"
+            }
+        }
+
+        version("1.20.1") {
+            fabric {
+                loaderVersion = "0.16.10"
+                fabricApi("0.92.6+1.20.1")
+            }
+            forge {
+                loaderVersion = "47.4.0"
+            }
+        }
+    }
+
 }
 
 subprojects {
     val minecraftVersion = parent?.name
+    val compatibilityModule = path.startsWith(":compatibility:")
+
+    if (compatibilityModule && minecraftVersion == "1.20.1" && name == "forge") {
+        afterEvaluate {
+            @Suppress("UNCHECKED_CAST")
+            val mappingsType = Class.forName("net.neoforged.moddevgradle.legacyforge.internal.MinecraftMappings") as Class<Named>
+            val mappingsAttribute = Attribute.of("net.neoforged.moddevgradle.legacy.minecraft_mappings.v2", mappingsType)
+            val nativeAe2 = configurations.maybeCreate("ae2NativeNamed").apply {
+                isCanBeConsumed = false
+                isCanBeResolved = true
+                attributes {
+                    attribute(mappingsAttribute, objects.named(mappingsType, "named"))
+                    attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
+                    attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
+                }
+            }
+            dependencies.add(nativeAe2.name, "maven.modrinth:ae2:jYgSnxye")
+            dependencies.add("compileOnly", files(nativeAe2))
+            if (providers.gradleProperty("includeAe2Runtime").map(String::toBoolean).getOrElse(false)) {
+                dependencies.add("runtimeOnly", files(nativeAe2))
+                dependencies.add("modRuntimeOnly", "maven.modrinth:guideme:20.1.7")
+            }
+        }
+    }
 
     plugins.withId("java") {
-        if (name in setOf("fabric", "forge", "neoforge")) {
+        if (!compatibilityModule && name in setOf("fabric", "forge", "neoforge")) {
             tasks.withType<ProcessResources>().configureEach {
                 from(rootProject.file("artwork/shared-resources"))
             }
@@ -288,7 +382,7 @@ subprojects {
             "maven.modrinth:hMlaZH8f:F4SdMde3"  // Sophisticated Storage 26.2-1.5.108.2088
         )
     )
-    if (minecraftVersion != null && name in setOf("forge", "neoforge")) {
+    if (compatibilityModule && minecraftVersion != null && name in setOf("forge", "neoforge")) {
         afterEvaluate {
             val dependenciesForVersion = sophisticatedVersions[minecraftVersion].orEmpty()
             dependenciesForVersion.forEach { dependency ->
@@ -363,10 +457,20 @@ subprojects {
                 if (mainSourceSet != null && mixinExtension != null) {
                     mixinExtension.javaClass
                         .getMethod("config", String::class.java)
-                        .invoke(mixinExtension, "salts_inventory_update.mixins.json")
+                        .invoke(mixinExtension, if (compatibilityModule) "salts_inventory_compat.sophisticated.mixins.json" else "salts_inventory_update.mixins.json")
+                    if (compatibilityModule) {
+                        mixinExtension.javaClass.getMethod("config", String::class.java)
+                            .invoke(mixinExtension, "salts_inventory_compat.ae2.mixins.json")
+                        mixinExtension.javaClass.getMethod("config", String::class.java)
+                            .invoke(mixinExtension, "salts_inventory_compat.ae2-native.mixins.json")
+                        // Source-set development mods do not have the core JAR manifest.
+                        // Forge therefore needs both independent mods' mixin configs here.
+                        mixinExtension.javaClass.getMethod("config", String::class.java)
+                            .invoke(mixinExtension, "salts_inventory_update.mixins.json")
+                    }
                     mixinExtension.javaClass
                         .getMethod("add", SourceSet::class.java, String::class.java)
-                        .invoke(mixinExtension, mainSourceSet, "salts_inventory_update.refmap.json")
+                        .invoke(mixinExtension, mainSourceSet, if (compatibilityModule) "salts_inventory_compat.refmap.json" else "salts_inventory_update.refmap.json")
                     logger.lifecycle("Salt's Inventory Update Forge 1.20.1 mixin refmap generation enabled")
                 } else {
                     logger.warn("Salt's Inventory Update Forge 1.20.1 mixin refmap generation could not be enabled")
@@ -376,7 +480,7 @@ subprojects {
         plugins.withId("java") {
             tasks.named<Jar>("jar") {
                 manifest {
-                    attributes("MixinConfigs" to "salts_inventory_update.mixins.json")
+                    attributes("MixinConfigs" to if (compatibilityModule) "salts_inventory_compat.sophisticated.mixins.json,salts_inventory_compat.ae2.mixins.json,salts_inventory_compat.ae2-native.mixins.json" else "salts_inventory_update.mixins.json")
                 }
             }
         }
@@ -385,13 +489,22 @@ subprojects {
     if (minecraftVersion != null && name == "fabric") {
         afterEvaluate {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
-                addFabricModMenuSourceDir()
-                addFabricPlatformSourceDir(minecraftVersion)
+                if (compatibilityModule) addFabricModMenuSourceDir()
+                else addFabricPlatformSourceDir(minecraftVersion)
             }
-            modMenuVersions[minecraftVersion]?.let { modMenuVersion ->
+            if (compatibilityModule) modMenuVersions[minecraftVersion]?.let { modMenuVersion ->
                 val configurationName = if (minecraftVersion.startsWith("26.")) "compileOnly" else "modCompileOnly"
                 if (configurations.findByName(configurationName) != null) {
                     dependencies.add(configurationName, "com.terraformersmc:modmenu:$modMenuVersion")
+                }
+            }
+            if (compatibilityModule && minecraftVersion == "1.20.1") {
+                dependencies.add("modCompileOnly", "maven.modrinth:ae2:xIOhOI9C")
+                if (providers.gradleProperty("includeAe2Runtime").map(String::toBoolean).getOrElse(false)) {
+                    dependencies.add("modLocalRuntime", "maven.modrinth:ae2:xIOhOI9C")
+                    // Loom's development launcher does not load AE2's nested
+                    // Energy JAR. Use the same upstream dependency for QA only.
+                    dependencies.add("modLocalRuntime", "teamreborn:energy:3.0.0")
                 }
             }
         }
@@ -411,7 +524,7 @@ subprojects {
         "1.21.11" to "27.13.0.43",
         "1.21.1" to "19.32.0.359"
     )
-    if (minecraftVersion != null && (name == "fabric" || name == "neoforge" || name == "forge")) {
+    if (compatibilityModule && minecraftVersion != null && (name == "fabric" || name == "neoforge" || name == "forge")) {
         afterEvaluate {
             val jeiVersion = if (name == "neoforge") {
                 neoForgeJeiVersions[minecraftVersion] ?: jeiVersions[minecraftVersion]
@@ -491,7 +604,7 @@ subprojects {
         "1.21.1" to "13.0.6",
         "1.20.1" to "9.0.7"
     )
-    if (minecraftVersion != null && (name == "fabric" || name == "neoforge" || name == "forge")) {
+    if (compatibilityModule && minecraftVersion != null && (name == "fabric" || name == "neoforge" || name == "forge")) {
         afterEvaluate {
             reiVersions[minecraftVersion]?.let { reiVersion ->
                 val reiLoader = name
@@ -526,7 +639,7 @@ subprojects {
     val emiVersions = mapOf(
         "1.21.1" to "1.1.24+1.21.1"
     )
-    if (minecraftVersion != null && (name == "fabric" || name == "neoforge")) {
+    if (compatibilityModule && minecraftVersion != null && (name == "fabric" || name == "neoforge")) {
         afterEvaluate {
             emiVersions[minecraftVersion]?.let { emiVersion ->
                 val apiConfiguration = if (name == "fabric" && configurations.findByName("modCompileOnly") != null) {
@@ -551,12 +664,16 @@ subprojects {
         val loaderName = name
         afterEvaluate {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
-                addLoaderSourceDirs(minecraftVersion, loaderName)
+                if (compatibilityModule) {
+                    java.srcDir(rootProject.file("compatibility/versions/$minecraftVersion/fabric/src/main/java"))
+                    java.exclude("**/SaltsInventoryCompatibilityFabric.java", "**/SaltsInventoryCompatibilityFabricClient.java",
+                        "**/compat/rei/SaltsReiClientPlugin.java", "**/compat/emi/SaltsEmiClientPlugin.java")
+                } else addLoaderSourceDirs(minecraftVersion, loaderName)
             }
         }
     }
 
-    if (minecraftVersion != null && (name == "fabric" || name == "forge" || name == "neoforge") && includeFunctionalTests.get()) {
+    if (!compatibilityModule && minecraftVersion != null && (name == "fabric" || name == "forge" || name == "neoforge") && includeFunctionalTests.get()) {
         afterEvaluate {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
                 addFunctionalTestSourceDir()
@@ -567,13 +684,14 @@ subprojects {
 
 gradle.projectsEvaluated {
     val exampleCompiles = subprojects
-        .filter { it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
+        .filter { !it.path.startsWith(":compatibility:") && it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
         .map { loaderProject ->
             val gameVersion = loaderProject.parent!!.name
             val legacyInput = gameVersion in setOf("1.20.1", "1.21.1")
             val legacyGraphics = legacyInput || gameVersion == "1.21.11"
             val generated = loaderProject.layout.buildDirectory.dir("generated/api-examples")
             val prepare = loaderProject.tasks.register<Sync>("prepareApiExamples") {
+                inputs.property("legacyEventPackage", "com.salts_inventory_update.api.client.input")
                 from(rootProject.file("api-examples/ui/src/main/java"))
                 into(generated)
                 filter { line: String ->
@@ -582,7 +700,7 @@ gradle.projectsEvaluated {
                     if (gameVersion == "1.20.1") adapted = adapted.replace("ResourceLocation.parse(", "ResourceLocation.tryParse(")
                     if (legacyGraphics) adapted = adapted.replace(".extractRenderState(", ".render(")
                     if (legacyInput) {
-                        adapted = adapted.replace("net.minecraft.client.input.", "com.salts_inventory_update.client.input.")
+                        adapted = adapted.replace("net.minecraft.client.input.", "com.salts_inventory_update.api.client.input.")
                             .replace("edit.mouseClicked(event, doubleClick)", "edit.mouseClicked(event.x(), event.y(), event.button())")
                             .replace("edit.mouseDragged(event, dx, dy)", "edit.mouseDragged(event.x(), event.y(), event.button(), dx, dy)")
                             .replace("edit.keyPressed(event)", "edit.keyPressed(event.key(), event.scancode(), event.modifiers())")
@@ -648,12 +766,12 @@ gradle.projectsEvaluated {
             }
         }
         dependsOn(subprojects
-            .filter { it.parent?.name != null && (it.name == "fabric" || it.name == "forge" || it.name == "neoforge") }
+            .filter { !it.path.startsWith(":compatibility:") && it.parent?.name != null && (it.name == "fabric" || it.name == "forge" || it.name == "neoforge") }
             .map { it.tasks.named("compileJava") })
     }
 
     val uploadableLoaderProjects = subprojects
-        .filter { it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
+        .filter { !it.path.startsWith(":compatibility:") && it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
     val allProjectBuildTasks = subprojects.mapNotNull { subproject ->
         subproject.tasks.findByName("build")?.let { subproject.tasks.named("build") }
     }
@@ -757,7 +875,7 @@ gradle.projectsEvaluated {
                 "1.21.1" to mapOf("fabric" to null, "neoforge" to "[21.1.229,21.2)"),
                 "1.21.11" to mapOf("fabric" to null, "neoforge" to "[21.11.42,21.12)"),
                 "26.1.2" to mapOf("fabric" to null, "neoforge" to "[26.1.2.59-beta,26.1.3)"),
-                "26.2" to mapOf("fabric" to null, "neoforge" to "[26.2.0.53-beta,26.3)"),
+                "26.2" to mapOf("fabric" to null, "neoforge" to "[26.2.0.90,26.3)"),
                 "26.3" to mapOf("fabric" to null, "neoforge" to "[26.3.0.22-beta,26.4)")
             )
             val languageLoaderRanges = mapOf(
@@ -864,14 +982,8 @@ gradle.projectsEvaluated {
                         if (missing.isNotEmpty()) {
                             throw GradleException("${jarFile.name} is missing required entries: $missing")
                         }
-                        val sophisticatedMixin = "salts_inventory_update.sophisticated.mixins.json"
-                        if (minecraftVersion in setOf("1.20.1", "1.21.1", "1.21.11", "26.1.2", "26.2")
-                            && loader in setOf("forge", "neoforge")) {
-                            if (sophisticatedMixin !in entries) {
-                                throw GradleException("${jarFile.name} is missing its Forge/NeoForge Sophisticated mixin configuration")
-                            }
-                        } else if (sophisticatedMixin in entries) {
-                            throw GradleException("${jarFile.name} contains the Forge/NeoForge-only Sophisticated mixin configuration")
+                        if (entries.any { it.contains("/compat/") || it.contains("sophisticated.mixins") }) {
+                            throw GradleException("${jarFile.name} contains compatibility implementation")
                         }
 
                         fun textEntry(name: String): String {
@@ -1029,3 +1141,5 @@ gradle.projectsEvaluated {
         dependsOn("verifyApiExamples")
     }
 }
+
+apply(from = "gradle/compatibility.gradle")

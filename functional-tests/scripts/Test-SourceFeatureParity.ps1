@@ -233,7 +233,7 @@ foreach ($version in $versions) {
     } else {
         $serverPlayerMixin
     }
-    $tomsPayloads = Join-Path $fabricRoot 'compat\toms_storage\TomsStoragePayloads.java'
+$tomsPayloads = Join-Path $RepoRoot "compatibility\versions\$version\fabric\src\main\java\com\salts_inventory_update\compat\toms_storage\TomsStoragePayloads.java"
     $language = Join-Path $RepoRoot "versions\$version\common\src\main\resources\assets\salts_inventory_update\lang\en_us.json"
     $mixinConfig = Join-Path $RepoRoot "versions\$version\common\src\main\resources\salts_inventory_update.mixins.json"
 
@@ -444,9 +444,9 @@ foreach ($target in $sophisticatedTargets) {
     $version = $target.Version
     $loader = $target.Loader
     $label = "$version $loader"
-    $nonFabricRoot = Join-Path $RepoRoot "versions\$version\$loader"
+    $nonFabricRoot = Join-Path $RepoRoot "compatibility\versions\$version\$loader"
     $fabricRoot = Join-Path $RepoRoot "versions\$version\fabric"
-    $mixinConfigPath = Join-Path $nonFabricRoot 'src\main\resources\salts_inventory_update.sophisticated.mixins.json'
+    $mixinConfigPath = Join-Path $nonFabricRoot 'src\main\resources\salts_inventory_compat.sophisticated.mixins.json'
     $metadataPath = Join-Path $nonFabricRoot "src\main\resources\META-INF\$($target.Metadata)"
     $fabricMetadataPath = Join-Path $fabricRoot 'src\main\resources\fabric.mod.json'
     $compatRoot = Join-Path $nonFabricRoot 'src\main\java\com\salts_inventory_update\compat\sophisticated'
@@ -494,9 +494,9 @@ foreach ($target in $sophisticatedTargets) {
     }
 }
 
-$sophisticatedNeoForgeRoot = Join-Path $RepoRoot 'versions\26.2\neoforge'
+$sophisticatedNeoForgeRoot = Join-Path $RepoRoot 'compatibility\versions\26.2\neoforge'
 $sophisticatedFabricRoot = Join-Path $RepoRoot 'versions\26.2\fabric'
-$sophisticatedMixinConfig = Join-Path $sophisticatedNeoForgeRoot 'src\main\resources\salts_inventory_update.sophisticated.mixins.json'
+$sophisticatedMixinConfig = Join-Path $sophisticatedNeoForgeRoot 'src\main\resources\salts_inventory_compat.sophisticated.mixins.json'
 $sophisticatedNeoForgeMetadata = Join-Path $sophisticatedNeoForgeRoot 'src\main\resources\META-INF\neoforge.mods.toml'
 $sophisticatedFabricMetadata = Join-Path $sophisticatedFabricRoot 'src\main\resources\fabric.mod.json'
 $sophisticatedHostedDefinition = Join-Path $sophisticatedNeoForgeRoot 'src\main\java\com\salts_inventory_update\compat\sophisticated\client\SophisticatedHostedScreenDefinition.java'
@@ -525,14 +525,14 @@ $sophisticatedCoreCompat = Join-Path $sophisticatedNeoForgeRoot 'src\main\java\c
 Assert-File -Path $sophisticatedMixinConfig -Label '26.2 NeoForge Sophisticated mixin config' | Out-Null
 Assert-Contains -Path $sophisticatedNeoForgeMetadata -Text 'config = "${mod_id}.sophisticated.mixins.json"' -Label '26.2 NeoForge registers its Sophisticated mixin config'
 Assert-NotContains -Path $sophisticatedFabricMetadata -Text 'sophisticated' -Label '26.2 Fabric metadata remains free of Sophisticated integration'
-Assert-Matches -Path $rootBuildScript -Pattern '(?s)if \(minecraftVersion != null && name in setOf\("forge", "neoforge"\)\).{0,1800}compileOnly' -Label 'Sophisticated dependencies are scoped to every Forge and NeoForge target'
+Assert-Matches -Path $rootBuildScript -Pattern '(?s)if \(compatibilityModule && minecraftVersion != null && name in setOf\("forge", "neoforge"\)\).{0,1800}compileOnly' -Label 'Sophisticated dependencies are scoped to every Forge and NeoForge target'
 Assert-Matches -Path $rootBuildScript -Pattern '(?s)name == "forge" && minecraftVersion == "1\.20\.1".{0,1800}sophisticatedForgeRuntimeNamed.{0,900}attribute\(mappingsAttribute, namedMappings\).{0,1200}classpath \+= files\(sophisticatedForgeRuntimeNamed\)' -Label '1.20.1 Forge development runtime remaps Sophisticated production jars to named mappings'
 Assert-Matches -Path $rootBuildScript -Pattern '(?s)runTask\.workingDir.{0,200}resolve\("mods"\).{0,500}file\.name\.startsWith\("jei-"\).{0,600}project\.delete\(staleJeiJars\).{0,500}managed by -PincludeJeiRuntime' -Label 'development runs remove stale JEI jars before applying the managed JEI runtime option'
 Assert-Matches -Path $rootBuildScript -Pattern '(?s)neoForgeJeiVersions = mapOf\(.{0,500}"26\.2" to "30\.7\.0\.39".{0,500}"1\.21\.11" to "27\.13\.0\.43".{0,500}"1\.21\.1" to "19\.32\.0\.359"' -Label 'NeoForge JEI pins satisfy the selected Sophisticated Core versions'
 Assert-Matches -Path $rootBuildScript -Pattern '(?s)val jeiVersion = if \(name == "neoforge"\).{0,250}neoForgeJeiVersions\[minecraftVersion\] \?: jeiVersions\[minecraftVersion\].{0,150}else \{\s*jeiVersions\[minecraftVersion\]' -Label 'Fabric retains its independent JEI version pins'
 Assert-Matches -Path $legacyDesktopContainerSessions -Pattern '(?s)SessionSynchronizer synchronizer = new SessionSynchronizer\(player, session\).{0,400}DesktopSynchronizerOverride\.run\(\s*synchronizer,.{0,250}session\.menu\.setSynchronizer\(synchronizer\)' -Label '1.20.1 preserves the detached Salt synchronizer while Sophisticated initializes high-stack synchronization'
 Assert-Contains -Path $legacyDesktopContainerSessions -Text 'SessionSynchronizer implements ContainerSynchronizer, DesktopSessionSynchronizer' -Label '1.20.1 detached synchronizer carries the preservation marker consumed by Sophisticated mixins'
-Assert-Matches -Path $rootBuildScript -Pattern '(?s)minecraftVersion in setOf\("1\.20\.1", "1\.21\.1", "1\.21\.11", "26\.1\.2", "26\.2"\).{0,300}loader in setOf\("forge", "neoforge"\).{0,500}sophisticatedMixin !in entries' -Label 'release verification requires the Sophisticated mixin on every Forge and NeoForge target'
+Assert-Contains -Path (Join-Path $RepoRoot 'tools\verify-module-boundaries.py') -Text 'sophisticated.mixins' -Label 'release verification isolates Sophisticated mixins from core'
 Assert-NotMatches -Path $sophisticatedHostedDefinition -Pattern '(?m)^\s*(?!//).*\.\s*extract(?:Background|Contents)\s*\(' -Label 'Sophisticated host does not invoke whole-screen rendering'
 Assert-Matches -Path $sophisticatedHostedDefinition -Pattern '(?s)translateDetachedTabChildren\(composite, dx, dy\).{0,1800}attachedChildren\.contains\(child\).{0,400}child\.setPosition\(new Position\(child\.getX\(\) \+ dx, child\.getY\(\) \+ dy\)\)' -Label 'Sophisticated closed-tab controls follow hosted window movement exactly once'
 Assert-Matches -Path $sophisticatedHostedDefinition -Pattern '(?s)tab instanceof SophisticatedHostedPositionAccess positionAccess.{0,300}positionAccess\.salts_inventory_update\$translateHostedPosition\(dx, dy\).{0,700}child instanceof SophisticatedHostedPositionAccess positionAccess.{0,300}positionAccess\.salts_inventory_update\$translateHostedPosition\(dx, dy\)' -Label 'Sophisticated cached tab geometry receives each nonzero hosted movement delta'
@@ -672,9 +672,9 @@ Assert-Matches -Path $desktopItemSourceLocks -Pattern '(?s)hasLockedSourceInRang
 Assert-Matches -Path $sophisticatedBackpackItemLocks -Pattern '(?s)ContextType\.ITEM_BACKPACK.{0,500}saltsInventoryUpdate\$getHandlerName\(\).{0,500}switch \(handlerName\).{0,700}MAIN_INVENTORY.{0,300}OFFHAND_INVENTORY.{0,300}ARMOR_INVENTORY.{0,1000}getPlayerInventoryHandler\(handlerName\).{0,800}getStackInSlot\(player, itemContext\.saltsInventoryUpdate\$getIdentifier\(\), handlerSlot\).{0,800}getContentsUuid\(\).{0,600}matchesContentsUuid\(stack, contentsUuid\)' -Label 'Sophisticated source resolver locks the exact top-level held or worn item Backpack'
 Assert-Matches -Path $sophisticatedBackpackItemLocks -Pattern '(?s)matchesContentsUuid\(ItemStack stack, UUID contentsUuid\).{0,300}BackpackWrapper\.fromStack\(stack\)\.getContentsUuid\(\)\.filter\(contentsUuid::equals\)' -Label 'Sophisticated source identity survives mutable Backpack component updates via contents UUID'
 Assert-Contains -Path $sophisticatedBackpacksCompat -Text 'SophisticatedBackpackItemLocks.register(backpack, settings);' -Label '26.2 NeoForge registers item Backpack locks for main and settings menus'
-Assert-Matches -Path $sophisticatedCoreCompat -Pattern '(?s)TransferItemsPayload\.TYPE\.id\(\)(?:(?!\r?\n        register).)*!payload\.transferToInventory\(\)(?:(?!\r?\n        register).)*DesktopItemSourceLocks\.hasLockedSourceInRange\(context\.player\(\), 9, Inventory\.INVENTORY_SIZE\)(?:(?!\r?\n        register).)*context\.broadcastChanges\(\);\s*return;' -Label 'Sophisticated bulk transfer-to-storage cannot move an open item Backpack into itself'
+Assert-Matches -Path $sophisticatedCoreCompat -Pattern '(?s)TransferItemsPayload\.TYPE\.id\(\)(?:(?!\r?\n        register).)*!payload\.transferToInventory\(\)(?:(?!\r?\n        register).)*DesktopItemSources\.hasLockedSourceInRange\(context\.player\(\), 9, Inventory\.INVENTORY_SIZE\)(?:(?!\r?\n        register).)*context\.broadcastChanges\(\);\s*return;' -Label 'Sophisticated bulk transfer-to-storage cannot move an open item Backpack into itself'
 Assert-Matches -Path $sophisticatedCoreCompat -Pattern '(?s)TransferFullSlotPayload\.TYPE\.id\(\).{0,300}runForValidUnlockedSlot\(context, payload\.slotId\(\)' -Label 'Sophisticated full-slot transfers use the locked-source-aware handler'
-Assert-Matches -Path $sophisticatedCoreCompat -Pattern '(?s)private static void runForValidUnlockedSlot\((?:(?!\r?\n    private static).)*DesktopItemSourceLocks\.isSlotLocked\(context\.player\(\), DesktopMenuBindings\.slot\(context\.menu\(\), slotId\)\)' -Label 'Sophisticated full-slot transfer rejects the exact locked Backpack source'
+Assert-Matches -Path $sophisticatedCoreCompat -Pattern '(?s)private static void runForValidUnlockedSlot\((?:(?!\r?\n    private static).)*DesktopItemSources\.isSlotLocked\(context\.player\(\), DesktopMenuBindings\.slot\(context\.menu\(\), slotId\)\)' -Label 'Sophisticated full-slot transfer rejects the exact locked Backpack source'
 Assert-Matches -Path $sophisticatedMixinPlugin -Pattern '(?s)mixinClassName\.endsWith\("\.BackpackContextItemAccessor"\).{0,200}mixinClassName\.endsWith\("\.ServerGamePacketListenerItemLockMixin"\).{0,200}return this\.backpacksEnabled;' -Label 'item-lock mixins remain guarded by Sophisticated Backpacks presence'
 Assert-Matches -Path $desktopContainerSessions -Pattern '(?s)hasOpenSessionMatching\(Player player, Predicate<AbstractContainerMenu> menuPredicate\).{0,800}menuPredicate\.test\(session\.menu\)' -Label 'detached menu ownership can be checked without exposing session state'
 Assert-Matches -Path $sophisticatedStorageOpenersMixin -Pattern '(?s)counter instanceof SophisticatedOpenersCounter.{0,500}hasOpenSessionMatching.{0,900}player\.containerMenu = desktopMenu;.{0,500}counter\.isOwnContainer\(player\).{0,300}finally \{\s*player\.containerMenu = previousMenu;' -Label 'Sophisticated physical storage opener checks use official ownership semantics for detached menus'
@@ -694,11 +694,11 @@ Assert-Matches -Path $desktopContainerSessions -Pattern '(?s)private static void
 Assert-Matches -Path $desktopContainerSessions -Pattern '(?s)private static void quickMove\(.{0,11000}targets\.removeIf\(slot -> DesktopItemSourceLocks\.isSlotLocked\(player, slot\)\)' -Label 'authenticated Salt quick moves reject locked Backpack destinations'
 Assert-Contains -Path $desktopContainerSessions -Text 'DesktopItemSourceLocks.shouldRejectClick(player, menu, slotIndex, button, input, effectiveCarried)' -Label 'authenticated Salt clicks reject the locked Backpack source'
 Assert-Count -Path $desktopContainerSessions -Text 'DesktopItemSourceLocks.anyLockedSourceMatches(' -Expected 2 -Label 'vanilla and JEI recipe transfers both exclude the locked Backpack source'
-Assert-Matches -Path $sophisticatedServerItemLockMixin -Pattern '(?s)@Inject\(method = "handleContainerClick".{0,900}DesktopItemSourceLocks\.shouldRejectClick.{0,800}@Inject\(method = "handlePlayerAction".{0,1000}@Inject\(method = "handleUseItem".{0,700}@Inject\(method = "handleUseItemOn".{0,700}@Inject\(method = "handleInteract".{0,700}@Inject\(method = "handleSetCreativeModeSlot".{0,1200}@Inject\(method = "tryPickItem"' -Label 'NeoForge server rejects vanilla click, drop, swap, use, creative, and pick packets for the locked Backpack source'
+Assert-Matches -Path $sophisticatedServerItemLockMixin -Pattern '(?s)@Inject\(method = "handleContainerClick".{0,900}DesktopItemSources\.shouldRejectClick.{0,800}@Inject\(method = "handlePlayerAction".{0,1000}@Inject\(method = "handleUseItem".{0,700}@Inject\(method = "handleUseItemOn".{0,700}@Inject\(method = "handleInteract".{0,700}@Inject\(method = "handleSetCreativeModeSlot".{0,1200}@Inject\(method = "tryPickItem"' -Label 'NeoForge server rejects vanilla click, drop, swap, use, creative, and pick packets for the locked Backpack source'
 Assert-Contains -Path $sophisticatedBackpackContextAccessor -Text '@Accessor("handlerName")' -Label 'Sophisticated item context exposes its top-level handler identity'
 
 $fabricSourceLockRegistrations = @(Get-ChildItem -LiteralPath (Join-Path $sophisticatedFabricRoot 'src\main\java') -Recurse -Filter '*.java' -File |
-    Where-Object { (Get-Content -LiteralPath $_.FullName -Raw).Contains('DesktopItemSourceLocks.register(') })
+    Where-Object { $_.FullName -notlike '*\api\*' -and (Get-Content -LiteralPath $_.FullName -Raw).Contains('DesktopItemSourceLocks.register(') })
 if ($fabricSourceLockRegistrations.Count -ne 0) {
     Add-Failure "26.2 Fabric unexpectedly registers item-source locking in: $($fabricSourceLockRegistrations.FullName -join ', ')"
 } else {
@@ -733,21 +733,21 @@ foreach ($version in $versions) {
         Assert-NotContains -Path $fabricMetadata -Text 'rei_client' -Label '26.3 omits REI until a compatible release exists'
         continue
     }
-    $runtimeRei = Join-Path $RepoRoot "versions\$version\fabric\src\main\java\com\salts_inventory_update\compat\rei\RuntimeReiRecipeBrowserAccess.java"
+    $runtimeRei = Join-Path $RepoRoot "compatibility\versions\$version\fabric\src\main\java\com\salts_inventory_update\compat\rei\RuntimeReiRecipeBrowserAccess.java"
     Assert-File -Path $runtimeRei -Label "$version shared REI runtime access retained" | Out-Null
 
     $nonFabricLoader = if ($version -eq '1.20.1') { 'forge' } else { 'neoforge' }
-    $nonFabricRei = Join-Path $RepoRoot "versions\$version\$nonFabricLoader\src\main\java\com\salts_inventory_update\compat\rei\SaltsReiForgeClientPlugin.java"
+    $nonFabricRei = Join-Path $RepoRoot "compatibility\versions\$version\$nonFabricLoader\src\main\java\com\salts_inventory_update\compat\rei\SaltsReiForgeClientPlugin.java"
     Assert-File -Path $nonFabricRei -Label "$version non-Fabric REI client plugin retained" | Out-Null
 }
 
 $versionDifferences = Join-Path $RepoRoot 'version_differences.md'
-$emiRuntime = Join-Path $RepoRoot 'versions\1.21.1\fabric\src\main\java\com\salts_inventory_update\compat\emi\RuntimeEmiRecipeBrowserAccess.java'
-$emiBootstrap = Join-Path $RepoRoot 'versions\1.21.1\fabric\src\main\java\com\salts_inventory_update\compat\emi\EmiRecipeBrowserBootstrap.java'
-$emiFabricPlugin = Join-Path $RepoRoot 'versions\1.21.1\fabric\src\main\java\com\salts_inventory_update\compat\emi\SaltsEmiClientPlugin.java'
-$emiNeoForgePlugin = Join-Path $RepoRoot 'versions\1.21.1\neoforge\src\main\java\com\salts_inventory_update\compat\emi\SaltsEmiForgeClientPlugin.java'
-$emiFabricMetadata = Join-Path $RepoRoot 'versions\1.21.1\fabric\src\main\resources\fabric.mod.json'
-$emiClientStartup = Join-Path $RepoRoot 'versions\1.21.1\fabric\src\main\java\com\salts_inventory_update\client\WindowedInventoryClient.java'
+$emiRuntime = Join-Path $RepoRoot 'compatibility\versions\1.21.1\fabric\src\main\java\com\salts_inventory_update\compat\emi\RuntimeEmiRecipeBrowserAccess.java'
+$emiBootstrap = Join-Path $RepoRoot 'compatibility\versions\1.21.1\fabric\src\main\java\com\salts_inventory_update\compat\emi\EmiRecipeBrowserBootstrap.java'
+$emiFabricPlugin = Join-Path $RepoRoot 'compatibility\versions\1.21.1\fabric\src\main\java\com\salts_inventory_update\compat\emi\SaltsEmiClientPlugin.java'
+$emiNeoForgePlugin = Join-Path $RepoRoot 'compatibility\versions\1.21.1\neoforge\src\main\java\com\salts_inventory_update\compat\emi\SaltsEmiForgeClientPlugin.java'
+$emiFabricMetadata = Join-Path $RepoRoot 'compatibility\versions\1.21.1\fabric\src\main\resources\fabric.mod.json'
+$emiClientStartup = Join-Path $RepoRoot 'compatibility\versions\1.21.1\fabric\src\main\java\com\salts_inventory_update\compat\CompatibilityBootstrap.java'
 Assert-Contains -Path $versionDifferences -Text 'Minecraft 1.21.1 and earlier versions support EMI integration.' -Label 'EMI version boundary is documented'
 Assert-Contains -Path $versionDifferences -Text 'the 26.3 NeoForge build will add this integration when Sophisticated publishes for 26.3' -Label 'Sophisticated loader/version boundary is documented'
 Assert-Contains -Path $versionDifferences -Text 'single Salt frame' -Label 'Sophisticated single-frame composition is documented'
@@ -769,7 +769,7 @@ Assert-Contains -Path $versionDifferences -Text 'same authenticated detached-con
 Assert-Contains -Path $versionDifferences -Text 'that exact source Backpack is locked for the lifetime of its Salt session' -Label 'Sophisticated item Backpack source lock is documented'
 Assert-Contains -Path $versionDifferences -Text 'exclusive to Forge and NeoForge and does not change Fabric behavior' -Label 'Sophisticated item-source lock loader boundary is documented'
 Assert-Contains -Path $versionDifferences -Text 'physical Sophisticated Storage block remains visibly open' -Label 'Sophisticated detached storage opener lifetime is documented'
-Assert-Contains -Path $emiRuntime -Text 'RecipeBrowserSource.EMI' -Label '1.21.1 shared EMI runtime access retained'
+Assert-Contains -Path $emiRuntime -Text 'RecipeBrowserProviders.EMI' -Label '1.21.1 shared EMI runtime access retained'
 Assert-Contains -Path $emiRuntime -Text 'EmiCraftingRecipe' -Label '1.21.1 EMI crafting transfer support retained'
 Assert-Contains -Path $emiRuntime -Text 'EMI_FAVORITES_CLASS' -Label '1.21.1 EMI favorites support retained'
 Assert-Contains -Path $emiRuntime -Text 'cachedIndexEntriesByType' -Label '1.21.1 EMI index rendering cache retained'
@@ -780,8 +780,8 @@ Assert-Contains -Path $emiRuntime -Text 'renderHoveredSlot' -Label '1.21.1 EMI h
 Assert-Contains -Path $emiRuntime -Text 'renderRecipeTooltip' -Label '1.21.1 EMI recipe widget tooltips retained'
 Assert-Contains -Path $emiRuntime -Text 'JEMI_TAG_RECIPE_HEIGHT = 42' -Label '1.21.1 EMI compacts JEI tag recipes imported through JEMI'
 Assert-Contains -Path $emiRuntime -Text 'compactJemiTagWidgets' -Label '1.21.1 EMI replaces oversized JEMI tag widget bounds'
-Assert-Contains -Path $emiBootstrap -Text 'RecipeBrowserBridge.install(RecipeBrowserSource.EMI, access)' -Label '1.21.1 EMI startup bootstrap retained'
-Assert-Contains -Path $emiClientStartup -Text 'EmiRecipeBrowserBootstrap.initialize();' -Label '1.21.1 client initializes EMI integration'
+Assert-Contains -Path $emiBootstrap -Text 'RecipeBrowserProviders.EMI, access)' -Label '1.21.1 EMI startup bootstrap retained'
+Assert-Contains -Path $emiClientStartup -Text 'com.salts_inventory_update.compat.emi.EmiRecipeBrowserBootstrap' -Label '1.21.1 client initializes EMI integration'
 Assert-Contains -Path $emiFabricPlugin -Text 'implements EmiPlugin' -Label '1.21.1 Fabric EMI client plugin retained'
 Assert-Contains -Path $emiNeoForgePlugin -Text '@EmiEntrypoint' -Label '1.21.1 NeoForge EMI client plugin retained'
 Assert-Contains -Path $emiFabricMetadata -Text '"emi": [' -Label '1.21.1 Fabric EMI entrypoint metadata retained'
@@ -863,7 +863,7 @@ $nonFabricRanges = @{
     '1.21.1' = @{ Loader = 'neoforge'; LanguageRange = '[4.0.34,5)'; ModRange = '[21.1.229,21.2)'; File = 'neoforge.mods.toml' }
     '1.21.11' = @{ Loader = 'neoforge'; LanguageRange = '[10,11)'; ModRange = '[21.11.42,21.12)'; File = 'neoforge.mods.toml' }
     '26.1.2' = @{ Loader = 'neoforge'; LanguageRange = '[11,12)'; ModRange = '[26.1.2.59-beta,26.1.3)'; File = 'neoforge.mods.toml' }
-    '26.2' = @{ Loader = 'neoforge'; LanguageRange = '[11,12)'; ModRange = '[26.2.0.53-beta,26.3)'; File = 'neoforge.mods.toml' }
+    '26.2' = @{ Loader = 'neoforge'; LanguageRange = '[11,12)'; ModRange = '[26.2.0.90,26.3)'; File = 'neoforge.mods.toml' }
     '26.3' = @{ Loader = 'neoforge'; LanguageRange = '[12,13)'; ModRange = '[26.3.0.22-beta,26.4)'; File = 'neoforge.mods.toml' }
 }
 foreach ($version in $versions) {
@@ -972,8 +972,8 @@ foreach ($version in $versions) {
     }
     if ($version -ne '26.3') {
         $sortLoader = if ($version -eq '1.20.1') { 'forge' } else { 'neoforge' }
-        $sortCompat = Join-Path $RepoRoot "versions\$version\$sortLoader\src\main\java\com\salts_inventory_update\compat\sophisticated\SophisticatedCoreCompat.java"
-        Assert-Contains -Path $sortCompat -Text 'DesktopSortSlots.registerStorage(menuType,' -Label "$version $sortLoader Sophisticated sort storage slots"
+        $sortCompat = Join-Path $RepoRoot "compatibility\versions\$version\$sortLoader\src\main\java\com\salts_inventory_update\compat\sophisticated\SophisticatedCoreCompat.java"
+        Assert-Contains -Path $sortCompat -Text 'DesktopMenuBindings.registerStorage(menuType,' -Label "$version $sortLoader Sophisticated sort storage slots"
     }
 }
 

@@ -1,0 +1,11 @@
+{
+  "includes": ["../spatial_io_port.json"],
+  "desktop": {
+    "width": 176,
+    "height": 108,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  }
+}

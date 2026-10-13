@@ -1,0 +1,11 @@
+{
+  "includes": ["../../terminals/pattern_access_terminal.json"],
+  "desktop": {
+    "width": 195,
+    "height": 75,
+    "resize": "list",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  }
+}

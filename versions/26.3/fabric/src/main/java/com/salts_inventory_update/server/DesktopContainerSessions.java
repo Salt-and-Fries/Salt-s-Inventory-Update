@@ -90,7 +90,6 @@ import com.salts_inventory_update.api.server.desktop.DesktopServerWindowHandler;
 import com.salts_inventory_update.api.server.desktop.DesktopTransferDecision;
 import com.salts_inventory_update.api.server.desktop.DesktopTransferRequest;
 import com.salts_inventory_update.api.server.desktop.DesktopTransferValidators;
-import com.salts_inventory_update.compat.toms_storage.TomsStorageCompat;
 import com.salts_inventory_update.debug.DesktopDebug;
 import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.internal.desktop.DesktopItemSourceLocks;
@@ -2505,7 +2504,7 @@ public final class DesktopContainerSessions {
 
         if (payload.targetKind() == DesktopPackets.QUICK_TARGET_SESSION && payload.targetSessionId() != source.sessionId) {
             Session targetSession = sessions.sessions.get(payload.targetSessionId());
-            if (quickMoveIntoTomStorageTerminal(player, sessions, source, targetSession)) {
+            if (quickMoveIntoNativeInventory(player, sessions, source, targetSession)) {
                 return;
             }
         }
@@ -2682,13 +2681,18 @@ public final class DesktopContainerSessions {
         InventoryExpansion.tryPurchase(player);
     }
 
-    private static boolean quickMoveIntoTomStorageTerminal(ServerPlayer player, PlayerSessions sessions, SlotSource source, @Nullable Session targetSession) {
+    private static boolean usesNativeInventoryQuickMove(AbstractContainerMenu menu) {
+        var handler = DesktopServerApi.findWindowHandler(menu.getType());
+        return handler != null && handler.usesNativePlayerInventoryQuickMove(menu);
+    }
+
+    private static boolean quickMoveIntoNativeInventory(ServerPlayer player, PlayerSessions sessions, SlotSource source, @Nullable Session targetSession) {
         @Nullable MenuType<?> targetMenuType = targetSession == null ? null : targetSession.menuType();
         if (targetSession == null
             || !targetSession.visibleToClient
             || !targetSession.menu.stillValid(player)
             || targetMenuType == null
-            || !TomsStorageCompat.isTerminal(targetMenuType)
+            || !usesNativeInventoryQuickMove(targetSession.menu)
             || !isPlayerInventorySlot(player, source.slot)
             || !source.slot.hasItem()) {
             return false;
@@ -2705,7 +2709,7 @@ public final class DesktopContainerSessions {
         }
         if (targetSlotIndex < 0) {
             DesktopDebug.trace(
-                "server quick move tom terminal dropped player={} sourceSlot={} targetSession={} reason=no-matching-player-slot",
+                "server quick move native inventory dropped player={} sourceSlot={} targetSession={} reason=no-matching-player-slot",
                 player.getName().getString(),
                 sourceContainerSlot,
                 targetSession.sessionId
@@ -2728,7 +2732,7 @@ public final class DesktopContainerSessions {
         ItemStack after = targetSession.menu.slots.get(targetSlotIndex).getItem();
         boolean moved = !ItemStack.matches(before, after);
         DesktopDebug.trace(
-            "server quick move tom terminal player={} sourceSession={} sourceSlot={} targetSession={} targetSlot={} moved={} before={} after={}",
+            "server quick move native inventory player={} sourceSession={} sourceSlot={} targetSession={} targetSlot={} moved={} before={} after={}",
             player.getName().getString(),
             source.sessionId,
             source.slot.getContainerSlot(),
@@ -4288,6 +4292,15 @@ public final class DesktopContainerSessions {
         DesktopDebug.trace("server sync player-menu player={} slots={}", player.getName().getString(), player.inventoryMenu.slots.size());
     }
 
+    private static void requireCursorContext(ServerPlayer player, PlayerSessions sessions, Session session) {
+        var level = player.level();
+        var server = level == null ? null : level.getServer();
+        if (server == null || !server.isSameThread() || PLAYERS.get(player) != sessions
+            || sessions.sessions.get(session.sessionId) != session || !session.menu.stillValid(player)) {
+            throw new IllegalStateException("Shared cursor access requires a live server-thread session");
+        }
+    }
+
     private static void setSharedCarried(ServerPlayer player, PlayerSessions sessions, ItemStack stack) {
         ItemStack carried = stack.copy();
         player.inventoryMenu.setCarried(carried.copy());
@@ -5483,6 +5496,18 @@ public final class DesktopContainerSessions {
         }
 
         @Override
+        public net.minecraft.world.item.ItemStack carriedStack() {
+            requireCursorContext(this.player, this.sessions, this.session);
+            return this.player.inventoryMenu.getCarried().copy();
+        }
+
+        @Override
+        public void setCarriedStack(net.minecraft.world.item.ItemStack stack) {
+            requireCursorContext(this.player, this.sessions, this.session);
+            setSharedCarried(this.player, this.sessions, java.util.Objects.requireNonNull(stack, "stack"));
+        }
+
+        @Override
         public void broadcastChanges() {
             this.sessions.requestHandlerBroadcast(this.player);
         }
@@ -5545,6 +5570,18 @@ public final class DesktopContainerSessions {
                 this.session.sessionId, this.session.sessionToken,
                 this.session.menu.getStateId(), channel, data
             ));
+        }
+
+        @Override
+        public net.minecraft.world.item.ItemStack carriedStack() {
+            requireCursorContext(this.player, this.sessions, this.session);
+            return this.player.inventoryMenu.getCarried().copy();
+        }
+
+        @Override
+        public void setCarriedStack(net.minecraft.world.item.ItemStack stack) {
+            requireCursorContext(this.player, this.sessions, this.session);
+            setSharedCarried(this.player, this.sessions, java.util.Objects.requireNonNull(stack, "stack"));
         }
 
         @Override

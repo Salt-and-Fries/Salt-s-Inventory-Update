@@ -1,0 +1,45 @@
+gradle.projectsEvaluated {
+    def root=gradle.rootProject
+    def version=root.providers.gradleProperty('qaControlVersion').getOrElse('26.3')
+    def target=root.project(":${version}:fabric")
+    def withCore=root.providers.gradleProperty('qaControlWithCore').map { it.toBoolean() }.getOrElse(false)
+    def production=target.tasks.named(target.tasks.findByName('remapJar')==null?'jar':'remapJar')
+    def source=target.sourceSets.create('graphicsControl')
+    source.java.srcDir(root.file('functional-tests/packaged-java'))
+    source.java.include('**/GraphicsControlInitializer.java')
+    source.compileClasspath += target.sourceSets.main.compileClasspath
+    def generated=target.layout.buildDirectory.dir('graphics-control-resources').get().asFile
+    source.resources.srcDir(generated)
+    def metadata=target.tasks.register('graphicsControlMetadata') {
+        doLast {
+            generated.mkdirs()
+            new File(generated,'fabric.mod.json').text=groovy.json.JsonOutput.toJson([
+                schemaVersion:1,id:'salts_graphics_control',version:'1.0.0',environment:'client',
+                entrypoints:[client:['com.salts_inventory_update.functionaltest.GraphicsControlInitializer']]
+            ])
+        }
+    }
+    target.tasks.named(source.processResourcesTaskName).configure { dependsOn(metadata) }
+    def run=target.tasks.named('runClient').get()
+    target.tasks.register('runGraphicsControl',JavaExec) {
+        dependsOn(target.tasks.named(source.classesTaskName),run.taskDependencies.getDependencies(run))
+        javaLauncher.set(run.javaLauncher);mainClass.set(run.mainClass)
+        if(withCore) dependsOn(production)
+        workingDir=target.layout.buildDirectory.dir(withCore?'runtime-smoke/graphics-control-core':'runtime-smoke/graphics-control').get().asFile
+        environment('SIU_FUNCTIONAL_TESTS','false');environment('SIU_GAMEPLAY_TESTS','false')
+        doFirst {
+            workingDir.mkdirs()
+            if(withCore){
+                def mods=new File(workingDir,'mods');mods.mkdirs()
+                root.copy { from(production.get().archiveFile);into(mods) }
+            }
+            def prefix=root.projectDir.canonicalPath+File.separator
+            classpath=run.classpath.filter { f -> !f.canonicalPath.startsWith(prefix) || f.canonicalPath.contains(File.separator+'.gradle'+File.separator) }+source.output
+            args=run.args
+            jvmArgs=run.jvmArgs.findAll { !it.startsWith('-Dfabric.classPathGroups=') }
+            systemProperties(run.systemProperties.findAll { k,v -> k!='fabric.classPathGroups' })
+            systemProperty('fabric.classPathGroups',source.output.files.collect { it.absolutePath }.join(File.pathSeparator))
+            println('GRAPHICS_CONTROL_PROJECT_CLASSPATH='+classpath.files.findAll { it.canonicalPath.startsWith(prefix)&&!it.canonicalPath.contains(File.separator+'.gradle'+File.separator) })
+        }
+    }
+}

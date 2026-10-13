@@ -1,0 +1,2 @@
+Manifest-Version: 1.0
+MixinConfigs: salts_inventory_compat.sophisticated.mixins.json,salts_inventory_compat.ae2.mixins.json,salts_inventory_compat.ae2-native.mixins.json
