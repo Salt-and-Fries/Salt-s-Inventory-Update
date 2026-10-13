@@ -27,6 +27,46 @@ The 0.1.4 public surface changes are:
 - Use `sendPayload` in place of `sendCustomPayload`. Matchers must declare their supported menu types for capture negotiation. Duplicate registration now fails; window replacement is explicit.
 - New optional discovery, client views/handles, keyboard ownership, modal routing, pointer capture/cancellation, overlay/external-region rendering, clips/transforms, free resizing and storage ownership hooks are described below. There are no old API aliases.
 
+### External workspace presentation on 1.21.1
+
+The controller branch additionally exposes `DesktopWorkspace`, `DesktopWorkspaceHost`
+and `DesktopWorkspaceWindow` on 1.21.1. An installed host receives normal workspace
+openings through `DesktopClientApi.setWorkspaceHost`. The host owns its screen and
+presentation; Core retains all window models, menus, authenticated sessions, shared
+cursor state and lifecycle callbacks. `currentWorkspace` and client tick callbacks
+provide access without importing Core implementation classes. `isNativeScreenActive`
+identifies an already visible native workspace, and `openPlayerWorkspace` opens the
+ordinary inventory lifetime through the installed host.
+
+Use `windows()` to retain lifetime handles, `ensureWindow` for the built-in player
+inventory or Character, `protectWindow` to prevent removal while externally presented,
+and `initialize` to update the native rendering viewport. A presentation transforms
+`renderWindow` and translates mouse coordinates back before `pointer`, `hoveredSlot`
+or `clickAt`. `containsPointer` includes native popups and interactive external
+regions, so controls extending past a window's base rectangle remain reachable.
+An active modal owner also receives outside presses. Use `dismissOutsidePointer`
+with each displayed window's native coordinates for a press on empty workspace;
+this dismisses native popups without dispatching body input or world interaction.
+`visibleSlots` supplies native slot geometry for cursor snapping;
+transform those points using the same presentation coordinates. `restoreWindow`
+resumes a minimized, ghosted or persistently hidden surface without replacing its
+model, state, handle or session, requesting focus, or saving layout preferences.
+Owner-hidden companions retain their normal visibility rules. `renderCarried`
+draws the shared cursor once. `transferPair` restricts
+quick-move to the other member of the displayed pair; destinations without storage
+reject the action. External presentations own window placement and management chrome;
+native content controls remain available. `cancelInput` ends local gestures and
+keyboard ownership before changing presentation.
+`forceInventoryHud` is an effective, presentation-scoped override and does not save
+the user's normal configuration. `closeAllHoldMillis` returns the existing Core hold
+duration, and `closeClosableWindows` disposes closable windows while preserving
+explicitly protected lifetimes. `isValid` detects owner/world/session replacement.
+
+All calls run on the client thread. Returning to gameplay or replacing the presentation
+must preserve native ownership; the host must not call vanilla container-screen teardown
+when it merely hides its workspace. These new hooks require the rebuilt Core artifact
+from the same branch; they are not available in previously published 0.1.4 JARs.
+
 ## Start with the examples
 
 The [example sources](../../api-examples/ui/src/main/java/example/desktop) demonstrate:

@@ -1,0 +1,94 @@
+// Opt-in gameplay verification against packaged production mods. This source set
+// and its separate test-only Fabric mod are never inputs to a distributable JAR.
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    def target = root.project(':controlify:1.21.1:fabric')
+    def core = root.project(':1.21.1:fabric')
+    def publishedUpstream = target.configurations.detachedConfiguration(
+            target.dependencies.create('maven.modrinth:controlify:y9bu5RxH'),
+            target.dependencies.create('maven.modrinth:1eAoo2KR:o3cDn8Vp'))
+    publishedUpstream.transitive = false
+    def qa = target.sourceSets.create('controlifyQa')
+    qa.java.srcDir(root.file('controlify/functional-tests/src/main/java'))
+    qa.compileClasspath += target.sourceSets.main.compileClasspath + target.sourceSets.main.output + core.sourceSets.main.output
+    def generated = target.layout.buildDirectory.dir('controlify-qa-resources')
+    qa.resources.srcDir(generated)
+    def metadata = target.tasks.register('controlifyQaMetadata') {
+        def output = generated.map { it.file('fabric.mod.json') }
+        outputs.file(output)
+        doLast {
+            output.get().asFile.parentFile.mkdirs()
+            output.get().asFile.text = groovy.json.JsonOutput.toJson([
+                schemaVersion: 1, id: 'salts_inventory_controlify_qa', version: '1.0.0', environment: 'client',
+                entrypoints: [client: ['com.salts_inventory_update.controlify.qa.ControlifyQaInitializer']],
+                depends: [salts_inventory_update: '*', salts_inventory_controlify: '*', controlify: '*']
+            ])
+        }
+    }
+    target.tasks.named(qa.compileJavaTaskName).configure { dependsOn(target.tasks.named('classes'), core.tasks.named('classes')) }
+    target.tasks.named(qa.processResourcesTaskName).configure { dependsOn(metadata) }
+    def run = target.tasks.named('runClient').get()
+    target.tasks.register('runPackagedControlifyQa', JavaExec) {
+        group = 'verification'
+        description = 'Runs disposable world/controller scenarios against the independent production JARs.'
+        dependsOn(target.tasks.named(qa.classesTaskName), target.tasks.named('remapJar'), core.tasks.named('remapJar'))
+        dependsOn(run.taskDependencies.getDependencies(run).findAll { it.name != 'runClient' })
+        javaLauncher.set(run.javaLauncher)
+        mainClass.set(run.mainClass)
+        def folder = target.layout.buildDirectory.dir('runtime-smoke/packaged-controlify').get().asFile
+        workingDir = folder
+        environment('SIU_FUNCTIONAL_TESTS', 'false')
+        environment('SIU_GAMEPLAY_TESTS', 'false')
+        environment('SIU_CONTROLIFY_TESTS', 'true')
+        environment('SIU_QA_OUTPUT', root.file('build/controlify-qa/1.21.1-fabric').absolutePath)
+        doFirst {
+            if (root.providers.gradleProperty('includeFunctionalTests').map { it.toBoolean() }.getOrElse(false))
+                throw new GradleException('Packaged controller QA requires production JARs; omit includeFunctionalTests.')
+            // A startup failure must not leave an earlier successful report or
+            // screenshot looking like evidence from this run. Preserve attempts.
+            def output = root.file('build/controlify-qa/1.21.1-fabric').canonicalFile
+            def expectedOutput = root.projectDir.canonicalFile.toPath()
+                    .resolve('build/controlify-qa/1.21.1-fabric').normalize()
+            if (output.toPath() != expectedOutput)
+                throw new GradleException('Controller QA output cleanup must stay in its owned workspace directory.')
+            def report = new File(output, 'results.json')
+            if (report.exists() && !report.delete())
+                throw new GradleException('Could not remove the previous controller QA report.')
+            def screenshots = new File(output, 'screenshots').canonicalFile
+            if (screenshots.toPath() != expectedOutput.resolve('screenshots'))
+                throw new GradleException('Controller QA screenshot cleanup must stay in its owned output directory.')
+            if (screenshots.isDirectory()) {
+                screenshots.listFiles().findAll { it.isFile() && it.name.endsWith('.png') }.each { image ->
+                    if (image.canonicalFile.parentFile != screenshots || !image.delete())
+                        throw new GradleException('Could not safely remove the previous controller QA screenshot: ' + image.name)
+                }
+            }
+            folder.mkdirs()
+            def projectPrefix = root.projectDir.canonicalPath + File.separator
+            classpath = run.classpath.filter { file ->
+                def namedUpstream = file.name.startsWith('controlify-') || file.name.startsWith('1eAoo2KR-') ||
+                        file.name.startsWith('yacl-') || file.name.startsWith('yet_another_config_lib_v3-')
+                !namedUpstream && (!file.canonicalPath.startsWith(projectPrefix) || file.canonicalPath.contains(File.separator + '.gradle' + File.separator))
+            } + qa.output
+            args = run.args
+            jvmArgs = run.jvmArgs.findAll { !it.startsWith('-Dfabric.classPathGroups=') }
+            systemProperties(run.systemProperties.findAll { key, value -> key != 'fabric.classPathGroups' })
+            systemProperty('fabric.classPathGroups', qa.output.files.collect { it.absolutePath }.join(File.pathSeparator))
+            systemProperty('salts_inventory_controlify.qa', 'true')
+            systemProperty('salts_inventory_controlify.qaOutput', root.file('build/controlify-qa/1.21.1-fabric').absolutePath)
+            def mods = new File(folder, 'mods')
+            mods.mkdirs()
+            mods.listFiles().findAll { it.name.endsWith('.jar') }.each { it.delete() }
+            [core, target].each { module ->
+                root.copy { from(module.tasks.named('remapJar').get().archiveFile); into(mods) }
+            }
+            // The loader remaps these published mods and discovers their nested
+            // HID/SDL/JSON-parser dependencies, just as a real installation does.
+            root.copy { from(publishedUpstream); into(mods) }
+            println('CONTROLIFY_QA_MODS=' + mods.listFiles().collect { it.name }.sort())
+            println('CONTROLIFY_QA_PROJECT_CLASSPATH=' + classpath.files.findAll {
+                it.canonicalPath.startsWith(projectPrefix) && !it.canonicalPath.contains(File.separator + '.gradle' + File.separator)
+            })
+        }
+    }
+}

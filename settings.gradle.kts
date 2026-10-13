@@ -49,6 +49,13 @@ prism {
         fabric()
         forge()
     }
+    mod("controlify") {
+        version("1.21.1") {
+            common()
+            fabric()
+            neoforge()
+        }
+    }
     mod("compatibility") {
         version("26.1.2") {
             common()
@@ -92,3 +99,11 @@ for (gameVersion in listOf("1.20.1", "1.21.1", "1.21.11", "26.1.2", "26.2", "26.
     }
 }
 project(":compatibility").projectDir = file("compatibility")
+
+project(":controlify").projectDir = file("controlify")
+project(":controlify:1.21.1").projectDir = file("controlify/versions/1.21.1")
+for (loader in listOf("common", "fabric", "neoforge")) {
+    project(":controlify:1.21.1:$loader").projectDir = file("controlify/versions/1.21.1/$loader")
+}
+include(":controlify:model")
+project(":controlify:model").projectDir = file("controlify/model")

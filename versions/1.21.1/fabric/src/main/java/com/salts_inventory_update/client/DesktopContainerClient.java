@@ -600,7 +600,7 @@ public final class DesktopContainerClient {
     }
 
     public static boolean quickMoveSlots(List<SlotTarget> sources, int targetKind, int targetSessionId) {
-        if (targetKind < DesktopPackets.QUICK_TARGET_DEFAULT || targetKind > DesktopPackets.QUICK_TARGET_HOTBAR) {
+        if (targetKind < DesktopPackets.QUICK_TARGET_DEFAULT || targetKind > DesktopPackets.QUICK_TARGET_PLAYER_STORAGE) {
             return false;
         }
         List<SlotTarget> logicalSources = validatedSlotTargets(sources, 1, DesktopPackets.MAX_GESTURE_SLOTS);
@@ -660,7 +660,7 @@ public final class DesktopContainerClient {
     }
 
     public static boolean quickMoveSlot(int sourceSessionId, int sourceSlotIndex, int targetKind, int targetSessionId) {
-        if (targetKind < DesktopPackets.QUICK_TARGET_DEFAULT || targetKind > DesktopPackets.QUICK_TARGET_HOTBAR) {
+        if (targetKind < DesktopPackets.QUICK_TARGET_DEFAULT || targetKind > DesktopPackets.QUICK_TARGET_PLAYER_STORAGE) {
             return false;
         }
         int resolvedTargetSessionId = targetKind == DesktopPackets.QUICK_TARGET_SESSION

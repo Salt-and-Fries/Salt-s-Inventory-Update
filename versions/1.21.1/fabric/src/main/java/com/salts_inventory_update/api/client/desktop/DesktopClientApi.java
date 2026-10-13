@@ -20,6 +20,27 @@ import net.minecraft.world.inventory.MenuType;
 
 public final class DesktopClientApi {
 
+    private static DesktopWorkspaceHost workspaceHost;
+
+    /** Installs one client-thread presentation owner. Pass null to release it. */
+    public static void setWorkspaceHost(DesktopWorkspaceHost host) { workspaceHost = host; }
+
+    public static DesktopWorkspaceHost workspaceHost() { return workspaceHost; }
+
+    /** Opens the existing player workspace through the same native inventory lifecycle. */
+    public static void openPlayerWorkspace() {
+        com.salts_inventory_update.client.InventoryDesktopScreen.openOrToggleInventory(net.minecraft.client.Minecraft.getInstance());
+    }
+
+    public static void onClientTick(java.util.function.Consumer<net.minecraft.client.Minecraft> action) {
+        com.salts_inventory_update.platform.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(action::accept);
+    }
+
+    public static java.util.Optional<DesktopWorkspace> currentWorkspace() {
+        var screen = com.salts_inventory_update.client.InventoryDesktopScreen.current(net.minecraft.client.Minecraft.getInstance());
+        return screen == null ? java.util.Optional.empty() : java.util.Optional.of(screen.workspaceAccess());
+    }
+
     private static final Map<MenuType<?>, DesktopWindowDefinition<?, ?>> DEFINITIONS = new LinkedHashMap<>();
     private static final Map<ResourceLocation, ViewRegistration<?, ?>> VIEWS = new LinkedHashMap<>();
     private static final List<PredicateRegistration> PREDICATES = new ArrayList<>();

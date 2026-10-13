@@ -2,6 +2,8 @@
 
 Salt's Inventory Update is a multi-version, multi-loader inventory framework. It builds two independent mods for every supported target: **Salt's Inventory Update** (`salts_inventory_update`, core) and **Salt's Inventory Compatibility** (`salts_inventory_compat`, optional extension).
 
+A third independent mod, **Salt's Inventory Controlify** (`salts_inventory_controlify`), provides the controller workspace on Minecraft 1.21.1 Fabric and NeoForge. Its [installation, controls and build guide](controlify/README.md) describes the radial presentation and separate JARs. Install the matching rebuilt core from this branch alongside Controlify and the controller JAR.
+
 Core provides inventory expansion, vanilla desktop windows, configuration, networking, persistence and the public API. Compatibility contains Tom's Simple Storage, JEI, REI, EMI, Mod Menu, Applied Energistics 2 and the supported Forge/NeoForge Sophisticated integrations. AE2 support follows the [reviewed upstream version matrix](compatibility/ae2/README.md#reviewed-upstream-targets). Install matching core and extension versions to enable these integrations; core works on its own. Supported third-party mods remain optional.
 
 ## Layout
@@ -41,12 +43,17 @@ compatibility/
     fabric/            Shared integration implementations and Fabric metadata/entrypoints
     forge|neoforge/    Loader-specific plugins, conditional mixins and metadata
   tests/               Optional integration initialization regressions
+controlify/
+  common/              Controller state, layout, animation, input routing and configuration
+  versions/1.21.1/     Controller presentation, Controlify processor and loader entrypoints
+  functional-tests/   Excluded native workspace regression fixtures
 dist/
   core/                Twelve production core JARs and checksums
   compatibility/       Twelve production extension JARs and checksums
+  controlify/          Independent controller compatibility JARs
 ```
 
-The version and loader matrix is declared in [settings.gradle.kts](settings.gradle.kts). Both mods use Prism's existing loader toolchains and production remapping. Dependency versions and mod metadata live in [build.gradle.kts](build.gradle.kts); API-only compilation, automated tests and distribution tasks live in [gradle/compatibility.gradle](gradle/compatibility.gradle). Existing core project paths remain stable.
+The version and loader matrix is declared in [settings.gradle.kts](settings.gradle.kts). All three mods use Prism's existing loader toolchains and production remapping. Dependency versions and mod metadata live in [build.gradle.kts](build.gradle.kts); API-only compilation, automated tests and distribution tasks live in [gradle/compatibility.gradle](gradle/compatibility.gradle) and [gradle/controlify.gradle](gradle/controlify.gradle). Existing core project paths remain stable.
 
 ## Common Code Pattern
 
@@ -67,7 +74,7 @@ This keeps version API differences contained while still letting you share most 
 .\gradlew.bat build
 ```
 
-The ordinary root `build` compiles and tests both mods on all twelve targets, compiles the API examples, checks source parity, remaps production artifacts and verifies JAR contents. The 26.3 artifact task uses ModDevGradle's supported binary patch pipeline automatically; `CI=true` is no longer needed.
+The ordinary root `build` compiles and tests core and extension on all twelve targets and the controller mod on its two 1.21.1 targets, compiles the API examples, checks source parity, remaps production artifacts and verifies JAR contents. The 26.3 artifact task uses ModDevGradle's supported binary patch pipeline automatically; `CI=true` is no longer needed.
 
 Production JARs appear in `dist/core` and `dist/compatibility`, with filenames such as `salts_inventory_update-1.21.1-Fabric-0.1.4.jar` and `salts_inventory_compat-1.21.1-Fabric-0.1.4.jar`. Each directory has `SHA256SUMS.txt`. The root release build clears `dist` before building and synchronizes exact production task outputs, preventing old, development or sources JARs from entering a release. `build/release/0.1.4` remains the legacy core-only release bundle.
 

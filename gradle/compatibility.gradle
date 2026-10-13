@@ -7,7 +7,7 @@ import org.gradle.api.tasks.Sync
 gradle.projectsEvaluated {
     def root = rootProject
     def loaders = ['fabric', 'forge', 'neoforge']
-    def coreTargets = root.subprojects.findAll { !it.path.startsWith(':compatibility:') && it.name in loaders }
+    def coreTargets = root.subprojects.findAll { !it.path.startsWith(':compatibility:') && !it.path.startsWith(':controlify:') && it.name in loaders }
     def extensionTargets = root.subprojects.findAll { it.path.startsWith(':compatibility:') && it.name in loaders }
 
     // NeoForm's binary-patch cache can reuse output from another loader build.
@@ -43,6 +43,19 @@ gradle.projectsEvaluated {
     }
 
     extensionTargets.each { extension ->
+        // These resources have committed SHA256 references. Windows Git text
+        // checkout conversion must not change their packaged bytes.
+        extension.tasks.named('processResources').configure {
+            inputs.property('ae2ReferenceLineEndings', 'desktop-LF-language-CRLF')
+            filesMatching('assets/ae2/screens/desktop/**/*.json') {
+                filter(org.apache.tools.ant.filters.FixCrLfFilter,
+                        eol: org.apache.tools.ant.filters.FixCrLfFilter.CrLf.newInstance('lf'), fixlast: false)
+            }
+            filesMatching('assets/ae2/lang/en_us.json') {
+                filter(org.apache.tools.ant.filters.FixCrLfFilter,
+                        eol: org.apache.tools.ant.filters.FixCrLfFilter.CrLf.newInstance('crlf'), fixlast: false)
+            }
+        }
         // Loader-independent AE2 additions live here. Native AE2 implementations
         // remain in the optional upstream JAR and are never copied into this output.
         extension.sourceSets.main.java.srcDir(root.file('compatibility/ae2/src/main/java'))
@@ -334,7 +347,7 @@ gradle.projectsEvaluated {
         group = 'build'
         dependsOn(verifyJars)
         doLast {
-            ['core', 'compatibility'].each { kind ->
+            ['core', 'compatibility', 'controlify'].each { kind ->
                 def folder = root.file("dist/$kind")
                 def lines = folder.listFiles().findAll { it.name.endsWith('.jar') }.sort { it.name }.collect { artifact ->
                     def hash = java.security.MessageDigest.getInstance('SHA-256').digest(artifact.bytes).encodeHex()

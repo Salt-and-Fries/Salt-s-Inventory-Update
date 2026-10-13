@@ -205,6 +205,23 @@ prism {
             loaderVersion = "47.4.0"
         }
     }
+    mod("controlify") {
+        metadata {
+            modId = "salts_inventory_controlify"
+            name = "Salt's Inventory Controlify"
+            description = "Controller radial inventory workspace for Salt's Inventory Update. Requires the matching core mod and Controlify."
+            license = "MIT"
+        }
+        version("1.21.1") {
+            fabric {
+                loaderVersion = "0.18.2"
+                fabricApi("0.116.1+1.21.1")
+            }
+            neoforge {
+                loaderVersion = "21.1.229"
+            }
+        }
+    }
     mod("compatibility") {
         metadata {
             modId = "salts_inventory_compat"
@@ -279,6 +296,18 @@ prism {
 subprojects {
     val minecraftVersion = parent?.name
     val compatibilityModule = path.startsWith(":compatibility:")
+    val controlifyModule = path.startsWith(":controlify:")
+    val coreModule = !compatibilityModule && !controlifyModule
+
+    if (controlifyModule && minecraftVersion == "1.21.1" && name in setOf("fabric", "neoforge")) {
+        val fabricTarget = name == "fabric"
+        afterEvaluate {
+            dependencies.add(if (fabricTarget) "modImplementation" else "implementation",
+                "maven.modrinth:controlify:${if (fabricTarget) "y9bu5RxH" else "RqsNKKLK"}")
+            dependencies.add(if (fabricTarget) "modRuntimeOnly" else "runtimeOnly",
+                "maven.modrinth:1eAoo2KR:${if (fabricTarget) "o3cDn8Vp" else "7TVdVtxF"}")
+        }
+    }
 
     if (compatibilityModule && minecraftVersion == "1.20.1" && name == "forge") {
         afterEvaluate {
@@ -304,7 +333,7 @@ subprojects {
     }
 
     plugins.withId("java") {
-        if (!compatibilityModule && name in setOf("fabric", "forge", "neoforge")) {
+        if (coreModule && name in setOf("fabric", "forge", "neoforge")) {
             tasks.withType<ProcessResources>().configureEach {
                 from(rootProject.file("artwork/shared-resources"))
             }
@@ -490,7 +519,7 @@ subprojects {
         afterEvaluate {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
                 if (compatibilityModule) addFabricModMenuSourceDir()
-                else addFabricPlatformSourceDir(minecraftVersion)
+                else if (coreModule) addFabricPlatformSourceDir(minecraftVersion)
             }
             if (compatibilityModule) modMenuVersions[minecraftVersion]?.let { modMenuVersion ->
                 val configurationName = if (minecraftVersion.startsWith("26.")) "compileOnly" else "modCompileOnly"
@@ -668,12 +697,12 @@ subprojects {
                     java.srcDir(rootProject.file("compatibility/versions/$minecraftVersion/fabric/src/main/java"))
                     java.exclude("**/SaltsInventoryCompatibilityFabric.java", "**/SaltsInventoryCompatibilityFabricClient.java",
                         "**/compat/rei/SaltsReiClientPlugin.java", "**/compat/emi/SaltsEmiClientPlugin.java")
-                } else addLoaderSourceDirs(minecraftVersion, loaderName)
+                } else if (coreModule) addLoaderSourceDirs(minecraftVersion, loaderName)
             }
         }
     }
 
-    if (!compatibilityModule && minecraftVersion != null && (name == "fabric" || name == "forge" || name == "neoforge") && includeFunctionalTests.get()) {
+    if (coreModule && minecraftVersion != null && (name == "fabric" || name == "forge" || name == "neoforge") && includeFunctionalTests.get()) {
         afterEvaluate {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
                 addFunctionalTestSourceDir()
@@ -684,7 +713,7 @@ subprojects {
 
 gradle.projectsEvaluated {
     val exampleCompiles = subprojects
-        .filter { !it.path.startsWith(":compatibility:") && it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
+        .filter { !it.path.startsWith(":compatibility:") && !it.path.startsWith(":controlify:") && it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
         .map { loaderProject ->
             val gameVersion = loaderProject.parent!!.name
             val legacyInput = gameVersion in setOf("1.20.1", "1.21.1")
@@ -766,12 +795,12 @@ gradle.projectsEvaluated {
             }
         }
         dependsOn(subprojects
-            .filter { !it.path.startsWith(":compatibility:") && it.parent?.name != null && (it.name == "fabric" || it.name == "forge" || it.name == "neoforge") }
+            .filter { !it.path.startsWith(":compatibility:") && !it.path.startsWith(":controlify:") && it.parent?.name != null && (it.name == "fabric" || it.name == "forge" || it.name == "neoforge") }
             .map { it.tasks.named("compileJava") })
     }
 
     val uploadableLoaderProjects = subprojects
-        .filter { !it.path.startsWith(":compatibility:") && it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
+        .filter { !it.path.startsWith(":compatibility:") && !it.path.startsWith(":controlify:") && it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
     val allProjectBuildTasks = subprojects.mapNotNull { subproject ->
         subproject.tasks.findByName("build")?.let { subproject.tasks.named("build") }
     }
@@ -1143,3 +1172,4 @@ gradle.projectsEvaluated {
 }
 
 apply(from = "gradle/compatibility.gradle")
+apply(from = "gradle/controlify.gradle")
