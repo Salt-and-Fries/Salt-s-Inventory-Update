@@ -1,0 +1,405 @@
+{
+  "schema_version": 1,
+  "generator": "built-in imagegen",
+  "assets": [
+    {
+      "id": "panel",
+      "runtime": false,
+      "width": 195,
+      "height": 267,
+      "selected_original": "panel-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: deliberately BASIC editable Minecraft UI pixel placeholder. Flat 2D pixel sprite, not polished art. Use only solid charcoal, stone gray and pale gray color blocks; selected parts use one flat muted gold. Crisp blocky edges on the stated logical grid, no smooth curves, gradients, shading, glow, engraving, decorative shapes, text, letters, numbers, icons, objects, scene, mockup, perspective or drop shadow. One portrait empty materials panel only. Logical canvas195x267; exact195:267 aspect. Fill the entire rectangular canvas with opaque uniform dark charcoal gray. Thin straight pale gray top/left bevel and dark gray bottom/right border, about1 logical pixel thick. Every interior pixel the same solid dark gray. No transparent areas, no empty center, no margins, no inset second frame. Plain rectangular UI background.",
+      "original_sha256": "e9e88d74a4c088765798b9e2ae8781c51bffa110fbab6a89c5292aba4efa4089",
+      "source_dimensions": [
+        1072,
+        1467
+      ],
+      "palette": [
+        "101010",
+        "303030",
+        "555555",
+        "858585",
+        "dddddd"
+      ],
+      "production_sha256": "ce246d509f8e6a72d7bcbd23ce85865657a29b44585281f135f36bb6032bb6fa"
+    },
+    {
+      "id": "wheel_panel",
+      "runtime": false,
+      "width": 344,
+      "height": 408,
+      "selected_original": "wheel_panel-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: deliberately BASIC editable Minecraft UI pixel placeholder. Flat 2D pixel sprite, not polished art. Use only solid charcoal, stone gray and pale gray color blocks; selected parts use one flat muted gold. Crisp blocky edges on the stated logical grid, no smooth curves, gradients, shading, glow, engraving, decorative shapes, text, letters, numbers, icons, objects, scene, mockup, perspective or drop shadow. One portrait empty central wheel background panel only. Logical canvas328x408; exact328:408 aspect. Entire rectangular canvas filled with opaque uniform dark charcoal gray, one simple2 logical pixel stone-gray frame and1 logical pixel pale upper/left edge. Only tiny stepped corner pixels. Every interior pixel same solid charcoal. No wheel/ring/cards drawn inside, no compartments, no texture, no transparent areas or margins. Plain rectangular UI background.",
+      "original_sha256": "34f9cc336e92558ae6ac6ccbda82b9c698db509865f1343cbd2a92de7e034824",
+      "source_dimensions": [
+        1124,
+        1399
+      ],
+      "palette": [
+        "101010",
+        "303030",
+        "555555",
+        "858585",
+        "dddddd"
+      ],
+      "production_sha256": "9ee14111915ce1c50bf736ff2ba79941925d7cc685a1655d84b5d3e9ebe2e6ab"
+    },
+    {
+      "id": "backdrop",
+      "width": 760,
+      "height": 450,
+      "selected_original": "backdrop-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: deliberately BASIC editable Minecraft UI pixel texture. Flat solid color blocks on exact logical pixel grid. No antialiasing, gradient, shadow, glow, texture, decoration, symbols, text, items, perspective or scene. One featureless760x450 logical horizontal UI dimmer swatch. Every pixel entirecanvasuniformdeepcharcoal RGB18,22,32. Nothingdrawnonit. No frame, no borders, no shapes, no vignetting, no noise. Intentionallyblankflatcolorplaceholder; willbe exportedwithconstant85%opacity forgamebackground dimming.",
+      "original_sha256": "0965089d7473d84385166995161dd1ea28206320d2568600d32c8e0a4280c365",
+      "source_dimensions": [
+        1630,
+        965
+      ],
+      "palette": [
+        "121620"
+      ],
+      "production_sha256": "5d408c0047277d1585e0fd526d3d61f576a54dd6bc9eacd8164a2ba23218d2d1"
+    },
+    {
+      "id": "recipe_card",
+      "width": 32,
+      "height": 32,
+      "selected_original": "recipe_card-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: deliberately BASIC editable Minecraft UI pixel placeholder. Flat 2D pixel sprite, not polished art. Use only solid charcoal, stone gray and pale gray color blocks; selected parts use one flat muted gold. Crisp blocky edges on the stated logical grid, no smooth curves, gradients, shading, glow, engraving, decorative shapes, text, letters, numbers, icons, objects, scene, mockup, perspective or drop shadow. Exactly one empty square recipe card logical32x32 enlarged sharply. Entire canvas filled with solid medium-dark stone gray; simple1 logical pixel charcoal outer border and1 pixel pale-gray top/left bevel, dark bottom/right bevel. Blank center for a separately drawn native item icon. No icon, no hollow center, no transparent interior, no text or margin. Bare simple inventory-slot placeholder.",
+      "original_sha256": "8b855416a3a8e6e1f3cab8c10c28b4bec018d214b59efb3db20d575507a9e6f8",
+      "source_dimensions": [
+        1254,
+        1254
+      ],
+      "palette": [
+        "101010",
+        "303030",
+        "555555",
+        "858585",
+        "dddddd"
+      ],
+      "production_sha256": "e76ec3ea5428ba4f5573b278ca68b27330acb2d21c92d7608eb5aa792ea2fe3d"
+    },
+    {
+      "id": "unavailable_recipe_card",
+      "width": 32,
+      "height": 32,
+      "selected_original": "unavailable_recipe_card-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: BASIC editable Minecraft mod UI pixel placeholder, not polished art. Flat top-down2D game texture on the stated logical pixel grid; charcoal/stone gray/pale gray colors and one flat gold for selected edges. Crisp square pixels. No gradient, antialiasing, shadows, glow, pattern, decoration, text, labels, icons, items, scene, perspective or mockup. One empty square32x32 logical card. Simple charcoal outer edge and pale gray top/left pixel bevel with a uniform muted dark dusty-red interior, indicating missing ingredients. Fill rectangularcanvas; center blank for separately rendered native item icon. No red cross, lock, warning or other icon; no transparent holes.",
+      "original_sha256": "6432cf142845a7d54e2625134a649519f9f4924968ac91f9a036519a1f53ccc1",
+      "source_dimensions": [
+        1254,
+        1254
+      ],
+      "palette": [
+        "101010",
+        "303030",
+        "555555",
+        "858585",
+        "dddddd",
+        "422c32",
+        "6b3a3a",
+        "963e3e",
+        "d27777"
+      ],
+      "production_sha256": "61cd9d2a29eb85919152f7268b4c3316a64394ccc4a8819c363faa8a023e4ad0"
+    },
+    {
+      "id": "hovered_card",
+      "width": 32,
+      "height": 32,
+      "selected_original": "hovered_card-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: BASIC editable Minecraft mod UI pixel placeholder, not polished art. Flat top-down2D game texture on the stated logical pixel grid; charcoal/stone gray/pale gray colors and one flat gold for selected edges. Crisp square pixels. No gradient, antialiasing, shadows, glow, pattern, decoration, text, labels, icons, items, scene, perspective or mockup. One square32x32 logical HOVER OVERLAY only. A thin TWO logical pixel GOLD outline aligned to the very outer edges of the square canvas; simple steppedcorner pixels. The entire inner28x28 center is genuinely transparent so the existing item/background shows through. Outside corner cut pixels transparent. Border solid flat gold, no filled interior, no gray background, no inset inner frame. Exactly one hollow gold square frame.",
+      "original_sha256": "10be2b2b87cc7a8ff2508c0e3b129dc040227c55521890be88b0c5d910321138",
+      "source_dimensions": [
+        1254,
+        1254
+      ],
+      "palette": [
+        "9c7d22",
+        "d4af36",
+        "ffe34d",
+        "fff8cc"
+      ],
+      "production_sha256": "dda6a0852ad9fddd56bc1cceb244737baf7c84bbd298660b16585ef1062d0233"
+    },
+    {
+      "id": "category",
+      "width": 32,
+      "height": 32,
+      "selected_original": "category-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: BASIC editable Minecraft mod UI pixel placeholder, not polished art. Flat top-down2D game texture on the stated logical pixel grid; charcoal/stone gray/pale gray colors and one flat gold for selected edges. Crisp square pixels. No gradient, antialiasing, shadows, glow, pattern, decoration, text, labels, icons, items, scene, perspective or mockup. One empty square32x32 logical category button. Thin dark charcoal outer frame, light gray upper/left pixel bevel, dark lower/right bevel and uniform flat gray interior. Blank center for native Minecraft item icon drawn separately. Frame fillscanvas with at mostone transparentcornerstep. No item/text, no nestedframe or margins.",
+      "original_sha256": "8b03511aa179d4370cf6b1aa56769681f131670a636ce06ab73272231bb55285",
+      "source_dimensions": [
+        1254,
+        1254
+      ],
+      "palette": [
+        "101010",
+        "303030",
+        "555555",
+        "858585",
+        "dddddd"
+      ],
+      "production_sha256": "f955f291974fc036fb1393932f3533365fbae51c8d90e63020678bb0b89dff9a"
+    },
+    {
+      "id": "selected_category",
+      "width": 32,
+      "height": 32,
+      "selected_original": "selected_category-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: BASIC editable Minecraft mod UI pixel placeholder, not polished art. Flat top-down2D game texture on the stated logical pixel grid; charcoal/stone gray/pale gray colors and one flat gold for selected edges. Crisp square pixels. No gradient, antialiasing, shadows, glow, pattern, decoration, text, labels, icons, items, scene, perspective or mockup. One empty square32x32 logical selected category button. Same simple inventory-slot geometry: charcoal outeredge, TWO logical pixel mutedgold border, uniform flat dark gray center for a native item icon. Selected gold border only, notgoldfill. Squareframe fillscanvas, tinycornersteps. No icons, no text, no decorations.",
+      "original_sha256": "4f7bd1dfb124911c904debe14f2ad812d90a4a37a0cbe8fcad91d739196b7c15",
+      "source_dimensions": [
+        1254,
+        1254
+      ],
+      "palette": [
+        "101010",
+        "303030",
+        "555555",
+        "858585",
+        "dddddd",
+        "9c7d22",
+        "d4af36",
+        "ffe34d",
+        "fff8cc"
+      ],
+      "production_sha256": "1f3e960c58676248d3658f1ae9052c8681978930c94a987fd08a2a3d53091bf1"
+    },
+    {
+      "id": "creative_tab",
+      "width": 32,
+      "height": 32,
+      "selected_original": "creative_tab-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: BASIC editable Minecraft mod UI pixel placeholder, not polished art. Flat top-down2D game texture on the stated logical pixel grid; charcoal/stone gray/pale gray colors and one flat gold for selected edges. Crisp square pixels. No gradient, antialiasing, shadows, glow, pattern, decoration, text, labels, icons, items, scene, perspective or mockup. One empty square32x32 logical creative-tab button. Plain charcoal outerframe, palegray upper/left1 logicalpixel bevel and darkgraylower/right bevel, uniform dark graycenter. Fullcanvas plaininventoryslot, blankinnerregion for native creative item icon. No icons, tabs protrusions, margin, text or ornaments.",
+      "original_sha256": "ac190fe8982276e784538e9c23bd316b1697da1e228a38ec5915a3a1cdb50880",
+      "source_dimensions": [
+        1254,
+        1254
+      ],
+      "palette": [
+        "101010",
+        "303030",
+        "555555",
+        "858585",
+        "dddddd"
+      ],
+      "production_sha256": "24df6bdf82faede7525ef57e52a1acf33d630e741891b05d2dcda6264b5cf89f"
+    },
+    {
+      "id": "hovered_creative_tab",
+      "width": 32,
+      "height": 32,
+      "selected_original": "hovered_creative_tab-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: BASIC editable Minecraft mod UI pixel placeholder. Flat2D pixel blocks, not polished artwork. Use charcoal, stone gray, ivory and flat muted gold accents only, with sharp stepped edges. No gradients, antialiasing, glow, decoration, symbols, text, numbers, items, shadows, perspective or scene. One32x32 logical square hover overlay only: TWO logical pixel GOLD outer outline at the verycanvasedges, slightlystepped squarecorners; allcenter28x28 pixels genuinely transparent. No base fill, no grayinnerborder, no icon, no background. This overlay sits on an existing32px creative-tab tile.",
+      "original_sha256": "d1b72e7adc1688fe3b48b580ee929e5529903d1e1b9b9d9ca4c4a1028d7c54e7",
+      "source_dimensions": [
+        1254,
+        1254
+      ],
+      "palette": [
+        "9c7d22",
+        "d4af36",
+        "ffe34d",
+        "fff8cc"
+      ],
+      "production_sha256": "d7215296c8c111e01c8bad92b0ddf793947da6c7130ca9c9503b0fe6a264dedd"
+    },
+    {
+      "id": "active_creative_tab",
+      "width": 32,
+      "height": 32,
+      "selected_original": "active_creative_tab-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: BASIC editable Minecraft mod UI pixel placeholder. Flat2D pixel blocks, not polished artwork. Use charcoal, stone gray, ivory and flat muted gold accents only, with sharp stepped edges. No gradients, antialiasing, glow, decoration, symbols, text, numbers, items, shadows, perspective or scene. One32x32 logical square ACTIVE marker overlay only. Entire canvas genuinely transparent except a small flat MINT GREEN horizontal bar of size12 logicalpixelswide by2 logicalpixels high, centered along bottom edge at x10..21,y29..30. Green is the only visiblecolor. No border, no background, no fullsquare, no text. Preserve empty topandcenter so a native itemicon remainsreadable.",
+      "original_sha256": "8de3dd47a0f9f2f09161ab521bd1401db2a2a9ef193c5c221ed63bfbdb09e594",
+      "source_dimensions": [
+        1254,
+        1254
+      ],
+      "palette": [
+        "3c7758",
+        "5db080",
+        "8de7bb"
+      ],
+      "production_sha256": "e250320f25cffb927a063fc50d675cd25f65adcd1f0357441ed8e169d14553d8"
+    },
+    {
+      "id": "outer_marker",
+      "runtime": false,
+      "width": 10,
+      "height": 10,
+      "selected_original": "outer_marker-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: deliberately BASIC editable Minecraft UI pixel texture. Flat solid color blocks on exact logical pixel grid. No antialiasing, gradient, shadow, glow, texture, decoration, symbols, text, items, perspective or scene. One tiny10x10logicalpixel continuous-positionmarker: hollow GOLD square border2logicalpixelsthick with charcoalinneredge, blank transparentcenter4x4. Canvas10x10 squarefullyoccupiedbythemarkerwithsmallsteppedcornercuts. No icon, no pointarrow, no text. Actualcentermusttransparent toavoidcovering underlyingring/cards.",
+      "original_sha256": "1152a04862b044026989805123b1b411262ef7a4fdb4ad6ce376f20251aab0ba",
+      "source_dimensions": [
+        1254,
+        1254
+      ],
+      "palette": [
+        "101010",
+        "303030",
+        "555555",
+        "858585",
+        "dddddd",
+        "9c7d22",
+        "d4af36",
+        "ffe34d",
+        "fff8cc"
+      ],
+      "production_sha256": "d24f57ea9fb051af4202a86fa7a20ffea833d1b089d01be5469ff649b35ebaee"
+    },
+    {
+      "id": "wheel_ring",
+      "width": 288,
+      "height": 288,
+      "selected_original": "wheel_ring-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: deliberately BASIC editable Minecraft UI pixel placeholder. Flat 2D pixel sprite, not polished art. Use only solid charcoal, stone gray and pale gray color blocks; selected parts use one flat muted gold. Crisp blocky edges on the stated logical grid, no smooth curves, gradients, shading, glow, engraving, decorative shapes, text, letters, numbers, icons, objects, scene, mockup, perspective or drop shadow. Exactly one complete circular ring on a genuinely transparent square background. Logical canvas288x288. Circle outer radius144, center144,144, touches midpoint of each canvas edge; inner radius141, so narrow3 logical pixel ring. Stone-gray ring body, simple charcoal outside edge, no gloss. Inner disk COMPLETELY transparent, corners COMPLETELY transparent. Full360 degrees with no break, no ticks, no labels, no extra concentric rings. Pixel staircase circle edges on288px grid.",
+      "original_sha256": "0d21ad0ea889bb9769d106de84dc9545276ff879445db520e282a33cab3779a8",
+      "source_dimensions": [
+        1254,
+        1254
+      ],
+      "palette": [
+        "101010",
+        "303030",
+        "555555",
+        "858585",
+        "dddddd"
+      ],
+      "production_sha256": "5f79a5beb6484808d0ff02ab9c56ea76a2791c17b18d2e31f81b7039edebdcca"
+    },
+    {
+      "id": "wheel_ring_highlight",
+      "width": 288,
+      "height": 288,
+      "selected_original": "wheel_ring_highlight-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: BASIC editable Minecraft mod UI pixel placeholder. Flat2D pixel blocks, not polished artwork. Use charcoal, stone gray, ivory and flat muted gold accents only, with sharp stepped edges. No gradients, antialiasing, glow, decoration, symbols, text, numbers, items, shadows, perspective or scene. One alignmentoverlay on a full288x288 logical square TRANSPARENT canvas. Show only a tiny GOLD arc at12o'clock on an otherwise invisiblecircle with center144,144 and outerradius144, innerradius141. Visiblearc spans only about12 degrees, from354 to6 degrees, near x129..159 and y0..4. Everything belowrow5 and the wholeinnerdisk trulytransparent. Overlaymust stay atTOPedge, NOTcenteredvertically; no fullcircle, no bottomarc, no ticks, no cursor, no triangle. Samecanvasandcircle registration as288pxring.",
+      "original_sha256": "8d0ca45028b0e57e083ed3922a627329d8d760df5150e6f881209337df582128",
+      "source_dimensions": [
+        1254,
+        1254
+      ],
+      "palette": [
+        "9c7d22",
+        "d4af36",
+        "ffe34d",
+        "fff8cc"
+      ],
+      "production_sha256": "a3885323d2e656ad859ea8c5ca704dbe0851f8d68485ab9a2d2be60309b3b732"
+    },
+    {
+      "id": "carousel_opening",
+      "width": 160,
+      "height": 90,
+      "selected_original": "carousel_opening-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: BASIC editable Minecraft mod UI pixel placeholder. Flat2D pixel blocks, not polished artwork. Use charcoal, stone gray, ivory and flat muted gold accents only, with sharp stepped edges. No gradients, antialiasing, glow, decoration, symbols, text, numbers, items, shadows, perspective or scene. One160x90 logical wide carousel entry/exit gate texture, genuinelytransparentbackground. Basic twin angular gray sidewall wedges: leftwall onfarleft and mirrorrightwall onfarright. Darkstonegray fill andonepixel lightgray edge. Leave a completelytransparent V-shaped central opening that iswide atTOP(approximatelyx20..140) andnarrows to40px wideatBOTTOMcenter(x60..100), opening allthewaythroughthe bottomedge. No horizontalbottombar, no arrow, no letters, no object. Only two plain steppedsidewalls; center transparent.",
+      "original_sha256": "c475a7c69cab49486cfd560f02e6fdfa82abfebaa3e4970f10273dc0b153df34",
+      "source_dimensions": [
+        1672,
+        941
+      ],
+      "palette": [
+        "101010",
+        "303030",
+        "555555",
+        "858585",
+        "dddddd"
+      ],
+      "production_sha256": "fd43fc0db7468e11effa0c548b83ad59ebb9a8f2e34b1ac1c2407c8fac2f4ba1"
+    },
+    {
+      "id": "alphabet_label",
+      "width": 10,
+      "height": 12,
+      "selected_original": "alphabet_label-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: BASIC editable Minecraft mod UI pixel placeholder. Flat2D pixel blocks, not polished artwork. Use charcoal, stone gray, ivory and flat muted gold accents only, with sharp stepped edges. No gradients, antialiasing, glow, decoration, symbols, text, numbers, items, shadows, perspective or scene. One blank10x12 logical portrait alphabetlabel box. Tiny flat darkgray rectangle fillingcanvas, ONE logicalpixel lightgray border; straightpixel edges. Entire center uniformdarkgray, opaque. No letters or text: nativefont letter isdrawn separately. Emptyflat inventory-stylelabel placeholder, no margins.",
+      "original_sha256": "24310904e2dfb090b469e360f407a16efbf93a937264796eb1f5595c27b617b1",
+      "source_dimensions": [
+        1145,
+        1374
+      ],
+      "palette": [
+        "101010",
+        "303030",
+        "555555",
+        "858585",
+        "dddddd"
+      ],
+      "production_sha256": "abcaab14a5d56e211a6c21513f92743a2cd1c56b0336772880f2fe6c0a01020d"
+    },
+    {
+      "id": "highlighted_alphabet_label",
+      "width": 10,
+      "height": 12,
+      "selected_original": "highlighted_alphabet_label-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: deliberately BASIC editable Minecraft UI pixel texture. Flat solid color blocks on exact logical pixel grid. No antialiasing, gradient, shadow, glow, texture, decoration, symbols, text, items, perspective or scene. One blank10x12 logical portrait label box. Uniform darkcharcoal interior withONElogicalpixel GOLD outline exactlyalignedtorectangularcanvas. No lettersornumbers, no icon, no beveldetail. Empty center for separatelydrawnnativefont letter. Fullopaque canvas, no margin.",
+      "original_sha256": "016d20d9bb52a155ebdab31293efbbe007a1059f74db71f5ecf68d5ea3ead582",
+      "source_dimensions": [
+        1145,
+        1374
+      ],
+      "palette": [
+        "101010",
+        "303030",
+        "555555",
+        "858585",
+        "dddddd",
+        "9c7d22",
+        "d4af36",
+        "ffe34d",
+        "fff8cc"
+      ],
+      "production_sha256": "b0eea7bdb7724fc91ce512a07c11dc7f30d17a359a8e830ca2433f309c86539e"
+    },
+    {
+      "id": "alphabet_anchor",
+      "width": 2,
+      "height": 2,
+      "selected_original": "alphabet_anchor-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: deliberately BASIC editable Minecraft UI pixel texture. Flat solid color blocks on exact logical pixel grid. No antialiasing, gradient, shadow, glow, texture, decoration, symbols, text, items, perspective or scene. One WHITE dot consisting ofexactly a2x2logicalpixelsquare, enlargednearestneighbor. Entireimagecanvasuniformopaque purewhite. No border, no gray, no black, no marginorbackground. Thisprimitive willbetintedbytherenderer.",
+      "original_sha256": "06d2198b662f0b2cd7357f5e4ff4209de18de873f88729d279623b347af70a97",
+      "source_dimensions": [
+        1536,
+        1024
+      ],
+      "palette": [
+        "ffffff"
+      ],
+      "production_sha256": "8573341c79fa72fc8ae638efe7f2be5f5b1c59b0af3e679d3f812126a21c76ca"
+    },
+    {
+      "id": "alphabet_leader",
+      "width": 1,
+      "height": 1,
+      "selected_original": "alphabet_leader-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: deliberately BASIC editable Minecraft UI pixel texture. Flat solid color blocks on exact logical pixel grid. No antialiasing, gradient, shadow, glow, texture, decoration, symbols, text, items, perspective or scene. One WHITE logical1x1pixel color swatch, enlargednearestneighbor. Entireimagecanvasuniformopaque purewhite, absolutelynothingelse. No border, no shadow, no margin, no letters. Thistexture isstretchedandtintedfor UIleaderline segments.",
+      "original_sha256": "1e23976db5a59129043b21569dcfdbe16d498755b92b2fa9b28ae9f7a23d7406",
+      "source_dimensions": [
+        1774,
+        887
+      ],
+      "palette": [
+        "ffffff"
+      ],
+      "production_sha256": "0cc4acc2e9abb600ff3fa032daa5e68cd6a0be87ec7c9de61dbf366fc87de0fc"
+    },
+    {
+      "id": "arc_boundary",
+      "runtime": false,
+      "width": 75,
+      "height": 1,
+      "selected_original": "arc_boundary-generated.png",
+      "prompt": "Use case: stylized-concept. Asset type: deliberately BASIC editable Minecraft UI pixel texture. Flat solid color blocks on exact logical pixel grid. No antialiasing, gradient, shadow, glow, texture, decoration, symbols, text, items, perspective or scene. Exactly one plain horizontal WHITE line only, logical75pixelwidebyONEpixeltall, noothercolors. Genuinelytransparentspaceaboveandbelow, withlinecentered. Straightflatedges, no caps, no arrows, no border, no shadows. Thevisiblewhitebar isone unbrokenrectangle andwillbecroppedandexported75x1asa rotation/tintable radial-boundary texture.",
+      "original_sha256": "7e221dac4f868779900adb9d9fef2ba36906442b1804b0f3b55f312e1fab0003",
+      "source_dimensions": [
+        1717,
+        916
+      ],
+      "palette": [
+        "ffffff"
+      ],
+      "production_sha256": "0fda042e376c33c5ea010be62a66780cacd9eae2812877cc4fdb3d05a159412c"
+    }
+  ]
+}

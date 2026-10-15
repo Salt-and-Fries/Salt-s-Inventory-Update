@@ -4,15 +4,33 @@ import org.gradle.api.tasks.bundling.AbstractArchiveTask
 gradle.projectsEvaluated {
     def root = rootProject
     def targets = root.subprojects.findAll {
-        it.path.startsWith(':controlify:') && it.name in ['fabric', 'neoforge']
+        it.path.startsWith(':controlify:') && it.name in ['fabric', 'forge', 'neoforge']
     }
+    def matrix = new groovy.json.JsonSlurper().parse(root.file('controlify/targets.json')).targets
+    def expected = matrix.collect { ":controlify:${it.minecraft}:${it.loader}" }.sort()
+    if (targets.collect { it.path }.sort() != expected)
+        throw new GradleException('Controller projects must cover the complete pinned Salt version/loader matrix.')
     // Controlify's typed Minecraft API needs each loader's remapped dependency.
     // Compile shared controller sources directly in the loader, not vanilla common.
     root.subprojects.findAll {
         it.path.startsWith(':controlify:') && it.name == 'common'
-    }.each { it.sourceSets.main.java.setSrcDirs([]) }
+    }.each { common ->
+        common.sourceSets.main.java.setSrcDirs([])
+        if (common.parent.name == '26.3') {
+            // These loader-neutral tests already run with their sources and JUnit in :controlify:model.
+            // The resource-only common project has no runtime classes to test independently.
+            common.sourceSets.test.java.setSrcDirs([])
+            common.tasks.named('check').configure {
+                dependsOn(root.project(':controlify:model').tasks.named('test'))
+            }
+        }
+    }
     root.project(':1.21.1:fabric').sourceSets.test.java.srcDir(
             root.file('controlify/functional-tests/src/test/java'))
+    targets.findAll { it.name == 'fabric' && it.parent.name != '1.21.1' }.each { target ->
+        root.project(":${target.parent.name}:fabric").sourceSets.test.java.srcDir(
+                root.file("controlify/functional-tests/versions/${target.parent.name}/src/test/java"))
+    }
     def productionJar = { target ->
         target.tasks.named(target.tasks.findByName('remapJar') != null ? 'remapJar' : 'jar', AbstractArchiveTask)
     }
@@ -38,9 +56,10 @@ gradle.projectsEvaluated {
             def loom = target.extensions.getByName('loom')
             loom.mods.maybeCreate('salts_inventory_controlify').sourceSet(target.sourceSets.main)
             loom.mods.maybeCreate('salts_inventory_update').sourceSet(core.sourceSets.main)
+            def pin = matrix.find { it.minecraft == target.parent.name && it.loader == target.name }
             def publishedUpstream = target.configurations.detachedConfiguration(
-                    target.dependencies.create('maven.modrinth:controlify:y9bu5RxH'),
-                    target.dependencies.create('maven.modrinth:1eAoo2KR:o3cDn8Vp'))
+                    target.dependencies.create("maven.modrinth:${pin.controller.project}:${pin.controller.version_id}"),
+                    target.dependencies.create("maven.modrinth:${pin.yacl.project}:${pin.yacl.version_id}"))
             publishedUpstream.transitive = false
             target.tasks.named('runClient', JavaExec).configure {
                 doFirst {
@@ -56,7 +75,8 @@ gradle.projectsEvaluated {
                 }
             }
         } else {
-            target.extensions.getByName('neoForge').mods.maybeCreate('salts_inventory_update').sourceSet(core.sourceSets.main)
+            target.extensions.getByName(target.name == 'forge' ? 'legacyForge' : 'neoForge')
+                    .mods.maybeCreate('salts_inventory_update').sourceSet(core.sourceSets.main)
         }
 
         target.tasks.withType(JavaExec).configureEach {
@@ -73,7 +93,7 @@ gradle.projectsEvaluated {
                     if (name == 'client') runDir = "build/runtime-smoke/$profile"
                 }
             } else {
-                target.extensions.getByName('neoForge').runs.configureEach {
+                target.extensions.getByName(target.name == 'forge' ? 'legacyForge' : 'neoForge').runs.configureEach {
                     if (name == 'client') gameDirectory.set(target.layout.buildDirectory.dir("runtime-smoke/$profile"))
                 }
             }
@@ -98,7 +118,7 @@ gradle.projectsEvaluated {
     def verifySources = root.tasks.register('verifyControlifySources', Exec) {
         group = 'verification'
         description = 'Checks controller sources use only the public Salt API and remain outside the other mods.'
-        commandLine('python', root.file('tools/verify-controlify-boundaries.py'), '--sources')
+        commandLine('python', root.file('tools/verify-controlify-boundaries.py'), '--sources', '--matrix')
     }
     def verifyJars = root.tasks.register('verifyControlifyJars', Exec) {
         group = 'verification'
@@ -106,9 +126,11 @@ gradle.projectsEvaluated {
         dependsOn(targets.collect { productionJar(it) }, targets.collect { it.tasks.named('writeControlifyClasspath') })
         dependsOn(targets.collect { productionJar(root.project(":${it.parent.name}:${it.name}")) })
         doFirst {
-            commandLine(['python', root.file('tools/verify-controlify-boundaries.py')] +
+            commandLine(['python', root.file('tools/verify-controlify-boundaries.py'), '--matrix'] +
                     targets.collectMany { ['--jar', productionJar(it).get().archiveFile.get().asFile,
                                           '--classpath', it.layout.buildDirectory.file('controlify-compile-classpath.txt').get().asFile,
+                                          '--native-classpath', it.tasks.named('jar', AbstractArchiveTask).get().archiveFile.get().asFile,
+                                          it.layout.buildDirectory.file('controlify-compile-classpath.txt').get().asFile,
                                           '--peer-jar', productionJar(root.project(":${it.parent.name}:${it.name}")).get().archiveFile.get().asFile] })
         }
     }
@@ -116,7 +138,9 @@ gradle.projectsEvaluated {
         group = 'build'
         description = 'Builds the separate Controlify compatibility JARs and checks controller behavior/isolation.'
         dependsOn(verifySources, verifyJars, root.project(':controlify:model').tasks.named('test'))
-        dependsOn(root.project(':1.21.1:fabric').tasks.named('test'))
+        dependsOn(targets.findAll { it.name == 'fabric' }.collect {
+            root.project(":${it.parent.name}:fabric").tasks.named('test')
+        })
         dependsOn(targets.collect { it.tasks.named('build') })
         dependsOn(targets.collect { root.project(":${it.parent.name}:${it.name}").tasks.named('assemble') })
     }

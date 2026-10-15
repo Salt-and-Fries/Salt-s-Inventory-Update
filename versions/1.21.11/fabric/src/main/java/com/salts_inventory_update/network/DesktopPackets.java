@@ -35,6 +35,9 @@ public final class DesktopPackets {
     public static final int QUICK_TARGET_DEFAULT = 0;
     public static final int QUICK_TARGET_SESSION = 1;
     public static final int QUICK_TARGET_HOTBAR = 2;
+    /** Exact built-in player surfaces, distinct from the native/default quick-move behavior. */
+    public static final int QUICK_TARGET_PLAYER_EQUIPMENT = 3;
+    public static final int QUICK_TARGET_PLAYER_STORAGE = 4;
     public static final int PIN_MODE_UNPINNED = 0;
     public static final int PIN_MODE_PINNED = 1;
     public static final int PIN_MODE_GHOST_PINNED = 2;
@@ -576,7 +579,7 @@ public final class DesktopPackets {
         }
 
         public DesktopQuickMoveAllPayload {
-            if (mutationId <= 0L || playerSessionToken == 0L || targetKind < QUICK_TARGET_DEFAULT || targetKind > QUICK_TARGET_HOTBAR || target == null) {
+            if (mutationId <= 0L || playerSessionToken == 0L || targetKind < QUICK_TARGET_DEFAULT || targetKind > QUICK_TARGET_PLAYER_STORAGE || target == null) {
                 throw new IllegalArgumentException("Invalid desktop quick-move-all target");
             }
             requireListSize("desktop quick-move-all slots", sources, 1, MAX_GESTURE_SLOTS);

@@ -35,6 +35,9 @@ public final class DesktopPackets {
     public static final int QUICK_TARGET_DEFAULT = 0;
     public static final int QUICK_TARGET_SESSION = 1;
     public static final int QUICK_TARGET_HOTBAR = 2;
+    /** Exact built-in player surfaces, distinct from the native/default quick-move behavior. */
+    public static final int QUICK_TARGET_PLAYER_EQUIPMENT = 3;
+    public static final int QUICK_TARGET_PLAYER_STORAGE = 4;
     public static final int PIN_MODE_UNPINNED = 0;
     public static final int PIN_MODE_PINNED = 1;
     public static final int PIN_MODE_GHOST_PINNED = 2;
@@ -304,7 +307,7 @@ public final class DesktopPackets {
     public record DesktopQuickMoveAllPayload(List<DesktopSlotReference> sources, int targetKind, DesktopSessionReference target) implements DesktopPacket {
         public static final ResourceLocation TYPE = DesktopPackets.id("desktop_quick_move_all");
         public DesktopQuickMoveAllPayload(FriendlyByteBuf buf) { this(readSlotReferences(buf), buf.readVarInt(), readSessionReference(buf)); }
-        public DesktopQuickMoveAllPayload { if (targetKind < QUICK_TARGET_DEFAULT || targetKind > QUICK_TARGET_HOTBAR || target == null) throw new IllegalArgumentException("Invalid quick move all"); sources = List.copyOf(sources); requireUniqueBounded(sources, MAX_GESTURE_SLOTS, r -> ((long) r.sessionId() << 32) ^ r.slotIndex()); }
+        public DesktopQuickMoveAllPayload { if (targetKind < QUICK_TARGET_DEFAULT || targetKind > QUICK_TARGET_PLAYER_STORAGE || target == null) throw new IllegalArgumentException("Invalid quick move all"); sources = List.copyOf(sources); requireUniqueBounded(sources, MAX_GESTURE_SLOTS, r -> ((long) r.sessionId() << 32) ^ r.slotIndex()); }
         @Override public ResourceLocation id() { return TYPE; }
         @Override public void write(FriendlyByteBuf buf) { writeSlotReferences(buf, sources); buf.writeVarInt(targetKind); writeSessionReference(buf, target); }
     }

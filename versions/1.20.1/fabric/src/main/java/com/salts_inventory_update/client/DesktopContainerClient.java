@@ -650,7 +650,7 @@ public final class DesktopContainerClient {
     }
 
     public static boolean quickMoveSlot(int sourceSessionId, int sourceSlotIndex, int targetKind, int targetSessionId) {
-        if (targetKind < DesktopPackets.QUICK_TARGET_DEFAULT || targetKind > DesktopPackets.QUICK_TARGET_HOTBAR) {
+        if (targetKind < DesktopPackets.QUICK_TARGET_DEFAULT || targetKind > DesktopPackets.QUICK_TARGET_PLAYER_STORAGE) {
             DesktopDebug.trace(
                 "client quick move skipped sourceSession={} sourceSlot={} targetKind={} reason=invalid-target-kind",
                 sourceSessionId,
@@ -711,6 +711,7 @@ public final class DesktopContainerClient {
     }
 
     public static boolean quickMoveSlots(List<SlotTarget> sources, int targetKind, int targetSessionId) {
+        if (targetKind < DesktopPackets.QUICK_TARGET_DEFAULT || targetKind > DesktopPackets.QUICK_TARGET_PLAYER_STORAGE) return false;
         if (sources.isEmpty() || !hasCapability(DesktopPackets.CAP_MULTI_MENU_GESTURES, true)) return false;
         int target = targetKind == DesktopPackets.QUICK_TARGET_SESSION ? targetSessionId : DesktopPackets.PLAYER_MENU_SESSION;
         return send(new DesktopQuickMoveAllPayload(

@@ -123,6 +123,51 @@ function Assert-NotMatches {
     }
 }
 
+function Assert-JavaMethodMatches {
+    param(
+        [string] $Path,
+        [string] $SignaturePattern,
+        [string] $Pattern,
+        [string] $Label
+    )
+
+    if (-not (Assert-File -Path $Path -Label $Label)) {
+        return
+    }
+
+    # Bound checks to the complete method, ignoring braces and guard text in comments/literals.
+    # A source refactor may grow a method without weakening the condition we need to protect.
+    $content = Get-Content -LiteralPath $Path -Raw
+    $ignoredTokens = '(?s)//[^\r\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"|''(?:\\.|[^''\\])*'''
+    $code = [regex]::Replace($content, $ignoredTokens, ' ')
+    $signature = [regex]::Match($code, $SignaturePattern + '\s*\{')
+    if (-not $signature.Success) {
+        Add-Failure "$Label missing method '$SignaturePattern' in $Path"
+        return
+    }
+
+    $bodyStart = $signature.Index + $signature.Length
+    $depth = 1
+    foreach ($brace in [regex]::Matches($code.Substring($bodyStart), '[{}]')) {
+        if ($brace.Value -eq '{') {
+            $depth++
+        } else {
+            $depth--
+        }
+        if ($depth -eq 0) {
+            $body = $code.Substring($bodyStart, $brace.Index)
+            if (-not [regex]::IsMatch($body, $Pattern)) {
+                Add-Failure "$Label missing method-body pattern '$Pattern' in $Path"
+            } else {
+                Write-Host "PASS $Label" -ForegroundColor Green
+            }
+            return
+        }
+    }
+
+    Add-Failure "$Label has an unclosed method body in $Path"
+}
+
 function Get-Sha256 {
     param([string] $Path)
 
@@ -300,8 +345,11 @@ $tomsPayloads = Join-Path $RepoRoot "compatibility\versions\$version\fabric\src\
     Assert-Contains -Path $server -Text 'Double.isFinite(range)' -Label "$version finite interaction-range validation"
     Assert-Contains -Path $server -Text 'SLOT_CLICKED_OUTSIDE' -Label "$version strict negative click-slot validation"
     Assert-Contains -Path $server -Text 'payload.targetKind() < DesktopPackets.QUICK_TARGET_DEFAULT' -Label "$version quick-move target discriminator lower bound"
-    Assert-Contains -Path $server -Text 'payload.targetKind() > DesktopPackets.QUICK_TARGET_HOTBAR' -Label "$version quick-move target discriminator upper bound"
-    Assert-Contains -Path $server -Text 'payload.targetKind() != DesktopPackets.QUICK_TARGET_SESSION' -Label "$version explicit session target bypasses vanilla result routing"
+    Assert-Matches -Path $packets -Pattern 'public static final int QUICK_TARGET_PLAYER_EQUIPMENT\s*=\s*3\s*;' -Label "$version quick-move equipment destination discriminator"
+    Assert-Matches -Path $packets -Pattern 'public static final int QUICK_TARGET_PLAYER_STORAGE\s*=\s*4\s*;' -Label "$version quick-move storage destination discriminator"
+    Assert-JavaMethodMatches -Path $server -SignaturePattern 'private static void quickMove\(ServerPlayer player, DesktopQuickMovePayload payload\)' -Pattern 'if\s*\(\s*payload\.targetKind\(\)\s*<\s*DesktopPackets\.QUICK_TARGET_DEFAULT\s*\|\|\s*payload\.targetKind\(\)\s*>\s*DesktopPackets\.QUICK_TARGET_PLAYER_STORAGE\b' -Label "$version quick-move target discriminator upper bound"
+    Assert-JavaMethodMatches -Path $server -SignaturePattern 'private static boolean usesNativeResultQuickMove\(int targetKind, SlotSource source, int slotIndex\)' -Pattern 'return\s+\(targetKind\s*==\s*DesktopPackets\.QUICK_TARGET_DEFAULT\s*\|\|\s*targetKind\s*==\s*DesktopPackets\.QUICK_TARGET_PLAYER_STORAGE\)\s*&&\s*isVanillaResultSource\(source,\s*slotIndex\)\s*;' -Label "$version explicit session target bypasses vanilla result routing"
+    Assert-JavaMethodMatches -Path $server -SignaturePattern 'private static void quickMove\(ServerPlayer player, DesktopQuickMovePayload payload\)' -Pattern 'if\s*\(usesNativeResultQuickMove\(payload\.targetKind\(\),\s*source,\s*payload\.sourceSlotIndex\(\)\)\)\s*\{' -Label "$version quick-move applies the native result destination gate"
     Assert-Contains -Path $server -Text 'public static void syncCraftingResult' -Label "$version detached crafting result custom sync"
     Assert-Contains -Path $craftingMenuMixin -Text 'DesktopContainerSessions.syncCraftingResult' -Label "$version crafting result recalculation bridge"
     Assert-Contains -Path $mixinConfig -Text 'server.CraftingMenuMixin' -Label "$version crafting result mixin registration"
@@ -385,8 +433,9 @@ Assert-Matches -Path $hotbarClient -Pattern '(?s)this\.kind == WindowKind\.INVEN
 Assert-Matches -Path $hotbarClient -Pattern '(?s)private int minResizableWidth\(InventoryWindow window\).{0,1200}INVENTORY_HOTBAR_WIDTH' -Label "$version inventory minimum width reserves hotbar"
 Assert-Contains -Path $hotbarClient -Text 'int reservedHeight = inventoryHotbarReservedHeight(window);' -Label "$version inventory grid layout reserves hotbar row"
 
-Assert-Matches -Path $hotbarClient -Pattern '(?s)private void renderCharacterWindow\([^)]*\).{0,2400}(?:returnHotbarToInventory.{0,900}offhandSlot|offhandSlot.{0,900}returnHotbarToInventory)' -Label "$version character window conditionally renders offhand"
-Assert-Matches -Path $hotbarClient -Pattern '(?s)private @Nullable SlotHit characterOffhandSlotAt\([^)]*\).{0,1200}returnHotbarToInventory.{0,1200}offhandSlot' -Label "$version character offhand hit helper is conditional"
+Assert-JavaMethodMatches -Path $hotbarClient -SignaturePattern 'private static boolean workspaceInventoryHud\(\)' -Pattern 'return\s+singleton\s*!=\s*null\s*&&\s*singleton\.workspaceHud\s*&&\s*singleton\.externallyPresented\(\)\s*\|\|\s*SaltsInventoryConfig\.get\(\)\.returnHotbarToInventory\s*;' -Label "$version workspace inventory HUD retains the return-hotbar config fallback"
+Assert-JavaMethodMatches -Path $hotbarClient -SignaturePattern 'private void renderCharacterWindow\([^)]*\)' -Pattern 'if\s*\(workspaceInventoryHud\(\)\)\s*\{\s*Slot offhand\s*=\s*offhandSlot\(menu\);\s*if\s*\(offhand\s*!=\s*null\)' -Label "$version character window conditionally renders offhand"
+Assert-JavaMethodMatches -Path $hotbarClient -SignaturePattern 'private @Nullable SlotHit characterOffhandSlotAt\([^)]*\)' -Pattern '(?s)\A\s*if\s*\(!workspaceInventoryHud\(\)\)\s*\{\s*return null;\s*\}.*?Slot slot\s*=\s*offhandSlot\(playerMenu\);' -Label "$version character offhand hit helper is conditional"
 Assert-Contains -Path $hotbarClient -Text 'SlotHit offhandHit = screen.characterOffhandSlotAt(this, mouseX, mouseY);' -Label "$version character window hits offhand"
 Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_MODEL_SLOT_GAP = CHARACTER_MODEL_X - (CHARACTER_ARMOR_X - 1 + SLOT_SIZE);' -Label "$version character offhand mirrors armor-model frame gap"
 Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_OFFHAND_X = CHARACTER_MODEL_X + CHARACTER_MODEL_WIDTH + CHARACTER_MODEL_SLOT_GAP + 1;' -Label "$version character offhand uses mirrored frame gap"
@@ -395,7 +444,7 @@ Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_CR
 Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_CRAFT_ARROW_Y = 31 + CHARACTER_CRAFT_VERTICAL_OFFSET;' -Label "$version character crafting arrow applies shared offset"
 Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_CRAFT_RESULT_Y = 31 + CHARACTER_CRAFT_VERTICAL_OFFSET;' -Label "$version character crafting result and recipe button apply shared offset"
 
-Assert-Matches -Path $hotbarClient -Pattern '(?s)private static int creativeWindowHeight\(\).{0,500}returnHotbarToInventory.{0,300}INVENTORY_HOTBAR_RESERVED_HEIGHT' -Label "$version creative window conditionally reserves hotbar footer"
+Assert-JavaMethodMatches -Path $hotbarClient -SignaturePattern 'private static int creativeWindowHeight\(\)' -Pattern 'int hotbarHeight\s*=\s*workspaceInventoryHud\(\)\s*\?\s*INVENTORY_HOTBAR_RESERVED_HEIGHT\s*:\s*0;\s*return TOP_BAR_HEIGHT\s*\+\s*CREATIVE_CONTENT_MARGIN\s*\*\s*2\s*\+\s*CREATIVE_CONTENT_HEIGHT\s*\+\s*hotbarHeight;' -Label "$version creative window conditionally reserves hotbar footer"
 Assert-Matches -Path $hotbarClient -Pattern '(?s)else if \(kind == WindowKind\.CREATIVE\).{0,500}creativeWindowWidth\(\).{0,200}creativeWindowHeight\(\)' -Label "$version new creative window uses hotbar-aware fixed size"
 Assert-Contains -Path $hotbarClient -Text 'case CREATIVE -> DesktopWindowSize.of(creativeWindowWidth(), creativeWindowHeight());' -Label "$version creative default size uses hotbar-aware height"
 Assert-Matches -Path $hotbarClient -Pattern '(?s)private DesktopWindowSize defaultInventoryPlacementAnchorSize\(WindowKind inventoryKind\).{0,500}DesktopWindowSize\.of\(creativeWindowWidth\(\), creativeWindowHeight\(\)\)' -Label "$version creative placement anchor uses hotbar-aware height"
@@ -612,7 +661,7 @@ foreach ($mutationPayload in $serializedMutationPayloads) {
 Assert-Matches -Path $desktopContainerClient -Pattern '(?s)private static boolean queueMutation\(.{0,1500}inFlightMutation != null.{0,1800}queued\.factory\(\)\.create\(mutationId\).{0,1500}nextMutationId = mutationId' -Label '26.2 client serializes shared-cursor mutations with dispatch-time packet construction'
 Assert-Matches -Path $desktopContainerClient -Pattern '(?s)queueMutation\("click".{0,500}SessionAuth auth = sessionAuth\(sessionId\);.{0,250}ItemStack carried = currentClientCarried\(\);.{0,500}auth\.stateId\(\)' -Label '26.2 queued clicks resolve current authentication, state, and carried stack at dispatch'
 Assert-Count -Path $desktopContainerClient -Text 'queueMutation("' -Expected 14 -Label '26.2 routes all item and menu mutations through one global client lane'
-Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)private QuickMoveTarget quickMoveTarget\(.{0,900}this\.sessions\.contains\(focusedWindow\.session\).{0,250}!focusedWindow\.minimized.{0,150}!focusedWindow\.ghosted.{0,150}!focusedWindow\.persistentHidden' -Label '26.2 cross-window quick moves target only registered visible focused sessions'
+Assert-JavaMethodMatches -Path $desktopInventoryScreen -SignaturePattern 'private QuickMoveTarget quickMoveTarget\(SlotHit hit\)' -Pattern 'if\s*\(focusedWindow\s*!=\s*null\s*&&\s*focusedWindow\.kind\s*==\s*WindowKind\.CONTAINER\s*&&\s*focusedWindow\.session\s*!=\s*null\s*&&\s*this\.sessions\.contains\(focusedWindow\.session\)\s*&&\s*!focusedWindow\.minimized\s*&&\s*!focusedWindow\.ghosted\s*&&\s*!focusedWindow\.persistentHidden\s*&&\s*focusedWindow\.session\.sessionId\(\)\s*!=\s*hit\.sessionId\(\)\)\s*\{\s*targetKind\s*=\s*DesktopPackets\.QUICK_TARGET_SESSION;\s*targetSessionId\s*=\s*focusedWindow\.session\.sessionId\(\);' -Label '26.2 cross-window quick moves target only registered visible focused sessions'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)private void applyDragDistribution\((?:(?!\r?\n    private).)*List<DesktopContainerClient\.SlotTarget> targets = slots\.stream\(\)(?:(?!\r?\n    private).)*DesktopContainerClient\.dragSlots\(drag\.quickCraftType\(\), targets\)' -Label '26.2 non-legacy mixed-window drags use one authenticated cross-session batch'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)private @Nullable DragDistribution activeDragPreview\((?:(?!\r?\n    private).)*this\.dragDistribution\.size\(\) == 0' -Label '26.2 an activated drag preview remains visible while revisiting its targets'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)public void texturelessSlot\((?:(?!\r?\n        @Override).)*DragSlotPreview dragPreview = InventoryDesktopScreen\.this\.dragSlotPreview\(slot\)(?:(?!\r?\n        @Override).)*if \(dragPreview != null\)(?:(?!\r?\n        @Override).)*renderItemStack\(' -Label 'Sophisticated textureless slots render live drag previews before acknowledgement'

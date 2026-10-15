@@ -59,6 +59,7 @@ import net.minecraft.world.inventory.CraftingMenu;
 import net.minecraft.world.inventory.GrindstoneMenu;
 import net.minecraft.world.inventory.HorseInventoryMenu;
 import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.inventory.LoomMenu;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.RecipeBookMenu;
@@ -429,7 +430,7 @@ public final class DesktopContainerSessions {
 
     private static int quickMoveTargetSession(DesktopQuickMovePayload payload) {
         if (payload.targetKind() < DesktopPackets.QUICK_TARGET_DEFAULT
-            || payload.targetKind() > DesktopPackets.QUICK_TARGET_HOTBAR) {
+            || payload.targetKind() > DesktopPackets.QUICK_TARGET_PLAYER_STORAGE) {
             throw new IllegalArgumentException("Invalid quick move target kind: " + payload.targetKind());
         }
         return payload.targetKind() == DesktopPackets.QUICK_TARGET_SESSION
@@ -1365,10 +1366,14 @@ public final class DesktopContainerSessions {
             return;
         }
 
+        if (payload.targetKind() < DesktopPackets.QUICK_TARGET_DEFAULT
+            || payload.targetKind() > DesktopPackets.QUICK_TARGET_PLAYER_STORAGE) return;
         SlotSource source = resolveSlot(player, sessions, payload.sourceSessionId(), payload.sourceSlotIndex());
         if (source == null) {
             return;
         }
+        if (payload.targetKind() != DesktopPackets.QUICK_TARGET_DEFAULT
+            && !allowsQuickMoveRouting(source.menu, source.slot, payload.targetKind())) return;
 
         if (payload.targetKind() == DesktopPackets.QUICK_TARGET_SESSION) {
             if (payload.targetSessionId() == source.sessionId) {
@@ -1414,8 +1419,7 @@ public final class DesktopContainerSessions {
             );
         }
 
-        if (payload.targetKind() != DesktopPackets.QUICK_TARGET_SESSION
-            && isVanillaResultSource(source, payload.sourceSlotIndex())) {
+        if (usesNativeResultQuickMove(payload.targetKind(), source, payload.sourceSlotIndex())) {
             DesktopDebug.trace(
                 "server quick move vanilla result player={} sourceSession={} sourceSlot={} menu={}",
                 player.getName().getString(),
@@ -1451,7 +1455,10 @@ public final class DesktopContainerSessions {
             return;
         }
 
-        boolean moved = moveSlotStack(player, source.slot, targets);
+        AbstractContainerMenu targetMenu = payload.targetKind() == DesktopPackets.QUICK_TARGET_SESSION
+            ? sessions.sessions.get(payload.targetSessionId()).menu : player.inventoryMenu;
+        boolean moved = moveSlotStack(player, sessions, source, targetMenu, targets,
+            new QuickMoveWorkBudget(MAX_QUICK_MOVE_TRANSACTION_WORK), false);
         DesktopDebug.trace(
             "server quick move player={} sourceSession={} sourceSlot={} targetKind={} targetSession={} moved={}",
             player.getName().getString(),
@@ -1587,31 +1594,25 @@ public final class DesktopContainerSessions {
     }
 
     private static boolean isVanillaResultSource(SlotSource source, int slotIndex) {
-        if (source.menu instanceof RecipeBookMenu<?> recipeMenu && source.menu.slots.indexOf(source.slot) == recipeMenu.getResultSlotIndex()) {
-            return true;
-        }
-        if (source.menu instanceof AbstractFurnaceMenu) {
-            return slotIndex == FURNACE_RESULT_SLOT;
-        }
-        if (source.menu instanceof AnvilMenu) {
-            return slotIndex == ANVIL_RESULT_SLOT;
-        }
-        if (source.menu instanceof CartographyTableMenu) {
-            return slotIndex == CARTOGRAPHY_RESULT_SLOT;
-        }
-        if (source.menu instanceof GrindstoneMenu) {
-            return slotIndex == GRINDSTONE_RESULT_SLOT;
-        }
-        if (source.menu instanceof MerchantMenu) {
-            return slotIndex == MERCHANT_RESULT_SLOT;
-        }
-        if (source.menu instanceof SmithingMenu) {
-            return slotIndex == SMITHING_RESULT_SLOT;
-        }
-        if (source.menu instanceof StonecutterMenu) {
-            return slotIndex == STONECUTTER_RESULT_SLOT;
-        }
+        return isVanillaResultSlot(source.menu, slotIndex);
+    }
+
+    private static boolean isVanillaResultSlot(AbstractContainerMenu menu, int slotIndex) {
+        if (menu instanceof RecipeBookMenu<?> recipeMenu) return slotIndex == recipeMenu.getResultSlotIndex();
+        if (menu instanceof AbstractFurnaceMenu) return slotIndex == FURNACE_RESULT_SLOT;
+        if (menu instanceof AnvilMenu) return slotIndex == ANVIL_RESULT_SLOT;
+        if (menu instanceof CartographyTableMenu) return slotIndex == CARTOGRAPHY_RESULT_SLOT;
+        if (menu instanceof GrindstoneMenu) return slotIndex == GRINDSTONE_RESULT_SLOT;
+        if (menu instanceof LoomMenu) return slotIndex == 3;
+        if (menu instanceof MerchantMenu) return slotIndex == MERCHANT_RESULT_SLOT;
+        if (menu instanceof SmithingMenu) return slotIndex == SMITHING_RESULT_SLOT;
+        if (menu instanceof StonecutterMenu) return slotIndex == STONECUTTER_RESULT_SLOT;
         return false;
+    }
+
+    private static boolean usesNativeResultQuickMove(int targetKind, SlotSource source, int slotIndex) {
+        return (targetKind == DesktopPackets.QUICK_TARGET_DEFAULT || targetKind == DesktopPackets.QUICK_TARGET_PLAYER_STORAGE)
+            && isVanillaResultSource(source, slotIndex);
     }
 
     private static void button(ServerPlayer player, DesktopButtonPayload payload) {
@@ -2564,6 +2565,21 @@ public final class DesktopContainerSessions {
     }
 
     private static List<net.minecraft.world.inventory.Slot> quickMoveTargets(ServerPlayer player, PlayerSessions sessions, SlotSource source, DesktopQuickMovePayload payload) {
+        if (payload.targetKind() == DesktopPackets.QUICK_TARGET_PLAYER_EQUIPMENT) {
+            // These are precisely the crafting inputs, armor and offhand shown by Character.
+            // Result slot zero is an output and must never become an insertion destination.
+            List<Slot> equipment = new ArrayList<>(9);
+            for (int slotIndex = 1; slotIndex <= 8 && slotIndex < player.inventoryMenu.slots.size(); slotIndex++) {
+                equipment.add(player.inventoryMenu.slots.get(slotIndex));
+            }
+            if (player.inventoryMenu.slots.size() > 45) equipment.add(player.inventoryMenu.slots.get(45));
+            return equipment;
+        }
+        if (payload.targetKind() == DesktopPackets.QUICK_TARGET_PLAYER_STORAGE) {
+            List<Slot> storage = new ArrayList<>(mainInventorySlots(player));
+            storage.addAll(hotbarSlots(player));
+            return storage;
+        }
         if (payload.targetKind() == DesktopPackets.QUICK_TARGET_SESSION) {
             if (payload.targetSessionId() == source.sessionId) {
                 return List.of();
@@ -2599,11 +2615,18 @@ public final class DesktopContainerSessions {
         return slots;
     }
 
+    private static boolean allowsQuickMoveRouting(AbstractContainerMenu menu, Slot slot, int targetKind) {
+        return DesktopMenuBindings.allowsTargetedQuickMoveSource(menu, slot)
+            || targetKind == DesktopPackets.QUICK_TARGET_DEFAULT && DesktopMenuBindings.useNativeQuickMove(menu);
+    }
+
     private static boolean moveSlotStack(
         ServerPlayer player, PlayerSessions sessions, SlotSource source, AbstractContainerMenu targetMenu,
         List<Slot> targets, QuickMoveWorkBudget workBudget, boolean sortExtraction
     ) {
         Slot sourceSlot = source.slot;
+        boolean nativeResult = isVanillaResultSource(source, sourceSlot.index);
+        boolean replenishingResult = nativeResult && !(source.menu instanceof AbstractFurnaceMenu);
         if (!sourceSlot.isActive() || !sourceSlot.hasItem() || !sourceSlot.mayPickup(player)) {
             return false;
         }
@@ -2640,14 +2663,21 @@ public final class DesktopContainerSessions {
             ItemStack remainder = moving.copy();
             final int extractedCount = moved;
             withMenuNetworkSession(player, sessions, source.menu, () -> {
-                if (sortExtraction) {
+                if (sortExtraction || nativeResult) {
                     sourceSlot.onQuickCraft(remainder, sourceBefore);
-                    sourceSlot.onTake(player, sourceBefore.copyWithCount(extractedCount));
-                } else {
-                    sourceSlot.onTake(player, remainder);
                 }
+                sourceSlot.onTake(player, sourceBefore.copyWithCount(extractedCount));
             });
-            verifyQuickMoveTransaction(player, carriedBefore, source, moving, plans);
+            // Vanilla recipe result callbacks consume inputs and may publish the next recipe's
+            // result. That newly computed output belongs to the source rather than this transfer.
+            // Keep checking the source's original physical identity, the cursor and every target.
+            ItemStack afterTake = replenishingResult ? sourceSlot.getItem().copy() : moving;
+            verifyQuickMoveTransaction(player, carriedBefore, source, afterTake, plans);
+            if (replenishingResult && !remainder.isEmpty()) {
+                // CraftingMenu's native quick-move also drops an uninserted partial output after
+                // consuming one recipe. Never discard it when a precise destination partly fills.
+                player.drop(remainder.copy(), false);
+            }
             return true;
         } catch (RuntimeException exception) {
             try {

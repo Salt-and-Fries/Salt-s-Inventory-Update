@@ -12,10 +12,16 @@ java {
 
 sourceSets {
     main {
-        java.setSrcDirs(listOf("../common/src/main/java"))
+        java.setSrcDirs(listOf(
+            "../common/src/main/java",
+            "../versions/26.3/common/src/main/java/com/salts_inventory_update/controlify/model",
+            "../versions/26.3/common/src/main/java/com/salts_inventory_update/controlify/input"
+        ))
+        // These two 26.3 directories also contain the native integration classes.
+        java.exclude("ControlifyInputBridge.java", "WorkspaceContainerScreen.java", "WorkspaceScreenProcessor.java")
     }
     test {
-        java.setSrcDirs(listOf("../common/src/test/java", "../tests"))
+        java.setSrcDirs(listOf("../common/src/test/java", "../tests", "../versions/26.3/common/src/test/java"))
     }
 }
 

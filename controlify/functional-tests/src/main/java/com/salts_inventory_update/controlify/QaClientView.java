@@ -1,4 +1,4 @@
-package com.salts_inventory_update.controlify;
+package com.salts_inventory_update.controlify.qa;
 
 import com.salts_inventory_update.api.client.desktop.*;
 import com.salts_inventory_update.api.client.input.MouseButtonEvent;

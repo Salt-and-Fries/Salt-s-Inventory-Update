@@ -1,6 +1,8 @@
-package com.salts_inventory_update.controlify;
+package com.salts_inventory_update.controlify.qa;
 
 import com.google.gson.GsonBuilder;
+import com.salts_inventory_update.controlify.SaltsControlifyClient;
+import com.salts_inventory_update.controlify.RadialInventoryScreen;
 import com.salts_inventory_update.api.client.desktop.DesktopWorkspaceWindow;
 import com.salts_inventory_update.api.client.desktop.DesktopClientApi;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowHandle;
@@ -9,6 +11,7 @@ import com.salts_inventory_update.client.DesktopContainerClient;
 import com.salts_inventory_update.client.DesktopContainerSession;
 import com.salts_inventory_update.client.InventoryDesktopScreen;
 import com.salts_inventory_update.client.SaltsInventoryConfig;
+import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.controlify.model.RadialWorkspace;
 import com.salts_inventory_update.controlify.model.WorkspaceLayout;
 import com.salts_inventory_update.controlify.model.RadialLayout;
@@ -31,12 +34,9 @@ import dev.isxander.controlify.controllermanager.UniqueControllerID;
 import dev.isxander.controlify.driver.Driver;
 import dev.isxander.controlify.screenop.ScreenProcessorProvider;
 import dev.isxander.controlify.utils.log.ControlifyLogger;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -85,7 +85,7 @@ public final class ControlifyGameplayHarness {
     private static final List<Map<String, Object>> results = new ArrayList<>();
     private static final TestDriver driver = new TestDriver();
     private static Minecraft mc;
-    private static SaltsControlifyClient owner;
+    private static QaWorkspaceOwner owner;
     private static ControllerEntity controller;
     private static Step active;
     private static CompletableFuture<?> serverTask;
@@ -107,6 +107,7 @@ public final class ControlifyGameplayHarness {
     private static final QaClientView.Model viewA = new QaClientView.Model(), viewB = new QaClientView.Model();
     private static DesktopWindowHandle viewAHandle, viewBHandle;
     private static Runnable pointerFixture;
+    private static volatile String lastLoomObservation = "not observed";
 
     private ControlifyGameplayHarness() { }
 
@@ -121,13 +122,16 @@ public final class ControlifyGameplayHarness {
         }
         catch (Exception failure) { throw new IllegalStateException(failure); }
         started = System.currentTimeMillis();
+        // Keep genuine dispatch/authorization evidence for the early displayed-pair tests too.
+        SaltsInventoryRuntime.setDetailedConsoleLogs(true);
+        QaNativePointerFixture.register(ControlifyGameplayHarness::prepareNativePointer);
         DesktopClientApi.registerView(QA_VIEW_ID, QaClientView.Model.class, new QaClientView());
         ControlifyEvents.INPUT_MODE_CHANGED.register(event -> {
             System.out.println("CONTROLIFY_QA_INPUT_MODE " + event.mode() + " step=" + (active == null ? "between" : active.name()));
             if (controller != null && !event.mode().isController()) new Throwable("QA input-mode change source").printStackTrace();
         });
         scenarios();
-        ClientTickEvents.END_CLIENT_TICK.register(ControlifyGameplayHarness::tick);
+        QaRuntime.registerTick(ControlifyGameplayHarness::tick);
         System.out.println("CONTROLIFY_QA_START output=" + output);
     }
 
@@ -194,6 +198,7 @@ public final class ControlifyGameplayHarness {
         add("configured-native-quickmove", () -> {
             ControlifyBindings.INV_QUICK_MOVE.on(controller).setBoundInput(new ButtonInput(GamepadInputs.MISC_1_BUTTON));
             pointAtItem(chestWindow, Items.DIAMOND);
+            pointerFixture = () -> pointAtItem(chestWindow, Items.DIAMOND);
             driver.buttons.add(GamepadInputs.MISC_1_BUTTON);
         }, () -> true, () -> { driver.buttons.clear(); }, 3);
         assertServer("quickmove-chest-to-player-exact", () ->
@@ -250,21 +255,30 @@ public final class ControlifyGameplayHarness {
         }, 8);
         add("place-player-for-real-world-USE", () -> server(() -> {
             player().teleportTo(barrelPos.getX() + 0.5, barrelPos.getY(), barrelPos.getZ() - 2.0);
-            return null;
-        }), ControlifyGameplayHarness::serverDone, () -> {
-            mc.player.setYRot(0); mc.player.setXRot(29.25f);
+            player().setDeltaMovement(Vec3.ZERO);
+            return player().canInteractWithBlock(barrelPos, 0);
+        }), () -> serverDone() && (Boolean) serverTask.join() && mc.player.canInteractWithBlock(barrelPos, 0), () -> {
+            check("world-USE-target-within-native-reach", (Boolean) serverTask.join()
+                    && mc.player.canInteractWithBlock(barrelPos, 0));
+            driver.cameraTarget = barrelPos;
+            aimCameraAt(barrelPos);
         }, 8);
-        add("settle-real-camera-ray", () -> {}, () -> true, () -> {
+        add("settle-real-camera-ray", () -> aimCameraAt(barrelPos), () -> {
+            aimCameraAt(barrelPos);
+            return mc.player.canInteractWithBlock(barrelPos, 0) && mc.hitResult instanceof BlockHitResult block
+                    && block.getBlockPos().equals(barrelPos);
+        }, () -> {
             check("camera-targets-real-barrel", mc.hitResult instanceof BlockHitResult block && block.getBlockPos().equals(barrelPos));
         }, 8);
         add("native-USE-barrel-while-tucked-press", () -> {
-            driver.useTarget = barrelPos; driver.trigger = 1;
+            driver.trigger = 1;
         }, () -> true, () -> record("native-USE-state", "OBSERVED", "mode=" + Controlify.instance().currentInputMode()
                 + ",tucked=" + owner.tuckedAway() + ",use=" + ControlifyBindings.USE.on(controller).digitalNow()
                 + ",key=" + mc.options.keyUse.isDown() + ",hit=" + mc.hitResult), 2);
         add("native-USE-barrel-open-while-tucked", () -> {
-            driver.useTarget = null; driver.trigger = 0;
+            driver.trigger = 0;
         }, () -> owner.windows().size() > preservedWindows.size(), () -> {
+            driver.cameraTarget = null;
             barrelWindow = newestOther();
             check("new-window-keeps-gameplay", owner.tuckedAway() && mc.screen == null);
             verifyPreserved();
@@ -288,7 +302,9 @@ public final class ControlifyGameplayHarness {
                     capture("08-two-containers-pair");
                 }, 8);
         add("native-quickmove-to-displayed-barrel", () -> {
-            pointAtItem(chestWindow, Items.DIAMOND); driver.buttons.add(GamepadInputs.MISC_1_BUTTON);
+            pointAtItem(chestWindow, Items.DIAMOND);
+            pointerFixture = () -> pointAtItem(chestWindow, Items.DIAMOND);
+            driver.buttons.add(GamepadInputs.MISC_1_BUTTON);
         }, () -> true, () -> driver.buttons.clear(), 3);
         assertServer("server-exact-pair-and-conservation", () -> count(chestPos, Items.DIAMOND) == 0
                 && count(barrelPos, Items.DIAMOND) == 32 && inventoryCount(Items.DIAMOND) == 16);
@@ -414,6 +430,8 @@ public final class ControlifyGameplayHarness {
     }
 
     private static void addLoomResultScenarios() {
+        add("loom-enable-native-transfer-diagnostics", () -> SaltsInventoryRuntime.setDetailedConsoleLogs(true),
+                () -> true, () -> {}, 0);
         openContainer("open-native-loom", () -> loomPos, () -> loomWindow = newestOther());
         add("seed-native-loom-pattern", () -> server(() -> {
             LoomMenu menu = (LoomMenu) serverMenu(LoomMenu.class);
@@ -428,6 +446,7 @@ public final class ControlifyGameplayHarness {
         quickMoveSlot("loom-session-result-slot-three", () -> loomWindow, 3);
         assertServer("loom-native-inputs-consumed-once-output-replenished", () -> {
             LoomMenu menu = (LoomMenu) serverMenu(LoomMenu.class);
+            observeLoom(menu);
             return menu.getSlot(0).getItem().getCount() == 1 && menu.getSlot(1).getItem().getCount() == 1
                     && menu.getResultSlot().getItem().is(Items.WHITE_BANNER)
                     && count(barrelPos, Items.WHITE_BANNER) == 1 && inventoryCount(Items.WHITE_BANNER) == 0;
@@ -437,11 +456,27 @@ public final class ControlifyGameplayHarness {
         quickMoveSlot("loom-storage-result-slot-three", () -> loomWindow, 3);
         assertServer("loom-final-output-conserved-no-extra-input-consumption", () -> {
             LoomMenu menu = (LoomMenu) serverMenu(LoomMenu.class);
+            observeLoom(menu);
             return menu.getSlot(0).getItem().isEmpty() && menu.getSlot(1).getItem().isEmpty()
                     && menu.getResultSlot().getItem().isEmpty() && count(barrelPos, Items.WHITE_BANNER) == 1
                     && inventoryCount(Items.WHITE_BANNER) == 1 && inventoryCount(Items.RED_DYE) == 0;
         });
         add("loom-final-result-capture", () -> {}, () -> true, () -> capture("11c-native-loom-result-inventory"), 3);
+        add("loom-disable-native-transfer-diagnostics", () -> SaltsInventoryRuntime.setDetailedConsoleLogs(false),
+                () -> true, () -> {}, 0);
+    }
+
+    private static void observeLoom(LoomMenu menu) {
+        String observation = "banner=" + menu.getSlot(0).getItem() + ", dye=" + menu.getSlot(1).getItem()
+                + ", result=" + menu.getResultSlot().getItem() + ", resultIndex=" + menu.getResultSlot().index
+                + ", resultPickup=" + menu.getResultSlot().mayPickup(player())
+                + ", barrelBanners=" + count(barrelPos, Items.WHITE_BANNER)
+                + ", inventoryBanners=" + inventoryCount(Items.WHITE_BANNER)
+                + ", menuStateId=" + menu.getStateId();
+        if (!observation.equals(lastLoomObservation)) {
+            lastLoomObservation = observation;
+            System.out.println("CONTROLIFY_QA_LOOM " + observation);
+        }
     }
 
     private static void addClientOnlyScenarios() {
@@ -513,7 +548,7 @@ public final class ControlifyGameplayHarness {
     }
     private static void pointOutsideUi(DesktopWindowHandle handle) {
         var bounds = handle.state();
-        var placement = owner.animatedLayout(mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight()).windows().get(handle.instanceId());
+        var placement = pointerLayout().windows().get(handle.instanceId());
         int localX = bounds.x() + bounds.width() / 2, localY = bounds.y() - 12;
         check("modal-owner-retains-outside-pointer", localY < bounds.y()
                 && owner.desktop().containsPointer(handle.instanceId(), localX, localY));
@@ -527,7 +562,7 @@ public final class ControlifyGameplayHarness {
     }
     private static void pointAtUiButton(DesktopWindowHandle handle, QaClientView.Model model, boolean external) {
         var bounds = handle.state();
-        var placement = owner.animatedLayout(mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight()).windows().get(handle.instanceId());
+        var placement = pointerLayout().windows().get(handle.instanceId());
         int localX = (external ? model.externalX : model.buttonX) + 60;
         int localY = (external ? model.externalY : model.buttonY) + 12;
         if (external) check("external-UI-hit-outside-base", localY >= bounds.y() + bounds.height()
@@ -596,7 +631,7 @@ public final class ControlifyGameplayHarness {
 
     @SuppressWarnings("unchecked")
     private static void installController() {
-        owner = (SaltsControlifyClient) field(SaltsControlifyClient.class, "instance");
+        owner = new QaWorkspaceOwner((SaltsControlifyClient) field(SaltsControlifyClient.class, "instance"));
         try { owner.config().setAnimationsEnabled(true); } catch (Exception failure) { throw new IllegalStateException(failure); }
         Controlify controlify = Controlify.instance();
         Object manager = controlify.getControllerManager().orElseThrow();
@@ -617,7 +652,7 @@ public final class ControlifyGameplayHarness {
     private static final class TestDriver implements Driver {
         final Set<ResourceLocation> buttons = new HashSet<>();
         float trigger, x, y, walk;
-        BlockPos useTarget;
+        BlockPos cameraTarget;
 
         @Override public void addComponents(ControllerEntity controller) {
             controller.setComponent(new UIDComponent("salts-controller-qa-only"));
@@ -626,17 +661,7 @@ public final class ControlifyGameplayHarness {
             controller.setComponent(new InputComponent(controller, 40, 12, 0, true, GamepadInputs.DEADZONE_GROUPS, "default"));
         }
         @Override public void update(ControllerEntity controller, boolean outOfFocus) {
-            if (pointerFixture != null && (buttons.contains(GamepadInputs.MISC_1_BUTTON) || buttons.contains(GamepadInputs.SOUTH_BUTTON))) {
-                // Prepare the cursor immediately before the real binding edge. Native OS
-                // events between scenario frames must not change which test fixture is hit.
-                Runnable preparePointer = pointerFixture;
-                pointerFixture = null;
-                preparePointer.run();
-            }
-            if (useTarget != null && mc.screen == null) {
-                // A deterministic ray fixture; vanilla processes the real configured USE binding.
-                mc.hitResult = new BlockHitResult(Vec3.atCenterOf(useTarget), Direction.NORTH, useTarget, false);
-            }
+            if (cameraTarget != null && mc.screen == null) aimCameraAt(cameraTarget);
             ControllerStateImpl state = new ControllerStateImpl();
             buttons.forEach(button -> state.setButton(button, true));
             state.setAxis(GamepadInputs.LEFT_TRIGGER_AXIS, trigger);
@@ -658,10 +683,39 @@ public final class ControlifyGameplayHarness {
     private static void pointAtItem(UUID id, Item item) {
         pointAtNativeSlot(id, slot -> slot.getItem().is(item));
     }
+
+    private static void prepareNativePointer(ControllerEntity processingController) {
+        if (pointerFixture == null || processingController != controller) return;
+        boolean quickMove = ControlifyBindings.INV_QUICK_MOVE.on(controller).justPressed();
+        boolean select = ControlifyBindings.INV_SELECT.on(controller).justPressed();
+        boolean pointerClick = ControlifyBindings.VMOUSE_LCLICK.on(controller).justPressed();
+        if (!quickMove && !select && !pointerClick) return;
+        Runnable prepare = pointerFixture;
+        pointerFixture = null;
+        prepare.run();
+        record("native-pointer-prepared-at-binding-consumption", "OBSERVED",
+                "quickMove=" + quickMove + ",select=" + select + ",pointerClick=" + pointerClick + ",slot="
+                        + ((RadialInventoryScreen) mc.screen).controllerHoveredSlot());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static WorkspaceLayout<UUID> pointerLayout() {
+        // Mouse routing uses the last rendered placements, so the test must point at that same frame.
+        return Objects.requireNonNull((WorkspaceLayout<UUID>) field((RadialInventoryScreen) mc.screen, "placements"),
+                "Rendered workspace placements");
+    }
+
+    private static void aimCameraAt(BlockPos position) {
+        Vec3 direction = Vec3.atCenterOf(position).subtract(mc.player.getEyePosition());
+        float yaw = (float) Math.toDegrees(Math.atan2(-direction.x, direction.z));
+        float pitch = (float) -Math.toDegrees(Math.atan2(direction.y, Math.hypot(direction.x, direction.z)));
+        mc.player.setYRot(yaw);
+        mc.player.setXRot(pitch);
+    }
     private static void pointAtNativeSlot(UUID id, java.util.function.Predicate<Slot> target) {
         var window = owner.windows().get(id);
         var bounds = window.handle().state();
-        var placement = owner.animatedLayout(mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight()).windows().get(id);
+        var placement = pointerLayout().windows().get(id);
         for (var hit : owner.desktop().visibleSlots(id)) {
                 int x = hit.x() + 8, y = hit.y() + 8;
                 Slot slot = owner.desktop().hoveredSlot(id, x, y);
@@ -672,7 +726,11 @@ public final class ControlifyGameplayHarness {
                     double scaleY = (double) mc.getWindow().getGuiScaledHeight() / mc.getWindow().getScreenHeight();
                     Controlify.instance().virtualMouseHandler().snapToPoint(new SnapPoint(px, py, 1), new Vector2d(scaleX, scaleY));
                     ((RadialInventoryScreen) mc.screen).mouseMoved(px, py);
-                    check("real-hovered-item-slot", ((RadialInventoryScreen) mc.screen).controllerHoveredSlot() != null);
+                    Slot actual = ((RadialInventoryScreen) mc.screen).controllerHoveredSlot();
+                    check("real-hovered-item-slot", actual == slot);
+                    if (id.equals(loomWindow)) System.out.println("CONTROLIFY_QA_LOOM_CURSOR expectedSlot="
+                            + slot.index + " actualSlot=" + (actual == null ? "none" : actual.index)
+                            + " nativeX=" + x + " nativeY=" + y + " screenX=" + px + " screenY=" + py);
                     return;
                 }
             }
@@ -802,7 +860,8 @@ public final class ControlifyGameplayHarness {
                 + ", workspaceMode=" + (owner == null || owner.model() == null ? "none" : owner.model().mode())
                 + ", focused=" + (owner == null || owner.model() == null ? "none" : owner.model().focused())
                 + ", selected=" + (owner == null || owner.model() == null ? "none" : owner.model().selected())
-                + ", highlighted=" + (owner == null || owner.model() == null ? "none" : owner.model().highlighted());
+                + ", highlighted=" + (owner == null || owner.model() == null ? "none" : owner.model().highlighted())
+                + ", loom=" + lastLoomObservation;
     }
     private static void record(String name, String status, String details) {
         results.add(new LinkedHashMap<>(Map.of("name", name, "status", status, "details", details,
@@ -818,9 +877,7 @@ public final class ControlifyGameplayHarness {
         report.put("coreCodeSource", InventoryDesktopScreen.class.getProtectionDomain().getCodeSource().getLocation().toString());
         report.put("companionCodeSource", SaltsControlifyClient.class.getProtectionDomain().getCodeSource().getLocation().toString());
         report.put("controlifyCodeSource", Controlify.class.getProtectionDomain().getCodeSource().getLocation().toString());
-        Map<String, String> mods = new TreeMap<>();
-        FabricLoader.getInstance().getAllMods().forEach(mod -> mods.put(mod.getMetadata().getId(), mod.getMetadata().getVersion().getFriendlyString()));
-        report.put("loadedMods", mods);
+        report.put("loadedMods", QaRuntime.loadedMods());
         try { Files.writeString(output.resolve("results.json"), new GsonBuilder().setPrettyPrinting().create().toJson(report)); }
         catch (Exception failure) { failure.printStackTrace(); }
         System.out.println("CONTROLIFY_QA_SUMMARY " + (failures == 0 ? "PASS" : "FAIL") + " records=" + results.size());

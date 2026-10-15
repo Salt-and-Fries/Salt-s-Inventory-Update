@@ -15,6 +15,7 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.language.jvm.tasks.ProcessResources
 import java.security.MessageDigest
 import java.util.zip.ZipFile
+import groovy.json.JsonSlurper
 
 plugins {
     id("dev.prism")
@@ -22,6 +23,10 @@ plugins {
 
 group = "com.salts_inventory_update"
 version = "0.1.4"
+
+@Suppress("UNCHECKED_CAST")
+val controlifyTargetPins = (JsonSlurper().parse(rootProject.file("controlify/targets.json")) as Map<*, *>)
+    .get("targets") as List<Map<String, Any>>
 
 
 val modMenuVersions = mapOf(
@@ -212,6 +217,15 @@ prism {
             description = "Controller radial inventory workspace for Salt's Inventory Update. Requires the matching core mod and Controlify."
             license = "MIT"
         }
+        version("1.20.1") {
+            fabric {
+                loaderVersion = "0.18.2"
+                fabricApi("0.92.6+1.20.1")
+            }
+            forge {
+                loaderVersion = "47.4.0"
+            }
+        }
         version("1.21.1") {
             fabric {
                 loaderVersion = "0.18.2"
@@ -220,6 +234,35 @@ prism {
             neoforge {
                 loaderVersion = "21.1.229"
             }
+        }
+        version("1.21.11") {
+            fabric {
+                loaderVersion = "0.19.2"
+                fabricApi("0.141.4+1.21.11")
+            }
+            neoforge { loaderVersion = "21.11.42" }
+        }
+        version("26.1.2") {
+            fabric {
+                loaderVersion = "0.19.5"
+                fabricApi("0.149.0+26.1.2")
+            }
+            neoforge { loaderVersion = "26.1.2.59-beta" }
+        }
+        version("26.2") {
+            fabric {
+                loaderVersion = "0.19.5"
+                fabricApi("0.153.0+26.2")
+            }
+            neoforge { loaderVersion = "26.2.0.90" }
+        }
+        version("26.3") {
+            neoFormVersion = "26.3-1"
+            fabric {
+                loaderVersion = "0.19.5"
+                fabricApi("0.161.0+26.3")
+            }
+            neoforge { loaderVersion = "26.3.0.76" }
         }
     }
     mod("compatibility") {
@@ -299,13 +342,29 @@ subprojects {
     val controlifyModule = path.startsWith(":controlify:")
     val coreModule = !compatibilityModule && !controlifyModule
 
-    if (controlifyModule && minecraftVersion == "1.21.1" && name in setOf("fabric", "neoforge")) {
+    if (controlifyModule && minecraftVersion != null && name in setOf("fabric", "forge", "neoforge")) {
         val fabricTarget = name == "fabric"
+        val mappedFabric = fabricTarget && !minecraftVersion.startsWith("26.")
+        val pin = controlifyTargetPins.single {
+            it["minecraft"] == minecraftVersion && it["loader"] == name
+        }
+        fun coordinate(kind: String): String {
+            val dependency = pin.getValue(kind) as Map<*, *>
+            return "maven.modrinth:${dependency["project"]}:${dependency["version_id"]}"
+        }
+        if (name == "forge") {
+            repositories.maven {
+                name = "ControlifyForgeRuntime"
+                url = uri("https://www.cursemaven.com")
+                content { includeModule("curse.maven", "mixin-args-1257105") }
+            }
+        }
         afterEvaluate {
-            dependencies.add(if (fabricTarget) "modImplementation" else "implementation",
-                "maven.modrinth:controlify:${if (fabricTarget) "y9bu5RxH" else "RqsNKKLK"}")
-            dependencies.add(if (fabricTarget) "modRuntimeOnly" else "runtimeOnly",
-                "maven.modrinth:1eAoo2KR:${if (fabricTarget) "o3cDn8Vp" else "7TVdVtxF"}")
+            dependencies.add(if (mappedFabric || name == "forge") "modImplementation" else "implementation", coordinate("controller"))
+            dependencies.add(if (mappedFabric || name == "forge") "modRuntimeOnly" else "runtimeOnly", coordinate("yacl"))
+            @Suppress("UNCHECKED_CAST")
+            val runtimeDependencies = pin["runtime_dependencies"] as? List<Map<String, Any?>> ?: emptyList()
+            runtimeDependencies.forEach { dependencies.add("runtimeOnly", it.getValue("coordinate") as String) }
         }
     }
 
@@ -486,7 +545,11 @@ subprojects {
                 if (mainSourceSet != null && mixinExtension != null) {
                     mixinExtension.javaClass
                         .getMethod("config", String::class.java)
-                        .invoke(mixinExtension, if (compatibilityModule) "salts_inventory_compat.sophisticated.mixins.json" else "salts_inventory_update.mixins.json")
+                        .invoke(mixinExtension, when {
+                            compatibilityModule -> "salts_inventory_compat.sophisticated.mixins.json"
+                            controlifyModule -> "salts_inventory_controlify.mixins.json"
+                            else -> "salts_inventory_update.mixins.json"
+                        })
                     if (compatibilityModule) {
                         mixinExtension.javaClass.getMethod("config", String::class.java)
                             .invoke(mixinExtension, "salts_inventory_compat.ae2.mixins.json")
@@ -497,9 +560,17 @@ subprojects {
                         mixinExtension.javaClass.getMethod("config", String::class.java)
                             .invoke(mixinExtension, "salts_inventory_update.mixins.json")
                     }
+                    if (controlifyModule) {
+                        mixinExtension.javaClass.getMethod("config", String::class.java)
+                            .invoke(mixinExtension, "salts_inventory_update.mixins.json")
+                    }
                     mixinExtension.javaClass
                         .getMethod("add", SourceSet::class.java, String::class.java)
-                        .invoke(mixinExtension, mainSourceSet, if (compatibilityModule) "salts_inventory_compat.refmap.json" else "salts_inventory_update.refmap.json")
+                        .invoke(mixinExtension, mainSourceSet, when {
+                            compatibilityModule -> "salts_inventory_compat.refmap.json"
+                            controlifyModule -> "salts_inventory_controlify.refmap.json"
+                            else -> "salts_inventory_update.refmap.json"
+                        })
                     logger.lifecycle("Salt's Inventory Update Forge 1.20.1 mixin refmap generation enabled")
                 } else {
                     logger.warn("Salt's Inventory Update Forge 1.20.1 mixin refmap generation could not be enabled")
@@ -509,7 +580,11 @@ subprojects {
         plugins.withId("java") {
             tasks.named<Jar>("jar") {
                 manifest {
-                    attributes("MixinConfigs" to if (compatibilityModule) "salts_inventory_compat.sophisticated.mixins.json,salts_inventory_compat.ae2.mixins.json,salts_inventory_compat.ae2-native.mixins.json" else "salts_inventory_update.mixins.json")
+                    attributes("MixinConfigs" to when {
+                        compatibilityModule -> "salts_inventory_compat.sophisticated.mixins.json,salts_inventory_compat.ae2.mixins.json,salts_inventory_compat.ae2-native.mixins.json"
+                        controlifyModule -> "salts_inventory_controlify.mixins.json"
+                        else -> "salts_inventory_update.mixins.json"
+                    })
                 }
             }
         }

@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "targets": [
+    {
+      "minecraft": "1.20.1",
+      "loader": "fabric",
+      "controller": {
+        "project": "controlify",
+        "version_id": "sDAshEPv",
+        "version": "2.0.4",
+        "url": "https://cdn.modrinth.com/data/DOUdJVEm/versions/sDAshEPv/controlify-2.0.4%2B1.20.1-fabric.jar",
+        "sha512": "5d9e04efca77fa381c96bc18188e0d7656f28ecffbe5740fb8c3effdb7bf676b6c5548fff5fcd3cda1589bac145f53f0e5b43dd155ffc6be8b46882e5fd870f6"
+      },
+      "yacl": {
+        "project": "yacl",
+        "version_id": "dvS5DjUA",
+        "version": "3.6.6+1.20.1-fabric",
+        "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/dvS5DjUA/yet_another_config_lib_v3-3.6.6%2B1.20.1-fabric.jar",
+        "sha512": "20f282b3cdaec7c83a96840edb756336677c5816ed943145022f1ce1eafac0c9aa7c621939e15abe6f4309626738bc56d3d1b8434f5175d22e7409108630b02b"
+      },
+      "native_forge_port": false
+    },
+    {
+      "minecraft": "1.20.1",
+      "loader": "forge",
+      "controller": {
+        "project": "G2K5sLls",
+        "version_id": "Tzzphrug",
+        "version": "2.1.9-mc1.20.1-forge",
+        "url": "https://cdn.modrinth.com/data/G2K5sLls/versions/Tzzphrug/controlify-forgified-2.1.9-mc1.20.1-forge.jar",
+        "sha512": "b18d36be936adb4ea2fa9ac3118ce4f251eb559c0263a16e55f57888aae822b1f33dd466e48f107b107c74c1d9a38c680a0f8b38130e6ffdeae97a54b18785d2"
+      },
+      "yacl": {
+        "project": "yacl",
+        "version_id": "sCWgXDYQ",
+        "version": "3.6.6+1.20.1-forge",
+        "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/sCWgXDYQ/yet_another_config_lib_v3-3.6.6%2B1.20.1-forge.jar",
+        "sha512": "7fdd923ae94c1ada9bf0524f21cdfbb4f870ea93b26d02f369829585892fc5a2f61e60f43a6686ee611ff11bde8f123f178279e2de453c8fb320264153a0e8d9"
+      },
+      "native_forge_port": true,
+      "runtime_dependencies": [
+        {
+          "provider": "curseforge",
+          "project_id": "1257105",
+          "version_id": "6488404",
+          "mod_id": "mixin_args",
+          "version": "1.0",
+          "coordinate": "curse.maven:mixin-args-1257105:6488404",
+          "filename": "mixin_args-1.0.jar",
+          "url": "https://mediafilez.forgecdn.net/files/6488/404/mixin_args-1.0.jar",
+          "sha512": "1d1951d76aa9ce23887a649db6a6c4d035345cb3b8f0ba2b6cd632aa3f7995eb1edeef50e31eef1efa54547f9b5a5be5ad9862bb5765a512e5b010effdc2a943",
+          "license": "All Rights Reserved",
+          "source": "https://www.curseforge.com/minecraft/mc-mods/mixin-args/files/6488404"
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "controller": {
+        "project": "controlify",
+        "version_id": "y9bu5RxH",
+        "version": "3.0.1+lts",
+        "url": "https://cdn.modrinth.com/data/DOUdJVEm/versions/y9bu5RxH/controlify-3.0.1%2Blts%2B1.21.1-fabric.jar",
+        "sha512": "55fa83d2a332bd8d26624a95043bb38a28028154982ee4a7d7560df380582a68985c13c6c73e55f1047010d7be2c6bb38f1bb67fe5f4eddb2b6c99f04caf25c0"
+      },
+      "yacl": {
+        "project": "yacl",
+        "version_id": "o3cDn8Vp",
+        "version": "3.8.2+1.21.1-fabric",
+        "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/o3cDn8Vp/yet_another_config_lib_v3-3.8.2%2B1.21.1-fabric.jar",
+        "sha512": "353169f85fa63e73ce9bdd0d4ddce54e3cbc4d71153a93c982f74c68fd93325986663f94fc2f2b10f4427e8b15a0485c608c5587b3840d933204b50ea4cb6d4c"
+      },
+      "native_forge_port": false
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "controller": {
+        "project": "controlify",
+        "version_id": "RqsNKKLK",
+        "version": "3.0.1+lts",
+        "url": "https://cdn.modrinth.com/data/DOUdJVEm/versions/RqsNKKLK/controlify-3.0.1%2Blts%2B1.21.1-neoforge.jar",
+        "sha512": "cfffb25b9e62ca39cd6f54ab0b83902feda23a763ae9e345a11609f0138de1b6c3ab7a78c8fd5b7b309795e5c6d4911fd37cd7f8722a72cca6ad18e32cec461e"
+      },
+      "yacl": {
+        "project": "yacl",
+        "version_id": "7TVdVtxF",
+        "version": "3.8.2+1.21.1-neoforge",
+        "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/7TVdVtxF/yet_another_config_lib_v3-3.8.2%2B1.21.1-neoforge.jar",
+        "sha512": "583de19b927ce8050c2b7d5e60b75accc69e325e5aac85c27994c82a9dec2e4e078343fa1d4c3a10d4bd7e0e524e0b3b246a18cf03db01e363a1e6f865adcf48"
+      },
+      "native_forge_port": false
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "fabric",
+      "controller": {
+        "project": "controlify",
+        "version_id": "qZW7FPjm",
+        "version": "3.0.1+lts",
+        "url": "https://cdn.modrinth.com/data/DOUdJVEm/versions/qZW7FPjm/controlify-3.0.1%2Blts%2B1.21.11-fabric.jar",
+        "sha512": "1a7bbcba7b721b28ed5e46fa5e94bf795251c9476939f34049a83d64a16ce56cdb2a6841c768f4393fa1b1ba67215c67fe7fdd14a29d1770f03d4c812b10fcde"
+      },
+      "yacl": {
+        "project": "yacl",
+        "version_id": "pHWDw3Vc",
+        "version": "3.8.2+1.21.11-fabric",
+        "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/pHWDw3Vc/yet_another_config_lib_v3-3.8.2%2B1.21.11-fabric.jar",
+        "sha512": "392db7d471030cca27483ecf58c626a14cd73d71a18afe6d4173c6b030948b8a925b36e708d4cc2c897dfa3f20a7f23b999fc18aa6d36c156da29037601153ac"
+      },
+      "native_forge_port": false
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "neoforge",
+      "controller": {
+        "project": "controlify",
+        "version_id": "rrwWAirw",
+        "version": "3.0.1+lts",
+        "url": "https://cdn.modrinth.com/data/DOUdJVEm/versions/rrwWAirw/controlify-3.0.1%2Blts%2B1.21.11-neoforge.jar",
+        "sha512": "65dfc535f842eef9cd23d8c161c0a4774d45e04ef61c76da9c86c61e5130d418e010a83b04f56cb2a0b52f4e60051a353d95ff918de0a1926883955a81663239"
+      },
+      "yacl": {
+        "project": "yacl",
+        "version_id": "HZs9mrWM",
+        "version": "3.8.2+1.21.11-neoforge",
+        "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/HZs9mrWM/yet_another_config_lib_v3-3.8.2%2B1.21.11-neoforge.jar",
+        "sha512": "5bffe9c6025e8ca3f79a9c098a090be66fd2b4d09fcbb83a4bd0ab8e79e069994901b12117ea1fd584bf88caf05e63d4550ff58961d2be2a1ed5808b4db66ee6"
+      },
+      "native_forge_port": false
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "fabric",
+      "controller": {
+        "project": "controlify",
+        "version_id": "CCtUQSV4",
+        "version": "3.5.3+mc26.1",
+        "url": "https://cdn.modrinth.com/data/DOUdJVEm/versions/CCtUQSV4/controlify-3.5.3%2Bmc26.1-universal.jar",
+        "sha512": "c2e7710a25a0d7a2a12c808b34b744e14f10dfb68843d63d35861484266dc25ab6972cf0755d630badf7d3241c286ccf77260a9c5fca0de27942b490b7f140b3"
+      },
+      "yacl": {
+        "project": "yacl",
+        "version_id": "IODousKT",
+        "version": "3.9.7+26.1-fabric",
+        "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/IODousKT/yet_another_config_lib_v3-3.9.7%2B26.1-fabric.jar",
+        "sha512": "734a2735521940b23b49cc645c49f8ad760212adb315602daf9cfb3c2f401cdd8a07250dc3e0b7429120a641032f6c8be1e5955d7aec3b07547ca34e7bacd4fa"
+      },
+      "native_forge_port": false
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "neoforge",
+      "controller": {
+        "project": "controlify",
+        "version_id": "CCtUQSV4",
+        "version": "3.5.3+mc26.1",
+        "url": "https://cdn.modrinth.com/data/DOUdJVEm/versions/CCtUQSV4/controlify-3.5.3%2Bmc26.1-universal.jar",
+        "sha512": "c2e7710a25a0d7a2a12c808b34b744e14f10dfb68843d63d35861484266dc25ab6972cf0755d630badf7d3241c286ccf77260a9c5fca0de27942b490b7f140b3"
+      },
+      "yacl": {
+        "project": "yacl",
+        "version_id": "B1mfgQmD",
+        "version": "3.9.7+26.1-neoforge",
+        "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/B1mfgQmD/yet_another_config_lib_v3-3.9.7%2B26.1-neoforge.jar",
+        "sha512": "df39cf9eeabf4c82733436c6561f625c7a4052736bfe2136e213f51e17a1fbd14b444957134097eff073d8ebeb2f7f93ca6505e0779c70cb61ba728202930658"
+      },
+      "native_forge_port": false
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "fabric",
+      "controller": {
+        "project": "controlify",
+        "version_id": "VDw4mGkG",
+        "version": "3.5.3+mc26.2",
+        "url": "https://cdn.modrinth.com/data/DOUdJVEm/versions/VDw4mGkG/controlify-3.5.3%2Bmc26.2-universal.jar",
+        "sha512": "fa590eeebeb7ce4be828456dd796dd786919b7a8c664a4e509fc1c4a82414a349c598a5c968e4b4974abcdb3db1d32d03a7f38a532d924308a5b382bdf28437a"
+      },
+      "yacl": {
+        "project": "yacl",
+        "version_id": "DoR7RYgi",
+        "version": "3.9.7+26.2-fabric",
+        "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/DoR7RYgi/yet_another_config_lib_v3-3.9.7%2B26.2-fabric.jar",
+        "sha512": "f36d91a9506ad9addbaaeecaea01d2b0cb5b060f52486b17688746cb597f0f3b23a80f8441f7a73a9cb8cde85af8809fe54825984b56345325359d505a80e7f2"
+      },
+      "native_forge_port": false
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "neoforge",
+      "controller": {
+        "project": "controlify",
+        "version_id": "VDw4mGkG",
+        "version": "3.5.3+mc26.2",
+        "url": "https://cdn.modrinth.com/data/DOUdJVEm/versions/VDw4mGkG/controlify-3.5.3%2Bmc26.2-universal.jar",
+        "sha512": "fa590eeebeb7ce4be828456dd796dd786919b7a8c664a4e509fc1c4a82414a349c598a5c968e4b4974abcdb3db1d32d03a7f38a532d924308a5b382bdf28437a"
+      },
+      "yacl": {
+        "project": "yacl",
+        "version_id": "FfvwIZmI",
+        "version": "3.9.7+26.2-neoforge",
+        "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/FfvwIZmI/yet_another_config_lib_v3-3.9.7%2B26.2-neoforge.jar",
+        "sha512": "7ffb9a55d5c6aedbe15bc70d0b3b28d5c9f7de9959c679e2f8e3756452faab3ca76a241f834f91f7a9f751fd9a2e742c7db6fa11aefff120ba1e4dbe6799e945"
+      },
+      "native_forge_port": false
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "fabric",
+      "controller": {
+        "project": "controlify",
+        "version_id": "fo76vL20",
+        "version": "3.5.3+mc26.3",
+        "url": "https://cdn.modrinth.com/data/DOUdJVEm/versions/fo76vL20/controlify-3.5.3%2Bmc26.3-universal.jar",
+        "sha512": "cd4e64a9621dff200329b249dc63fc4542ce554db16c75c4b04cfa7495bf84e1a4bca0f89a7a9d4d425f6b6f23c8df52ab8ce323ee18ae49c6cf24858697bbf7"
+      },
+      "yacl": {
+        "project": "yacl",
+        "version_id": "s9SjoFu1",
+        "version": "3.9.7+26.3-fabric",
+        "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/s9SjoFu1/yet_another_config_lib_v3-3.9.7%2B26.3-fabric.jar",
+        "sha512": "f3957028dd31cae78f08aee3e768f61bd12c4c8423257d357bc3c1a2172047c769d37901f99775c7ffff1e5ee794025dc72738b2869cab06f1c2811841d68b24"
+      },
+      "native_forge_port": false
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "neoforge",
+      "controller": {
+        "project": "controlify",
+        "version_id": "fo76vL20",
+        "version": "3.5.3+mc26.3",
+        "url": "https://cdn.modrinth.com/data/DOUdJVEm/versions/fo76vL20/controlify-3.5.3%2Bmc26.3-universal.jar",
+        "sha512": "cd4e64a9621dff200329b249dc63fc4542ce554db16c75c4b04cfa7495bf84e1a4bca0f89a7a9d4d425f6b6f23c8df52ab8ce323ee18ae49c6cf24858697bbf7"
+      },
+      "yacl": {
+        "project": "yacl",
+        "version_id": "GL24RgOP",
+        "version": "3.9.7+26.3-neoforge",
+        "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/GL24RgOP/yet_another_config_lib_v3-3.9.7%2B26.3-neoforge.jar",
+        "sha512": "4f94b08706825c0e5f8413a68783355d60bd3da7b6526c817caad997147db6eae42f187c7f14a0242941a7ceec9d69396978e154342f6c9d55862258b0afbfa8"
+      },
+      "native_forge_port": false
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 package com.salts_inventory_update.controlify.qa;
 
-import com.salts_inventory_update.controlify.ControlifyGameplayHarness;
+import com.salts_inventory_update.controlify.qa.ControlifyGameplayHarness;
 import net.fabricmc.api.ClientModInitializer;
 
 /** Entrypoint of the separate, opt-in QA mod, never the distributable companion. */
