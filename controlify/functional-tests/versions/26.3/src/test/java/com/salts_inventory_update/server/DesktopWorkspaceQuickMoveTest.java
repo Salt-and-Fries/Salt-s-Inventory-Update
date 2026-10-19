@@ -161,6 +161,46 @@ final class DesktopWorkspaceQuickMoveTest {
                 new DesktopPackets.DesktopSessionReference(DesktopPackets.PLAYER_MENU_SESSION, 303, 7)));
     }
 
+    @Test void contextualSourcesUseBackingIdentityRatherThanSharedDummyContainers() throws Exception {
+        MenuType<?> type = (MenuType<?>) unsafe.allocateInstance(MenuType.class);
+        SimpleContainer dummy = new SimpleContainer(1);
+        dummy.setItem(0, new ItemStack(Items.DIRT));
+        Slot first = new Slot(dummy, 0, 0, 0), distinct = new Slot(dummy, 0, 0, 0), alias = new Slot(dummy, 0, 0, 0);
+        Object firstBacking = new java.util.ArrayList<>(), secondBacking = new java.util.ArrayList<>();
+        assertEquals(firstBacking, secondBacking, "Value-equal mutable handlers still have distinct ownership");
+        DesktopMenuBindings.register(type, menu -> menu.slots.size(), false, null, null, new DesktopMenuBindings.GesturePolicy() {
+            @Override public Object physicalOwner(AbstractContainerMenu menu, Slot slot) { return slot == distinct ? secondBacking : firstBacking; }
+            @Override public int physicalIndex(AbstractContainerMenu menu, Slot slot) { return 0; }
+        });
+        TestMenu firstMenu = new TestMenu(type), secondMenu = new TestMenu(type);
+        firstMenu.slots.clear(); firstMenu.slots.add(first);
+        secondMenu.slots.clear(); secondMenu.slots.add(distinct); secondMenu.slots.add(alias);
+        var sources = new java.util.LinkedHashMap<Object, Slot>();
+        invoke("addContextualRecipeSource", player, sources, firstMenu, first, java.util.Set.of());
+        invoke("addContextualRecipeSource", player, sources, secondMenu, distinct, java.util.Set.of());
+        invoke("addContextualRecipeSource", player, sources, secondMenu, alias, java.util.Set.of());
+        assertEquals(List.of(first, distinct), new ArrayList<>(sources.values()),
+            "Different native backing inventories count once each; a second view of the same physical cell counts once");
+        assertEquals(2, sources.values().stream().mapToInt(slot -> slot.getItem().getCount()).sum());
+        assertEquals(1, dummy.getItem(0).getCount(), "Counting is observational and never extracts native items");
+    }
+
+    @Test void registeredVirtualSlotsRemainNavigableWithoutOwningRecipeResources() throws Exception {
+        MenuType<?> type = (MenuType<?>) unsafe.allocateInstance(MenuType.class);
+        TestMenu menu = new TestMenu(type);
+        Slot phantom = menu.slots.getFirst();
+        phantom.set(new ItemStack(Items.DIRT, 64));
+        DesktopMenuBindings.register(type, new DesktopMenuBindings.SlotAccess() {
+            @Override public int size(AbstractContainerMenu current) { return current.slots.size(); }
+            @Override public boolean isVirtualSlot(AbstractContainerMenu current, Slot slot) { return slot == phantom; }
+        }, false);
+        assertFalse(phantom.isFake(), "Custom APIs must not depend on a native Slot subclass flag");
+        assertTrue(phantom.mayPickup(player));
+        assertTrue(DesktopMenuBindings.isVirtualSlot(menu, phantom));
+        assertEquals(List.of(phantom), DesktopMenuBindings.all(menu), "Native UI entries retain their original indexes");
+        assertFalse(DesktopMenuBindings.isVirtualSlot(new TestMenu(), phantom), "Virtual ownership is scoped to its registered menu");
+    }
+
     @Test void exactSurfaceTargetsCannotBypassNativeOnlySourcePolicy() throws Exception {
         MenuType<?> type = (MenuType<?>) unsafe.allocateInstance(MenuType.class);
         DesktopMenuBindings.register(type, menu -> menu.slots.size(), false, null, null,
@@ -253,7 +293,7 @@ final class DesktopWorkspaceQuickMoveTest {
         var container = new SimpleContainer(100);
         java.util.List<Slot> slots = new java.util.ArrayList<>();
         for (int i=0;i<100;i++) slots.add(new Slot(container,i,0,0));
-        Object selected = invoke("contextualCraftTargets",player,new ItemStack(Items.OAK_PLANKS,4),slots,java.util.Map.of());
+        Object selected = invoke("contextualCraftTargets",player,player.inventoryMenu,new ItemStack(Items.OAK_PLANKS,4),slots,java.util.Map.of());
         assertEquals(java.util.List.of(slots.getFirst()),selected,"Large destinations must not multiply transactional validation for every batch");
         assertTrue(container.isEmpty());
     }
@@ -263,9 +303,39 @@ final class DesktopWorkspaceQuickMoveTest {
         container.setItem(0,new ItemStack(Items.OAK_LOG));
         Slot target = new Slot(container,0,0,0), ingredient = new Slot(container,0,0,0);
         assertEquals(false,invoke("craftOutputFits",player,new ItemStack(Items.OAK_PLANKS,4),java.util.List.of(target)));
-        assertEquals(java.util.List.of(target),invoke("contextualCraftTargets",player,new ItemStack(Items.OAK_PLANKS,4),
-            java.util.List.of(target),java.util.Map.of(ingredient,ItemStack.EMPTY)));
+        assertEquals(java.util.List.of(target),invoke("contextualCraftTargets",player,player.inventoryMenu,new ItemStack(Items.OAK_PLANKS,4),
+            java.util.List.of(target),java.util.Map.of(construct("ContextualSourceKey",container,0),ItemStack.EMPTY)));
         assertTrue(container.getItem(0).is(Items.OAK_LOG),"Capacity planning cannot mutate the ingredient");
+    }
+
+    @Test void contextualCraftTargetsUsePhysicalOwnersAndRejectVirtualDestinations() throws Exception {
+        MenuType<?> type = (MenuType<?>) unsafe.allocateInstance(MenuType.class);
+        SimpleContainer dummy = new SimpleContainer(1), fullStorage = new SimpleContainer(1), inputStorage = new SimpleContainer(1);
+        fullStorage.setItem(0, new ItemStack(Items.SAND, 64));
+        inputStorage.setItem(0, new ItemStack(Items.OAK_LOG));
+        Slot full = new Slot(dummy, 0, 0, 0) { @Override public ItemStack getItem() { return fullStorage.getItem(0); } };
+        Slot alias = new Slot(dummy, 0, 0, 0) { @Override public ItemStack getItem() { return inputStorage.getItem(0); } };
+        Slot phantom = new Slot(dummy, 0, 0, 0), free = new Slot(dummy, 0, 0, 0);
+        Object inputOwner = new ArrayList<>(), fullOwner = new ArrayList<>(), freeOwner = new Object();
+        assertEquals(inputOwner, fullOwner, "Equal-valued inventory handlers still have distinct physical ownership");
+        DesktopMenuBindings.register(type, new DesktopMenuBindings.SlotAccess() {
+            @Override public int size(AbstractContainerMenu menu) { return menu.slots.size(); }
+            @Override public boolean isVirtualSlot(AbstractContainerMenu menu, Slot slot) { return slot == phantom; }
+        }, false, null, null, new DesktopMenuBindings.GesturePolicy() {
+            @Override public Object physicalOwner(AbstractContainerMenu menu, Slot slot) {
+                return slot == full ? fullOwner : slot == alias ? inputOwner : freeOwner;
+            }
+            @Override public int physicalIndex(AbstractContainerMenu menu, Slot slot) { return 0; }
+        });
+        TestMenu destination = new TestMenu(type);
+        var plannedSources = java.util.Map.of(construct("ContextualSourceKey", inputOwner, 0), ItemStack.EMPTY);
+        assertEquals(List.of(free), invoke("contextualCraftTargets", player, destination, new ItemStack(Items.OAK_PLANKS, 4),
+            List.of(full, phantom, free), plannedSources),
+            "A consumed ingredient cannot create capacity in another dummy-container wrapper or a phantom entry");
+        assertEquals(List.of(alias), invoke("contextualCraftTargets", player, destination, new ItemStack(Items.OAK_PLANKS, 4),
+            List.of(alias), plannedSources), "A second view of the consumed physical ingredient may use its freed space");
+        assertEquals(64, fullStorage.getItem(0).getCount());
+        assertEquals(1, inputStorage.getItem(0).getCount(), "Planning never mutates the underlying inventories");
     }
 
     @Test void stackCraftUsesSeparateChannelAndRetainsBothAuthenticatedMenuIdentities() {
@@ -342,24 +412,25 @@ final class DesktopWorkspaceQuickMoveTest {
         SimpleContainer container = new SimpleContainer(1);
         Slot first = new Slot(container, 0, 0, 0), alias = new Slot(container, 0, 0, 0);
         first.set(new ItemStack(Items.OAK_PLANKS, 4));
-        invoke("addContextualRecipeSource", player, pool, first, java.util.Set.of());
-        invoke("addContextualRecipeSource", player, pool, alias, java.util.Set.of());
+        invoke("addContextualRecipeSource", player, pool, player.inventoryMenu, first, java.util.Set.of());
+        invoke("addContextualRecipeSource", player, pool, player.inventoryMenu, alias, java.util.Set.of());
         assertEquals(1, pool.size());
         assertEquals(4, count(new ArrayList<>(pool.values())));
         Slot output = new Slot(new SimpleContainer(1), 0, 0, 0) { @Override public boolean mayPlace(ItemStack stack) { return false; } };
         output.set(new ItemStack(Items.OAK_PLANKS, 7));
-        invoke("addContextualRecipeSource", player, pool, output, java.util.Set.of());
-        invoke("addContextualRecipeSource", player, pool, player.inventoryMenu.getSlot(6), java.util.Set.of());
+        invoke("addContextualRecipeSource", player, pool, player.inventoryMenu, output, java.util.Set.of());
+        invoke("addContextualRecipeSource", player, pool, player.inventoryMenu, player.inventoryMenu.getSlot(6), java.util.Set.of());
         player.inventoryMenu.getSlot(6).set(new ItemStack(Items.OAK_PLANKS, 4));
         player.inventoryMenu.getSlot(45).set(new ItemStack(Items.OAK_PLANKS, 7));
         Slot armor = player.inventoryMenu.getSlot(6), offhand = player.inventoryMenu.getSlot(45);
-        invoke("addContextualRecipeSource", player, pool, new Slot(armor.container, armor.getContainerSlot(), 0, 0), java.util.Set.of());
-        invoke("addContextualRecipeSource", player, pool, new Slot(offhand.container, offhand.getContainerSlot(), 0, 0), java.util.Set.of());
+        invoke("addContextualRecipeSource", player, pool, player.inventoryMenu, new Slot(armor.container, armor.getContainerSlot(), 0, 0), java.util.Set.of());
+        invoke("addContextualRecipeSource", player, pool, player.inventoryMenu, new Slot(offhand.container, offhand.getContainerSlot(), 0, 0), java.util.Set.of());
         assertEquals(1, pool.size());
         assertEquals(4, armor.getItem().getCount());
         assertEquals(7, offhand.getItem().getCount());
+        var excludedKeys=java.util.Set.copyOf(pool.keySet());
         pool.clear();
-        invoke("addContextualRecipeSource", player, pool, alias, java.util.Set.of(first));
+        invoke("addContextualRecipeSource", player, pool, player.inventoryMenu, alias, excludedKeys);
         assertTrue(pool.isEmpty(), "Recipe-grid aliases cannot supply their own ingredients twice");
     }
 
@@ -564,11 +635,11 @@ final class DesktopWorkspaceQuickMoveTest {
         player.inventoryMenu.getSlot(9).set(new ItemStack(Items.OAK_PLANKS, 12));
         var source = resultMenu(CraftingMenu.class, 0, new ItemStack(Items.OAK_PLANKS, 4), new int[1], new int[1], () -> ItemStack.EMPTY);
         var candidates = targets(source, DesktopPackets.QUICK_TARGET_PLAYER_STORAGE);
-        assertEquals(List.of(player.inventoryMenu.getSlot(36)), invoke("contextualCraftTargets", player,
+        assertEquals(List.of(player.inventoryMenu.getSlot(36)), invoke("contextualCraftTargets", player, player.inventoryMenu,
             new ItemStack(Items.OAK_PLANKS,4), candidates, java.util.Map.of()));
         for (int i=36;i<45;i++) player.inventoryMenu.getSlot(i).set(new ItemStack(Items.SAND,64));
         player.inventoryMenu.getSlot(36).set(new ItemStack(Items.OAK_PLANKS,63));
-        assertEquals(List.of(player.inventoryMenu.getSlot(36),player.inventoryMenu.getSlot(9)), invoke("contextualCraftTargets", player,
+        assertEquals(List.of(player.inventoryMenu.getSlot(36),player.inventoryMenu.getSlot(9)), invoke("contextualCraftTargets", player, player.inventoryMenu,
             new ItemStack(Items.OAK_PLANKS,4), candidates, java.util.Map.of()));
     }
 

@@ -90,3 +90,6 @@ type = "optional"
 versionRange = "[0,)"
 ordering = "AFTER"
 side = "BOTH"
+
+[[mixins]]
+config = "${mod_id}.ae2-navigation.mixins.json"

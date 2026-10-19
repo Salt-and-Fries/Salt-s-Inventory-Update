@@ -19,4 +19,3 @@ public record DesktopTransferRequest<T extends AbstractContainerMenu, S>(
         Objects.requireNonNull(recipe, "recipe");
     }
 }
-

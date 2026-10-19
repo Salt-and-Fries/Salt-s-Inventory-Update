@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
-/** Minecraft 1.21.1's scissor stack ignores the current GUI pose transform. */
+/** Minecraft 1.20.1's scissor stack ignores the current GUI pose transform. */
 @Mixin(GuiGraphics.class)
 public abstract class WorkspaceScissorMixin {
     @Shadow

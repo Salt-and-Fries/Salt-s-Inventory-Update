@@ -167,7 +167,7 @@ public final class GuiGraphicsExtractor {
 
     public void blit(Object pipeline, ResourceLocation texture, int x, int y, float u, float v, int width, int height, int textureWidth, int textureHeight, int color) {
         logTextureLookup("texture", texture);
-        this.graphics.blit(texture, x, y, u, v, width, height, textureWidth, textureHeight);
+        tinted(color, () -> this.graphics.blit(texture, x, y, u, v, width, height, textureWidth, textureHeight));
     }
 
     public void blit(Object pipeline, ResourceLocation texture, int x, int y, float u, float v, int width, int height, int textureWidth, int textureHeight) {
@@ -182,7 +182,16 @@ public final class GuiGraphicsExtractor {
 
     public void blit(Object pipeline, ResourceLocation texture, int x, int y, float u, float v, int width, int height, int sourceWidth, int sourceHeight, int textureWidth, int textureHeight, int color) {
         logTextureLookup("texture", texture);
-        this.graphics.blit(texture, x, y, width, height, u, v, sourceWidth, sourceHeight, textureWidth, textureHeight);
+        tinted(color, () -> this.graphics.blit(texture, x, y, width, height, u, v, sourceWidth, sourceHeight, textureWidth, textureHeight));
+    }
+
+    private void tinted(int color, Runnable draw) {
+        if(color==0xFFFFFFFF){draw.run();return;}
+        this.graphics.flush();
+        float[] previous=RenderSystem.getShaderColor().clone();
+        RenderSystem.setShaderColor(previous[0]*((color>>>16)&255)/255f,previous[1]*((color>>>8)&255)/255f,previous[2]*(color&255)/255f,previous[3]*((color>>>24)&255)/255f);
+        try {draw.run();this.graphics.flush();}
+        finally {RenderSystem.setShaderColor(previous[0],previous[1],previous[2],previous[3]);}
     }
 
     public void blit(ResourceLocation texture, int x, int y, int width, int height, float u0, float u1, float v0, float v1) {
@@ -522,6 +531,8 @@ public final class GuiGraphicsExtractor {
         private PoseAdapter(PoseStack pose) {
             this.pose = pose;
         }
+
+        public void rotate(float radians) { this.pose.mulPose(Axis.ZP.rotation(radians)); }
 
         public void pushMatrix() {
             this.pose.pushPose();

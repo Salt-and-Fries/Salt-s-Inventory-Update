@@ -17,25 +17,32 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
+import com.salts_inventory_update.controlify.model.RadialStickDirection;
+import com.salts_inventory_update.controlify.ContextualRecipeBinding;
+import com.salts_inventory_update.controlify.WorkspaceUiSounds;
+import com.salts_inventory_update.controlify.CreativeSearchBinding;
+import com.salts_inventory_update.controlify.WorkspaceSearchKeyboard;
 
 import java.util.Objects;
 
 /** Typed adapter for the published Controlify 3.5.3 API. */
 public final class ControlifyInputBridge {
-    private static ControllerWorkspaceActions actions;
-    private static WorkspaceInputRouter router;
+    private static RadialWorkspaceActions actions;
+    private static RadialSortInputRouter router;
     private static String lastControllerUid;
 
     private ControlifyInputBridge() {
     }
 
     public static <M extends AbstractContainerMenu, T extends AbstractContainerScreen<M> & WorkspaceContainerScreen> void initialize(
-            ControllerWorkspaceActions workspace, Class<T> screenClass) {
+            RadialWorkspaceActions workspace, Class<T> screenClass) {
         if (actions != null) {
             throw new IllegalStateException("Controlify companion inputs already initialized");
         }
         actions = Objects.requireNonNull(workspace, "workspace");
-        router = new WorkspaceInputRouter(workspace);
+        ContextualRecipeBinding.initialize();
+        CreativeSearchBinding.initialize();
+        router = new RadialSortInputRouter(workspace);
         ScreenProcessorProvider.registerProvider(screenClass, screen -> new WorkspaceScreenProcessor<>(screen));
 
         // Runs after bindings receive the new state but BEFORE Controlify's gameplay handler.
@@ -62,6 +69,8 @@ public final class ControlifyInputBridge {
     public static void hoveredSlotChanged(AbstractContainerScreen<?> screen, Slot current, Slot previous) {
         if (current != previous && ScreenProcessorProvider.provide(screen) instanceof AbstractContainerScreenProcessor<?> processor) {
             processor.onHoveredSlotChanged(current, previous);
+            if (current != null && screen instanceof WorkspaceContainerScreen && usingController())
+                WorkspaceUiSounds.play(WorkspaceUiSounds.Action.HOVER);
         }
     }
 
@@ -79,22 +88,103 @@ public final class ControlifyInputBridge {
         ControllerStateView current = input.stateNow();
         ControllerStateView previous = input.stateThen();
         float threshold = input.settings().buttonActivationThreshold;
+        if (WorkspaceSearchKeyboard.suppressWorkspaceInput(current, threshold)) return true;
         InputBinding close = ControlifyBindings.GUI_BACK.on(controller);
+        InputBinding inventory = ControlifyBindings.INVENTORY.on(controller);
+        var nativeScreen = Minecraft.getInstance().screen;
+        var workspaceScreen = nativeScreen instanceof WorkspaceContainerScreen screen ? screen : null;
+        boolean contextual = workspaceScreen != null && workspaceScreen.contextualRadialActive();
+        boolean leftTriggerHeld = current.getAxisState(GamepadInputs.LEFT_TRIGGER_AXIS) > threshold;
+        router.observeOpeningTrigger(leftTriggerHeld);
+        InputBinding recipe = ContextualRecipeBinding.OPEN_WHEEL.on(controller);
+        boolean openingRecipeBlocked = router.awaitingOpeningTriggerRelease()
+                && recipe.boundInput().getRelevantInputs().contains(GamepadInputs.LEFT_TRIGGER_AXIS);
+        boolean recipeHeld = !openingRecipeBlocked && recipe.boundInput().state(current) > threshold;
+        if (contextual && !recipeHeld) {
+            // Hand the release sample back before workspace routing too, so fresh bumpers/LT
+            // and native inventory actions all apply in SIDE mode immediately.
+            workspaceScreen.controllerContextualInput(false, 0, 0, 0, 0,
+                    false, false, false, false, false, false, false);
+            contextual = false;
+        }
+        boolean recipeOwns = contextual || recipeHeld && workspaceScreen != null && workspaceScreen.controllerCanOpenContextual();
+        InputBinding select = ControlifyBindings.INV_SELECT.on(controller);
+        InputBinding quickMove = ControlifyBindings.INV_QUICK_MOVE.on(controller);
+        boolean craftStackPressed = quickMove.boundInput().state(current) > threshold && quickMove.boundInput().state(previous) <= threshold;
+        boolean confirmPressed = select.boundInput().state(current) > threshold && select.boundInput().state(previous) <= threshold;
+        boolean closeOwns = close.boundInput().state(current) > threshold || close.boundInput().state(previous) > threshold;
+        if (!closeOwns && !contextual && !actions.radialActive() && workspaceScreen != null) {
+            InputBinding search = CreativeSearchBinding.SEARCH.on(controller);
+            boolean openingSearchBlocked = router.awaitingOpeningTriggerRelease()
+                && search.boundInput().getRelevantInputs().contains(GamepadInputs.LEFT_TRIGGER_AXIS);
+            boolean searchPressed = !openingSearchBlocked && search.boundInput().state(current) > threshold
+                && search.boundInput().state(previous) <= threshold;
+            if (searchPressed && workspaceScreen.controllerCreativeSearch(false)) return true;
+            if (confirmPressed && workspaceScreen.controllerCreativeSearch(true)) return true;
+        }
         boolean consumed = router.update(new ControllerInputFrame(
-                current.getAxisState(GamepadInputs.LEFT_TRIGGER_AXIS) > threshold,
+                !recipeOwns && leftTriggerHeld,
                 current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_RIGHT) - current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_LEFT),
                 current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_DOWN) - current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_UP),
-                justPressed(current, previous, GamepadInputs.LEFT_SHOULDER_BUTTON),
-                justPressed(current, previous, GamepadInputs.RIGHT_SHOULDER_BUTTON),
-                justPressed(current, previous, GamepadInputs.SOUTH_BUTTON),
+                !recipeOwns && justPressed(current, previous, GamepadInputs.LEFT_SHOULDER_BUTTON),
+                !recipeOwns && justPressed(current, previous, GamepadInputs.RIGHT_SHOULDER_BUTTON),
+                !contextual && confirmPressed,
                 close.boundInput().state(current) > threshold,
                 System.nanoTime() / 1_000_000L
-        ));
-        return consumed;
+        ), inventory.boundInput().state(current) > threshold,
+                inventory.boundInput().state(previous) > threshold);
+        if (consumed || workspaceScreen == null || Minecraft.getInstance().screen != nativeScreen) return consumed;
+        // Independent axis deadzones distort angles and can make dense wheel sectors unreachable.
+        // rawStateNow is already device-mapped; retain its angle with the configured processed magnitude.
+        ControllerStateView raw = input.rawStateNow();
+        var right = RadialStickDirection.from(
+                raw.getAxisState(GamepadInputs.RIGHT_STICK_AXIS_RIGHT) - raw.getAxisState(GamepadInputs.RIGHT_STICK_AXIS_LEFT),
+                raw.getAxisState(GamepadInputs.RIGHT_STICK_AXIS_DOWN) - raw.getAxisState(GamepadInputs.RIGHT_STICK_AXIS_UP),
+                current.getAxisState(GamepadInputs.RIGHT_STICK_AXIS_RIGHT) - current.getAxisState(GamepadInputs.RIGHT_STICK_AXIS_LEFT),
+                current.getAxisState(GamepadInputs.RIGHT_STICK_AXIS_DOWN) - current.getAxisState(GamepadInputs.RIGHT_STICK_AXIS_UP));
+        var left = RadialStickDirection.from(
+                raw.getAxisState(GamepadInputs.LEFT_STICK_AXIS_RIGHT) - raw.getAxisState(GamepadInputs.LEFT_STICK_AXIS_LEFT),
+                raw.getAxisState(GamepadInputs.LEFT_STICK_AXIS_DOWN) - raw.getAxisState(GamepadInputs.LEFT_STICK_AXIS_UP),
+                current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_RIGHT) - current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_LEFT),
+                current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_DOWN) - current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_UP));
+        if (workspaceScreen.controllerContextualInput(
+                recipeHeld,
+                right.x(), right.y(), left.x(), left.y(),
+                justPressed(current, previous, GamepadInputs.DPAD_LEFT_BUTTON),
+                justPressed(current, previous, GamepadInputs.DPAD_RIGHT_BUTTON),
+                justPressed(current, previous, GamepadInputs.DPAD_UP_BUTTON), confirmPressed,
+                current.isButtonDown(GamepadInputs.LEFT_SHOULDER_BUTTON),
+                current.isButtonDown(GamepadInputs.RIGHT_SHOULDER_BUTTON), craftStackPressed)) return true;
+        // Native Quick Move and cursor-drop can share Y and both run in one native sample.
+        // A creative hotbar deletion must own that sample, preserving any carried stack.
+        if (craftStackPressed && workspaceScreen.controllerCreativeDeleteHotbar()) return true;
+        // Catalog actions use the same configured bindings as their native guide rows.
+        // The full-stack action wins when both bindings share an input or fire together.
+        if (inventory.boundInput().state(current) > threshold && inventory.boundInput().state(previous) <= threshold
+                && workspaceScreen.controllerCreativeHotbar(true)) return true;
+        return confirmPressed && workspaceScreen.controllerCreativeHotbar(false);
     }
 
     public static float closeProgress() {
         return router == null ? 0f : router.closeProgress(System.nanoTime() / 1_000_000L);
+    }
+
+    public static boolean awaitingOpeningTriggerRelease() {
+        return router != null && router.awaitingOpeningTriggerRelease();
+    }
+
+    public static void workspaceOpened() {
+        if (router == null) return;
+        var controller = ControlifyApi.get().getCurrentController().orElse(null);
+        // The first container may be opened by USE before a workspace processor has sampled
+        // this controller. Preserve the opening latch across that first processor update.
+        if (controller != null && !controller.uid().equals(lastControllerUid)) {
+            router.reset();
+            lastControllerUid = controller.uid();
+        }
+        boolean held = controller != null && controller.input().map(input ->
+                input.stateNow().getAxisState(GamepadInputs.LEFT_TRIGGER_AXIS) > input.settings().buttonActivationThreshold).orElse(false);
+        router.workspaceOpened(held);
     }
 
     static boolean radialActive() {
@@ -103,8 +193,8 @@ public final class ControlifyInputBridge {
 
     /** Hides only the cursor image; its native state/position survives radial selection. */
     public static boolean suppressVirtualMouseRendering() {
-        return actions != null && actions.radialActive()
-                && Minecraft.getInstance().screen instanceof WorkspaceContainerScreen;
+        return actions != null && Minecraft.getInstance().screen instanceof WorkspaceContainerScreen screen
+                && (actions.radialActive() || screen.contextualRadialActive());
     }
 
     static boolean closeOwnsButtons(ControllerEntity controller) {
@@ -140,6 +230,7 @@ public final class ControlifyInputBridge {
     }
 
     public static void reset() {
+        WorkspaceUiSounds.reset();
         if (router != null) {
             router.reset();
         }

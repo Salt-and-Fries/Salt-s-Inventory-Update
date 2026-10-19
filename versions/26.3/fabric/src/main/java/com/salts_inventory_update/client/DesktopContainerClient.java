@@ -411,11 +411,7 @@ public final class DesktopContainerClient {
         }
 
         tickMutationQueue();
-        if (recipeHoverSession >= 0 && ++recipeHoverHeartbeat >= 20) {
-            recipeHoverHeartbeat = 0;
-            queueRecipeHover(recipeHoverSession, recipeHoverEpoch,
-                recipeHoverIndex < 0 ? DesktopPackets.RECIPE_HOVER_BEGIN : DesktopPackets.RECIPE_HOVER_UPDATE, recipeHoverIndex);
-        }
+        tickRecipeHover();
 
         boolean desiredUi = SaltsInventoryRuntime.isConfiguredEnabled();
         java.util.List<String> desiredForcedMenuIds = forcedMenuIds();
@@ -788,6 +784,22 @@ public final class DesktopContainerClient {
                 sourceSession, source.token(), source.stateId(), targetSession, target.token(), target.stateId(), recipe);
             return stack ? new DesktopPackets.DesktopCraftStackToWindowPayload(request) : request;
         });
+    }
+
+    private static void tickRecipeHover() {
+        if (recipeHoverSession < 0) return;
+        var state = RECIPE_HOVER_STATES.get(recipeHoverSession);
+        boolean sameEpoch = state != null && state.epoch() == recipeHoverEpoch;
+        // An explicit refusal is terminal for this opening; never repeatedly clear or reopen it.
+        if (sameEpoch && !state.active()) return;
+        boolean acknowledged = sameEpoch && state.active();
+        boolean current = acknowledged && state.recipeIndex() == recipeHoverIndex;
+        // Native grid/furnace callbacks can advance the menu state before an UPDATE arrives.
+        // Retry only the latest selection until its authoritative state is acknowledged.
+        if (++recipeHoverHeartbeat < (current ? 20 : 4)) return;
+        recipeHoverHeartbeat = 0;
+        queueRecipeHover(recipeHoverSession, recipeHoverEpoch,
+            acknowledged ? DesktopPackets.RECIPE_HOVER_UPDATE : DesktopPackets.RECIPE_HOVER_BEGIN, recipeHoverIndex);
     }
 
     public static boolean beginRecipeHover(int sourceSession) {

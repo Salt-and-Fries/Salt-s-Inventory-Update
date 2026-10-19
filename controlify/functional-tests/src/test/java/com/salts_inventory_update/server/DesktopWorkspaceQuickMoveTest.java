@@ -265,18 +265,80 @@ final class DesktopWorkspaceQuickMoveTest {
         assertEquals(0, player.droppedCount, "Unmoved furnace output remains in its source slot");
     }
 
-    @Test void onlyPlayerStorageAndDefaultMayUseNativeResultShortcut() throws Exception {
+    @Test void craftingUsesExplicitHotbarPriorityWhileDefaultRetainsNativeShortcut() throws Exception {
         AbstractContainerMenu source = resultMenu(CraftingMenu.class, 0, new ItemStack(Items.OAK_PLANKS, 4),
                 new int[1], new int[1], null);
         Object slotSource = construct("SlotSource", 11, source, source.slots.getFirst(), null);
-        for (int kind : new int[]{DesktopPackets.QUICK_TARGET_DEFAULT, DesktopPackets.QUICK_TARGET_PLAYER_STORAGE}) {
-            assertEquals(true, invoke("usesNativeResultQuickMove", kind, slotSource, 0));
-        }
+        assertEquals(true, invoke("usesNativeResultQuickMove", DesktopPackets.QUICK_TARGET_DEFAULT, slotSource, 0));
+        assertEquals(false, invoke("usesNativeResultQuickMove", DesktopPackets.QUICK_TARGET_PLAYER_STORAGE, slotSource, 0));
         for (int kind : new int[]{DesktopPackets.QUICK_TARGET_PLAYER_EQUIPMENT, DesktopPackets.QUICK_TARGET_SESSION,
                 DesktopPackets.QUICK_TARGET_HOTBAR}) {
             assertEquals(false, invoke("usesNativeResultQuickMove", kind, slotSource, 0));
         }
     }
+
+    @Test void craftedOutputUsesEmptyHotbarBeforeMergingIntoMainInventory() throws Exception {
+        player.inventoryMenu.getSlot(9).set(new ItemStack(Items.OAK_PLANKS, 12));
+        var source = resultMenu(CraftingMenu.class, 0, new ItemStack(Items.OAK_PLANKS, 4), new int[1], new int[1], () -> ItemStack.EMPTY);
+        assertTrue(transfer(source, DesktopPackets.QUICK_TARGET_PLAYER_STORAGE));
+        assertEquals(4, player.inventoryMenu.getSlot(36).getItem().getCount());
+        assertEquals(12, player.inventoryMenu.getSlot(9).getItem().getCount());
+    }
+
+    @Test void contextualCraftTargetsUsePhysicalOwnersAndRejectVirtualDestinations() throws Exception {
+        MenuType<?> type = (MenuType<?>) unsafe.allocateInstance(MenuType.class);
+        SimpleContainer dummy = new SimpleContainer(1), fullStorage = new SimpleContainer(1), inputStorage = new SimpleContainer(1);
+        fullStorage.setItem(0, new ItemStack(Items.SAND, 64));
+        inputStorage.setItem(0, new ItemStack(Items.OAK_LOG));
+        Slot full = new Slot(dummy, 0, 0, 0) { @Override public ItemStack getItem() { return fullStorage.getItem(0); } };
+        Slot alias = new Slot(dummy, 0, 0, 0) { @Override public ItemStack getItem() { return inputStorage.getItem(0); } };
+        Slot phantom = new Slot(dummy, 0, 0, 0), free = new Slot(dummy, 0, 0, 0);
+        Object inputOwner = new ArrayList<>(), fullOwner = new ArrayList<>(), freeOwner = new Object();
+        assertEquals(inputOwner, fullOwner, "Equal-valued inventory handlers still have distinct physical ownership");
+        DesktopMenuBindings.register(type, new DesktopMenuBindings.SlotAccess() {
+            @Override public int size(AbstractContainerMenu menu) { return menu.slots.size(); }
+            @Override public boolean isVirtualSlot(AbstractContainerMenu menu, Slot slot) { return slot == phantom; }
+        }, false, null, null, new DesktopMenuBindings.GesturePolicy() {
+            @Override public Object physicalOwner(AbstractContainerMenu menu, Slot slot) {
+                return slot == full ? fullOwner : slot == alias ? inputOwner : freeOwner;
+            }
+            @Override public int physicalIndex(AbstractContainerMenu menu, Slot slot) { return 0; }
+        });
+        TestMenu destination = new TestMenu(type);
+        var plannedSources = java.util.Map.of(construct("ContextualSourceKey", inputOwner, 0), ItemStack.EMPTY);
+        assertEquals(List.of(free), invoke("contextualCraftTargets", player, destination, new ItemStack(Items.OAK_PLANKS, 4),
+            List.of(full, phantom, free), plannedSources),
+            "A consumed ingredient cannot create capacity in another dummy-container wrapper or a phantom entry");
+        assertEquals(List.of(alias), invoke("contextualCraftTargets", player, destination, new ItemStack(Items.OAK_PLANKS, 4),
+            List.of(alias), plannedSources), "A second view of the consumed physical ingredient may use its freed space");
+        assertEquals(64, fullStorage.getItem(0).getCount());
+        assertEquals(1, inputStorage.getItem(0).getCount(), "Planning never mutates the underlying inventories");
+    }
+
+
+    @Test void recipeWheelCapacitySelectionReservesHotbarBeforeMainMerges() throws Exception {
+        player.inventoryMenu.getSlot(9).set(new ItemStack(Items.OAK_PLANKS, 12));
+        var source = resultMenu(CraftingMenu.class, 0, new ItemStack(Items.OAK_PLANKS, 4), new int[1], new int[1], () -> ItemStack.EMPTY);
+        var candidates = targets(source, DesktopPackets.QUICK_TARGET_PLAYER_STORAGE);
+        assertEquals(List.of(player.inventoryMenu.getSlot(36)), invoke("contextualCraftTargets", player, player.inventoryMenu,
+            new ItemStack(Items.OAK_PLANKS,4), candidates, java.util.Map.of()));
+        for (int i=36;i<45;i++) player.inventoryMenu.getSlot(i).set(new ItemStack(Items.SAND,64));
+        player.inventoryMenu.getSlot(36).set(new ItemStack(Items.OAK_PLANKS,63));
+        assertEquals(List.of(player.inventoryMenu.getSlot(36),player.inventoryMenu.getSlot(9)), invoke("contextualCraftTargets", player, player.inventoryMenu,
+            new ItemStack(Items.OAK_PLANKS,4), candidates, java.util.Map.of()));
+    }
+
+    @Test void craftedOutputFillsHotbarCapacityThenOverflowsToMainInventory() throws Exception {
+        for (int i = 36; i < 45; i++) player.inventoryMenu.getSlot(i).set(new ItemStack(Items.SAND, 64));
+        player.inventoryMenu.getSlot(36).set(new ItemStack(Items.OAK_PLANKS, 63));
+        player.inventoryMenu.getSlot(9).set(new ItemStack(Items.OAK_PLANKS, 12));
+        var source = resultMenu(CraftingMenu.class, 0, new ItemStack(Items.OAK_PLANKS, 4), new int[1], new int[1], () -> ItemStack.EMPTY);
+        assertTrue(transfer(source, DesktopPackets.QUICK_TARGET_PLAYER_STORAGE));
+        assertEquals(64, player.inventoryMenu.getSlot(36).getItem().getCount());
+        assertEquals(15, player.inventoryMenu.getSlot(9).getItem().getCount());
+        assertEquals(0, player.droppedCount);
+    }
+
 
     @Test void ordinaryFakeUiSourceCannotUseVanillaResultException() throws Exception {
         TestMenu source = new TestMenu();

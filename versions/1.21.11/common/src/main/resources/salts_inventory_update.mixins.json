@@ -15,7 +15,8 @@
     "server.CraftingMenuMixin",
     "server.ServerPlayerInventoryExpansionMixin",
     "server.ServerPlayerMixin",
-    "server.ServerGamePacketListenerImplMixin"
+    "server.ServerGamePacketListenerImplMixin",
+    "server.FurnaceCookingCounterMixin"
   ],
   "client": [
     "client.ClientPacketListenerInventoryExpansionMixin",
@@ -29,7 +30,9 @@
     "client.MultiPlayerGameModeMixin",
     "client.MouseHandlerAccessor",
     "client.MouseHandlerHandoffMixin",
-    "client.RecipeBookComponentAccessor"
+    "client.RecipeBookComponentAccessor",
+    "client.RecipeBookPageAccessor",
+    "client.OverlayRecipeComponentAccessor"
   ],
   "server": [],
   "injectors": {

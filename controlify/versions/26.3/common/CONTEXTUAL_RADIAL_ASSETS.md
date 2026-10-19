@@ -1,4 +1,8 @@
-# Contextual wheel textures (26.3)
+# Contextual wheel textures
+
+These editable assets are shared by all twelve companion builds. Their canonical
+PNG/PDN source paths remain in this `versions/26.3` directory; native rendering
+adapters use the same artwork on each supported game version and loader.
 
 The held-RT recipe and creative wheels use Salt's existing dynamic window renderer
 for the large wheel frame and materials frame. Those surfaces resize through Core's

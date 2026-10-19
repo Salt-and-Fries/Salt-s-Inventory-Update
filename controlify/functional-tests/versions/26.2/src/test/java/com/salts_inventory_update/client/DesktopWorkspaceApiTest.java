@@ -211,6 +211,73 @@ final class DesktopWorkspaceApiTest {
         }
     }
 
+    @Test void compactControllerInventoryPreservesSavedKeyboardHeightAfterHostDisables() throws Exception {
+        boolean savedReturnHotbar = SaltsInventoryConfig.get().returnHotbarToInventory;
+        boolean savedExpandable = SaltsInventoryConfig.get().expandableInventory;
+        boolean savedGlobalPins = SaltsInventoryConfig.get().globalPins;
+        try {
+            SaltsInventoryConfig.get().expandableInventory = false;
+            SaltsInventoryConfig.get().globalPins = true;
+            for (boolean keyboardHotbar : List.of(false, true)) {
+                SaltsInventoryConfig.get().returnHotbarToInventory = keyboardHotbar;
+                var enabled = new java.util.concurrent.atomic.AtomicBoolean(true);
+                DesktopClientApi.setWorkspaceHost(new DesktopWorkspaceHost() {
+                    @Override public boolean enabled() { return enabled.get(); }
+                    @Override public void opened(DesktopWorkspace workspace) { }
+                });
+                InventoryDesktopScreen screen = screen();
+                set(screen, net.minecraft.client.gui.screens.Screen.class, "width", 640);
+                set(screen, net.minecraft.client.gui.screens.Screen.class, "height", 480);
+                var font = (net.minecraft.client.gui.Font) unsafe.allocateInstance(net.minecraft.client.gui.Font.class);
+                set(font, "splitter", new net.minecraft.client.StringSplitter((codepoint, style) -> 6));
+                set(screen, net.minecraft.client.gui.screens.Screen.class, "font", font);
+                var localPlayer = (net.minecraft.client.player.LocalPlayer) unsafe.allocateInstance(net.minecraft.client.player.LocalPlayer.class);
+                var inventory = new net.minecraft.world.entity.player.Inventory(localPlayer, new net.minecraft.world.entity.EntityEquipment());
+                set(localPlayer, Player.class, "inventory", inventory);
+                var menu = (net.minecraft.world.inventory.InventoryMenu) unsafe.allocateInstance(net.minecraft.world.inventory.InventoryMenu.class);
+                var slots = net.minecraft.core.NonNullList.<Slot>create();
+                for (int index = 0; index < 9; index++) slots.add(new Slot(new SimpleContainer(9), index, 0, 0));
+                for (int index = 9; index < 36; index++) slots.add(new Slot(inventory, index, 0, 0));
+                for (int index = 0; index < 9; index++) slots.add(new Slot(inventory, index, 0, 0));
+                for (int index = 0; index < slots.size(); index++) slots.get(index).index = index;
+                set(menu, AbstractContainerMenu.class, "slots", slots);
+                set(localPlayer, Player.class, "inventoryMenu", menu);
+                set(screen, "owner", localPlayer);
+                Object playerWindow = window(screen, "INVENTORY", "Inventory");
+                set(playerWindow, "width", 178);
+                set(playerWindow, "height", 314);
+
+                DesktopWorkspace workspace = screen.workspaceAccess();
+                workspace.transferPair(id(playerWindow), null);
+                workspace.forceInventoryHud(true);
+                assertEquals(108, workspace.presentationBounds(id(playerWindow)).height(),
+                    "Controller presentation must discard blank rows in a previously tall keyboard window");
+                var visibleSlots = workspace.visibleSlots(id(playerWindow));
+                assertEquals(36, visibleSlots.size());
+                int lastInventoryRow = visibleSlots.stream().filter(slot -> slot.menuSlotId() >= 9 && slot.menuSlotId() < 36)
+                    .mapToInt(DesktopSlotHit::y).max().orElseThrow();
+                int hotbar = visibleSlots.stream().filter(slot -> slot.menuSlotId() >= 36)
+                    .mapToInt(DesktopSlotHit::y).min().orElseThrow();
+                assertEquals(22, hotbar - lastInventoryRow, "Hotbar follows the occupied row with the normal 4px gap");
+                invoke(screen, "saveWindowState", playerWindow, false);
+                assertEquals(314, DesktopWindowStateStore.load(null, "local:inventory").orElseThrow().height,
+                    "Saving during controller use must retain the keyboard user's height");
+
+                enabled.set(false); // Actual host ordering: input mode changes before the addon releases ownership.
+                workspace.forceInventoryHud(false);
+                assertEquals(314, field(playerWindow, "height"));
+                assertEquals(keyboardHotbar, screen.usesInventoryWindowHotbar());
+                assertEquals(keyboardHotbar, SaltsInventoryConfig.get().returnHotbarToInventory);
+                workspace.forceInventoryHud(false);
+                assertEquals(314, field(playerWindow, "height"), "Repeated keyboard ticks must not subtract the forced row again");
+            }
+        } finally {
+            SaltsInventoryConfig.get().returnHotbarToInventory = savedReturnHotbar;
+            SaltsInventoryConfig.get().expandableInventory = savedExpandable;
+            SaltsInventoryConfig.get().globalPins = savedGlobalPins;
+        }
+    }
+
     @Test void characterDestinationUsesItsExactEquipmentSurface() throws Exception {
         InventoryDesktopScreen screen = screen();
         Object player = window(screen, "INVENTORY", "Player");
@@ -331,7 +398,7 @@ final class DesktopWorkspaceApiTest {
             assertEquals(true, invoke(screen, "apiActionAvailable", view,
                     com.salts_inventory_update.api.client.desktop.DesktopWindowAction.MOVE));
             assertEquals(true, invoke(screen, "canResizeWindow", view), "The resize guard must be tested on a normally resizable view");
-            for (int button : new int[]{0, 1}) {
+            for (int button : new int[]{org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT, org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT}) {
                 assertEquals(true, invoke(screen, "beginSurfaceInteraction", view, new MouseButtonEvent(30, 40, new net.minecraft.client.input.MouseButtonInfo(button, 0)), false));
                 assertNull(field(screen, "movingWindow"));
                 assertNull(field(screen, "resizingWindow"));
@@ -363,7 +430,7 @@ final class DesktopWorkspaceApiTest {
         assertNull(field(view, "apiControlFocus"));
         invoke(screen, "renderSurfaceControls", null, view, 30, 40);
         assertEquals(0, managementPaints.get());
-        assertEquals(true, invoke(screen, "beginSurfaceInteraction", view, new MouseButtonEvent(40, 50, new net.minecraft.client.input.MouseButtonInfo(0, 0)), false));
+        assertEquals(true, invoke(screen, "beginSurfaceInteraction", view, new MouseButtonEvent(40, 50, new net.minecraft.client.input.MouseButtonInfo(org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT, 0)), false));
         assertEquals(1, nativeClicks.get(), "The native body control must still receive its normal click");
         assertSame(view, field(screen, "apiPointerCaptureWindow"));
         assertNull(field(screen, "movingWindow"));
@@ -379,7 +446,7 @@ final class DesktopWorkspaceApiTest {
         set(view, "apiSurface", surface);
         set(view, "apiDefinition", nativeDefinition(surface, new AtomicInteger(), new AtomicInteger(), List.of()));
         DesktopClientApi.setWorkspaceHost(null);
-        assertEquals(true, invoke(screen, "beginSurfaceInteraction", view, new MouseButtonEvent(30, 40, new net.minecraft.client.input.MouseButtonInfo(0, 0)), false));
+        assertEquals(true, invoke(screen, "beginSurfaceInteraction", view, new MouseButtonEvent(30, 40, new net.minecraft.client.input.MouseButtonInfo(org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT, 0)), false));
         assertSame(view, field(screen, "movingWindow"));
         assertNull(field(screen, "resizingWindow"));
     }
@@ -406,7 +473,7 @@ final class DesktopWorkspaceApiTest {
         assertFalse(workspace.containsPointer(id(view), -35, 25), "Visual-only protrusions do not own input");
         assertTrue(workspace.containsPointer(id(view), 195, 35), "Committed native popup geometry must own input");
         assertFalse(workspace.containsPointer(id(view), 220, 35));
-        assertEquals(true, invoke(screen, "beginSurfaceInteraction", view, new MouseButtonEvent(-5, 25, new net.minecraft.client.input.MouseButtonInfo(0, 0)), false));
+        assertEquals(true, invoke(screen, "beginSurfaceInteraction", view, new MouseButtonEvent(-5, 25, new net.minecraft.client.input.MouseButtonInfo(org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT, 0)), false));
         assertEquals(1, clicks.get(), "A protruding native control keeps its existing click callback");
         assertSame(view, field(screen, "apiPointerCaptureWindow"));
         set(other, "apiSurface", DesktopWindowSurface.SALT);
@@ -588,6 +655,51 @@ final class DesktopWorkspaceApiTest {
         assertEquals(0x1F600, received.get(), "Native text events must not truncate a supplementary character to a UTF-16 char");
     }
 
+    @Test void dynamicApiControlsAndVirtualEntriesFollowCommittedSurfaceWithoutCreatingSlots() throws Exception {
+        InventoryDesktopScreen screen=screen();Object view=window(screen,"CLIENT_API","Unknown controls");
+        DesktopWindowSurface surface=DesktopWindowSurface.SALT.withRegions(List.of(
+            DesktopWindowRegion.interactive(12,24,32,16).withRole(DesktopHitRole.CONTROL),
+            DesktopWindowRegion.interactive(12,64,16,16).withRole(DesktopHitRole.SLOT),
+            DesktopWindowRegion.visual(80,20,32,16),DesktopWindowRegion.interactive(0,0,100,100)));
+        set(view,"apiSurface",surface);set(view,"apiDefinition",nativeDefinition(surface,new AtomicInteger(),new AtomicInteger(),List.of()));
+        DesktopWorkspace workspace=screen.workspaceAccess();
+        workspace.transferPair(id(view),id(view));
+        var first=workspace.visibleControls(id(view));assertEquals(2,first.size());
+        int x=(Integer)field(view,"x"),y=(Integer)field(view,"y");
+        assertEquals(new DesktopWindowBounds(x+12,y+24,32,16),first.getFirst());
+        assertNull(workspace.hoveredSlot(id(view),x+20,y+72),"A virtual API entry must retain its native handler, not invent an inventory slot");
+        set(view,"x",x+37);set(view,"y",y+13);
+        assertEquals(new DesktopWindowBounds(x+49,y+37,32,16),workspace.visibleControls(id(view)).getFirst());
+        set(view,"ghosted",true);assertTrue(workspace.visibleControls(id(view)).isEmpty());
+    }
+
+    @Test void adjacentVirtualEntriesKeepDistinctColumnsAtNativeSpacing() throws Exception {
+        InventoryDesktopScreen screen=screen();Object view=window(screen,"CLIENT_API","Virtual grid");
+        var emptyMenu=new TestMenu();emptyMenu.slots.clear();set(view,"legacyMenu",emptyMenu);
+        var regions=java.util.stream.IntStream.range(0,5).mapToObj(i ->
+            DesktopWindowRegion.interactive(7+i*18,24,18,18).withRole(DesktopHitRole.SLOT)).toList();
+        var surface=DesktopWindowSurface.SALT.withRegions(regions);
+        set(view,"apiSurface",surface);set(view,"apiDefinition",nativeDefinition(surface,new AtomicInteger(),new AtomicInteger(),List.of()));
+        var workspace=screen.workspaceAccess();workspace.transferPair(id(view),id(view));
+        var targets=workspace.controllerTargets(id(view));
+        assertEquals(5,targets.size());
+        assertEquals(5,targets.stream().map(t -> t.column()).distinct().count(),"Native spacing must not merge adjacent controls");
+        assertEquals(1,targets.stream().map(t -> t.row()).distinct().count());
+    }
+
+    @Test void onlyTheFocusedApiEditorRequestsAKeyboard() throws Exception {
+        InventoryDesktopScreen screen=screen();Object view=window(screen,"CLIENT_API","Editor");
+        Object other=window(screen,"CLIENT_API","Modal buttons");
+        var editing=new java.util.concurrent.atomic.AtomicBoolean();
+        set(view,"apiDefinition",Proxy.newProxyInstance(DesktopWindowDefinition.class.getClassLoader(),new Class<?>[]{DesktopWindowDefinition.class},
+            (proxy,method,args) -> method.getName().equals("wantsTextInput") ? editing.get() : method.getReturnType()==boolean.class?false:null));
+        set(screen,"apiKeyboardFocusWindow",view);DesktopWorkspace workspace=screen.workspaceAccess();
+        workspace.transferPair(id(view),id(other));
+        assertFalse(workspace.textInputActive(id(view)));editing.set(true);
+        assertTrue(workspace.textInputActive(id(view)));assertFalse(workspace.textInputActive(id(other)));
+        set(screen,"apiKeyboardFocusWindow",other);assertFalse(workspace.textInputActive(id(view)));
+    }
+
     private static Object nativeDefinition(DesktopWindowSurface surface, AtomicInteger clicks, AtomicInteger paints,
                                             List<DesktopSurfaceControl> controls) {
         return Proxy.newProxyInstance(DesktopWindowDefinition.class.getClassLoader(), new Class<?>[]{DesktopWindowDefinition.class},
@@ -597,7 +709,7 @@ final class DesktopWorkspaceApiTest {
                     case "resizePolicy" -> DesktopResizePolicy.FREE;
                     case "minSize" -> DesktopWindowSize.of(64, 48);
                     case "managementControls" -> controls;
-                    case "popups" -> List.of();
+                    case "popups", "controllerScrollRegions", "textInputBounds" -> List.of();
                     case "mouseClicked" -> { clicks.incrementAndGet(); yield true; }
                     case "renderManagementControls" -> { paints.incrementAndGet(); yield null; }
                     default -> method.getReturnType() == boolean.class ? false : null;

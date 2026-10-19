@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.salts_inventory_update.api.client.desktop.DesktopInputContext;
 import com.salts_inventory_update.api.client.desktop.DesktopRenderContext;
@@ -228,7 +228,54 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
             return List.of();
         }
         updateLayout(context);
-        return state.externalRegions;
+        var result = new ArrayList<>(state.externalRegions);
+        var controls=new ArrayList<Rect2i>();
+        var visited=Collections.newSetFromMap(new IdentityHashMap<GuiEventListener,Boolean>());
+        for(var widget:state.access.components().interactiveWidgets()) collectControllerRects(widget,controls,visited);
+        controls.addAll(state.layout.inventoryControls);
+        for (Rect2i rect : controls) {
+            result.add(DesktopWindowRegion.interactive(rect.getX()-context.windowX(),rect.getY()-context.windowY(),
+                rect.getWidth(),rect.getHeight()).withRole(com.salts_inventory_update.api.client.desktop.DesktopHitRole.CONTROL));
+        }
+        return List.copyOf(result);
+    }
+
+    private static void collectControllerRects(GuiEventListener listener,List<Rect2i> result,Set<GuiEventListener> visited) {
+        if(!visited.add(listener)) return;
+        if(listener instanceof CompositeWidgetBase<?> composite) {
+            for(var child:composite.children()) collectControllerRects(child,result,visited);
+            return;
+        }
+        if(listener instanceof net.minecraft.client.gui.components.AbstractWidget widget) {
+            if(widget.visible && widget.active && widget.getWidth()>0 && widget.getHeight()>0)
+                result.add(new Rect2i(widget.getX(),widget.getY(),widget.getWidth(),widget.getHeight()));
+        } else if(listener instanceof WidgetBase widget) {
+            var rect=widgetRect(widget);
+            if(widget.isMouseOver(rect.getX()+rect.getWidth()/2.0,rect.getY()+rect.getHeight()/2.0)) result.add(rect);
+        }
+    }
+
+    @Override public List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> textInputBounds(DesktopWindowContext<T,State> context) {
+        var result=new ArrayList<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds>();
+        var pending=new java.util.ArrayDeque<GuiEventListener>(context.state().access.components().interactiveWidgets());
+        var visited=Collections.newSetFromMap(new IdentityHashMap<GuiEventListener,Boolean>());
+        while(!pending.isEmpty()) {
+            var widget=pending.removeFirst();if(!visited.add(widget)) continue;
+            if(widget instanceof CompositeWidgetBase<?> composite) pending.addAll(composite.children());
+            if(widget instanceof TextBox text && text.isMouseOver(text.getX()+text.getWidth()/2.0,text.getY()+text.getHeight()/2.0))
+                result.add(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(text.getX(),text.getY(),text.getWidth(),text.getHeight()));
+            else if(widget instanceof EditBox text && text.visible && text.active)
+                result.add(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(text.getX(),text.getY(),text.getWidth(),text.getHeight()));
+        }
+        return List.copyOf(result);
+    }
+
+    @Override public List<com.salts_inventory_update.api.client.desktop.DesktopScrollRegion> controllerScrollRegions(DesktopWindowContext<T,State> context) {
+        var state=context.state();var layout=state.layout;
+        if(layout==null || layout.maxScroll==0) return List.of();
+        var grid=layout.grid;
+        return List.of(new com.salts_inventory_update.api.client.desktop.DesktopScrollRegion(grid.getX(),grid.getY(),grid.getWidth(),grid.getHeight(),SLOT,
+            state.scrollRow>0,state.scrollRow<layout.maxScroll));
     }
 
     @Override
@@ -464,7 +511,7 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
             return false;
         }
         if (layout.scrollbar != null && contains(layout.scrollbar, event.x(), event.y())) {
-            if (event.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            if (event.button() != org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT) {
                 return true;
             }
             state.nativePointerOwner = null;

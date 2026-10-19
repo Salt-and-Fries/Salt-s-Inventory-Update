@@ -23,6 +23,6 @@ public abstract class GameplayWorkspaceAnimationMixin {
     }
     @Inject(method = "render", at = @At("TAIL"))
     private void saltsControlify$renderTuckedTransition(GuiGraphics graphics, float partialTick, CallbackInfo ci) {
-        SaltsControlifyClient.renderGameplayTransition(graphics, partialTick);
+        SaltsControlifyClient.renderGameplayTransition(com.salts_inventory_update.api.client.gui.GuiGraphicsExtractor.wrap(graphics), partialTick);
     }
 }

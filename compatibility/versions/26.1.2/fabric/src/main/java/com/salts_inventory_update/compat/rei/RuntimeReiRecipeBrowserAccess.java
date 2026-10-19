@@ -29,7 +29,6 @@ import me.shedaniel.rei.api.client.config.ConfigManager;
 import me.shedaniel.rei.api.client.config.ConfigObject;
 import me.shedaniel.rei.api.client.favorites.FavoriteEntry;
 import me.shedaniel.rei.api.client.favorites.FavoriteEntryType;
-import me.shedaniel.rei.api.client.gui.compat.GuiGraphics;
 import me.shedaniel.rei.api.client.gui.widgets.Slot;
 import me.shedaniel.rei.api.client.gui.widgets.Tooltip;
 import me.shedaniel.rei.api.client.gui.widgets.TooltipContext;
@@ -71,7 +70,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import org.joml.Matrix3x2f;
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 final class RuntimeReiRecipeBrowserAccess implements RecipeBrowserAccess {
     private static final String FAVORITES_TAB_UID = "salts_inventory_update:rei_favorites";
@@ -157,7 +156,7 @@ final class RuntimeReiRecipeBrowserAccess implements RecipeBrowserAccess {
     public void render(GuiGraphicsExtractor graphics, RecipeBrowserEntry entry, int x, int y) {
         EntryStack<?> stack = this.entryStack(entry);
         if (stack != null && !stack.isEmpty()) {
-            stack.render(GuiGraphics.of(graphics), new Rectangle(x, y, 16, 16), x, y, 0.0F);
+            stack.render(ReiGraphics.adapt(graphics), new Rectangle(x, y, 16, 16), x, y, 0.0F);
         }
     }
 
@@ -197,12 +196,12 @@ final class RuntimeReiRecipeBrowserAccess implements RecipeBrowserAccess {
 
     @Override
     public boolean matchesRecipeKey(int key) {
-        return key == GLFW.GLFW_KEY_R;
+        return key == org.lwjgl.glfw.GLFW.GLFW_KEY_R;
     }
 
     @Override
     public boolean matchesUsesKey(int key) {
-        return key == GLFW.GLFW_KEY_U;
+        return key == org.lwjgl.glfw.GLFW.GLFW_KEY_U;
     }
 
     @Override
@@ -293,14 +292,15 @@ final class RuntimeReiRecipeBrowserAccess implements RecipeBrowserAccess {
     public void renderRecipeCategoryIcon(GuiGraphicsExtractor graphics, RecipeBrowserCategory category, int x, int y) {
         ReiCategory reiCategory = this.reiCategory(category);
         if (reiCategory != null) {
-            reiCategory.config().getCategory().getIcon().render(GuiGraphics.of(graphics), new Rectangle(x, y, 16, 16), x, y, 0.0F);
+            reiCategory.config().getCategory().getIcon().render(ReiGraphics.adapt(graphics), new Rectangle(x, y, 16, 16), x, y, 0.0F);
         }
     }
 
     @Override
     public void renderRecipe(GuiGraphicsExtractor graphics, RecipeBrowserRecipe recipe, int x, int y, int mouseX, int mouseY) {
+        var adapted=ReiGraphics.adapt(graphics);
         for (Widget widget : this.widgets(recipe, x, y)) {
-            widget.extractRenderState(graphics, mouseX, mouseY, 0.0F);
+            widget.extractRenderState(adapted, mouseX, mouseY, 0.0F);
         }
     }
 
@@ -480,6 +480,15 @@ final class RuntimeReiRecipeBrowserAccess implements RecipeBrowserAccess {
             }
         }
         return null;
+    }
+
+    @Override public List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> recipeIngredientBounds(RecipeBrowserRecipe recipe,int x,int y) {
+        var result=new ArrayList<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds>();
+        for(var widget:this.widgets(recipe,x,y)) if(widget instanceof Slot slot && !slot.getCurrentEntry().isEmpty()) {
+            var rect=slot.getInnerBounds();
+            if(rect.width>0 && rect.height>0) result.add(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(rect.x,rect.y,rect.width,rect.height));
+        }
+        return List.copyOf(result);
     }
 
     @Override
@@ -893,7 +902,7 @@ final class RuntimeReiRecipeBrowserAccess implements RecipeBrowserAccess {
             this.ensureWidget();
             if (this.widget != null) {
                 this.clampPan();
-                this.widget.extractRenderState(graphics, mouseX, mouseY, tickProgress);
+                this.widget.extractRenderState(ReiGraphics.adapt(graphics), mouseX, mouseY, tickProgress);
             } else {
                 Component message = this.error == null ? Component.literal("Loading tree...") : this.error;
                 graphics.text(Minecraft.getInstance().font, message, x + 4, y + 4, 0xFFAAAAAA, false);
@@ -903,7 +912,7 @@ final class RuntimeReiRecipeBrowserAccess implements RecipeBrowserAccess {
         @Override
         public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
             if (this.widget == null
-                || event.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT
+                || event.button() != org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
                 || !this.bounds.contains(event.x(), event.y())) {
                 return false;
             }

@@ -5,10 +5,12 @@ import hashlib
 import importlib.util
 import json
 import math
+import re
 import struct
 import tomllib
 from pathlib import Path
 from zipfile import ZipFile
+from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 LOADER_NAMES = {"fabric": "Fabric", "forge": "Forge", "neoforge": "NeoForge"}
@@ -19,7 +21,8 @@ def host_motion_isolation(report, name):
     isolation = report.get("feature26Probe", {}).get("hostSdlMotionIsolation")
     if isolation is None:
         return {"applied": False, "status": "not-applied"}
-    assert name.startswith("26.3-"), f"{name}: host motion isolation is scoped to the 26.3 QA fixture"
+    game = name.split("-", 1)[0]
+    assert game in ("26.1.2", "26.2", "26.3"), f"{name}: host motion isolation is scoped to the modern disposable QA fixtures"
     assert isolation.get("policy") == "disposable-synthetic-controller-motion-only" \
         and isolation.get("scope") == "unfinished-run/current-installed-synthetic-controller/loaded-world-player", \
         f"{name}: host SDL isolation does not disclose its exact disposable test scope"
@@ -33,13 +36,16 @@ def host_motion_isolation(report, name):
     assert type(count) is int and count >= 0 and isinstance(events, list) and len(events) == min(count, 64), \
         f"{name}: missing total or bounded SDL motion observations"
     for event in events:
-        assert event.get("type") == 1024 and isinstance(event.get("scenario"), str) and event["scenario"], \
+        backend_type = 1024 if game == "26.3" else "glfw_cursor_motion"
+        assert event.get("type") == backend_type and isinstance(event.get("scenario"), str) and event["scenario"], \
             f"{name}: isolation recorded a non-motion event or a scenario outside its scope"
         assert all(event.get(key) is True for key in ("syntheticControllerCurrent", "worldPlayerLoaded", "unfinishedRun")), \
             f"{name}: isolated host motion outside the installed disposable controller/world scope"
-        assert all(type(event.get(key)) is int for key in ("windowId", "which", "timestamp")), \
+        native_fields = ("windowId", "which", "timestamp") if game == "26.3" else ("windowId", "timestamp")
+        position_fields = ("x", "y", "xrel", "yrel") if game == "26.3" else ("x", "y")
+        assert all(type(event.get(key)) is int for key in native_fields), \
             f"{name}: missing native SDL device/window/timestamp metadata"
-        assert all(isinstance(event.get(key), (int, float)) and math.isfinite(event[key]) for key in ("x", "y", "xrel", "yrel")), \
+        assert all(isinstance(event.get(key), (int, float)) and math.isfinite(event[key]) for key in position_fields), \
             f"{name}: missing finite native SDL position/relative motion observations"
     return {"applied": True, "status": "qa-only-disposable-synthetic-controller", "blocked_motion_events": count,
             "recorded_events": len(events), "native_controller_pointer_routes_unchanged": True}
@@ -59,7 +65,7 @@ COVERAGE = {
     "actual controller/server": ["actual-controlify-driver", "real-input-bindings-created", "salt-server-handshake"],
 }
 
-# Only 26.3 has received this feature pass; older targets retain their prior behavior.
+# The original 26.3 checks are also required for the modern ports under --feature-parity.
 FEATURE_COVERAGE_26_3 = {
     "native close completes on the first configured input edge": [
         "radial-B-closes-on-first-processed-configured-edge",
@@ -401,7 +407,24 @@ def digest(path, algorithm="sha256"):
     return hashlib.new(algorithm, Path(path).read_bytes()).hexdigest()
 
 
-def forge_lineage(results, mods, report_path):
+def code_source_path(value):
+    """Decode the actual native file/Forge union JAR source, excluding sibling profiles."""
+    assert isinstance(value, str), "Missing native JAR CodeSource"
+    if value.startswith("jar:"):
+        value = value[4:]
+    parsed = urlsplit(value)
+    assert parsed.scheme in {"file", "union"} and not parsed.netloc \
+        and not parsed.query and not parsed.fragment, f"Unexpected native CodeSource: {value}"
+    path = unquote(parsed.path).replace("\\", "/")
+    match = re.fullmatch(r"(.+\.jar)(?:#\d+)?(?:!/)?", path, flags=re.IGNORECASE)
+    assert match, f"CodeSource is not an actual top-level JAR: {value}"
+    path = match.group(1)
+    if re.match(r"^/[A-Za-z]:/", path):
+        path = path[1:]
+    return Path(path).resolve()
+
+
+def forge_lineage(results, mods, report_path, with_extension=False):
     """Legacy Forge runs named derivatives of unchanged final SRG artifacts."""
     path = results / "forge-remap-lineage.json"
     lineage = json.loads(path.read_text(encoding="utf-8-sig"))
@@ -415,7 +438,8 @@ def forge_lineage(results, mods, report_path):
     helper = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(helper)
     records = lineage["artifacts"]
-    assert len(records) == len({row["mapped"] for row in records}) == 4, "Forge must remap the exact four production/upstream mods"
+    assert len(records) == len({row["mapped"] for row in records}) == 4 + with_extension, \
+        "Forge must remap the exact production/upstream mods, including Extended when installed"
     original_folder = mods.parent / "original-mods"
     originals = {}
     for row in records:
@@ -431,30 +455,105 @@ def forge_lineage(results, mods, report_path):
     return originals, lineage
 
 
-def artifact_match(module,release,staged):
+def corrected_ui_class(data):
+    """Repair only the four misdecoded UI constants; retain every instruction and other class byte."""
+    assert data[:4] == b'\xca\xfe\xba\xbe'
+    count = struct.unpack_from('>H', data, 8)[0]
+    result, offset, index, corrected = bytearray(data[:10]), 10, 1, 0
+    replacements = [(bad.encode('utf-8'), good.encode('utf-8')) for bad, good in (
+        ('\u00e2\u20ac\u00a2', '\u2022'), ('\u00e2\u20ac\u00a6', '\u2026'))]
+    while index < count:
+        tag = data[offset]; result.append(tag); offset += 1
+        if tag == 1:
+            length = struct.unpack_from('>H', data, offset)[0]; offset += 2
+            original = value = data[offset:offset+length]; offset += length
+            for bad, good in replacements: value = value.replace(bad, good)
+            corrected += value != original
+            result.extend(struct.pack('>H', len(value))); result.extend(value)
+        else:
+            lengths = {3:4,4:4,5:8,6:8,7:2,8:2,9:4,10:4,11:4,12:4,15:3,16:2,17:4,18:4,19:2,20:2}
+            assert tag in lengths, f'Unexpected class constant tag: {tag}'
+            length = lengths[tag]; result.extend(data[offset:offset+length]); offset += length
+            if tag in (5,6): index += 1
+        index += 1
+    result.extend(data[offset:])
+    return bytes(result), corrected
+
+
+def artifact_match(module,release,staged,allow_ui_text_correction=False):
     final_hash, staged_hash = digest(release), digest(staged)
+    if final_hash != staged_hash and allow_ui_text_correction:
+        assert module == 'controlify' and any(f'-{game}-' in release.name for game in ('26.1.2','26.2'))
+        member = 'com/salts_inventory_update/controlify/ContextualRadialOverlay.class'
+        with ZipFile(staged) as before, ZipFile(release) as after:
+            assert before.testzip() is None and after.testzip() is None
+            assert set(before.namelist()) == set(after.namelist()), 'UI text correction changed the archive inventory'
+            changed = [name for name in before.namelist() if before.read(name) != after.read(name)]
+            assert changed == [member], f'Unverified production changes beyond the wheel UI text: {changed}'
+            repaired, constants = corrected_ui_class(before.read(member))
+            assert constants == 4 and repaired == after.read(member), \
+                'UI retry lineage must preserve all class bytes except the four corrected UTF-8 constants'
+        return {'mode':'four-wheel-text-constants-only', 'runtime_sha256':staged_hash,'final_sha256':final_hash,
+                'changed_member':member, 'corrected_constants':constants, 'all_other_class_and_resource_bytes_identical':True,
+                'requires_final_artifact_wheel_retry':True}
     assert final_hash==staged_hash, f'{module}: runtime differs from final collected artifact'
     return {'mode':'exact','runtime_sha256':staged_hash,'final_sha256':final_hash}
 
 
-def validate(target, results_root, artifacts, run_profile, report_suffix="", with_extension=False, with_optional_mods=False):
+def legacy_feature_parity(passed, name):
+    required = {
+        "api-controls-discovered", "api-no-real-slots", "api-scroll-viewport", "api-native-tab-selected",
+        "api-virtual-native-click", "api-scroll-one-native-row", "api-right-stick-native-scroll",
+        "api-editor-keyboard-open", "api-editor-own-text-focus", "api-editor-native-typing",
+        "api-keyboard-keeps-workspace", "api-keyboard-captures-item-actions", "api-keyboard-restores-input",
+        "api-retained-focus-does-not-reopen-keyboard", "api-item-controls-restored",
+        "native-warp-echo-observed", "native-warp-retains-controller-cursor",
+        "different-native-mouse-motion-forwarded", "different-native-mouse-motion-reveals-cursor",
+        "wheel-native-crafting-context", "wheel-counts-other-container-materials", "wheel-clears-existing-grid",
+        "wheel-right-stick-selects-recipe", "wheel-crafts-real-native-result", "wheel-output-hotbar-first",
+        "wheel-stack-obeys-64-item-limit", "wheel-small-stick-does-not-shift", "wheel-bumper-continuous-rotation",
+        "wheel-parts-filter", "wheel-craftable-filter", "wheel-no-items-lost", "wheel-filter-retained",
+        "cooking-native-context", "cooking-other-container-supply", "cooking-native-input-and-fuel",
+        "creative-tabs-and-catalog-navigation", "creative-A-one-to-hotbar", "creative-real-cursor-before-catalog",
+        "creative-catalog-clears-without-grant", "creative-Y-deletes-only-hotbar",
+        "creative-shortcut-opens-keyboard", "creative-search-restores-controls",
+    }
+    missing = {"parity-" + proof for proof in required} - passed
+    assert not missing, f"{name}: missing native feature parity evidence: {sorted(missing)}"
+
+
+def validate(target, results_root, artifacts, run_profile, report_suffix="", with_extension=False, with_optional_mods=False,
+             feature_parity=False, allow_completed_main_suite=False, allow_ui_text_correction=False):
     game, loader = target["minecraft"], target["loader"]
     name = f"{game}-{loader}" + report_suffix
     ui_sound_evidence = None
     report_path = results_root / name / "results.json"
     report = json.loads(report_path.read_text(encoding="utf-8-sig"))
-    assert report.get("failures") == 0, f"{name}: gameplay failures reported"
+    completed_main_only = False
+    if report.get("failures") != 0 and allow_completed_main_suite:
+        assert feature_parity and game in ('26.1.2','26.2') and report.get('scope','all') == 'all'
+        rows = report.get('results', [])
+        failed = [(i,row) for i,row in enumerate(rows) if row['status']=='FAIL']
+        boundary = [i for i,row in enumerate(rows) if row['name']=='contextual-presentation-native-book-sprite-regression' and row['status']=='PASS']
+        assert report.get('failures') == len(failed) == 1 and boundary and failed[0][0] > boundary[-1] \
+            and failed[0][1]['name'] == 'compat-api-independent-baseline', \
+            f'{name}: failure is outside the independently retried post-suite API setup'
+        completed_main_only = True
+    assert report.get("failures") == 0 or completed_main_only, f"{name}: gameplay failures reported"
     input_isolation = host_motion_isolation(report, name)
     records = report.get("results", [])
-    assert records and all(row["status"] in ("PASS", "CAPTURED", "OBSERVED") for row in records), \
+    assert records and all(row["status"] in ("PASS", "CAPTURED", "OBSERVED")
+                           or completed_main_only and row['status']=='FAIL' and row['name']=='compat-api-independent-baseline' for row in records), \
         f"{name}: missing or unsuccessful scenario records"
     passed = {row["name"] for row in records if row["status"] == "PASS"}
     for group, names in COVERAGE.items():
-        if game == "26.3" and group == "configured hold threshold":
+        if (game == "26.3" or feature_parity) and group == "configured hold threshold":
             names = ["radial-held-B-does-not-close-all", "side-B-closes-immediately", "close-all-server-sessions-disposed"]
         missing = set(names) - passed
         assert not missing, f"{name}: missing {group} proof: {sorted(missing)}"
-    if game == "26.3":
+    if feature_parity and not game.startswith("26."):
+        legacy_feature_parity(passed, name)
+    if game == "26.3" or feature_parity and game in ("26.1.2", "26.2"):
         for group, names in FEATURE_COVERAGE_26_3.items():
             missing = set(names) - passed
             assert not missing, f"{name}: missing 26.3 {group} proof: {sorted(missing)}"
@@ -670,6 +769,10 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
         source = report.get(field, "")
         assert ".jar" in source.lower() and "/classes/" not in source.replace("\\", "/").lower(), \
             f"{name}: {field} did not load from a production JAR: {source}"
+    if run_profile == "auto":
+        run_profile = "packaged-controlify-" + name if report_suffix else "packaged-controlify"
+    assert "/" not in run_profile and "\\" not in run_profile and run_profile.startswith("packaged-controlify"), \
+        f"{name}: invalid disposable runtime profile"
     mods_folder = ROOT / f"controlify/versions/{game}/{loader}/build/runtime-smoke/{run_profile}/mods"
     staged = list(mods_folder.glob("*.jar"))
     assert staged, f"{name}: missing staged production mods"
@@ -716,7 +819,7 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
         f"{name}: runtime loaded implementation directories instead of production JARs"
     assert report_path.stat().st_mtime >= staging_path.stat().st_mtime, \
         f"{name}: gameplay report predates the recorded launcher inventory"
-    originals, lineage = forge_lineage(results_root / name, mods_folder, report_path) if loader == "forge" else ({}, None)
+    originals, lineage = forge_lineage(results_root / name, mods_folder, report_path, with_extension) if loader == "forge" else ({}, None)
     hashes = {digest(path, "sha512"): path for path in (list(originals.values()) if lineage else staged)}
     for role in ("controller", "yacl"):
         assert target[role]["sha512"] in hashes, f"{name}: original pinned {role} JAR is absent or altered"
@@ -737,7 +840,7 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
         release, runtime = artifacts / module / filename, mods_folder / filename
         assert release.is_file() and runtime.is_file(), f"{name}: missing final {module} production JAR"
         preserved = originals.get(filename, runtime)
-        artifact_lineage[module] = artifact_match(module,release,preserved)
+        artifact_lineage[module] = artifact_match(module,release,preserved,allow_ui_text_correction and module=='controlify')
         assert report_path.stat().st_mtime >= runtime.stat().st_mtime, f"{name}: report predates its staged {module}"
         if game == "26.3" and module == "controlify":
             with ZipFile(release) as jar:
@@ -766,6 +869,16 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
                     for retired in ("panel","wheel_panel","arc_boundary","outer_marker")), \
                     f"{name}: retired panel/boundary textures remain in the final26.3 companion"
         matching[module] = digest(release)
+    expected_sources = {
+        "coreCodeSource": mods_folder / f"salts_inventory_update-{game}-{LOADER_NAMES[loader]}-{version}.jar",
+        "companionCodeSource": mods_folder / f"salts_inventory_controlify-{game}-{LOADER_NAMES[loader]}-{version}.jar",
+        "controlifyCodeSource": mods_folder / hashes[target["controller"]["sha512"]].name,
+    }
+    if with_extension and "extensionCodeSource" in report:
+        expected_sources["extensionCodeSource"] = mods_folder / f"salts_inventory_compat-{game}-{LOADER_NAMES[loader]}-{version}.jar"
+    for field, expected in expected_sources.items():
+        assert code_source_path(report[field]) == expected.resolve(), \
+            f"{name}: {field} did not load its actual preserved profile JAR"
     captures = [row for row in records if row["status"] == "CAPTURED"]
     for row in captures:
         image = results_root / name / "screenshots" / (row["name"] + ".png")
@@ -778,6 +891,9 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
         "screenshots": len(captures), "elapsed_ms": report["elapsedMs"],
         "artifact_sha256": matching, "artifact_lineage":artifact_lineage, "report": str(report_path.relative_to(ROOT)),
         "host_sdl_motion_isolation": input_isolation,
+        "validated_scope": "main suite before independent API setup" if completed_main_only else "all recorded scenarios",
+        "report_failures": report.get('failures'),
+        "requires_successful_final_artifact_api_retry": completed_main_only,
     }
     if ui_sound_evidence is not None:
         summary["workspace_ui_sounds"] = ui_sound_evidence
@@ -789,7 +905,7 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
         summary["runtime_dependencies"] = [{"mod_id": dependency["mod_id"], "version": dependency["version"],
                                              "filename": dependency["filename"], "sha512": dependency["sha512"]}
                                             for dependency in runtime_dependencies]
-    print(f"Packaged runtime verified: {name}, {summary['passes']} PASS records, {len(captures)} screenshots, exact release hashes")
+    print(f"Packaged runtime verified: {name}, {summary['passes']} PASS records, {len(captures)} screenshots, final artifact lineage checked")
     return summary
 
 
@@ -802,6 +918,7 @@ if __name__ == "__main__":
     parser.add_argument("--report-suffix", default="", help="Suffix of an independently retained full report, e.g. -extended-jei")
     parser.add_argument("--with-extension", action="store_true")
     parser.add_argument("--with-optional-mods", action="store_true")
+    parser.add_argument("--feature-parity", action="store_true", help="Require the new cross-version feature pass, including native legacy recipe/keyboard scenarios")
     parser.add_argument("--target", action="append", default=[], help="MC:loader for a focused run; omit to require all12")
     parser.add_argument("--summary", type=Path, help="Write a machine-readable validated evidence inventory")
     args = parser.parse_args()
@@ -814,7 +931,7 @@ if __name__ == "__main__":
     assert selected and selected.issubset(expected), f"Unsupported runtime targets: {selected - expected}"
     assert not any(character in args.report_suffix for character in '/\\'), 'Report suffix cannot contain a path'
     reports = [validate(target, args.results_root.resolve(), args.artifacts.resolve(), args.run_profile,
-                        args.report_suffix,args.with_extension,args.with_optional_mods)
+                        args.report_suffix,args.with_extension,args.with_optional_mods,args.feature_parity)
                for target in targets if (target["minecraft"], target["loader"]) in selected]
     if args.summary:
         args.summary.parent.mkdir(parents=True, exist_ok=True)

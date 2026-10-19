@@ -3,6 +3,8 @@ package com.salts_inventory_update.controlify.qa;
 import com.google.gson.GsonBuilder;
 import com.salts_inventory_update.controlify.SaltsControlifyClient;
 import com.salts_inventory_update.controlify.RadialInventoryScreen;
+import com.salts_inventory_update.controlify.WorkspaceSearchKeyboard;
+import com.salts_inventory_update.controlify.NativeCursorWarpGuard;
 import com.salts_inventory_update.api.client.desktop.DesktopWorkspaceWindow;
 import com.salts_inventory_update.api.client.desktop.DesktopClientApi;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowHandle;
@@ -102,6 +104,9 @@ public final class ControlifyGameplayHarness {
     private static long heldAt, firstClosedAt;
     private static int furnaceXpAfterSession;
     private static int cursorBeforeX;
+    private static double probeMouseX,probeMouseY;
+    private static boolean probeMousePending,probeMouseForwarded;
+    private static volatile String lastRecipeClearObservation="";
     private static final int[] GEAR_RECIPE_INPUTS = {1, 3, 4, 5, 6, 7, 8, 9};
     private static final ResourceLocation QA_VIEW_ID = ResourceLocation.fromNamespaceAndPath("salts_inventory_controlify_qa", "client_view");
     private static final QaClientView.Model viewA = new QaClientView.Model(), viewB = new QaClientView.Model();
@@ -110,6 +115,13 @@ public final class ControlifyGameplayHarness {
     private static volatile String lastLoomObservation = "not observed";
 
     private ControlifyGameplayHarness() { }
+
+    public static void observeNativeMouseMotion(long window,double x,double y){
+        if(probeMousePending&&window==mc.getWindow().getWindow()
+            &&Math.abs(x-probeMouseX)<1&&Math.abs(y-probeMouseY)<1
+            &&!Controlify.instance().virtualMouseHandler().isVirtualMouseEnabled())probeMouseForwarded=true;
+    }
+
 
     public static void initialize() {
         output = Path.of(System.getProperty("salts_inventory_controlify.qaOutput", "controlify-qa")).toAbsolutePath();
@@ -129,6 +141,14 @@ public final class ControlifyGameplayHarness {
         ControlifyEvents.INPUT_MODE_CHANGED.register(event -> {
             System.out.println("CONTROLIFY_QA_INPUT_MODE " + event.mode() + " step=" + (active == null ? "between" : active.name()));
             if (controller != null && !event.mode().isController()) new Throwable("QA input-mode change source").printStackTrace();
+        });
+        ControlifyEvents.VIRTUAL_MOUSE_TOGGLED.register(event -> {
+            if (controller == null) return;
+            String callers = StackWalker.getInstance().walk(frames -> frames.limit(12)
+                .map(frame -> frame.getClassName() + "." + frame.getMethodName() + ":" + frame.getLineNumber())
+                .collect(java.util.stream.Collectors.joining(" <- ")));
+            record("native-virtual-mouse-transition", "OBSERVED", event + ",stage="
+                + (active == null ? "between" : active.name()) + ",modalReturn=" + keyboardReturnProbe() + ",callers=" + callers);
         });
         scenarios();
         QaRuntime.registerTick(ControlifyGameplayHarness::tick);
@@ -164,6 +184,13 @@ public final class ControlifyGameplayHarness {
                     mc.getSingleplayerServer().createCommandSourceStack().withSuppressedOutput(), "time set noon");
             return null;
         }), ControlifyGameplayHarness::serverDone, () -> {}, 10);
+        if ("feature-parity".equals(System.getProperty("salts_inventory_controlify.qaScope"))) {
+            add("feature-parity-native-quickmove-binding", () ->
+                ControlifyBindings.INV_QUICK_MOVE.on(controller).setBoundInput(new ButtonInput(GamepadInputs.MISC_1_BUTTON)),
+                () -> true, () -> {}, 3);
+            addFeatureParityScenarios();
+            return;
+        }
         button("initial-Y-opens-player-workspace", GamepadInputs.NORTH_BUTTON, () -> {
             check("ordinary-inventory-uses-controller-workspace", owner.workspaceActive() && mc.screen instanceof RadialInventoryScreen);
             check("initial-player-and-character-only", owner.windows().values().stream().noneMatch(w -> w.kind() == DesktopWorkspaceWindow.Kind.OTHER));
@@ -316,7 +343,7 @@ public final class ControlifyGameplayHarness {
             Map<UUID, WindowSize> sizes = new LinkedHashMap<>();
             owner.windows().forEach((id, window) -> sizes.put(id,
                     new WindowSize(window.handle().state().width(), window.handle().state().height())));
-            WorkspaceLayout<UUID> target = new RadialLayout().compute(owner.model(), sizes,
+            WorkspaceLayout<UUID> target = new com.salts_inventory_update.controlify.model.WorkspacePresentationLayout().compute(owner.model(), sizes,
                     mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight(), 1);
             check("disabled-animation-immediate-target", current.equals(target));
             capture("09-animations-disabled-radial");
@@ -329,27 +356,34 @@ public final class ControlifyGameplayHarness {
             ControlifyBindings.GUI_BACK.on(controller).setBoundInput(new ButtonInput(GamepadInputs.SOUTH_BUTTON));
             driver.trigger = 1; aimWindow(owner.model().playerInventory());
         }, () -> owner.radialActive(), () -> {}, 2);
-        add("hold-close-all-in-radial", () -> {
-            heldAt = System.nanoTime(); firstClosedAt = 0; driver.buttons.add(GamepadInputs.SOUTH_BUTTON);
+        add("protected-close-press-in-radial", () -> {
+            heldAt=System.nanoTime();driver.buttons.add(GamepadInputs.SOUTH_BUTTON);
+        }, () -> System.nanoTime()-heldAt > 120_000_000L, () -> {
+            check("radial-protected-close-keeps-workspace",owner.workspaceActive() && owner.radialActive()
+                && owner.windows().containsKey(chestWindow));driver.buttons.clear();driver.trigger=0;driver.stick(0,0);
+        }, 3);
+        add("return-to-side-before-immediate-close",() -> {},() -> !owner.radialActive(),() -> {},4);
+        add("side-close-all-immediate", () -> {
+            heldAt=System.nanoTime();firstClosedAt=0;driver.buttons.add(GamepadInputs.SOUTH_BUTTON);
         }, ControlifyGameplayHarness::observeClosed, () -> {
-            driver.buttons.clear(); driver.trigger = 0; driver.stick(0, 0);
-            long elapsed = (firstClosedAt - heldAt) / 1_000_000;
-            check("same-core-hold-duration", elapsed >= owner.closeHoldDurationMillis());
-            check("close-all-keeps-only-permanent", owner.windows().values().stream().noneMatch(w -> w.kind() == DesktopWorkspaceWindow.Kind.OTHER));
-            check("close-all-server-sessions-disposed", sessions().values().stream().noneMatch(i -> i.object().title().getString().equals("Chest")));
+            driver.buttons.clear();driver.trigger=0;driver.stick(0,0);
+            check("side-close-without-hold",(firstClosedAt-heldAt)/1_000_000 < owner.closeHoldDurationMillis());
+            check("close-all-keeps-only-permanent",owner.windows().values().stream().noneMatch(w -> w.kind()==DesktopWorkspaceWindow.Kind.OTHER));
+            check("close-all-server-sessions-disposed",sessions().values().stream().noneMatch(i -> i.object().title().getString().equals("Chest")));
             capture("10-close-all-gameplay");
-        }, 4);
+        }, 3);
         openContainer("reopen-chest-for-side-hold", () -> chestPos, () -> check("reopen-default-focus", owner.model().focused().equals(owner.model().playerInventory())));
         add("hold-close-all-side", () -> {
             heldAt = System.nanoTime(); firstClosedAt = 0; driver.buttons.add(GamepadInputs.SOUTH_BUTTON);
         }, ControlifyGameplayHarness::observeClosed, () -> {
             driver.buttons.clear();
-            check("side-hold-honors-threshold", (firstClosedAt - heldAt) / 1_000_000 >= owner.closeHoldDurationMillis());
+            check("side-second-close-immediate", (firstClosedAt - heldAt) / 1_000_000 < owner.closeHoldDurationMillis());
             check("side-hold-returned-gameplay", mc.screen == null);
         }, 4);
         button("Y-opens-workspace-after-close-all", GamepadInputs.NORTH_BUTTON,
                 () -> check("ordinary-Y-after-close", owner.workspaceActive() && mc.screen instanceof RadialInventoryScreen));
         addNativeResultScenarios();
+        addFeatureParityScenarios();
     }
 
     private static void addNativeResultScenarios() {
@@ -552,8 +586,8 @@ public final class ControlifyGameplayHarness {
         int localX = bounds.x() + bounds.width() / 2, localY = bounds.y() - 12;
         check("modal-owner-retains-outside-pointer", localY < bounds.y()
                 && owner.desktop().containsPointer(handle.instanceId(), localX, localY));
-        int x = (int) Math.round(placement.x() + (localX - bounds.x()) * placement.scale());
-        int y = (int) Math.round(placement.y() + (localY - bounds.y()) * placement.scale());
+        int x = (int) Math.round(placement.x() + (localX - owner.desktop().presentationBounds(handle.instanceId()).x()) * placement.scale());
+        int y = (int) Math.round(placement.y() + (localY - owner.desktop().presentationBounds(handle.instanceId()).y()) * placement.scale());
         var scale = new Vector2d((double) mc.getWindow().getGuiScaledWidth() / mc.getWindow().getScreenWidth(),
                 (double) mc.getWindow().getGuiScaledHeight() / mc.getWindow().getScreenHeight());
         Controlify.instance().virtualMouseHandler().snapToPoint(new SnapPoint(x, y, 1), scale);
@@ -567,8 +601,8 @@ public final class ControlifyGameplayHarness {
         int localY = (external ? model.externalY : model.buttonY) + 12;
         if (external) check("external-UI-hit-outside-base", localY >= bounds.y() + bounds.height()
                 && owner.desktop().containsPointer(handle.instanceId(), localX, localY));
-        int x = (int) Math.round(placement.x() + (localX - bounds.x()) * placement.scale());
-        int y = (int) Math.round(placement.y() + (localY - bounds.y()) * placement.scale());
+        int x = (int) Math.round(placement.x() + (localX - owner.desktop().presentationBounds(handle.instanceId()).x()) * placement.scale());
+        int y = (int) Math.round(placement.y() + (localY - owner.desktop().presentationBounds(handle.instanceId()).y()) * placement.scale());
         var scale = new Vector2d((double) mc.getWindow().getGuiScaledWidth() / mc.getWindow().getScreenWidth(),
                 (double) mc.getWindow().getGuiScaledHeight() / mc.getWindow().getScreenHeight());
         Controlify.instance().virtualMouseHandler().snapToPoint(new SnapPoint(x, y, 1), scale);
@@ -652,6 +686,7 @@ public final class ControlifyGameplayHarness {
     private static final class TestDriver implements Driver {
         final Set<ResourceLocation> buttons = new HashSet<>();
         float trigger, x, y, walk;
+        float rightTrigger,rightX,rightY;
         BlockPos cameraTarget;
 
         @Override public void addComponents(ControllerEntity controller) {
@@ -665,6 +700,11 @@ public final class ControlifyGameplayHarness {
             ControllerStateImpl state = new ControllerStateImpl();
             buttons.forEach(button -> state.setButton(button, true));
             state.setAxis(GamepadInputs.LEFT_TRIGGER_AXIS, trigger);
+            state.setAxis(GamepadInputs.RIGHT_TRIGGER_AXIS,rightTrigger);
+            state.setAxis(GamepadInputs.RIGHT_STICK_AXIS_RIGHT,Math.max(0,rightX));
+            state.setAxis(GamepadInputs.RIGHT_STICK_AXIS_LEFT,Math.max(0,-rightX));
+            state.setAxis(GamepadInputs.RIGHT_STICK_AXIS_DOWN,Math.max(0,rightY));
+            state.setAxis(GamepadInputs.RIGHT_STICK_AXIS_UP,Math.max(0,-rightY));
             state.setAxis(GamepadInputs.LEFT_STICK_AXIS_RIGHT, Math.max(0, x));
             state.setAxis(GamepadInputs.LEFT_STICK_AXIS_LEFT, Math.max(0, -x));
             state.setAxis(GamepadInputs.LEFT_STICK_AXIS_DOWN, Math.max(0, y));
@@ -714,7 +754,7 @@ public final class ControlifyGameplayHarness {
     }
     private static void pointAtNativeSlot(UUID id, java.util.function.Predicate<Slot> target) {
         var window = owner.windows().get(id);
-        var bounds = window.handle().state();
+        var bounds = owner.desktop().presentationBounds(id);
         var placement = pointerLayout().windows().get(id);
         for (var hit : owner.desktop().visibleSlots(id)) {
                 int x = hit.x() + 8, y = hit.y() + 8;
@@ -738,8 +778,53 @@ public final class ControlifyGameplayHarness {
     }
 
     private static void button(String name, ResourceLocation button, Runnable verify) {
-        add(name + "-press", () -> driver.buttons.add(button), () -> true, () -> {}, 2);
+        add(name + "-press", () -> {
+            // D-pad navigation establishes the click target; discard a pending
+            // authored pointer fixture before native navigation moves the cursor.
+            if (button.equals(GamepadInputs.DPAD_UP_BUTTON) || button.equals(GamepadInputs.DPAD_RIGHT_BUTTON)
+                || button.equals(GamepadInputs.DPAD_DOWN_BUTTON) || button.equals(GamepadInputs.DPAD_LEFT_BUTTON)) {
+                pointerFixture = null;
+            }
+            driver.buttons.add(button);
+        }, () -> true, () -> {
+            if (button.equals(GamepadInputs.SOUTH_BUTTON) || button.equals(GamepadInputs.EAST_BUTTON)) {
+                var vmouse = Controlify.instance().virtualMouseHandler();
+                var select = ControlifyBindings.INV_SELECT.on(controller);
+                var click = ControlifyBindings.VMOUSE_LCLICK.on(controller);
+                var input = controller.input().orElseThrow();
+                record("native-A-binding-state", "OBSERVED", "stage=" + name
+                    + ",driver=" + driver.buttons.contains(button)
+                    + ",now=" + input.stateNow().isButtonDown(button) + ",then=" + input.stateThen().isButtonDown(button)
+                    + ",select=" + select.digitalNow() + "/" + select.digitalPrev()
+                    + ",click=" + click.digitalNow() + "/" + click.digitalPrev()
+                    + ",vmouse=" + vmouse.isVirtualMouseEnabled() + ",required=" + vmouse.requiresVirtualMouse()
+                    + ",processor=" + ScreenProcessorProvider.provide(mc.screen).getClass().getName()
+                    + ",contexts=" + Controlify.instance().thisTickBindContexts()
+                    + ",pointerPending=" + (pointerFixture != null)
+                    + ",keyboardNeutral=" + WorkspaceSearchKeyboard.waitingNeutral()
+                    + ",closePhysical=" + ControlifyBindings.GUI_BACK.on(controller).boundInput().state(input.stateNow())
+                        + "/" + ControlifyBindings.GUI_BACK.on(controller).boundInput().state(input.stateThen())
+                    + ",leftTrigger=" + input.stateNow().getAxisState(GamepadInputs.LEFT_TRIGGER_AXIS)
+                    + ",rightTrigger=" + input.stateNow().getAxisState(GamepadInputs.RIGHT_TRIGGER_AXIS)
+                    + ",contextual=" + (mc.screen instanceof com.salts_inventory_update.controlify.input.WorkspaceContainerScreen workspaceScreen && workspaceScreen.contextualRadialActive())
+                    + ",modalReturn=" + keyboardReturnProbe());
+            }
+        }, 2);
         add(name, () -> driver.buttons.remove(button), () -> true, verify, 3);
+    }
+
+    private static String keyboardReturnProbe() {
+        Object keyboard = field(WorkspaceSearchKeyboard.class, "owner");
+        if (keyboard == null) return "owner=null/exit=" + field(WorkspaceSearchKeyboard.class, "exitAwaitingNeutral");
+        var desktop = (com.salts_inventory_update.api.client.desktop.DesktopWorkspace) field(keyboard, "desktop");
+        Object target = field(keyboard, "window");
+        return "savedVM=" + field(keyboard, "returnVirtualMouseEnabled")
+            + "/closed=" + field(keyboard, "closed")
+            + "/exit=" + field(WorkspaceSearchKeyboard.class, "exitAwaitingNeutral")
+            + "/parent=" + (field(keyboard, "parent") == mc.screen)
+            + "/sameController=" + (field(keyboard, "openingController") == controller)
+            + "/valid=" + desktop.isValid()
+            + "/targetOpen=" + (desktop.isValid() && desktop.windows().stream().anyMatch(window -> window.handle().instanceId().equals(target) && window.handle().isOpen()));
     }
 
     private static void openContainer(String name, Supplier<BlockPos> pos, Runnable verify) {
@@ -890,5 +975,104 @@ public final class ControlifyGameplayHarness {
             catch (NoSuchFieldException ignored) { } catch (Exception failure) { throw new IllegalStateException(failure); }
         }
         throw new IllegalArgumentException(type + "." + name);
+    }
+
+    private static void verifyNativeWarpEchoGuard() {
+        long window=mc.getWindow().getWindow();
+        var pure=new com.salts_inventory_update.controlify.model.CursorWarpEchoTracker();
+        Object owner=new Object();
+        pure.record(owner,window,10,20,1);
+        check("warp-receipt-consumed-once",pure.consume(owner,window,10,20,2) && !pure.consume(owner,window,10,20,3));
+        pure.record(owner,window,10,20,1);
+        check("warp-expired-receipt-forwards-motion",!pure.consume(owner,window,10,20,200_000_002L));
+        pure.record(owner,window,10,20,1);
+        check("warp-other-window-not-consumed",!pure.consume(owner,window+1,10,20,2) && pure.consume(owner,window,10,20,3));
+        pure.record(owner,window,10,20,1);
+        check("warp-other-workspace-not-consumed",!pure.consume(new Object(),window,10,20,2) && pure.consume(owner,window,10,20,3));
+        for(int i=0;i<9;i++)pure.record(owner,window,i,20,1);
+        check("warp-pending-receipts-bounded",!pure.consume(owner,window,0,20,2));
+    }
+
+    private static void addFeatureParityScenarios() {
+        QaFeatureParity.append(new QaFeatureParity.Harness() {
+            public void step(String n,Runnable s,BooleanSupplier r,Runnable v,int t) {
+                if(n.equals("parity-api-view-close"))addNativeCursorCallbackProbe();
+                add(n,s,r,v,t);
+            }
+            public void button(String n,String k,Runnable v) {ControlifyGameplayHarness.button(n,parityButton(k),v);}
+            public void check(String n,boolean v) {
+                ControlifyGameplayHarness.check(n,v);
+                if (v && n.equals("parity-start-native-workspace")) verifyNativeWarpEchoGuard();
+            }
+            public void capture(String n) {ControlifyGameplayHarness.capture(n);}
+            public QaWorkspaceOwner owner() {return owner;}
+            public boolean creative() {return mc.player!=null && mc.player.isCreative();}
+            public net.minecraft.client.gui.screens.Screen screen() {return mc.screen;}
+            public void neutral() {pointerFixture=null;driver.buttons.clear();driver.trigger=driver.rightTrigger=driver.rightX=driver.rightY=0;driver.stick(0,0);}
+            public void leftTrigger(float v) {driver.trigger=v;}
+            public void rightTrigger(float v) {driver.rightTrigger=v;}
+            public void rightStick(float x,float y) {driver.rightX=x;driver.rightY=y;}
+            public void holdButton(String n,boolean down) {if(down)driver.buttons.add(parityButton(n));else driver.buttons.remove(parityButton(n));}
+            public void aimWindow(UUID id) {ControlifyGameplayHarness.aimWindow(id);}
+            public void point(UUID id,double x,double y) {parityPoint(id,x,y);pointerFixture=() -> parityPoint(id,x,y);}
+            public void openContainer(String n,String which) {
+                ControlifyGameplayHarness.openContainer(n,() -> which.equals("table")?tablePos:which.equals("furnace")?furnacePos:chestPos,
+                    () -> {if(which.equals("table"))tableWindow=newestOther();else if(which.equals("furnace"))furnaceWindow=newestOther();else chestWindow=newestOther();});
+            }
+            public UUID window(String name) {return switch(name) {case "table" -> tableWindow;case "furnace" -> furnaceWindow;case "chest" -> chestWindow;case "inventory" -> owner.model().playerInventory();default -> throw new IllegalArgumentException(name);};}
+            public void server(Runnable r) {
+                boolean trace=active!=null&&active.name().equals("parity-wheel-clears-existing-grid");
+                ControlifyGameplayHarness.server(() -> {r.run();if(trace)observeRecipeClear();return null;});
+            }
+            public boolean serverDone() {return ControlifyGameplayHarness.serverDone();}
+            public ServerPlayer player() {return ControlifyGameplayHarness.player();}
+            public Container storage() {return (Container)player().serverLevel().getBlockEntity(chestPos);}
+            public AbstractContainerMenu menu(Class<? extends AbstractContainerMenu> c) {return serverMenu(c);}
+            public void awardRecipes() {player().awardRecipes(mc.getSingleplayerServer().getRecipeManager().getRecipes());}
+            public DesktopWindowHandle openView(QaClientView.Model m) {return DesktopClientApi.openView(QA_VIEW_ID,"feature-parity",m,Component.literal("API navigation and keyboard")).orElseThrow();}
+        });
+    }
+    private static void observeRecipeClear() {
+        var player=player();var table=serverMenu(CraftingMenu.class);
+        String state="inventory="+java.util.stream.IntStream.range(0,36).mapToObj(player.getInventory()::getItem).toList()+",characterGrid="
+            +player.inventoryMenu.slots.subList(1,5).stream().map(Slot::getItem).toList()
+            +",tableGrid="+table.slots.subList(1,10).stream().map(Slot::getItem).toList()
+            +",chest="+((Container)player.serverLevel().getBlockEntity(chestPos)).getItem(1);
+        Object sessions=((Map<?,?>)field(DesktopContainerSessions.class,"PLAYERS")).get(player);
+        if(sessions!=null){Object hover=field(sessions,"recipeHover");state+=",hover="+hover;if(hover!=null)state+=",hoverRecipe="+field(hover,"recipeIndex");}
+        if(!state.equals(lastRecipeClearObservation)){lastRecipeClearObservation=state;System.out.println("CONTROLIFY_QA_RECIPE_CLEAR "+state);}
+    }
+    private static void addNativeCursorCallbackProbe(){
+        add("parity-known-native-warp-callback",()->{},()->true,()->{
+            check("parity-native-warp-echo-observed",((Number)field(NativeCursorWarpGuard.class,"matchedCallbacks")).longValue()>0);
+            check("parity-native-warp-retains-controller-cursor",Controlify.instance().virtualMouseHandler().isVirtualMouseEnabled());
+        },3);
+        add("parity-unscoped-native-cursor-callback",()->{
+            pointerFixture=null;
+            probeMouseX=mc.mouseHandler.xpos()+17;probeMouseY=mc.mouseHandler.ypos()+13;
+            probeMousePending=true;probeMouseForwarded=false;
+            // Outside an owned transition: this native callback must retain ordinary mouse priority.
+            org.lwjgl.glfw.GLFW.glfwSetCursorPos(mc.getWindow().getWindow(),probeMouseX,probeMouseY);
+        },()->probeMouseForwarded,()->{
+            probeMousePending=false;
+            check("parity-different-native-mouse-motion-forwarded",probeMouseForwarded);
+            check("parity-different-native-mouse-motion-reveals-cursor",probeMouseForwarded);
+        },3);
+        add("parity-restore-controller-after-mouse-probe",()->{
+            NativeCursorWarpGuard.keyboardTransition((RadialInventoryScreen)mc.screen,()->Controlify.instance().virtualMouseHandler().onScreenChanged());
+        },()->Controlify.instance().virtualMouseHandler().isVirtualMouseEnabled(),()->{},4);
+    }
+    private static ResourceLocation parityButton(String name) {
+        try {return (ResourceLocation)GamepadInputs.class.getField(name).get(null);}
+        catch(ReflectiveOperationException failure) {throw new IllegalStateException(failure);}
+    }
+    private static void parityPoint(UUID id,double localX,double localY) {
+        var bounds=owner.desktop().presentationBounds(id);var p=pointerLayout().windows().get(id);
+        int x=(int)Math.round(p.x()+(localX-bounds.x())*p.scale());
+        int y=(int)Math.round(p.y()+(localY-bounds.y())*p.scale());
+        var scale=new Vector2d((double)mc.getWindow().getGuiScaledWidth()/mc.getWindow().getScreenWidth(),
+            (double)mc.getWindow().getGuiScaledHeight()/mc.getWindow().getScreenHeight());
+        Controlify.instance().virtualMouseHandler().snapToPoint(new SnapPoint(x,y,1),scale);
+        ((RadialInventoryScreen)mc.screen).mouseMoved(x,y);
     }
 }

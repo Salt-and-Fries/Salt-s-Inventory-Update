@@ -8,8 +8,8 @@ compatibility JAR is optional.
 
 The [illustrated feature guide](docs/salts-inventory-controlify-feature-guide.pdf)
 documents the original controller presentation, control reference and installation
-steps using verified Minecraft 1.21.1 Fabric images. The current 26.3 features and
-screenshots are described below. See [current validation](VALIDATION.md) for the
+steps using verified Minecraft 1.21.1 Fabric images. The current shared controller features are described below; screenshots
+from 26.3 illustrate the presentation used across the supported versions. See [current validation](VALIDATION.md) for the
 expanded matrix and each loader's packaged gameplay verification.
 
 Controller code lives exclusively in `controlify/`. The integration compiles only
@@ -27,7 +27,7 @@ use the core JAR produced by this branch's build together with the controller JA
 Opening a supported container or UI focuses player inventory on the left and places
 the opened window on the right. Player inventory and Character remain available and
 cannot be closed individually. Controlify's usual cursor, scrolling, select,
-quick-move and take-half actions retain their configured bindings. The 26.3
+quick-move and take-half actions retain their configured bindings. The workspace
 overrides, including immediate side-by-side B close and right-stick scrolling,
 are described in the feature section below.
 
@@ -38,10 +38,8 @@ are described in the feature section below.
 | Left stick while holding LT | Highlight the nearest radial window; bottom selects Tuck Away |
 | Release LT | Put the highlighted window on the right, or tuck the workspace upward |
 | A while holding LT | Swap the highlighted window into focus |
-| Configured close-inventory button (normally B), in the 26.3 LT wheel | Immediately close only the highlighted closable window; keep the wheel and other windows open |
-| Configured close-inventory button, while holding LT on older versions | Close the highlighted closable window on release |
-| Configured close-inventory button (normally B), in 26.3 side-by-side view | Immediately close the workspace and all closable windows |
-| Hold the configured close-inventory button, on older versions | Close all closable windows using Core's existing hold duration |
+| Configured close-inventory button (normally B), in the LT wheel | Immediately close only the highlighted closable window; keep the wheel and other windows open |
+| Configured close-inventory button (normally B), in side-by-side view | Immediately close the workspace and all closable windows |
 | Configured inventory button (normally Y), while tucked | Restore the same windows and sessions |
 
 While either inventory mode is visible, the screen owns character and world input.
@@ -54,11 +52,15 @@ Set `animations=false` and restart the client to make all presentation transitio
 immediate. The controller presentation forces Core's inventory HUD/offhand arrangement
 while active without overwriting the keyboard/mouse preference on disk.
 
-## 26.3 feature test
+## Controller features
 
-The current feature pass applies only to Minecraft **26.3**, for Fabric and NeoForge.
-Other versions retain their previous controller behavior. Replace both the matching
-Core and Salt's Controlify companion when installing this pass.
+These features are implemented for all twelve version/loader targets in the matrix
+below: Minecraft 1.20.1 Fabric/Forge and 1.21.1, 1.21.11, 26.1.2, 26.2 and 26.3
+Fabric/NeoForge. The same workspace and wheel models are shared, with native
+adapters for each game and Controlify version. Replace both the matching Core
+and Salt's Controlify companion when installing this pass; replace Extended as
+well when using its mod integrations. Compilation, unit checks and packaged
+gameplay results are recorded separately in [VALIDATION.md](VALIDATION.md).
 
 The inventory fits its occupied rows and hotbar. Item tooltips use screen coordinates,
 and the native crafting guide participates in pane sizing and positioning when its
@@ -77,7 +79,7 @@ matching items, shared item tags, the focused destination, then empty containers
 In side-by-side view, pressing the configured close button (normally B) immediately
 closes the workspace and its closable container sessions. In the LT window radial,
 a press closes only the highlighted closable window and leaves the wheel open.
-Holding the close button has no extra action or progress timer in either 26.3 view.
+Holding the close button has no extra action or progress timer in either view.
 
 Opening a container with LT keeps the workspace in side-by-side view until LT is
 released. A fresh LT press then opens the window radial. Its focused center and
@@ -103,7 +105,7 @@ When player Inventory is paired with Character or a crafting table, Quick Move
 Crafted output sent to player Inventory fills compatible or empty hotbar slots
 first, then uses main inventory space. Character crafting inputs are returned to
 the player's inventory on close, with overflow dropped using vanilla's rules.
-Tucking keeps those windows open. These changes require the updated **26.3 Core**
+Tucking keeps those windows open. These changes require the updated matching **Core**
 JAR; the cleanup also applies to the ordinary keyboard/mouse character window.
 
 In the creative catalog, A adds one item directly to an available hotbar slot and
@@ -123,7 +125,7 @@ inputs must return to neutral before inventory controls resume. X retains its
 ordinary action outside this context. Rebind **Creative search** in Controlify's
 Salt's Inventory binding category.
 
-In **26.3**, selecting a modded text field with A also opens Controlify's native
+Selecting a modded text field with A also opens Controlify's native
 keyboard. This uses the window's public API editor bounds and focus state, including
 search fields in the recipe browser, Tom's terminals, Sophisticated containers and
 AE2. The field continues to own its text, caret and filtering. Inventory actions
@@ -135,9 +137,11 @@ Custom API windows expose their current controls, virtual entries, scroll viewpo
 and editor bounds through Core's desktop API. Controlify consumes those queries
 without per-mod checks. Extended supplies the native adapters for supported mods;
 an arbitrary unregistered mod screen still needs an API integration. See the
-[controller API contract](../docs/markdown/desktop_window_api.md#controller-navigation-and-editors-263).
-When installing this compatibility pass, replace the matching **26.3 Core and
-Controlify** JARs and **Extended** if you use it.
+[controller API contract](../docs/markdown/desktop_window_api.md#controller-navigation-and-editors).
+When installing this compatibility pass, replace the matching **Core and
+Controlify** JARs and **Extended** if you use it. Only integrations available for
+the selected Minecraft version and loader are included; the companion does not
+add upstream mod releases to targets where those mods are unavailable.
 
 Hold the quick-action binding (RT by default) over a supported crafting, cooking,
 or creative window to open its wheel. Controlify's native action lists show the
@@ -155,12 +159,16 @@ adjacent icons with ordinary spacing outside the controller bitmap font. Craft
 and Craft Stack remain visible throughout crafting-wheel browsing, even when a
 recipe is unavailable, keeping the action rows stable.
 Hints change with the active mode and hovered window, use the actual configured
-bindings, and respect Controlify's screen-guide visibility and scale preferences.
+bindings and respect Controlify's screen-guide visibility preference. Controlify
+3.5 targets also use its screen-guide scale setting; the 2.x and 3.0 LTS adapters
+use Minecraft's GUI scale because those upstream versions lack that setting.
 While tucked, the native inventory action becomes Restore; top-aligned
 gameplay guides sit below the retained tabs and departing previews. Their normal
 placement returns when leaving tucked mode.
 
-D-pad left/right changes category; D-pad up toggles craftable recipes. Category icons
+D-pad left/right changes category; D-pad up cycles **All**, **Contains Parts** and
+**Craftable**, retaining the filter when the wheel is reopened. Contains Parts
+requires at least one available ingredient for that recipe. Category icons
 appear above the wheel with the selected category enlarged. The right stick moves
 continuously through the outer recipe list, feeding individual cards through the
 inner ring's bottom opening. The left stick chooses a visible recipe. Hold LB/RB to
@@ -169,7 +177,7 @@ Both recipe sticks use a larger dead zone (0.78 activation, 0.64 release) and ig
 inward spring movement, keeping the selected recipe stable when the stick is released.
 Recipes are sorted by their displayed localized names. The outer ring marks the
 start of each available A–Z group, skipping empty groups; categories and the
-craftable filter rebuild these markers without changing continuous browsing.
+recipe filter rebuild these markers without changing continuous browsing.
 Letters use two fixed inner/outer tracks with consistent spacing and short
 connecting lines, staying clear of the category tabs. Aiming
 at a letter centers its first recipe at the top of the carousel. The highlighted
@@ -233,7 +241,7 @@ Holding the same action over creative inventory opens its tab wheel. The active 
 remains highlighted separately from the hovered choice. Release the action to return
 to side-by-side view. The carousel rendering keeps separate texture hooks for future
 artwork. Its control instructions appear in the native guide lists.
-The **26.3 Fabric and NeoForge companion** uses nine dedicated UI events
+Every companion target uses nine dedicated UI events
 for navigation, window changes, opening, closing, tucking, restoring, confirmation,
 observed crafting output and unavailable actions. Opening and closing use Minecraft's
 classic button click; the other seven recordings retain their CC0-derived palette.
@@ -246,12 +254,14 @@ idle wheels stay silent, and cursor-hover audio is off by default. One cue wins 
 with action feedback taking priority over transitions and navigation.
 Open **Options → Music & Sounds → Controller sounds** for presets, companion volume,
 separate Navigation/Windows/Actions levels, and one-cue preview, Stop and reset.
-Minecraft's Master and UI levels still apply. Craft completion follows an observed
+Minecraft's Master level also applies. Targets with a native UI sound category
+(26.x) additionally respect UI volume; older targets use Minecraft's native
+Master-routed UI playback. Craft completion follows an observed
 increase in matching output in the destination; sending a request alone does not
 play success, and uncertain results remain silent. This client observation is not
 a Core server acknowledgment.
-This audio pass changes only the 26.3 companion JAR. Core, Extended and other
-Minecraft versions receive no sound changes. The [sound guide](versions/26.3/common/UI_SOUNDS.md)
+These optional sound changes live only in the companion JARs. Core and Extended
+receive no controller sound assets or playback hooks. The [sound guide](versions/26.3/common/UI_SOUNDS.md)
 documents all event IDs, settings, resource-pack replacement and editable sources.
 The [texture asset guide](versions/26.3/common/CONTEXTUAL_RADIAL_ASSETS.md) lists the
 runtime PNG paths, source sizes and editable tuck sprite.
@@ -260,15 +270,27 @@ The root `build` refreshes production JARs for all twelve targets in
 [`dist/core`](../dist/core/), [`dist/compatibility`](../dist/compatibility/) and
 [`dist/controlify`](../dist/controlify/), with checksums in each directory.
 The [combined latest archive](../dist/salts-inventory-all-latest.zip) groups all
-36 production JARs by Minecraft version and loader. For this 26.3 feature pass,
-use the matching 26.3 Core and controller companion; the compatibility extension
-remains optional. Install the pinned upstream dependencies listed below separately.
+36 production JARs by Minecraft version and loader. Use the matching Core and
+controller companion for the chosen target; the compatibility extension remains
+optional. Install the pinned upstream dependencies listed below separately.
 The combined archive does not include gameplay screenshots.
 See [validation](VALIDATION.md) for native game evidence and exact artifact hashes.
 
 The input adapters use Controlify's native container screen processors and bindings.
 Version-specific adapters handle Minecraft's native screen, input and rendering
-APIs and the Controlify 2.x, 3.0 LTS and 3.5 families. Build checks resolve their
+APIs and the Controlify 2.x, 3.0 LTS and 3.5 families. Controlify 3.5 supplies its
+contextual action-guide engine. Earlier versions render the same compact action
+facts with their native bindings and controller glyphs. Controlify 3.0 LTS uses
+its native keyboard overlay; the 1.20.1 adapter hosts Controlify 2.x's native
+keyboard widget in a modal screen with the same input capture and neutral-release
+rules. Minecraft's native recipe IDs, recipe matching, slot restrictions,
+remainders and furnace behavior remain version-specific.
+
+Editable wheel PNG/PDN originals stay in
+`controlify/versions/26.3/common/src/main/resources/assets/salts_inventory_controlify/`.
+The build shares that asset namespace with every companion target, so editing
+those files and rebuilding updates the corresponding sprites across the matrix.
+Do not edit copies inside build output or `dist`. Build checks resolve their
 member references and mixin targets against the actual target compiler inputs
 and pinned upstream JARs.
 
@@ -357,7 +379,12 @@ filters and LT window wheel have a focused scope:
 
 Replace `fabric` with `neoforge` for that loader. Its reports and screenshots go
 to `build/controlify-qa/26.3-<loader>-wheel-polish`, preserving the full-scope
-reports separately. Run a complete functional scope only on explicit request:
+reports separately. The 1.20.1, 1.21.1 and 1.21.11 profiles also support
+`-PcontrolifyQaScope=feature-parity` to exercise the added API navigation, modded
+editor keyboard, recipe/cooking wheels, filters and creative actions after their
+native world/controller/server fixtures, without rerunning the earlier baseline
+scenarios. This is a focused scope, not complete gameplay coverage.
+Run a complete functional scope only on explicit request:
 
 ```powershell
 .\gradlew.bat -I controlify/functional-tests/controlify-qa.init.gradle :controlify:1.21.1:fabric:runPackagedControlifyQa

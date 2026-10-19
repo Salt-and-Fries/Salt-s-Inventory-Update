@@ -114,6 +114,12 @@ public final class DesktopMenuBindings {
         return List.copyOf(slots);
     }
 
+    /** Phantom configuration entries may be clickable but can never supply real recipe ingredients. */
+    public static boolean isVirtualSlot(AbstractContainerMenu menu, Slot slot) {
+        Access access=access(menu);
+        return access!=null&&access.slots.isVirtualSlot(menu,slot);
+    }
+
     /** Explicit inventory ownership for custom slot wrappers and nonstandard inventory layouts. */
     public static boolean isPlayerInventorySlot(AbstractContainerMenu menu, Slot slot,
                                                net.minecraft.world.entity.player.Inventory inventory) {
@@ -267,6 +273,8 @@ public final class DesktopMenuBindings {
     @FunctionalInterface
     public interface SlotAccess {
         int size(AbstractContainerMenu menu);
+
+        default boolean isVirtualSlot(AbstractContainerMenu menu, Slot slot) { return false; }
 
         default boolean isPlayerInventorySlot(AbstractContainerMenu menu, Slot slot,
                                               net.minecraft.world.entity.player.Inventory inventory) {

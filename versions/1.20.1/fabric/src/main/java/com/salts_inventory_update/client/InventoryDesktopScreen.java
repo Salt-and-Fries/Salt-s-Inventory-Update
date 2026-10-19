@@ -23,6 +23,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import com.salts_inventory_update.api.client.gui.GuiGraphicsExtractor;
 import com.salts_inventory_update.api.client.input.CharacterEvent;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.CyclingSlotBackground;
 import net.minecraft.client.gui.screens.inventory.EnchantmentNames;
@@ -74,6 +75,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.inventory.AbstractFurnaceMenu;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.HorseInventoryMenu;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.BeaconMenu;
 import net.minecraft.world.inventory.BlastFurnaceMenu;
@@ -131,6 +133,7 @@ import com.salts_inventory_update.api.client.desktop.DesktopWindowAction;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowState;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowTasks;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowBounds;
+import com.salts_inventory_update.api.client.desktop.DesktopControllerTarget;
 import com.salts_inventory_update.api.client.desktop.DesktopChromeMetrics;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowDecoration;
 import com.salts_inventory_update.api.client.desktop.DesktopControlState;
@@ -170,8 +173,13 @@ import com.salts_inventory_update.inventory.InventoryExpansion;
 import com.salts_inventory_update.internal.desktop.DesktopItemSourceLocks;
 import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
 import com.salts_inventory_update.internal.desktop.DesktopSortSlots;
+import com.salts_inventory_update.internal.desktop.ContextualRecipes;
+import com.salts_inventory_update.api.client.desktop.DesktopControllerTarget;
+import net.minecraft.client.gui.components.AbstractWidget;
 import com.salts_inventory_update.mixin.client.MenuScreensAccessor;
 import com.salts_inventory_update.mixin.client.RecipeBookComponentAccessor;
+import com.salts_inventory_update.mixin.client.RecipeBookPageAccessor;
+import com.salts_inventory_update.mixin.client.OverlayRecipeComponentAccessor;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopGhostRecipePayload;
@@ -990,6 +998,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private long lastPrimitiveClickTimeMs;
     private @Nullable SlotKey hoveredBundleSlotKey;
     private ItemStack sharedCarried = ItemStack.EMPTY;
+    private boolean contextualRecipePresentation;
+    private @Nullable UUID contextualHoverSource;
+    private int contextualHoverSession = Integer.MIN_VALUE;
     private ItemStack lastQuickMoved = ItemStack.EMPTY;
     private @Nullable SlotKey lastQuickMovedSlotKey;
     private int nextDebugClickId = 1;
@@ -1015,6 +1026,51 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private boolean externallyPresented() {
         var host = DesktopClientApi.workspaceHost();
         return host != null && host.enabled();
+    }
+
+    private static ItemStack workspacePreviewIcon(InventoryWindow window) {
+        if (window.kind == WindowKind.INVENTORY) return new ItemStack(Items.CHEST);
+        if (window.kind == WindowKind.CREATIVE) return new ItemStack(Items.GRASS_BLOCK);
+        if (window.kind == WindowKind.CHARACTER) return new ItemStack(Items.ARMOR_STAND);
+        Minecraft client = Minecraft.getInstance();
+        if (window.session != null && client.level != null) {
+            String dimension = client.level.dimension().location().toString();
+            var source = com.salts_inventory_update.internal.desktop.WorkspacePreviewSource.blockPosition(
+                    window.session.sourceKey(), dimension);
+            if (source != null) {
+                var position = new net.minecraft.core.BlockPos(source.x(), source.y(), source.z());
+                if (client.level.hasChunkAt(position)) {
+                    ItemStack item = new ItemStack(client.level.getBlockState(position).getBlock().asItem());
+                    if (!item.isEmpty()) return item;
+                }
+            }
+        }
+        AbstractContainerMenu menu = window.session != null ? window.session.menu() : window.legacyMenu;
+        if (menu instanceof CraftingMenu) return new ItemStack(Items.CRAFTING_TABLE);
+        if (menu instanceof BlastFurnaceMenu) return new ItemStack(Items.BLAST_FURNACE);
+        if (menu instanceof SmokerMenu) return new ItemStack(Items.SMOKER);
+        if (menu instanceof AbstractFurnaceMenu) return new ItemStack(Items.FURNACE);
+        if (menu instanceof BrewingStandMenu) return new ItemStack(Items.BREWING_STAND);
+        if (menu instanceof AnvilMenu) return new ItemStack(Items.ANVIL);
+        if (menu instanceof BeaconMenu) return new ItemStack(Items.BEACON);
+        if (menu instanceof CartographyTableMenu) return new ItemStack(Items.CARTOGRAPHY_TABLE);
+
+        if (menu instanceof EnchantmentMenu) return new ItemStack(Items.ENCHANTING_TABLE);
+        if (menu instanceof GrindstoneMenu) return new ItemStack(Items.GRINDSTONE);
+        if (menu instanceof LoomMenu) return new ItemStack(Items.LOOM);
+        if (menu instanceof SmithingMenu) return new ItemStack(Items.SMITHING_TABLE);
+        if (menu instanceof StonecutterMenu) return new ItemStack(Items.STONECUTTER);
+        if (menu instanceof MerchantMenu) return new ItemStack(Items.EMERALD);
+        if (menu instanceof HorseInventoryMenu) return new ItemStack(Items.SADDLE);
+        return new ItemStack(window.kind == WindowKind.CONTAINER ? Items.CHEST : Items.BOOK);
+    }
+
+    private static int workspaceModifiers() {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) return 0;
+        return (Screen.hasShiftDown() ? GLFW.GLFW_MOD_SHIFT : 0)
+            | (Screen.hasControlDown() ? GLFW.GLFW_MOD_CONTROL : 0)
+            | (Screen.hasAltDown() ? GLFW.GLFW_MOD_ALT : 0);
     }
 
     private static boolean workspaceInventoryHud() {
@@ -1060,25 +1116,33 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                         .filter(w -> w.kind == nativeKind && w.session == null && w.legacyMenu == null).findFirst().orElseThrow();
                 }
                 window.minimized = false; window.persistentHidden = false; window.ghosted = false;
+                compactWorkspaceInventoryWindow(window);
                 return apiWindowHandle(window);
             }
-            @Override public void initialize(int width, int height) { InventoryDesktopScreen.this.init(Minecraft.getInstance(), width, height); }
+            @Override public void initialize(int width, int height) {
+                InventoryDesktopScreen.this.init(Minecraft.getInstance(), width, height);
+                compactWorkspaceInventoryWindows();
+            }
             @Override public void restoreWindow(UUID id) {
                 InventoryWindow window = find(id);
                 if (window == null || window.companionHidden) return;
                 boolean wasGhosted = window.ghosted;
                 boolean wasHidden = wasGhosted || window.persistentHidden;
                 window.minimized = false; window.ghosted = false; window.persistentHidden = false;
+                compactWorkspaceInventoryWindow(window);
                 if (wasHidden && window.session != null) DesktopContainerClient.setSessionVisible(window.session.sessionId(), true);
                 if (wasGhosted) apiUnghosted(window);
                 commitApiSurface(window);
                 notifyApiWindowState(window);
             }
-            @Override public void tick() { InventoryDesktopScreen.this.tick(); }
-            @Override public void renderWindow(UUID id, GuiGraphics raw, int x, int y, float partialTick) {
+            @Override public void tick() {
+                InventoryDesktopScreen.this.tick();
+                compactWorkspaceInventoryWindows();
+            }
+            @Override public void renderWindow(UUID id, GuiGraphicsExtractor raw, int x, int y, float partialTick) {
                 InventoryWindow window = find(id);
                 if (window == null) return;
-                var graphics = GuiGraphicsExtractor.wrap(raw);
+                var graphics = raw;
                 graphics.nextStratum();
                 InventoryWindow previous = workspacePointerWindow;
                 workspacePointerWindow = window;
@@ -1089,14 +1153,24 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     if (x != Integer.MIN_VALUE) extractHoveredTooltip(graphics, x, y);
                 } finally { workspacePointerWindow = previous; }
             }
-            @Override public void renderCarried(GuiGraphics raw, int x, int y) {
+            @Override public void renderWindowFrame(GuiGraphicsExtractor raw,
+                    com.salts_inventory_update.api.client.desktop.DesktopWindowBounds bounds, Component title) {
+                InventoryDesktopScreen.this.renderSaltWindowFrame(raw, bounds.x(), bounds.y(),
+                    bounds.width(), bounds.height(), title.getString());
+            }
+            @Override public void renderCarried(GuiGraphicsExtractor raw, int x, int y) {
                 var preview = dragCarriedPreview();
-                InventoryDesktopScreen.renderCarried(GuiGraphicsExtractor.wrap(raw), preview.stack(), x, y, Minecraft.getInstance(), preview.countText());
+                InventoryDesktopScreen.renderCarried(raw, preview.stack(), x, y, Minecraft.getInstance(), preview.countText());
+            }
+            @Override public ItemStack previewIcon(UUID id) {
+                InventoryWindow window = find(id);
+                return window == null || window.apiDisposed ? ItemStack.EMPTY : workspacePreviewIcon(window);
             }
             @Override public boolean containsPointer(UUID id, double x, double y) {
                 if (!Double.isFinite(x) || !Double.isFinite(y)) return false;
                 InventoryWindow window = find(id);
-                return interactive(window) && (apiModalWindow() == window || window.contains(x, y) || apiExternalRegionContains(window, x, y));
+                return interactive(window) && (apiModalWindow() == window || window.contains(x, y)
+                    || apiExternalRegionContains(window, x, y) || attachedRecipeBookContains(window, x, y));
             }
             @Override public boolean dismissOutsidePointer(UUID id, double x, double y) {
                 if (!Double.isFinite(x) || !Double.isFinite(y)) return false;
@@ -1133,7 +1207,25 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             @Override public boolean keyReleased(int key, int scan, int modifiers) {
                 return isTextInputActive() && InventoryDesktopScreen.this.keyReleased(key, scan, modifiers);
             }
-            @Override public boolean charTyped(char character, int modifiers) { return InventoryDesktopScreen.this.charTyped(character, modifiers); }
+            @Override public boolean charTyped(char character, int modifiers) { return charTyped((int) character, modifiers); }
+            @Override public boolean charTyped(int codepoint, int modifiers) { if(!Character.isValidCodePoint(codepoint))return false;boolean accepted=false;for(char part:Character.toChars(codepoint))accepted|=InventoryDesktopScreen.this.charTyped(part,modifiers);return accepted; }
+            @Override public boolean textInputActive(UUID id) {
+                InventoryWindow window = find(id);
+                return interactive(window) && (window == activeCreativeSearchWindow() || window == activeJeiSearchWindow()
+                    || window == activeAnvilEditWindow() || window == apiKeyboardFocusWindow && apiWantsTextInput());
+            }
+            @Override public List<DesktopWindowBounds> textInputBounds(UUID id) {
+                InventoryWindow window=find(id);
+                if(!interactive(window)) return List.of();
+                if(window.kind==WindowKind.JEI && window.jeiMode==RecipeBrowserMode.INGREDIENTS)
+                    return List.of(new DesktopWindowBounds(jeiSearchX(window),jeiSearchY(window),jeiSearchWidth(window),JEI_SEARCH_HEIGHT));
+                if(window.kind==WindowKind.CREATIVE && creativeSearchRect(window)!=null) {
+                    var rect=creativeSearchRect(window);return List.of(new DesktopWindowBounds(rect.x(),rect.y(),rect.width(),rect.height()));
+                }
+                if(window.containerMenu() instanceof AnvilMenu) return List.of(new DesktopWindowBounds(anvilContentX(window)+ANVIL_TEXT_FIELD_X,
+                    anvilContentY(window)+ANVIL_TEXT_FIELD_Y,ANVIL_TEXT_FIELD_WIDTH,ANVIL_TEXT_FIELD_HEIGHT));
+                return apiTextInputBounds(window);
+            }
             @Override public Slot hoveredSlot(UUID id, double x, double y) {
                 InventoryWindow window = find(id);
                 SlotHit hit = window == null ? null : window.slotAt(InventoryDesktopScreen.this, x, y);
@@ -1152,6 +1244,76 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 }
                 return List.copyOf(result);
             }
+            @Override public List<DesktopWindowBounds> visibleControls(UUID id) {
+                InventoryWindow window = find(id);
+                return interactive(window) ? workspaceControlBounds(window) : List.of();
+            }
+            @Override public List<com.salts_inventory_update.api.client.desktop.DesktopControllerTarget> controllerTargets(UUID id) {
+                InventoryWindow window = find(id);
+                return interactive(window) ? workspaceControllerTargets(window, visibleSlots(id)) : List.of();
+            }
+            @Override public boolean scrollController(UUID id, double x, double y, int direction, boolean edgeOnly) {
+                InventoryWindow window = find(id);
+                return interactive(window) && workspaceControllerScroll(window, x, y, direction, edgeOnly);
+            }
+            @Override public boolean controllerScrollAvailable(UUID id, double x, double y) {
+                InventoryWindow window = find(id);
+                return interactive(window) && workspaceControllerScrollAvailable(window, x, y);
+            }
+            @Override public boolean creativeHotbarAt(UUID id, double x, double y, boolean stack) {
+                InventoryWindow window = find(id);
+                if (!interactive(window) || window.kind != WindowKind.CREATIVE) return false;
+                CreativeItemHit hit = creativeItemAt(window, x, y);
+                if (hit == null) return false;
+                workspaceCreativeHotbar(hit.stack(), stack);
+                return true;
+            }
+            @Override public boolean creativeCatalogAt(UUID id, double x, double y) {
+                InventoryWindow window = find(id);
+                return interactive(window) && Double.isFinite(x) && Double.isFinite(y)
+                    && creativeItemAt(window, x, y, false) != null;
+            }
+            @Override public boolean creativeHotbarDeleteAt(UUID id, double x, double y) {
+                InventoryWindow window = find(id);
+                if (!interactive(window) || !Double.isFinite(x) || !Double.isFinite(y)) return false;
+                SlotHit hit = window.slotAt(InventoryDesktopScreen.this, x, y);
+                return workspaceCreativeHotbarDeleteTarget(window, hit) && hit.slot().hasItem();
+            }
+            @Override public DesktopWindowBounds presentationBounds(UUID id) {
+                InventoryWindow window = find(id);
+                if (window == null) throw new IllegalArgumentException("Unknown workspace window: " + id);
+                DesktopWindowBounds bounds = new DesktopWindowBounds(window.x, window.y, window.width, window.height);
+                if(window.kind==WindowKind.JEI && !window.minimized) {
+                    var visual=visibleWindowBounds(window);
+                    bounds=new DesktopWindowBounds(visual.x(),visual.y(),visual.width(),visual.height());
+                }
+                if (window.kind == WindowKind.CREATIVE) {
+                    for (CreativeModeTab tab : creativeTabsForPage(window)) {
+                        CreativeTabRect rect = creativeTabRect(window, tab);
+                        if (rect != null) bounds = WorkspaceSurfaceGeometry.union(bounds,
+                            new DesktopWindowBounds(rect.x(), rect.y(), rect.width(), rect.height()));
+                    }
+                }
+                for (DesktopWindowRegion region : apiExternalRegions(window)) {
+                    if (region.width() > 0 && region.height() > 0 && (region.visual() || region.interactive())) {
+                        bounds = WorkspaceSurfaceGeometry.union(bounds,
+                            new DesktopWindowBounds(window.x + region.x(), window.y + region.y(), region.width(), region.height()));
+                    }
+                }
+                RecipeBookComponent recipeBook = visibleRecipeBook(window);
+                if (recipeBook != null) {
+                    updateRecipeBookPosition(window, recipeBook);
+                    bounds = WorkspaceSurfaceGeometry.union(bounds, new DesktopWindowBounds(
+                        window.recipeBookX - RECIPE_BOOK_TAB_LEFT_OVERHANG, window.recipeBookY,
+                        recipeBookBoundsWidth(), RECIPE_BOOK_HEIGHT));
+                    for (DesktopWindowBounds control : recipeBookControlBounds(window)) {
+                        bounds = WorkspaceSurfaceGeometry.union(bounds, control);
+                    }
+                    DesktopWindowBounds overlay = recipeBookOverlayBounds(window);
+                    if (overlay != null) bounds = WorkspaceSurfaceGeometry.union(bounds, overlay);
+                }
+                return bounds;
+            }
             private void sampleSlots(InventoryWindow window, long left, long top, int width, int height, Set<DesktopSlotHit> result) {
                 for (long y = top; y < top + height; y += SLOT_ITEM_SIZE / 2) {
                     for (long x = left; x < left + width; x += SLOT_ITEM_SIZE / 2) {
@@ -1166,10 +1328,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 SlotHit hit = window == null ? null : window.slotAt(InventoryDesktopScreen.this, x, y);
                 if (hit == null) return;
                 workspaceLastPointerWindow = window;
-                if (type == ClickType.QUICK_MOVE) quickMoveSlot(hit);
+                if (type == ClickType.QUICK_MOVE) {
+                    if (!workspaceDeleteCreativeHotbar(window, hit)) quickMoveSlot(hit);
+                }
                 else InventoryDesktopScreen.this.slotClicked(hit, button, type);
             }
             @Override public void dropCarried(int button) { dropCarriedOutside(button); }
+            @Override public ItemStack carriedStack() { return InventoryDesktopScreen.this.sharedCarried.copy(); }
             @Override public void cancelInput() { clearTransientInteractionState("external-presentation"); setApiKeyboardFocus(null); stopWorldAttack(); stopWorldUse(); }
             @Override public void transferPair(UUID first, UUID second) {
                 workspaceTransferFirst = first; workspaceTransferSecond = second;
@@ -1180,18 +1345,206 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 }
             }
             @Override public void protectWindow(UUID id) { workspaceProtectedWindows.add(id); }
+            @Override public boolean sortWindow(UUID id, boolean force) {
+                InventoryWindow window = find(id);
+                return window != null && sortIntoOpenWindows(window, force);
+            }
+            @Override public boolean canSortWindow(UUID id) {
+                InventoryWindow window = find(id);
+                return window != null && !window.minimized && sharedCarried.isEmpty()
+                    && InventoryDesktopScreen.this.canSortWindow(window, false);
+            }
             @Override public void forceInventoryHud(boolean enabled) {
-                boolean old = workspaceInventoryHud(); workspaceHud = enabled;
+                // A host switches its input mode before releasing presentation ownership.
+                // Remember the previous forced surface without querying that new input mode.
+                boolean old = workspaceHud || SaltsInventoryConfig.get().returnHotbarToInventory;
+                workspaceHud = enabled;
                 if (old != workspaceInventoryHud()) refreshInventoryWindowLayout(old);
+                if (enabled) compactWorkspaceInventoryWindows();
+                else restoreWorkspaceInventoryWindows();
             }
             @Override public long closeAllHoldMillis() { return SaltsInventoryConfig.get().eHoldCloseAllMs(); }
+            @Override public com.salts_inventory_update.api.client.desktop.DesktopContextualMenu contextualMenu(UUID id) {
+                InventoryWindow window = find(id);
+                return interactive(window) ? contextualSnapshot(window) : com.salts_inventory_update.api.client.desktop.DesktopContextualMenu.NONE;
+            }
+            @Override public boolean craftToWindow(UUID sourceId, UUID destinationId, ResourceLocation recipe) {
+                return contextualCraftToWindow(sourceId, destinationId, recipe, false);
+            }
+            @Override public boolean craftStackToWindow(UUID sourceId, UUID destinationId, ResourceLocation recipe) {
+                return contextualCraftToWindow(sourceId, destinationId, recipe, true);
+            }
+            private boolean contextualCraftToWindow(UUID sourceId, UUID destinationId, ResourceLocation recipe, boolean stack) {
+                InventoryWindow source = find(sourceId), destination = find(destinationId);
+                if (!interactive(source) || !interactive(destination) || source == destination
+                    || !ContextualRecipes.isCrafting(contextualNativeMenu(source))
+                    || destination.kind == WindowKind.CHARACTER || destination.kind == WindowKind.CREATIVE || !sharedCarried.isEmpty()) return false;
+                int targetSession = destination.kind == WindowKind.INVENTORY ? DesktopPackets.PLAYER_MENU_SESSION
+                    : destination.session == null ? Integer.MIN_VALUE : destination.session.sessionId();
+                var option = contextualSnapshot(source).recipes().stream().filter(entry -> entry.id().equals(recipe)).findFirst().orElse(null);
+                if (targetSession == Integer.MIN_VALUE || option == null || !option.craftable()
+                    || !stack && !contextualOutputFits(destination, option.output())) return false;
+                int sourceSession = source.kind == WindowKind.CHARACTER ? DesktopPackets.PLAYER_MENU_SESSION : source.session.sessionId();
+                return stack ? DesktopContainerClient.craftStackToWindow(sourceSession, targetSession, recipe)
+                    : DesktopContainerClient.craftToWindow(sourceSession, targetSession, recipe);
+            }
+            @Override public boolean prepareCookingRecipe(UUID sourceId, ResourceLocation recipe) {
+                InventoryWindow source = find(sourceId);
+                if (!interactive(source) || source.session == null || !(contextualNativeMenu(source) instanceof AbstractFurnaceMenu) || !sharedCarried.isEmpty()) return false;
+                var option = contextualSnapshot(source).recipes().stream().filter(entry -> entry.id().equals(recipe)).findFirst().orElse(null);
+                return option != null && option.craftable() && DesktopContainerClient.prepareCookingRecipe(source.session.sessionId(), recipe);
+            }
+            @Override public boolean beginRecipeHover(UUID sourceId) {
+                InventoryWindow source = find(sourceId);
+                AbstractContainerMenu menu = source == null ? null : contextualNativeMenu(source);
+                if (!interactive(source) || !(ContextualRecipes.isCrafting(menu) || menu instanceof AbstractFurnaceMenu)
+                    || !sharedCarried.isEmpty()) return false;
+                int session = source.kind == WindowKind.CHARACTER ? DesktopPackets.PLAYER_MENU_SESSION
+                    : source.session == null ? Integer.MIN_VALUE : source.session.sessionId();
+                if (session == Integer.MIN_VALUE) return false;
+                if (contextualHoverSession != Integer.MIN_VALUE) DesktopContainerClient.endRecipeHover(contextualHoverSession);
+                contextualHoverSource = null; contextualHoverSession = Integer.MIN_VALUE;
+                if (!DesktopContainerClient.beginRecipeHover(session)) return false;
+                contextualHoverSource = sourceId; contextualHoverSession = session;
+                return true;
+            }
+            @Override public boolean updateRecipeHover(UUID sourceId, ResourceLocation recipe) {
+                InventoryWindow source = find(sourceId);
+                return sourceId != null && sourceId.equals(contextualHoverSource) && interactive(source)
+                    && DesktopContainerClient.updateRecipeHover(contextualHoverSession, recipe);
+            }
+            @Override public void endRecipeHover(UUID sourceId) {
+                if (sourceId == null || !sourceId.equals(contextualHoverSource)) return;
+                int session = contextualHoverSession;
+                contextualHoverSource = null; contextualHoverSession = Integer.MIN_VALUE;
+                DesktopContainerClient.endRecipeHover(session);
+            }
+            @Override public List<com.salts_inventory_update.api.client.desktop.DesktopRecipeGhost> recipeHoverGhosts(UUID sourceId) {
+                return sourceId != null && sourceId.equals(contextualHoverSource)
+                    ? DesktopContainerClient.recipeHoverGhosts(contextualHoverSession) : List.of();
+            }
+            @Override public boolean recipeHoverRejected(UUID sourceId) {
+                return sourceId != null && sourceId.equals(contextualHoverSource)
+                    && DesktopContainerClient.recipeHoverRejected(contextualHoverSession);
+            }
+            @Override public void setContextualRecipePresentation(boolean enabled) {
+                contextualRecipePresentation = enabled;
+                if (!enabled) clearContextualHover();
+            }
+            @Override public com.salts_inventory_update.api.client.desktop.DesktopContextualBookHint contextualBookHint(UUID id) {
+                InventoryWindow window = find(id);
+                return window == null || window.apiDisposed || window.minimized || window.ghosted ? null : contextualHint(window);
+            }
+            @Override public boolean selectContextualTab(UUID id, ResourceLocation tabId) {
+                InventoryWindow window = find(id);
+                if (!interactive(window) || window.kind != WindowKind.CREATIVE || tabId == null) return false;
+                for (CreativeModeTab tab : creativeTabs()) {
+                    if (tabId.equals(BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab))) {
+                        selectCreativeTab(window, tab);
+                        return true;
+                    }
+                }
+                return false;
+            }
             @Override public void closeClosableWindows() {
                 for (InventoryWindow window : List.copyOf(InventoryDesktopScreen.this.windows)) {
                     if (!workspaceProtectedWindows.contains(window.apiInstanceId) && apiOptions(window).closable()) closeWindow(window, "external-close-all", true);
                 }
+                DesktopContainerClient.closeSession(DesktopPackets.PLAYER_MENU_SESSION);
                 cancelInput();
             }
         };
+    }
+
+    private com.salts_inventory_update.api.client.desktop.DesktopContextualMenu contextualSnapshot(InventoryWindow window) {
+        if (this.minecraft == null || this.minecraft.player == null || this.minecraft.level == null) return com.salts_inventory_update.api.client.desktop.DesktopContextualMenu.NONE;
+        if (window.kind == WindowKind.CREATIVE) {
+            CreativeModeTab selected = selectedCreativeTab(window);
+            var tabs = creativeTabs().stream().map(tab -> new com.salts_inventory_update.api.client.desktop.DesktopContextualMenu.Tab(
+                BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab), tab.getDisplayName().getString(), tab.getIconItem(), tab == selected)).toList();
+            return new com.salts_inventory_update.api.client.desktop.DesktopContextualMenu(
+                com.salts_inventory_update.api.client.desktop.DesktopContextualMenu.Kind.CREATIVE, List.of(), List.of(), tabs);
+        }
+        return ContextualRecipes.snapshot(this.minecraft.player, this.minecraft.player.getRecipeBook(), contextualNativeMenu(window), contextualAvailableSlots());
+    }
+
+    private AbstractContainerMenu contextualNativeMenu(InventoryWindow window) {
+        return window.kind == WindowKind.CHARACTER ? this.playerMenu() : window.containerMenu();
+    }
+
+    private void clearContextualHover() {
+        int session = this.contextualHoverSession;
+        this.contextualHoverSource = null;
+        this.contextualHoverSession = Integer.MIN_VALUE;
+        if (session != Integer.MIN_VALUE) DesktopContainerClient.endRecipeHover(session);
+    }
+
+    private List<Slot> contextualAvailableSlots() {
+        var candidates=new ArrayList<com.salts_inventory_update.internal.desktop.ContextualRecipeSources.OwnedSlot>();
+        AbstractContainerMenu playerMenu=this.minecraft.player.inventoryMenu;
+        for(Slot slot:DesktopMenuBindings.all(playerMenu)) if(com.salts_inventory_update.internal.desktop.ContextualRecipeSources.eligible(this.minecraft.player,slot,false))
+            candidates.add(new com.salts_inventory_update.internal.desktop.ContextualRecipeSources.OwnedSlot(playerMenu,slot));
+        for(InventoryWindow window:this.windows) if(window.session!=null&&!window.apiDisposed&&!window.companionHidden&&!window.persistentHidden&&!window.ghosted){
+            AbstractContainerMenu menu=window.session.menu();
+            for(Slot slot:DesktopMenuBindings.all(menu))if(com.salts_inventory_update.internal.desktop.ContextualRecipeSources.eligible(this.minecraft.player,slot,false))
+                candidates.add(new com.salts_inventory_update.internal.desktop.ContextualRecipeSources.OwnedSlot(menu,slot));
+        }
+        return com.salts_inventory_update.internal.desktop.ContextualRecipeSources.uniquePhysical(candidates,List.of());
+    }
+
+    private static boolean contextualCookingFits(AbstractFurnaceMenu furnace, List<ItemStack> alternatives, ItemStack output, boolean hoverActive) {
+        ItemStack input = furnace.getSlot(0).getItem(), currentOutput = furnace.getSlot(2).getItem();
+        return (hoverActive || input.isEmpty() || alternatives.stream().anyMatch(option -> ItemStack.isSameItemSameTags(input, option)))
+            && (hoverActive || input.getCount() < furnace.getSlot(0).getMaxStackSize(input.isEmpty() && !alternatives.isEmpty() ? alternatives.get(0) : input))
+            && (currentOutput.isEmpty() || ItemStack.isSameItemSameTags(currentOutput, output))
+            && currentOutput.getCount() + output.getCount() <= Math.min(output.getMaxStackSize(), furnace.getSlot(2).getMaxStackSize(output));
+    }
+
+    private com.salts_inventory_update.api.client.desktop.DesktopContextualBookHint contextualHint(InventoryWindow window) {
+        AbstractContainerMenu menu = contextualNativeMenu(window);
+        DesktopWindowBounds activation;
+        var kind = com.salts_inventory_update.api.client.desktop.DesktopContextualMenu.Kind.CRAFTING;
+        if (window.kind == WindowKind.CHARACTER && ContextualRecipes.isCrafting(menu)) activation = new DesktopWindowBounds(
+            characterContentX(window) + CHARACTER_CRAFT_X - 2, characterContentY(window) + CHARACTER_CRAFT_Y - 2, 40, 40);
+        else if (menu instanceof CraftingMenu) activation = new DesktopWindowBounds(craftingTableContentX(window) - 2, craftingTableContentY(window) - 2, 58, 58);
+        else if (menu instanceof AbstractFurnaceMenu) {
+            kind = com.salts_inventory_update.api.client.desktop.DesktopContextualMenu.Kind.COOKING;
+            activation = new DesktopWindowBounds(furnaceContentX(window) - 2, furnaceContentY(window) - 2, 22, 22);
+        } else if (window.kind == WindowKind.CREATIVE) {
+            kind = com.salts_inventory_update.api.client.desktop.DesktopContextualMenu.Kind.CREATIVE;
+            activation = new DesktopWindowBounds(window.x, window.y, window.width, window.height);
+        } else return null;
+        return new com.salts_inventory_update.api.client.desktop.DesktopContextualBookHint(kind, activation,
+            new DesktopWindowBounds(window.x + window.width - 23, window.y + TOP_BAR_HEIGHT + 2, 20, 18));
+    }
+
+    private static boolean contextualSameAlternatives(List<ItemStack> first, List<ItemStack> second) {
+        return first.size() == second.size() && first.stream().allMatch(stack -> second.stream().anyMatch(other -> ItemStack.isSameItemSameTags(stack, other)));
+    }
+
+    private boolean contextualOutputFits(InventoryWindow destination, ItemStack output) {
+        List<Slot> slots;
+        if (destination.kind == WindowKind.INVENTORY) slots = this.minecraft.player.inventoryMenu.slots.stream().filter(slot ->
+            slot.container == this.minecraft.player.getInventory() && slot.getContainerSlot() >= 0 && slot.getContainerSlot() < 36
+                || InventoryExpansion.isExtraSlot(slot)).toList();
+        else slots = destination.session == null ? List.of() : destination.session.containerSlots();
+        long capacity = 0;
+        for (Slot slot : slots) {
+            if (!slot.isActive() || false || !slot.mayPlace(output) || DesktopItemSourceLocks.isSlotLocked(this.minecraft.player, slot)) continue;
+            ItemStack present = slot.getItem();
+            if (!present.isEmpty() && !ItemStack.isSameItemSameTags(present, output)) continue;
+            capacity += Math.max(0, Math.min(output.getMaxStackSize(), slot.getMaxStackSize(output)) - present.getCount());
+            if (capacity >= output.getCount()) return true;
+        }
+        return false;
+    }
+
+    private static com.salts_inventory_update.api.client.desktop.DesktopContextualMenu.Ingredient contextualIngredient(
+        List<ItemStack> alternatives, int required, List<ItemStack> available) {
+        int count = 0;
+        for (ItemStack stack : available) if (!stack.isEmpty() && !stack.isEmpty()
+            && alternatives.stream().anyMatch(option -> option.is(stack.getItem()))) count += stack.getCount();
+        return new com.salts_inventory_update.api.client.desktop.DesktopContextualMenu.Ingredient(alternatives, required, count);
     }
 
     public static InventoryDesktopScreen getOrCreate(Minecraft minecraft) {
@@ -4444,7 +4797,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             targetSessionId
         );
         if (!DesktopContainerClient.quickMoveSlot(hit.sessionId(), hit.slotId(), targetKind, targetSessionId)
-            && !this.externallyPresented() && hit.sessionId() == DesktopPackets.PLAYER_MENU_SESSION && !this.externallyPresented()) {
+            && !this.externallyPresented() && hit.sessionId() == DesktopPackets.PLAYER_MENU_SESSION) {
             slotClicked(hit.menu(), hit.slotId(), 0, ClickType.QUICK_MOVE, this.minecraft);
             this.setSharedCarried(hit.menu().getCarried());
         }
@@ -4460,6 +4813,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 .filter(w -> w.apiInstanceId.equals(other)).findFirst().orElse(null);
             if (destination == null || destination.kind == WindowKind.CLIENT_API || destination.kind == WindowKind.INSTRUCTIONS
                 || destination.kind == WindowKind.JEI || destination.kind == WindowKind.RECIPE_BROWSER_VIEW) return new QuickMoveTarget(-1, 0);
+            if (source.kind == WindowKind.INVENTORY && hit.sessionId() == DesktopPackets.PLAYER_MENU_SESSION
+                && (hit.slotId() >= 9 && hit.slotId() <= 44 || hit.slot() instanceof com.salts_inventory_update.inventory.InventoryExpansionSlot)
+                && (destination.kind == WindowKind.CHARACTER || destination.containerMenu() instanceof CraftingMenu))
+                return new QuickMoveTarget(DesktopPackets.QUICK_TARGET_PLAYER_STORAGE, DesktopPackets.PLAYER_MENU_SESSION);
             if (destination.session != null) return destination.session.sessionId() == hit.sessionId()
                 ? new QuickMoveTarget(-1, 0) : new QuickMoveTarget(DesktopPackets.QUICK_TARGET_SESSION, destination.session.sessionId());
             if (destination.kind == WindowKind.CHARACTER)
@@ -6302,6 +6659,32 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.clampWindowIntoDesktop(window);
     }
 
+    private void compactWorkspaceInventoryWindows() {
+        for (InventoryWindow window : this.windows) this.compactWorkspaceInventoryWindow(window);
+    }
+
+    private void compactWorkspaceInventoryWindow(InventoryWindow window) {
+        if (!this.workspaceHud || !this.externallyPresented() || window.kind != WindowKind.INVENTORY) return;
+        if (window.workspaceKeyboardHeight < 0) {
+            window.workspaceKeyboardHeight = window.height
+                - (SaltsInventoryConfig.get().returnHotbarToInventory ? 0 : INVENTORY_HOTBAR_RESERVED_HEIGHT);
+        }
+        SlotGridLayout layout = this.storageLayout(window, this.inventoryVirtualSlotCount());
+        window.height = WorkspaceSurfaceGeometry.compactInventoryHeight(this.inventoryVirtualSlotCount(),
+            layout.columns(), INVENTORY_MAX_AUTO_VISIBLE_ROWS, TOP_BAR_HEIGHT, WINDOW_CONTENT_PADDING,
+            SLOT_SIZE, inventoryHotbarReservedHeight(window));
+        this.clampInventoryWindowSize(window);
+    }
+
+    private void restoreWorkspaceInventoryWindows() {
+        for (InventoryWindow window : this.windows) {
+            if (window.workspaceKeyboardHeight < 0) continue;
+            window.height = window.workspaceKeyboardHeight;
+            window.workspaceKeyboardHeight = -1;
+            this.clampInventoryWindowSize(window);
+        }
+    }
+
     private SlotGridLayout storageLayout(InventoryWindow window, int slotCount) {
         int reservedHeight = inventoryHotbarReservedHeight(window);
         int visibleRows = Math.max(1, (window.height - TOP_BAR_HEIGHT - WINDOW_CONTENT_PADDING * 2 - reservedHeight) / SLOT_SIZE);
@@ -6737,10 +7120,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean canSortWindow(InventoryWindow window) {
+        return this.canSortWindow(window, true);
+    }
+
+    private boolean canSortWindow(InventoryWindow window, boolean synchronizeCreativeState) {
         if (!DesktopContainerClient.canSortWindows() || window.ghosted || window.persistentHidden) return false;
         if (window.kind == WindowKind.INVENTORY) return true;
         if (window.kind == WindowKind.CREATIVE) {
-            CreativeModeTab tab = this.selectedCreativeTab(window);
+            CreativeModeTab tab = this.selectedCreativeTab(window, synchronizeCreativeState);
             return tab != null && this.isCreativeInventoryTab(tab);
         }
         AbstractContainerMenu menu = window.containerMenu();
@@ -6756,7 +7143,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void sortIntoOpenWindows(InventoryWindow source) {
-        if (!this.canSortWindow(source) || source.minimized || !this.sharedCarried.isEmpty()) return;
+        this.sortIntoOpenWindows(source, this.isShiftHeld());
+    }
+
+    private boolean sortIntoOpenWindows(InventoryWindow source, boolean force) {
+        if (!this.canSortWindow(source) || source.minimized || !this.sharedCarried.isEmpty()) return false;
         int sourceId = source.kind == WindowKind.INVENTORY || source.kind == WindowKind.CREATIVE
             ? DesktopPackets.PLAYER_MENU_SESSION : source.session.sessionId();
         List<Integer> destinations = new ArrayList<>();
@@ -6771,7 +7162,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         destinations.sort(Integer::compareTo);
         InventoryWindow focused = this.focusedWindow();
         int focusedId = focused != null && focused.session != null ? focused.session.sessionId() : -1;
-        DesktopContainerClient.sortWindows(sourceId, destinations, focusedId, this.isShiftHeld());
+        return DesktopContainerClient.sortWindows(sourceId, destinations, focusedId, force);
     }
 
     private List<WindowControl> fullTitleControls() {
@@ -7016,7 +7407,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return;
         }
 
-        DesktopWindowStateStore.WindowState state = new DesktopWindowStateStore.WindowState(window.x, window.y, window.width, window.height, window.locked, window.pinMode);
+        int rememberedHeight = window.workspaceKeyboardHeight >= 0
+            ? window.workspaceKeyboardHeight
+            : window.height;
+        DesktopWindowStateStore.WindowState state = new DesktopWindowStateStore.WindowState(window.x, window.y, window.width, rememberedHeight, window.locked, window.pinMode);
         state.localState(this.apiSaveLocalState(window));
         DesktopWindowStateStore.save(
             this.minecraft == null ? Minecraft.getInstance() : this.minecraft,
@@ -7995,6 +8389,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void hideWindowPersistently(InventoryWindow window, String reason) {
         if (!this.apiOptions(window).closable()) return;
+        if (window.kind == WindowKind.CHARACTER) DesktopContainerClient.closeSession(DesktopPackets.PLAYER_MENU_SESSION);
         if (window == this.apiKeyboardFocusWindow) this.setApiKeyboardFocus(null);
         this.rememberCreativeWindow(window);
         this.saveWindowState(window, false);
@@ -8092,6 +8487,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void clearForOwnerChange(String reason) {
+        this.clearContextualHover();
         this.setApiKeyboardFocus(null);
         this.apiLastModalWindow = null;
         DesktopDebug.log("client clear desktop={} reason={} windows={} sessions={}", this.desktopId, reason, this.windows.size(), this.sessions.size());
@@ -8345,6 +8741,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             window.session.close();
         } else if (window.legacyMenu != null) {
             this.closeLegacyContainer(window);
+        } else if (window.kind == WindowKind.CHARACTER) {
+            DesktopContainerClient.closeSession(DesktopPackets.PLAYER_MENU_SESSION);
         }
 
         this.closeRecipeBrowserView(window);
@@ -8356,6 +8754,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void demoteGhostWindow(InventoryWindow window, boolean notifyServer) {
+        if (notifyServer && window.kind == WindowKind.CHARACTER) DesktopContainerClient.closeSession(DesktopPackets.PLAYER_MENU_SESSION);
         if (window == this.apiKeyboardFocusWindow) this.setApiKeyboardFocus(null);
         this.cancelApiPointerCapture(window);
         window.ghosted = true;
@@ -8683,9 +9082,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 if (ghosted) {
                     this.renderGhostBackdrop(graphics, window, visibleHeight);
                 } else {
-                    renderNineSlice(graphics, WINDOW_TEXTURE, window.x, window.y, window.width, visibleHeight);
+                    this.renderSaltWindowFrame(graphics, window.x, window.y, window.width, visibleHeight, titleLayout.displayTitle());
                 }
-                graphics.text(this.font, titleLayout.displayTitle(), window.x + TITLE_LEFT_PADDING, window.y + 5, this.uiColor(COLOR_WINDOW_TITLE), false);
+                if (ghosted) graphics.text(this.font, titleLayout.displayTitle(), window.x + TITLE_LEFT_PADDING,
+                    window.y + 5, this.uiColor(COLOR_WINDOW_TITLE), false);
                 if (this.shouldRenderJeiIngredientTabs(window, ghosted)) {
                     this.renderJeiDefaultTabButton(graphics, window, mouseX, mouseY);
                 }
@@ -8796,6 +9196,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable RecipeBookComponent visibleRecipeBook(InventoryWindow window) {
+        if (this.contextualRecipePresentation && this.externallyPresented()) return null;
         if (window.persistentHidden || window.companionHidden || window.minimized || window.ghosted || window.recipeBook == null || !window.recipeBook.isVisible()) {
             return null;
         }
@@ -8878,6 +9279,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private RecipeBookPosition recipeBookPosition(InventoryWindow window) {
+        if (this.externallyPresented()) {
+            // The external presentation fits the combined surface. Keep its attached guide on
+            // a stable side rather than re-positioning it against the untransformed desktop.
+            return new RecipeBookPosition(window.x - RECIPE_BOOK_WIDTH - RECIPE_BOOK_GAP, window.y);
+        }
         List<RecipeBookPosition> candidates = List.of(
             new RecipeBookPosition(window.x - RECIPE_BOOK_WIDTH - RECIPE_BOOK_GAP, window.y),
             new RecipeBookPosition(window.x + window.width + RECIPE_BOOK_GAP + RECIPE_BOOK_TAB_LEFT_OVERHANG, window.y),
@@ -8918,18 +9324,434 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable InventoryWindow recipeBookWindowAt(double mouseX, double mouseY) {
         for (int i = this.windows.size() - 1; i >= 0; i--) {
             InventoryWindow window = this.windows.get(i);
+            if (this.workspacePointerWindow != null && window != this.workspacePointerWindow) continue;
+            if (window.persistentHidden) {
+                continue;
+            }
             RecipeBookComponent recipeBook = this.visibleRecipeBook(window);
             if (recipeBook == null) {
                 continue;
             }
 
             this.updateRecipeBookPosition(window, recipeBook);
-            if (contains(mouseX, mouseY, window.recipeBookX - RECIPE_BOOK_TAB_LEFT_OVERHANG, window.recipeBookY, recipeBookBoundsWidth(), RECIPE_BOOK_HEIGHT)
-                || recipeBook.isMouseOver(mouseX, mouseY)) {
+            if (this.attachedRecipeBookContains(window, mouseX, mouseY)) {
                 return window;
             }
         }
         return null;
+    }
+
+    private boolean attachedRecipeBookContains(InventoryWindow window, double x, double y) {
+        RecipeBookComponent recipeBook = this.visibleRecipeBook(window);
+        if (recipeBook == null) return false;
+        this.updateRecipeBookPosition(window, recipeBook);
+        if (contains(x, y, window.recipeBookX - RECIPE_BOOK_TAB_LEFT_OVERHANG, window.recipeBookY,
+                recipeBookBoundsWidth(), RECIPE_BOOK_HEIGHT) || recipeBook.isMouseOver(x, y)) return true;
+        DesktopWindowBounds overlay = this.recipeBookOverlayBounds(window);
+        if (overlay != null && contains(x, y, overlay.x(), overlay.y(), overlay.width(), overlay.height())) return true;
+        return this.recipeBookControlBounds(window).stream()
+            .anyMatch(bounds -> contains(x, y, bounds.x(), bounds.y(), bounds.width(), bounds.height()));
+    }
+
+    private @Nullable DesktopWindowBounds recipeBookOverlayBounds(InventoryWindow window) {
+        RecipeBookComponent recipeBook = this.visibleRecipeBook(window);
+        if (recipeBook == null) return null;
+        RecipeBookComponentAccessor book = (RecipeBookComponentAccessor) recipeBook;
+        var overlay = ((RecipeBookPageAccessor) book.salts_inventory_update$getRecipeBookPage()).salts_inventory_update$getOverlay();
+        if (!overlay.isVisible()) return null;
+        OverlayRecipeComponentAccessor accessor = (OverlayRecipeComponentAccessor) overlay;
+        int count = accessor.salts_inventory_update$getRecipeButtons().size();
+        // Native OverlayRecipeComponent draws 25px cells with an 8px total border;
+        // its column cap changes from four to five when there are more than sixteen choices.
+        int columns = count <= 16 ? 4 : 5;
+        return new DesktopWindowBounds(accessor.salts_inventory_update$getX(), accessor.salts_inventory_update$getY(),
+            Math.min(count, columns) * 25 + 8, rowsForSlots(count, columns) * 25 + 8);
+    }
+
+    private List<DesktopControllerTarget> workspaceControllerTargets(InventoryWindow window, List<DesktopSlotHit> slots) {
+        List<DesktopControllerTarget> result = new ArrayList<>();
+        int minX = slots.stream().mapToInt(DesktopSlotHit::x).min().orElse(window.x);
+        int minY = slots.stream().mapToInt(DesktopSlotHit::y).min().orElse(window.y);
+        AbstractContainerMenu menu = window.containerMenu();
+        if (menu == null) menu = this.playerMenu();
+        for (DesktopSlotHit slot : slots) {
+            String group = "slots";
+            WorkspaceControllerSlots.Cell cell = null;
+            if (window.kind == WindowKind.INVENTORY || window.kind == WindowKind.CREATIVE) {
+                group = slot.menuSlotId() >= 36 && slot.menuSlotId() <= 44 ? "hotbar" : "inventory-grid";
+            } else if (window.kind == WindowKind.CHARACTER) {
+                if (slot.menuSlotId() >= 5 && slot.menuSlotId() <= 8) {
+                    group = "armor";
+                    cell = new WorkspaceControllerSlots.Cell(slot.menuSlotId() - 5, 0);
+                } else if (slot.menuSlotId() == OFFHAND_MENU_SLOT_FALLBACK) {
+                    group = "offhand";
+                    cell = new WorkspaceControllerSlots.Cell(0, 0);
+                } else cell = WorkspaceControllerSlots.authored("InventoryMenu", slot.menuSlotId());
+            } else if (menu != null && !(window.apiDefinition instanceof DesktopWindowPresentation)) {
+                cell = WorkspaceControllerSlots.authored(menu.getClass().getSimpleName(), slot.menuSlotId());
+            }
+            int row = cell == null ? Math.floorDiv(slot.y() - minY + 8, SLOT_SIZE) : cell.row();
+            int column = cell == null ? Math.floorDiv(slot.x() - minX + 8, SLOT_SIZE) : cell.column();
+            result.add(new DesktopControllerTarget(group, row, column, slot.x(), slot.y(), SLOT_ITEM_SIZE, SLOT_ITEM_SIZE));
+        }
+        if (window.kind == WindowKind.CREATIVE) {
+            for (CreativeModeTab tab : this.creativeTabsForPage(window)) {
+                CreativeTabRect rect = this.creativeTabRect(window, tab);
+                if (rect != null) result.add(new DesktopControllerTarget(rect.topRow() ? "creative-top-tabs" : "creative-bottom-tabs",
+                    0, rect.column(), rect.x(), rect.y(), rect.width(), rect.height()));
+            }
+            List<ItemStack> items = this.creativeVisibleItems(window);
+            int first = window.creativeScrollRow * CREATIVE_GRID_COLUMNS;
+            for (int i = 0; i < CREATIVE_GRID_ROWS * CREATIVE_GRID_COLUMNS && first + i < items.size(); i++) {
+                result.add(new DesktopControllerTarget("creative-catalog", i / CREATIVE_GRID_COLUMNS, i % CREATIVE_GRID_COLUMNS,
+                    creativePanelX(window) + CREATIVE_GRID_X + i % CREATIVE_GRID_COLUMNS * SLOT_SIZE,
+                    creativePanelY(window) + CREATIVE_GRID_Y + i / CREATIVE_GRID_COLUMNS * SLOT_SIZE, SLOT_ITEM_SIZE, SLOT_ITEM_SIZE));
+            }
+        }
+        for (DesktopWindowBounds control : this.workspaceControlBounds(window)) {
+            String group = "controls";
+            // API controls and virtual grids may use any spacing. Quantizing them to
+            // 20px cells merges adjacent 18px entries and makes D-pad movement skip items.
+            int row = window.apiDefinition != null || window.kind == WindowKind.JEI ? control.y() - window.y + control.height() / 2
+                : Math.floorDiv(control.y() - window.y, 20);
+            int column = window.apiDefinition != null || window.kind == WindowKind.JEI ? control.x() - window.x + control.width() / 2
+                : Math.floorDiv(control.x() - window.x, 20);
+            double x = control.x() + control.width() / 2.0;
+            double y = control.y() + control.height() / 2.0;
+            if (window.kind == WindowKind.JEI && this.jeiGridContains(window,x,y)) {
+                group = "browser-catalog";
+                row = (control.y()-this.jeiGridY(window))/SLOT_SIZE;
+                column = (control.x()-this.jeiGridX(window))/SLOT_SIZE;
+            } else if (menu instanceof StonecutterMenu && this.stonecutterRecipeGridContains(window, x, y)) {
+                group = "stonecutter-recipes";
+                row = (control.y() - stonecutterContentY(window) - STONECUTTER_RECIPE_GRID_Y) / STONECUTTER_RECIPE_BUTTON_HEIGHT;
+                column = (control.x() - stonecutterContentX(window) - STONECUTTER_RECIPE_GRID_X) / STONECUTTER_RECIPE_BUTTON_WIDTH;
+            } else if (menu instanceof LoomMenu && this.loomPatternGridContains(window, x, y)) {
+                group = "loom-patterns";
+                row = (control.y() - loomContentY(window) - LOOM_PATTERN_GRID_Y) / LOOM_PATTERN_BUTTON_SIZE;
+                column = (control.x() - loomContentX(window) - LOOM_PATTERN_GRID_X) / LOOM_PATTERN_BUTTON_SIZE;
+            } else if (menu instanceof MerchantMenu && this.merchantTradeRowsContain(window, x, y)) {
+                group = "merchant-trades";
+                row = (control.y() - merchantContentY(window) - MERCHANT_TRADE_LIST_Y) / MERCHANT_TRADE_ROW_HEIGHT;
+                column = 0;
+            } else if (menu instanceof EnchantmentMenu && this.enchantmentButtonAt(window, x, y) >= 0) {
+                group = "enchantment-options";
+                row = this.enchantmentButtonAt(window, x, y);
+                column = 0;
+            }
+            result.add(new DesktopControllerTarget(group, row, column, control.x(), control.y(), control.width(), control.height()));
+        }
+        return List.copyOf(result);
+    }
+
+    /** Inspects the same native list geometry as controller scrolling without normalizing its state. */
+    private boolean workspaceControllerScrollAvailable(InventoryWindow window, double x, double y) {
+        if (!Double.isFinite(x) || !Double.isFinite(y)) return false;
+        if (this.apiControllerScrollRegions(window).stream().anyMatch(region -> region.contains(x,y)
+                && (region.canScrollUp() || region.canScrollDown()))) return true;
+        if (window.kind == WindowKind.CREATIVE && this.creativeGridContains(window, x, y, false)) {
+            CreativeModeTab selected = this.selectedCreativeTab(window, false);
+            CreativeGridLayout layout = selected != null && this.isCreativeInventoryTab(selected)
+                ? this.creativeInventoryGridLayout()
+                : this.creativeGridLayout(this.creativeVisibleItems(window, false).size());
+            return layout.maxScrollRow() > 0;
+        }
+        AbstractContainerMenu menu = window.containerMenu();
+        if (menu instanceof MerchantMenu merchant && this.merchantTradeListContains(window, x, y))
+            return merchantMaxScroll(merchant.getOffers()) > 0;
+        if (menu instanceof StonecutterMenu stonecutter && this.stonecutterRecipeGridContains(window, x, y))
+            return stonecutterMaxScroll(stonecutter) > 0;
+        if (menu instanceof LoomMenu loom && this.shouldDisplayLoomPatterns(loom) && this.loomPatternGridContains(window, x, y))
+            return loomMaxScroll(loom) > 0;
+        if (this.isResizableStorageWindow(window) && !(window.apiDefinition instanceof DesktopWindowPresentation)) {
+            SlotGridLayout layout = this.storageLayout(window, this.storageSlotCount(window));
+            return layout.maxScrollRow() > 0 && contains(x, y, window.contentX() - 1, window.contentY() - 1,
+                layout.columns() * SLOT_SIZE, layout.visibleRows() * SLOT_SIZE);
+        }
+        // A custom mouseScrolled callback is an action, not a capability query.
+        return window.kind == WindowKind.JEI && this.jeiGridContains(window, x, y)
+            && this.jeiGridLayout(this.jeiVisibleEntries(window, false).size()).maxScrollRow() > 0;
+    }
+
+    /** A row step affects only the list under the pointer, never the player's selected hotbar slot. */
+    private boolean workspaceControllerScroll(InventoryWindow window, double x, double y, int direction, boolean edgeOnly) {
+        if (!Double.isFinite(x) || !Double.isFinite(y) || direction == 0) return false;
+        direction = Integer.signum(direction);
+        for (var region : this.apiControllerScrollRegions(window)) {
+            if (region.accepts(x, y, direction, edgeOnly)) return this.apiMouseScrolled(window, x, y, 0, -direction*region.nativeScrollStep());
+        }
+        if (window.kind == WindowKind.CREATIVE && this.creativeGridContains(window, x, y)) {
+            CreativeModeTab selected = this.selectedCreativeTab(window);
+            int top = creativePanelY(window) + (selected != null && this.isCreativeInventoryTab(selected) ? CREATIVE_INVENTORY_GRID_Y : CREATIVE_GRID_Y);
+            int row = Math.floorDiv((int) y - top + 1, SLOT_SIZE);
+            if (edgeOnly && !workspaceScrollEdge(row, CREATIVE_GRID_ROWS, direction)) return false;
+            int old = window.creativeScrollRow;
+            window.creativeScrollRow = clamp(old + direction, 0, this.creativeScrollLayout(window).maxScrollRow());
+            this.rememberCreativeWindow(window);
+            return old != window.creativeScrollRow;
+        }
+        if (window.containerMenu() instanceof MerchantMenu merchant && this.merchantTradeListContains(window, x, y)) {
+            int row = Math.floorDiv((int) y - merchantContentY(window) - MERCHANT_TRADE_LIST_Y, MERCHANT_TRADE_ROW_HEIGHT);
+            if (edgeOnly && !workspaceScrollEdge(row, MERCHANT_VISIBLE_TRADES, direction)) return false;
+            int old = window.merchantScroll;
+            window.merchantScroll = clamp(old + direction, 0, merchantMaxScroll(merchant.getOffers()));
+            return old != window.merchantScroll;
+        }
+        if (window.containerMenu() instanceof StonecutterMenu stonecutter && this.stonecutterRecipeGridContains(window, x, y)) {
+            int row = Math.floorDiv((int) y - stonecutterContentY(window) - STONECUTTER_RECIPE_GRID_Y, STONECUTTER_RECIPE_BUTTON_HEIGHT);
+            if (edgeOnly && !workspaceScrollEdge(row, STONECUTTER_RECIPE_ROWS, direction)) return false;
+            int old = window.stonecutterScroll;
+            window.stonecutterScroll = clamp(old + direction, 0, stonecutterMaxScroll(stonecutter));
+            return old != window.stonecutterScroll;
+        }
+        if (window.containerMenu() instanceof LoomMenu loom && this.shouldDisplayLoomPatterns(loom) && this.loomPatternGridContains(window, x, y)) {
+            int row = Math.floorDiv((int) y - loomContentY(window) - LOOM_PATTERN_GRID_Y, LOOM_PATTERN_BUTTON_SIZE);
+            if (edgeOnly && !workspaceScrollEdge(row, LOOM_PATTERN_ROWS, direction)) return false;
+            int old = window.loomScroll;
+            window.loomScroll = clamp(old + direction, 0, loomMaxScroll(loom));
+            return old != window.loomScroll;
+        }
+        if (this.isResizableStorageWindow(window) && !(window.apiDefinition instanceof DesktopWindowPresentation)) {
+            SlotGridLayout layout = this.storageLayout(window, this.storageSlotCount(window));
+            if (!contains(x, y, window.contentX() - 1, window.contentY() - 1,
+                    layout.columns() * SLOT_SIZE, layout.visibleRows() * SLOT_SIZE)) return false;
+            int row = Math.floorDiv((int) y - window.contentY() + 1, SLOT_SIZE);
+            if (edgeOnly && !workspaceScrollEdge(row, layout.visibleRows(), direction)) return false;
+            int old = window.scrollRow;
+            window.scrollRow = clamp(old + direction, 0, layout.maxScrollRow());
+            return old != window.scrollRow;
+        }
+        if (window.kind == WindowKind.JEI && this.jeiGridContains(window,x,y)) {
+            int row=Math.floorDiv((int)y-this.jeiGridY(window)+1,SLOT_SIZE);
+            if(edgeOnly && !workspaceScrollEdge(row,JEI_GRID_ROWS,direction)) return false;
+            return this.scrollJeiWindow(window,-direction);
+        }
+        // API-supplied scroll panels retain their native handlers, but are still rate-limited to one row.
+        if (!edgeOnly && this.apiMouseScrolled(window, x, y, 0, -direction)) return true;
+        if (!edgeOnly && window.kind == WindowKind.JEI && this.jeiGridContains(window, x, y)) return this.scrollJeiWindow(window, -direction);
+        return false;
+    }
+
+    private static boolean workspaceScrollEdge(int row, int rows, int direction) {
+        return direction < 0 ? row == 0 : row == rows - 1;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private List<com.salts_inventory_update.api.client.desktop.DesktopScrollRegion> apiControllerScrollRegions(InventoryWindow window) {
+        if (window.apiDefinition == null) return List.of();
+        try {
+            return List.copyOf(((DesktopWindowDefinition)window.apiDefinition).controllerScrollRegions(
+                this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE)));
+        } catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                window.debugName(), "controllerScrollRegions", "Window navigation callback failed", failure);
+            return List.of();
+        }
+    }
+
+    private void workspaceCreativeHotbar(ItemStack source, boolean fullStack) {
+        if (this.minecraft == null || this.minecraft.player == null || this.minecraft.gameMode == null
+                || !this.minecraft.player.isCreative() || !this.isCreativeCatalogStackActionable(source)) return;
+        // Match the catalog's ordinary pickup behavior: an occupied cursor is cleared by
+        // this press, and a subsequent fresh press may grant the selected catalog item.
+        if (!this.sharedCarried.isEmpty()) {
+            this.setCreativeSharedCarried(ItemStack.EMPTY, "controller-catalog-clear");
+            return;
+        }
+        Inventory inventory = this.minecraft.player.getInventory();
+        int requested = fullStack ? source.getMaxStackSize() : 1;
+        // Prefer compatible existing stacks, then empty slots. Never replace an unrelated occupied slot.
+        for (int pass = 0; pass < 2 && requested > 0; pass++) {
+            for (int i = 0; i < HOTBAR_SLOT_COUNT && requested > 0; i++) {
+                if (DesktopItemSourceLocks.isInventorySlotLocked(this.minecraft.player, i)) continue;
+                ItemStack present = inventory.getItem(i);
+                if (pass == 0 ? present.isEmpty() || !ItemStack.isSameItemSameTags(present, source) : !present.isEmpty()) continue;
+                int capacity = source.getMaxStackSize() - present.getCount();
+                int add = Math.min(requested, capacity);
+                if (add <= 0) continue;
+                ItemStack replacement = source.copyWithCount(present.getCount() + add);
+                inventory.setItem(i, replacement);
+                this.minecraft.gameMode.handleCreativeModeItemAdd(replacement, 36 + i);
+                requested -= add;
+            }
+        }
+        this.minecraft.player.inventoryMenu.broadcastChanges();
+    }
+
+    private boolean workspaceCreativeHotbarDeleteTarget(InventoryWindow window, @Nullable SlotHit hit) {
+        if (this.minecraft == null || this.minecraft.player == null || this.minecraft.gameMode == null
+                || !this.minecraft.player.isCreative() || window == null || window.kind != WindowKind.CREATIVE
+                || hit == null || hit.sessionId() != DesktopPackets.PLAYER_MENU_SESSION
+                || hit.menu() != this.playerMenu() || hit.slot().container != this.minecraft.player.getInventory()
+                || hit.slot().getContainerSlot() < 0 || hit.slot().getContainerSlot() >= HOTBAR_SLOT_COUNT
+                || hit.slotId() != 36 + hit.slot().getContainerSlot()
+                || DesktopItemSourceLocks.isSlotLocked(this.minecraft.player, hit.slot())) return false;
+        CreativeModeTab selected = this.selectedCreativeTab(window, false);
+        return selected != null && !this.isCreativeInventoryTab(selected);
+    }
+
+    private boolean workspaceDeleteCreativeHotbar(InventoryWindow window, SlotHit hit) {
+        if (!this.workspaceCreativeHotbarDeleteTarget(window, hit)) return false;
+        if (hit.slot().hasItem()) {
+            hit.slot().set(ItemStack.EMPTY);
+            hit.slot().setChanged();
+            // Creative inventory edits use the same native, server-validated slot packet
+            // as catalog grants. Only the exact player hotbar slot can reach this branch.
+            this.minecraft.gameMode.handleCreativeModeItemAdd(ItemStack.EMPTY, hit.slotId());
+            this.minecraft.player.inventoryMenu.broadcastChanges();
+        }
+        return true;
+    }
+
+    private List<DesktopWindowBounds> workspaceControlBounds(InventoryWindow window) {
+        List<DesktopWindowBounds> result = new ArrayList<>();
+        RecipeBookButtonRect toggle = this.recipeBookButtonRect(window);
+        if (toggle != null) result.add(new DesktopWindowBounds(toggle.x(), toggle.y(),
+            RECIPE_BOOK_BUTTON_WIDTH, RECIPE_BOOK_BUTTON_HEIGHT));
+        InventoryIncreaseButtonRect increase = this.increaseInventoryButtonRect(window);
+        if (increase != null) result.add(new DesktopWindowBounds(increase.x(), increase.y(), SLOT_SIZE, SLOT_SIZE));
+        AbstractContainerMenu menu = window.containerMenu();
+        if (window.kind == WindowKind.CREATIVE) {
+            CreativeSearchRect search = this.creativeSearchRect(window);
+            if (search != null) result.add(new DesktopWindowBounds(search.x(), search.y(), search.width(), search.height()));
+            if (this.creativeMaxTabPage(this.creativeTabs()) > 0) for (int direction : new int[] {-1, 1}) {
+                if (!this.canChangeCreativeTabPage(window, direction)) continue;
+                CreativeTabPageButtonRect page = this.creativeTabPageButtonRect(window, this.titleBarLayout(window), direction);
+                result.add(new DesktopWindowBounds(page.x(), page.y(), page.width(), page.height()));
+            }
+            CreativeModeTab selected = this.selectedCreativeTab(window);
+            if (selected != null && this.isCreativeInventoryTab(selected)) result.add(new DesktopWindowBounds(
+                creativePanelX(window) + CREATIVE_DELETE_SLOT_X, creativePanelY(window) + CREATIVE_DELETE_SLOT_Y, SLOT_ITEM_SIZE, SLOT_ITEM_SIZE));
+        }
+        if (menu instanceof StonecutterMenu stonecutter) {
+            for (int i = 0; i < STONECUTTER_VISIBLE_RECIPES && window.stonecutterScroll * STONECUTTER_RECIPE_COLUMNS + i < stonecutter.getNumRecipes(); i++) {
+                result.add(new DesktopWindowBounds(stonecutterContentX(window) + STONECUTTER_RECIPE_GRID_X + i % STONECUTTER_RECIPE_COLUMNS * STONECUTTER_RECIPE_BUTTON_WIDTH,
+                    stonecutterContentY(window) + STONECUTTER_RECIPE_GRID_Y + i / STONECUTTER_RECIPE_COLUMNS * STONECUTTER_RECIPE_BUTTON_HEIGHT,
+                    STONECUTTER_RECIPE_BUTTON_WIDTH, STONECUTTER_RECIPE_BUTTON_HEIGHT));
+            }
+        } else if (menu instanceof LoomMenu loom && this.shouldDisplayLoomPatterns(loom)) {
+            for (int i = 0; i < LOOM_VISIBLE_PATTERNS && window.loomScroll * LOOM_PATTERN_COLUMNS + i < loom.getSelectablePatterns().size(); i++) {
+                result.add(new DesktopWindowBounds(loomContentX(window) + LOOM_PATTERN_GRID_X + i % LOOM_PATTERN_COLUMNS * LOOM_PATTERN_BUTTON_SIZE,
+                    loomContentY(window) + LOOM_PATTERN_GRID_Y + i / LOOM_PATTERN_COLUMNS * LOOM_PATTERN_BUTTON_SIZE,
+                    LOOM_PATTERN_BUTTON_SIZE, LOOM_PATTERN_BUTTON_SIZE));
+            }
+        } else if (menu instanceof MerchantMenu merchant) {
+            for (int i = 0; i < MERCHANT_VISIBLE_TRADES && window.merchantScroll + i < merchant.getOffers().size(); i++) {
+                result.add(new DesktopWindowBounds(merchantContentX(window) + MERCHANT_TRADE_LIST_X,
+                    merchantContentY(window) + MERCHANT_TRADE_LIST_Y + i * MERCHANT_TRADE_ROW_HEIGHT, MERCHANT_TRADE_LIST_WIDTH, MERCHANT_TRADE_ROW_HEIGHT));
+            }
+        } else if (menu instanceof EnchantmentMenu enchantment) {
+            for (int i = 0; i < 3; i++) if (enchantment.costs[i] > 0) result.add(new DesktopWindowBounds(
+                enchantmentContentX(window) + ENCHANTMENT_BUTTON_X, enchantmentContentY(window) + ENCHANTMENT_BUTTON_Y + i * ENCHANTMENT_BUTTON_HEIGHT,
+                ENCHANTMENT_BUTTON_WIDTH, ENCHANTMENT_BUTTON_HEIGHT));
+        } else if (menu instanceof AnvilMenu) {
+            result.add(new DesktopWindowBounds(anvilContentX(window) + ANVIL_TEXT_FIELD_X, anvilContentY(window) + ANVIL_TEXT_FIELD_Y,
+                ANVIL_TEXT_FIELD_WIDTH, ANVIL_TEXT_FIELD_HEIGHT));
+        } else if (menu instanceof BeaconMenu beacon) {
+            int x = beaconContentX(window), y = beaconContentY(window);
+            for (int tier = 0; tier < Math.min(3, Math.min(beacon.getLevels(), BeaconBlockEntity.BEACON_EFFECTS.length)); tier++) {
+                List<MobEffect> effects = java.util.Arrays.asList(BeaconBlockEntity.BEACON_EFFECTS[tier]);
+                int rowWidth = effects.size() * BEACON_BUTTON_SIZE + Math.max(0, effects.size() - 1) * BEACON_BUTTON_GAP;
+                int rowX = x + BEACON_PRIMARY_BUTTON_BASE_X + (2 * BEACON_BUTTON_SIZE + BEACON_BUTTON_GAP - rowWidth) / 2;
+                for (int i = 0; i < effects.size(); i++) result.add(new DesktopWindowBounds(rowX + i * BEACON_BUTTON_STEP_X,
+                    y + BEACON_PRIMARY_BUTTON_BASE_Y + tier * BEACON_BUTTON_STEP_Y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE));
+            }
+            if (beacon.getLevels() >= 4) {
+                result.add(new DesktopWindowBounds(x + BEACON_SECONDARY_BUTTON_X, y + BEACON_SECONDARY_BUTTON_Y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE));
+                if (window.beaconPrimary != null) result.add(new DesktopWindowBounds(x + BEACON_UPGRADE_BUTTON_X,
+                    y + BEACON_SECONDARY_BUTTON_Y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE));
+            }
+            if (this.canConfirmBeacon(beacon, window)) result.add(new DesktopWindowBounds(x + BEACON_CONFIRM_X,
+                y + BEACON_CONFIRM_Y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE));
+            result.add(new DesktopWindowBounds(x + BEACON_CANCEL_X, y + BEACON_CANCEL_Y, BEACON_BUTTON_SIZE, BEACON_BUTTON_SIZE));
+        }
+        result.addAll(this.recipeBookControlBounds(window));
+        result.addAll(this.apiTextInputBounds(window));
+        if (window.kind == WindowKind.JEI && this.jeiAccess().isAvailable()) result.addAll(this.workspaceRecipeBrowserControls(window));
+        // Reuse the committed public surface, including native tabs and virtual/ghost slots.
+        // These rectangles navigate the pointer only; the owning definition still handles
+        // clicks, so a virtual entry can never become an ordinary inventory slot.
+        for (DesktopWindowRegion region : this.apiExternalRegions(window)) {
+            if (region.interactive() && region.width() > 0 && region.height() > 0
+                    && (region.role() == DesktopHitRole.CONTROL || region.role() == DesktopHitRole.SLOT)) {
+                result.add(new DesktopWindowBounds(window.x + region.x(), window.y + region.y(), region.width(), region.height()));
+            }
+        }
+        return List.copyOf(new LinkedHashSet<>(result));
+    }
+
+    @SuppressWarnings({"rawtypes","unchecked"})
+    private List<DesktopWindowBounds> apiTextInputBounds(InventoryWindow window) {
+        if(window.apiDefinition==null) return List.of();
+        try {return List.copyOf(((DesktopWindowDefinition)window.apiDefinition).textInputBounds(this.apiContext(window,null,Integer.MIN_VALUE,Integer.MIN_VALUE)));}
+        catch(RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,window.debugName(),"textInputBounds","Window editor geometry callback failed",failure);
+            return List.of();
+        }
+    }
+
+    /** Core owns these browser layouts; providers retain every recipe/virtual ingredient action. */
+    private List<DesktopWindowBounds> workspaceRecipeBrowserControls(InventoryWindow window) {
+        List<DesktopWindowBounds> result=new ArrayList<>();
+        java.util.function.Consumer<JeiRecipeButtonRect> add=rect -> result.add(new DesktopWindowBounds(rect.x(),rect.y(),rect.width(),rect.height()));
+        if(window.jeiMode==RecipeBrowserMode.INGREDIENTS) {
+            var tabs=this.jeiAccess().tabs();
+            int visible=this.jeiVisibleIngredientTabCount(window,tabs);
+            for(int i=0;i<visible;i++) result.add(new DesktopWindowBounds(jeiRecipeTopTabsX(window)+i*(JEI_RECIPE_TAB_SIZE+JEI_RECIPE_TAB_GAP),
+                jeiRecipeTopTabsY(window),JEI_RECIPE_TAB_SIZE,JEI_RECIPE_TAB_SIZE));
+            result.add(new DesktopWindowBounds(this.jeiSearchX(window),this.jeiSearchY(window),this.jeiSearchWidth(window),JEI_SEARCH_HEIGHT));
+            add.accept(this.jeiDefaultTabButtonRect(window));
+            int count=this.jeiVisibleEntries(window,false).size(),first=window.jeiScrollRow*JEI_GRID_COLUMNS;
+            for(int i=0;i<JEI_GRID_ROWS*JEI_GRID_COLUMNS && first+i<count;i++) result.add(new DesktopWindowBounds(
+                this.jeiGridX(window)+i%JEI_GRID_COLUMNS*SLOT_SIZE,this.jeiGridY(window)+i/JEI_GRID_COLUMNS*SLOT_SIZE,SLOT_ITEM_SIZE,SLOT_ITEM_SIZE));
+        } else {
+            int count=Math.min(this.jeiRecipeTabsPerPage(window),window.jeiRecipeCategories.size()-window.jeiCategoryTabPage*this.jeiRecipeTabsPerPage(window));
+            for(int i=0;i<count;i++) result.add(new DesktopWindowBounds(this.jeiRecipeTabsX(window)+i*(JEI_RECIPE_TAB_SIZE+JEI_RECIPE_TAB_GAP),
+                this.jeiRecipeTabsY(window),JEI_RECIPE_TAB_SIZE,JEI_RECIPE_TAB_SIZE));
+            for(JeiRecipeButton button:JeiRecipeButton.values()) {
+                if((button==JeiRecipeButton.PREVIOUS_CATEGORY_TAB_PAGE || button==JeiRecipeButton.NEXT_CATEGORY_TAB_PAGE)
+                        && !this.hasRecipeBrowserCategoryTabPages(window)) continue;
+                add.accept(this.jeiRecipeButtonRect(window,button));
+            }
+            for(JeiRecipeOptionButton option:JeiRecipeOptionButton.values()) add.accept(this.jeiRecipeOptionButtonRect(window,option));
+            var category=this.selectedRecipeBrowserCategory(window);
+            if(category!=null) for(var placement:this.visibleJeiRecipePlacements(window,category)) {
+                result.addAll(this.jeiAccess().recipeIngredientBounds(placement.recipe(),placement.x(),placement.y()));
+                if(this.jeiAccess().canBookmarkRecipe(placement.recipe())) add.accept(this.jeiRecipeBookmarkButtonRect(placement));
+                var transfer=this.jeiRecipeTransferTargetFor(this.jeiAccess(),placement.recipe());
+                if(transfer!=null && this.jeiRecipeTransferAvailability(transfer).craftable()) add.accept(this.jeiRecipeTransferButtonRect(placement,transfer.plan()));
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    private List<DesktopWindowBounds> recipeBookControlBounds(InventoryWindow window) {
+        RecipeBookComponent recipeBook = this.visibleRecipeBook(window);
+        if (recipeBook == null) return List.of();
+        this.updateRecipeBookPosition(window, recipeBook);
+        RecipeBookComponentAccessor book = (RecipeBookComponentAccessor) recipeBook;
+        RecipeBookPageAccessor page = (RecipeBookPageAccessor) book.salts_inventory_update$getRecipeBookPage();
+        var overlay = page.salts_inventory_update$getOverlay();
+        List<DesktopWindowBounds> result = new ArrayList<>();
+        java.util.function.Consumer<AbstractWidget> collect = widget -> {
+            if (widget != null && widget.visible && widget.active && widget.getWidth() > 0 && widget.getHeight() > 0) {
+                result.add(new DesktopWindowBounds(widget.getX(), widget.getY(), widget.getWidth(), widget.getHeight()));
+            }
+        };
+        if (overlay.isVisible()) {
+            // Vanilla consumes clicks inside an expanded choice panel before the underlying page.
+            ((OverlayRecipeComponentAccessor) overlay).salts_inventory_update$getRecipeButtons().forEach(collect);
+        } else {
+            collect.accept(book.salts_inventory_update$getSearchBox());
+            collect.accept(book.salts_inventory_update$getFilterButton());
+            book.salts_inventory_update$getTabButtons().forEach(collect);
+            page.salts_inventory_update$listButtons(collect);
+            collect.accept(page.salts_inventory_update$getForwardButton());
+            collect.accept(page.salts_inventory_update$getBackButton());
+        }
+        return List.copyOf(result);
     }
 
     private boolean recipeBookButtonContains(InventoryWindow window, double mouseX, double mouseY) {
@@ -8938,6 +9760,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable RecipeBookButtonRect recipeBookButtonRect(InventoryWindow window) {
+        if (this.contextualRecipePresentation && this.externallyPresented()) return null;
         if (window.minimized || window.ghosted) {
             return null;
         }
@@ -10534,7 +11357,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private List<CreativeModeTab> creativeTabs() {
-        this.refreshCreativeTabs();
+        return this.creativeTabs(true);
+    }
+
+    private List<CreativeModeTab> creativeTabs(boolean refreshContents) {
+        if (refreshContents) this.refreshCreativeTabs();
         List<CreativeModeTab> tabs = new ArrayList<>(CreativeModeTabs.allTabs());
         tabs.removeIf(tab -> tab.getType() == CreativeModeTab.Type.CATEGORY && tab.getDisplayItems().isEmpty());
         return tabs;
@@ -10637,9 +11464,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable CreativeModeTab selectedCreativeTab(InventoryWindow window) {
-        List<CreativeModeTab> tabs = this.creativeTabs();
+        return this.selectedCreativeTab(window, true);
+    }
+
+    private @Nullable CreativeModeTab selectedCreativeTab(InventoryWindow window, boolean synchronizeState) {
+        List<CreativeModeTab> tabs = this.creativeTabs(synchronizeState);
         if (tabs.isEmpty()) {
-            window.creativeSelectedTab = null;
+            if (synchronizeState) window.creativeSelectedTab = null;
             return null;
         }
 
@@ -10647,12 +11478,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             CreativeModeTab defaultTab = this.rememberedCreativeTab != null && tabs.contains(this.rememberedCreativeTab)
                 ? this.rememberedCreativeTab
                 : CreativeModeTabs.getDefaultTab();
-            window.creativeSelectedTab = tabs.contains(defaultTab) ? defaultTab : tabs.get(0);
+            CreativeModeTab selected = tabs.contains(defaultTab) ? defaultTab : tabs.get(0);
+            if (!synchronizeState) return selected;
+            window.creativeSelectedTab = selected;
             window.creativeTabPage = this.creativePageForTab(tabs, window.creativeSelectedTab);
             window.creativeScrollRow = 0;
         }
 
-        window.creativeTabPage = clamp(window.creativeTabPage, 0, this.creativeMaxTabPage(tabs));
+        if (synchronizeState) window.creativeTabPage = clamp(window.creativeTabPage, 0, this.creativeMaxTabPage(tabs));
         return window.creativeSelectedTab;
     }
 
@@ -10665,7 +11498,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private List<ItemStack> creativeVisibleItems(InventoryWindow window) {
-        CreativeModeTab tab = this.selectedCreativeTab(window);
+        return this.creativeVisibleItems(window, true);
+    }
+
+    private List<ItemStack> creativeVisibleItems(InventoryWindow window, boolean synchronizeState) {
+        CreativeModeTab tab = this.selectedCreativeTab(window, synchronizeState);
         if (tab == null || this.isCreativeInventoryTab(tab)) {
             return List.of();
         }
@@ -10969,11 +11806,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable CreativeItemHit creativeItemAt(InventoryWindow window, double mouseX, double mouseY) {
-        if (window.kind != WindowKind.CREATIVE || window.minimized || !this.creativeGridContains(window, mouseX, mouseY)) {
+        return this.creativeItemAt(window, mouseX, mouseY, true);
+    }
+
+    private @Nullable CreativeItemHit creativeItemAt(InventoryWindow window, double mouseX, double mouseY, boolean synchronizeState) {
+        if (window.kind != WindowKind.CREATIVE || window.minimized || !this.creativeGridContains(window, mouseX, mouseY, synchronizeState)) {
             return null;
         }
 
-        CreativeModeTab selectedTab = this.selectedCreativeTab(window);
+        CreativeModeTab selectedTab = this.selectedCreativeTab(window, synchronizeState);
         if (selectedTab == null || this.isCreativeInventoryTab(selectedTab)) {
             return null;
         }
@@ -10986,9 +11827,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return null;
         }
 
-        List<ItemStack> items = this.creativeVisibleItems(window);
-        window.creativeScrollRow = clamp(window.creativeScrollRow, 0, this.creativeGridLayout(items.size()).maxScrollRow());
-        int index = window.creativeScrollRow * CREATIVE_GRID_COLUMNS + row * CREATIVE_GRID_COLUMNS + column;
+        List<ItemStack> items = this.creativeVisibleItems(window, synchronizeState);
+        int scrollRow = clamp(selectedTab == window.creativeSelectedTab ? window.creativeScrollRow : 0,
+            0, this.creativeGridLayout(items.size()).maxScrollRow());
+        if (synchronizeState) window.creativeScrollRow = scrollRow;
+        int index = scrollRow * CREATIVE_GRID_COLUMNS + row * CREATIVE_GRID_COLUMNS + column;
         if (index < 0 || index >= items.size()) {
             return null;
         }
@@ -11074,7 +11917,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private boolean creativeGridContains(InventoryWindow window, double mouseX, double mouseY) {
-        CreativeModeTab selectedTab = this.selectedCreativeTab(window);
+        return this.creativeGridContains(window, mouseX, mouseY, true);
+    }
+
+    private boolean creativeGridContains(InventoryWindow window, double mouseX, double mouseY, boolean synchronizeState) {
+        CreativeModeTab selectedTab = this.selectedCreativeTab(window, synchronizeState);
         int gridY = selectedTab != null && this.isCreativeInventoryTab(selectedTab) ? CREATIVE_INVENTORY_GRID_Y : CREATIVE_GRID_Y;
         return window.kind == WindowKind.CREATIVE
             && contains(
@@ -12227,13 +13074,17 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable RecipeBrowserTab selectedJeiTab(InventoryWindow window, List<RecipeBrowserTab> tabs) {
-        this.refreshJeiSelection(window, tabs);
+        return this.selectedJeiTab(window, tabs, true);
+    }
+
+    private @Nullable RecipeBrowserTab selectedJeiTab(InventoryWindow window, List<RecipeBrowserTab> tabs, boolean synchronizeState) {
+        if (synchronizeState) this.refreshJeiSelection(window, tabs);
         for (RecipeBrowserTab tab : tabs) {
             if (tab.uid().equals(window.jeiSelectedTabUid)) {
                 return tab;
             }
         }
-        return null;
+        return !synchronizeState && !tabs.isEmpty() ? this.defaultJeiTab(window, tabs) : null;
     }
 
     private void refreshJeiSelection(InventoryWindow window, List<RecipeBrowserTab> tabs) {
@@ -13526,13 +14377,17 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private List<RecipeBrowserEntry> jeiVisibleEntries(InventoryWindow window) {
+        return this.jeiVisibleEntries(window, true);
+    }
+
+    private List<RecipeBrowserEntry> jeiVisibleEntries(InventoryWindow window, boolean synchronizeState) {
         RecipeBrowserAccess access = this.jeiAccess();
         if (!access.isAvailable() || window.jeiMode != RecipeBrowserMode.INGREDIENTS) {
             return List.of();
         }
 
         List<RecipeBrowserTab> tabs = access.tabs();
-        RecipeBrowserTab selectedTab = this.selectedJeiTab(window, tabs);
+        RecipeBrowserTab selectedTab = this.selectedJeiTab(window, tabs, synchronizeState);
         return selectedTab == null ? List.of() : access.filteredEntries(selectedTab);
     }
 
@@ -16876,6 +17731,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void renderRecipeBookButton(GuiGraphicsExtractor graphics, InventoryWindow window, int x, int y, int mouseX, int mouseY) {
+        if (this.contextualRecipePresentation && this.externallyPresented()) return;
         boolean hovered = contains(mouseX, mouseY, x, y, RECIPE_BOOK_BUTTON_WIDTH, RECIPE_BOOK_BUTTON_HEIGHT);
         RecipeBookComponent recipeBook = window.recipeBook;
         boolean active = recipeBook != null && recipeBook.isVisible();
@@ -17264,6 +18120,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private @Nullable Slot offhandSlot() {
         return offhandSlot(this.playerMenu());
+    }
+
+    /** Shared native chrome for normal windows and host-owned decorative workspace panels. */
+    private void renderSaltWindowFrame(GuiGraphicsExtractor graphics, int x, int y, int width, int height, String title) {
+        renderNineSlice(graphics, WINDOW_TEXTURE, x, y, width, height);
+        if (!title.isEmpty()) graphics.text(this.font, this.truncatedTitle(title, Math.max(0, width - TITLE_LEFT_PADDING - 4)),
+            x + TITLE_LEFT_PADDING, y + 5, this.uiColor(COLOR_WINDOW_TITLE), false);
     }
 
     private static void renderNineSlice(GuiGraphicsExtractor graphics, ResourceLocation texture, int x, int y, int width, int height) {
@@ -18925,6 +19788,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 );
             }
 
+            InventoryDesktopScreen desktop = current(Minecraft.getInstance());
+            if (desktop == null || !desktop.contextualRecipePresentation || !desktop.externallyPresented()) {
             int buttonX = contentX + FURNACE_RECIPE_BUTTON_X;
             int buttonY = contentY + FURNACE_RECIPE_BUTTON_Y;
             boolean hovered = contains(context.mouseX(), context.mouseY(), buttonX, buttonY, RECIPE_BOOK_BUTTON_WIDTH, RECIPE_BOOK_BUTTON_HEIGHT);
@@ -18941,6 +19806,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 RECIPE_BUTTON_TEXTURE_WIDTH,
                 RECIPE_BUTTON_TEXTURE_HEIGHT
             );
+            }
         }
 
         @Override
@@ -19118,6 +19984,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         private int y;
         private int width;
         private int height;
+        private int workspaceKeyboardHeight = -1;
         private final @Nullable DesktopContainerSession session;
         private final @Nullable AbstractContainerMenu legacyMenu;
         private @Nullable UUID mountedVehicleId;

@@ -1,9 +1,11 @@
 # Controller inventory sounds — 26.3
 
-The Minecraft **26.3 Fabric and NeoForge Controlify companion** owns this sound
-palette, its settings and its playback rules. The sound overhaul adds no audio
-implementation or resources to Core or Extended and does not change other game
-versions. The optional Extended JAR is not needed for these sounds.
+Every supported **Controlify companion** target owns this sound palette, its
+settings and its playback rules. Native adapters cover Minecraft 1.20.1, 1.21.1,
+1.21.11, 26.1.2, 26.2 and 26.3 and their supported loaders. The sound overhaul adds
+no audio implementation or resources to Core or Extended. The optional Extended
+JAR is not needed for these sounds. Editable assets remain in this 26.3 source
+directory and are shared into all companion builds.
 
 **Inventory sounds are off by default.** New installations and Restore defaults
 use the Off preset. Choose an audible preset below to opt in. Existing saved
@@ -34,7 +36,8 @@ Minecraft controls in a scrolling options list, with focus, tooltips and narrati
 | Cue / Play / Stop | Auditions one selected cue at the current mix. Starting another replaces the previous preview; Stop stops that preview. Play and Stop add no simultaneous vanilla button click. Muted cues remain silent. |
 | Restore defaults | Returns to Off with inventory sounds and cursor-hover audio silent. |
 
-Minecraft's **Master** and **UI** volume controls continue to govern every cue.
+Minecraft's **Master** volume governs every cue. The 26.x native **UI** level
+also applies; older targets use Minecraft's Master-routed native UI playback.
 This mixer does not alter other mods' audio or the world's sound categories.
 Controls take effect immediately; Done saves the mix to
 `config/salts_inventory_controlify_sounds.properties` in the instance's game
@@ -58,7 +61,8 @@ settings; they are not a measurement of perceived loudness or device volume.
 
 All event IDs use the companion namespace. Opening and closing alias
 `minecraft:ui.button.click`. The other seven events use short mono OGG files.
-All nine play without looping on Minecraft's UI category, relative to the listener.
+All nine play without looping through Minecraft's native UI playback, relative to
+the listener; its category is UI on 26.x and Master on older targets.
 
 | Event ID | Meaning |
 | --- | --- |

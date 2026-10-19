@@ -1460,6 +1460,7 @@ public final class DesktopMenuBindings {
     public static @Nullable Slot slot(AbstractContainerMenu menu, int slotId);
     public static int indexOf(AbstractContainerMenu menu, Slot slot);
     public static List<Slot> all(AbstractContainerMenu menu);
+    public static boolean isVirtualSlot(AbstractContainerMenu menu, Slot slot);
     public static boolean isPlayerInventorySlot(AbstractContainerMenu menu, Slot slot, net.minecraft.world.entity.player.Inventory inventory);
     public static boolean requiresOpeningData(AbstractContainerMenu menu);
     public static @Nullable String sourceKey(ServerPlayer player, AbstractContainerMenu menu, byte[] openingData);
@@ -1477,6 +1478,7 @@ public final class DesktopMenuBindings {
     public static boolean isSamePhysicalSlot( AbstractContainerMenu firstMenu, Slot first, AbstractContainerMenu secondMenu, Slot second );
     @FunctionalInterface public interface SlotAccess {
         int size(AbstractContainerMenu menu);
+        default boolean isVirtualSlot(AbstractContainerMenu menu, Slot slot);
         default boolean isPlayerInventorySlot(AbstractContainerMenu menu, Slot slot, net.minecraft.world.entity.player.Inventory inventory);
         default Slot slot(AbstractContainerMenu menu, int slotId);
     }

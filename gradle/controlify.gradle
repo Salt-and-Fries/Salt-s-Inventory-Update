@@ -1,5 +1,6 @@
 // An independent third mod. Its compiler sees only Salt's public consumer API.
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
+import org.gradle.api.tasks.bundling.Zip
 
 gradle.projectsEvaluated {
     def root = rootProject
@@ -39,6 +40,15 @@ gradle.projectsEvaluated {
         target.sourceSets.main.java.srcDir(root.file('controlify/common/src/main/java'))
         target.sourceSets.main.java.srcDir(root.file("controlify/versions/${target.parent.name}/common/src/main/java"))
         target.sourceSets.main.resources.srcDir(root.file('controlify/common/src/main/resources'))
+        if (target.parent.name != '26.3') {
+            // Keep one editable artwork/sound palette at the established 26.3 path.
+            // Version-specific loader metadata, Controlify bindings and services stay local.
+            target.tasks.named('processResources').configure {
+                from(root.file('controlify/versions/26.3/common/src/main/resources/assets/salts_inventory_controlify')) {
+                    into('assets/salts_inventory_controlify')
+                }
+            }
+        }
         // Prism also contributes version-common files to the source archive.
         // Their physical source directory is explicitly added for loader javac.
         target.tasks.named('sourcesJar').configure {
@@ -167,4 +177,28 @@ gradle.projectsEvaluated {
         dependsOn(buildControlify)
         targets.each { target -> from(productionJar(target).flatMap { it.archiveFile }) { into('controlify') } }
     }
+    def bundleLatestMods = root.tasks.register('bundleLatestMods', Zip) {
+        group = 'build'
+        description = 'Bundles all matching production modules by Minecraft version and loader.'
+        dependsOn(root.tasks.named('writeModuleChecksums'))
+        archiveFileName = 'salts-inventory-all-latest.zip'
+        destinationDirectory = root.layout.projectDirectory.dir('dist')
+        duplicatesStrategy = DuplicatesStrategy.FAIL
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
+        targets.each { target ->
+            def game = target.parent.name
+            def loader = target.name
+            ['core': productionJar(root.project(":${game}:${loader}")).get().archiveFileName.get(),
+             'compatibility': productionJar(root.project(":compatibility:${game}:${loader}")).get().archiveFileName.get(),
+             'controlify': productionJar(target).get().archiveFileName.get()].each { module, filename ->
+                from(root.file("dist/${module}/${filename}")) { into("${game}/${loader}") }
+            }
+        }
+        from(root.file('controlify/README.md')) { rename { 'CONTROLIFY-README.md' } }
+        ['core', 'compatibility', 'controlify'].each { module ->
+            from(root.file("dist/${module}/SHA256SUMS.txt")) { into("checksums/${module}") }
+        }
+    }
+    root.tasks.named('build').configure { dependsOn(bundleLatestMods) }
 }

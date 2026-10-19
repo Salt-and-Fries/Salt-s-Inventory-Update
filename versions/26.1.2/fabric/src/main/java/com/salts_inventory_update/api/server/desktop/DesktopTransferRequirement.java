@@ -25,4 +25,3 @@ public record DesktopTransferRequirement(int targetSlotId, int count, List<ItemS
         return alternatives.stream().map(ItemStack::copy).toList();
     }
 }
-

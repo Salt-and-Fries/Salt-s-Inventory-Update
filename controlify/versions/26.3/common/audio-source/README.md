@@ -1,6 +1,6 @@
-# Controlify 26.3 UI sound source
+# Controlify UI sound source
 
-This is the editable source for the **26.3 Controlify companion's** UI palette. It is outside `src/main/resources`, so the source originals and Python tool are not packaged in any production JAR. The generated assets live exclusively in `assets/salts_inventory_controlify`; they override no Minecraft, Core, or Extended events.
+This is the editable source for **all supported Controlify companions'** UI palette. Its canonical location remains under `versions/26.3`; the build shares the generated companion assets with every target. It is outside `src/main/resources`, so the source originals and Python tool are not packaged in any production JAR. The generated assets live exclusively in `assets/salts_inventory_controlify`; they override no Minecraft, Core, or Extended events.
 
 The palette follows the UI sound research in `output/pdf/ui-sound-research/salts-inventory-ui-sound-research.pdf`, with later user listening feedback: keep repeated movement tiny, restart the selection cue during fast browsing, reserve a separate completion cue for a completed action, and use refusal feedback only for an attempted unavailable action. Opening and closing now reference Minecraft's classic button click. Seven other recordings retain their approved bytes. **No controlled listening study is claimed.**
 

@@ -114,7 +114,12 @@ public final class AE2ServerIntegration {
     @SuppressWarnings("unchecked")
     private void registerMenu(MenuType<?> untyped, MenuTypeBuilder<?, ?> builder) {
         var type = (MenuType<AEBaseMenu>) untyped;
-        DesktopMenuBindings.register(type, menu -> menu.slots.size(), true, (player, menu, bytes) -> {
+        DesktopMenuBindings.register(type, new DesktopMenuBindings.SlotAccess() {
+            @Override public int size(AbstractContainerMenu menu) { return menu.slots.size(); }
+            @Override public boolean isVirtualSlot(AbstractContainerMenu menu, Slot slot) {
+                return slot instanceof appeng.menu.slot.FakeSlot || slot instanceof appeng.menu.slot.CraftingTermSlot;
+            }
+        }, true, (player, menu, bytes) -> {
             var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), player.registryAccess(),
                     ConnectionType.NEOFORGE);
             try {

@@ -1576,11 +1576,16 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private List<Slot> contextualAvailableSlots() {
         var seen = new java.util.IdentityHashMap<Object, Set<Integer>>();
         List<Slot> result = new ArrayList<>();
-        List<Slot> slots = new ArrayList<>(this.minecraft.player.inventoryMenu.slots);
+        java.util.function.BiConsumer<AbstractContainerMenu, Slot> collect = (menu, slot) -> {
+            if (!DesktopMenuBindings.isVirtualSlot(menu, slot)
+                && com.salts_inventory_update.internal.desktop.ContextualRecipeSources.eligible(this.minecraft.player, slot, false)
+                && seen.computeIfAbsent(DesktopMenuBindings.physicalOwner(menu, slot), ignored -> new HashSet<>())
+                    .add(DesktopMenuBindings.physicalIndex(menu, slot))) result.add(slot);
+        };
+        for (Slot slot : DesktopMenuBindings.all(this.minecraft.player.inventoryMenu)) collect.accept(this.minecraft.player.inventoryMenu, slot);
         for (InventoryWindow window : this.windows) if (window.session != null && !window.apiDisposed && !window.companionHidden
-            && !window.persistentHidden && !window.ghosted) slots.addAll(window.session.menu().slots);
-        for (Slot slot : slots) if (com.salts_inventory_update.internal.desktop.ContextualRecipeSources.eligible(this.minecraft.player, slot, false)
-            && seen.computeIfAbsent(slot.container, ignored -> new HashSet<>()).add(slot.getContainerSlot())) result.add(slot);
+            && !window.persistentHidden && !window.ghosted)
+            for (Slot slot : DesktopMenuBindings.all(window.session.menu())) collect.accept(window.session.menu(), slot);
         return result;
     }
 

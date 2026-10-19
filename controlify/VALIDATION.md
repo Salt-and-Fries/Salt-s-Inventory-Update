@@ -1,12 +1,86 @@
 # Controlify integration validation
 
-Generated from local evidence at 2026-10-19T05:15:57+00:00. Refresh with `python tools/report-controlify-validation.py --extended-26-3 --artifacts dist`.
+## All-version controller port (2026-10-19)
 
-The complete target inventory contains **12 Minecraft/loader combinations**. **12/12 matching Core and companion artifact pairs** are collected. Packaged gameplay is verified for **6/12 targets** against those exact artifacts.
+The current port implements the controller feature set across **all twelve pinned
+Minecraft/loader targets**. Core, Extended and the Controlify companion are
+separate matching JARs. Install the newly rebuilt artifacts together; older JARs
+with the same `0.1.4` filename may lack the added API methods. The
+[port notes](functional-tests/all-versions-port-notes.md) describe native
+Controlify, keyboard, guide, rendering and recipe differences, and the shared
+editable assets that remain in their original 26.3 source directory.
 
-This broader inventory spans six Minecraft versions. Other versions were not rerun in the current 26.3 pass. Pending or stale reports below do not establish working gameplay for those targets.
+**Headless checks: 1,435 tests passed, with zero failures, errors or skips.** The
+current JUnit XML contains 216 shared controller model/input/render tests, 972 Core
+tests across the six game versions, and 247 Extended provider tests. Core tests
+run once per game version through the Fabric test source set; native compilation,
+packaged JAR checks and gameplay on the other loaders are separate evidence.
 
-## Current 26.3 full feature and mod compatibility pass
+**Packaged scoped verification passed for all 12 targets.** The
+[all-version verification report](functional-tests/all-versions-verification.md)
+records the final artifact hashes, native gameplay checks and screenshots. All six
+legacy targets passed their native feature-parity scope; all six modern targets
+passed aggregation of their main feature suites and seven required focused retries.
+The scopes below document what was exercised on each target.
+
+| Minecraft | Loader | Current runtime verification scope | Status |
+| --- | --- | --- | --- |
+| 1.20.1 | Fabric | Native feature parity and public API editors | Passed scoped verification |
+| 1.20.1 | Forge | Native feature parity and public API editors | Passed scoped verification |
+| 1.21.1 | Fabric | Native feature parity and public API editors | Passed scoped verification |
+| 1.21.1 | NeoForge | Native feature parity and public API editors | Passed scoped verification |
+| 1.21.11 | Fabric | Native feature parity and public API editors | Passed scoped verification |
+| 1.21.11 | NeoForge | Native feature parity and public API editors | Passed scoped verification |
+| 26.1.2 | Fabric | Main feature suite with focused retries where needed | Passed scoped verification |
+| 26.1.2 | NeoForge | Main feature suite with focused retries where needed | Passed scoped verification |
+| 26.2 | Fabric | Main feature suite with focused retries where needed | Passed scoped verification |
+| 26.2 | NeoForge | Main feature suite with focused retries where needed | Passed scoped verification |
+| 26.3 | Fabric | Main feature suite with focused retries where needed | Passed scoped verification |
+| 26.3 | NeoForge | Main feature suite with focused retries where needed | Passed scoped verification |
+
+Legacy `feature-parity` profiles exercise native crafting/cooking and creative
+wheels, all-open ingredient counts, filters, scrolling, generic controls and
+modded editor keyboard ownership. Modern profiles use the main feature suite;
+`public-api` retries cover the independent custom-window/editor cases, and
+`wheel-polish` retries cover wheel text/filter behavior when needed. These scopes
+are reported individually and do not constitute a complete functional test of
+every target or every optional mod combination. Synthetic native controller input
+and an integrated server are used; physical controllers and a separate multiplayer
+server are outside this fixture.
+
+Every focused retry must pass with **all three final Salt JARs byte-identical** to
+its staged production inputs, along with the pinned original upstream dependencies.
+Legacy Fabric development launches load named-namespace copies from the owned
+profile's `.fabric/processedMods/` directory. The verifier invokes that target's
+actual Fabric Loader `RuntimeModRemapper` with its recorded mapping JAR, native
+classpath and selected original/nested inputs, then compares every generated
+archive member name and byte with the loaded copies. Each of the three Fabric
+profiles reproduces all 16 selected JARs. Forge preserves the same five original
+Salt/Controlify/YACL inputs and records the official `SRG_TO_MCP` tool, mapping
+hashes and named runtime derivatives. Original Salt inputs match final `dist/`
+bytes; original upstream inputs match their published SHA-512 pins. Reproducing
+these checks requires the retained native mapping/classpath cache and a local JDK.
+
+For modern main-suite evidence only, the verifier can accept a narrowly proven
+change to four UTF-8 bullet/ellipsis constants in one wheel class: every other
+class and resource byte must remain identical, and the final companion must pass
+a fresh wheel retry. A run that completed the main suite but stopped only during
+the independent API setup also requires a successful API retry on final artifacts.
+Original failures remain recorded. Arbitrary code changes, an earlier feature
+failure or a stale focused report cannot use either exception.
+
+Final aggregation uses:
+
+```powershell
+python tools/report-controlify-validation.py --feature-parity --artifacts dist --output controlify/functional-tests/all-versions-verification.md --require-runtime
+```
+
+The dated results below are retained history. Their test totals, artifact hashes,
+version limits and statements about which JARs changed describe those earlier
+passes; they do not certify the current all-version artifacts. Work remains on
+`controllify-jar-test`; no merge is part of this port.
+
+## Historical 26.3 full feature and mod compatibility pass (2026-10-19)
 
 Verified at 2026-10-19T05:15:57+00:00. All **12 required 26.3 packaged profiles**
 passed: the full suite on both loaders,
@@ -50,7 +124,7 @@ sounds remain off by default. Work remains on `controllify-jar-test`; no merge w
 performed. Physical controllers and a separate multiplayer server were not tested.
 
 See [the detailed scope and reproduction commands](functional-tests/26.3-compatibility-verification.md)
-and [the public controller/editor API contract](../docs/markdown/desktop_window_api.md#controller-navigation-and-editors-263).
+and [the public controller/editor API contract](../docs/markdown/desktop_window_api.md#controller-navigation-and-editors).
 
 The dated notes below describe their individual earlier passes. Their statements
 about which JARs changed apply to those passes; this current compatibility update

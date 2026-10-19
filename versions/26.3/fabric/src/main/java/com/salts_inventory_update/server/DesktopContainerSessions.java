@@ -3041,7 +3041,7 @@ public final class DesktopContainerSessions {
         if (includeOutput && hover.menu instanceof AbstractFurnaceMenu) owned.add(hover.menu.getSlot(2));
         Set<Slot> excluded = new HashSet<>(owned);
         if (hover.menu instanceof AbstractFurnaceMenu) { excluded.add(hover.menu.getSlot(1)); excluded.add(hover.menu.getSlot(2)); }
-        List<Slot> storage = contextualRecipeSourceSlots(player, sessions, excluded);
+        List<Slot> storage = contextualRecipeSourceSlots(player, sessions, hover.menu, excluded);
         Map<Slot, ItemStack> planned = new LinkedHashMap<>();
         for (Slot slot : storage) planned.put(slot, slot.getItem().copy());
         for (Slot slot : owned) {
@@ -3099,7 +3099,7 @@ public final class DesktopContainerSessions {
         List<Slot> grid = recipeHoverInputSlots(hover.menu);
         Set<Slot> excluded = new HashSet<>(grid);
         if (hover.menu instanceof AbstractFurnaceMenu) { excluded.add(hover.menu.getSlot(1)); excluded.add(hover.menu.getSlot(2)); }
-        List<Slot> sources = contextualRecipeSourceSlots(player, sessions, excluded);
+        List<Slot> sources = contextualRecipeSourceSlots(player, sessions, hover.menu, excluded);
         boolean[][] accepts = new boolean[requirements.size()][sources.size()];
         int[] counts = new int[sources.size()];
         for (int s = 0; s < sources.size(); s++) counts[s] = sources.get(s).getItem().getCount();
@@ -3152,7 +3152,7 @@ public final class DesktopContainerSessions {
             if (!returning.isEmpty()) {
                 Set<Slot> excluded = new HashSet<>(recipeHoverInputSlots(hover.menu));
                 if (hover.menu instanceof AbstractFurnaceMenu) { excluded.add(hover.menu.getSlot(1)); excluded.add(hover.menu.getSlot(2)); }
-                for (Slot slot : contextualRecipeSourceSlots(player, sessions, excluded)) {
+                for (Slot slot : contextualRecipeSourceSlots(player, sessions, hover.menu, excluded)) {
                     insertHoverReturn(slot, returning); if (returning.isEmpty()) break;
                 }
             }
@@ -3163,9 +3163,10 @@ public final class DesktopContainerSessions {
 
     private static boolean hoverOriginStillAvailable(ServerPlayer player, PlayerSessions sessions, Slot origin) {
         if (!com.salts_inventory_update.internal.desktop.ContextualRecipeSources.eligible(player, origin, true)) return false;
-        if (player.inventoryMenu.slots.contains(origin)) return true;
-        for (Session session : sessions.sessions.values()) if (session.menu.slots.contains(origin) && session.menu.stillValid(player)
-            && companionTransferAuthorized(player, sessions, session)) return true;
+        if (DesktopMenuBindings.all(player.inventoryMenu).contains(origin)
+            && !DesktopMenuBindings.isVirtualSlot(player.inventoryMenu, origin)) return true;
+        for (Session session : sessions.sessions.values()) if (DesktopMenuBindings.all(session.menu).contains(origin) && session.menu.stillValid(player)
+            && companionTransferAuthorized(player, sessions, session) && !DesktopMenuBindings.isVirtualSlot(session.menu, origin)) return true;
         return false;
     }
 
@@ -3245,7 +3246,8 @@ public final class DesktopContainerSessions {
         do {
             if (!contextualCraftSessionLive(player, sessions, sourceAuthorization)
                 || !contextualCraftSessionLive(player, sessions, targetAuthorization)) break;
-            List<Slot> ingredientSources = contextualRecipeSourceSlots(player, sessions, new HashSet<>(grid));
+            Map<ContextualSourceKey, Slot> ingredientPool = contextualRecipeSourcePool(player, sessions, crafting, new HashSet<>(grid));
+            List<Slot> ingredientSources = new ArrayList<>(ingredientPool.values());
             List<JeiTransferRequirement> requirements = contextualCraftingRequirements(crafting, recipe, ingredientSources);
             if (requirements == null) break;
             JeiTransferSimulation placement = simulateJeiTransfer(player, grid, requirements, ingredientSources, false, 1);
@@ -3260,7 +3262,9 @@ public final class DesktopContainerSessions {
                 outputLimit = stack ? preview.getMaxStackSize() : preview.getCount();
             }
             if (!ItemStack.isSameItemSameComponents(firstOutput, preview) || preview.getCount() > outputLimit - produced) break;
-            List<Slot> batchTargets = contextualCraftTargets(player, preview, acceptedTargets, placement.sourceStacks());
+            Map<ContextualSourceKey, ItemStack> plannedSources = new LinkedHashMap<>();
+            for (var entry : ingredientPool.entrySet()) plannedSources.put(entry.getKey(), placement.sourceStacks().get(entry.getValue()));
+            List<Slot> batchTargets = contextualCraftTargets(player, targetAuthorization.menu(), preview, acceptedTargets, plannedSources);
             if (batchTargets.isEmpty()) break;
             Map<Slot, ItemStack> originals = contextualOriginalStacks(placement);
             boolean[] extractionStarted = {false}, moved = {false};
@@ -3291,16 +3295,16 @@ public final class DesktopContainerSessions {
     }
 
     /** Select only enough real capacity for one batch, including space freed by its ingredient placement. */
-    private static List<Slot> contextualCraftTargets(ServerPlayer player, ItemStack output, List<Slot> candidates, Map<Slot, ItemStack> consumedSources) {
+    private static List<Slot> contextualCraftTargets(ServerPlayer player, AbstractContainerMenu targetMenu, ItemStack output, List<Slot> candidates, Map<ContextualSourceKey, ItemStack> consumedSources) {
         List<Slot> result = new ArrayList<>();
         long capacity = 0;
         boolean hotbarFirst = candidates.stream().anyMatch(slot -> isPlayerHotbarSlot(player, slot));
         for (int pass = 0; pass < (hotbarFirst ? 4 : 2); pass++) for (Slot slot : candidates) {
             if (hotbarFirst && isPlayerHotbarSlot(player, slot) != (pass < 2)) continue;
-            if (!slot.isActive() || slot.isFake() || DesktopItemSourceLocks.isSlotLocked(player, slot) || !slot.mayPlace(output)) continue;
-            ItemStack present = slot.getItem();
-            for (var entry : consumedSources.entrySet()) if (entry.getKey().container == slot.container
-                && entry.getKey().getContainerSlot() == slot.getContainerSlot()) { present = entry.getValue(); break; }
+            if (!slot.isActive() || slot.isFake() || DesktopMenuBindings.isVirtualSlot(targetMenu, slot)
+                || DesktopItemSourceLocks.isSlotLocked(player, slot) || !slot.mayPlace(output)) continue;
+            var key = new ContextualSourceKey(DesktopMenuBindings.physicalOwner(targetMenu, slot), DesktopMenuBindings.physicalIndex(targetMenu, slot));
+            ItemStack present = consumedSources.getOrDefault(key, slot.getItem());
             if (present.isEmpty() != (pass % 2 == 1) || !present.isEmpty() && !ItemStack.isSameItemSameComponents(present, output)) continue;
             int available = Math.max(0, Math.min(output.getMaxStackSize(), slot.getMaxStackSize(output)) - present.getCount());
             if (available == 0) continue;
@@ -3310,21 +3314,34 @@ public final class DesktopContainerSessions {
         return List.of();
     }
 
-    private static List<Slot> contextualRecipeSourceSlots(ServerPlayer player, PlayerSessions sessions, Set<Slot> excluded) {
-        Map<JeiTransferSourceKey, Slot> result = new LinkedHashMap<>();
-        for (Slot slot : player.inventoryMenu.slots) addContextualRecipeSource(player, result, slot, excluded);
+    private static List<Slot> contextualRecipeSourceSlots(ServerPlayer player, PlayerSessions sessions, AbstractContainerMenu excludedMenu, Set<Slot> excluded) {
+        return new ArrayList<>(contextualRecipeSourcePool(player, sessions, excludedMenu, excluded).values());
+    }
+
+    /** Retain the originating menu's physical identity through ingredient and destination simulation. */
+    private static Map<ContextualSourceKey, Slot> contextualRecipeSourcePool(ServerPlayer player, PlayerSessions sessions, AbstractContainerMenu excludedMenu, Set<Slot> excluded) {
+        Map<ContextualSourceKey, Slot> result = new LinkedHashMap<>();
+        List<AbstractContainerMenu> menus = new ArrayList<>();
+        menus.add(player.inventoryMenu);
         for (Session session : List.copyOf(sessions.sessions.values())) {
             if (sessions.sessions.get(session.sessionId) != session || !session.visibleToClient
                 || !companionTransferAuthorized(player, sessions, session) || !session.menu.stillValid(player)) continue;
-            for (Slot slot : session.menu.slots) addContextualRecipeSource(player, result, slot, excluded);
+            menus.add(session.menu);
         }
-        return new ArrayList<>(result.values());
+        Set<ContextualSourceKey> excludedKeys = new HashSet<>();
+        for (Slot slot : excluded)
+            excludedKeys.add(new ContextualSourceKey(DesktopMenuBindings.physicalOwner(excludedMenu, slot), DesktopMenuBindings.physicalIndex(excludedMenu, slot)));
+        for (AbstractContainerMenu menu : menus) for (Slot slot : DesktopMenuBindings.all(menu))
+            addContextualRecipeSource(player, result, menu, slot, excludedKeys);
+        return result;
     }
 
-    private static void addContextualRecipeSource(ServerPlayer player, Map<JeiTransferSourceKey, Slot> sources, Slot slot, Set<Slot> excluded) {
-        if (excluded.stream().anyMatch(target -> target.container == slot.container && target.getContainerSlot() == slot.getContainerSlot())
+    private static void addContextualRecipeSource(ServerPlayer player, Map<ContextualSourceKey, Slot> sources,
+        AbstractContainerMenu menu, Slot slot, Set<ContextualSourceKey> excluded) {
+        if (DesktopMenuBindings.isVirtualSlot(menu, slot)
             || !com.salts_inventory_update.internal.desktop.ContextualRecipeSources.eligible(player, slot, true)) return;
-        sources.putIfAbsent(new JeiTransferSourceKey(slot.container, slot.getContainerSlot()), slot);
+        var key = new ContextualSourceKey(DesktopMenuBindings.physicalOwner(menu, slot), DesktopMenuBindings.physicalIndex(menu, slot));
+        if (!excluded.contains(key)) sources.putIfAbsent(key, slot);
     }
 
     private static @Nullable List<JeiTransferRequirement> contextualCraftingRequirements(AbstractCraftingMenu menu,
@@ -3394,7 +3411,7 @@ public final class DesktopContainerSessions {
         ItemStack result = displayInfo.display().display().result().resolveForFirstStack(net.minecraft.world.item.crafting.display.SlotDisplayContext.fromLevel(player.level()));
         if (result.isEmpty() || !contextualCookingOutputFits(result, output)) return;
         boolean needsFuel = !furnace.isLit() && fuel.getItem().isEmpty();
-        List<Slot> sources = contextualRecipeSourceSlots(player, sessions, Set.of(input, fuel, output));
+        List<Slot> sources = contextualRecipeSourceSlots(player, sessions, furnace, Set.of(input, fuel, output));
         JeiTransferSimulation placement = matchingPreview ? contextualHoverFuelSimulation(player, fuel, sources, needsFuel)
             : contextualCookingSimulation(player, recipe, input, fuel, sources, needsFuel);
         if (placement == null) return;
@@ -6083,6 +6100,14 @@ public final class DesktopContainerSessions {
         public int hashCode() {
             return ItemStack.hashItemAndComponents(this.stack);
         }
+    }
+
+    /** Native wrappers can share a dummy container; registered mutable owners use identity. */
+    private record ContextualSourceKey(Object owner, int index) {
+        @Override public boolean equals(Object other) {
+            return other instanceof ContextualSourceKey key && owner == key.owner && index == key.index;
+        }
+        @Override public int hashCode() { return 31 * System.identityHashCode(owner) + index; }
     }
 
     private record JeiTransferSourceKey(Container container, int containerSlot) {

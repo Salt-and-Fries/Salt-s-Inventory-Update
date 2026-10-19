@@ -273,6 +273,10 @@ public final class ControlifyGameplayHarness {
             addCraftingQolScenarios();
             return;
         }
+        if ("public-api".equals(System.getProperty("salts_inventory_controlify.qaScope"))) {
+            addPublicApiParityScenarios();
+            return;
+        }
         if ("mod-compat".equals(System.getProperty("salts_inventory_controlify.qaScope"))) {
             addModCompatibilityScenarios();
             return;
@@ -777,8 +781,18 @@ public final class ControlifyGameplayHarness {
         },1);
     }
 
-    /** An unfamiliar public-API view plus the actual optional mods staged by the launcher. */
-    private static void addModCompatibilityScenarios() {
+    /** Native text, virtual entries and controls provided by a previously unknown public-API window. */
+    private static void addPublicApiParityScenarios() {
+        add("compat-api-baseline-neutral",() -> {
+            driver.buttons.clear();driver.trigger=driver.rightTrigger=driver.rightY=0;pointerFixture=null;
+            // The full lifecycle suite deliberately rebinds Back to A. Restore B before this
+            // independent fixture, then close through the real configured controller action.
+            ControlifyBindings.GUI_BACK.on(controller).setBoundInput(new ButtonInput(GamepadInputs.EAST_BUTTON));
+            viewA.modalPopup=false;viewA.editing=false;viewA.tab=viewA.shift=viewA.virtualClicks=viewA.scroll=0;viewA.query="";
+        },() -> true,() -> {},8);
+        button("compat-api-baseline-native-B-close",GamepadInputs.EAST_BUTTON,
+            () -> check("compat-api-baseline-returned-gameplay",!owner.workspaceActive() && mc.gui.screen()==null));
+        add("compat-api-independent-baseline",() -> {},() -> !owner.workspaceActive() && mc.gui.screen()==null,() -> {},8);
         button("compat-open-workspace",GamepadInputs.NORTH_BUTTON,() -> check("compat-controller-workspace",owner.workspaceActive()));
         add("compat-unknown-api-view",() -> {
             viewA.navigationFixture=true;viewA.height=180;
@@ -816,6 +830,11 @@ public final class ControlifyGameplayHarness {
         nativePointerClick("compat-api-controls-resume",GamepadInputs.SOUTH_BUTTON,() -> pointAtControl(viewAHandle.instanceId(),apiFixtureControl(0)),
             () -> {check("compat-api-normal-controller-resumes",viewA.tab==0 && viewA.query.equals("\uD83D\uDE42x"));capture("compat-unknown-api-controls");});
         add("compat-api-close-view",() -> viewAHandle.close(),() -> !viewAHandle.isOpen(),() -> {},4);
+    }
+
+    /** An unfamiliar public-API view plus the actual optional mods staged by the launcher. */
+    private static void addModCompatibilityScenarios() {
+        addPublicApiParityScenarios();
         for(String id:List.of("toms_storage:storage_terminal","toms_storage:crafting_terminal","toms_storage:inventory_link","ae2:sky_stone_chest","ae2:cell_workbench",
                 "sophisticatedstorage:chest","sophisticatedstorage:barrel","sophisticatedstorage:limited_barrel_1")) {
             if(com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded(id.substring(0,id.indexOf(':')))) addModContainerScenario(id);
@@ -2506,8 +2525,8 @@ public final class ControlifyGameplayHarness {
         }
         List<Slot> eligible;
         try {
-            var method=DesktopContainerSessions.class.getDeclaredMethod("contextualRecipeSourceSlots",ServerPlayer.class,state.getClass(),Set.class);method.setAccessible(true);
-            @SuppressWarnings("unchecked") var actual=(List<Slot>)method.invoke(null,player(),state,new HashSet<>(source.getInputGridSlots()));eligible=actual;
+            var method=DesktopContainerSessions.class.getDeclaredMethod("contextualRecipeSourceSlots",ServerPlayer.class,state.getClass(),AbstractContainerMenu.class,Set.class);method.setAccessible(true);
+            @SuppressWarnings("unchecked") var actual=(List<Slot>)method.invoke(null,player(),state,source,new HashSet<>(source.getInputGridSlots()));eligible=actual;
         } catch(ReflectiveOperationException error) {throw new IllegalStateException(error);}
         boolean full=!eligible.isEmpty() && eligible.stream().allMatch(slot -> slot.getItem().is(Items.BEDROCK) && slot.getItem().getCount()==64);
         String capacity="eligibleSlots="+eligible.size()+",full="+full+",nonFull="+eligible.stream()
