@@ -1,6 +1,8 @@
 # Salt's Inventory Update
 
-Salt's Inventory Update is a multi-version, multi-loader inventory framework. It builds two independent mods for every supported target: **Salt's Inventory Update** (`salts_inventory_update`, core) and **Salt's Inventory Compatibility** (`salts_inventory_compat`, optional extension).
+Salt's Inventory Update is a multi-version, multi-loader inventory framework. It builds three independent mods for each of twelve supported targets: **Salt's Inventory Update** (`salts_inventory_update`, core), **Salt's Inventory Compatibility** (`salts_inventory_compat`, optional extension), and **Salt's Inventory Controlify** (`salts_inventory_controlify`, optional controller client).
+
+Salt's Inventory Controlify provides the controller workspace across all twelve Minecraft and loader targets. Its [installation, controls and build guide](controlify/README.md) describes the radial presentation, separate JARs and pinned upstream dependencies. Install the matching rebuilt core from this branch alongside the native Controlify build, YACL and the controller JAR.
 
 Core provides inventory expansion, vanilla desktop windows, configuration, networking, persistence and the public API. Compatibility contains Tom's Simple Storage, JEI, REI, EMI, Mod Menu, Applied Energistics 2 and the supported Forge/NeoForge Sophisticated integrations. AE2 support follows the [reviewed upstream version matrix](compatibility/ae2/README.md#reviewed-upstream-targets). Install matching core and extension versions to enable these integrations; core works on its own. Supported third-party mods remain optional.
 
@@ -41,12 +43,18 @@ compatibility/
     fabric/            Shared integration implementations and Fabric metadata/entrypoints
     forge|neoforge/    Loader-specific plugins, conditional mixins and metadata
   tests/               Optional integration initialization regressions
+controlify/
+  common/              Controller state, layout, animation, input routing and configuration
+  versions/<version>/  Controller presentation, Controlify processor and loader entrypoints
+  model/               Loader-neutral controller tests
+  functional-tests/   Excluded native workspace regression fixtures
 dist/
   core/                Twelve production core JARs and checksums
   compatibility/       Twelve production extension JARs and checksums
+  controlify/          Twelve production controller JARs and checksums
 ```
 
-The version and loader matrix is declared in [settings.gradle.kts](settings.gradle.kts). Both mods use Prism's existing loader toolchains and production remapping. Dependency versions and mod metadata live in [build.gradle.kts](build.gradle.kts); API-only compilation, automated tests and distribution tasks live in [gradle/compatibility.gradle](gradle/compatibility.gradle). Existing core project paths remain stable.
+The version and loader matrix is declared in [settings.gradle.kts](settings.gradle.kts). All three mods use Prism's existing loader toolchains and production remapping. Dependency versions and mod metadata live in [build.gradle.kts](build.gradle.kts); API-only compilation, automated tests and distribution tasks live in [gradle/compatibility.gradle](gradle/compatibility.gradle) and [gradle/controlify.gradle](gradle/controlify.gradle). Existing core project paths remain stable.
 
 ## Common Code Pattern
 
@@ -67,11 +75,13 @@ This keeps version API differences contained while still letting you share most 
 .\gradlew.bat build
 ```
 
-The ordinary root `build` compiles and tests both mods on all twelve targets, compiles the API examples, checks source parity, remaps production artifacts and verifies JAR contents. The 26.3 artifact task uses ModDevGradle's supported binary patch pipeline automatically; `CI=true` is no longer needed.
+The ordinary root `build` compiles and tests all three mods on all twelve targets, producing **36 production JARs**. It also compiles the API examples, checks source parity, remaps production artifacts and verifies JAR contents. The 26.3 artifact task uses ModDevGradle's supported binary patch pipeline automatically; `CI=true` is no longer needed.
 
-Production JARs appear in `dist/core` and `dist/compatibility`, with filenames such as `salts_inventory_update-1.21.1-Fabric-0.1.4.jar` and `salts_inventory_compat-1.21.1-Fabric-0.1.4.jar`. Each directory has `SHA256SUMS.txt`. The root release build clears `dist` before building and synchronizes exact production task outputs, preventing old, development or sources JARs from entering a release. `build/release/0.1.4` remains the legacy core-only release bundle.
+Production JARs appear in `dist/core`, `dist/compatibility` and `dist/controlify`, with filenames such as `salts_inventory_update-1.21.1-Fabric-0.1.4.jar`, `salts_inventory_compat-1.21.1-Fabric-0.1.4.jar` and `salts_inventory_controlify-1.21.1-Fabric-0.1.4.jar`. Each directory has `SHA256SUMS.txt`. The root release build clears `dist` before building and synchronizes exact production task outputs, preventing old, development or sources JARs from entering a release. `build/release/0.1.4` remains the legacy core-only release bundle.
 
-Build individual targets with `./gradlew :1.21.1:fabric:build` or `./gradlew :compatibility:1.21.1:fabric:build`. Individual artifacts remain in the target's `build/libs`; use the root build to refresh `dist`. Use `:1.21.1:fabric:runClient` for core alone and `:compatibility:1.21.1:fabric:runClient` for the extension plus core. Extension development runtimes retain the optional `-PincludeJeiRuntime=true`, `-PincludeReiRuntime=true`, `-PincludeEmiRuntime=true` and `-PincludeSophisticatedRuntime=true` flags on supported targets.
+The [combined latest archive](dist/salts-inventory-all-latest.zip) groups all 36 production JARs by Minecraft version and loader. Select the folder matching your installation; the extension and controller companion are optional. The archive contains JARs rather than gameplay screenshots, and upstream mod dependencies are installed separately as described in their guides.
+
+Build individual targets with `./gradlew :1.21.1:fabric:build`, `./gradlew :compatibility:1.21.1:fabric:build` or `./gradlew :controlify:1.21.1:fabric:build`. Individual artifacts remain in the target's `build/libs`; use the root build to refresh `dist`. Use `:1.21.1:fabric:runClient` for core alone, `:compatibility:1.21.1:fabric:runClient` for the extension plus core, and `:controlify:1.21.1:fabric:runClient` for the controller companion plus core. Extension development runtimes retain the optional `-PincludeJeiRuntime=true`, `-PincludeReiRuntime=true`, `-PincludeEmiRuntime=true` and `-PincludeSophisticatedRuntime=true` flags on supported targets.
 
 For publishing, configure the existing Prism `publishing` block for core and a separate `publishing` block inside `mod("compatibility")` for the extension, using separate project IDs. Set the relevant publishing tokens in your environment and declare the matching core as a required extension release dependency. Upload the production JARs from the matching `dist` directory.
 

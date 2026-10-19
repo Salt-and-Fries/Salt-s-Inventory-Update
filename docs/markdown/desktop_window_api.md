@@ -27,6 +27,46 @@ The 0.1.4 public surface changes are:
 - Use `sendPayload` in place of `sendCustomPayload`. Matchers must declare their supported menu types for capture negotiation. Duplicate registration now fails; window replacement is explicit.
 - New optional discovery, client views/handles, keyboard ownership, modal routing, pointer capture/cancellation, overlay/external-region rendering, clips/transforms, free resizing and storage ownership hooks are described below. There are no old API aliases.
 
+### External workspace presentation on 1.21.1
+
+The controller branch additionally exposes `DesktopWorkspace`, `DesktopWorkspaceHost`
+and `DesktopWorkspaceWindow` on 1.21.1. An installed host receives normal workspace
+openings through `DesktopClientApi.setWorkspaceHost`. The host owns its screen and
+presentation; Core retains all window models, menus, authenticated sessions, shared
+cursor state and lifecycle callbacks. `currentWorkspace` and client tick callbacks
+provide access without importing Core implementation classes. `isNativeScreenActive`
+identifies an already visible native workspace, and `openPlayerWorkspace` opens the
+ordinary inventory lifetime through the installed host.
+
+Use `windows()` to retain lifetime handles, `ensureWindow` for the built-in player
+inventory or Character, `protectWindow` to prevent removal while externally presented,
+and `initialize` to update the native rendering viewport. A presentation transforms
+`renderWindow` and translates mouse coordinates back before `pointer`, `hoveredSlot`
+or `clickAt`. `containsPointer` includes native popups and interactive external
+regions, so controls extending past a window's base rectangle remain reachable.
+An active modal owner also receives outside presses. Use `dismissOutsidePointer`
+with each displayed window's native coordinates for a press on empty workspace;
+this dismisses native popups without dispatching body input or world interaction.
+`visibleSlots` supplies native slot geometry for cursor snapping;
+transform those points using the same presentation coordinates. `restoreWindow`
+resumes a minimized, ghosted or persistently hidden surface without replacing its
+model, state, handle or session, requesting focus, or saving layout preferences.
+Owner-hidden companions retain their normal visibility rules. `renderCarried`
+draws the shared cursor once. `transferPair` restricts
+quick-move to the other member of the displayed pair; destinations without storage
+reject the action. External presentations own window placement and management chrome;
+native content controls remain available. `cancelInput` ends local gestures and
+keyboard ownership before changing presentation.
+`forceInventoryHud` is an effective, presentation-scoped override and does not save
+the user's normal configuration. `closeAllHoldMillis` returns the existing Core hold
+duration, and `closeClosableWindows` disposes closable windows while preserving
+explicitly protected lifetimes. `isValid` detects owner/world/session replacement.
+
+All calls run on the client thread. Returning to gameplay or replacing the presentation
+must preserve native ownership; the host must not call vanilla container-screen teardown
+when it merely hides its workspace. These new hooks require the rebuilt Core artifact
+from the same branch; they are not available in previously published 0.1.4 JARs.
+
 ## Start with the examples
 
 The [example sources](../../api-examples/ui/src/main/java/example/desktop) demonstrate:
@@ -163,7 +203,7 @@ DesktopMenuBindings.register(MyMenus.TERMINAL,
     menu -> menu.slots.size(), true);
 ```
 
-The registration overloads add `SourceKeyResolver`, `SnapshotPreparer`, then `GesturePolicy`; omit unused hooks or pass `null`. A custom `SlotAccess` implements `size(menu)` and can override `slot(menu, logicalId)` and player-inventory ownership. Its defaults use the native menu slots and `slot.container == inventory`.
+The registration overloads add `SourceKeyResolver`, `SnapshotPreparer`, then `GesturePolicy`; omit unused hooks or pass `null`. A custom `SlotAccess` implements `size(menu)` and can override `slot(menu, logicalId)`, player-inventory ownership and `isVirtualSlot(menu, slot)`. Its defaults use the native menu slots, `slot.container == inventory` and `false` for virtual slots. Mark phantom/configuration slots as virtual even when their native class does not override Minecraft's fake-slot method. They can remain visible controller targets, but must not supply real recipe resources. `DesktopMenuBindings.all(menu)` enumerates the binding's current logical slots, including slots not stored in the native `menu.slots` list.
 
 | Binding hook | Responsibility |
 | --- | --- |
@@ -174,7 +214,7 @@ The registration overloads add `SourceKeyResolver`, `SnapshotPreparer`, then `Ge
 | `repeatedQuickMoveLimit`, `useNativeQuickMove`, `allowsTargetedQuickMoveSource` | Bound repeated transfers and select menu-specific quick-move behavior. |
 | `physicalOwner`, `physicalIndex` | Identify the backing storage object and index, even when different menus use different slot wrappers. Owner comparison uses object identity. |
 
-Both sides must use the same logical topology. Return the same stable physical owner object/index for slots backed by the same storage to prevent duplicate transfers across windows. These hooks supplement menu/slot restrictions and server validity checks. A binding is shared by menu type, so inspect the supplied menu when behavior varies by instance.
+Both sides must use the same logical topology. Return the same stable physical owner object/index for slots backed by the same storage to prevent duplicate transfers across windows. Contextual recipe availability, ingredient borrowing and grid exclusions use this menu-aware physical identity too. Owners are compared by reference, not `equals`; different physical inventories must return different owner objects even if their slot wrappers share a dummy native container/index. Aliased views of one physical slot must return the same owner and index so quantities count only once. Return stable identities on the client and server independently; their Java object references do not cross the network. These hooks supplement menu/slot restrictions and server validity checks. A binding is shared by menu type, so inspect the supplied menu when behavior varies by instance.
 
 Virtual catalog entries are presentation data. Render them with `virtualItem` or `DesktopVirtualItem`; handle them with your own hit testing and server actions. Do not create real slots merely to represent counts, recipes or remote entries.
 
@@ -443,6 +483,18 @@ The public integration descriptor now uses `apiVersion=5`; the wire protocol is 
 Client layout, rendering, input, handles and widget mutation use the client main thread. Server acquisition, release, guards, menu creation and server callbacks use the server main thread. `DesktopWindowHandle.schedule` remains the thread-safe way to enqueue a lifetime-checked client update. Do asynchronous backend work using immutable inputs and marshal validated results onto the appropriate main thread before inventory mutation.
 
 Resource reload re-prepares retained surfaces and controls and delivers the new resource revision; re-resolve consumer caches there. The demonstration retains original 176-GUI-pixel texture/slot dimensions through GUI scales 2/3/4. Constrained viewports may require the consumer to select a compact layout through ADAPT; preserving native pixels does not guarantee that several full windows fit beside one another. Native/runtime acceptance evidence is maintained in [the companion implementation audit](../../API-COMPANIONS-0.1.4-PLAN.md). Compilation and headless routing tests are separate from actual inventory/network/lifecycle and rendered-image proof.
+
+## Controller navigation and editors
+
+The Controlify companion uses the public workspace API for every window across all twelve supported version/loader targets. Compile the integration against the matching Core API; native input, rendering and recipe types still vary by game version. These hooks do not require a dependency on Controlify or its implementation classes. A definition can expose its current tabs, buttons and virtual entries through its committed `surface` regions: use `DesktopHitRole.CONTROL` for a control and `DesktopHitRole.SLOT` for an entry. Coordinates are relative to the window. Publish only visible, enabled targets and update them when layout, scrolling or tab state changes. Salt transforms these same rectangles for controller snapping; the companion needs no mod ID or screen-class check. Native menu slots remain discoverable through `slotAt`.
+
+A virtual or ghost entry must keep its own `mouseClicked` handler. Declaring a `SLOT` region makes it navigable; it does not create a real menu slot, allow item transfers or grant inventory authority. Regions with content, movement, resize or visual-only roles are not controller action targets.
+
+For a scrolling list, implement `controllerScrollRegions(context)` and return `DesktopScrollRegion` values describing its native GUI viewport, row height and current up/down availability. These are absolute native GUI coordinates. This is a pure query. D-pad movement at a list edge and right-stick scrolling call the existing `mouseScrolled` handler; that handler remains responsible for changing the native scroll position. `nativeScrollStep` defaults to 1; set it to the native wheel delta that advances one logical row when the widget uses a different scale. At a list boundary the D-pad may leave the list normally.
+
+An editor reports `wantsTextInput(context)` only while it owns keyboard focus and is editable. Route `keyPressed`, `keyReleased` and `charTyped` to that editor, preserving Unicode code points. Publish visible, editable fields through `textInputBounds(context)` using absolute native GUI coordinates. A controller click inside a field opens Controlify's native keyboard automatically, including when the field was already focused. Retained or automatic search focus does not open the keyboard when clicking a different control or item. For definitions without field geometry, the companion can detect a click that newly acquires text focus; publishing bounds also supports clicking an already-focused field. The keyboard captures controller actions, pointer input and scrolling until it closes and the opening/closing inputs return to neutral. The companion uses Controlify's native keyboard overlay on 3.x and hosts its native keyboard widget in a modal screen on 1.20.1/2.x; window definitions use the same focus and editor-bounds contract on every target. A modal dialog without an active text editor does not request the keyboard. Other integrations can query `DesktopWorkspace.textInputActive(windowId)` and `textInputBounds(windowId)` without dispatching input.
+
+Recipe-browser providers expose their current virtual ingredient rectangles through `RecipeBrowserAccess.recipeIngredientBounds(recipe, x, y)`. Return the actual clickable bounds in native GUI coordinates; decorative backgrounds are not navigation targets. Core adds these to the browser's controls and leaves recipe clicks with the provider. This method does not create inventory slots or authorize transfers.
 
 ## Diagnostics and verification
 

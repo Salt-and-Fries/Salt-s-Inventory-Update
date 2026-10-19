@@ -15,6 +15,7 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.language.jvm.tasks.ProcessResources
 import java.security.MessageDigest
 import java.util.zip.ZipFile
+import groovy.json.JsonSlurper
 
 plugins {
     id("dev.prism")
@@ -22,6 +23,10 @@ plugins {
 
 group = "com.salts_inventory_update"
 version = "0.1.4"
+
+@Suppress("UNCHECKED_CAST")
+val controlifyTargetPins = (JsonSlurper().parse(rootProject.file("controlify/targets.json")) as Map<*, *>)
+    .get("targets") as List<Map<String, Any>>
 
 
 val modMenuVersions = mapOf(
@@ -205,6 +210,61 @@ prism {
             loaderVersion = "47.4.0"
         }
     }
+    mod("controlify") {
+        metadata {
+            modId = "salts_inventory_controlify"
+            name = "Salt's Inventory Controlify"
+            description = "Controller radial inventory workspace for Salt's Inventory Update. Requires the matching core mod and Controlify."
+            license = "MIT"
+        }
+        version("1.20.1") {
+            fabric {
+                loaderVersion = "0.18.2"
+                fabricApi("0.92.6+1.20.1")
+            }
+            forge {
+                loaderVersion = "47.4.0"
+            }
+        }
+        version("1.21.1") {
+            fabric {
+                loaderVersion = "0.18.2"
+                fabricApi("0.116.1+1.21.1")
+            }
+            neoforge {
+                loaderVersion = "21.1.229"
+            }
+        }
+        version("1.21.11") {
+            fabric {
+                loaderVersion = "0.19.2"
+                fabricApi("0.141.4+1.21.11")
+            }
+            neoforge { loaderVersion = "21.11.42" }
+        }
+        version("26.1.2") {
+            fabric {
+                loaderVersion = "0.19.5"
+                fabricApi("0.149.0+26.1.2")
+            }
+            neoforge { loaderVersion = "26.1.2.59-beta" }
+        }
+        version("26.2") {
+            fabric {
+                loaderVersion = "0.19.5"
+                fabricApi("0.153.0+26.2")
+            }
+            neoforge { loaderVersion = "26.2.0.90" }
+        }
+        version("26.3") {
+            neoFormVersion = "26.3-1"
+            fabric {
+                loaderVersion = "0.19.5"
+                fabricApi("0.161.0+26.3")
+            }
+            neoforge { loaderVersion = "26.3.0.76" }
+        }
+    }
     mod("compatibility") {
         metadata {
             modId = "salts_inventory_compat"
@@ -279,6 +339,34 @@ prism {
 subprojects {
     val minecraftVersion = parent?.name
     val compatibilityModule = path.startsWith(":compatibility:")
+    val controlifyModule = path.startsWith(":controlify:")
+    val coreModule = !compatibilityModule && !controlifyModule
+
+    if (controlifyModule && minecraftVersion != null && name in setOf("fabric", "forge", "neoforge")) {
+        val fabricTarget = name == "fabric"
+        val mappedFabric = fabricTarget && !minecraftVersion.startsWith("26.")
+        val pin = controlifyTargetPins.single {
+            it["minecraft"] == minecraftVersion && it["loader"] == name
+        }
+        fun coordinate(kind: String): String {
+            val dependency = pin.getValue(kind) as Map<*, *>
+            return "maven.modrinth:${dependency["project"]}:${dependency["version_id"]}"
+        }
+        if (name == "forge") {
+            repositories.maven {
+                name = "ControlifyForgeRuntime"
+                url = uri("https://www.cursemaven.com")
+                content { includeModule("curse.maven", "mixin-args-1257105") }
+            }
+        }
+        afterEvaluate {
+            dependencies.add(if (mappedFabric || name == "forge") "modImplementation" else "implementation", coordinate("controller"))
+            dependencies.add(if (mappedFabric || name == "forge") "modRuntimeOnly" else "runtimeOnly", coordinate("yacl"))
+            @Suppress("UNCHECKED_CAST")
+            val runtimeDependencies = pin["runtime_dependencies"] as? List<Map<String, Any?>> ?: emptyList()
+            runtimeDependencies.forEach { dependencies.add("runtimeOnly", it.getValue("coordinate") as String) }
+        }
+    }
 
     if (compatibilityModule && minecraftVersion == "1.20.1" && name == "forge") {
         afterEvaluate {
@@ -304,7 +392,7 @@ subprojects {
     }
 
     plugins.withId("java") {
-        if (!compatibilityModule && name in setOf("fabric", "forge", "neoforge")) {
+        if (coreModule && name in setOf("fabric", "forge", "neoforge")) {
             tasks.withType<ProcessResources>().configureEach {
                 from(rootProject.file("artwork/shared-resources"))
             }
@@ -356,6 +444,7 @@ subprojects {
     }
 
     val sophisticatedVersions = mapOf(
+        "26.3" to listOf("maven.modrinth:nmoqTijg:LUel1F77", "maven.modrinth:TyCTlI4b:wfDx3oyJ", "maven.modrinth:hMlaZH8f:vbyKOzIR"),
         "1.20.1" to listOf(
             "maven.modrinth:nmoqTijg:JGT2DD0v", // Sophisticated Core 1.20.1-1.3.84.2308
             "maven.modrinth:TyCTlI4b:as0tf712", // Sophisticated Backpacks 1.20.1-3.24.67.2109
@@ -457,7 +546,11 @@ subprojects {
                 if (mainSourceSet != null && mixinExtension != null) {
                     mixinExtension.javaClass
                         .getMethod("config", String::class.java)
-                        .invoke(mixinExtension, if (compatibilityModule) "salts_inventory_compat.sophisticated.mixins.json" else "salts_inventory_update.mixins.json")
+                        .invoke(mixinExtension, when {
+                            compatibilityModule -> "salts_inventory_compat.sophisticated.mixins.json"
+                            controlifyModule -> "salts_inventory_controlify.mixins.json"
+                            else -> "salts_inventory_update.mixins.json"
+                        })
                     if (compatibilityModule) {
                         mixinExtension.javaClass.getMethod("config", String::class.java)
                             .invoke(mixinExtension, "salts_inventory_compat.ae2.mixins.json")
@@ -468,9 +561,17 @@ subprojects {
                         mixinExtension.javaClass.getMethod("config", String::class.java)
                             .invoke(mixinExtension, "salts_inventory_update.mixins.json")
                     }
+                    if (controlifyModule) {
+                        mixinExtension.javaClass.getMethod("config", String::class.java)
+                            .invoke(mixinExtension, "salts_inventory_update.mixins.json")
+                    }
                     mixinExtension.javaClass
                         .getMethod("add", SourceSet::class.java, String::class.java)
-                        .invoke(mixinExtension, mainSourceSet, if (compatibilityModule) "salts_inventory_compat.refmap.json" else "salts_inventory_update.refmap.json")
+                        .invoke(mixinExtension, mainSourceSet, when {
+                            compatibilityModule -> "salts_inventory_compat.refmap.json"
+                            controlifyModule -> "salts_inventory_controlify.refmap.json"
+                            else -> "salts_inventory_update.refmap.json"
+                        })
                     logger.lifecycle("Salt's Inventory Update Forge 1.20.1 mixin refmap generation enabled")
                 } else {
                     logger.warn("Salt's Inventory Update Forge 1.20.1 mixin refmap generation could not be enabled")
@@ -480,7 +581,11 @@ subprojects {
         plugins.withId("java") {
             tasks.named<Jar>("jar") {
                 manifest {
-                    attributes("MixinConfigs" to if (compatibilityModule) "salts_inventory_compat.sophisticated.mixins.json,salts_inventory_compat.ae2.mixins.json,salts_inventory_compat.ae2-native.mixins.json" else "salts_inventory_update.mixins.json")
+                    attributes("MixinConfigs" to when {
+                        compatibilityModule -> "salts_inventory_compat.sophisticated.mixins.json,salts_inventory_compat.ae2.mixins.json,salts_inventory_compat.ae2-native.mixins.json"
+                        controlifyModule -> "salts_inventory_controlify.mixins.json"
+                        else -> "salts_inventory_update.mixins.json"
+                    })
                 }
             }
         }
@@ -490,7 +595,7 @@ subprojects {
         afterEvaluate {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
                 if (compatibilityModule) addFabricModMenuSourceDir()
-                else addFabricPlatformSourceDir(minecraftVersion)
+                else if (coreModule) addFabricPlatformSourceDir(minecraftVersion)
             }
             if (compatibilityModule) modMenuVersions[minecraftVersion]?.let { modMenuVersion ->
                 val configurationName = if (minecraftVersion.startsWith("26.")) "compileOnly" else "modCompileOnly"
@@ -577,6 +682,7 @@ subprojects {
     }
 
     val reiVersions = mapOf(
+        "26.3" to "26.3.824",
         "26.2" to "26.2.820",
         "26.1.2" to "26.1.818",
         "1.21.11" to "21.11.816",
@@ -584,6 +690,7 @@ subprojects {
         "1.20.1" to "12.1.785"
     )
     val reiBasicMathVersions = mapOf(
+        "26.3" to "0.6.1",
         "26.2" to "0.6.1",
         "26.1.2" to "0.6.1",
         "1.21.11" to "0.6.1",
@@ -591,6 +698,7 @@ subprojects {
         "1.20.1" to "0.6.1"
     )
     val reiClothConfigVersions = mapOf(
+        "26.3" to "26.3.159",
         "26.2" to "26.2.155",
         "26.1.2" to "26.1.154",
         "1.21.11" to "21.11.151",
@@ -598,6 +706,7 @@ subprojects {
         "1.20.1" to "11.0.99"
     )
     val reiArchitecturyVersions = mapOf(
+        "26.3" to "22.0.5",
         "26.2" to "21.0.2",
         "26.1.2" to "20.0.6",
         "1.21.11" to "19.0.1",
@@ -668,12 +777,12 @@ subprojects {
                     java.srcDir(rootProject.file("compatibility/versions/$minecraftVersion/fabric/src/main/java"))
                     java.exclude("**/SaltsInventoryCompatibilityFabric.java", "**/SaltsInventoryCompatibilityFabricClient.java",
                         "**/compat/rei/SaltsReiClientPlugin.java", "**/compat/emi/SaltsEmiClientPlugin.java")
-                } else addLoaderSourceDirs(minecraftVersion, loaderName)
+                } else if (coreModule) addLoaderSourceDirs(minecraftVersion, loaderName)
             }
         }
     }
 
-    if (!compatibilityModule && minecraftVersion != null && (name == "fabric" || name == "forge" || name == "neoforge") && includeFunctionalTests.get()) {
+    if (coreModule && minecraftVersion != null && (name == "fabric" || name == "forge" || name == "neoforge") && includeFunctionalTests.get()) {
         afterEvaluate {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
                 addFunctionalTestSourceDir()
@@ -684,7 +793,7 @@ subprojects {
 
 gradle.projectsEvaluated {
     val exampleCompiles = subprojects
-        .filter { !it.path.startsWith(":compatibility:") && it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
+        .filter { !it.path.startsWith(":compatibility:") && !it.path.startsWith(":controlify:") && it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
         .map { loaderProject ->
             val gameVersion = loaderProject.parent!!.name
             val legacyInput = gameVersion in setOf("1.20.1", "1.21.1")
@@ -766,12 +875,12 @@ gradle.projectsEvaluated {
             }
         }
         dependsOn(subprojects
-            .filter { !it.path.startsWith(":compatibility:") && it.parent?.name != null && (it.name == "fabric" || it.name == "forge" || it.name == "neoforge") }
+            .filter { !it.path.startsWith(":compatibility:") && !it.path.startsWith(":controlify:") && it.parent?.name != null && (it.name == "fabric" || it.name == "forge" || it.name == "neoforge") }
             .map { it.tasks.named("compileJava") })
     }
 
     val uploadableLoaderProjects = subprojects
-        .filter { !it.path.startsWith(":compatibility:") && it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
+        .filter { !it.path.startsWith(":compatibility:") && !it.path.startsWith(":controlify:") && it.parent?.name != null && it.name in setOf("fabric", "forge", "neoforge") }
     val allProjectBuildTasks = subprojects.mapNotNull { subproject ->
         subproject.tasks.findByName("build")?.let { subproject.tasks.named("build") }
     }
@@ -1143,3 +1252,4 @@ gradle.projectsEvaluated {
 }
 
 apply(from = "gradle/compatibility.gradle")
+apply(from = "gradle/controlify.gradle")

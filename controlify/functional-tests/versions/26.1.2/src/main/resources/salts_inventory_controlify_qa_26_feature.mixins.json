@@ -1,0 +1,37 @@
+{
+  "required": true,
+  "package": "com.salts_inventory_update.controlify.qa.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "FeatureTabsProbeMixin",
+    "FeatureTooltipProbeMixin",
+    "FeatureCursorProbeMixin",
+    "FeatureSortProbeMixin",
+    "FeatureCreativeProbeMixin",
+    "FeatureNavigationProbeMixin",
+    "FeatureHostMouseIsolationMixin",
+    "FeatureHoverPacketProbeMixin",
+    "FeatureHoverServerProbeMixin",
+    "FeatureNativeGuideProbeMixin",
+    "FeatureCompactGuideProbeMixin",
+    "FeatureWorkspacePreviewProbeMixin",
+    "FeatureWorkspaceSurfaceProbeMixin",
+    "FeatureWorkspaceCloseTimingMixin",
+    "FeatureSearchMouseProbeMixin",
+    "FeatureWorkspaceSoundProbeMixin",
+    "FeatureNativeWorkspaceSoundProbeMixin",
+    "FeatureSoundRequestAccessor",
+    "FeatureLayoutViewportProbeMixin",
+    "FeatureInGameGuideProbeMixin",
+    "FeatureNativeGuideDrawProbeMixin",
+    "FeatureContextualRenderProbeMixin",
+    "FeatureContextualSurfaceProbeMixin",
+    "FeatureVanillaBookSpriteProbeMixin",
+    "FeatureLiveSourceSlotProbeMixin",
+    "FeatureLiveSourceCookingProbeMixin",
+    "FeatureCoreFrameProbeMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

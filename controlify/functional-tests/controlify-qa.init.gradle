@@ -1,0 +1,317 @@
+// Opt-in world/controller verification. QA sources never enter production archives.
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
+import org.gradle.api.tasks.bundling.Jar
+import java.security.MessageDigest
+
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    def matrix = new groovy.json.JsonSlurper().parse(root.file('controlify/targets.json')).targets
+    def productionJar = { project ->
+        project.tasks.named(project.tasks.findByName('remapJar') != null ? 'remapJar' : 'jar', AbstractArchiveTask)
+    }
+    def upstreamFile = { file ->
+        ['controlify-', 'G2K5sLls-', '1eAoo2KR-', 'yacl-', 'yet_another_config_lib_v3-', 'mixin-args-', 'mixin_args-'].any { file.name.startsWith(it) }
+    }
+    def retainedRuntimeFile = { file ->
+        def path = file.canonicalPath
+        def prefix = root.projectDir.canonicalPath + File.separator
+        !upstreamFile(file) && (!path.startsWith(prefix) ||
+                path.contains(File.separator + '.gradle' + File.separator) ||
+                path.contains(File.separator + 'moddev' + File.separator))
+    }
+    def digest = { file, algorithm ->
+        def md = MessageDigest.getInstance(algorithm)
+        file.withInputStream { stream ->
+            byte[] buffer = new byte[65536]
+            int length
+            while ((length = stream.read(buffer)) != -1) md.update(buffer, 0, length)
+        }
+        md.digest().encodeHex().toString()
+    }
+    matrix.each { pin ->
+        def target = root.project(":controlify:${pin.minecraft}:${pin.loader}")
+        def core = root.project(":${pin.minecraft}:${pin.loader}")
+        def key = "${pin.minecraft}-${pin.loader}"
+        def qa = target.sourceSets.create('controlifyQa')
+        def sources = pin.minecraft == '1.21.1' ? 'controlify/functional-tests/src/main/java' :
+                "controlify/functional-tests/versions/${pin.minecraft}/src/main/java"
+        qa.java.srcDir(root.file(sources))
+        qa.java.srcDir(root.file("controlify/functional-tests/platform/${pin.loader}"))
+        qa.java.srcDir(root.file('controlify/functional-tests/shared'))
+        qa.resources.srcDir(root.file('controlify/functional-tests/shared-resources'))
+        qa.java.include('**/ControlifyGameplayHarness.java', '**/QaClientView.java', '**/QaRuntime.java', '**/QaWorkspaceOwner.java', '**/QaClientInitializer.java', '**/QaNativePointerFixture.java', '**/NativePointerFixtureMixin.java')
+        if (pin.minecraft in ['1.20.1', '1.21.1', '1.21.11']) qa.java.include('**/QaFeatureParity.java')
+        if (pin.minecraft == '1.20.1') {
+            qa.java.include('**/QaScreenTransitionMixin.java', '**/QaKeyboardCloseMixin.java', '**/QaCursorWarpTraceMixin.java', '**/QaInputCursorWarpTraceMixin.java', '**/QaNativeMouseMotionProbeMixin.java')
+            qa.resources.srcDir(root.file('controlify/functional-tests/versions/1.20.1/src/main/resources'))
+        }
+        if (pin.minecraft in ['1.21.1', '1.21.11']) {
+            qa.java.include('**/QaNativeMouseMotionProbeMixin.java')
+            qa.resources.srcDir(root.file(pin.minecraft == '1.21.1' ?
+                    'controlify/functional-tests/src/main/resources' :
+                    "controlify/functional-tests/versions/${pin.minecraft}/src/main/resources"))
+        }
+        def queuedRendering = !(pin.minecraft in ['1.20.1', '1.21.1'])
+        if (queuedRendering) {
+            qa.java.srcDir(root.file('controlify/functional-tests/modern/src/main/java'))
+            qa.java.include('**/WorkspaceOpacityProbe.java', '**/WorkspaceOpacityProbeMixin.java', '**/WorkspaceInputProbeMixin.java')
+            qa.resources.srcDir(root.file('controlify/functional-tests/modern/src/main/resources'))
+        }
+        def featurePass26 = pin.minecraft in ['26.1.2', '26.2', '26.3']
+        if (featurePass26) {
+            qa.java.include('**/FeatureWorkspaceCloseTimingMixin.java')
+            qa.java.include('**/FeatureSearchMouseProbeMixin.java')
+            qa.java.include('**/QaHoverPacketProbe.java', '**/FeatureHoverPacketProbeMixin.java', '**/FeatureHoverServerProbeMixin.java')
+            qa.java.include('**/QaContextualPresentationProbe.java', '**/FeatureLiveSourceSlotProbeMixin.java', '**/FeatureLiveSourceCookingProbeMixin.java', '**/FeatureCoreFrameProbeMixin.java')
+            qa.java.include('**/QaFeatureProbe.java', '**/QaVisualFeatureProbe.java', '**/FeatureTabsProbeMixin.java', '**/FeatureTooltipProbeMixin.java', '**/FeatureCursorProbeMixin.java', '**/FeatureSortProbeMixin.java', '**/FeatureCreativeProbeMixin.java', '**/FeatureNavigationProbeMixin.java', '**/FeatureHostMouseIsolationMixin.java', '**/QaNativeGuideProbe.java', '**/FeatureNativeGuideProbeMixin.java', '**/FeatureCompactGuideProbeMixin.java', '**/FeatureWorkspacePreviewProbeMixin.java', '**/FeatureWorkspaceSurfaceProbeMixin.java', '**/FeatureWorkspaceSoundProbeMixin.java', '**/FeatureNativeWorkspaceSoundProbeMixin.java', '**/FeatureSoundRequestAccessor.java', '**/FeatureLayoutViewportProbeMixin.java', '**/FeatureInGameGuideProbeMixin.java', '**/FeatureNativeGuideDrawProbeMixin.java', '**/FeatureContextualRenderProbeMixin.java', '**/FeatureContextualSurfaceProbeMixin.java', '**/FeatureVanillaBookSpriteProbeMixin.java', '**/FeatureNeoForgeTooltipProbeMixin.java')
+            qa.resources.srcDir(root.file("controlify/functional-tests/versions/${pin.minecraft}/src/main/resources"))
+        }
+        qa.compileClasspath += target.sourceSets.main.compileClasspath + target.sourceSets.main.output + core.sourceSets.main.output
+        if (pin.minecraft == '26.3' && pin.loader == 'neoforge') {
+            def nativeExtension = root.project(':compatibility:26.3:neoforge')
+            qa.java.srcDir(root.file('controlify/functional-tests/versions/26.3/neoforge/src/main/java'))
+            qa.java.include('**/QaAe2Network.java')
+            qa.compileClasspath += nativeExtension.sourceSets.main.compileClasspath
+            target.tasks.named(qa.compileJavaTaskName).configure { dependsOn(nativeExtension.tasks.named('compileJava')) }
+        }
+        def generated = target.layout.buildDirectory.dir('controlify-qa-resources')
+        qa.resources.srcDir(generated)
+        def metadata = target.tasks.register('controlifyQaMetadata') {
+            inputs.property('keyboardTraceSchema', pin.minecraft == '1.20.1' ? 3 : 0)
+            outputs.dir(generated)
+            doLast {
+                def folder = generated.get().asFile
+                folder.mkdirs()
+                if (pin.loader == 'fabric') {
+                    def definition = [
+                        schemaVersion: 1, id: 'salts_inventory_controlify_qa', version: '1.0.0', environment: 'client',
+                        entrypoints: [client: ['com.salts_inventory_update.controlify.qa.QaClientInitializer']],
+                        depends: [salts_inventory_update: '*', salts_inventory_controlify: '*', controlify: '*']
+                    ]
+                    definition.mixins = ['salts_inventory_controlify_qa_pointer.mixins.json']
+                    if (pin.minecraft == '1.20.1') definition.mixins += ['salts_inventory_controlify_qa_keyboard_trace.mixins.json']
+                    if (pin.minecraft in ['1.21.1', '1.21.11']) definition.mixins += ['salts_inventory_controlify_qa_mouse_motion.mixins.json']
+                    if (queuedRendering) definition.mixins += ['salts_inventory_controlify_qa.mixins.json']
+                    if (featurePass26) definition.mixins += ['salts_inventory_controlify_qa_26_feature.mixins.json']
+                    new File(folder, 'fabric.mod.json').text = groovy.json.JsonOutput.toJson(definition)
+                } else {
+                    def output = new File(folder, pin.loader == 'forge' ? 'META-INF/mods.toml' : 'META-INF/neoforge.mods.toml')
+                    output.parentFile.mkdirs()
+                    output.text = '''modLoader="javafml"
+loaderVersion="[1,)"
+license="Test fixture"
+[[mods]]
+modId="salts_inventory_controlify_qa"
+version="1.0.0"
+displayName="Salt Controller QA"
+'''
+                    if (pin.loader == 'neoforge') output.append('\n[[mixins]]\nconfig="salts_inventory_controlify_qa_pointer.mixins.json"\n')
+                    if (pin.minecraft in ['1.21.1', '1.21.11']) output.append('\n[[mixins]]\nconfig="salts_inventory_controlify_qa_mouse_motion.mixins.json"\n')
+                    if (queuedRendering) output.append('\n[[mixins]]\nconfig="salts_inventory_controlify_qa.mixins.json"\n')
+                    if (featurePass26) output.append('\n[[mixins]]\nconfig="salts_inventory_controlify_qa_26_feature.mixins.json"\n')
+                    if (featurePass26 && pin.loader == 'neoforge') output.append('\n[[mixins]]\nconfig="salts_inventory_controlify_qa_26_neoforge_feature.mixins.json"\n')
+                }
+            }
+        }
+        target.tasks.named(qa.compileJavaTaskName).configure { dependsOn(target.tasks.named('classes'), core.tasks.named('classes')) }
+        target.tasks.named(qa.processResourcesTaskName).configure { dependsOn(metadata) }
+        def qaJar = target.tasks.register('controlifyQaJar', Jar) {
+            from(qa.output)
+            archiveFileName.set("controller-qa-${key}.jar")
+            destinationDirectory.set(target.layout.buildDirectory.dir('controlify-qa-artifact'))
+            if (pin.loader == 'forge') manifest.attributes('MixinConfigs': 'salts_inventory_controlify_qa_pointer.mixins.json' +
+                (pin.minecraft == '1.20.1' ? ',salts_inventory_controlify_qa_keyboard_trace.mixins.json' : ''))
+        }
+        def published = target.configurations.detachedConfiguration(
+                target.dependencies.create("maven.modrinth:${pin.controller.project}:${pin.controller.version_id}"),
+                target.dependencies.create("maven.modrinth:${pin.yacl.project}:${pin.yacl.version_id}"))
+        published.transitive = false
+        def runtimePins = pin.runtime_dependencies ?: []
+        def publishedRuntime = runtimePins ? target.configurations.detachedConfiguration(
+                *runtimePins.collect { target.dependencies.create(it.coordinate) }) : null
+        if (publishedRuntime != null) publishedRuntime.transitive = false
+        def run = target.tasks.named('runClient').get()
+        target.tasks.register('runPackagedControlifyQa', JavaExec) {
+            def scope = root.providers.gradleProperty('controlifyQaScope').getOrElse('all')
+            if (!(scope in ['all', 'feature-parity', 'public-api', 'wheel-polish', 'wheel-stability', 'crafting-qol', 'mod-compat', 'creative-regression', 'browser-render'])
+                || scope != 'all' && scope != 'feature-parity' && !featurePass26
+                || scope == 'feature-parity' && featurePass26)
+                throw new GradleException('Unsupported controller QA scope: ' + scope)
+            def withExtension = root.providers.gradleProperty('controlifyQaExtension').map { it.toBoolean() }.getOrElse(false)
+            def fixtures = root.providers.gradleProperty('controlifyQaFixtures').getOrElse('')
+            if (!(fixtures in ['', 'jei', 'rei'])) throw new GradleException('Unsupported optional mod fixture profile: ' + fixtures)
+            if (fixtures && (!withExtension || pin.minecraft != '26.3')) throw new GradleException('Optional mod profiles require 26.3 Extended QA.')
+            def extension = root.project(":compatibility:${pin.minecraft}:${pin.loader}")
+            def reportKey = (scope == 'all' ? key : "${key}-${scope}") + (withExtension ? '-extended' : '') + (fixtures ? '-' + fixtures : '')
+            group = 'verification'
+            description = "Runs ${key} disposable controller scenarios using separate production JARs."
+            // The expanded 26.3 wheel scenarios include native cooking and lease expiry.
+            timeout.set(java.time.Duration.ofMinutes(8))
+            dependsOn(target.tasks.named(qa.classesTaskName), productionJar(target), productionJar(core))
+            if (withExtension) dependsOn(productionJar(extension))
+            if (pin.loader != 'fabric') dependsOn(qaJar)
+            if (pin.loader == 'forge') dependsOn(target.extensions.getByName('obfuscation').srgToNamedMappings)
+            dependsOn(run.taskDependencies.getDependencies(run).findAll { it.name != 'runClient' })
+            javaLauncher.set(run.javaLauncher)
+            def qaVendor = root.providers.gradleProperty('controlifyQaJvmVendor')
+            if (featurePass26 && qaVendor.isPresent()) javaLauncher.set(target.extensions.getByType(org.gradle.jvm.toolchain.JavaToolchainService).launcherFor {
+                languageVersion.set(org.gradle.jvm.toolchain.JavaLanguageVersion.of(25))
+                vendor.set(org.gradle.jvm.toolchain.JvmVendorSpec.matching(qaVendor.get()))
+            })
+            mainClass.set(run.mainClass)
+            if (featurePass26) { minHeapSize = '512m'; maxHeapSize = '3g' }
+            def runtimeProfile = withExtension || scope != 'all' ? 'packaged-controlify-' + reportKey : 'packaged-controlify'
+            def folder = target.layout.buildDirectory.dir('runtime-smoke/' + runtimeProfile).get().asFile
+            def output = root.file("build/controlify-qa/${reportKey}").canonicalFile
+            workingDir = folder
+            environment('SIU_FUNCTIONAL_TESTS', 'false')
+            environment('SIU_GAMEPLAY_TESTS', 'false')
+            environment('SIU_CONTROLIFY_TESTS', 'true')
+            environment('SIU_QA_OUTPUT', output.absolutePath)
+            environment('MOD_CLASSES', '')
+            doFirst {
+                if (root.providers.gradleProperty('includeFunctionalTests').map { it.toBoolean() }.getOrElse(false))
+                    throw new GradleException('Packaged controller QA requires production JARs; omit includeFunctionalTests.')
+                if (queuedRendering) {
+                    def config = new groovy.json.JsonSlurper().parse(root.file(
+                            'controlify/functional-tests/modern/src/main/resources/salts_inventory_controlify_qa.mixins.json'))
+                    config.client.each { mixin ->
+                        def path = (config.package + '.' + mixin).replace('.', '/') + '.class'
+                        if (!qa.output.classesDirs.files.any { new File(it, path).isFile() })
+                            throw new GradleException('Compile the required QA mixin before launch: ' + path)
+                    }
+                }
+                if (featurePass26) {
+                    def config = new groovy.json.JsonSlurper().parse(root.file(
+                            'controlify/functional-tests/versions/26.3/src/main/resources/salts_inventory_controlify_qa_26_feature.mixins.json'))
+                    config.client.each { mixin ->
+                        def path = (config.package + '.' + mixin).replace('.', '/') + '.class'
+                        if (!qa.output.classesDirs.files.any { new File(it, path).isFile() })
+                            throw new GradleException('Compile the required 26.3 feature probe before launch: ' + path)
+                    }
+                    if (pin.loader == 'neoforge') {
+                        def path = 'com/salts_inventory_update/controlify/qa/mixin/FeatureNeoForgeTooltipProbeMixin.class'
+                        if (!qa.output.classesDirs.files.any { new File(it, path).isFile() })
+                            throw new GradleException('Compile the required NeoForge tooltip observer before launch: ' + path)
+                    }
+                }
+                def expected = root.projectDir.canonicalFile.toPath().resolve("build/controlify-qa/${reportKey}").normalize()
+                if (output.toPath() != expected) throw new GradleException('QA cleanup must stay in its owned output directory.')
+                output.mkdirs()
+                def previous = new File(output, 'results.json')
+                if (previous.exists() && !previous.delete()) throw new GradleException('Could not clear previous QA report.')
+                def screenshots = new File(output, 'screenshots').canonicalFile
+                if (screenshots.toPath() != expected.resolve('screenshots')) throw new GradleException('Invalid QA screenshots directory.')
+                if (screenshots.isDirectory()) screenshots.listFiles().findAll { it.isFile() && it.name.endsWith('.png') }.each { file ->
+                    if (file.canonicalFile.parentFile != screenshots || !file.delete()) throw new GradleException('Could not clear QA screenshot: ' + file.name)
+                }
+                folder.mkdirs()
+                def runClasspath = run.hasProperty('classpathProvider') ? run.classpathProvider : run.classpath
+                classpath = runClasspath.filter(retainedRuntimeFile)
+                if (pin.loader == 'fabric') classpath += qa.output
+                args = run.args
+                jvmArgs = run.jvmArgs.findAll { !it.startsWith('-Dfabric.classPathGroups=') && !it.startsWith('-Dfml.modFolders=') }
+                systemProperties(run.systemProperties.findAll { name, value -> !(name in ['fabric.classPathGroups', 'fml.modFolders']) })
+                if (featurePass26) systemProperty('max.bg.threads', '2')
+                if (pin.loader == 'fabric') systemProperty('fabric.classPathGroups', qa.output.files.collect { it.absolutePath }.join(File.pathSeparator))
+                systemProperty('salts_inventory_controlify.qa', 'true')
+                systemProperty('salts_inventory_controlify.qaOutput', output.absolutePath)
+                systemProperty('salts_inventory_controlify.qaScope', scope)
+                // ModDev's argument file has a second runtime classpath; filter it too.
+                if (pin.loader != 'fabric') {
+                    def launch = new File(folder, 'qa-launch')
+                    launch.mkdirs()
+                    jvmArgs = jvmArgs.collect { arg ->
+                        if (!arg.startsWith('@')) return arg
+                        def original = new File(arg.substring(1).replace('\\\\', '\\'))
+                        if (!original.isFile()) throw new GradleException('Missing loader argument file: ' + original)
+                        def copy = new File(launch, original.name)
+                        copy.text = original.readLines().collect { line ->
+                            if (!line.contains('-DlegacyClassPath.file=')) return line
+                            def value = line.substring(line.indexOf('-DlegacyClassPath.file=') + '-DlegacyClassPath.file='.length()).replace('"', '').replace('\\\\', '\\')
+                            def originalClasspath = new File(value)
+                            def filtered = new File(launch, 'packagedLegacyClasspath.txt')
+                            filtered.text = originalClasspath.readLines().findAll { retainedRuntimeFile(new File(it)) }.join('\n') + '\n'
+                            return '"-DlegacyClassPath.file=' + filtered.absolutePath.replace('\\', '\\\\') + '"'
+                        }.join('\n') + '\n'
+                        return '@' + copy.absolutePath
+                    }
+                }
+                def mods = new File(folder, 'mods').canonicalFile
+                if (mods.toPath() != folder.canonicalFile.toPath().resolve('mods')) throw new GradleException('Invalid packaged QA mods directory.')
+                mods.mkdirs()
+                mods.listFiles().findAll { it.isFile() && it.name.endsWith('.jar') }.each { file ->
+                    if (file.canonicalFile.parentFile != mods || !file.delete()) throw new GradleException('Could not clear owned QA mod: ' + file.name)
+                }
+                [core, target].each { module -> root.copy { from(productionJar(module).get().archiveFile); into(mods) } }
+                if (withExtension) root.copy { from(productionJar(extension).get().archiveFile); into(mods) }
+                if (fixtures) {
+                    def fixtureDirectory = root.providers.gradleProperty('controlifyQaFixtureDirectory').getOrElse('build/controlify-qa/fixtures')
+                    def manifestFile = new File(root.file(fixtureDirectory), "${pin.loader}-${fixtures}/manifest.json")
+                    if (!manifestFile.isFile()) throw new GradleException('Download the official optional-mod fixtures before launching: ' + manifestFile)
+                    def fixtureManifest = new groovy.json.JsonSlurper().parse(manifestFile)
+                    fixtureManifest.mods.each { dependency ->
+                        def artifact = root.file(dependency.path)
+                        if (!artifact.isFile() || digest(artifact, 'SHA-512') != dependency.file.hashes.sha512)
+                            throw new GradleException('Optional-mod fixture hash differs: ' + artifact)
+                        root.copy { from(artifact); into(mods) }
+                    }
+                    root.copy { from(manifestFile); into(output); rename { 'optional-mods.json' } }
+                }
+                def upstream = published.files
+                [pin.controller, pin.yacl].each { dependency ->
+                    if (!upstream.any { digest(it, 'SHA-512') == dependency.sha512 }) throw new GradleException('Upstream artifact hash differs from pinned matrix: ' + dependency.version_id)
+                }
+                root.copy { from(upstream); into(mods) }
+                if (pin.loader == 'forge') {
+                    // Legacy Forge's development Minecraft uses named methods. Preserve
+                    // exact release inputs, then apply ModDev's supported namespace remap.
+                    def originals = new File(folder, 'original-mods').canonicalFile
+                    if (originals.toPath() != folder.canonicalFile.toPath().resolve('original-mods'))
+                        throw new GradleException('Invalid preserved Forge input directory.')
+                    originals.mkdirs()
+                    originals.listFiles().findAll { it.isFile() && it.name.endsWith('.jar') }.each { file ->
+                        if (file.canonicalFile.parentFile != originals || !file.delete())
+                            throw new GradleException('Could not clear owned Forge input: ' + file.name)
+                    }
+                    root.copy { from(mods.listFiles().findAll { it.name.endsWith('.jar') }); into(originals) }
+                    def mappings = target.extensions.getByName('obfuscation').srgToNamedMappings.get().asFile
+                    def tool = target.configurations.getByName('installerToolsRuntime').singleFile
+                    def remap = ['python', root.file('tools/remap-controlify-forge-qa.py'),
+                            '--java', javaLauncher.get().executablePath.asFile,
+                            '--installer-tools', tool, '--mappings', mappings,
+                            '--output-directory', mods, '--evidence', new File(output, 'forge-remap-lineage.json')]
+                    remap += originals.listFiles().findAll { it.name.endsWith('.jar') }.sort { it.name }.collectMany { ['--jar', it] }
+                    def conversion = root.providers.exec { commandLine(remap) }
+                    println(conversion.standardOutput.asText.get())
+                    conversion.result.get().assertNormalExitValue()
+                }
+                // Version-neutral loader shims remain unchanged, outside the four SRG remap inputs.
+                runtimePins.each { dependency ->
+                    def original = publishedRuntime.files.find { digest(it, 'SHA-512') == dependency.sha512 }
+                    if (original == null) throw new GradleException('Runtime dependency hash differs from pinned matrix: ' + dependency.version_id)
+                    root.copy { from(original); into(mods); rename { dependency.filename } }
+                }
+                if (pin.loader != 'fabric') root.copy { from(qaJar.get().archiveFile); into(mods) }
+                def staged = mods.listFiles().findAll { it.name.endsWith('.jar') }.sort { it.name }.collect {
+                    [file: it.name, sha256: digest(it, 'SHA-256'), bytes: it.length()]
+                }
+                new File(output, 'staged-artifacts.json').text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson([
+                    minecraft: pin.minecraft, loader: pin.loader, artifacts: staged,
+                    runtimeProfile: runtimeProfile, scope: scope, withExtension: withExtension, fixtures: fixtures,
+                    projectClasspath: classpath.files.findAll { it.canonicalPath.startsWith(root.projectDir.canonicalPath + File.separator) &&
+                        !it.canonicalPath.contains(File.separator + '.gradle' + File.separator) &&
+                        !it.canonicalPath.contains(File.separator + 'moddev' + File.separator) }.collect { it.absolutePath }
+                ]))
+                println('CONTROLIFY_QA_MODS=' + staged.collect { it.file })
+            }
+            doLast {
+                def report = new File(output, 'results.json')
+                if (!report.isFile()) throw new GradleException('Controller QA exited without its result report: ' + output)
+                def results = new groovy.json.JsonSlurper().parse(report)
+                if (results.failures != 0 || !results.results || results.results.any { it.status == 'FAIL' })
+                    throw new GradleException('Controller gameplay assertions failed; inspect ' + report)
+            }
+        }
+    }
+}

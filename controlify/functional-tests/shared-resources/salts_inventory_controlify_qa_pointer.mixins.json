@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.controlify.qa.mixin",
+  "client": ["NativePointerFixtureMixin"],
+  "injectors": {"defaultRequire": 1}
+}

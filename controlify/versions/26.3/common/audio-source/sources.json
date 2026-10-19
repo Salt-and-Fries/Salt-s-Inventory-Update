@@ -1,0 +1,196 @@
+{
+  "packs": [
+    {
+      "id": "kenney-interface-sounds",
+      "title": "Interface Sounds",
+      "author": "Kenney",
+      "source_url": "https://kenney.nl/assets/interface-sounds",
+      "download_url": "https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip",
+      "archive_sha256": "f2193d072726d6758a5f7871b2dcc54dcce0d5c35c6f0a62f92549b327c81232",
+      "license": "CC0-1.0",
+      "license_file": "licenses/kenney-interface-sounds-License.txt",
+      "license_sha256": "f7966c773bbed0eca6a9c75081c44a178b38eae112724dbb5fdfbd4192d118a9"
+    },
+    {
+      "id": "kenney-ui-audio",
+      "title": "UI Audio",
+      "author": "Kenney Vleugels (Kenney.nl)",
+      "source_url": "https://kenney.nl/assets/ui-audio",
+      "download_url": "https://kenney.nl/media/pages/assets/ui-audio/490d233f68-1677590494/kenney_ui-audio.zip",
+      "archive_sha256": "946fc23a63d535d693eb31b2eabb80c8c28d6351e2186b344ceb71b2cb1d5eb6",
+      "license": "CC0-1.0",
+      "license_file": "licenses/kenney-ui-audio-License.txt",
+      "license_sha256": "4f88ab3c885c87874834441a0d009cea8942f57461d7b870be65cf4e31362073"
+    }
+  ],
+  "assets": [
+    {
+      "name": "navigate",
+      "pack": "kenney-interface-sounds",
+      "author": "Kenney",
+      "source_url": "https://kenney.nl/assets/interface-sounds",
+      "source_archive_member": "Audio/tick_001.ogg",
+      "source_file": "originals/kenney-interface-sounds/tick_001.ogg",
+      "source_sha256": "9d057b918024c787bbe6c00beed13a7ef72a3fa0c259add3cef36582792f4230",
+      "license": "CC0-1.0",
+      "source_gain_db": -3,
+      "fade_in_seconds": 0.0003,
+      "fade_out_seconds": 0.003,
+      "keep_first_seconds": null
+    },
+    {
+      "name": "window_change",
+      "pack": "kenney-interface-sounds",
+      "author": "Kenney",
+      "source_url": "https://kenney.nl/assets/interface-sounds",
+      "source_archive_member": "Audio/select_001.ogg",
+      "source_file": "originals/kenney-interface-sounds/select_001.ogg",
+      "source_sha256": "aec0c31ea934a35936ae0d2ab8fac8123c93aa5647f935853a58dbaf90278b7a",
+      "license": "CC0-1.0",
+      "source_gain_db": -3,
+      "fade_in_seconds": 0.0005,
+      "fade_out_seconds": 0.004,
+      "keep_first_seconds": null
+    },
+    {
+      "name": "tuck",
+      "pack": "kenney-interface-sounds",
+      "author": "Kenney",
+      "source_url": "https://kenney.nl/assets/interface-sounds",
+      "source_archive_member": "Audio/minimize_003.ogg",
+      "source_file": "originals/kenney-interface-sounds/minimize_003.ogg",
+      "source_sha256": "400e1041499de85ec8b5529a35ff36787288175c4696cf2018ecff24a3a3fd29",
+      "license": "CC0-1.0",
+      "source_gain_db": -3,
+      "fade_in_seconds": 0.001,
+      "fade_out_seconds": 0.01,
+      "keep_first_seconds": null
+    },
+    {
+      "name": "restore",
+      "pack": "kenney-interface-sounds",
+      "author": "Kenney",
+      "source_url": "https://kenney.nl/assets/interface-sounds",
+      "source_archive_member": "Audio/maximize_003.ogg",
+      "source_file": "originals/kenney-interface-sounds/maximize_003.ogg",
+      "source_sha256": "df16f25d45189f5d44d6a482ab20d5067350ca8525a9affa1f8ce599e31a20a5",
+      "license": "CC0-1.0",
+      "source_gain_db": -3,
+      "fade_in_seconds": 0.001,
+      "fade_out_seconds": 0.01,
+      "keep_first_seconds": null
+    },
+    {
+      "name": "confirm",
+      "pack": "kenney-ui-audio",
+      "author": "Kenney Vleugels (Kenney.nl)",
+      "source_url": "https://kenney.nl/assets/ui-audio",
+      "source_archive_member": "Audio/click1.ogg",
+      "source_file": "originals/kenney-ui-audio/click1.ogg",
+      "source_sha256": "59175ac17cd49a68dd736285738441287636112a84a6f7ce0d89921bda5a5360",
+      "license": "CC0-1.0",
+      "source_gain_db": -3,
+      "fade_in_seconds": 0.0005,
+      "fade_out_seconds": 0.006,
+      "keep_first_seconds": null
+    },
+    {
+      "name": "craft_complete",
+      "pack": "kenney-interface-sounds",
+      "author": "Kenney",
+      "source_url": "https://kenney.nl/assets/interface-sounds",
+      "source_archive_member": "Audio/confirmation_001.ogg",
+      "source_file": "originals/kenney-interface-sounds/confirmation_001.ogg",
+      "source_sha256": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a",
+      "license": "CC0-1.0",
+      "source_gain_db": -6,
+      "fade_in_seconds": 0.001,
+      "fade_out_seconds": 0.024,
+      "keep_first_seconds": 0.14
+    },
+    {
+      "name": "unavailable",
+      "pack": "kenney-interface-sounds",
+      "author": "Kenney",
+      "source_url": "https://kenney.nl/assets/interface-sounds",
+      "source_archive_member": "Audio/error_004.ogg",
+      "source_file": "originals/kenney-interface-sounds/error_004.ogg",
+      "source_sha256": "0b574cea597d96507e782ae9764f88482ce49f46e931e57054bf7150047f2d69",
+      "license": "CC0-1.0",
+      "source_gain_db": -3,
+      "fade_in_seconds": 0.001,
+      "fade_out_seconds": 0.008,
+      "keep_first_seconds": null
+    }
+  ],
+  "retired_source_assets": [
+    {
+      "name": "open",
+      "pack": "kenney-interface-sounds",
+      "author": "Kenney",
+      "source_url": "https://kenney.nl/assets/interface-sounds",
+      "source_archive_member": "Audio/open_001.ogg",
+      "source_file": "originals/kenney-interface-sounds/open_001.ogg",
+      "source_sha256": "a27c6bb0df7da1e6af5dd5937593c98bc58b6e513f42fe6a3254cd6a6949c648",
+      "license": "CC0-1.0",
+      "source_gain_db": -3,
+      "fade_in_seconds": 0.001,
+      "fade_out_seconds": 0.008,
+      "keep_first_seconds": null
+    },
+    {
+      "name": "close",
+      "pack": "kenney-interface-sounds",
+      "author": "Kenney",
+      "source_url": "https://kenney.nl/assets/interface-sounds",
+      "source_archive_member": "Audio/close_001.ogg",
+      "source_file": "originals/kenney-interface-sounds/close_001.ogg",
+      "source_sha256": "44af8249b933e0fd35ec957a638bb1a0b01f85b53fbe9674bf77bd3ca3168ef4",
+      "license": "CC0-1.0",
+      "source_gain_db": -3,
+      "fade_in_seconds": 0.001,
+      "fade_out_seconds": 0.008,
+      "keep_first_seconds": null
+    }
+  ],
+  "event_aliases": [
+    {
+      "name": "open",
+      "event_id": "salts_inventory_controlify:ui.open",
+      "type": "event",
+      "target_event": "minecraft:ui.button.click",
+      "provider": "Minecraft 26.3 built-in resources",
+      "redistributed_audio": false,
+      "license": "Minecraft-provided; no audio redistribution",
+      "selection_basis": "Classic native UI button feedback; no general UI open/close event exists in 26.3",
+      "native_definition": {
+        "sounds": [
+          "random/click_stereo"
+        ]
+      },
+      "native_sounds_json_sha1": "7975165ad4a3c0cb3c05078b914eac0f2c3b5f5f",
+      "native_recording_resource": "minecraft:sounds/random/click_stereo.ogg",
+      "native_recording_sha1": "f0ca66561f832bf2f60b393837297c2692367cd5",
+      "native_recording_duration_seconds": 0.276735
+    },
+    {
+      "name": "close",
+      "event_id": "salts_inventory_controlify:ui.close",
+      "type": "event",
+      "target_event": "minecraft:ui.button.click",
+      "provider": "Minecraft 26.3 built-in resources",
+      "redistributed_audio": false,
+      "license": "Minecraft-provided; no audio redistribution",
+      "selection_basis": "Classic native UI button feedback; no general UI open/close event exists in 26.3",
+      "native_definition": {
+        "sounds": [
+          "random/click_stereo"
+        ]
+      },
+      "native_sounds_json_sha1": "7975165ad4a3c0cb3c05078b914eac0f2c3b5f5f",
+      "native_recording_resource": "minecraft:sounds/random/click_stereo.ogg",
+      "native_recording_sha1": "f0ca66561f832bf2f60b393837297c2692367cd5",
+      "native_recording_duration_seconds": 0.276735
+    }
+  ]
+}

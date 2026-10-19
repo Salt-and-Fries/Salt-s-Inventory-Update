@@ -1,0 +1,491 @@
+{
+  "minecraft": "26.3",
+  "checked_utc": "2026-10-19",
+  "metadata_source": "https://api.modrinth.com/v2",
+  "profiles": {
+    "fabric-jei": [
+      {
+        "project": "jei",
+        "version": "31.16.0.84",
+        "version_id": "G8Pw3LAj",
+        "file": {
+          "id": "qLYlrD1T",
+          "hashes": {
+            "sha1": "15755374a18f4940e2b8b03f7861967de667ce8c",
+            "sha512": "71451e8be3135d7c21ffa8df104f6e46f64b22940e4f4920ee5f6e651bceba3de71d5c714948930408e0dafdef9f57b23195ccfff17a223a13eaf7f04d1ce616"
+          },
+          "url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/G8Pw3LAj/jei-26.3-fabric-31.16.0.84.jar",
+          "filename": "jei-26.3-fabric-31.16.0.84.jar",
+          "primary": true,
+          "size": 7379833,
+          "file_type": null
+        }
+      },
+      {
+        "project": "toms-storage",
+        "version": "26.3-2.12.2-fabric",
+        "version_id": "e7S7Hc7o",
+        "file": {
+          "id": "7Ssj5z28",
+          "hashes": {
+            "sha1": "b6877dff0aa79379917bc43f387ed41f152a1c92",
+            "sha512": "b16374830a11fe3b0c9c48b202bb2ef0b56268cf20169eabdb44e6e5ada80c3bf6a61064e40ceb9686c97dc70898d230be17dfc8190cf867083ceaa6be09228e"
+          },
+          "url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/e7S7Hc7o/toms_storage_fabric-26.3-2.12.2.jar",
+          "filename": "toms_storage_fabric-26.3-2.12.2.jar",
+          "primary": true,
+          "size": 1879286,
+          "file_type": null
+        }
+      },
+      {
+        "project": "modmenu",
+        "version": "21.0.0",
+        "version_id": "kyy7dbrZ",
+        "file": {
+          "id": "kai5Dbms",
+          "hashes": {
+            "sha1": "66ec40f1cd0c037ddca2b5fc6b4b976d479c18e8",
+            "sha512": "588c0c557963f4778572ee81bfafc190b332c26d5926c5fe7e3e1614dcf8e14f58e3bc80a97694521dd05907e9753a7c8575048ea769e4dbf40a3db74a4e2606"
+          },
+          "url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/kyy7dbrZ/modmenu-21.0.0.jar",
+          "filename": "modmenu-21.0.0.jar",
+          "primary": true,
+          "size": 856779,
+          "file_type": null
+        }
+      },
+      {
+        "project": "7tEfOcA7",
+        "version": "0.6.8",
+        "version_id": "GKiA7PV4",
+        "file": {
+          "id": "Xnk5XC4V",
+          "hashes": {
+            "sha512": "cf0957c09bd0af1be7627cf68d1ceaad92bcb06c529ab85db5c26ae8a4950b236b7c62e5d096fc1b82c718578519b674b0970f8843c2d2178c14f3e63c28fd06",
+            "sha1": "7e7770093973e2ffb53ff9fb8d32304bf73744c4"
+          },
+          "url": "https://cdn.modrinth.com/data/7tEfOcA7/versions/GKiA7PV4/mezz_config-26.3-fabric-0.6.8.jar",
+          "filename": "mezz_config-26.3-fabric-0.6.8.jar",
+          "primary": true,
+          "size": 368401,
+          "file_type": null
+        }
+      },
+      {
+        "project": "eXts2L7r",
+        "version": "3.2.0+26.3",
+        "version_id": "lXytLqWj",
+        "file": {
+          "id": "S55UzZQh",
+          "hashes": {
+            "sha1": "4c455faa6333dbaef72cedbb91fe4a2a03176741",
+            "sha512": "eb2bb31e51068aad2581b7864ea7b11b1209ba1c2b27551cd5837d9b312b818b73bb47c06374b46b99b73401c62c6b6c115f702c55aed6afd467ad8ad6448de4"
+          },
+          "url": "https://cdn.modrinth.com/data/eXts2L7r/versions/lXytLqWj/placeholder-api-3.2.0%2B26.3.jar",
+          "filename": "placeholder-api-3.2.0+26.3.jar",
+          "primary": true,
+          "size": 254959,
+          "file_type": null
+        }
+      }
+    ],
+    "fabric-rei": [
+      {
+        "project": "rei",
+        "version": "26.3.824+fabric",
+        "version_id": "rKsAE6bX",
+        "file": {
+          "id": "Bicm8xZK",
+          "hashes": {
+            "sha1": "b7bfe27288f68027fab7277f4cf84b9d243f8978",
+            "sha512": "7724d8e8dc50248641686c878b6b60736572c49e0cd8c71640c1c57fe85aed9941cad8ff7806b923903253da3540ff3df9bf619d701f50b904990fa7cdd59ee9"
+          },
+          "url": "https://cdn.modrinth.com/data/nfn13YXA/versions/rKsAE6bX/RoughlyEnoughItems-26.3.824.jar",
+          "filename": "RoughlyEnoughItems-26.3.824.jar",
+          "primary": true,
+          "size": 2421605,
+          "file_type": null
+        }
+      },
+      {
+        "project": "toms-storage",
+        "version": "26.3-2.12.2-fabric",
+        "version_id": "e7S7Hc7o",
+        "file": {
+          "id": "7Ssj5z28",
+          "hashes": {
+            "sha1": "b6877dff0aa79379917bc43f387ed41f152a1c92",
+            "sha512": "b16374830a11fe3b0c9c48b202bb2ef0b56268cf20169eabdb44e6e5ada80c3bf6a61064e40ceb9686c97dc70898d230be17dfc8190cf867083ceaa6be09228e"
+          },
+          "url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/e7S7Hc7o/toms_storage_fabric-26.3-2.12.2.jar",
+          "filename": "toms_storage_fabric-26.3-2.12.2.jar",
+          "primary": true,
+          "size": 1879286,
+          "file_type": null
+        }
+      },
+      {
+        "project": "modmenu",
+        "version": "21.0.0",
+        "version_id": "kyy7dbrZ",
+        "file": {
+          "id": "kai5Dbms",
+          "hashes": {
+            "sha1": "66ec40f1cd0c037ddca2b5fc6b4b976d479c18e8",
+            "sha512": "588c0c557963f4778572ee81bfafc190b332c26d5926c5fe7e3e1614dcf8e14f58e3bc80a97694521dd05907e9753a7c8575048ea769e4dbf40a3db74a4e2606"
+          },
+          "url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/kyy7dbrZ/modmenu-21.0.0.jar",
+          "filename": "modmenu-21.0.0.jar",
+          "primary": true,
+          "size": 856779,
+          "file_type": null
+        }
+      },
+      {
+        "project": "9s6osm5g",
+        "version": "26.3.159+fabric",
+        "version_id": "fg2uyxOW",
+        "file": {
+          "id": "FAAB3MCT",
+          "hashes": {
+            "sha512": "8924e19d41845096724fa10f3717bc51964a0edbbbcad0ff1e6c6187a398b08f356e49579a657c2dc44a7f92e3850771f3ca70bf8c1f654de60425163b91dbb1",
+            "sha1": "9a5cce069380a2047250831dcb19f4ef1b15872d"
+          },
+          "url": "https://cdn.modrinth.com/data/9s6osm5g/versions/fg2uyxOW/cloth-config-fabric-26.3.159.jar",
+          "filename": "cloth-config-fabric-26.3.159.jar",
+          "primary": true,
+          "size": 1135009,
+          "file_type": null
+        }
+      },
+      {
+        "project": "lhGA9TYQ",
+        "version": "22.0.5+fabric",
+        "version_id": "1pMaB6So",
+        "file": {
+          "id": "ZOukte3p",
+          "hashes": {
+            "sha1": "8c5f566e32bd47fbb80be4932b9be1cfa97c4e3a",
+            "sha512": "14c61af2088b80b465f06edd3b3005038fa5be1c95a2161ce712c8da408a358038b7cd7ae4acf3198f6d47c693e4fdf65d646dac7e124f7cdd7f32bbc0dcd0ce"
+          },
+          "url": "https://cdn.modrinth.com/data/lhGA9TYQ/versions/1pMaB6So/architectury-fabric-22.0.5.jar",
+          "filename": "architectury-fabric-22.0.5.jar",
+          "primary": true,
+          "size": 622542,
+          "file_type": null
+        }
+      },
+      {
+        "project": "eXts2L7r",
+        "version": "3.2.0+26.3",
+        "version_id": "lXytLqWj",
+        "file": {
+          "id": "S55UzZQh",
+          "hashes": {
+            "sha1": "4c455faa6333dbaef72cedbb91fe4a2a03176741",
+            "sha512": "eb2bb31e51068aad2581b7864ea7b11b1209ba1c2b27551cd5837d9b312b818b73bb47c06374b46b99b73401c62c6b6c115f702c55aed6afd467ad8ad6448de4"
+          },
+          "url": "https://cdn.modrinth.com/data/eXts2L7r/versions/lXytLqWj/placeholder-api-3.2.0%2B26.3.jar",
+          "filename": "placeholder-api-3.2.0+26.3.jar",
+          "primary": true,
+          "size": 254959,
+          "file_type": null
+        }
+      }
+    ],
+    "neoforge-jei": [
+      {
+        "project": "jei",
+        "version": "31.16.0.84",
+        "version_id": "wSzwAzVB",
+        "file": {
+          "id": "DPjsByEr",
+          "hashes": {
+            "sha1": "e7811bead1e9b9577417fc42aa1d10e044b80b01",
+            "sha512": "b485b706464aa4bf31f161e635f20a26a4913d84855f5e67968577770b107ce68bbadbfbf6a549001c6b71e1a3fffbfb4c9972d38f45c512c065a1068b612088"
+          },
+          "url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/wSzwAzVB/jei-26.3-neoforge-31.16.0.84.jar",
+          "filename": "jei-26.3-neoforge-31.16.0.84.jar",
+          "primary": true,
+          "size": 7357592,
+          "file_type": null
+        }
+      },
+      {
+        "project": "toms-storage",
+        "version": "26.3-2.12.3",
+        "version_id": "WoT7ihuc",
+        "file": {
+          "id": "F1ZUelGF",
+          "hashes": {
+            "sha1": "83fb39353eb875af521efb8f7ada01a8a6c16c30",
+            "sha512": "48ddc1fe10df14f00df51327353d351836309359d5b98d6e6cbbf7908fa1888781ec0209a3ea850e2d110930c127fc39aff441a97e8a4d7fbb6ea0dd6a942444"
+          },
+          "url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/WoT7ihuc/toms_storage-26.3-2.12.3.jar",
+          "filename": "toms_storage-26.3-2.12.3.jar",
+          "primary": true,
+          "size": 872202,
+          "file_type": null
+        }
+      },
+      {
+        "project": "ae2",
+        "version": "26.3.1-alpha",
+        "version_id": "PDPQ4WfW",
+        "file": {
+          "id": "GaBFrL9O",
+          "hashes": {
+            "sha512": "0b2cd09cb2fc63c39e600d2989edb6c8ac2ceac396cbb15224aadd87c555ffa8465503af165a02df73646f1e0cc2f3a6d711f669fa7ba9a5dd9fe88d0b9533cc",
+            "sha1": "41e5ce3f2dfb9e6d9a423754b3134e385f6dbcda"
+          },
+          "url": "https://cdn.modrinth.com/data/XxWD5pD3/versions/PDPQ4WfW/appliedenergistics2-26.3.1-alpha.jar",
+          "filename": "appliedenergistics2-26.3.1-alpha.jar",
+          "primary": true,
+          "size": 8397266,
+          "file_type": null
+        }
+      },
+      {
+        "project": "guideme",
+        "version": "26.3.4-alpha",
+        "version_id": "k8pDKdkO",
+        "file": {
+          "id": "IYdKJIil",
+          "hashes": {
+            "sha512": "0fee84231d32e106d08aa028827a6c7136fe3cad90e29b8e1d0c80f2a620e3594f555e8bee21f4bb57174e6e62f992d2f376ee9874e3dea03d14d9f5bd120f55",
+            "sha1": "03e9137f8118204bd0d0dc32c8e1ec762b1a3775"
+          },
+          "url": "https://cdn.modrinth.com/data/Ck4E7v7R/versions/k8pDKdkO/guideme-26.3.4-alpha.jar",
+          "filename": "guideme-26.3.4-alpha.jar",
+          "primary": true,
+          "size": 5311239,
+          "file_type": null
+        }
+      },
+      {
+        "project": "nmoqTijg",
+        "version": "26.3-1.5.14.2411",
+        "version_id": "LUel1F77",
+        "file": {
+          "id": "TQW4WM3E",
+          "hashes": {
+            "sha1": "45814f2ca0a42a67290d3d2ac08e9391380489bb",
+            "sha512": "58af2211bc6c2d0a589bb3f75a66ab00774e04ad69c7183363c211269e00a3be2c5b8c07951cd85ed1deba63e94d43186c5384f73c2ae2f06d8a26d9b0e51394"
+          },
+          "url": "https://cdn.modrinth.com/data/nmoqTijg/versions/LUel1F77/sophisticatedcore-26.3-1.5.14.2411.jar",
+          "filename": "sophisticatedcore-26.3-1.5.14.2411.jar",
+          "primary": true,
+          "size": 1846651,
+          "file_type": null
+        }
+      },
+      {
+        "project": "TyCTlI4b",
+        "version": "26.3-3.26.13.2209",
+        "version_id": "wfDx3oyJ",
+        "file": {
+          "id": "6MfXpmka",
+          "hashes": {
+            "sha512": "83fbb5e34fe14bfd5a8a5eb37c0b29c2186f3e6eafedbc4cdc7f8feb71166e83bd063f4421b08dc96ab19958466cbb27a3ccc0522175cc2260a3b1c892849ae3",
+            "sha1": "393ecacbef30b6e51a9d3016b901862bc10fac78"
+          },
+          "url": "https://cdn.modrinth.com/data/TyCTlI4b/versions/wfDx3oyJ/sophisticatedbackpacks-26.3-3.26.13.2209.jar",
+          "filename": "sophisticatedbackpacks-26.3-3.26.13.2209.jar",
+          "primary": true,
+          "size": 1264522,
+          "file_type": null
+        }
+      },
+      {
+        "project": "hMlaZH8f",
+        "version": "26.3-1.5.123.2187",
+        "version_id": "vbyKOzIR",
+        "file": {
+          "id": "zS0WkStw",
+          "hashes": {
+            "sha512": "5e2fbc678f0ed783dd94fe9ec2fb89b570c3ed6dcf0d987ef7fe62ef0adf776454e9d8658a78bcd10e0b8a07d7851030133de2b147af339502cc7d77c8c67926",
+            "sha1": "5e190dc32f49117e6f6bc8b7625c8e66bd9e4aef"
+          },
+          "url": "https://cdn.modrinth.com/data/hMlaZH8f/versions/vbyKOzIR/sophisticatedstorage-26.3-1.5.123.2187.jar",
+          "filename": "sophisticatedstorage-26.3-1.5.123.2187.jar",
+          "primary": true,
+          "size": 1994355,
+          "file_type": null
+        }
+      },
+      {
+        "project": "7tEfOcA7",
+        "version": "0.6.8",
+        "version_id": "WFeT02Wv",
+        "file": {
+          "id": "uVVEaFrm",
+          "hashes": {
+            "sha512": "6774c36d33775fb72d5b1079271c381d0935ef6cdf8a4ae3b84c63a657d8aa4fee10d67432f9cbddb27741fc9434f5347eed0f05b1fe64205dc2c6809c5197fd",
+            "sha1": "a1c1f51cb1e99eef3b4d6c84415ce98e71a51742"
+          },
+          "url": "https://cdn.modrinth.com/data/7tEfOcA7/versions/WFeT02Wv/mezz_config-26.3-neoforge-0.6.8-standalone.jar",
+          "filename": "mezz_config-26.3-neoforge-0.6.8-standalone.jar",
+          "primary": true,
+          "size": 327189,
+          "file_type": null
+        }
+      }
+    ],
+    "neoforge-rei": [
+      {
+        "project": "rei",
+        "version": "26.3.824+neoforge",
+        "version_id": "uwE0PJmc",
+        "file": {
+          "id": "T5mnQELx",
+          "hashes": {
+            "sha512": "5693ec23590ce87910b0f05e0215a2597131fe8e5bb8632fb3992708ae61f1d6709db6f6c3f533d791c50fabc2a60207792b8cc8b6da52e3df1a546ddf574683",
+            "sha1": "aed81122f59ace0da2bec02563ca3814ee2da07b"
+          },
+          "url": "https://cdn.modrinth.com/data/nfn13YXA/versions/uwE0PJmc/RoughlyEnoughItems-26.3.824.jar",
+          "filename": "RoughlyEnoughItems-26.3.824.jar",
+          "primary": true,
+          "size": 2429684,
+          "file_type": null
+        }
+      },
+      {
+        "project": "toms-storage",
+        "version": "26.3-2.12.3",
+        "version_id": "WoT7ihuc",
+        "file": {
+          "id": "F1ZUelGF",
+          "hashes": {
+            "sha1": "83fb39353eb875af521efb8f7ada01a8a6c16c30",
+            "sha512": "48ddc1fe10df14f00df51327353d351836309359d5b98d6e6cbbf7908fa1888781ec0209a3ea850e2d110930c127fc39aff441a97e8a4d7fbb6ea0dd6a942444"
+          },
+          "url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/WoT7ihuc/toms_storage-26.3-2.12.3.jar",
+          "filename": "toms_storage-26.3-2.12.3.jar",
+          "primary": true,
+          "size": 872202,
+          "file_type": null
+        }
+      },
+      {
+        "project": "ae2",
+        "version": "26.3.1-alpha",
+        "version_id": "PDPQ4WfW",
+        "file": {
+          "id": "GaBFrL9O",
+          "hashes": {
+            "sha512": "0b2cd09cb2fc63c39e600d2989edb6c8ac2ceac396cbb15224aadd87c555ffa8465503af165a02df73646f1e0cc2f3a6d711f669fa7ba9a5dd9fe88d0b9533cc",
+            "sha1": "41e5ce3f2dfb9e6d9a423754b3134e385f6dbcda"
+          },
+          "url": "https://cdn.modrinth.com/data/XxWD5pD3/versions/PDPQ4WfW/appliedenergistics2-26.3.1-alpha.jar",
+          "filename": "appliedenergistics2-26.3.1-alpha.jar",
+          "primary": true,
+          "size": 8397266,
+          "file_type": null
+        }
+      },
+      {
+        "project": "guideme",
+        "version": "26.3.4-alpha",
+        "version_id": "k8pDKdkO",
+        "file": {
+          "id": "IYdKJIil",
+          "hashes": {
+            "sha512": "0fee84231d32e106d08aa028827a6c7136fe3cad90e29b8e1d0c80f2a620e3594f555e8bee21f4bb57174e6e62f992d2f376ee9874e3dea03d14d9f5bd120f55",
+            "sha1": "03e9137f8118204bd0d0dc32c8e1ec762b1a3775"
+          },
+          "url": "https://cdn.modrinth.com/data/Ck4E7v7R/versions/k8pDKdkO/guideme-26.3.4-alpha.jar",
+          "filename": "guideme-26.3.4-alpha.jar",
+          "primary": true,
+          "size": 5311239,
+          "file_type": null
+        }
+      },
+      {
+        "project": "nmoqTijg",
+        "version": "26.3-1.5.14.2411",
+        "version_id": "LUel1F77",
+        "file": {
+          "id": "TQW4WM3E",
+          "hashes": {
+            "sha1": "45814f2ca0a42a67290d3d2ac08e9391380489bb",
+            "sha512": "58af2211bc6c2d0a589bb3f75a66ab00774e04ad69c7183363c211269e00a3be2c5b8c07951cd85ed1deba63e94d43186c5384f73c2ae2f06d8a26d9b0e51394"
+          },
+          "url": "https://cdn.modrinth.com/data/nmoqTijg/versions/LUel1F77/sophisticatedcore-26.3-1.5.14.2411.jar",
+          "filename": "sophisticatedcore-26.3-1.5.14.2411.jar",
+          "primary": true,
+          "size": 1846651,
+          "file_type": null
+        }
+      },
+      {
+        "project": "TyCTlI4b",
+        "version": "26.3-3.26.13.2209",
+        "version_id": "wfDx3oyJ",
+        "file": {
+          "id": "6MfXpmka",
+          "hashes": {
+            "sha512": "83fbb5e34fe14bfd5a8a5eb37c0b29c2186f3e6eafedbc4cdc7f8feb71166e83bd063f4421b08dc96ab19958466cbb27a3ccc0522175cc2260a3b1c892849ae3",
+            "sha1": "393ecacbef30b6e51a9d3016b901862bc10fac78"
+          },
+          "url": "https://cdn.modrinth.com/data/TyCTlI4b/versions/wfDx3oyJ/sophisticatedbackpacks-26.3-3.26.13.2209.jar",
+          "filename": "sophisticatedbackpacks-26.3-3.26.13.2209.jar",
+          "primary": true,
+          "size": 1264522,
+          "file_type": null
+        }
+      },
+      {
+        "project": "hMlaZH8f",
+        "version": "26.3-1.5.123.2187",
+        "version_id": "vbyKOzIR",
+        "file": {
+          "id": "zS0WkStw",
+          "hashes": {
+            "sha512": "5e2fbc678f0ed783dd94fe9ec2fb89b570c3ed6dcf0d987ef7fe62ef0adf776454e9d8658a78bcd10e0b8a07d7851030133de2b147af339502cc7d77c8c67926",
+            "sha1": "5e190dc32f49117e6f6bc8b7625c8e66bd9e4aef"
+          },
+          "url": "https://cdn.modrinth.com/data/hMlaZH8f/versions/vbyKOzIR/sophisticatedstorage-26.3-1.5.123.2187.jar",
+          "filename": "sophisticatedstorage-26.3-1.5.123.2187.jar",
+          "primary": true,
+          "size": 1994355,
+          "file_type": null
+        }
+      },
+      {
+        "project": "9s6osm5g",
+        "version": "26.3.159+neoforge",
+        "version_id": "GchRXPnb",
+        "file": {
+          "id": "69hsDkaI",
+          "hashes": {
+            "sha512": "941dd8aab50d658cfa6da071dacd05802c7097643ad569935d0073b39231a2137f2ade2403b791f70cf5ebf1649d7b6337862568a8b340c88e5d364569f94431",
+            "sha1": "d57fa1419228ee371b0c29abf943288d384e2d08"
+          },
+          "url": "https://cdn.modrinth.com/data/9s6osm5g/versions/GchRXPnb/cloth-config-neoforge-26.3.159.jar",
+          "filename": "cloth-config-neoforge-26.3.159.jar",
+          "primary": true,
+          "size": 1135657,
+          "file_type": null
+        }
+      },
+      {
+        "project": "lhGA9TYQ",
+        "version": "22.0.5+neoforge",
+        "version_id": "dZ7iNvS4",
+        "file": {
+          "id": "DsoaLk2l",
+          "hashes": {
+            "sha512": "04e6fb056ada0f0148c002527cdac09a651f275c5fa6b6dbcbcd7d4fd62a4eb6f583d7711030e1c82b00339ba808d8070a588a5432f334903d8b430a0da47ae5",
+            "sha1": "3d97172dfd753f70a1ece295af19bc1a8bcd32f6"
+          },
+          "url": "https://cdn.modrinth.com/data/lhGA9TYQ/versions/dZ7iNvS4/architectury-neoforge-22.0.5.jar",
+          "filename": "architectury-neoforge-22.0.5.jar",
+          "primary": true,
+          "size": 622642,
+          "file_type": null
+        }
+      }
+    ]
+  }
+}

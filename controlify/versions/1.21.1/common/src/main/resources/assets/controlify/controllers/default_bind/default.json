@@ -1,0 +1,7 @@
+{
+  "defaults": {
+    "salts_inventory_controlify:contextual_recipe_wheel": {
+      "axis": "controlify:axis/right_trigger"
+    }
+  }
+}

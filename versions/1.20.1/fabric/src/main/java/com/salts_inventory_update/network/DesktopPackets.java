@@ -35,6 +35,9 @@ public final class DesktopPackets {
     public static final int QUICK_TARGET_DEFAULT = 0;
     public static final int QUICK_TARGET_SESSION = 1;
     public static final int QUICK_TARGET_HOTBAR = 2;
+    /** Exact built-in player surfaces, distinct from the native/default quick-move behavior. */
+    public static final int QUICK_TARGET_PLAYER_EQUIPMENT = 3;
+    public static final int QUICK_TARGET_PLAYER_STORAGE = 4;
     public static final int PIN_MODE_UNPINNED = 0;
     public static final int PIN_MODE_PINNED = 1;
     public static final int PIN_MODE_GHOST_PINNED = 2;
@@ -304,7 +307,7 @@ public final class DesktopPackets {
     public record DesktopQuickMoveAllPayload(List<DesktopSlotReference> sources, int targetKind, DesktopSessionReference target) implements DesktopPacket {
         public static final ResourceLocation TYPE = DesktopPackets.id("desktop_quick_move_all");
         public DesktopQuickMoveAllPayload(FriendlyByteBuf buf) { this(readSlotReferences(buf), buf.readVarInt(), readSessionReference(buf)); }
-        public DesktopQuickMoveAllPayload { if (targetKind < QUICK_TARGET_DEFAULT || targetKind > QUICK_TARGET_HOTBAR || target == null) throw new IllegalArgumentException("Invalid quick move all"); sources = List.copyOf(sources); requireUniqueBounded(sources, MAX_GESTURE_SLOTS, r -> ((long) r.sessionId() << 32) ^ r.slotIndex()); }
+        public DesktopQuickMoveAllPayload { if (targetKind < QUICK_TARGET_DEFAULT || targetKind > QUICK_TARGET_PLAYER_STORAGE || target == null) throw new IllegalArgumentException("Invalid quick move all"); sources = List.copyOf(sources); requireUniqueBounded(sources, MAX_GESTURE_SLOTS, r -> ((long) r.sessionId() << 32) ^ r.slotIndex()); }
         @Override public ResourceLocation id() { return TYPE; }
         @Override public void write(FriendlyByteBuf buf) { writeSlotReferences(buf, sources); buf.writeVarInt(targetKind); writeSessionReference(buf, target); }
     }
@@ -501,6 +504,41 @@ public final class DesktopPackets {
             buf.writeVarInt(this.sessionId);
             buf.writeVarInt(this.buttonId);
         }
+    }
+
+    public static final int RECIPE_HOVER_BEGIN=0, RECIPE_HOVER_UPDATE=1, RECIPE_HOVER_END=2;
+    public record DesktopCraftToWindowPayload(int sourceSessionId,int targetSessionId,ResourceLocation recipeId,boolean stack) implements DesktopPacket {
+        public static final ResourceLocation TYPE=DesktopPackets.id("desktop_craft_to_window");
+        public DesktopCraftToWindowPayload { if(sourceSessionId<0||targetSessionId<0||recipeId==null)throw new IllegalArgumentException("Invalid contextual craft"); }
+        public DesktopCraftToWindowPayload(FriendlyByteBuf buf){this(buf.readVarInt(),buf.readVarInt(),buf.readResourceLocation(),buf.readBoolean());}
+        @Override public ResourceLocation id(){return TYPE;}
+        @Override public void write(FriendlyByteBuf buf){buf.writeVarInt(sourceSessionId);buf.writeVarInt(targetSessionId);buf.writeResourceLocation(recipeId);buf.writeBoolean(stack);}
+    }
+    public record DesktopCookingRecipePayload(int sessionId,ResourceLocation recipeId) implements DesktopPacket {
+        public static final ResourceLocation TYPE=DesktopPackets.id("desktop_cooking_recipe");
+        public DesktopCookingRecipePayload { if(sessionId<=0||recipeId==null)throw new IllegalArgumentException("Invalid contextual cooking"); }
+        public DesktopCookingRecipePayload(FriendlyByteBuf buf){this(buf.readVarInt(),buf.readResourceLocation());}
+        @Override public ResourceLocation id(){return TYPE;}
+        @Override public void write(FriendlyByteBuf buf){buf.writeVarInt(sessionId);buf.writeResourceLocation(recipeId);}
+    }
+    public record DesktopRecipeHoverPayload(int sessionId,long epoch,int action,ResourceLocation recipeId) implements DesktopPacket {
+        public static final ResourceLocation TYPE=DesktopPackets.id("desktop_recipe_hover");
+        public DesktopRecipeHoverPayload { if(sessionId<0||epoch<=0||action<0||action>2)throw new IllegalArgumentException("Invalid contextual preview"); }
+        public DesktopRecipeHoverPayload(FriendlyByteBuf buf){this(buf.readVarInt(),buf.readVarLong(),buf.readVarInt(),buf.readBoolean()?buf.readResourceLocation():null);}
+        @Override public ResourceLocation id(){return TYPE;}
+        @Override public void write(FriendlyByteBuf buf){buf.writeVarInt(sessionId);buf.writeVarLong(epoch);buf.writeVarInt(action);buf.writeBoolean(recipeId!=null);if(recipeId!=null)buf.writeResourceLocation(recipeId);}
+    }
+    public record RecipeHoverGhost(int slotIndex,ItemStack item){
+        public RecipeHoverGhost {if(slotIndex<0||slotIndex>=DesktopProtocol.MAX_OPEN_SESSION_ITEMS||item==null||item.isEmpty())throw new IllegalArgumentException("Invalid hover ghost");item=item.copyWithCount(1);}
+        @Override public ItemStack item(){return item.copy();}
+    }
+    public record DesktopRecipeHoverStatePayload(long connectionNonce,int sessionId,long epoch,boolean active,ResourceLocation recipeId,List<RecipeHoverGhost> ghosts) implements DesktopPacket {
+        public static final ResourceLocation TYPE=DesktopPackets.id("desktop_recipe_hover_state");
+        public DesktopRecipeHoverStatePayload {if(connectionNonce==0||sessionId<0||epoch<=0||ghosts.size()>9)throw new IllegalArgumentException("Invalid hover state");ghosts=List.copyOf(ghosts);}
+        public DesktopRecipeHoverStatePayload(FriendlyByteBuf buf){this(buf.readLong(),buf.readVarInt(),buf.readVarLong(),buf.readBoolean(),buf.readBoolean()?buf.readResourceLocation():null,readGhosts(buf));}
+        private static List<RecipeHoverGhost> readGhosts(FriendlyByteBuf buf){int size=buf.readVarInt();if(size<0||size>9)throw new IllegalArgumentException("Too many ghosts");List<RecipeHoverGhost> ghosts=new ArrayList<>();for(int i=0;i<size;i++)ghosts.add(new RecipeHoverGhost(buf.readVarInt(),buf.readItem()));return ghosts;}
+        @Override public ResourceLocation id(){return TYPE;}
+        @Override public void write(FriendlyByteBuf buf){buf.writeLong(connectionNonce);buf.writeVarInt(sessionId);buf.writeVarLong(epoch);buf.writeBoolean(active);buf.writeBoolean(recipeId!=null);if(recipeId!=null)buf.writeResourceLocation(recipeId);buf.writeVarInt(ghosts.size());for(var ghost:ghosts){buf.writeVarInt(ghost.slotIndex());buf.writeItem(ghost.item());}}
     }
 
     public record DesktopPlaceRecipePayload(int sessionId, ResourceLocation recipeId, boolean useMaxItems) implements DesktopPacket {

@@ -144,6 +144,29 @@ public final class TomsStorageDesktopWindows {
         public Terminal(boolean crafting) {
             this.crafting = crafting;
         }
+        @Override public List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> textInputBounds(DesktopWindowContext<AbstractContainerMenu,TerminalState> context) {
+            return List.of(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(terminalOriginX(context),terminalOriginY(context),terminalSearchWidth(context),STORAGE_TERMINAL_SEARCH_HEIGHT));
+        }
+
+        @Override public com.salts_inventory_update.api.client.desktop.DesktopWindowSurface surface(DesktopWindowContext<AbstractContainerMenu,TerminalState> context) {
+            var regions=new ArrayList<com.salts_inventory_update.api.client.desktop.DesktopWindowRegion>();
+            int x=terminalOriginX(context)-context.windowX(),y=terminalOriginY(context)-context.windowY();
+            regions.add(com.salts_inventory_update.api.client.desktop.DesktopWindowRegion.interactive(x,y,terminalSearchWidth(context),STORAGE_TERMINAL_SEARCH_HEIGHT)
+                .withRole(com.salts_inventory_update.api.client.desktop.DesktopHitRole.CONTROL));
+            for(int i=0;i<STORAGE_TERMINAL_CONTROL_COUNT;i++) regions.add(com.salts_inventory_update.api.client.desktop.DesktopWindowRegion.interactive(
+                terminalControlsX(context)-context.windowX(),y+i*18,BUTTON,BUTTON).withRole(com.salts_inventory_update.api.client.desktop.DesktopHitRole.CONTROL));
+            int columns=terminalColumns(context),first=context.state().scrollRow*columns,count=filteredEntries(context).size();
+            for(int i=0;i<columns*visibleRows(context) && first+i<count;i++) regions.add(com.salts_inventory_update.api.client.desktop.DesktopWindowRegion.interactive(
+                terminalGridX(context)-context.windowX()+i%columns*SLOT,terminalGridY(context)-context.windowY()+i/columns*SLOT,SLOT_ITEM,SLOT_ITEM)
+                .withRole(com.salts_inventory_update.api.client.desktop.DesktopHitRole.SLOT));
+            return com.salts_inventory_update.api.client.desktop.DesktopWindowSurface.SALT.withRegions(regions);
+        }
+
+        @Override public List<com.salts_inventory_update.api.client.desktop.DesktopScrollRegion> controllerScrollRegions(DesktopWindowContext<AbstractContainerMenu,TerminalState> context) {
+            int max=Math.max(0,rowsForEntries(filteredEntries(context).size(),terminalColumns(context))-visibleRows(context));
+            return List.of(new com.salts_inventory_update.api.client.desktop.DesktopScrollRegion(terminalGridX(context),terminalGridY(context),
+                terminalColumns(context)*SLOT,visibleRows(context)*SLOT,SLOT,context.state().scrollRow>0,context.state().scrollRow<max));
+        }
 
         @Override
         public TerminalState createState(DesktopWindowSetupContext<AbstractContainerMenu> context) {
@@ -911,6 +934,9 @@ public final class TomsStorageDesktopWindows {
     }
 
     public static final class InventoryLink implements Definition<AbstractContainerMenu, InventoryLinkState> {
+        @Override public List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> textInputBounds(DesktopWindowContext<AbstractContainerMenu,InventoryLinkState> context) {
+            return List.of(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(context.contentX()+PAD,context.contentY()+PAD+14,106,13));
+        }
         @Override
         public InventoryLinkState createState(DesktopWindowSetupContext<AbstractContainerMenu> context) {
             return new InventoryLinkState();

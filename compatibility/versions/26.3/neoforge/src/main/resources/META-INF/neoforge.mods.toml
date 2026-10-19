@@ -46,9 +46,43 @@ config = "${mod_id}.ae2.mixins.json"
 [[mixins]]
 config = "${mod_id}.ae2-native.mixins.json"
 
+[[mixins]]
+config = "${mod_id}.ae2-navigation.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId = "ae2"
 type = "optional"
 versionRange = "[0,)"
 ordering = "AFTER"
 side = "BOTH"
+
+[[mixins]]
+config = "${mod_id}.sophisticated.mixins.json"
+
+[[dependencies.${mod_id}]]
+modId = "sophisticatedcore"
+type = "optional"
+versionRange = "[1.5.14,2)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "sophisticatedstorage"
+type = "optional"
+versionRange = "[1.5.123,2)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "sophisticatedbackpacks"
+type = "optional"
+versionRange = "[3.26.13,4)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "roughlyenoughitems"
+type = "optional"
+versionRange = "[26.3.824,)"
+ordering = "AFTER"
+side = "CLIENT"

@@ -47,6 +47,30 @@ import appeng.menu.slot.FakeSlot;
 
 /** A native window of AE content and controls. Never renders or installs a container screen. */
 public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWindow.State>, DesktopWindowPresentation {
+    @Override public List<com.salts_inventory_update.api.client.desktop.DesktopScrollRegion> controllerScrollRegions(DesktopWindowContext<AEBaseMenu,State> context) {
+        var content=context.state().content;
+        if(!(content instanceof appeng.client.gui.me.common.MEStorageScreen<?>)) return List.of();
+        var bar=((com.salts_inventory_update.compat.ae2.mixin.MEStorageScrollAccessor)content).saltsInventory$scrollbar();
+        var range=(com.salts_inventory_update.compat.ae2.mixin.ScrollbarRangeAccessor)bar;
+        var slots=content.desktopSlots().stream().filter(slot -> slot instanceof appeng.client.gui.me.common.RepoSlot && content.desktopSlotVisible(slot)).toList();
+        if(slots.isEmpty()) return List.of();
+        int x=slots.stream().mapToInt(slot -> slot.x).min().orElseThrow(),y=slots.stream().mapToInt(slot -> slot.y).min().orElseThrow();
+        int right=slots.stream().mapToInt(slot -> slot.x+16).max().orElseThrow(),bottom=slots.stream().mapToInt(slot -> slot.y+16).max().orElseThrow();
+        return List.of(new com.salts_inventory_update.api.client.desktop.DesktopScrollRegion(content.getGuiLeft()+x,content.getGuiTop()+y,right-x,bottom-y,18,
+            bar.getCurrentScroll()>range.saltsInventory$minScroll(),bar.getCurrentScroll()<range.saltsInventory$maxScroll(),1.0/Math.max(1,range.saltsInventory$pageSize())));
+    }
+    @Override public List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> textInputBounds(DesktopWindowContext<AEBaseMenu,State> context) {
+        var result=new java.util.ArrayList<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds>();
+        var pending=new java.util.ArrayDeque<net.minecraft.client.gui.components.events.GuiEventListener>(context.state().content.children());
+        var visited=java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<net.minecraft.client.gui.components.events.GuiEventListener,Boolean>());
+        while(!pending.isEmpty()) {
+            var widget=pending.removeFirst();if(!visited.add(widget)) continue;
+            if(widget instanceof net.minecraft.client.gui.components.events.ContainerEventHandler container) pending.addAll(container.children());
+            if(widget instanceof net.minecraft.client.gui.components.EditBox text && text.visible && text.active)
+                result.add(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(text.getX(),text.getY(),text.getWidth(),text.getHeight()));
+        }
+        return List.copyOf(result);
+    }
     private static final Map<UUID, State> OPEN = new HashMap<>();
 
     public static final class State {
@@ -289,7 +313,7 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
                         .withRole(DesktopHitRole.CONTROL));
             }
         }
-        for (var slot : context.model().slots) {
+        for (var slot : content.desktopSlots()) {
             if (content.desktopSlotVisible(slot)) {
                 regions.add(DesktopWindowRegion.interactive(slot.x - 1, slot.y - 1, 18, 18)
                         .withRole(DesktopHitRole.SLOT));

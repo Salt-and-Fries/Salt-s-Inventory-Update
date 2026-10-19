@@ -546,6 +546,15 @@ final class RuntimeEmiRecipeBrowserAccess implements RecipeBrowserAccess {
         return null;
     }
 
+    @Override public List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> recipeIngredientBounds(RecipeBrowserRecipe recipe,int x,int y) {
+        var result=new ArrayList<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds>();
+        for(Widget widget:this.widgets(recipe))if(widget instanceof SlotWidget slot && !slot.getStack().isEmpty()) {
+            Bounds bounds=slot.getBounds();
+            if(bounds.width()>0 && bounds.height()>0)result.add(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(x+bounds.left(),y+bounds.top(),bounds.width(),bounds.height()));
+        }
+        return List.copyOf(result);
+    }
+
     @Override
     public boolean handleRecipeMouseScrolled(
         RecipeBrowserRecipe recipe,

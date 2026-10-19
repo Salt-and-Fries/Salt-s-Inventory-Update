@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.mojang.serialization.Codec;
 
@@ -46,6 +46,7 @@ import com.salts_inventory_update.compat.toms_storage.TomsStoragePayloads;
 import com.salts_inventory_update.compat.toms_storage.TomsStoragePayloads.LinkChannel;
 import com.salts_inventory_update.compat.toms_storage.TomsStoragePayloads.TerminalEntry;
 import com.salts_inventory_update.compat.toms_storage.TomsStorageReflect;
+import com.salts_inventory_update.api.client.desktop.DesktopMouseButtons;
 import com.salts_inventory_update.compat.CompatibilityLog;
 
 public final class TomsStorageDesktopWindows {
@@ -143,6 +144,29 @@ public final class TomsStorageDesktopWindows {
 
         public Terminal(boolean crafting) {
             this.crafting = crafting;
+        }
+        @Override public List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> textInputBounds(DesktopWindowContext<AbstractContainerMenu,TerminalState> context) {
+            return List.of(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(terminalOriginX(context),terminalOriginY(context),terminalSearchWidth(context),STORAGE_TERMINAL_SEARCH_HEIGHT));
+        }
+
+        @Override public com.salts_inventory_update.api.client.desktop.DesktopWindowSurface surface(DesktopWindowContext<AbstractContainerMenu,TerminalState> context) {
+            var regions=new ArrayList<com.salts_inventory_update.api.client.desktop.DesktopWindowRegion>();
+            int x=terminalOriginX(context)-context.windowX(),y=terminalOriginY(context)-context.windowY();
+            regions.add(com.salts_inventory_update.api.client.desktop.DesktopWindowRegion.interactive(x,y,terminalSearchWidth(context),STORAGE_TERMINAL_SEARCH_HEIGHT)
+                .withRole(com.salts_inventory_update.api.client.desktop.DesktopHitRole.CONTROL));
+            for(int i=0;i<STORAGE_TERMINAL_CONTROL_COUNT;i++) regions.add(com.salts_inventory_update.api.client.desktop.DesktopWindowRegion.interactive(
+                terminalControlsX(context)-context.windowX(),y+i*18,BUTTON,BUTTON).withRole(com.salts_inventory_update.api.client.desktop.DesktopHitRole.CONTROL));
+            int columns=terminalColumns(context),first=context.state().scrollRow*columns,count=filteredEntries(context).size();
+            for(int i=0;i<columns*visibleRows(context) && first+i<count;i++) regions.add(com.salts_inventory_update.api.client.desktop.DesktopWindowRegion.interactive(
+                terminalGridX(context)-context.windowX()+i%columns*SLOT,terminalGridY(context)-context.windowY()+i/columns*SLOT,SLOT_ITEM,SLOT_ITEM)
+                .withRole(com.salts_inventory_update.api.client.desktop.DesktopHitRole.SLOT));
+            return com.salts_inventory_update.api.client.desktop.DesktopWindowSurface.SALT.withRegions(regions);
+        }
+
+        @Override public List<com.salts_inventory_update.api.client.desktop.DesktopScrollRegion> controllerScrollRegions(DesktopWindowContext<AbstractContainerMenu,TerminalState> context) {
+            int max=Math.max(0,rowsForEntries(filteredEntries(context).size(),terminalColumns(context))-visibleRows(context));
+            return List.of(new com.salts_inventory_update.api.client.desktop.DesktopScrollRegion(terminalGridX(context),terminalGridY(context),
+                terminalColumns(context)*SLOT,visibleRows(context)*SLOT,SLOT,context.state().scrollRow>0,context.state().scrollRow<max));
         }
 
         @Override
@@ -267,7 +291,7 @@ public final class TomsStorageDesktopWindows {
                 state.searchBox.focused(true);
                 state.searchBox.moveToEnd(false);
                 state.searchPopupOpen = false;
-                if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+                if (event.button() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
                     state.search = "";
                     state.searchBox.text("");
                     sendTerminalSettings(context, state);
@@ -283,7 +307,7 @@ public final class TomsStorageDesktopWindows {
             int craftingX = this.craftingAreaX(context);
             int craftingY = this.craftingAreaY(context);
             if (this.crafting && this.craftingRecipeBookButtonContains(context, event.x(), event.y())) {
-                if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                if (event.button() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT) {
                     if (context.toggleRecipeBook() && recipeBookSearchSyncEnabled(state)) {
                         context.setRecipeBookSearch(state.search);
                     }
@@ -291,11 +315,11 @@ public final class TomsStorageDesktopWindows {
                 return true;
             }
             if (this.crafting && this.craftingOutputContains(event.x(), event.y(), craftingX, craftingY)) {
-                if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+                if (event.button() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT || event.button() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
                     if (event.hasShiftDown() || context.shiftDown()) {
                         context.clickSlot(0, 0, ContainerInput.QUICK_MOVE);
                     } else {
-                        context.clickSlot(0, event.button(), ContainerInput.PICKUP);
+                        context.clickSlot(0, DesktopMouseButtons.menuButton(event.button()), ContainerInput.PICKUP);
                     }
                 }
                 return true;
@@ -328,7 +352,7 @@ public final class TomsStorageDesktopWindows {
                 context.carriedStack().isEmpty(),
                 entry,
                 overTerminalGrid,
-                keyDown(context, GLFW.GLFW_KEY_SPACE)
+                keyDown(context, org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE)
             );
             if (action != null) {
                 CompatibilityLog.trace(
@@ -412,7 +436,7 @@ public final class TomsStorageDesktopWindows {
         public boolean keyPressed(DesktopInputContext<AbstractContainerMenu, TerminalState> context, KeyEvent event) {
             TerminalState state = context.state();
             if (state.searchPopupOpen) {
-                if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) {
+                if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE || event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER || event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER) {
                     state.searchPopupOpen = false;
                     return true;
                 }
@@ -424,7 +448,7 @@ public final class TomsStorageDesktopWindows {
 
             state.searchBox.text(state.search);
             state.searchBox.focused(true);
-            if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) {
+            if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE || event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER || event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER) {
                 state.searchFocused = false;
                 state.searchBox.focused(false);
                 return true;
@@ -911,6 +935,9 @@ public final class TomsStorageDesktopWindows {
     }
 
     public static final class InventoryLink implements Definition<AbstractContainerMenu, InventoryLinkState> {
+        @Override public List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> textInputBounds(DesktopWindowContext<AbstractContainerMenu,InventoryLinkState> context) {
+            return List.of(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(context.contentX()+PAD,context.contentY()+PAD+14,106,13));
+        }
         @Override
         public InventoryLinkState createState(DesktopWindowSetupContext<AbstractContainerMenu> context) {
             return new InventoryLinkState();
@@ -1022,7 +1049,7 @@ public final class TomsStorageDesktopWindows {
 
             state.nameBox.text(state.name);
             state.nameBox.focused(true);
-            if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) {
+            if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE || event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER || event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER) {
                 state.nameFocused = false;
                 state.nameBox.focused(false);
                 return true;
@@ -1477,29 +1504,29 @@ public final class TomsStorageDesktopWindows {
 
     private static boolean isPullOne(TerminalState state, MouseButtonEvent event, boolean hasCarriedStack) {
         return switch (state.modes & 0xF) {
-            case 1 -> event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT && event.hasShiftDown();
-            case 2 -> event.button() == GLFW.GLFW_MOUSE_BUTTON_MIDDLE;
-            default -> event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT;
+            case 1 -> event.button() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT && event.hasShiftDown();
+            case 2 -> event.button() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_MIDDLE;
+            default -> event.button() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;
         };
     }
 
     private static boolean isTransferOne(TerminalState state, MouseButtonEvent event) {
         return switch (state.modes & 0xF) {
             case 1 -> event.hasShiftDown() && event.hasControlDown();
-            case 2 -> event.hasShiftDown() && event.button() == GLFW.GLFW_MOUSE_BUTTON_MIDDLE;
-            default -> event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT && event.hasShiftDown();
+            case 2 -> event.hasShiftDown() && event.button() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_MIDDLE;
+            default -> event.button() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT && event.hasShiftDown();
         };
     }
 
     private static boolean pullHalf(TerminalState state, MouseButtonEvent event, boolean carriedEmpty) {
         return switch (state.modes & 0xF) {
-            case 1, 2 -> event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT;
-            default -> event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT && carriedEmpty;
+            case 1, 2 -> event.button() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;
+            default -> event.button() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT && carriedEmpty;
         };
     }
 
     private static boolean pullNormal(TerminalState state, MouseButtonEvent event) {
-        return event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT;
+        return event.button() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
     }
 
     private static @Nullable TerminalClickAction resolveTerminalClick(
@@ -1833,7 +1860,7 @@ public final class TomsStorageDesktopWindows {
     }
 
     private static boolean buttonHit(MouseButtonEvent event, int x, int y, int width, int height) {
-        return event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && contains(event.x(), event.y(), x, y, width, height);
+        return event.button() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT && contains(event.x(), event.y(), x, y, width, height);
     }
 
     private static boolean contains(double mouseX, double mouseY, int x, int y, int width, int height) {
@@ -1841,7 +1868,7 @@ public final class TomsStorageDesktopWindows {
     }
 
     private static boolean keyDown(DesktopWindowContext<?, ?> context, int key) {
-        return org.lwjgl.glfw.GLFW.glfwGetKey(context.minecraft().getWindow().handle(), key) != GLFW.GLFW_RELEASE;
+        return InputConstants.isKeyDown(context.minecraft().getWindow(), key);
     }
 
     private static int clamp(int value, int min, int max) {

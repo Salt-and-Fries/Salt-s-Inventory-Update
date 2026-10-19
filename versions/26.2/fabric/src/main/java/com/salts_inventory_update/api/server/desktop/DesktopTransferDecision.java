@@ -136,4 +136,3 @@ public final class DesktopTransferDecision {
         return status == Status.ALLOWED;
     }
 }
-

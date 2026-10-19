@@ -35,6 +35,9 @@ public final class DesktopPackets {
     public static final int QUICK_TARGET_DEFAULT = 0;
     public static final int QUICK_TARGET_SESSION = 1;
     public static final int QUICK_TARGET_HOTBAR = 2;
+    /** Exact built-in player surfaces, distinct from the native/default quick-move behavior. */
+    public static final int QUICK_TARGET_PLAYER_EQUIPMENT = 3;
+    public static final int QUICK_TARGET_PLAYER_STORAGE = 4;
     public static final int PIN_MODE_UNPINNED = 0;
     public static final int PIN_MODE_PINNED = 1;
     public static final int PIN_MODE_GHOST_PINNED = 2;
@@ -62,6 +65,10 @@ public final class DesktopPackets {
         PayloadTypeRegistry.serverboundPlay().register(DesktopQuickMovePayload.TYPE, DesktopQuickMovePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopButtonPayload.TYPE, DesktopButtonPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopPlaceRecipePayload.TYPE, DesktopPlaceRecipePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopCraftToWindowPayload.TYPE, DesktopCraftToWindowPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopCraftStackToWindowPayload.TYPE, DesktopCraftStackToWindowPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopCookingRecipePayload.TYPE, DesktopCookingRecipePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopRecipeHoverPayload.TYPE, DesktopRecipeHoverPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopJeiTransferPayload.TYPE, DesktopJeiTransferPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopRenamePayload.TYPE, DesktopRenamePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
@@ -85,6 +92,7 @@ public final class DesktopPackets {
         PayloadTypeRegistry.clientboundPlay().register(DesktopMerchantOffersPayload.TYPE, DesktopMerchantOffersPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopCustomPayload.TYPE, DesktopCustomPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopGhostRecipePayload.TYPE, DesktopGhostRecipePayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopRecipeHoverStatePayload.TYPE, DesktopRecipeHoverStatePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(InventoryExpansionSyncPayload.TYPE, InventoryExpansionSyncPayload.CODEC);
     }
 
@@ -576,7 +584,7 @@ public final class DesktopPackets {
         }
 
         public DesktopQuickMoveAllPayload {
-            if (mutationId <= 0L || playerSessionToken == 0L || targetKind < QUICK_TARGET_DEFAULT || targetKind > QUICK_TARGET_HOTBAR || target == null) {
+            if (mutationId <= 0L || playerSessionToken == 0L || targetKind < QUICK_TARGET_DEFAULT || targetKind > QUICK_TARGET_PLAYER_STORAGE || target == null) {
                 throw new IllegalArgumentException("Invalid desktop quick-move-all target");
             }
             requireListSize("desktop quick-move-all slots", sources, 1, MAX_GESTURE_SLOTS);
@@ -748,6 +756,125 @@ public final class DesktopPackets {
         public Type<? extends CustomPacketPayload> type() {
             return TYPE;
         }
+    }
+
+    public static final int RECIPE_HOVER_BEGIN = 0, RECIPE_HOVER_UPDATE = 1, RECIPE_HOVER_END = 2;
+
+    /** Epoch prevents an outgoing wheel's cleanup from ending a newly opened preview. */
+    public record DesktopRecipeHoverPayload(long connectionNonce, long mutationId, long playerSessionToken,
+        int sessionId, long sessionToken, int stateId, long epoch, int action, int recipeIndex) implements CustomPacketPayload {
+        public static final Type<DesktopRecipeHoverPayload> TYPE = new Type<>(id("desktop_recipe_hover"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopRecipeHoverPayload> CODEC = CustomPacketPayload.codec(
+            DesktopRecipeHoverPayload::write, DesktopRecipeHoverPayload::new);
+        private DesktopRecipeHoverPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readVarLong(), buf.readLong(), buf.readVarInt(), buf.readLong(), buf.readVarInt(),
+                buf.readVarLong(), buf.readVarInt(), buf.readInt());
+        }
+        public DesktopRecipeHoverPayload {
+            if (connectionNonce == 0 || mutationId <= 0 || playerSessionToken == 0 || sessionId < 0 || sessionToken == 0
+                || stateId < 0 || epoch <= 0 || action < RECIPE_HOVER_BEGIN || action > RECIPE_HOVER_END
+                || recipeIndex < -1)
+                throw new IllegalArgumentException("Invalid recipe hover request");
+        }
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(connectionNonce); buf.writeVarLong(mutationId); buf.writeLong(playerSessionToken);
+            buf.writeVarInt(sessionId); buf.writeLong(sessionToken); buf.writeVarInt(stateId);
+            buf.writeVarLong(epoch); buf.writeVarInt(action); buf.writeInt(recipeIndex);
+        }
+        @Override public Type<DesktopRecipeHoverPayload> type() { return TYPE; }
+    }
+
+    public record RecipeHoverGhost(int slotIndex, ItemStack item) {
+        public RecipeHoverGhost {
+            if (slotIndex < 0 || slotIndex >= DesktopProtocol.MAX_OPEN_SESSION_ITEMS || item == null || item.isEmpty())
+                throw new IllegalArgumentException("Invalid hover ghost");
+            item = item.copyWithCount(1);
+        }
+    }
+
+    /** Ghosts describe missing slots only; the actual ingredients use ordinary menu synchronization. */
+    public record DesktopRecipeHoverStatePayload(long connectionNonce, int sessionId, long epoch, boolean active,
+        int recipeIndex, List<RecipeHoverGhost> ghosts) implements CustomPacketPayload {
+        public static final Type<DesktopRecipeHoverStatePayload> TYPE = new Type<>(id("desktop_recipe_hover_state"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopRecipeHoverStatePayload> CODEC = CustomPacketPayload.codec(
+            DesktopRecipeHoverStatePayload::write, DesktopRecipeHoverStatePayload::new);
+        private DesktopRecipeHoverStatePayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readVarInt(), buf.readVarLong(), buf.readBoolean(), buf.readInt(), readGhosts(buf));
+        }
+        public DesktopRecipeHoverStatePayload {
+            if (connectionNonce == 0 || sessionId < 0 || epoch <= 0 || recipeIndex < -1 || ghosts.size() > 9)
+                throw new IllegalArgumentException("Invalid recipe hover state");
+            ghosts = List.copyOf(ghosts);
+        }
+        private static List<RecipeHoverGhost> readGhosts(RegistryFriendlyByteBuf buf) {
+            int size = buf.readVarInt();
+            if (size < 0 || size > 9) throw new IllegalArgumentException("Too many hover ghosts");
+            List<RecipeHoverGhost> ghosts = new ArrayList<>(size);
+            for (int i = 0; i < size; i++) ghosts.add(new RecipeHoverGhost(buf.readVarInt(), ItemStack.STREAM_CODEC.decode(buf)));
+            return ghosts;
+        }
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(connectionNonce); buf.writeVarInt(sessionId); buf.writeVarLong(epoch); buf.writeBoolean(active); buf.writeInt(recipeIndex);
+            buf.writeVarInt(ghosts.size());
+            for (RecipeHoverGhost ghost : ghosts) { buf.writeVarInt(ghost.slotIndex()); ItemStack.STREAM_CODEC.encode(buf, ghost.item()); }
+        }
+        @Override public Type<DesktopRecipeHoverStatePayload> type() { return TYPE; }
+    }
+
+    /** One recipe operation, with both menu identities/state ids authorized by the server. */
+    public record DesktopCraftToWindowPayload(long connectionNonce, long mutationId, long playerSessionToken,
+        int sourceSessionId, long sourceSessionToken, int sourceStateId,
+        int targetSessionId, long targetSessionToken, int targetStateId, RecipeDisplayId recipeId) implements CustomPacketPayload {
+        public static final Type<DesktopCraftToWindowPayload> TYPE = new Type<>(id("desktop_craft_to_window"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopCraftToWindowPayload> CODEC = CustomPacketPayload.codec(
+            DesktopCraftToWindowPayload::write, DesktopCraftToWindowPayload::new);
+        private DesktopCraftToWindowPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readVarLong(), buf.readLong(), buf.readVarInt(), buf.readLong(), buf.readVarInt(),
+                buf.readVarInt(), buf.readLong(), buf.readVarInt(), RecipeDisplayId.STREAM_CODEC.decode(buf));
+        }
+        public DesktopCraftToWindowPayload {
+            if (connectionNonce == 0L || mutationId <= 0L || playerSessionToken == 0L || sourceSessionId < PLAYER_MENU_SESSION
+                || targetSessionId < PLAYER_MENU_SESSION || sourceSessionId == targetSessionId && sourceSessionId != PLAYER_MENU_SESSION || sourceSessionToken == 0L
+                || targetSessionToken == 0L || sourceStateId < 0 || targetStateId < 0 || recipeId == null || recipeId.index() < 0)
+                throw new IllegalArgumentException("Invalid craft-to-window request");
+        }
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(connectionNonce); buf.writeVarLong(mutationId); buf.writeLong(playerSessionToken);
+            buf.writeVarInt(sourceSessionId); buf.writeLong(sourceSessionToken); buf.writeVarInt(sourceStateId);
+            buf.writeVarInt(targetSessionId); buf.writeLong(targetSessionToken); buf.writeVarInt(targetStateId);
+            RecipeDisplayId.STREAM_CODEC.encode(buf, recipeId);
+        }
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    /** Separate opt-in packet keeps single-craft wire compatibility unchanged. */
+    public record DesktopCraftStackToWindowPayload(DesktopCraftToWindowPayload request) implements CustomPacketPayload {
+        public static final Type<DesktopCraftStackToWindowPayload> TYPE = new Type<>(id("desktop_craft_stack_to_window"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopCraftStackToWindowPayload> CODEC = CustomPacketPayload.codec(
+            DesktopCraftStackToWindowPayload::write, DesktopCraftStackToWindowPayload::new);
+        public DesktopCraftStackToWindowPayload { java.util.Objects.requireNonNull(request); }
+        private DesktopCraftStackToWindowPayload(RegistryFriendlyByteBuf buf) { this(new DesktopCraftToWindowPayload(buf)); }
+        private void write(RegistryFriendlyByteBuf buf) { request.write(buf); }
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    public record DesktopCookingRecipePayload(long connectionNonce, long mutationId, long playerSessionToken,
+        int sessionId, long sessionToken, int stateId, RecipeDisplayId recipeId) implements CustomPacketPayload {
+        public static final Type<DesktopCookingRecipePayload> TYPE = new Type<>(id("desktop_cooking_recipe"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopCookingRecipePayload> CODEC = CustomPacketPayload.codec(
+            DesktopCookingRecipePayload::write, DesktopCookingRecipePayload::new);
+        private DesktopCookingRecipePayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readVarLong(), buf.readLong(), buf.readVarInt(), buf.readLong(), buf.readVarInt(), RecipeDisplayId.STREAM_CODEC.decode(buf));
+        }
+        public DesktopCookingRecipePayload {
+            if (connectionNonce == 0L || mutationId <= 0L || playerSessionToken == 0L || sessionId <= PLAYER_MENU_SESSION
+                || sessionToken == 0L || stateId < 0 || recipeId == null || recipeId.index() < 0) throw new IllegalArgumentException("Invalid cooking recipe request");
+        }
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(connectionNonce); buf.writeVarLong(mutationId); buf.writeLong(playerSessionToken);
+            buf.writeVarInt(sessionId); buf.writeLong(sessionToken); buf.writeVarInt(stateId); RecipeDisplayId.STREAM_CODEC.encode(buf, recipeId);
+        }
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
     public record DesktopPlaceRecipePayload(long connectionNonce, long mutationId, long playerSessionToken, int sessionId, long sessionToken, int stateId, RecipeDisplayId recipeId, boolean useMaxItems) implements CustomPacketPayload {

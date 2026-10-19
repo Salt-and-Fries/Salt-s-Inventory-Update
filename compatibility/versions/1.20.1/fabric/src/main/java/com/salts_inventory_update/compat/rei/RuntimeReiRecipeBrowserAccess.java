@@ -481,6 +481,15 @@ final class RuntimeReiRecipeBrowserAccess implements RecipeBrowserAccess {
         return null;
     }
 
+    @Override public List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> recipeIngredientBounds(RecipeBrowserRecipe recipe,int x,int y) {
+        var result=new ArrayList<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds>();
+        for(var widget:this.widgets(recipe,x,y)) if(widget instanceof Slot slot && !slot.getCurrentEntry().isEmpty()) {
+            var rect=slot.getInnerBounds();
+            if(rect.width>0 && rect.height>0) result.add(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(rect.x,rect.y,rect.width,rect.height));
+        }
+        return List.copyOf(result);
+    }
+
     @Override
     public boolean handleRecipeMouseScrolled(RecipeBrowserRecipe recipe, int x, int y, double mouseX, double mouseY, double scrollX, double scrollY) {
         for (Widget widget : this.widgets(recipe, x, y)) {

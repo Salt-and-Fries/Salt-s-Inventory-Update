@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.controlify.qa.mixin",
+  "client": ["QaScreenTransitionMixin", "QaKeyboardCloseMixin", "QaCursorWarpTraceMixin", "QaInputCursorWarpTraceMixin", "QaNativeMouseMotionProbeMixin", "QaRecipeHoverTraceMixin"],
+  "injectors": {"defaultRequire": 1}
+}

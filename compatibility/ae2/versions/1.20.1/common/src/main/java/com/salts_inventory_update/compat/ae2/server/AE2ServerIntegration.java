@@ -110,7 +110,12 @@ public final class AE2ServerIntegration {
     private void registerMenu(MenuType<?> untyped, Object untypedBuilder) {
         var type = (MenuType<AEBaseMenu>) untyped;
         var builder=(com.salts_inventory_update.compat.ae2.menu.NativeDesktopBuilder)untypedBuilder;
-        DesktopMenuBindings.register(type, menu -> menu.slots.size(), true, (player, menu, bytes) -> {
+        DesktopMenuBindings.register(type, new DesktopMenuBindings.SlotAccess() {
+            @Override public int size(AbstractContainerMenu menu) { return menu.slots.size(); }
+            @Override public boolean isVirtualSlot(AbstractContainerMenu menu,Slot slot) {
+                return slot instanceof appeng.menu.slot.FakeSlot || slot instanceof appeng.menu.slot.CraftingTermSlot;
+            }
+        }, true, (player, menu, bytes) -> {
             var buffer = new FriendlyByteBuf(Unpooled.buffer());
             try {
                 appeng.menu.locator.MenuLocators.writeToPacket(buffer, ((AEBaseMenu) menu).getLocator());

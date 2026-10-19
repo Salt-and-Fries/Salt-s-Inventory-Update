@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "preserved_pages": 14,
+  "title": "Twelve native targets",
+  "subtitle": "Current compatibility, installation and runtime evidence",
+  "historical_note": "Pages 1-14 preserve the original illustrated feature guide and its Minecraft 1.21.1 Fabric captures. This appendix supersedes their installation matrix, test totals and verification-scope statements. The controls and feature descriptions remain applicable.",
+  "java_requirements": "Java 17 for Minecraft 1.20.1; Java 21 for 1.21.1 and 1.21.11; Java 25 for every 26.x target.",
+  "fabric_loader_requirements": "Fabric Loader 0.18.2 or newer for 1.20.1 and 1.21.1; 0.19.2 or newer for 1.21.11; 0.19.5 or newer for every 26.x target.",
+  "fabric_loader_source": "https://github.com/FabricMC/fabric-loader/releases/tag/0.19.5",
+  "legacy_loom_note": "Minecraft 1.20.1 retains Core's existing blank large Loom banner preview. Native pattern selection, result transfers, input consumption and replenishment work; the modern targets also render the banner preview.",
+  "runtime_dependency_labels": {
+    "mixin_args": "LexManos's Mixin Args"
+  },
+  "modern_evidence": [
+    {
+      "minecraft": "1.21.11",
+      "preferred_loader": "neoforge",
+      "capture": "03-swapped-focus-radial",
+      "title": "Modern rendering: radial focus",
+      "caption": "Character is focused in the radial workspace. The surrounding previews use the native window renderers with the companion's transformed placement and queued opacity.",
+      "required_pass": "character-now-focused"
+    },
+    {
+      "minecraft": "26.1.2",
+      "preferred_loader": "fabric",
+      "capture": "08-two-containers-pair",
+      "title": "Exact transfers between windows",
+      "caption": "Two existing container sessions form the displayed pair. Quick-move routes to the other displayed storage window; the server checks destination authorization and item conservation.",
+      "required_pass": "server-exact-pair-and-conservation"
+    },
+    {
+      "minecraft": "26.2",
+      "preferred_loader": "neoforge",
+      "capture": "12b-external-client-UI-button",
+      "title": "Native UI beyond the base rectangle",
+      "caption": "The test view's external button receives the configured native A action through its own interactive region. Its window identity and UI state survive tuck and restoration.",
+      "required_pass": "protruding-client-UI-button-clicked"
+    },
+    {
+      "minecraft": "26.3",
+      "preferred_loader": "fabric",
+      "capture": "11b-native-loom-replenished-result",
+      "title": "Native results and retained inputs",
+      "caption": "A Loom result moves into the selected container. Native callbacks consume one banner and dye, replenish the next result, and conserve the two completed banners across the displayed destinations.",
+      "required_pass": "loom-native-inputs-consumed-once-output-replenished"
+    }
+  ]
+}

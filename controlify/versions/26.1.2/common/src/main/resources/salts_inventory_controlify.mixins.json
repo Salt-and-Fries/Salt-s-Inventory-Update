@@ -1,0 +1,22 @@
+{
+  "required": true,
+  "package": "com.salts_inventory_update.controlify.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "GameplayWorkspaceAnimationMixin",
+    "TuckedInGameGuideMixin",
+    "VirtualCursorVisibilityMixin",
+    "WorkspaceTooltipMixin",
+    "WorkspaceNavigationMixin",
+    "QueuedWorkspaceOpacityMixin",
+    "WorkspaceOpacityVertexMixin",
+    "WorkspacePictureInPictureMixin",
+    "WorkspacePictureScaleMixin",
+    "WorkspaceSoundOptionsMixin",
+    "WorkspaceUpstreamSoundMixin",
+    "WorkspaceMouseHandlerAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

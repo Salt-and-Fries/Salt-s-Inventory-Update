@@ -29,4 +29,3 @@ public final class DesktopTransferValidators {
         return Objects.requireNonNull(decision, "validateTransfer returned null");
     }
 }
-

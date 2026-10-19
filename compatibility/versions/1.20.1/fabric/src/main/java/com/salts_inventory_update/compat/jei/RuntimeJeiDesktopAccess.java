@@ -67,6 +67,9 @@ import net.minecraft.world.item.TooltipFlag;
 import org.jspecify.annotations.Nullable;
 
 final class RuntimeRecipeBrowserAccess implements RecipeBrowserAccess {
+    private record HitGeometry(com.salts_inventory_update.api.client.desktop.DesktopWindowBounds artwork,
+                               com.salts_inventory_update.api.client.desktop.DesktopWindowBounds hit) { }
+    private final java.util.Map<IRecipeSlotDrawable,HitGeometry> controllerHitBounds=new java.util.WeakHashMap<>();
     private static final String FAVORITES_TAB_UID = "salts_inventory_update:jei_favorites";
     private static final String RECENT_TAB_UID = "salts_inventory_update:jei_recent";
     private static final int RECENT_HISTORY_LIMIT = 64;
@@ -421,6 +424,22 @@ final class RuntimeRecipeBrowserAccess implements RecipeBrowserAccess {
             .findFirst()
             .map(this::wrapTypedIngredient)
             .orElse(null);
+    }
+
+    @Override public List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> recipeIngredientBounds(RecipeBrowserRecipe recipe,int x,int y) {
+        var layout=this.castRecipeLayout(recipe.layout());layout.setPosition(x,y);
+        var result=new ArrayList<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds>();
+        for(var view:layout.getRecipeSlotsView().getSlotViews()) if(!view.isEmpty() && view instanceof IRecipeSlotDrawable slot) {
+            var rect=slot.getAreaIncludingBackground();
+            var artwork=new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(rect.getX(),rect.getY(),rect.getWidth(),rect.getHeight());
+            var cached=controllerHitBounds.get(slot);
+            if(cached==null || !cached.artwork().equals(artwork)) {
+                cached=new HitGeometry(artwork,RecipeHitBounds.find(artwork,slot::isMouseOver));controllerHitBounds.put(slot,cached);
+            }
+            var hit=cached.hit();
+            if(hit!=null) result.add(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(x+hit.x(),y+hit.y(),hit.width(),hit.height()));
+        }
+        return List.copyOf(result);
     }
 
     @Override

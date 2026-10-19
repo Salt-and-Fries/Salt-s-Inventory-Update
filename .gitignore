@@ -18,4 +18,12 @@ run/
 /compatibility/versions/*/*/logs/
 /tmp/pdfs/
 /output/pdf/
-/tools/__pycache__/
+
+# Local test runs and diagnostic artifacts
+/tmp/
+/logs/
+/controller-workspace-config/
+/hs_err_pid*.log
+/replay_pid*.log
+__pycache__/
+*.py[cod]
