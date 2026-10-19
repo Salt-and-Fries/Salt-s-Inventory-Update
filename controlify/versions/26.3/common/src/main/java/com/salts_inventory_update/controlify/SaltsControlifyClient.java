@@ -17,6 +17,8 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
     private static final Logger LOGGER = LoggerFactory.getLogger("salts_inventory_controlify");
     private static SaltsControlifyClient instance;
     private final ControlifyConfig config;
+    private final RecipeFilterSettings recipeFilters;
+    private final WorkspaceCraftFeedback craftFeedback = new WorkspaceCraftFeedback();
     private DesktopWorkspace desktop;
     private RadialWorkspace<UUID> model;
     private RadialInventoryScreen screen;
@@ -30,7 +32,24 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
     private boolean synchronizing;
     private boolean controllerPresentationActive;
 
-    private SaltsControlifyClient(ControlifyConfig config) { this.config = config; }
+    private SaltsControlifyClient(ControlifyConfig config) {
+        this.config = config;
+        Path path = Minecraft.getInstance().gameDirectory.toPath().resolve("config/salts_inventory_controlify_recipes.properties");
+        RecipeFilterSettings loaded;
+        try { loaded = RecipeFilterSettings.load(path); }
+        catch (IOException failure) {
+            LOGGER.warn("Could not read recipe-wheel preferences; using All", failure);
+            loaded = new RecipeFilterSettings(path);
+        }
+        recipeFilters = loaded;
+    }
+
+    RecipeFilter recipeFilter() { return recipeFilters.filter(); }
+    RecipeFilter cycleRecipeFilter() {
+        try { recipeFilters.set(recipeFilters.filter().next()); }
+        catch (IOException failure) { LOGGER.warn("Could not save recipe-wheel filter", failure); }
+        return recipeFilters.filter();
+    }
 
     public static void initialize() {
         if (instance != null) return;
@@ -41,11 +60,15 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
             throw new IllegalStateException("Could not load controller inventory configuration", failure);
         }
         ControlifyInputBridge.initialize(instance, RadialInventoryScreen.class);
+        WorkspaceUiSounds.initialize();
         DesktopClientApi.setWorkspaceHost(instance);
         DesktopClientApi.onClientTick(instance::tick);
+        DesktopClientApi.onClientTick(WorkspaceUiSounds::tick);
     }
 
-    @Override public boolean enabled() { return ControlifyInputBridge.usingController(); }
+    @Override public boolean enabled() {
+        return WorkspaceSearchKeyboard.activeFor(screen) || ControlifyInputBridge.usingController();
+    }
 
     @Override public void opened(DesktopWorkspace workspace) {
         if (synchronizing) return;
@@ -65,6 +88,7 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
             desktop.protectWindow(inventory.instanceId());
             desktop.protectWindow(character.instanceId());
             if (changed || model == null || !model.windows().contains(inventory.instanceId())) {
+                craftFeedback.reset(); WorkspaceUiSounds.reset();
                 model = new RadialWorkspace<>(inventory.instanceId(), character.instanceId());
                 animator.reset(); windows.clear(); before.clear(); screen = null;
             }
@@ -100,14 +124,18 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
             return;
         }
         if (!desktop.isValid() || minecraft.player == null) {
+            craftFeedback.reset(); WorkspaceUiSounds.reset();
             desktop.setContextualRecipePresentation(false);
             controllerPresentationActive = false;
-            if (minecraft.gui.screen() == screen) minecraft.gui.setScreen(null);
+            if (minecraft.gui.screen() == screen || WorkspaceSearchKeyboard.activeFor(screen)) minecraft.gui.setScreen(null);
+            WorkspaceSearchKeyboard.resetFor(screen);
             desktop = null; model = null; windows.clear(); screen = null; animator.reset();
             ControlifyInputBridge.reset();
             return;
         }
         if (!enabled()) {
+            WorkspaceSearchKeyboard.resetFor(screen);
+            craftFeedback.reset(); WorkspaceUiSounds.reset();
             desktop.forceInventoryHud(false);
             desktop.setContextualRecipePresentation(false);
             controllerPresentationActive = false;
@@ -125,6 +153,7 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
         }
         if (!model.active() && desktop.isNativeScreenActive()) opened(desktop);
         syncWindows();
+        craftFeedback.tick(desktop);
         if (model.active() && minecraft.gui.screen() == null && !tuckedAway()) show();
         if (tuckedAway()) desktop.tick();
         updateTransferPair();
@@ -149,6 +178,7 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
         });
         var frame = animator.animate(layout.compute(model, sizes, Math.max(1, width), Math.max(1, height), 1),
                 System.nanoTime(), config.animationsEnabled(), 220);
+        frame = layout.constrainRadial(model, sizes, frame, Math.max(1, width), Math.max(1, height));
         if (renderingTuckedPreview) {
             lastTuckedPreviewFrame = frame;
             lastTuckedPreviewWidth = width; lastTuckedPreviewHeight = height;
@@ -165,7 +195,7 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
             try { instance.screen.renderWorkspace(graphics, Integer.MIN_VALUE, Integer.MIN_VALUE, partialTick); }
             finally { instance.renderingTuckedPreview = false; }
         }
-        TuckedWindowTabs.render(graphics, instance.windows);
+        TuckedWindowTabs.render(graphics, instance.windows, instance.desktop);
     }
 
     /** Retained windows can be restored by the native inventory action during tucked gameplay. */
@@ -204,6 +234,7 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
     Map<UUID, DesktopWorkspaceWindow> windows() { return Collections.unmodifiableMap(windows); }
     RadialWorkspace<UUID> model() { return model; }
     ControlifyConfig config() { return config; }
+    WorkspaceCraftFeedback craftFeedback() { return craftFeedback; }
 
     @Override public boolean workspaceActive() { return model != null && model.active(); }
     @Override public boolean radialActive() { return workspaceActive() && model.mode() == RadialWorkspace.Mode.RADIAL; }
@@ -219,14 +250,16 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
             WorkspaceUiSounds.play(WorkspaceUiSounds.Action.FOCUS);
     }
     @Override public void releaseRadial() {
+        UUID previous = model.selected();
         model.releaseRadial(); updateTransferPair();
         if (tuckedAway()) {
+            craftFeedback.reset();
             WorkspaceUiSounds.play(WorkspaceUiSounds.Action.TUCK);
             tuckedAt = System.nanoTime();
             lastTuckedPreviewFrame = null;
             desktop.cancelInput();
             Minecraft.getInstance().gui.setScreen(null);
-        } else WorkspaceUiSounds.play(WorkspaceUiSounds.Action.CONFIRM);
+        } else if (!Objects.equals(previous, model.selected())) WorkspaceUiSounds.play(WorkspaceUiSounds.Action.CYCLE);
     }
     @Override public void cycleSelected(int steps) {
         if (model.cycleSelected(steps)) { desktop.cancelInput(); updateTransferPair(); WorkspaceUiSounds.play(WorkspaceUiSounds.Action.CYCLE); }
@@ -251,6 +284,7 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
     }
     @Override public void closeWorkspace() {
         boolean wasActive = workspaceActive();
+        craftFeedback.reset(); WorkspaceUiSounds.reset();
         desktop.closeClosableWindows(); model.closeAll(); syncWindows();
         desktop.cancelInput();
         desktop.transferPair(null, null);

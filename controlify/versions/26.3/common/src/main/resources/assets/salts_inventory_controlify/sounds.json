@@ -1,0 +1,74 @@
+{
+  "ui.navigate": {
+    "sounds": [
+      {
+        "name": "salts_inventory_controlify:ui/navigate",
+        "stream": false
+      }
+    ]
+  },
+  "ui.window_change": {
+    "sounds": [
+      {
+        "name": "salts_inventory_controlify:ui/window_change",
+        "stream": false
+      }
+    ]
+  },
+  "ui.tuck": {
+    "sounds": [
+      {
+        "name": "salts_inventory_controlify:ui/tuck",
+        "stream": false
+      }
+    ]
+  },
+  "ui.restore": {
+    "sounds": [
+      {
+        "name": "salts_inventory_controlify:ui/restore",
+        "stream": false
+      }
+    ]
+  },
+  "ui.confirm": {
+    "sounds": [
+      {
+        "name": "salts_inventory_controlify:ui/confirm",
+        "stream": false
+      }
+    ]
+  },
+  "ui.craft_complete": {
+    "sounds": [
+      {
+        "name": "salts_inventory_controlify:ui/craft_complete",
+        "stream": false
+      }
+    ]
+  },
+  "ui.unavailable": {
+    "sounds": [
+      {
+        "name": "salts_inventory_controlify:ui/unavailable",
+        "stream": false
+      }
+    ]
+  },
+  "ui.open": {
+    "sounds": [
+      {
+        "name": "minecraft:ui.button.click",
+        "type": "event"
+      }
+    ]
+  },
+  "ui.close": {
+    "sounds": [
+      {
+        "name": "minecraft:ui.button.click",
+        "type": "event"
+      }
+    ]
+  }
+}

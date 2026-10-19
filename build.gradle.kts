@@ -444,6 +444,7 @@ subprojects {
     }
 
     val sophisticatedVersions = mapOf(
+        "26.3" to listOf("maven.modrinth:nmoqTijg:LUel1F77", "maven.modrinth:TyCTlI4b:wfDx3oyJ", "maven.modrinth:hMlaZH8f:vbyKOzIR"),
         "1.20.1" to listOf(
             "maven.modrinth:nmoqTijg:JGT2DD0v", // Sophisticated Core 1.20.1-1.3.84.2308
             "maven.modrinth:TyCTlI4b:as0tf712", // Sophisticated Backpacks 1.20.1-3.24.67.2109
@@ -681,6 +682,7 @@ subprojects {
     }
 
     val reiVersions = mapOf(
+        "26.3" to "26.3.824",
         "26.2" to "26.2.820",
         "26.1.2" to "26.1.818",
         "1.21.11" to "21.11.816",
@@ -688,6 +690,7 @@ subprojects {
         "1.20.1" to "12.1.785"
     )
     val reiBasicMathVersions = mapOf(
+        "26.3" to "0.6.1",
         "26.2" to "0.6.1",
         "26.1.2" to "0.6.1",
         "1.21.11" to "0.6.1",
@@ -695,6 +698,7 @@ subprojects {
         "1.20.1" to "0.6.1"
     )
     val reiClothConfigVersions = mapOf(
+        "26.3" to "26.3.159",
         "26.2" to "26.2.155",
         "26.1.2" to "26.1.154",
         "1.21.11" to "21.11.151",
@@ -702,6 +706,7 @@ subprojects {
         "1.20.1" to "11.0.99"
     )
     val reiArchitecturyVersions = mapOf(
+        "26.3" to "22.0.5",
         "26.2" to "21.0.2",
         "26.1.2" to "20.0.6",
         "1.21.11" to "19.0.1",

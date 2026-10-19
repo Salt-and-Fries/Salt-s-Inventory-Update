@@ -2,14 +2,13 @@ package com.salts_inventory_update.controlify.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Collection;
 
 /** A compact HUD row: each retained window owns one evenly spaced cell. */
 public final class TuckedTabsLayout {
-    public static final int HEIGHT = 18;
-    public static final int TEXT_PADDING = 6;
-    private static final int MINIMUM_WIDTH = 28;
-    private static final int MAXIMUM_WIDTH = 160;
+    public static final int WIDTH = 28;
+    public static final int HEIGHT = 30;
+    public static final int CLIPPED_TOP = 6;
 
     private TuckedTabsLayout() { }
 
@@ -17,24 +16,21 @@ public final class TuckedTabsLayout {
         public double displayedWidth() { return width * scale; }
     }
 
-    /** Keeps insertion order and uses the full row without stretching short names. */
-    public static <K> List<Tab<K>> compute(int viewportWidth, Map<K, Integer> labelWidths) {
-        if (viewportWidth <= 0 || labelWidths.isEmpty()) return List.of();
+    /** The top border stays above the viewport, leaving an icon tab hanging from its edge. */
+    public static <K> List<Tab<K>> compute(int viewportWidth, Collection<K> windows) {
+        if (viewportWidth <= 0 || windows.isEmpty()) return List.of();
         double margin = Math.min(6, viewportWidth * 0.05);
-        double cell = (viewportWidth - margin * 2) / labelWidths.size();
+        double cell = (viewportWidth - margin * 2) / windows.size();
         double gap = Math.min(4, cell * 0.18);
-        List<Tab<K>> result = new ArrayList<>(labelWidths.size());
+        List<Tab<K>> result = new ArrayList<>(windows.size());
         int index = 0;
-        for (var entry : labelWidths.entrySet()) {
-            double desired = Math.max(MINIMUM_WIDTH, Math.min(MAXIMUM_WIDTH,
-                    Math.max(0, entry.getValue()) + TEXT_PADDING * 2));
-            double available = Math.min(desired, cell - gap);
+        for (K window : windows) {
+            double available = Math.min(WIDTH, cell - gap);
             // For very crowded rows, shrink the whole tab rather than dropping windows.
-            double scale = Math.min(1, available / MINIMUM_WIDTH);
-            int width = Math.max(MINIMUM_WIDTH, (int) Math.floor(available / scale));
-            double displayedWidth = width * scale;
+            double scale = available / WIDTH;
+            double displayedWidth = WIDTH * scale;
             double center = margin + (index++ + 0.5) * cell;
-            result.add(new Tab<>(entry.getKey(), center - displayedWidth / 2, 2, width, HEIGHT, scale));
+            result.add(new Tab<>(window, center - displayedWidth / 2, -CLIPPED_TOP * scale, WIDTH, HEIGHT, scale));
         }
         return List.copyOf(result);
     }

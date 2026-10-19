@@ -1,10 +1,12 @@
 """Validate packaged in-world evidence against every exact controller target/pin."""
 import argparse
+from collections import Counter
 import hashlib
 import importlib.util
 import json
 import math
 import struct
+import tomllib
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -59,6 +61,34 @@ COVERAGE = {
 
 # Only 26.3 has received this feature pass; older targets retain their prior behavior.
 FEATURE_COVERAGE_26_3 = {
+    "native close completes on the first configured input edge": [
+        "radial-B-closes-on-first-processed-configured-edge",
+        "radial-B-target-closed-before-native-handler-return",
+        "side-B-closes-on-first-processed-configured-edge",
+        "side-B-target-closed-before-native-handler-return"],
+    "companion sound settings native controls": [
+        "sound-overhaul-companion-entry-native-footer-visible", "sound-overhaul-default-off-hover-silent",
+        "sound-overhaul-native-standard-opt-in-audible", "sound-overhaul-native-quiet-opt-in-audible",
+        "sound-overhaul-native-settings-scroll-and-narration", "sound-overhaul-native-slider-click-accepted",
+        "sound-overhaul-native-slider-updates-live-custom-mix", "sound-overhaul-custom-mix-persists",
+        "sound-overhaul-small-viewport-scroll-keeps-footer-clear", "sound-overhaul-scrolling-reaches-last-native-setting",
+        "sound-overhaul-restore-defaults-off-hover-off", "sound-overhaul-native-footer-resize-preserves-two-controls",
+        "sound-overhaul-original-native-screen-restored"],
+    "companion sounds default off before explicit opt-in": [
+        "sound-overhaul-new-file-default-off", "sound-overhaul-new-file-off-no-native-dispatch",
+        "sound-overhaul-audio-tests-explicitly-opt-in-quiet"],
+    "companion sound quiet minimal and muted mixes": [
+        "sound-overhaul-minimal-mutes-browsing-keeps-actions", "sound-overhaul-minimal-navigation-request-silent",
+        "sound-overhaul-minimal-action-request-retained", "sound-overhaul-minimal-only-action-dispatched",
+        "sound-overhaul-mod-master-request-suppressed", "sound-overhaul-mod-master-no-native-dispatch",
+        "sound-overhaul-disabled-hover-request-suppressed", "sound-overhaul-disabled-hover-no-native-dispatch"],
+    "semantic sound priority and isolated preview": [
+        "sound-overhaul-result-queued-over-navigation", "sound-overhaul-same-tick-one-result-no-navigation",
+        "sound-overhaul-preview-exactly-one-native-cue", "sound-overhaul-preview-stop-clears-only-preview"],
+    "rapid navigation interrupts native audio": [
+        "sound-overhaul-mod-master-fast-navigation-suppressed", "sound-overhaul-every-fast-update-native-cue",
+        "sound-overhaul-fast-navigation-three-cues-under-200ms", "sound-overhaul-fast-navigation-stops-previous-before-play",
+        "sound-overhaul-fast-navigation-keeps-result-priority-policy", "sound-overhaul-fast-navigation-no-idle-repeats"],
     "native framed contextual pair": ["contextual-live-destination-below-ingredients", "contextual-panels-use-two-actual-Core-native-frames",
         "contextual-destination-real-native-planks-slot", "contextual-destination-real-native-cake-slot",
         "contextual-character-real-native-destination-slot", "contextual-recipe-cards-native-layer-below-opening",
@@ -74,6 +104,9 @@ FEATURE_COVERAGE_26_3 = {
         "contextual-every-custom-shape-is-native-decoded-PNG", "contextual-card-tab-category-letter-texture-states-rendered",
         "contextual-textured-ring-highlight-fixed-UV-sector-tracks-selection", "contextual-overlay-no-procedural-shape-fallback",
         "contextual-live-source-transitions-and-native-draws-valid"],
+    "creative cursor clearing and hotbar-only deletion": ["creative-cursor-A-cleared-without-catalog-grant", "creative-cursor-Y-cleared-without-catalog-grant", "creative-Y-delete-preserves-carried-and-other-hotbar", "creative-hotbar-delete-guide-native-Y", "creative-Y-other-window-retains-ordinary-transfer", "creative-inventory-tab-Y-hotbar-retains-ordinary-transfer", "creative-inventory-tab-Y-storage-retains-ordinary-transfer"],
+    "composed native controller glyphs": ["native-guide-ordinary-chest-single-whole-dpad-icon", "native-guide-ordinary-chest-adjacent-bumpers-clean-font-spacing"],
+    "bounded Craft Stack native transactions": ["contextual-Craft-Stack-64-native-cap-and-conservation", "contextual-Craft-Stack-16-native-cap-and-conservation", "contextual-Craft-Stack-1-native-cap-and-conservation", "contextual-Craft-Stack-whole-batches-native-cap-and-conservation", "contextual-Craft-Stack-limited-supply-native-cap-and-conservation", "contextual-Craft-Stack-limited-destination-native-cap-and-conservation", "contextual-Craft-Stack-64-old-Y-no-craft", "contextual-Craft-Stack-64-retains-live-preview"],
     "compact horizontal native controls": ["compact-native-guide-short-horizontal-items", "compact-native-cursor-uses-one-plain-stick-glyph", "compact-native-recipe-sticks-have-one-undirected-glyph-each", "compact-guide-constrained-two-rows-small-band", "compact-guide-resize-preserves-native-pair", "compact-native-guides-all-modes-with-plain-stick-glyphs"],
     "textured animated tuck": ["textured-tuck-normal-frame-native-blit", "textured-tuck-selected-frame-native-blit", "textured-tuck-both-atlas-frames-decoded-distinct", "textured-tuck-intermediate-animation-observed", "textured-tuck-native-highlight-shrinks-smoothly", "textured-tuck-native-selection-returns-before-release"],
     "associated inactive native item previews": ["active-SIDE-pair-render-full-native-menus", "inactive-SIDE-previews-render-associated-native-items", "active-LT-focus-and-highlight-render-full-native-menus", "inactive-LT-previews-render-associated-native-items"],
@@ -89,7 +122,34 @@ FEATURE_COVERAGE_26_3 = {
     "large focus and neighboring previews": ["ghost-fixture-has-many-native-and-client-windows", "ghost-animation-round-trip-keeps-selection", "radial-highlight-much-larger-than-thumbnails", "radial-focus-much-larger-than-thumbnails"],
     "logical brewing navigation": ["brewing-staggered-middle-bottle-reached", "brewing-next-bottle-reached"],
     "creative hotbar actions": ["creative-A-one-item-no-carried-stack", "creative-Y-legal-stack-no-carried-item", "creative-full-hotbar-preserves-existing-stacks", "native-guide-creative-stack-rebound-labels-and-glyphs", "native-guide-creative-stack-actual-rebound-glyph", "creative-rebound-old-Y-no-hotbar-mutation", "creative-rebound-inventory-action-adds-legal-stack", "creative-remap-keeps-native-left-click-SOUTH", "creative-remap-keeps-native-shift-click-NORTH", "native-guide-creative-select-rebound-labels-and-glyphs", "native-guide-creative-select-actual-rebound-glyph", "creative-rebound-old-SOUTH-no-hotbar-mutation", "creative-rebound-select-action-adds-exactly-one"],
-    "creative list and right-stick scroll": ["creative-catalog-has-rigid-items-and-tabs", "creative-DPAD-scrolls-one-row-before-hotbar", "creative-DPAD-scroll-keeps-cursor-in-catalog", "creative-right-stick-drift-does-not-scroll", "creative-right-stick-scroll-rate-controlled"],
+    "creative list and right-stick scroll": ["creative-catalog-has-rigid-items-and-tabs", "creative-DPAD-scrolls-one-row-before-hotbar", "creative-DPAD-scroll-keeps-cursor-in-catalog", "creative-right-stick-drift-does-not-scroll", "creative-right-stick-scroll-rate-controlled",
+        "creative-right-stick-full-deflection-faster-without-pause", "creative-right-stick-neutral-release-no-stale-repeat",
+        "creative-right-stick-gentle-deflection-scrolls", "creative-right-stick-deflection-controls-speed",
+        "creative-right-stick-proportional-release-no-stale-repeat"],
+    "native creative Search keyboard and rebinding": [
+        "creative-search-public-api-selects-search-tab", "creative-search-guide-uses-native-X-glyph",
+        "creative-search-X-opens-native-KeyboardWidget", "creative-search-opening-X-does-not-backspace-query",
+        "creative-search-native-OSK-updates-Core-query", "creative-search-native-query-filters-real-catalog",
+        "creative-search-physical-text-path-updates-query", "creative-search-native-backspace-edits-query",
+        "creative-search-A-field-uses-same-native-keyboard", "creative-search-guide-follows-rebound-native-glyph",
+        "creative-search-old-X-does-not-open", "creative-search-rebound-opens-native-keyboard",
+        "creative-search-wrong-tab-does-not-open", "creative-search-wrong-window-does-not-open",
+        "creative-search-neutral-restores-normal-catalog-navigation", "creative-search-query-cleared-and-tab-restored"],
+    "native virtual mouse simultaneous creative Search Enter clicks": [
+        "creative-search-VM-Enter-native-keyboard-open", "creative-search-VM-A-X-Enter-closes-keyboard-only",
+        "creative-search-VM-A-X-both-native-click-bindings",
+        "creative-search-VM-Enter-preserves-workspace-windows-and-sessions", "creative-search-VM-Enter-preserves-workspace-items-and-cursor",
+        "creative-search-VM-Enter-preserves-workspace-no-sort-craft-drop-or-grant",
+        "creative-search-VM-Enter-neutral-clears-physical-quarantine", "creative-search-VM-Enter-neutral-clears-native-mouse-drag",
+        "creative-search-VM-Enter-neutral-restores-catalog-navigation"],
+    "creative Search keyboard owns input until neutral": [
+        "creative-search-outside-mouse-and-scroll-consumed", "creative-search-keyboard-isolates-underlying-input-windows-and-sessions",
+        "creative-search-keyboard-isolates-underlying-input-items-and-cursor", "creative-search-keyboard-isolates-underlying-input-no-sort-craft-drop-or-grant",
+        "creative-search-B-returns-exact-parent", "creative-search-held-triggers-wait-for-neutral",
+        "creative-search-held-exit-isolates-underlying-input-windows-and-sessions", "creative-search-held-exit-isolates-underlying-input-items-and-cursor",
+        "creative-search-held-exit-isolates-underlying-input-no-sort-craft-drop-or-grant",
+        "creative-search-neutral-exit-preserves-workspace-windows-and-sessions", "creative-search-neutral-exit-preserves-workspace-items-and-cursor",
+        "creative-search-neutral-exit-preserves-workspace-no-sort-craft-drop-or-grant", "creative-search-keyboard-server-items-and-cursor-preserved"],
     "crafting contextual radial": ["contextual-source-is-hovered-crafting-table", "contextual-all-unlocked-recipes-in-continuous-carousel", "contextual-ingredient-container-open-but-not-displayed", "contextual-wheel-real-native-ingredient-count", "contextual-category-next-native-binding", "contextual-category-row-renders-every-category", "contextual-craftable-filter-enabled-native-binding", "contextual-one-craft-ingredients-output-cursor-conserved", "contextual-noncraftable-no-inventory-mutation", "contextual-full-destination-no-consumption-no-leak", "contextual-native-cake-output-remainders-conserved", "contextual-release-same-side-pair", "contextual-release-native-cursor-preserved"],
     "continuous recipe carousel": ["contextual-right-stick-addresses-individual-recipe", "contextual-right-stick-moves-one-adjacent-recipe", "contextual-right-stick-continuous-fractional-position", "contextual-carousel-visible-adjacent-window", "contextual-left-stick-selects-displayed-adjacent-card", "contextual-held-RB-five-recipes-per-second", "contextual-held-LB-five-recipes-per-second", "contextual-held-bumpers-keep-side-pair", "contextual-fixed-right-stick-preserves-fine-offset", "contextual-right-stick-inward-return-does-not-shift-wheel", "contextual-recipe-large-deadzone-retains-outer-and-inner-selection", "contextual-left-stick-inward-return-does-not-shift-selection"],
     "live recipe hover and origin conservation": ["contextual-enter-clears-input-without-granting-derived-result", "contextual-hover-physically-stages-from-hidden-open-container", "contextual-hover-change-restores-unused-exact-origin", "contextual-release-restores-unused-exact-origin", "contextual-hover-shapes-available-ingredients-across-three-open-sources", "contextual-missing-ghosts-red-translucent-over-real-native-inputs", "contextual-hover-LT-interruption-restores-exact-components-and-origin", "contextual-hover-full-origin-safe-fallback-without-loss-or-duplication", "contextual-hover-source-close-restores-before-native-menu-disposal", "contextual-full-storage-rejected-preview-closes-native-wheel", "contextual-full-storage-rejected-preview-preserves-input-and-derived-output", "contextual-full-storage-fixture-covers-all-actual-eligible-slots", "contextual-full-return-fixture-covers-all-actual-eligible-slots", "contextual-hover-all-full-return-preserves-one-native-item-entity"],
@@ -97,7 +157,7 @@ FEATURE_COVERAGE_26_3 = {
     "hover authenticated interruption and recovery": ["contextual-hover-genuinely-stale-click-rejected-before-preview-cleanup", "contextual-hover-genuinely-stale-click-retains-active-native-wheel", "contextual-hover-stale-resync-retains-native-window-and-side-pair", "contextual-hover-first-interrupting-click-applies-and-restores", "contextual-hover-first-interrupting-quickmove-applies-and-restores", "contextual-hover-stale-BEGIN-rejected-inactive-and-closes-wheel", "contextual-hover-stale-BEGIN-held-RT-does-not-repeat-BEGIN", "contextual-hover-stale-BEGIN-does-not-mutate-owned-items", "contextual-hover-stale-BEGIN-safe-native-retry-physical-native-input", "contextual-full-storage-held-RT-does-not-repeat-BEGIN", "contextual-hover-real-server-lease-expiry-closes-wheel", "contextual-hover-expired-lease-restores-exact-origin-on-native-tick"],
     "recipe wheel alphabet and layers": ["alphabet-aim-first-letter-displays-first-recipe-at-top", "alphabet-aim-middle-letter-displays-first-recipe-at-top", "alphabet-native-labels-use-inside-and-outside-lanes", "contextual-navigation-native-layer-above-opening", "contextual-world-dimming-preserved-through-all-wheel-modes", "contextual-body-text-readable-on-native-window-chrome"],
     "native bottom guide and hovered remapped recipe action": ["native-guide-supported-table-labels-and-glyphs", "native-guide-table-result-labels-and-glyphs", "contextual-result-slot-activates-hovered-wheel", "native-guide-table-background-labels-and-glyphs", "contextual-background-activates-hovered-wheel", "native-guide-unsupported-barrel-labels-and-glyphs", "native-guide-quick-action-hidden-off-supported-pane", "contextual-unsupported-pane-does-not-activate-wheel", "contextual-rebound-native-guide-actual-binding-glyph", "contextual-rebound-old-RT-no-longer-opens-wheel", "contextual-rebound-action-opens-hovered-wheel", "native-guide-rebound-recipe-wheel-labels-and-glyphs", "native-guide-screen-preference-off-no-render", "native-guide-screen-preference-restored-labels-and-glyphs"],
-    "native workspace guide modes and conditional actions": ["native-guide-opening-release-first-labels-and-glyphs", "native-guide-opening-LT-suppresses-hold", "native-guide-opening-release-cleared-labels-and-glyphs", "native-guide-ordinary-chest-labels-and-glyphs", "native-guide-native-item-actions-and-glyphs", "native-guide-radial-protected-labels-and-glyphs", "native-guide-protected-highlight-hides-close", "native-guide-radial-tuck-labels-and-glyphs", "native-guide-radial-closable-sort-labels-and-glyphs", "native-guide-rebound-close-protected-labels-and-glyphs", "native-guide-close-owned-focus-action-hidden", "native-guide-craftable-recipe-labels-and-glyphs", "native-guide-unavailable-recipe-hides-confirm", "native-guide-creative-catalog-labels-and-glyphs", "native-guide-creative-tabs-labels-and-glyphs", "native-guide-creative-tab-both-sticks-glyphs"],
+    "native workspace guide modes and conditional actions": ["native-guide-opening-release-first-labels-and-glyphs", "native-guide-opening-LT-suppresses-hold", "native-guide-opening-release-cleared-labels-and-glyphs", "native-guide-ordinary-chest-labels-and-glyphs", "native-guide-native-item-actions-and-glyphs", "native-guide-radial-protected-labels-and-glyphs", "native-guide-protected-highlight-hides-close", "native-guide-radial-tuck-labels-and-glyphs", "native-guide-radial-closable-sort-labels-and-glyphs", "native-guide-rebound-close-protected-labels-and-glyphs", "native-guide-close-owned-focus-action-hidden", "native-guide-craftable-recipe-labels-and-glyphs", "native-guide-unavailable-recipe-keeps-craft-and-stack", "native-guide-creative-catalog-labels-and-glyphs", "native-guide-creative-tabs-labels-and-glyphs", "native-guide-creative-tab-both-sticks-glyphs"],
     "native gameplay guides around tucked previews": ["native-guide-tucked-top-columns-clear-tabs-and-previews", "native-guide-tucked-restore-uses-inventory-glyph", "native-guide-tucked-transition-columns-clear-preview", "native-guide-bottom-preference-keeps-original-pose", "native-guide-gameplay-preference-off-no-render", "native-guide-hidden-HUD-no-render", "native-guide-tucked-preferences-restored-native-render", "native-guide-outside-tuck-restores-native-pose-and-inventory"],
     "removed pane icon and manual control instructions": ["native-guide-removed-pane-book-never-drawn", "native-guide-old-manual-controls-never-drawn", "native-guide-main-panes-clear-bottom-lists", "native-guide-layout-viewport-is-observed-content-area", "native-guide-contextual-surfaces-clear-bottom-lists", "native-guide-tall-fixture-is-actually-tall", "native-guide-tall-window-labels-and-glyphs", "native-guide-tall-window-native-close-isolated", "native-guide-tall-cleanup-preserves-saved-source", "native-guide-tall-cleanup-restores-exact-pair"],
     "controller native recipe-book replacement": ["legacy-opt-out-renders-native-vanilla-book-toggle", "contextual-presentation-hides-vanilla-book-sprites-including-furnace-ghosts"],
@@ -116,6 +176,8 @@ for station in ("furnace", "blast-furnace", "smoker"):
         )
     ]
 FEATURE_CAPTURES_26_3 = {
+    "46-creative-search-native-osk",
+    "45-controller-sound-settings", "45b-controller-sound-settings-constrained",
     "43-native-red-translucent-missing-ingredients", "44-letter-selection-centers-first-recipe",
     "42-native-destination-crafted-planks", "42b-native-destination-crafted-cake", "42c-character-native-destination-output",
     "41a-textured-wheel-opening-live-source", "41b-textured-wheel-settled-native-container", "41c-textured-wheel-reverse-live-container",
@@ -142,6 +204,197 @@ CONTEXTUAL_TEXTURES_26_3 = {
     "ALPHABET_LABEL": (10,12), "HIGHLIGHTED_ALPHABET_LABEL": (10,12), "ALPHABET_ANCHOR": (2,2),
     "ALPHABET_LEADER": (1,1),
 }
+
+
+# This inventory is independent of the production enum/probe: changed code cannot
+# silently redefine its own expected event, priority, gain or cadence contract.
+WORKSPACE_SOUND_ACTIONS_26_3 = {
+    "OPEN": ("open", "STRUCTURE", 160, .35),
+    "CLOSE": ("close", "STRUCTURE", 160, .35),
+    "FOCUS": ("navigate", "NAVIGATION", 200, .55),
+    "CYCLE": ("window_change", "STRUCTURE", 100, .35),
+    "TUCK": ("tuck", "STRUCTURE", 160, .35),
+    "RESTORE": ("restore", "STRUCTURE", 160, .35),
+    "SCROLL": ("navigate", "NAVIGATION", 0, .55),
+    "NAVIGATE": ("navigate", "NAVIGATION", 200, .55),
+    "CAROUSEL": ("navigate", "NAVIGATION", 0, .55),
+    "HOVER": ("navigate", "NAVIGATION", 200, .55),
+    "CATEGORY": ("window_change", "STRUCTURE", 120, .35),
+    "FILTER": ("window_change", "STRUCTURE", 140, .35),
+    "CONFIRM": ("confirm", "RESULT", 120, .4),
+    "TAB": ("window_change", "STRUCTURE", 120, .35),
+    "SORT": ("window_change", "STRUCTURE", 160, .35),
+    "REJECT": ("unavailable", "RESULT", 260, .4),
+    "CRAFT_COMPLETE": ("craft_complete", "RESULT", 160, .4),
+    "REQUEST": ("window_change", "STRUCTURE", 160, .35),
+}
+
+
+def workspace_ui_sound_evidence(feature_probe, name):
+    """Validate actual native emissions, with preview outside the real policy lane."""
+    sounds = feature_probe.get("workspaceUiNativeSounds", [])
+    assert sounds and feature_probe.get("workspaceUiSoundSuppressedRequests", 0) >= 4, \
+        f"{name}: missing native quiet/mute sound observations"
+    accepted = Counter()
+    real = Counter()
+    events = set()
+    generations = set()
+    previews = []
+    previous_generation = previous_at = None
+    policy_generation = previous_any = previous_navigation = previous_result = previous_priority = None
+    previous_kinds = {}
+    for sound in sounds:
+        kind, at = sound.get("action"), sound.get("atNanos")
+        assert kind in WORKSPACE_SOUND_ACTIONS_26_3, f"{name}: unknown native workspace sound action {kind}"
+        event, priority, interval, gain_cap = WORKSPACE_SOUND_ACTIONS_26_3[kind]
+        preview, generation = sound.get("preview"), sound.get("generation")
+        volume, pitch = sound.get("volume"), sound.get("pitch")
+        assert type(at) is int and type(generation) is int and generation >= 0 and type(preview) is bool \
+            and (previous_generation is None or generation >= previous_generation) \
+            and (previous_at is None or at >= previous_at), \
+            f"{name}: missing/out-of-order actual native sound timestamp, generation or preview metadata"
+        assert sound.get("identifier") == "salts_inventory_controlify:ui." + event \
+            and sound.get("priority") == priority and sound.get("measurement") == "native-request-fields" \
+            and sound.get("source") == "UI" and sound.get("relative") is True and sound.get("looping") is False \
+            and type(sound.get("delay")) is int and sound["delay"] == 0 \
+            and type(volume) in (int, float) and math.isfinite(volume) and 0 < volume <= gain_cap + .000001 \
+            and type(pitch) in (int, float) and math.isfinite(pitch) and abs(pitch - 1) <= .000001, \
+            f"{name}: inappropriate semantic native workspace sound: {sound}"
+        assert isinstance(sound.get("scenario"), str) and sound["scenario"], \
+            f"{name}: native sound is missing its actual gameplay scenario"
+        accepted[kind] += 1
+        previous_at, previous_generation = at, generation
+        if preview:
+            previews.append(sound)
+            # Preview stops its own prior instance and bypasses policy. It neither
+            # consumes real cooldowns nor resets real history within a generation.
+            continue
+        events.add(sound["identifier"])
+        generations.add(generation)
+        real[kind] += 1
+        if policy_generation != generation:
+            policy_generation = generation
+            previous_any = previous_navigation = previous_result = previous_priority = None
+            previous_kinds = {}
+        # As in the native probe, allow 2 ms for integer-millisecond policy clocks
+        # and measurement at emit HEAD. Only SCROLL/CAROUSEL can bypass ordinary
+        # navigation/quiet spacing following another navigation cue.
+        assert kind not in previous_kinds or at - previous_kinds[kind] >= (interval - 2) * 1_000_000, \
+            f"{name}: per-action native sound cadence exceeded: {kind}"
+        if priority == "RESULT":
+            # Results may preempt a browsing/structural cue immediately. Another
+            # result still needs its own 90 ms family gap and action-specific gap.
+            assert previous_result is None or at - previous_result >= 88_000_000, \
+                f"{name}: native result sound family cadence exceeded"
+            previous_result = at
+        else:
+            fast = priority == "NAVIGATION" and interval == 0
+            assert previous_any is None or fast and previous_priority == "NAVIGATION" or at - previous_any >= 88_000_000, \
+                f"{name}: native quiet-lane cadence exceeded"
+            if priority == "NAVIGATION":
+                assert fast or previous_navigation is None or at - previous_navigation >= 198_000_000, \
+                    f"{name}: ordinary native navigation cadence exceeded"
+                previous_navigation = at
+        previous_any = at
+        previous_priority = priority
+        previous_kinds[kind] = at
+    expected_events = {"salts_inventory_controlify:ui." + row[0] for row in WORKSPACE_SOUND_ACTIONS_26_3.values()}
+    assert events == expected_events and len(events) == 9, \
+        f"{name}: all nine semantic events must dispatch during real actions, independently of settings preview"
+    assert dict(accepted) == feature_probe.get("workspaceUiSoundAccepted"), \
+        f"{name}: native sound records and dispatch counters disagree"
+    requests = feature_probe.get("workspaceUiSoundRequests", {})
+    assert requests and all(key in WORKSPACE_SOUND_ACTIONS_26_3 and type(value) is int and value > 0 for key, value in requests.items()) \
+        and all(requests.get(key, 0) >= count for key, count in real.items()), \
+        f"{name}: real native sounds lack matching submitted action requests"
+    assert len(previews) == 1 and previews[0]["action"] == "FOCUS" \
+        and previews[0]["scenario"] == "sound-overhaul-one-cue-native-preview", \
+        f"{name}: isolated settings preview must emit exactly its selected native cue"
+    burst = [sound for sound in sounds if sound["scenario"] == "sound-overhaul-rapid-navigation-native-restarts"]
+    assert len(burst) == 8 and all(sound["action"] == ("SCROLL" if index % 2 == 0 else "CAROUSEL")
+        and sound["preview"] is False for index, sound in enumerate(burst)), \
+        f"{name}: every fast native navigation update must emit its fresh cue"
+    assert any(burst[index]["atNanos"] - burst[index - 2]["atNanos"] < 200_000_000 for index in range(2, len(burst))), \
+        f"{name}: missing actual three-cue burst under 200 ms"
+    stops = feature_probe.get("workspaceUiNativeSoundStops", [])
+    for before, after in zip(burst, burst[1:]):
+        assert type(before.get("instance")) is int and type(before.get("nativeOrder")) is int \
+            and type(after.get("nativeOrder")) is int and any(stop.get("instance") == before["instance"]
+                and type(stop.get("nativeOrder")) is int and before["nativeOrder"] < stop["nativeOrder"] < after["nativeOrder"]
+                and stop.get("scenario") == after["scenario"] for stop in stops), \
+            f"{name}: new navigation sound overlapped its previous native instance"
+    return {"actual_events": sorted(events), "real_emissions": sum(real.values()), "preview_emissions": len(previews),
+            "policy_generations": len(generations), "native_ui_bus": True, "pitch": 1,
+            "ordinary_navigation_interval_ms": 200, "fast_navigation_interval_ms": 0,
+            "fast_native_updates": len(burst), "stop_before_restart": True, "quiet_interval_ms": 90, "result_interval_ms": 90,
+            "measurement_tolerance_ms": 2}
+
+
+def workspace_ui_sound_resources(jar, name):
+    """Bind the native event observations to the collected companion's real OGGs."""
+    prefix = "assets/salts_inventory_controlify/"
+    inventory = set(jar.namelist())
+    for cls in ("WorkspaceUiSounds", "WorkspaceSoundSettingsScreen", "model/UiSoundPolicy", "model/WorkspaceSoundSettings"):
+        assert "com/salts_inventory_update/controlify/" + cls + ".class" in inventory, \
+            f"{name}: missing companion-owned sound implementation {cls}"
+    sounds = json.loads(jar.read(prefix + "sounds.json").decode("utf-8-sig"))
+    events = {"ui." + row[0] for row in WORKSPACE_SOUND_ACTIONS_26_3.values()}
+    assert set(sounds) == events and len(sounds) == 9, f"{name}: final companion must supply all nine semantic sound events"
+    manifest = json.loads(jar.read(prefix + "licenses/ui-sounds/palette-manifest.json").decode("utf-8-sig"))
+    recordings = manifest.get("assets", [])
+    aliases = manifest.get("event_aliases", [])
+    assert len(recordings) == 7 and {"ui." + row.get("name", "") for row in recordings} == events - {"ui.open", "ui.close"} \
+        and manifest.get("license") == "CC0-1.0" and manifest.get("auditioned_by_researcher") is False, \
+        f"{name}: missing or misleading CC0 sound provenance"
+    assert len(aliases) == 2 and {row.get("name") for row in aliases} == {"open", "close"} \
+        and isinstance(manifest.get("license_scope"), str) and "event_aliases" in manifest["license_scope"], \
+        f"{name}: native open/close aliases must be distinguished from the seven CC0 recordings"
+    for alias in aliases:
+        event = "ui." + alias["name"]
+        assert sounds[event].get("sounds") == [{"name": "minecraft:ui.button.click", "type": "event"}] \
+            and alias.get("event_id") == "salts_inventory_controlify:" + event and alias.get("type") == "event" \
+            and alias.get("target_event") == "minecraft:ui.button.click" and alias.get("redistributed_audio") is False \
+            and alias.get("provider") == "Minecraft 26.3 built-in resources" \
+            and alias.get("license") == "Minecraft-provided; no audio redistribution" \
+            and alias.get("native_definition") == {"sounds": ["random/click_stereo"]} \
+            and alias.get("native_sounds_json_sha1") == "7975165ad4a3c0cb3c05078b914eac0f2c3b5f5f", \
+            f"{name}: native open/close event alias or provenance differs from the pinned Minecraft definition"
+    expected_resources = set()
+    original_hashes = set()
+    for recording in recordings:
+        event, short = "ui." + recording["name"], recording["name"]
+        entries = sounds[event].get("sounds", [])
+        assert len(entries) == 1 and isinstance(entries[0], dict) \
+            and entries[0].get("name") == "salts_inventory_controlify:ui/" + short \
+            and entries[0].get("stream") is False, f"{name}: semantic event must use one nonstreaming OGG: {event}"
+        resource = prefix + "sounds/ui/" + short + ".ogg"
+        expected_resources.add(resource)
+        original_hashes.add(recording["source_sha256"])
+        raw = jar.read(resource)
+        assert recording.get("derived_resource") == resource and raw.startswith(b"OggS") \
+            and hashlib.sha256(raw).hexdigest() == recording.get("derived_sha256") \
+            and len(raw) == recording.get("derived_size_bytes") and recording.get("channels") == 1 \
+            and recording.get("sample_rate_hz") == 44100 and 0 < recording.get("duration_seconds", 0) <= .25, \
+            f"{name}: final cue differs from its measured mono CC0 derivative: {event}"
+        if short == "craft_complete":
+            assert recording["duration_seconds"] <= .16, f"{name}: craft cue is too long for repeated transactions"
+    assert {path for path in inventory if path.startswith(prefix + "sounds/") and path.endswith(".ogg")} == expected_resources, \
+        f"{name}: unaccounted UI sound recording in the companion"
+    packs = manifest.get("packs", [])
+    assert len(packs) == 2, f"{name}: both original CC0 notices must be retained"
+    for pack in packs:
+        notice = pack.get("packaged_notice", "")
+        assert notice.startswith(prefix + "licenses/ui-sounds/") and pack.get("license") == "CC0-1.0" \
+            and hashlib.sha256(jar.read(notice)).hexdigest() == pack.get("license_sha256"), \
+            f"{name}: original CC0 license notice missing or changed"
+    assert prefix + "licenses/ui-sounds/ATTRIBUTION.md" in inventory, f"{name}: missing UI recording attribution"
+    for path in inventory:
+        assert "audio-source/" not in path and "/originals/" not in path \
+            and not path.endswith(("build_palette.py", ".wav", ".aif", ".aiff", ".flac")), \
+            f"{name}: audio authoring or PCM source leaked into final production JAR: {path}"
+        if path.endswith(".ogg"):
+            assert hashlib.sha256(jar.read(path)).hexdigest() not in original_hashes, \
+                f"{name}: unmodified authoring original leaked into final production JAR: {path}"
 
 
 def digest(path, algorithm="sha256"):
@@ -178,9 +431,16 @@ def forge_lineage(results, mods, report_path):
     return originals, lineage
 
 
-def validate(target, results_root, artifacts, run_profile):
+def artifact_match(module,release,staged):
+    final_hash, staged_hash = digest(release), digest(staged)
+    assert final_hash==staged_hash, f'{module}: runtime differs from final collected artifact'
+    return {'mode':'exact','runtime_sha256':staged_hash,'final_sha256':final_hash}
+
+
+def validate(target, results_root, artifacts, run_profile, report_suffix="", with_extension=False, with_optional_mods=False):
     game, loader = target["minecraft"], target["loader"]
-    name = f"{game}-{loader}"
+    name = f"{game}-{loader}" + report_suffix
+    ui_sound_evidence = None
     report_path = results_root / name / "results.json"
     report = json.loads(report_path.read_text(encoding="utf-8-sig"))
     assert report.get("failures") == 0, f"{name}: gameplay failures reported"
@@ -349,22 +609,7 @@ def validate(target, results_root, artifacts, run_profile):
         assert texture.get("width") == 64 and texture.get("height") == 32 and texture.get("visiblePixels", 0) > 0 \
             and texture.get("transparentPixels", 0) > 0 and len(set(texture.get("decodedFrameSha256", []))) == 2, \
             f"{name}: tuck texture is missing transparent/distinct 32px state frames"
-        intervals = {"OPEN":160, "CLOSE":160, "FOCUS":90, "CYCLE":100, "TUCK":160, "RESTORE":160, "SCROLL":100,
-                     "NAVIGATE":100, "CAROUSEL":110, "CATEGORY":120, "FILTER":140, "CONFIRM":120, "TAB":120, "SORT":160, "REJECT":220}
-        sounds = feature_probe.get("workspaceUiNativeSounds", [])
-        assert sounds and feature_probe.get("workspaceUiSoundSuppressedRequests", 0) >= 4, f"{name}: missing native quiet/mute sound observations"
-        previous, previous_kinds = None, {}
-        for sound in sounds:
-            kind, at = sound.get("action"), sound.get("atNanos")
-            assert kind in intervals and type(at) is int and sound.get("identifier") == "minecraft:ui.button.click" \
-                and sound.get("measurement") == "native-request-fields" \
-                and sound.get("source") == "UI" and sound.get("relative") is True and sound.get("looping") is False \
-                and sound.get("delay") == 0 and 0 < sound.get("volume",0) <= .180001 and .64999 <= sound.get("pitch",0) <= 1.30001, \
-                f"{name}: inappropriate native workspace sound"
-            assert previous is None or at-previous >= 43_000_000, f"{name}: global native sound spam limit exceeded"
-            assert kind not in previous_kinds or at-previous_kinds[kind] >= (intervals[kind]-2)*1_000_000, \
-                f"{name}: per-action native sound spam limit exceeded"
-            previous, previous_kinds[kind] = at, at
+        ui_sound_evidence = workspace_ui_sound_evidence(feature_probe, name)
         assert all(feature_probe.get(key, 0) > 0 for key in (
             "tabFrames", "tooltipCalls", "cursorCalls", "nativeNavigationRequests",
             "nativeWorkspaceGuideFrames", "nativeGameplayGuideFrames", "nativeTuckedTopGuideFrames",
@@ -428,12 +673,30 @@ def validate(target, results_root, artifacts, run_profile):
     mods_folder = ROOT / f"controlify/versions/{game}/{loader}/build/runtime-smoke/{run_profile}/mods"
     staged = list(mods_folder.glob("*.jar"))
     assert staged, f"{name}: missing staged production mods"
-    assert len(staged) == 4 + len(runtime_dependencies) + (loader != "fabric"), \
+    optional_entries = []
+    if with_optional_mods:
+        optional = json.loads((results_root / name / 'optional-mods.json').read_text(encoding='utf-8-sig'))
+        pins = json.loads((ROOT / 'controlify/functional-tests/mod-fixtures-26.3.json').read_text(encoding='utf8'))
+        assert optional['minecraft'] == game and optional['loader'] == loader
+        optional_entries = pins['profiles'][loader + '-' + optional['browser']]
+        assert {(entry['version_id'],entry['file']['filename']) for entry in optional['mods']} == \
+            {(entry['version_id'],entry['file']['filename']) for entry in optional_entries}, f'{name}: optional fixture pins differ'
+        for entry in optional_entries:
+            path = mods_folder / entry['file']['filename']
+            assert path.is_file() and digest(path,'sha512') == entry['file']['hashes']['sha512'], f'{name}: modified upstream fixture {path}'
+            with ZipFile(path) as jar:
+                if 'fabric.mod.json' in jar.namelist() and loader == 'fabric':
+                    ids = [json.loads(jar.read('fabric.mod.json'))['id']]
+                elif 'META-INF/neoforge.mods.toml' in jar.namelist():
+                    ids = [row['modId'] for row in tomllib.loads(jar.read('META-INF/neoforge.mods.toml').decode())['mods']]
+                else: ids = []
+            assert all(mod_id in mods for mod_id in ids), f'{name}: staged optional mod did not load: {ids}'
+    assert len(staged) == 4 + len(runtime_dependencies) + (loader != "fabric") + with_extension + len(optional_entries), \
         f"{name}: unexpected staged mod outside the exact production/upstream/QA inventory"
     if loader != "fabric":
-        qa_name = f"controller-qa-{name}.jar"
+        qa_name = f"controller-qa-{game}-{loader}.jar"
         qa_release = ROOT / f"controlify/versions/{game}/{loader}/build/controlify-qa-artifact/{qa_name}"
-        assert qa_release.is_file() and digest(qa_release) == digest(mods_folder / qa_name), \
+        assert (report_suffix and (mods_folder / qa_name).is_file()) or qa_release.is_file() and digest(qa_release) == digest(mods_folder / qa_name), \
             f"{name}: staged QA fixture differs from the compiled opt-in artifact"
     staging_path = results_root / name / "staged-artifacts.json"
     staging = json.loads(staging_path.read_text(encoding="utf-8-sig"))
@@ -463,16 +726,25 @@ def validate(target, results_root, artifacts, run_profile):
             f"{name}: required runtime shim must be staged unchanged from the original pin"
         assert runtime.name not in originals, f"{name}: version-neutral runtime shim must not be remapped"
     matching = {}
+    artifact_lineage = {}
     version = mods["salts_inventory_update"]
-    for module, prefix in (("core", "salts_inventory_update"), ("controlify", "salts_inventory_controlify")):
+    modules = [("core", "salts_inventory_update"), ("controlify", "salts_inventory_controlify")]
+    if with_extension:
+        assert mods.get('salts_inventory_compat') == version, f'{name}: matching Extended jar did not load'
+        modules.append(('compatibility','salts_inventory_compat'))
+    for module, prefix in modules:
         filename = f"{prefix}-{game}-{LOADER_NAMES[loader]}-{version}.jar"
         release, runtime = artifacts / module / filename, mods_folder / filename
         assert release.is_file() and runtime.is_file(), f"{name}: missing final {module} production JAR"
         preserved = originals.get(filename, runtime)
-        assert digest(release) == digest(preserved), f"{name}: QA {module} differs from final collected artifact"
+        artifact_lineage[module] = artifact_match(module,release,preserved)
         assert report_path.stat().st_mtime >= runtime.stat().st_mtime, f"{name}: report predates its staged {module}"
         if game == "26.3" and module == "controlify":
             with ZipFile(release) as jar:
+                workspace_ui_sound_resources(jar, name)
+                assert all("com/salts_inventory_update/controlify/" + cls + ".class" in jar.namelist()
+                    for cls in ("CreativeSearchBinding", "CreativeSearchTarget", "WorkspaceSearchKeyboard")), \
+                    f"{name}: missing companion-owned native creative search implementation"
                 assert not any("FeatureHostMouseIsolationMixin" in entry for entry in jar.namelist()), \
                     f"{name}: QA-only SDL motion isolation leaked into the production companion"
                 assert not any("/RecipeBookHintRenderer" in entry for entry in jar.namelist()), \
@@ -504,9 +776,11 @@ def validate(target, results_root, artifacts, run_profile):
         "minecraft": game, "loader": loader, "failures": 0,
         "records": len(records), "passes": sum(row["status"] == "PASS" for row in records),
         "screenshots": len(captures), "elapsed_ms": report["elapsedMs"],
-        "artifact_sha256": matching, "report": str(report_path.relative_to(ROOT)),
+        "artifact_sha256": matching, "artifact_lineage":artifact_lineage, "report": str(report_path.relative_to(ROOT)),
         "host_sdl_motion_isolation": input_isolation,
     }
+    if ui_sound_evidence is not None:
+        summary["workspace_ui_sounds"] = ui_sound_evidence
     if lineage:
         summary["runtime_remapping"] = {"operation": lineage["operation"], "mappings_sha256": lineage["mappings_sha256"],
                                        "mapped_artifact_sha256": {Path(row["mapped"]).name: row["mapped_sha256"]
@@ -515,7 +789,7 @@ def validate(target, results_root, artifacts, run_profile):
         summary["runtime_dependencies"] = [{"mod_id": dependency["mod_id"], "version": dependency["version"],
                                              "filename": dependency["filename"], "sha512": dependency["sha512"]}
                                             for dependency in runtime_dependencies]
-    print(f"Packaged runtime verified: {name}, {summary['passes']} PASS records, {len(captures)} screenshots, final artifact hashes match")
+    print(f"Packaged runtime verified: {name}, {summary['passes']} PASS records, {len(captures)} screenshots, exact release hashes")
     return summary
 
 
@@ -525,6 +799,9 @@ if __name__ == "__main__":
     parser.add_argument("--results-root", type=Path, default=ROOT / "build/controlify-qa")
     parser.add_argument("--artifacts", type=Path, default=ROOT / "dist/controlify-test")
     parser.add_argument("--run-profile", default="packaged-controlify")
+    parser.add_argument("--report-suffix", default="", help="Suffix of an independently retained full report, e.g. -extended-jei")
+    parser.add_argument("--with-extension", action="store_true")
+    parser.add_argument("--with-optional-mods", action="store_true")
     parser.add_argument("--target", action="append", default=[], help="MC:loader for a focused run; omit to require all12")
     parser.add_argument("--summary", type=Path, help="Write a machine-readable validated evidence inventory")
     args = parser.parse_args()
@@ -535,7 +812,9 @@ if __name__ == "__main__":
     assert len(keys) == len(set(keys)) == 12 and set(keys) == expected, "Runtime inventory must describe the complete12-target matrix"
     selected = {tuple(name.split(":")) for name in args.target} if args.target else expected
     assert selected and selected.issubset(expected), f"Unsupported runtime targets: {selected - expected}"
-    reports = [validate(target, args.results_root.resolve(), args.artifacts.resolve(), args.run_profile)
+    assert not any(character in args.report_suffix for character in '/\\'), 'Report suffix cannot contain a path'
+    reports = [validate(target, args.results_root.resolve(), args.artifacts.resolve(), args.run_profile,
+                        args.report_suffix,args.with_extension,args.with_optional_mods)
                for target in targets if (target["minecraft"], target["loader"]) in selected]
     if args.summary:
         args.summary.parent.mkdir(parents=True, exist_ok=True)

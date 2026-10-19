@@ -1,8 +1,16 @@
 package com.salts_inventory_update.controlify.qa;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import com.google.gson.GsonBuilder;
 import com.salts_inventory_update.controlify.SaltsControlifyClient;
 import com.salts_inventory_update.controlify.RadialInventoryScreen;
+import com.salts_inventory_update.controlify.CreativeSearchBinding;
+import com.salts_inventory_update.controlify.CreativeSearchTarget;
+import com.salts_inventory_update.controlify.WorkspaceSearchKeyboard;
+import com.salts_inventory_update.controlify.model.RecipeFilter;
+import com.salts_inventory_update.controlify.model.RecipeFilterSettings;
+import com.salts_inventory_update.api.client.desktop.DesktopWorkspace;
 import com.salts_inventory_update.api.client.desktop.DesktopWorkspaceWindow;
 import com.salts_inventory_update.api.client.desktop.DesktopClientApi;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowHandle;
@@ -109,6 +117,18 @@ public final class ControlifyGameplayHarness {
     private static Map<Integer, SessionIdentity> preservedSessions;
     private static net.minecraft.world.phys.Vec3 positionBefore;
     private static long heldAt, firstClosedAt;
+    private static final class NativeCloseTiming {
+        String action;
+        UUID target;
+        long queuedAt, queuedSample, firstSampleAt, firstSample, entryAt, entrySample, returnedAt;
+        float closeNow, closePrevious, threshold;
+        boolean digitalNow, digitalPrevious, closedAtReturn;
+    }
+    private static NativeCloseTiming nativeCloseTiming;
+    private record NativeSearchMouseEvent(long sample, int button, int action, net.minecraft.client.gui.screens.Screen screen,
+                                          boolean controllerDispatch, boolean virtualMouse, boolean leftNow, boolean rightNow) { }
+    private static WorkspaceSearchKeyboard observedSearchMouseOwner;
+    private static final List<NativeSearchMouseEvent> nativeSearchMouseEvents=new ArrayList<>();
     private static int furnaceXpAfterSession;
     private static int cursorBeforeX;
     private static double nativeUiMasterVolumeBefore, nativeUiVolumeBefore;
@@ -241,6 +261,33 @@ public final class ControlifyGameplayHarness {
                     mc.getSingleplayerServer().createCommandSourceStack().withSuppressedOutput(), "recipe give @a *");
             return null;
         }), ControlifyGameplayHarness::serverDone, () -> {}, 10);
+        if ("wheel-polish".equals(System.getProperty("salts_inventory_controlify.qaScope"))) {
+            addWheelPolishScenarios();
+            return;
+        }
+        if ("wheel-stability".equals(System.getProperty("salts_inventory_controlify.qaScope"))) {
+            addWheelStabilityScenarios();
+            return;
+        }
+        if ("crafting-qol".equals(System.getProperty("salts_inventory_controlify.qaScope"))) {
+            addCraftingQolScenarios();
+            return;
+        }
+        if ("mod-compat".equals(System.getProperty("salts_inventory_controlify.qaScope"))) {
+            addModCompatibilityScenarios();
+            return;
+        }
+        if ("browser-render".equals(System.getProperty("salts_inventory_controlify.qaScope"))) {
+            addBrowserCompatibilityScenarios();return;
+        }
+        if ("creative-regression".equals(System.getProperty("salts_inventory_controlify.qaScope"))) {
+            add("creative-regression-prior-inventory-and-grid",() -> server(() -> {
+                player().getInventory().setItem(0,new ItemStack(Items.BEDROCK,2));player().getInventory().setItem(1,new ItemStack(Items.IRON_INGOT,8));
+                player().inventoryMenu.getInputGridSlots().get(0).set(new ItemStack(Items.BEDROCK,2));
+                player().inventoryMenu.getInputGridSlots().get(1).set(new ItemStack(Items.IRON_INGOT,8));return null;
+            }),ControlifyGameplayHarness::serverDone,() -> {},4);
+            addCreativeNavigationScenarios();return;
+        }
         add("first-workspace-native-USE-position", () -> server(() -> {
             player().teleportTo(chestPos.getX() + 0.5, chestPos.getY(), chestPos.getZ() - 2.0);
             return null;
@@ -501,11 +548,17 @@ public final class ControlifyGameplayHarness {
         }, 1);
         observeNativeGuide("radial-closable-sort", "LT_RADIAL", "Close highlighted window", "Release: show highlighted window",
             "Focus highlighted window", "Choose window / tuck away", "Sort focused; double tap: force");
-        add("B-closes-highlighted-barrel", () -> { heldAt = System.nanoTime(); driver.buttons.add(GamepadInputs.EAST_BUTTON); },
-            () -> !owner.windows().containsKey(barrelWindow), () -> {
+        add("B-closes-highlighted-barrel", () -> {
+            heldAt = System.nanoTime(); firstClosedAt = 0; beginNativeCloseTiming("highlighted", barrelWindow);
+            driver.buttons.add(GamepadInputs.EAST_BUTTON);
+        }, () -> {
+            boolean closed = !owner.windows().containsKey(barrelWindow);
+            if (closed && firstClosedAt == 0) firstClosedAt = System.nanoTime();
+            return closed;
+        }, () -> {
                 check("only-highlighted-window-closed", owner.windows().containsKey(chestWindow)
                     && owner.windows().containsKey(owner.model().playerInventory()) && owner.windows().containsKey(owner.model().character()));
-                check("radial-B-closes-highlighted-immediately", (System.nanoTime() - heldAt) / 1_000_000 < 500);
+                check("radial-B-closes-highlighted-immediately", verifyNativeCloseFirstSample("radial-B"));
                 preservedWindows = Set.copyOf(owner.windows().keySet()); preservedSessions = sessions();
             }, 0);
         add("keep-B-held-after-highlighted-close", () -> {}, () -> System.nanoTime() - heldAt >= 1_500_000_000L, () -> {
@@ -568,15 +621,15 @@ public final class ControlifyGameplayHarness {
                 () -> check("fresh-LT-after-opening-enters-radial", owner.radialActive()), 4);
         add("return-side-before-immediate-close", () -> driver.trigger = 0, () -> !owner.radialActive(), () -> {}, 4);
         add("press-close-all-side", () -> {
-            heldAt = System.nanoTime(); firstClosedAt = 0; driver.buttons.add(GamepadInputs.SOUTH_BUTTON);
+            heldAt = System.nanoTime(); firstClosedAt = 0; beginNativeCloseTiming("workspace", null);
+            driver.buttons.add(GamepadInputs.SOUTH_BUTTON);
         }, () -> {
             boolean closed = !owner.workspaceActive() && mc.gui.screen() == null;
             if (closed && firstClosedAt == 0) firstClosedAt = System.nanoTime();
             return closed;
         }, () -> {
             driver.buttons.clear();
-            long elapsed = (firstClosedAt - heldAt) / 1_000_000;
-            check("side-B-closes-immediately", elapsed < 500);
+            check("side-B-closes-immediately", verifyNativeCloseFirstSample("side-B"));
             check("side-B-returned-gameplay", mc.gui.screen() == null);
         }, 4);
         button("Y-opens-workspace-after-close-all", GamepadInputs.NORTH_BUTTON,
@@ -584,12 +637,800 @@ public final class ControlifyGameplayHarness {
         addNativeResultScenarios();
     }
 
+    private static void beginNativeCloseTiming(String action, UUID target) {
+        nativeCloseTiming = new NativeCloseTiming();
+        nativeCloseTiming.action = action; nativeCloseTiming.target = target;
+        nativeCloseTiming.queuedAt = System.nanoTime(); nativeCloseTiming.queuedSample = driver.samples;
+    }
+
+    /** QA-only method-entry/return observation, reached from the genuine configured input route. */
+    public static void observeNativeClose(String action, boolean returning) {
+        var timing = nativeCloseTiming;
+        if (timing == null || !Objects.equals(timing.action, action)) return;
+        if (!returning) {
+            if (timing.entryAt != 0) return;
+            timing.entryAt = System.nanoTime(); timing.entrySample = driver.samples;
+            var input = controller.input().orElseThrow(); var close = ControlifyBindings.GUI_BACK.on(controller);
+            timing.closeNow = close.boundInput().state(input.stateNow());
+            timing.closePrevious = close.boundInput().state(input.stateThen());
+            timing.threshold = input.settings().buttonActivationThreshold;
+            timing.digitalNow = close.digitalNow(); timing.digitalPrevious = close.digitalPrev();
+        } else {
+            timing.returnedAt = System.nanoTime();
+            timing.closedAtReturn = action.equals("highlighted") ? !owner.windows().containsKey(timing.target)
+                : !owner.workspaceActive() && mc.gui.screen() == null;
+        }
+    }
+
+    /** Focused menu regression scope; unrelated gameplay scenarios are not queued. */
+    private static void addWheelPolishScenarios() {
+        final class Fixture {
+            DesktopWorkspace nativeDesktop, countingDesktop;
+            RecipeFilterSettings preferences;
+            RecipeFilter previousFilter;
+            long catalogCalls, before, measuredAt;
+            void installCounter() {
+                if (countingDesktop == null) {
+                    nativeDesktop = owner.desktop();
+                    countingDesktop = (DesktopWorkspace) java.lang.reflect.Proxy.newProxyInstance(
+                        DesktopWorkspace.class.getClassLoader(), new Class<?>[]{DesktopWorkspace.class}, (proxy, method, arguments) -> {
+                            if (method.getName().equals("contextualMenu")) catalogCalls++;
+                            try { return method.invoke(nativeDesktop, arguments); }
+                            catch (java.lang.reflect.InvocationTargetException failure) { throw failure.getCause(); }
+                        });
+                }
+                setField(field(owner,"value"),"desktop",countingDesktop);
+            }
+            void hover(String name, Supplier<UUID> id) {
+                nativeCursorNeutralReady("polish-"+name+"-hover",() -> {
+                    installCounter(); pointAtControl(id.get(),owner.desktop().contextualBookHint(id.get()).activationBounds());
+                });
+                add("polish-"+name+"-stationary-hover",() -> {before=catalogCalls; measuredAt=System.nanoTime();},() -> true,() -> {
+                    record("polish-"+name+"-catalog-observation","OBSERVED","snapshotCalls="+(catalogCalls-before)+",elapsedMs="+(System.nanoTime()-measuredAt)/1_000_000);
+                    check("polish-"+name+"-hover-builds-no-recipe-catalog",owner.desktop()==countingDesktop && catalogCalls==before);
+                },24);
+            }
+            void openWheel(String name) {
+                add(name,() -> driver.rightTrigger=1,() -> contextualOverlay().active(),() -> {},5);
+            }
+            void closeWheel(String name) {
+                add(name,() -> {driver.rightTrigger=0;driver.stick(0,0);driver.rightX=driver.rightY=0;},
+                    () -> !contextualOverlay().active(),() -> {},5);
+            }
+            void filter(String name, RecipeFilter expected) {
+                button(name,GamepadInputs.DPAD_UP_BUTTON,() -> {
+                    check(name+"-state",field(contextualOverlay(),"filter")==expected);
+                    try {
+                        check(name+"-saved",RecipeFilterSettings.load(mc.gameDirectory.toPath().resolve("config/salts_inventory_controlify_recipes.properties")).filter()==expected);
+                    } catch(java.io.IOException failure) {throw new IllegalStateException(failure);}
+                    check(name+"-membership",contextualEntries().stream().allMatch(recipe -> expected.includes(recipe.craftable(),
+                        recipe.grid().stream().anyMatch(ingredient -> ingredient.available()>0))));
+                });
+            }
+        }
+        var fixture=new Fixture();
+        openContainer("polish-open-chest",() -> chestPos,() -> chestWindow=newestOther());
+        openContainer("polish-open-crafting-table",() -> tablePos,() -> tableWindow=newestOther());
+        openContainer("polish-open-furnace",() -> furnacePos,() -> furnaceWindow=newestOther());
+        focusPair("polish-table-pair",() -> tableWindow,() -> chestWindow);
+        add("polish-ingredient-fixture",() -> server(() -> {
+            player().getInventory().setItem(0,new ItemStack(Items.OAK_LOG,1));
+            player().inventoryMenu.broadcastChanges(); return null;
+        }),ControlifyGameplayHarness::serverDone,() -> {
+            fixture.preferences=(RecipeFilterSettings)field(field(owner,"value"),"recipeFilters");
+            fixture.previousFilter=fixture.preferences.filter();
+            try {fixture.preferences.set(RecipeFilter.ALL);}catch(java.io.IOException failure){throw new IllegalStateException(failure);}
+        },5);
+        fixture.hover("crafting-table",() -> tableWindow);
+        fixture.openWheel("polish-crafting-wheel-all");
+        add("polish-all-recipes-includes-missing",() -> {},() -> !contextualEntries().isEmpty(),() ->
+            check("polish-all-includes-unavailable-recipe",contextualEntries().stream().anyMatch(recipe -> !recipe.craftable())),2);
+        fixture.filter("polish-filter-parts",RecipeFilter.CONTAINS_PARTS);
+        add("polish-parts-quantity",() -> {},() -> true,() ->
+            check("polish-parts-includes-incomplete-oak-wood",contextualEntries().stream().anyMatch(recipe -> recipe.output().is(Items.OAK_WOOD)&&!recipe.craftable())),2);
+        fixture.filter("polish-filter-craftable",RecipeFilter.CRAFTABLE);
+        add("polish-craftable-removes-incomplete",() -> {},() -> true,() ->
+            check("polish-craftable-excludes-incomplete-oak-wood",contextualEntries().stream().noneMatch(recipe -> recipe.output().is(Items.OAK_WOOD))),2);
+        fixture.closeWheel("polish-close-crafting-wheel");
+        fixture.openWheel("polish-reopen-crafting-wheel");
+        add("polish-filter-reopen",() -> {},() -> true,() -> {
+            check("polish-reopen-retains-craftable",field(contextualOverlay(),"filter")==RecipeFilter.CRAFTABLE);
+            capture("polish-craftable-filter");
+        },4);
+        fixture.filter("polish-filter-wraps-all",RecipeFilter.ALL);
+        fixture.closeWheel("polish-finish-crafting-wheel");
+        add("polish-window-wheel",() -> {driver.trigger=1;aimWindow(furnaceWindow);},() -> owner.radialActive(),() -> {
+            var frame=renderedLayout();var focused=owner.model().focused();var p=frame.windows().get(focused);
+            var bounds=owner.desktop().presentationBounds(focused);
+            check("polish-center-inside-ring",Math.hypot(bounds.width()*p.scale(),bounds.height()*p.scale())<.78*Math.min(mc.getWindow().getGuiScaledWidth(),mc.getWindow().getGuiScaledHeight()));
+            for(var id:owner.model().radialOrder()) if(!owner.model().highlighted().filter(id::equals).isPresent()) {
+                var icon=frame.windows().get(id);check("polish-opaque-icon-"+id,icon.opacity()==1);
+            }
+            capture("polish-window-wheel-opaque-icons");
+        },10);
+        add("polish-window-wheel-release",() -> {driver.trigger=0;driver.stick(0,0);},() -> !owner.radialActive(),() -> {},5);
+        focusPair("polish-furnace-pair",() -> furnaceWindow,() -> chestWindow);
+        fixture.hover("furnace",() -> furnaceWindow);
+        add("polish-fuel-only-fixture",() -> server(() -> {
+            player().getInventory().clearContent();player().getInventory().setItem(0,new ItemStack(Items.COAL,1));
+            player().inventoryMenu.broadcastChanges();return null;
+        }),ControlifyGameplayHarness::serverDone,() -> {},5);
+        fixture.openWheel("polish-furnace-wheel");
+        fixture.filter("polish-furnace-parts",RecipeFilter.CONTAINS_PARTS);
+        add("polish-furnace-fuel-is-not-recipe-part",() -> {},() -> true,() ->
+            check("polish-coal-alone-does-not-match-smelting-recipes",contextualEntries().isEmpty()),4);
+        add("polish-furnace-add-ingredient",() -> server(() -> {
+            player().getInventory().setItem(1,new ItemStack(Items.RAW_IRON,1));player().inventoryMenu.broadcastChanges();return null;
+        }),() -> serverDone() && contextualEntries().stream().anyMatch(recipe -> recipe.output().is(Items.IRON_INGOT)),() ->
+            check("polish-parts-refreshes-open-container-resources",contextualEntries().stream().anyMatch(recipe -> recipe.output().is(Items.IRON_INGOT))),4);
+        fixture.filter("polish-furnace-craftable",RecipeFilter.CRAFTABLE);
+        fixture.closeWheel("polish-finish-furnace-wheel");
+        focusPair("polish-character-pair",() -> owner.model().character(),() -> chestWindow);
+        fixture.hover("character",() -> owner.model().character());
+        fixture.openWheel("polish-character-crafting-wheel");
+        add("polish-cross-window-filter-retained",() -> {},() -> true,() ->
+            check("polish-2x2-retains-craftable-filter",field(contextualOverlay(),"filter")==RecipeFilter.CRAFTABLE),3);
+        fixture.closeWheel("polish-finish-character-wheel");
+        add("polish-restore-test-preferences",() -> {},() -> true,() -> {
+            setField(field(owner,"value"),"desktop",fixture.nativeDesktop);
+            try {fixture.preferences.set(fixture.previousFilter);}catch(java.io.IOException failure){throw new IllegalStateException(failure);}
+        },1);
+    }
+
+    /** An unfamiliar public-API view plus the actual optional mods staged by the launcher. */
+    private static void addModCompatibilityScenarios() {
+        button("compat-open-workspace",GamepadInputs.NORTH_BUTTON,() -> check("compat-controller-workspace",owner.workspaceActive()));
+        add("compat-unknown-api-view",() -> {
+            viewA.navigationFixture=true;viewA.height=180;
+            viewAHandle=DesktopClientApi.openView(QA_VIEW_ID,"dynamic-controls",viewA,Component.literal("Unknown API controls")).orElseThrow();
+        },() -> owner.windows().containsKey(viewAHandle.instanceId()),() -> {},8);
+        nativeCursorNeutralReady("compat-api-tabs",() -> prepareDpadTarget(viewAHandle.instanceId(),apiFixtureControl(0)));
+        button("compat-api-DPAD-tab",GamepadInputs.DPAD_RIGHT_BUTTON,() -> verifyDpadTarget("compat-api-tab-snapped"));
+        nativePointerClick("compat-api-A-tab",GamepadInputs.SOUTH_BUTTON,() -> pointAtControl(viewAHandle.instanceId(),apiFixtureControl(1)),
+            () -> check("compat-api-native-tab-activated",viewA.tab==1));
+        add("compat-api-layout-changes",() -> viewA.shift=8,() -> true,() -> {},8);
+        nativeCursorNeutralReady("compat-api-relayout",() -> prepareDpadTarget(viewAHandle.instanceId(),apiFixtureControl(2)));
+        button("compat-api-relayout-DPAD",GamepadInputs.DPAD_RIGHT_BUTTON,() -> verifyDpadTarget("compat-api-relayout-current-geometry"));
+        nativePointerClick("compat-api-virtual-entry",GamepadInputs.SOUTH_BUTTON,() -> pointAtControl(viewAHandle.instanceId(),apiFixtureControl(4)),
+            () -> check("compat-api-virtual-entry-retains-owner-and-no-real-slot",viewA.virtualClicks==1
+                && owner.desktop().hoveredSlot(viewAHandle.instanceId(),apiFixtureControl(4).x()+8,apiFixtureControl(4).y()+8)==null
+                && owner.desktop().carriedStack().isEmpty()));
+        nativeCursorNeutralReady("compat-api-scroll",() -> pointAtControl(viewAHandle.instanceId(),apiFixtureControl(4)));
+        button("compat-api-DPAD-edge-scroll",GamepadInputs.DPAD_DOWN_BUTTON,() -> check("compat-api-edge-scroll-native-handler",viewA.scroll==1));
+        add("compat-api-right-stick-scroll",() -> {pointAtControl(viewAHandle.instanceId(),apiFixtureControl(4));driver.rightY=1;},
+            () -> viewA.scroll>=5,() -> {driver.rightY=0;check("compat-api-right-stick-scrolls-native-list",viewA.scroll>=5);},0);
+        nativePointerClick("compat-api-click-custom-editor",GamepadInputs.SOUTH_BUTTON,() -> pointAtControl(viewAHandle.instanceId(),apiFixtureControl(3)),
+            () -> check("compat-api-custom-text-opens-native-keyboard",mc.gui.screen() instanceof WorkspaceSearchKeyboard));
+        add("compat-api-keyboard-neutral",() -> {driver.buttons.clear();driver.rightY=0;},
+            () -> mc.gui.screen() instanceof WorkspaceSearchKeyboard && !(Boolean)field(mc.gui.screen(),"openingAwaitingNeutral"),() -> {},2);
+        add("compat-api-keyboard-unicode",() -> {
+            mc.gui.screen().charTyped(new net.minecraft.client.input.CharacterEvent(0x1F642));
+            mc.gui.screen().charTyped(new net.minecraft.client.input.CharacterEvent('x'));
+        },() -> true,() -> check("compat-api-custom-editor-receives-unicode",viewA.query.equals("\uD83D\uDE42x")),2);
+        add("compat-api-keyboard-modal-input",() -> {driver.trigger=1;driver.rightTrigger=1;driver.rightY=1;},
+            () -> true,() -> check("compat-api-keyboard-blocks-window-and-recipe-wheels",mc.gui.screen() instanceof WorkspaceSearchKeyboard
+                && !owner.radialActive() && viewAHandle.isOpen() && viewA.virtualClicks==1),5);
+        add("compat-api-keyboard-release-triggers",() -> {driver.trigger=driver.rightTrigger=driver.rightY=0;},() -> true,() -> {},4);
+        button("compat-api-keyboard-B-close",GamepadInputs.EAST_BUTTON,() -> check("compat-api-keyboard-returns-workspace",mc.gui.screen() instanceof RadialInventoryScreen));
+        nativeCursorNeutralReady("compat-api-after-keyboard",() -> pointAtControl(viewAHandle.instanceId(),apiFixtureControl(0)));
+        nativePointerClick("compat-api-controls-resume",GamepadInputs.SOUTH_BUTTON,() -> pointAtControl(viewAHandle.instanceId(),apiFixtureControl(0)),
+            () -> {check("compat-api-normal-controller-resumes",viewA.tab==0 && viewA.query.equals("\uD83D\uDE42x"));capture("compat-unknown-api-controls");});
+        add("compat-api-close-view",() -> viewAHandle.close(),() -> !viewAHandle.isOpen(),() -> {},4);
+        for(String id:List.of("toms_storage:storage_terminal","toms_storage:crafting_terminal","toms_storage:inventory_link","ae2:sky_stone_chest","ae2:cell_workbench",
+                "sophisticatedstorage:chest","sophisticatedstorage:barrel","sophisticatedstorage:limited_barrel_1")) {
+            if(com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded(id.substring(0,id.indexOf(':')))) addModContainerScenario(id);
+        }
+        if(com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("ae2")) addAe2NetworkScenarios();
+        if(com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("sophisticatedbackpacks")) addBackpackCompatibilityScenarios();
+        if(com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("jei")
+                || com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("roughlyenoughitems")) addBrowserCompatibilityScenarios();
+    }
+
+    private static DesktopWindowBounds apiFixtureControl(int index) {
+        var state=viewAHandle.state();int x=state.x()+8+viewA.shift,y=state.y()+24;
+        if(index<3) return new DesktopWindowBounds(x+12+index*40,y,32,16);
+        return index==3 ? new DesktopWindowBounds(x+12,y+70,132,16) : new DesktopWindowBounds(x+12,y+96,16,16);
+    }
+
+    private static void addModContainerScenario(String id) {
+        final BlockPos pos= new BlockPos(24+Math.floorMod(id.hashCode(),12)*3,-60,24);
+        final String blockId=id.equals("toms_storage:inventory_link")?"toms_storage:inventory_cable_connector":id;
+        final UUID[] window={null};
+        add("compat-fixture-"+id,() -> server(() -> {
+            var level=player().level();var block=net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(Identifier.parse(blockId));
+            if(block==null || block==Blocks.AIR) throw new IllegalStateException("Missing optional fixture "+id);
+            level.setBlock(pos.below(),Blocks.STONE.defaultBlockState(),3);level.setBlock(pos,block.defaultBlockState(),3);
+            block.setPlacedBy(level,pos,level.getBlockState(pos),player(),new ItemStack(block));
+            if(id.equals("toms_storage:inventory_link")) {
+                var direction=level.getBlockState(pos).getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
+                level.setBlock(pos.relative(direction),Blocks.BEACON.defaultBlockState(),3);
+            }
+            player().teleportTo(pos.getX()+.5,pos.getY(),pos.getZ()-1);
+            return null;
+        }),() -> serverDone() && mc.level!=null && mc.level.getBlockEntity(pos)!=null
+            && net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(mc.level.getBlockState(pos).getBlock()).toString().equals(blockId),() -> {},id.equals("toms_storage:inventory_link")?45:20);
+        add("compat-open-"+id,() -> server(() -> {
+            var level=player().level();
+            var provider=level.getBlockState(pos).getMenuProvider(level,pos);
+            if(provider!=null) player().openMenu(provider);
+            else level.getBlockState(pos).useWithoutItem(level,player(),new BlockHitResult(Vec3.atCenterOf(pos),Direction.NORTH,pos,false));
+            return null;
+        }),() -> serverDone() && owner.windows().values().stream().anyMatch(w -> w.kind()==DesktopWorkspaceWindow.Kind.OTHER),() -> {
+            window[0]=newestOther();
+            var nativeWindow=field(InventoryDesktopScreen.current(mc),"windows");
+            Object found=((List<?>)nativeWindow).stream().filter(w -> window[0].equals(field(w,"apiInstanceId"))).findFirst().orElseThrow();
+            check("compat-"+id+"-native-api-adapter",field(found,"apiDefinition")!=null);
+        },12);
+        nativeCursorNeutralReady("compat-navigation-"+id,() -> {
+            var controls=owner.desktop().visibleControls(window[0]);
+            if(!controls.isEmpty()) prepareDpadTarget(window[0],controls.getFirst());
+            else {var slot=owner.desktop().visibleSlots(window[0]).getFirst();prepareDpadTarget(window[0],new DesktopWindowBounds(slot.x(),slot.y(),16,16));}
+        });
+        button("compat-DPAD-"+id,GamepadInputs.DPAD_RIGHT_BUTTON,() -> {verifyDpadTarget("compat-"+id+"-Dpad-native-target");capture("compat-"+id.replace(':','-'));});
+        if(id.startsWith("toms_storage:")) {
+            addApiEditorScenario("compat-"+id,() -> window[0],() -> owner.desktop().visibleControls(window[0]).stream()
+                .filter(control -> control.width()>60 && control.height()<=16).findFirst().orElseThrow());
+        }
+        if(id.equals("ae2:cell_workbench")) addAe2GhostSlotScenario(() -> window[0]);
+        if(id.equals("sophisticatedstorage:chest") || id.equals("sophisticatedstorage:barrel"))
+            addApiEditorScenario("compat-"+id,() -> window[0],() -> nativeSophisticatedSearch(window[0]));
+        button("compat-close-"+id,GamepadInputs.EAST_BUTTON,() -> check("compat-"+id+"-close-all",!owner.workspaceActive()));
+        button("compat-reopen-after-"+id,GamepadInputs.NORTH_BUTTON,() -> check("compat-"+id+"-reopened",owner.workspaceActive()));
+    }
+
+    private static void addAe2GhostSlotScenario(Supplier<UUID> window) {
+        final Slot[] ghost={null};
+        add("compat-ae2-ghost-fixture",() -> server(() -> {
+            var cell=new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(Identifier.parse("ae2:item_storage_cell_1k")));
+            var menu=serverMenu(AbstractContainerMenu.class);
+            menu.slots.stream().filter(slot -> slot.getClass().getSimpleName().equals("RestrictedInputSlot") && slot.mayPlace(cell))
+                .findFirst().orElseThrow().set(cell);
+            player().getInventory().setItem(9,new ItemStack(Items.DIRT,5));player().inventoryMenu.sendAllDataToRemote();return null;
+        }),() -> serverDone() && mc.player.getInventory().getItem(9).getCount()==5,() -> {
+            var nativeWindow=((List<?>)field(InventoryDesktopScreen.current(mc),"windows")).stream()
+                .filter(w -> window.get().equals(field(w,"apiInstanceId"))).findFirst().orElseThrow();
+            var menu=(AbstractContainerMenu)field(field(nativeWindow,"apiState"),"model");
+            ghost[0]=menu.slots.stream().filter(slot -> {
+                for(Class<?> type=slot.getClass();type!=null;type=type.getSuperclass()) if(type.getSimpleName().equals("FakeSlot")) return true;
+                return false;
+            }).findFirst().orElseThrow();
+        },10);
+        nativePointerClick("compat-ae2-real-stack-pickup",GamepadInputs.SOUTH_BUTTON,() -> pointAtNativeSlot(owner.model().playerInventory(),slot -> slot.getItem().is(Items.DIRT)),
+            () -> {});
+        add("compat-ae2-carried-stack",() -> {},() -> owner.desktop().carriedStack().getCount()==5,() -> {},8);
+        nativeCursorNeutralReady("compat-ae2-fake-slot",() -> {
+            var state=owner.windows().get(window.get()).handle().state();
+            prepareDpadTarget(window.get(),new DesktopWindowBounds(state.x()+ghost[0].x-1,state.y()+ghost[0].y-1,18,18));
+        });
+        button("compat-ae2-DPAD-fake-slot",GamepadInputs.DPAD_RIGHT_BUTTON,() -> verifyDpadTarget("compat-ae2-native-ghost-slot-navigable"));
+        nativePointerClick("compat-ae2-A-ghost-filter",GamepadInputs.SOUTH_BUTTON,() -> {
+            var state=owner.windows().get(window.get()).handle().state();
+            pointAtControl(window.get(),new DesktopWindowBounds(state.x()+ghost[0].x-1,state.y()+ghost[0].y-1,18,18));
+        },() -> {});
+        add("compat-ae2-ghost-keeps-carried-stack",() -> {},() -> ghost[0].hasItem(),() -> {
+            check("compat-ae2-ghost-copy-does-not-consume-cursor",owner.desktop().carriedStack().getCount()==5 && ghost[0].getItem().is(Items.DIRT));
+            capture("compat-ae2-ghost-slot");
+        },8);
+        nativePointerClick("compat-ae2-return-real-stack",GamepadInputs.SOUTH_BUTTON,
+            () -> pointAtNativeSlot(owner.model().playerInventory(),slot -> slot.getContainerSlot()==9),() -> {});
+        assertServer("compat-ae2-real-stack-conserved",() -> inventoryCount(Items.DIRT)==5 && player().inventoryMenu.getCarried().isEmpty());
+    }
+
+    private static void addBackpackCompatibilityScenarios() {
+        final UUID[] window={null};
+        add("compat-backpack-seed",() -> server(() -> {
+            var item=net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(Identifier.parse("sophisticatedbackpacks:backpack"));
+            ItemStack stack=new ItemStack(item);
+            try {
+                var type=Class.forName("net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.BackpackWrapper");
+                Object wrapper=type.getMethod("fromStack",ItemStack.class).invoke(null,stack);
+                type.getMethod("getInventoryHandler").invoke(wrapper);
+                if(((Optional<?>)type.getMethod("getContentsUuid").invoke(wrapper)).isEmpty()) type.getMethod("setContentsUuid",UUID.class).invoke(wrapper,UUID.randomUUID());
+            } catch(ReflectiveOperationException failure) {throw new IllegalStateException(failure);}
+            player().setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,stack);player().inventoryMenu.sendAllDataToRemote();return null;
+        }),() -> serverDone() && mc.player.getMainHandItem().getItem().toString().contains("backpack"),() -> {},8);
+        add("compat-backpack-open",() -> server(() -> {
+            var player=player();player.getMainHandItem().getItem().use(player.level(),player,net.minecraft.world.InteractionHand.MAIN_HAND);return null;
+        }),() -> serverDone() && owner.windows().values().stream().anyMatch(w -> w.kind()==DesktopWorkspaceWindow.Kind.OTHER),
+            () -> {window[0]=newestOther();capture("compat-backpack");},12);
+        nativeCursorNeutralReady("compat-backpack-tabs",() -> {
+            var controls=owner.desktop().visibleControls(window[0]);check("compat-backpack-exposes-native-controls",!controls.isEmpty());
+            prepareDpadTarget(window[0],controls.getFirst());
+        });
+        button("compat-backpack-DPAD-tab",GamepadInputs.DPAD_RIGHT_BUTTON,() -> verifyDpadTarget("compat-backpack-native-controls-navigable"));
+        addApiEditorScenario("compat-backpack",() -> window[0],() -> nativeSophisticatedSearch(window[0]));
+        add("compat-backpack-source-locked",() -> {},() -> true,() -> {
+            var menu=((List<DesktopContainerSession>)field(InventoryDesktopScreen.current(mc),"sessions")).getLast().menu();
+            check("compat-backpack-held-source-cannot-be-picked-up",menu.slots.stream().anyMatch(slot -> slot.getItem().getItem().toString().contains("backpack") && !slot.mayPickup(mc.player)));
+        },3);
+        button("compat-backpack-B-close",GamepadInputs.EAST_BUTTON,() -> check("compat-backpack-closes",!owner.workspaceActive()));
+        button("compat-backpack-reopen-workspace",GamepadInputs.NORTH_BUTTON,() -> {});
+    }
+
+    private static Object ae2Fixture(String method,Object... args) {
+        try {
+            var type=Class.forName("com.salts_inventory_update.controlify.qa.QaAe2Network");
+            return java.util.Arrays.stream(type.getMethods()).filter(m -> m.getName().equals(method) && m.getParameterCount()==args.length)
+                .findFirst().orElseThrow().invoke(null,args);
+        } catch(ReflectiveOperationException failure) {throw new IllegalStateException("Native AE2 fixture "+method,failure);}
+    }
+
+    private static Object nativeApiContent(UUID window) {return field(field(nativeWorkspaceWindow(window),"apiState"),"content");}
+    @SuppressWarnings("unchecked") private static List<DesktopWindowBounds> ae2Entries(UUID window) {
+        return (List<DesktopWindowBounds>)ae2Fixture("entries",nativeApiContent(window));
+    }
+
+    private static void addAe2NetworkScenarios() {
+        final UUID[] window={null};
+        final int[] scroll={0};
+        add("compat-ae2-network-build",() -> server(() -> {
+            player().getInventory().clearContent();player().inventoryMenu.sendAllDataToRemote();
+            ae2Fixture("setup",player());return null;
+        }),() -> serverDone() && (Boolean)ae2Fixture("clientReady"),() -> {},30);
+        add("compat-ae2-network-open",() -> server(() -> {ae2Fixture("open",player());return null;}),
+            () -> serverDone() && owner.windows().values().stream().anyMatch(w -> w.kind()==DesktopWorkspaceWindow.Kind.OTHER),
+            () -> window[0]=newestOther(),15);
+        add("compat-ae2-network-items-ready",() -> {},() -> !ae2Entries(window[0]).isEmpty(),() -> {
+            var first=ae2Entries(window[0]).getFirst();
+            check("compat-ae2-network-virtual-slots-no-real-authority",owner.desktop().hoveredSlot(window[0],first.x()+8,first.y()+8)==null
+                && owner.desktop().visibleControls(window[0]).contains(first));
+        },8);
+        nativeCursorNeutralReady("compat-ae2-network-dpad",() -> prepareDpadTarget(window[0],ae2Entries(window[0]).getFirst()));
+        button("compat-ae2-network-DPAD-item",GamepadInputs.DPAD_RIGHT_BUTTON,() -> verifyDpadTarget("compat-ae2-network-virtual-item-navigable"));
+        nativeCursorNeutralReady("compat-ae2-network-adjacent",() -> {
+            var entries=ae2Entries(window[0]);pointAtControl(window[0],entries.get(3));setDpadExpected(window[0],entries.get(4));
+        });
+        button("compat-ae2-network-DPAD-adjacent",GamepadInputs.DPAD_RIGHT_BUTTON,() -> verifyDpadTarget("compat-ae2-network-dpad-does-not-skip-adjacent-entries"));
+        nativeCursorNeutralReady("compat-ae2-network-scroll",() -> {
+            scroll[0]=(Integer)ae2Fixture("scroll",nativeApiContent(window[0]));
+            pointAtControl(window[0],ae2Entries(window[0]).getLast());
+        });
+        button("compat-ae2-network-DPAD-edge",GamepadInputs.DPAD_DOWN_BUTTON,() ->
+            check("compat-ae2-network-dpad-scrolls-one-row",(Integer)ae2Fixture("scroll",nativeApiContent(window[0]))==scroll[0]+1));
+        add("compat-ae2-network-analog-scroll",() -> {pointAtControl(window[0],ae2Entries(window[0]).getLast());driver.rightY=1;},
+            () -> (Integer)ae2Fixture("scroll",nativeApiContent(window[0]))>=scroll[0]+3,
+            () -> {driver.rightY=0;check("compat-ae2-network-right-stick-native-scroll",true);},0);
+        nativePointerClick("compat-ae2-network-search-A",GamepadInputs.SOUTH_BUTTON,
+            () -> pointAtControl(window[0],owner.desktop().textInputBounds(window[0]).getFirst()),
+            () -> check("compat-ae2-network-search-native-keyboard",mc.gui.screen() instanceof WorkspaceSearchKeyboard));
+        add("compat-ae2-network-search-neutral",() -> {driver.buttons.clear();driver.rightY=0;},
+            () -> mc.gui.screen() instanceof WorkspaceSearchKeyboard && !(Boolean)field(mc.gui.screen(),"openingAwaitingNeutral"),() -> {},2);
+        add("compat-ae2-network-search-type",() -> {
+            var select=new net.minecraft.client.input.KeyEvent(InputConstants.KEY_A,0,InputConstants.MOD_CONTROL);
+            mc.gui.screen().keyPressed(select);mc.gui.screen().keyReleased(select);
+            "diamond".codePoints().forEach(c -> mc.gui.screen().charTyped(new net.minecraft.client.input.CharacterEvent(c)));
+        },
+            () -> true,() -> {},3);
+        button("compat-ae2-network-search-B",GamepadInputs.EAST_BUTTON,() -> check("compat-ae2-network-keyboard-restores-controls",mc.gui.screen() instanceof RadialInventoryScreen));
+        add("compat-ae2-network-filtered",() -> {},() -> (Boolean)ae2Fixture("filteredForDiamonds",nativeApiContent(window[0])),
+            () -> check("compat-ae2-network-keyboard-updates-native-filter",true),5);
+        nativeCursorNeutralReady("compat-ae2-network-withdraw",() -> {});
+        nativePointerClick("compat-ae2-network-item-A",GamepadInputs.SOUTH_BUTTON,() -> pointAtControl(window[0],(DesktopWindowBounds)ae2Fixture("diamondEntry",nativeApiContent(window[0]))),
+            () -> check("compat-ae2-network-item-click-does-not-open-keyboard",mc.gui.screen() instanceof RadialInventoryScreen));
+        add("compat-ae2-network-withdraw-synced",() -> {},() -> owner.desktop().carriedStack().is(Items.DIAMOND),
+            () -> check("compat-ae2-network-withdraws-real-stack",owner.desktop().carriedStack().getCount()==64),5);
+        assertServer("compat-ae2-network-withdraw-conserves-items",() -> (Long)ae2Fixture("diamonds")==64 && player().inventoryMenu.getCarried().getCount()==64);
+        nativePointerClick("compat-ae2-network-deposit-A",GamepadInputs.SOUTH_BUTTON,() -> pointAtControl(window[0],(DesktopWindowBounds)ae2Fixture("diamondEntry",nativeApiContent(window[0]))),() -> {});
+        add("compat-ae2-network-deposit-synced",() -> {},() -> owner.desktop().carriedStack().isEmpty(),() -> capture("compat-ae2-network"),5);
+        assertServer("compat-ae2-network-deposit-conserves-items",() -> (Long)ae2Fixture("diamonds")==128 && player().inventoryMenu.getCarried().isEmpty());
+        button("compat-ae2-network-B-close",GamepadInputs.EAST_BUTTON,() -> check("compat-ae2-network-closes",!owner.workspaceActive()));
+        button("compat-ae2-network-reopen",GamepadInputs.NORTH_BUTTON,() -> {});
+    }
+
+    private static void addApiEditorScenario(String name,Supplier<UUID> window,Supplier<DesktopWindowBounds> fieldBounds) {
+        nativePointerClick(name+"-editor-A",GamepadInputs.SOUTH_BUTTON,() -> pointAtControl(window.get(),fieldBounds.get()),
+            () -> check(name+"-editor-native-keyboard",mc.gui.screen() instanceof WorkspaceSearchKeyboard));
+        add(name+"-editor-opening-neutral",() -> driver.buttons.clear(),
+            () -> mc.gui.screen() instanceof WorkspaceSearchKeyboard && !(Boolean)field(mc.gui.screen(),"openingAwaitingNeutral"),() -> {},2);
+        add(name+"-editor-type",() -> mc.gui.screen().charTyped(new net.minecraft.client.input.CharacterEvent('d')),
+            () -> true,() -> check(name+"-editor-still-exclusive",mc.gui.screen() instanceof WorkspaceSearchKeyboard && owner.desktop().textInputActive(window.get())),2);
+        button(name+"-editor-B-close",GamepadInputs.EAST_BUTTON,() -> check(name+"-editor-controller-restored",mc.gui.screen() instanceof RadialInventoryScreen));
+        nativeCursorNeutralReady(name+"-editor-return",() -> {});
+    }
+
+    private static DesktopWindowBounds nativeSophisticatedSearch(UUID window) {
+        try {
+            var nativeWindow=((List<?>)field(InventoryDesktopScreen.current(mc),"windows")).stream()
+                .filter(w -> window.equals(field(w,"apiInstanceId"))).findFirst().orElseThrow();
+            Object access=field(field(nativeWindow,"apiState"),"access");
+            var components=access.getClass().getMethod("components").invoke(access);
+            Object search=components.getClass().getMethod("search").invoke(components);
+            Class<?> type=search.getClass();
+            return new DesktopWindowBounds((Integer)type.getMethod("getX").invoke(search),(Integer)type.getMethod("getY").invoke(search),
+                (Integer)type.getMethod("getWidth").invoke(search),(Integer)type.getMethod("getHeight").invoke(search));
+        } catch(ReflectiveOperationException failure) {throw new IllegalStateException("Native Sophisticated search geometry",failure);}
+    }
+
+    private static void addBrowserCompatibilityScenarios() {
+        final UUID[] window={null};
+        final int[] itemTab={0};
+        button("compat-close-before-browser",GamepadInputs.EAST_BUTTON,() -> check("compat-browser-open-from-gameplay",!owner.workspaceActive()));
+        add("compat-browser-open",() -> InventoryDesktopScreen.openOrToggleJei(mc),
+            () -> owner.windows().values().stream().anyMatch(w -> w.kind()==DesktopWorkspaceWindow.Kind.OTHER),() -> {
+                window[0]=newestOther();
+                var access=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access();
+                check("compat-browser-real-provider",access.isAvailable());record("compat-browser-provider","OBSERVED",access.source().id());
+                String expected=com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("roughlyenoughitems")?"roughlyenoughitems":"jei";
+                check("compat-browser-correct-provider",access.source().id().toLowerCase(java.util.Locale.ROOT).contains(expected));
+                itemTab[0]=java.util.stream.IntStream.range(0,access.tabs().size()).filter(i -> access.tabs().get(i).kind()
+                    ==com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserTabKind.INGREDIENTS
+                    && access.tabs().get(i).uid().toLowerCase(java.util.Locale.ROOT).contains("item")).findFirst().orElseThrow();
+                access.setFilterText("");
+            },15);
+        nativeCursorNeutralReady("compat-browser-tabs",() -> prepareDpadTarget(window[0],owner.desktop().visibleControls(window[0]).getFirst()));
+        button("compat-browser-DPAD-tab",GamepadInputs.DPAD_RIGHT_BUTTON,() -> verifyDpadTarget("compat-browser-tabs-selectable"));
+        nativePointerClick("compat-browser-A-tab",GamepadInputs.SOUTH_BUTTON,() -> pointAtControl(window[0],owner.desktop().visibleControls(window[0]).get(itemTab[0])),() -> {
+            var list=(List<?>)field(InventoryDesktopScreen.current(mc),"windows");
+            Object nativeWindow=list.stream().filter(w -> window[0].equals(field(w,"apiInstanceId"))).findFirst().orElseThrow();
+            String selected=(String)field(nativeWindow,"jeiSelectedTabUid");
+            check("compat-browser-tab-native-selection",selected.equals(com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access().tabs().get(itemTab[0]).uid()));
+        });
+        addApiEditorScenario("compat-browser",() -> window[0],() -> owner.desktop().visibleControls(window[0]).stream()
+            .filter(control -> control.width()>60 && control.height()==12).findFirst().orElseThrow());
+        add("compat-browser-search-native-filter",() -> {},() -> true,() -> {
+            var access=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access();
+            check("compat-browser-custom-keyboard-edits-native-filter",access.filterText().equals("d"));
+            access.setFilterText("");capture("compat-browser-controls");
+        },4);
+        add("compat-browser-filter-cleared-native-grid",() -> {},() -> owner.desktop().controllerTargets(window[0]).stream()
+            .anyMatch(t -> t.group().equals("browser-catalog")),() -> {},2);
+        nativeCursorNeutralReady("compat-browser-grid",() -> {
+            var target=owner.desktop().controllerTargets(window[0]).stream().filter(t -> t.group().equals("browser-catalog")).findFirst().orElseThrow();
+            prepareDpadTarget(window[0],new DesktopWindowBounds(target.x(),target.y(),target.width(),target.height()));
+        });
+        button("compat-browser-DPAD-virtual-item",GamepadInputs.DPAD_RIGHT_BUTTON,() -> verifyDpadTarget("compat-browser-virtual-item-navigable"));
+        add("compat-browser-known-recipe-filter",() -> com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access().setFilterText("crafting table"),
+            () -> owner.desktop().controllerTargets(window[0]).stream().anyMatch(t -> t.group().equals("browser-catalog")),() -> {},6);
+        nativePointerClick("compat-browser-A-catalog-recipe",GamepadInputs.SOUTH_BUTTON,() -> {
+            var target=owner.desktop().controllerTargets(window[0]).stream().filter(t -> t.group().equals("browser-catalog")).findFirst().orElseThrow();
+            pointAtControl(window[0],new DesktopWindowBounds(target.x(),target.y(),target.width(),target.height()));
+        },() -> {});
+        add("compat-browser-native-recipes-ready",() -> {},() -> {
+            var view=nativeWorkspaceWindow(window[0]);
+            return !field(view,"jeiMode").toString().equals("INGREDIENTS") && !((List<?>)field(view,"jeiRecipeEntries")).isEmpty();
+        },() -> {
+            check("compat-browser-real-recipe-view",true);
+            var bounds=owner.desktop().presentationBounds(window[0]);
+            check("compat-browser-controls-inside-presentation-bounds",owner.desktop().visibleControls(window[0]).stream().allMatch(control ->
+                control.x()>=bounds.x() && control.y()>=bounds.y() && control.x()+control.width()<=bounds.x()+bounds.width()
+                && control.y()+control.height()<=bounds.y()+bounds.height()));
+            verifyDisplayedPanes("compat-browser-fitted-panes");
+        },16);
+        if(com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("roughlyenoughitems")) {
+            add("compat-browser-native-render-state",() -> {},() -> true,() -> {
+                var access=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access();
+                var entry=access.entryForItemStack(new ItemStack(Items.CRAFTING_TABLE));
+                verifyBrowserRenderTransform("entry",graphics -> access.render(graphics,entry,20,30));
+                var view=nativeWorkspaceWindow(window[0]);
+                var recipe=(com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserRecipe)((List<?>)field(view,"jeiRecipeEntries")).getFirst();
+                verifyBrowserRenderTransform("recipe",graphics -> access.renderRecipe(graphics,recipe,20,30,-10000,-10000));
+            },1);
+        }
+        nativeCursorNeutralReady("compat-browser-recipe-ingredient",() -> prepareDpadTarget(window[0],nativeBrowserIngredient(window[0])));
+        button("compat-browser-DPAD-recipe-ingredient",GamepadInputs.DPAD_RIGHT_BUTTON,() -> verifyDpadTarget("compat-browser-recipe-ingredient-navigable"));
+        nativeCursorNeutralReady("compat-browser-adjacent-ingredients",() -> {
+            var pair=nativeBrowserAdjacentIngredients(window[0]);pointAtControl(window[0],pair.getFirst());setDpadExpected(window[0],pair.getLast());
+        });
+        button("compat-browser-DPAD-adjacent-ingredient",GamepadInputs.DPAD_RIGHT_BUTTON,() -> verifyDpadTarget("compat-browser-adjacent-ingredients-do-not-skip"));
+        final List<ItemStack> before=new ArrayList<>();
+        add("compat-browser-virtual-recipe-snapshot",() -> {
+            for(int i=0;i<mc.player.getInventory().getContainerSize();i++) before.add(mc.player.getInventory().getItem(i).copy());
+        },() -> true,() -> {},1);
+        nativePointerClick("compat-browser-A-virtual-recipe-slot",GamepadInputs.SOUTH_BUTTON,() -> pointAtControl(window[0],nativeBrowserIngredient(window[0])),() -> {
+            check("compat-browser-virtual-recipe-retains-inventory",owner.desktop().carriedStack().isEmpty()
+                && java.util.stream.IntStream.range(0,before.size()).allMatch(i -> {
+                    var now=mc.player.getInventory().getItem(i);var previous=before.get(i);
+                    return now.getCount()==previous.getCount() && ItemStack.isSameItemSameComponents(now,previous);
+                }));
+            capture("compat-browser-recipe-virtual-slots");
+        });
+    }
+
+    private static Object nativeWorkspaceWindow(UUID window) {
+        return ((List<?>)field(InventoryDesktopScreen.current(mc),"windows")).stream()
+            .filter(w -> window.equals(field(w,"apiInstanceId"))).findFirst().orElseThrow();
+    }
+
+    private static void verifyBrowserRenderTransform(String name,java.util.function.Consumer<net.minecraft.client.gui.GuiGraphicsExtractor> draw) {
+        var baseState=new net.minecraft.client.renderer.state.gui.GuiRenderState();
+        var base=new net.minecraft.client.gui.GuiGraphicsExtractor(mc,baseState,-10000,-10000);
+        base.enableScissor(0,0,300,200);draw.accept(base);
+        var baseItems=new ArrayList<net.minecraft.client.renderer.state.gui.GuiItemRenderState>();baseState.forEachItem(baseItems::add);
+        var state=new net.minecraft.client.renderer.state.gui.GuiRenderState();
+        var graphics=new net.minecraft.client.gui.GuiGraphicsExtractor(mc,state,-10000,-10000);
+        graphics.pose().translate(31,17).scale(.75f);
+        var transform=new org.joml.Matrix3x2f(graphics.pose());
+        graphics.enableScissor(0,0,300,200);draw.accept(graphics);
+        var items=new ArrayList<net.minecraft.client.renderer.state.gui.GuiItemRenderState>();state.forEachItem(items::add);
+        check("compat-browser-"+name+"-native-items-extracted",!baseItems.isEmpty() && baseItems.size()==items.size());
+        boolean posed=true,clipped=true;
+        var unmatched=new ArrayList<>(items);
+        for(var original:baseItems) {
+            var expectedPose=new org.joml.Matrix3x2f(transform).mul(original.pose());
+            var expected=expectedPose.transformPosition(original.x(),original.y(),new org.joml.Vector2f());
+            // GuiRenderState may reorder non-overlapping items into different nodes at a
+            // different scale. Match the emitted geometry rather than traversal indices.
+            var actual=unmatched.stream().filter(item -> {
+                var position=item.pose().transformPosition(item.x(),item.y(),new org.joml.Vector2f());
+                return expected.distance(position)<.02f && Math.abs(expectedPose.m00()-item.pose().m00())<.001f
+                    && Math.abs(expectedPose.m11()-item.pose().m11())<.001f
+                    && Math.abs(expectedPose.m01()-item.pose().m01())<.001f && Math.abs(expectedPose.m10()-item.pose().m10())<.001f;
+            }).findFirst().orElse(null);
+            if(actual==null) {posed=false;continue;}unmatched.remove(actual);
+            var clip=original.scissorArea();var current=actual.scissorArea();
+            if(clip==null || current==null) {clipped=false;continue;}
+            var wanted=clip.transformMaxBounds(transform);
+            clipped &= Math.abs(wanted.left()-current.left())<=1 && Math.abs(wanted.top()-current.top())<=1
+                && Math.abs(wanted.right()-current.right())<=1 && Math.abs(wanted.bottom()-current.bottom())<=1;
+        }
+        if(!posed || !clipped) record("compat-browser-"+name+"-render-geometry","OBSERVED",
+            "parent="+graphics.pose()+",expectedParent="+transform+",base="+baseItems.stream().map(item -> item.pose()+";xy="+item.x()+","+item.y()+";clip="+item.scissorArea()).toList()
+            +",transformed="+items.stream().map(item -> item.pose()+";xy="+item.x()+","+item.y()+";clip="+item.scissorArea()).toList());
+        check("compat-browser-"+name+"-retains-window-transform",posed && graphics.pose().equals(transform,.001f));
+        check("compat-browser-"+name+"-retains-window-clip",clipped);
+    }
+
+    private static DesktopWindowBounds nativeBrowserIngredient(UUID window) {
+        try {
+            var view=nativeWorkspaceWindow(window);
+            var category=((List<com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserCategory>)field(view,"jeiRecipeCategories")).stream()
+                .filter(c -> c.uid().equals(field(view,"jeiSelectedRecipeCategoryUid"))).findFirst().orElseThrow();
+            var method=InventoryDesktopScreen.class.getDeclaredMethod("visibleJeiRecipePlacements",view.getClass(),category.getClass());
+            method.setAccessible(true);
+            var access=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access();
+            for(var placement:(List<?>)method.invoke(InventoryDesktopScreen.current(mc),view,category)) {
+                var recipe=(com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserRecipe)field(placement,"recipe");
+                int x=(Integer)field(placement,"x"),y=(Integer)field(placement,"y");
+                for(var bounds:access.recipeIngredientBounds(recipe,x,y)) {
+                    int cx=bounds.x()+bounds.width()/2,cy=bounds.y()+bounds.height()/2;
+                    if(access.recipeIngredientAt(recipe,x,y,cx,cy)!=null) {
+                        check("compat-browser-recipe-geometry-uses-native-hit-test",owner.desktop().visibleControls(window).contains(bounds)
+                            && owner.desktop().hoveredSlot(window,cx,cy)==null);
+                        return bounds;
+                    }
+                }
+            }
+            throw new IllegalStateException("Native recipe ingredient rectangle missing");
+        } catch(ReflectiveOperationException failure) {throw new IllegalStateException("Native recipe geometry",failure);}
+    }
+
+    private static List<DesktopWindowBounds> nativeBrowserAdjacentIngredients(UUID window) {
+        try {
+            var view=nativeWorkspaceWindow(window);
+            var category=((List<com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserCategory>)field(view,"jeiRecipeCategories")).stream()
+                .filter(c -> c.uid().equals(field(view,"jeiSelectedRecipeCategoryUid"))).findFirst().orElseThrow();
+            var method=InventoryDesktopScreen.class.getDeclaredMethod("visibleJeiRecipePlacements",view.getClass(),category.getClass());method.setAccessible(true);
+            var access=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access();
+            for(var placement:(List<?>)method.invoke(InventoryDesktopScreen.current(mc),view,category)) {
+                var recipe=(com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserRecipe)field(placement,"recipe");
+                var entries=access.recipeIngredientBounds(recipe,(Integer)field(placement,"x"),(Integer)field(placement,"y"));
+                for(var left:entries) for(var right:entries) if(left.y()==right.y() && right.x()>left.x() && right.x()-left.x()<=20)
+                    return List.of(left,right);
+            }
+            throw new IllegalStateException("Native adjacent crafting ingredients missing");
+        } catch(ReflectiveOperationException failure) {throw new IllegalStateException(failure);}
+    }
+
+    private static void addCraftingQolScenarios() {
+        final class Fixture {
+            void seed(String name, Runnable contents) {
+                add(name,() -> server(() -> {
+                    player().getInventory().clearContent();player().inventoryMenu.setCarried(ItemStack.EMPTY);
+                    for(var slot:player().inventoryMenu.getInputGridSlots()) slot.set(ItemStack.EMPTY);
+                    contents.run();player().inventoryMenu.broadcastChanges();return null;
+                }),ControlifyGameplayHarness::serverDone,() -> {},8);
+            }
+            void quickMove(String name, boolean hotbar) {
+                nativeCursorNeutralReady(name+"-hover",() -> pointAtNativeSlot(owner.model().playerInventory(),
+                    slot -> slot.hasItem() && slot.getItem().is(Items.DIRT) && (slot.getContainerSlot()<9)==hotbar));
+                button(name+"-Y",GamepadInputs.NORTH_BUTTON,() -> {});
+                assertServer(name+"-exact-destination",() -> {
+                    var inv=player().getInventory();int main=0,bar=0;
+                    for(int i=0;i<36;i++) if(inv.getItem(i).is(Items.DIRT)) {if(i<9) bar+=inv.getItem(i).getCount();else main+=inv.getItem(i).getCount();}
+                    return (hotbar ? main==17 && bar==0 : bar==17 && main==0)
+                        && player().inventoryMenu.getInputGridSlots().stream().noneMatch(Slot::hasItem);
+                });
+            }
+            void craft(String name, boolean fullHotbar, boolean character) {
+                seed(name+"-resources",() -> {
+                    player().getInventory().setItem(9,new ItemStack(Items.OAK_LOG,1));
+                    player().getInventory().setItem(10,new ItemStack(Items.OAK_PLANKS,12));
+                    if(fullHotbar) for(int i=0;i<9;i++) player().getInventory().setItem(i,new ItemStack(Items.SAND,64));
+                });
+                nativeCursorNeutralReady(name+"-hover",() -> {
+                    UUID id=character?owner.model().character():tableWindow;
+                    pointAtControl(id,owner.desktop().contextualBookHint(id).activationBounds());
+                });
+                add(name+"-wheel",() -> driver.rightTrigger=1,() -> contextualOverlay().active(),() -> {},4);
+                add(name+"-recipe",() -> aimContextualRecipe(Items.OAK_PLANKS,true),() -> contextualRecipeReady(Items.OAK_PLANKS,true),
+                    () -> {driver.rightX=driver.rightY=0;driver.stick(0,0);},5);
+                button(name+"-craft-A",GamepadInputs.SOUTH_BUTTON,() -> {});
+                assertServer(name+"-output-placement",() -> {
+                    var inv=player().getInventory();int hotbar=0,main=0;
+                    for(int i=0;i<36;i++) if(inv.getItem(i).is(Items.OAK_PLANKS)) {if(i<9) hotbar+=inv.getItem(i).getCount();else main+=inv.getItem(i).getCount();}
+                    return fullHotbar?hotbar==0&&main==16:hotbar==4&&main==12;
+                });
+                add(name+"-release",() -> {driver.rightTrigger=0;driver.rightX=driver.rightY=0;},() -> !contextualOverlay().active(),() -> {},6);
+            }
+        }
+        var fixture=new Fixture();
+        openContainer("qol-open-table",() -> tablePos,() -> tableWindow=newestOther());
+        add("qol-bind-native-Y",() -> ControlifyBindings.INV_QUICK_MOVE.on(controller).setBoundInput(new ButtonInput(GamepadInputs.NORTH_BUTTON)),
+            () -> true,() -> {},2);
+        fixture.seed("qol-inventory-seed",() -> player().getInventory().setItem(9,new ItemStack(Items.DIRT,17)));
+        fixture.quickMove("qol-table-main-to-hotbar",false);
+        fixture.quickMove("qol-table-hotbar-to-main",true);
+        selectPair("qol-character-pair",() -> owner.model().character());
+        fixture.quickMove("qol-character-main-to-hotbar",false);
+        fixture.quickMove("qol-character-hotbar-to-main",true);
+        fixture.craft("qol-character-hotbar-priority",false,true);
+        selectPair("qol-table-pair",() -> tableWindow);
+        fixture.craft("qol-table-hotbar-priority",false,false);
+        fixture.craft("qol-table-full-hotbar-fallback",true,false);
+        fixture.seed("qol-close-return-fixture",() -> player().inventoryMenu.getInputGridSlots().getFirst().set(new ItemStack(Items.DIAMOND,7)));
+        button("qol-close-B",GamepadInputs.EAST_BUTTON,() -> check("qol-B-returns-gameplay",mc.gui.screen()==null));
+        assertServer("qol-close-returns-character-inputs",() -> player().inventoryMenu.getInputGridSlots().stream().noneMatch(Slot::hasItem)
+            && java.util.stream.IntStream.range(0,36).map(i -> player().getInventory().getItem(i).is(Items.DIAMOND)?player().getInventory().getItem(i).getCount():0).sum()==7
+            && player().inventoryMenu.getResultSlot().getItem().isEmpty());
+        button("qol-reopen-inventory",GamepadInputs.NORTH_BUTTON,() -> {});
+        fixture.seed("qol-overflow-fixture",() -> {
+            for(int i=0;i<36;i++) player().getInventory().setItem(i,new ItemStack(Items.SAND,64));
+            player().inventoryMenu.getInputGridSlots().getFirst().set(new ItemStack(Items.DIAMOND,7));
+            player().inventoryMenu.setCarried(new ItemStack(Items.DIRT,5));
+        });
+        button("qol-overflow-close-B",GamepadInputs.EAST_BUTTON,() -> {});
+        assertServer("qol-full-inventory-drops-exact-overflow",() -> player().inventoryMenu.getInputGridSlots().stream().noneMatch(Slot::hasItem)
+            && player().level().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,player().getBoundingBox().inflate(16),e -> e.getItem().is(Items.DIAMOND))
+                .stream().mapToInt(e -> e.getItem().getCount()).sum()==7
+            && player().inventoryMenu.getCarried().is(Items.DIRT) && player().inventoryMenu.getCarried().getCount()==5);
+        fixture.seed("qol-keyboard-close-fixture",() -> player().inventoryMenu.getInputGridSlots().getFirst().set(new ItemStack(Items.EMERALD,3)));
+        button("qol-reopen-for-keyboard",GamepadInputs.NORTH_BUTTON,() -> {});
+        add("qol-keyboard-mode",() -> Controlify.instance().setInputMode(InputMode.KEYBOARD_MOUSE),
+            () -> !Controlify.instance().currentInputMode().isController(),() -> {},4);
+        add("qol-native-character-window-close",() -> owner.desktop().windows().stream()
+            .filter(window -> window.kind()==DesktopWorkspaceWindow.Kind.CHARACTER).findFirst().orElseThrow().handle().close(),
+            () -> true,() -> {},6);
+        assertServer("qol-keyboard-close-also-clears-grid",() -> player().inventoryMenu.getInputGridSlots().stream().noneMatch(Slot::hasItem)
+            && java.util.stream.IntStream.range(0,36).map(i -> player().getInventory().getItem(i).is(Items.EMERALD)?player().getInventory().getItem(i).getCount():0).sum()==3);
+    }
+
+    /** Only the center preview, recipe indexing and tucked HUD changed in this pass. */
+    private static void addWheelStabilityScenarios() {
+        final class Fixture {
+            com.salts_inventory_update.controlify.model.WindowPlacement center;
+            java.util.List<?> groups;
+            Object snapshot;
+            RecipeFilter previousFilter;
+            RecipeFilterSettings preferences;
+            void open(String name) {
+                add(name,() -> driver.rightTrigger=1,() -> contextualOverlay().active(),() -> {},5);
+            }
+            void close(String name) {
+                add(name,() -> {driver.rightTrigger=0;driver.stick(0,0);driver.rightX=driver.rightY=0;},
+                    () -> !contextualOverlay().active(),() -> {},5);
+            }
+            void verifyFresh(String name) {
+                var current=contextualSnapshot();
+                check(name+"-fresh-native-recipes",contextualEntries().stream().allMatch(recipe ->
+                    current.recipes().stream().anyMatch(nativeRecipe -> nativeRecipe==recipe)));
+                check(name+"-reuses-alphabet-order",field(field(contextualOverlay(),"alphabetCatalog"),"groups")==groups);
+            }
+        }
+        var fixture=new Fixture();
+        openContainer("stability-open-chest",() -> chestPos,() -> chestWindow=newestOther());
+        openContainer("stability-open-table",() -> tablePos,() -> tableWindow=newestOther());
+        openContainer("stability-open-furnace",() -> furnacePos,() -> furnaceWindow=newestOther());
+        focusPair("stability-table-pair",() -> tableWindow,() -> chestWindow);
+        add("stability-window-wheel-settle",() -> {driver.trigger=1;aimWindow(chestWindow);},() -> owner.radialActive(),() -> {
+            fixture.center=renderedLayout().windows().get(owner.model().focused());
+            record("stability-center-before-changes","OBSERVED",fixture.center.toString());
+        },30);
+        for (int i=0;i<18;i++) {
+            int index=i;
+            add("stability-change-highlight-"+i,() -> {
+                var order=owner.model().radialOrder();aimWindow(order.get(index%order.size()));
+            },() -> {
+                var order=owner.model().radialOrder();return owner.model().highlighted().filter(order.get(index%order.size())::equals).isPresent();
+            },() -> {
+                var center=renderedLayout().windows().get(owner.model().focused());
+                record("stability-center-frame-"+index,"OBSERVED",center.toString());
+                check("stability-center-unchanged-"+index,Math.abs(center.scale()-fixture.center.scale())<1e-8
+                    && Math.abs(center.x()-fixture.center.x())<1e-8 && Math.abs(center.y()-fixture.center.y())<1e-8);
+                check("stability-icons-opaque-"+index,owner.model().radialOrder().stream()
+                    .allMatch(id -> renderedLayout().windows().get(id).opacity()==1));
+            },0);
+        }
+        add("stability-window-wheel-capture",() -> {},() -> true,() -> capture("stability-window-wheel"),2);
+        add("stability-window-wheel-release",() -> {driver.trigger=0;driver.stick(0,0);},() -> !owner.radialActive(),() -> {},4);
+        selectPair("stability-recipe-table-pair",() -> chestWindow);
+        nativeCursorNeutralReady("stability-hover-crafting-grid",() -> {
+            fixture.preferences=(RecipeFilterSettings)field(field(owner,"value"),"recipeFilters");
+            fixture.previousFilter=fixture.preferences.filter();
+            try {fixture.preferences.set(RecipeFilter.ALL);}catch(java.io.IOException failure){throw new IllegalStateException(failure);}
+            pointAtControl(tableWindow,owner.desktop().contextualBookHint(tableWindow).activationBounds());
+        });
+        fixture.open("stability-open-recipe-wheel");
+        add("stability-catalog-initial",() -> {},() -> !contextualEntries().isEmpty(),() -> {
+            fixture.groups=(java.util.List<?>)field(field(contextualOverlay(),"alphabetCatalog"),"groups");
+            fixture.snapshot=contextualSnapshot();
+        },2);
+        add("stability-native-refresh",() -> {},() -> contextualSnapshot()!=fixture.snapshot,() -> {
+            fixture.verifyFresh("stability-refresh");capture("stability-recipe-wheel");
+        },3);
+        fixture.close("stability-close-recipe-wheel");
+        fixture.open("stability-reopen-recipe-wheel");
+        add("stability-reopened-catalog",() -> {},() -> !contextualEntries().isEmpty(),() -> fixture.verifyFresh("stability-reopen"),3);
+        fixture.close("stability-finish-recipe-wheel");
+        add("stability-restore-preferences",() -> {},() -> true,() -> {
+            try {fixture.preferences.set(fixture.previousFilter);}catch(java.io.IOException failure){throw new IllegalStateException(failure);}
+        },1);
+        add("stability-select-tuck",() -> {driver.trigger=1;driver.stick(0,1);},() -> owner.model().tuckHighlighted(),() -> {},3);
+        add("stability-tuck",() -> {driver.trigger=0;driver.stick(0,0);observedTabsAt=QaFeatureProbe.tabFrames;
+            controller.settings().generic.guide.showIngameGuide=true;
+            controller.settings().generic.guide.ingameGuideBottom=false;nativeGuideBefore=QaNativeGuideProbe.gameplayFrames;
+            driver.useTarget=chestPos;aimCameraAt(chestPos);
+        },() -> owner.tuckedAway()&&mc.gui.screen()==null,() -> {},8);
+        add("stability-hanging-tabs",() -> {},() -> QaFeatureProbe.tabFrames>observedTabsAt && nativeGameplayGuideReady(false),() -> {
+            check("stability-every-window-has-icon",QaFeatureProbe.tabCount==owner.windows().size()
+                && QaFeatureProbe.tabIcons.keySet().equals(owner.windows().keySet()));
+            check("stability-tabs-no-text-labels",QaFeatureProbe.tabTextDraws==0);
+            check("stability-tabs-clipped-top-visible-icons",QaFeatureProbe.tabIcons.values().stream()
+                .allMatch(tab -> tab.top()<0 && tab.bottom()>0 && tab.iconTop()>=0));
+            check("stability-tabs-use-window-wheel-icons",QaFeatureProbe.tabIcons.entrySet().stream()
+                .allMatch(entry -> ItemStack.matches(entry.getValue().stack(),owner.desktop().previewIcon(entry.getKey()))));
+            var guide=QaNativeGuideProbe.gameplay;
+            check("stability-top-guide-clears-hanging-tabs",guide!=null && guide.tuckedInset()>0
+                && guide.draws().stream().allMatch(draw -> draw.top()>=QaNativeGuideProbe.tabsBottom)
+                && QaNativeGuideProbe.overlapViolations.isEmpty());
+            capture("stability-hanging-icon-tabs");
+        },5);
+        button("stability-restore-workspace",GamepadInputs.NORTH_BUTTON,() -> {
+            driver.useTarget=null;
+            check("stability-tabs-restore-windows",owner.workspaceActive()&&!owner.tuckedAway()&&mc.gui.screen() instanceof RadialInventoryScreen);
+        });
+    }
+
+    /** QA-only observations at native MouseHandler entry, before a click can replace its screen. */
+    public static void observeNativeSearchMouse(int button,int action) {
+        if (observedSearchMouseOwner==null || controller==null || nativeSearchMouseEvents.size()>=16) return;
+        nativeSearchMouseEvents.add(new NativeSearchMouseEvent(driver.samples,button,action,mc.gui.screen(),
+            (Boolean)field(observedSearchMouseOwner,"controllerDispatch"),Controlify.instance().virtualMouseHandler().isVirtualMouseEnabled(),
+            ControlifyBindings.VMOUSE_LCLICK.on(controller).digitalNow(),ControlifyBindings.VMOUSE_RCLICK.on(controller).digitalNow()));
+    }
+
+    private static boolean verifyNativeCloseFirstSample(String name) {
+        var timing = Objects.requireNonNull(nativeCloseTiming);
+        boolean firstEdge = timing.firstSample > timing.queuedSample && timing.entrySample == timing.firstSample
+            && timing.entryAt > 0 && timing.closeNow > timing.threshold && timing.closePrevious <= timing.threshold;
+        record(name + "-native-close-timing", "OBSERVED", "queuedToFirstNativeSampleMs=" + (timing.firstSampleAt - timing.queuedAt) / 1_000_000.0
+            + ",firstSampleToHandlerMs=" + (timing.entryAt - timing.firstSampleAt) / 1_000_000.0
+            + ",handlerDurationMs=" + (timing.returnedAt - timing.entryAt) / 1_000_000.0
+            + ",queuedToClosureObservedMs=" + (firstClosedAt - timing.queuedAt) / 1_000_000.0
+            + ",queuedSample=" + timing.queuedSample + ",firstCloseSample=" + timing.firstSample + ",handlerSample=" + timing.entrySample
+            + ",configuredCloseNow=" + timing.closeNow + ",configuredClosePrevious=" + timing.closePrevious
+            + ",threshold=" + timing.threshold + ",digitalNow=" + timing.digitalNow + ",digitalPrevious=" + timing.digitalPrevious
+            + ",closedByHandlerReturn=" + timing.closedAtReturn);
+        check(name + "-closes-on-first-processed-configured-edge", firstEdge);
+        check(name + "-target-closed-before-native-handler-return", timing.returnedAt >= timing.entryAt && timing.closedAtReturn);
+        nativeCloseTiming = null;
+        return firstEdge && timing.closedAtReturn;
+    }
+
     private static void addGuideScenarios() {
-        add("guide-toggle-is-rigid-snap-option", () -> {
+        add("guide-legacy-presentation-native-layout-ready", () -> {
             // The native guide remains a supported Core presentation when a host opts out
             // of the alternate book. Keep its real compatibility checks in this explicit phase.
             vanillaBookLegacyBefore = QaFeatureProbe.vanillaBookSpritesLegacyOptOut;
             owner.desktop().setContextualRecipePresentation(false);
+            // Native slot extraction lays out controls lazily. Do not compare old frame
+            // snap points with controls first revealed by this presentation change.
+            owner.desktop().visibleSlots(owner.model().character());
+        }, () -> mc.gui.screen() instanceof RadialInventoryScreen
+            && QaFeatureProbe.vanillaBookSpritesLegacyOptOut > vanillaBookLegacyBefore
+            && renderedLayout().windows().containsKey(owner.model().character())
+            && !owner.desktop().visibleControls(owner.model().character()).isEmpty(), () ->
+                check("guide-legacy-native-frame-and-controls-ready", QaFeatureProbe.vanillaBookSpritesLegacyOptOut > vanillaBookLegacyBefore), 3);
+        add("guide-toggle-is-rigid-snap-option", () -> {}, () -> true, () -> {
             guideClosedBounds = owner.desktop().presentationBounds(owner.model().character());
             var toggle = owner.desktop().visibleControls(owner.model().character()).getFirst();
             verifyControlSnaps(owner.model().character(), "closed-guide-toggle");
@@ -597,7 +1438,7 @@ public final class ControlifyGameplayHarness {
             // Its decorative offset must not prevent moving down into that control.
             setDpadExpected(owner.model().character(), toggle);
             pointAtNativeSlot(owner.model().character(), slot -> slot.index == 0);
-        }, () -> true, () -> {}, 3);
+        }, 2);
         nativeCursorNeutralReady("native-DPAD-selects-crafting-guide-toggle", () -> {
             var toggle = owner.desktop().visibleControls(owner.model().character()).getFirst();
             setDpadExpected(owner.model().character(), toggle);
@@ -864,7 +1705,11 @@ public final class ControlifyGameplayHarness {
             var control = controls.get(index);
             int x = (int) Math.round(placement.x() + (control.x() + control.width() / 2.0 - bounds.x()) * placement.scale());
             int y = (int) Math.round(placement.y() + (control.y() + control.height() / 2.0 - bounds.y()) * placement.scale());
-            check(name + "-rigid-control-" + index, snaps.stream().anyMatch(snap -> snap.position().x() == x && snap.position().y() == y));
+            boolean matched = snaps.stream().anyMatch(snap -> snap.position().x() == x && snap.position().y() == y);
+            if (!matched) record(name + "-snap-geometry-" + index, "OBSERVED", "expectedGUI=" + x + "," + y
+                + ",nativeBounds=" + bounds + ",placement=" + placement + ",controls=" + controls
+                + ",liveControllerTargets=" + owner.desktop().controllerTargets(id) + ",collectedSnaps=" + snaps);
+            check(name + "-rigid-control-" + index, matched);
         }
     }
     private static void prepareDpadTarget(UUID id, DesktopWindowBounds control) {
@@ -1035,6 +1880,7 @@ public final class ControlifyGameplayHarness {
         addCharacterContextualScenarios();
         addCookingContextualScenarios();
         addCreativeNavigationScenarios();
+        addSoundOverhaulScenarios();
         add("contextual-presentation-native-book-sprite-regression", () -> {}, () -> true, () -> {
             record("native-vanilla-book-sprite-observation", "OBSERVED", "contextualEnabled="
                 + QaFeatureProbe.vanillaBookSpritesContextualEnabled + ",legacyOptOut=" + QaFeatureProbe.vanillaBookSpritesLegacyOptOut);
@@ -1046,6 +1892,212 @@ public final class ControlifyGameplayHarness {
             check("native-guide-contextual-surfaces-clear-bottom-lists", QaNativeGuideProbe.overlayFrames > 0
                 && QaNativeGuideProbe.overlayOverlapViolations.isEmpty());
         }, 3);
+    }
+
+    private static void addSoundOverhaulScenarios() {
+        final class SoundFixture {
+            net.minecraft.client.gui.screens.Screen previous;
+            net.minecraft.client.gui.screens.options.SoundOptionsScreen nativeSounds;
+            int windowWidth, windowHeight, guiWidth, guiHeight;
+            long before;
+            double master, ui;
+            List<AbstractWidget> widgets() {
+                var pending = new ArrayDeque<net.minecraft.client.gui.components.events.GuiEventListener>();
+                pending.addAll(mc.gui.screen().children());
+                var widgets = new ArrayList<AbstractWidget>();
+                while (!pending.isEmpty()) {
+                    var child = pending.removeFirst();
+                    if (child instanceof AbstractWidget widget) widgets.add(widget);
+                    if (child instanceof net.minecraft.client.gui.components.events.ContainerEventHandler container)
+                        pending.addAll(container.children());
+                }
+                return widgets;
+            }
+            net.minecraft.client.gui.components.Button button(String key) {
+                var label = Component.translatable(key);
+                return widgets().stream().filter(widget -> widget instanceof net.minecraft.client.gui.components.Button
+                    && Objects.equals(widget.getMessage(), label)).map(widget -> (net.minecraft.client.gui.components.Button)widget)
+                    .findFirst().orElseThrow(() -> new IllegalStateException("Missing native sound option: " + key));
+            }
+            void click(AbstractWidget widget) {
+                var event = new net.minecraft.client.input.MouseButtonEvent(widget.getX() + widget.getWidth() / 2.0,
+                    widget.getY() + widget.getHeight() / 2.0, new net.minecraft.client.input.MouseButtonInfo(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, 0));
+                check("sound-settings-native-widget-accepts-click", widget.mouseClicked(event, false));
+                widget.mouseReleased(event);
+            }
+            com.salts_inventory_update.controlify.model.WorkspaceSoundSettings settings() {
+                return com.salts_inventory_update.controlify.WorkspaceUiSounds.settings();
+            }
+            void resetPolicy() { com.salts_inventory_update.controlify.WorkspaceUiSounds.reset(); before = QaVisualFeatureProbe.acceptedSoundCount(); }
+            List<Map<String,Object>> addedSounds() { return QaVisualFeatureProbe.sounds().stream().skip(before).toList(); }
+            void restoreQuiet() {
+                settings().applyPreset(com.salts_inventory_update.controlify.model.WorkspaceSoundSettings.Preset.QUIET);
+                com.salts_inventory_update.controlify.WorkspaceUiSounds.reset();
+            }
+        }
+        var fixture = new SoundFixture();
+        String prefix = "salts_inventory_controlify.sounds.";
+        add("sound-overhaul-native-sound-options-entry", () -> {
+            fixture.previous = mc.gui.screen();
+            fixture.windowWidth = mc.getWindow().getWidth(); fixture.windowHeight = mc.getWindow().getHeight();
+            fixture.guiWidth = mc.getWindow().getGuiScaledWidth(); fixture.guiHeight = mc.getWindow().getGuiScaledHeight();
+            fixture.master = mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.MASTER).get();
+            fixture.ui = mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.UI).get();
+            driver.buttons.clear(); driver.stick(0, 0); driver.trigger = driver.rightTrigger = driver.rightX = driver.rightY = driver.walk = 0;
+            fixture.settings().resetToDefaults();
+            com.salts_inventory_update.controlify.WorkspaceUiSounds.reset();
+            mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.MASTER).set(1.0);
+            mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.UI).set(1.0);
+            fixture.nativeSounds = new net.minecraft.client.gui.screens.options.SoundOptionsScreen(fixture.previous, mc.options);
+            mc.gui.setScreen(fixture.nativeSounds);
+        }, () -> mc.gui.screen() == fixture.nativeSounds, () -> {
+            var entry = fixture.button(prefix + "entry");
+            var done = fixture.button("gui.done");
+            check("sound-overhaul-companion-entry-native-footer-visible", entry.active && entry.visible && done.active && done.visible
+                && entry.getY() == done.getY() && done.getRight() <= entry.getX()
+                && done.getX() >= 0 && entry.getRight() <= mc.gui.screen().width);
+            fixture.click(entry);
+        }, 3);
+        add("sound-overhaul-settings-native-screen-accessible", () -> {},
+            () -> mc.gui.screen() instanceof com.salts_inventory_update.controlify.WorkspaceSoundSettingsScreen, () -> {
+                check("sound-overhaul-default-off-hover-silent", fixture.settings().preset()
+                    == com.salts_inventory_update.controlify.model.WorkspaceSoundSettings.Preset.OFF
+                    && fixture.settings().masterVolume() == 0 && !fixture.settings().hoverEnabled());
+                check("sound-overhaul-native-settings-scroll-and-narration", field(mc.gui.screen(), "list") instanceof net.minecraft.client.gui.components.OptionsList
+                    && fixture.widgets().stream().filter(widget -> widget instanceof net.minecraft.client.gui.components.AbstractSliderButton).count() == 4);
+                capture("45-controller-sound-settings");
+                fixture.click((AbstractWidget)field(mc.gui.screen(), "presetButton"));
+            }, 3);
+        add("sound-overhaul-native-standard-opt-in", () -> {}, () -> true, () -> {
+            check("sound-overhaul-native-standard-opt-in-audible", fixture.settings().preset()
+                == com.salts_inventory_update.controlify.model.WorkspaceSoundSettings.Preset.STANDARD && fixture.settings().masterVolume() == 1);
+            fixture.click((AbstractWidget)field(mc.gui.screen(), "presetButton"));
+        }, 2);
+        add("sound-overhaul-native-quiet-opt-in", () -> {}, () -> true, () -> {
+            check("sound-overhaul-native-quiet-opt-in-audible", fixture.settings().preset()
+                == com.salts_inventory_update.controlify.model.WorkspaceSoundSettings.Preset.QUIET && fixture.settings().masterVolume() == 0.7);
+            fixture.click((AbstractWidget)field(mc.gui.screen(), "presetButton"));
+        }, 2);
+        add("sound-overhaul-minimal-native-preset", () -> {
+            check("sound-overhaul-minimal-mutes-browsing-keeps-actions", fixture.settings().preset()
+                == com.salts_inventory_update.controlify.model.WorkspaceSoundSettings.Preset.MINIMAL
+                && fixture.settings().navigationVolume() == 0 && fixture.settings().transitionsVolume() == 0 && fixture.settings().actionsVolume() > 0);
+            fixture.resetPolicy();
+            check("sound-overhaul-minimal-navigation-request-silent", !com.salts_inventory_update.controlify.WorkspaceUiSounds.play(
+                com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.NAVIGATE));
+            check("sound-overhaul-minimal-action-request-retained", com.salts_inventory_update.controlify.WorkspaceUiSounds.play(
+                com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.CONFIRM));
+        }, () -> true, () -> check("sound-overhaul-minimal-only-action-dispatched", fixture.addedSounds().size() == 1
+            && fixture.addedSounds().getFirst().get("action").equals("CONFIRM")), 4);
+        add("sound-overhaul-mod-master-mute", () -> {
+            fixture.restoreQuiet(); fixture.settings().setMasterVolume(0); fixture.resetPolicy();
+            check("sound-overhaul-mod-master-request-suppressed", !com.salts_inventory_update.controlify.WorkspaceUiSounds.play(
+                com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.CONFIRM));
+            check("sound-overhaul-mod-master-fast-navigation-suppressed", !com.salts_inventory_update.controlify.WorkspaceUiSounds.play(
+                com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.SCROLL));
+        }, () -> true, () -> check("sound-overhaul-mod-master-no-native-dispatch", fixture.addedSounds().isEmpty()), 3);
+        add("sound-overhaul-default-hover-silent", () -> {
+            fixture.restoreQuiet(); fixture.resetPolicy();
+            check("sound-overhaul-disabled-hover-request-suppressed", !com.salts_inventory_update.controlify.WorkspaceUiSounds.play(
+                com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.HOVER));
+        }, () -> true, () -> check("sound-overhaul-disabled-hover-no-native-dispatch", fixture.addedSounds().isEmpty()), 3);
+        add("sound-overhaul-same-tick-result-priority", () -> {
+            fixture.restoreQuiet(); fixture.resetPolicy();
+            com.salts_inventory_update.controlify.WorkspaceUiSounds.play(com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.NAVIGATE);
+            check("sound-overhaul-result-queued-over-navigation", com.salts_inventory_update.controlify.WorkspaceUiSounds.play(
+                com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.CONFIRM));
+        }, () -> true, () -> check("sound-overhaul-same-tick-one-result-no-navigation", fixture.addedSounds().size() == 1
+            && fixture.addedSounds().getFirst().get("action").equals("CONFIRM")), 5);
+        add("sound-overhaul-rapid-navigation-native-restarts", () -> {
+            fixture.restoreQuiet(); fixture.resetPolicy();
+            // Distinct real engine updates in one fixture avoid treating an unrelated
+            // render/server stall between QA stages as a navigation admission interval.
+            for (int index=0;index<8;index++) {
+                var action = index%2==0 ? com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.SCROLL
+                    : com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.CAROUSEL;
+                check("sound-overhaul-fast-navigation-update-" + index + "-retained",
+                    com.salts_inventory_update.controlify.WorkspaceUiSounds.play(action));
+                com.salts_inventory_update.controlify.WorkspaceUiSounds.tick(mc);
+            }
+        }, () -> true, () -> {
+            var burst = fixture.addedSounds();
+            check("sound-overhaul-every-fast-update-native-cue", burst.size()==8 && java.util.stream.IntStream.range(0,8).allMatch(index ->
+                burst.get(index).get("action").equals(index%2==0 ? "SCROLL" : "CAROUSEL") && !Boolean.TRUE.equals(burst.get(index).get("preview"))));
+            boolean sub200Burst = false;
+            for (int index=2;index<burst.size();index++) if (((Number)burst.get(index).get("atNanos")).longValue()
+                    - ((Number)burst.get(index-2).get("atNanos")).longValue() < 200_000_000L) sub200Burst = true;
+            check("sound-overhaul-fast-navigation-three-cues-under-200ms", sub200Burst);
+            check("sound-overhaul-fast-navigation-stops-previous-before-play", QaVisualFeatureProbe.navigationRestartsAreOrdered(burst));
+            check("sound-overhaul-fast-navigation-keeps-result-priority-policy", QaVisualFeatureProbe.soundPolicyBounded());
+        }, 1);
+        add("sound-overhaul-fast-navigation-neutral-stays-quiet", () -> fixture.before = QaVisualFeatureProbe.acceptedSoundCount(),
+            () -> true, () -> check("sound-overhaul-fast-navigation-no-idle-repeats", fixture.addedSounds().isEmpty()), 4);
+        add("sound-overhaul-one-cue-native-preview", () -> {
+            fixture.resetPolicy();
+            fixture.click(fixture.button(prefix + "preview.play"));
+        }, () -> true, () -> {
+            check("sound-overhaul-preview-exactly-one-native-cue", fixture.addedSounds().size() == 1
+                && fixture.addedSounds().getFirst().get("action").equals("FOCUS")
+                && field(com.salts_inventory_update.controlify.WorkspaceUiSounds.class, "previewSound") != null);
+            fixture.click(fixture.button(prefix + "preview.stop"));
+            check("sound-overhaul-preview-stop-clears-only-preview", field(com.salts_inventory_update.controlify.WorkspaceUiSounds.class, "previewSound") == null
+                && fixture.addedSounds().size() == 1);
+        }, 2);
+        add("sound-overhaul-native-slider-custom-mix", () -> {
+            var slider = fixture.widgets().stream().filter(widget -> widget instanceof net.minecraft.client.gui.components.AbstractSliderButton
+                && Objects.equals(field(widget, "key"), "volume")).findFirst().orElseThrow();
+            var event = new net.minecraft.client.input.MouseButtonEvent(slider.getX() + 4 + (slider.getWidth() - 8) * 0.25,
+                slider.getY() + slider.getHeight() / 2.0, new net.minecraft.client.input.MouseButtonInfo(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, 0));
+            check("sound-overhaul-native-slider-click-accepted", slider.mouseClicked(event, false)); slider.mouseReleased(event);
+        }, () -> true, () -> {
+            check("sound-overhaul-native-slider-updates-live-custom-mix", fixture.settings().preset()
+                == com.salts_inventory_update.controlify.model.WorkspaceSoundSettings.Preset.CUSTOM && fixture.settings().masterVolume() == 0.25);
+            fixture.click(fixture.button("gui.done"));
+        }, 2);
+        add("sound-overhaul-config-saved-and-reopened", () -> {}, () -> mc.gui.screen() == fixture.nativeSounds, () -> {
+            try {
+                var reloaded = com.salts_inventory_update.controlify.model.WorkspaceSoundSettings.load((Path)field(fixture.settings(), "path"));
+                check("sound-overhaul-custom-mix-persists", reloaded.preset()
+                    == com.salts_inventory_update.controlify.model.WorkspaceSoundSettings.Preset.CUSTOM && reloaded.masterVolume() == 0.25);
+            } catch (java.io.IOException failure) { throw new IllegalStateException(failure); }
+            fixture.click(fixture.button(prefix + "entry"));
+        }, 3);
+        add("sound-overhaul-native-settings-small-viewport", () -> mc.getWindow().setWindowed(800, 600),
+            () -> mc.getWindow().getGuiScaledWidth() == 400 && mc.getWindow().getGuiScaledHeight() == 300
+                && mc.gui.screen() instanceof com.salts_inventory_update.controlify.WorkspaceSoundSettingsScreen && mc.gui.screen().width == 400, () -> {
+                var list = (net.minecraft.client.gui.components.OptionsList)field(mc.gui.screen(), "list");
+                var done = fixture.button("gui.done");
+                check("sound-overhaul-small-viewport-scroll-keeps-footer-clear", list.getY() >= 0 && list.getBottom() <= done.getY()
+                    && done.getX() >= 0 && done.getRight() <= 400 && done.getBottom() <= 300);
+                capture("45b-controller-sound-settings-constrained");
+                list.setScrollAmount(10000);
+            }, 4);
+        add("sound-overhaul-native-small-viewport-reset-accessible", () -> {}, () -> true, () -> {
+            var list = (net.minecraft.client.gui.components.OptionsList)field(mc.gui.screen(), "list");
+            var reset = fixture.button(prefix + "reset");
+            check("sound-overhaul-scrolling-reaches-last-native-setting", reset.getY() >= list.getY() && reset.getBottom() <= list.getBottom());
+            fixture.click(reset);
+        }, 3);
+        add("sound-overhaul-native-reset-restores-off", () -> {}, () -> true, () -> {
+            check("sound-overhaul-restore-defaults-off-hover-off", fixture.settings().preset()
+                == com.salts_inventory_update.controlify.model.WorkspaceSoundSettings.Preset.OFF
+                && fixture.settings().masterVolume() == 0 && !fixture.settings().hoverEnabled());
+            fixture.click(fixture.button("gui.done"));
+            mc.getWindow().setWindowed(fixture.windowWidth, fixture.windowHeight);
+        }, 3);
+        add("sound-overhaul-native-options-resize-and-return", () -> {},
+            () -> mc.gui.screen() == fixture.nativeSounds && mc.getWindow().getGuiScaledWidth() == fixture.guiWidth
+                && mc.getWindow().getGuiScaledHeight() == fixture.guiHeight, () -> {
+                var entry = fixture.button(prefix + "entry"); var done = fixture.button("gui.done");
+                check("sound-overhaul-native-footer-resize-preserves-two-controls", entry.active && entry.visible
+                    && entry.getY() == done.getY() && done.getRight() <= entry.getX() && entry.getRight() <= mc.gui.screen().width);
+                fixture.click(done);
+                check("sound-overhaul-original-native-screen-restored", mc.gui.screen() == fixture.previous);
+                fixture.settings().resetToDefaults();
+                com.salts_inventory_update.controlify.WorkspaceUiSounds.reset();
+                mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.MASTER).set(fixture.master);
+                mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.UI).set(fixture.ui);
+            }, 4);
     }
 
     private static com.salts_inventory_update.controlify.ContextualRadialOverlay contextualOverlay() {
@@ -1181,10 +2233,12 @@ public final class ControlifyGameplayHarness {
             });
         button("contextual-DPAD-left-category", GamepadInputs.DPAD_LEFT_BUTTON,
             () -> check("contextual-category-restored-native-binding", (Integer) field(contextualOverlay(), "category") == 0));
+        button("contextual-DPAD-up-parts-filter", GamepadInputs.DPAD_UP_BUTTON,
+            () -> check("contextual-parts-filter-native-binding", field(contextualOverlay(), "filter") == com.salts_inventory_update.controlify.model.RecipeFilter.CONTAINS_PARTS));
         button("contextual-DPAD-up-craftable-filter", GamepadInputs.DPAD_UP_BUTTON,
-            () -> check("contextual-craftable-filter-enabled-native-binding", (Boolean) field(contextualOverlay(), "craftableOnly")));
+            () -> check("contextual-craftable-filter-enabled-native-binding", field(contextualOverlay(), "filter") == com.salts_inventory_update.controlify.model.RecipeFilter.CRAFTABLE));
         button("contextual-DPAD-up-all-filter", GamepadInputs.DPAD_UP_BUTTON,
-            () -> check("contextual-craftable-filter-disabled-native-binding", !(Boolean) field(contextualOverlay(), "craftableOnly")));
+            () -> check("contextual-craftable-filter-disabled-native-binding", field(contextualOverlay(), "filter") == com.salts_inventory_update.controlify.model.RecipeFilter.ALL));
         addContextualAlphabetScenarios();
         addNativeUiMuteScenarios();
         addContextualCarouselScenarios();
@@ -1231,8 +2285,9 @@ public final class ControlifyGameplayHarness {
             capture("43-native-red-translucent-missing-ingredients");
         },2);
         observeNativeGuide("unavailable-recipe", "RECIPE", "Browse recipes", "Choose recipe", "Release: return to pair");
-        add("native-guide-unavailable-recipe-no-confirm", () -> {}, () -> true, () ->
-            check("native-guide-unavailable-recipe-hides-confirm", !QaNativeGuideProbe.workspace.label("Craft into opposite window")), 2);
+        add("native-guide-unavailable-recipe-keeps-confirm", () -> {}, () -> true, () ->
+            check("native-guide-unavailable-recipe-keeps-craft-and-stack", QaNativeGuideProbe.workspace.label("Craft into opposite window")
+                && QaNativeGuideProbe.workspace.label("Craft Stack")), 2);
         button("contextual-A-rejects-missing-ingredients", GamepadInputs.SOUTH_BUTTON,
             () -> check("contextual-missing-ingredients-status", field(contextualOverlay(), "status").equals("Missing ingredients")));
         assertServer("contextual-noncraftable-no-inventory-mutation", () -> count(barrelPos, Items.OAK_PLANKS) == 4
@@ -1304,7 +2359,72 @@ public final class ControlifyGameplayHarness {
         add("contextual-final-release-RT", () -> { driver.rightTrigger = 0; driver.rightX = 0; driver.rightY = 0; driver.stick(0, 0); },
             () -> mc.gui.screen() instanceof RadialInventoryScreen screen && !screen.contextualRadialActive(),
             () -> capture("14c-contextual-crafted-output-in-opposite-container"), 4);
+        addContextualStackScenarios();
         addContextualHoverLifecycleScenarios();
+    }
+
+    private static dev.isxander.controlify.bindings.input.Input contextualQuickMoveBefore;
+    private static void addContextualStackScenarios() {
+        add("contextual-Craft-Stack-default-Y-fixture",() -> {
+            contextualQuickMoveBefore=ControlifyBindings.INV_QUICK_MOVE.on(controller).boundInput();
+            ControlifyBindings.INV_QUICK_MOVE.on(controller).setBoundInput(new ButtonInput(GamepadInputs.NORTH_BUTTON));
+        },() -> true,() -> {},2);
+        addContextualStackCase("64", Items.OAK_PLANKS, 64, Map.of(Items.OAK_LOG,32), Map.of(Items.OAK_LOG,16),0,true);
+        addContextualStackCase("16", Items.BUCKET,16,Map.of(Items.IRON_INGOT,64),Map.of(Items.IRON_INGOT,16),0,false);
+        addContextualStackCase("1", Items.WOODEN_SHOVEL,1,Map.of(Items.OAK_PLANKS,64,Items.STICK,64),
+            Map.of(Items.OAK_PLANKS,63,Items.STICK,62),0,false);
+        addContextualStackCase("whole-batches",Items.OAK_SLAB,60,Map.of(Items.OAK_PLANKS,64),Map.of(Items.OAK_PLANKS,34),0,false);
+        addContextualStackCase("limited-supply",Items.OAK_PLANKS,8,Map.of(Items.OAK_LOG,2),Map.of(Items.OAK_LOG,0),0,false);
+        addContextualStackCase("limited-destination",Items.OAK_PLANKS,64,Map.of(Items.OAK_LOG,32),Map.of(Items.OAK_LOG,30),56,false);
+        add("contextual-Craft-Stack-restore-binding",() -> ControlifyBindings.INV_QUICK_MOVE.on(controller).setBoundInput(contextualQuickMoveBefore),
+            () -> true,() -> {},2);
+    }
+    private static void addContextualStackCase(String suffix,Item output,int expected,Map<Item,Integer> supplies,Map<Item,Integer> remaining,int already,boolean rebound) {
+        String name="contextual-Craft-Stack-"+suffix;
+        add(name+"-fixture",() -> server(() -> {
+            player().getInventory().clearContent();player().inventoryMenu.setCarried(ItemStack.EMPTY);
+            for(int i=1;i<=4;i++) player().inventoryMenu.getSlot(i).set(ItemStack.EMPTY);
+            CraftingMenu menu=(CraftingMenu)serverMenu(CraftingMenu.class);
+            for(var slot:menu.getInputGridSlots()) slot.set(ItemStack.EMPTY);
+            Container destination=(Container)player().level().getBlockEntity(barrelPos);destination.clearContent();
+            Container origin=(Container)player().level().getBlockEntity(contextualIngredientPos);origin.clearContent();
+            int supplyIndex=0;for(var entry:supplies.entrySet()) origin.setItem(supplyIndex++,new ItemStack(entry.getKey(),entry.getValue()));
+            if(already>0) {for(int i=0;i<destination.getContainerSize();i++) destination.setItem(i,new ItemStack(Items.BARRIER,64));
+                destination.setItem(0,new ItemStack(output,already));}
+            menu.broadcastChanges();player().inventoryMenu.broadcastChanges();return true;
+        }),ControlifyGameplayHarness::serverDone,() -> {},4);
+        add(name+"-point",() -> pointAtNativeSlot(tableWindow,slot -> slot.index==1),ControlifyGameplayHarness::nativePointerReady,() -> {},3);
+        add(name+"-open",() -> driver.rightTrigger=1,() -> contextualOverlay().active(),() -> {},3);
+        add(name+"-select",() -> aimContextualRecipe(output,true),() -> contextualRecipeReady(output,true),() -> {
+            driver.rightX=driver.rightY=0;driver.stick(0,0);
+            if(rebound) {ControlifyBindings.INV_QUICK_MOVE.on(controller).setBoundInput(new ButtonInput(GamepadInputs.MISC_1_BUTTON));}
+        },4);
+        if(rebound) {
+            button(name+"-old-Y",GamepadInputs.NORTH_BUTTON,() -> {});
+            assertServer(name+"-old-Y-no-craft",() -> count(barrelPos,output)==already);
+        }
+        button(name+"-native-Y",rebound?GamepadInputs.MISC_1_BUTTON:GamepadInputs.NORTH_BUTTON,() -> {});
+        assertServer(name+"-native-cap-and-conservation",() -> {
+            boolean exact=count(barrelPos,output)==expected && contextualOwnedCount(output,null)==expected
+                && player().inventoryMenu.getCarried().isEmpty();
+            for(var entry:remaining.entrySet()) exact &= contextualOwnedCount(entry.getKey(),null)==entry.getValue();
+            if(!exact) record(name+"-native-counts","OBSERVED","output="+contextualOwnedCount(output,null)+",destination="+count(barrelPos,output)
+                +",remaining="+remaining.entrySet().stream().map(entry -> entry.getKey()+"="+contextualOwnedCount(entry.getKey(),null)).toList());
+            return exact;
+        });
+        if(suffix.equals("64")) assertServer(name+"-retains-live-preview",() -> contextualGridCount(Items.OAK_LOG)==1);
+        add(name+"-guide",() -> {},() -> true,() -> {
+            check(name+"-guide-keeps-craft-and-stack",QaNativeGuideProbe.workspace.label("Craft into opposite window") && QaNativeGuideProbe.workspace.label("Craft Stack"));
+            capture("44-Craft-Stack-"+suffix);
+            if(rebound) ControlifyBindings.INV_QUICK_MOVE.on(controller).setBoundInput(new ButtonInput(GamepadInputs.NORTH_BUTTON));
+        },2);
+        add(name+"-release",() -> {driver.rightTrigger=0;driver.rightX=driver.rightY=0;driver.stick(0,0);},() -> !contextualOverlay().presenting(),() -> {},5);
+        assertServer(name+"-release-restores-unused-without-changing-output",() -> {
+            boolean exact=((CraftingMenu)serverMenu(CraftingMenu.class)).getInputGridSlots().stream().allMatch(slot -> slot.getItem().isEmpty())
+                && count(barrelPos,output)==expected && player().inventoryMenu.getCarried().isEmpty();
+            for(var entry:remaining.entrySet()) exact &= contextualOwnedCount(entry.getKey(),null)==entry.getValue();
+            return exact;
+        });
     }
 
     /** Counts real owned stacks once even when several native menus expose the same inventory. */
@@ -1345,10 +2465,15 @@ public final class ControlifyGameplayHarness {
     }
     private static void seedContextualHoverOrigin() {
         player().getInventory().clearContent();player().inventoryMenu.setCarried(ItemStack.EMPTY);
+        // A previous full-origin return may legitimately land in Character's separate 2x2 grid.
+        for(int slot=1;slot<=4;slot++) player().inventoryMenu.getSlot(slot).set(ItemStack.EMPTY);
         for(var slot:((CraftingMenu)serverMenu(CraftingMenu.class)).getInputGridSlots()) slot.set(ItemStack.EMPTY);
         ((Container)player().level().getBlockEntity(barrelPos)).clearContent();
         var origin=(Container)player().level().getBlockEntity(contextualIngredientPos);origin.clearContent();
         var log=new ItemStack(Items.OAK_LOG);log.set(DataComponents.CUSTOM_DATA,contextualOriginData());origin.setItem(7,log);
+        int owned=contextualOwnedOriginLogs();
+        if(owned!=1) throw new IllegalStateException("Hover origin fixture must seed exactly one marked log: owned="+owned
+            +",locations="+contextualOwnedLocations(Items.OAK_LOG));
         serverMenu(CraftingMenu.class).broadcastChanges();player().inventoryMenu.broadcastChanges();
     }
     private static boolean contextualExactOriginRestored() {
@@ -1806,19 +2931,21 @@ public final class ControlifyGameplayHarness {
             mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.UI).set(0.0);
         }, () -> true, () -> {},2);
         button("workspace-ui-muted-native-filter",GamepadInputs.DPAD_UP_BUTTON,() -> {
-            check("workspace-ui-muted-native-action-still-operates",(Boolean)field(contextualOverlay(),"craftableOnly"));
+            check("workspace-ui-muted-native-action-still-operates",field(contextualOverlay(),"filter")==com.salts_inventory_update.controlify.model.RecipeFilter.CONTAINS_PARTS);
             check("workspace-ui-native-source-mute-suppresses-play",QaVisualFeatureProbe.acceptedSoundCount()==nativeUiSoundsBefore);
         });
+        button("workspace-ui-muted-native-filter-craftable",GamepadInputs.DPAD_UP_BUTTON,() -> {});
         button("workspace-ui-muted-native-filter-return",GamepadInputs.DPAD_UP_BUTTON,() ->
-            check("workspace-ui-muted-filter-restores-native-category",!(Boolean)field(contextualOverlay(),"craftableOnly")));
+            check("workspace-ui-muted-filter-restores-native-category",field(contextualOverlay(),"filter")==com.salts_inventory_update.controlify.model.RecipeFilter.ALL));
         add("workspace-ui-mute-native-master",() -> {
             mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.UI).set(1.0);
             mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.MASTER).set(0.0);
         },() -> true,() -> {},2);
         button("workspace-ui-master-muted-native-filter",GamepadInputs.DPAD_UP_BUTTON,() ->
             check("workspace-ui-native-master-mute-suppresses-play",QaVisualFeatureProbe.acceptedSoundCount()==nativeUiSoundsBefore));
+        button("workspace-ui-master-muted-filter-craftable",GamepadInputs.DPAD_UP_BUTTON,() -> {});
         button("workspace-ui-master-muted-filter-return",GamepadInputs.DPAD_UP_BUTTON,() ->
-            check("workspace-ui-master-muted-filter-restores-native-category",!(Boolean)field(contextualOverlay(),"craftableOnly")));
+            check("workspace-ui-master-muted-filter-restores-native-category",field(contextualOverlay(),"filter")==com.salts_inventory_update.controlify.model.RecipeFilter.ALL));
         add("workspace-ui-normal-volume-restored",() -> mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.MASTER).set(1.0),
             () -> true,() -> check("workspace-ui-mute-respects-native-preferences",QaVisualFeatureProbe.rejectedSoundCount()>=4),2);
     }
@@ -1844,10 +2971,12 @@ public final class ControlifyGameplayHarness {
         if (!metadata.isEmpty()) return ((dev.isxander.controlify.api.bind.InputBindingSupplier)
             field(com.salts_inventory_update.controlify.WorkspaceActionGuide.class, metadata)).on(controller).inputGlyph();
         return switch (label) {
+            case "Search" -> CreativeSearchBinding.SEARCH.on(controller).inputGlyph();
             case "Close all windows", "Close highlighted window" -> ControlifyBindings.GUI_BACK.on(controller).inputGlyph();
             case "Focus highlighted window", "Craft into opposite window", "Load cooking ingredients",
                  "Select creative tab", "Add one to hotbar" -> ControlifyBindings.INV_SELECT.on(controller).inputGlyph();
             case "Sort focused; double tap: force", "Add stack to hotbar", "Restore windows" -> ControlifyBindings.INVENTORY.on(controller).inputGlyph();
+            case "Craft stack into opposite window" -> ControlifyBindings.INV_QUICK_MOVE.on(controller).inputGlyph();
             default -> com.salts_inventory_update.controlify.ContextualRecipeBinding.OPEN_WHEEL.on(controller).inputGlyph();
         };
     }
@@ -1859,6 +2988,11 @@ public final class ControlifyGameplayHarness {
         check("native-guide-" + name + "-short-horizontal-bounded-entries", frame.draws().stream()
             .allMatch(draw -> !draw.label().isEmpty() && draw.label().split("\\s+").length <= 2)
             && QaNativeGuideProbe.compactViolations.isEmpty());
+        if (Arrays.asList(labels).contains("Navigate slots / controls") || Arrays.asList(labels).contains("Navigate / scroll rows"))
+            check("native-guide-" + name + "-single-whole-dpad-icon", frame.wholeDpad("Navigate slots / controls"));
+        if (Arrays.asList(labels).contains("Previous / next window") || Arrays.asList(labels).contains("Hold: rotate recipes"))
+            check("native-guide-" + name + "-adjacent-bumpers-clean-font-spacing", frame.adjacentButtons(
+                mode.equals("RECIPE") || mode.equals("COOKING") ? "Hold: rotate recipes" : "Previous / next window", 2));
         if (mode.equals("SIDE") || mode.equals("LT_RADIAL")) {
             var placements = renderedLayout();
             boolean mainPanesClear = true;
@@ -1942,7 +3076,7 @@ public final class ControlifyGameplayHarness {
             () -> mc.gui.screen() instanceof RadialInventoryScreen screen && screen.contextualRadialActive(), () -> {
                 check("contextual-rebound-action-opens-hovered-wheel", contextualOverlay().source().equals(tableWindow));
             }, 2);
-        observeNativeGuide("rebound-recipe-wheel", "RECIPE", "Release: return to pair", "Browse recipes", "Choose recipe",
+        observeNativeGuide("rebound-recipe-wheel", "RECIPE", "Release: return to pair", "Craft into opposite window", "Craft stack into opposite window", "Browse recipes", "Choose recipe",
             "Hold: rotate recipes", "Change recipe category", "Toggle craftable recipes");
         add("contextual-native-rebound-action-release", () -> driver.buttons.remove(GamepadInputs.MISC_3_BUTTON),
             () -> mc.gui.screen() instanceof RadialInventoryScreen screen && !screen.contextualRadialActive(), () -> {
@@ -2308,9 +3442,14 @@ public final class ControlifyGameplayHarness {
                     && viewA.clicks == 1 && viewA.externalClicks == 1 && viewA.closed == 0);
             verifyTuckedTabs("client-UI-disabled-animation-tab"); capture("12d-tucked-client-UI-tabs");
         }, 12);
-        add("client-only-view-open-while-tucked", () ->
-                viewBHandle = DesktopClientApi.openView(QA_VIEW_ID, "tucked", viewB, Component.literal("QA UI added while tucked")).orElseThrow(),
-                () -> owner.windows().containsKey(viewBHandle.instanceId()), () -> {
+        add("client-only-view-open-while-tucked", () -> {
+                observedTabsAt = QaFeatureProbe.tabFrames;
+                viewBHandle = DesktopClientApi.openView(QA_VIEW_ID, "tucked", viewB, Component.literal("QA UI added while tucked")).orElseThrow();
+            }, () -> owner.windows().containsKey(viewBHandle.instanceId()) && QaFeatureProbe.tabFrames > observedTabsAt
+                    && QaFeatureProbe.tabNames.containsKey(viewBHandle.instanceId()), () -> {
+                    record("new-client-UI-tucked-tab-render-observation", "OBSERVED", "baselineFrame=" + observedTabsAt
+                        + ",completedFrame=" + QaFeatureProbe.tabFrames + ",drawnTabs=" + QaFeatureProbe.tabCount
+                        + ",liveWindows=" + owner.windows().size() + ",drawnNames=" + QaFeatureProbe.tabNames);
                     check("UI-open-does-not-restore-tucked", owner.tuckedAway() && mc.gui.screen() == null);
                     verifyPreserved();
                     check("both-client-UI-lifetimes-alive", viewAHandle.isOpen() && viewBHandle.isOpen()
@@ -2717,6 +3856,32 @@ public final class ControlifyGameplayHarness {
         nativeUiVolumeBefore = mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.UI).get();
         mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.MASTER).set(1.0);
         mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.UI).set(1.0);
+        var configuredSoundSettings = com.salts_inventory_update.controlify.WorkspaceUiSounds.settings();
+        try {
+            Path freshSoundFile = Files.createTempDirectory(output, "new-sound-defaults-").resolve("sounds.properties");
+            var freshSoundSettings = com.salts_inventory_update.controlify.model.WorkspaceSoundSettings.load(freshSoundFile);
+            check("sound-overhaul-new-file-default-off", Files.isRegularFile(freshSoundFile)
+                && freshSoundSettings.preset() == com.salts_inventory_update.controlify.model.WorkspaceSoundSettings.Preset.OFF
+                && freshSoundSettings.masterVolume() == 0 && !freshSoundSettings.hoverEnabled());
+            setField(com.salts_inventory_update.controlify.WorkspaceUiSounds.class, "settings", freshSoundSettings);
+            com.salts_inventory_update.controlify.WorkspaceUiSounds.reset();
+            long acceptedBefore = QaVisualFeatureProbe.acceptedSoundCount();
+            boolean muted = true;
+            for (var action : com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.values())
+                muted &= !com.salts_inventory_update.controlify.WorkspaceUiSounds.play(action);
+            muted &= !com.salts_inventory_update.controlify.WorkspaceUiSounds.preview(com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.FOCUS);
+            com.salts_inventory_update.controlify.WorkspaceUiSounds.tick(mc);
+            check("sound-overhaul-new-file-off-no-native-dispatch", muted && QaVisualFeatureProbe.acceptedSoundCount() == acceptedBefore);
+        } catch (java.io.IOException failure) {
+            throw new IllegalStateException("Could not prepare a new-file sound-default fixture", failure);
+        } finally {
+            com.salts_inventory_update.controlify.WorkspaceUiSounds.stopPreview();
+            setField(com.salts_inventory_update.controlify.WorkspaceUiSounds.class, "settings", configuredSoundSettings);
+            com.salts_inventory_update.controlify.WorkspaceUiSounds.reset();
+        }
+        // The nine-event audio scenarios deliberately opt in; gameplay defaults remain Off.
+        configuredSoundSettings.applyPreset(com.salts_inventory_update.controlify.model.WorkspaceSoundSettings.Preset.QUIET);
+        check("sound-overhaul-audio-tests-explicitly-opt-in-quiet", configuredSoundSettings.masterVolume() > 0);
         Object manager = controlify.getControllerManager().orElseThrow();
         var globals = controlify.config().getSettings().globalSettings();
         // Windows can deliver native cursor events while this synthetic controller runs.
@@ -2742,6 +3907,7 @@ public final class ControlifyGameplayHarness {
 
     private static final class TestDriver implements Driver {
         final Set<Identifier> buttons = new HashSet<>();
+        long samples;
         float trigger, rightTrigger, x, y, rightX, rightY, walk;
         BlockPos useTarget;
 
@@ -2768,6 +3934,14 @@ public final class ControlifyGameplayHarness {
             state.setAxis(GamepadInputs.RIGHT_STICK_AXIS_LEFT, Math.max(0, -rightX));
             state.setAxis(GamepadInputs.RIGHT_STICK_AXIS_DOWN, Math.max(0, rightY));
             state.setAxis(GamepadInputs.RIGHT_STICK_AXIS_UP, Math.max(0, -rightY));
+            samples++;
+            var timing = nativeCloseTiming;
+            if (timing != null && timing.firstSample == 0) {
+                var input = controller.input().orElseThrow();
+                if (ControlifyBindings.GUI_BACK.on(controller).boundInput().state(state) > input.settings().buttonActivationThreshold) {
+                    timing.firstSample = samples; timing.firstSampleAt = System.nanoTime();
+                }
+            }
             controller.input().orElseThrow().pushState(state);
         }
         void stick(float x, float y) { this.x = x; this.y = y; }
@@ -2914,6 +4088,13 @@ public final class ControlifyGameplayHarness {
     }
     private static boolean observeServerCondition(String name, BooleanSupplier condition) {
         boolean passed = condition.getAsBoolean();
+        if (name.startsWith("qol-") && !passed) {
+            String observation=name+":"+java.util.stream.IntStream.range(0,36).filter(i -> !player().getInventory().getItem(i).isEmpty())
+                .mapToObj(i -> i+"="+player().getInventory().getItem(i)).toList()+",grid="+player().inventoryMenu.getInputGridSlots().stream().map(Slot::getItem).toList();
+            if(!observation.equals(creativeNavigationServerObservation)) {
+                creativeNavigationServerObservation=observation;System.out.println("CONTROLIFY_QA_QOL_SERVER "+observation);
+            }
+        }
         if (name.startsWith("creative-")) {
             String hotbar = java.util.stream.IntStream.range(0, 9).mapToObj(i -> i + ":" + player().getInventory().getItem(i))
                 .collect(java.util.stream.Collectors.joining(";"));
@@ -2960,6 +4141,11 @@ public final class ControlifyGameplayHarness {
     private static ServerPlayer player() { return mc.getSingleplayerServer().getPlayerList().getPlayers().get(0); }
 
     private static void addCreativeNavigationScenarios() {
+        final class ScrollFixture {
+            int fullRows, releasedRow;
+            long samplesBefore, fullElapsed;
+        }
+        var scrollFixture = new ScrollFixture();
         add("controller-navigation-brewing-fixture", () -> server(() -> {
             creativeNavigationBrewingPos = tablePos.offset(0, 0, 4);
             var level = player().level();
@@ -2982,12 +4168,18 @@ public final class ControlifyGameplayHarness {
             verifyDpadTarget("brewing-next-bottle-reached"); capture("27-logical-brewing-navigation");
         });
         button("controller-navigation-close-before-creative", GamepadInputs.EAST_BUTTON, () -> check("creative-stage-side-B-closed-immediately", mc.gui.screen() == null && !owner.workspaceActive()));
+        assertServer("creative-previous-desktop-close-and-grid-cleanup-complete",() -> {
+            var state=((Map<?,?>)field(DesktopContainerSessions.class,"PLAYERS")).get(player());
+            return state!=null && ((Map<?,?>)field(state,"sessions")).isEmpty() && field(state,"recipeHover")==null
+                && player().inventoryMenu.getInputGridSlots().stream().noneMatch(Slot::hasItem);
+        });
         add("controller-navigation-server-creative-mode", () -> server(() -> {
             player().setGameMode(GameType.CREATIVE);
             player().getInventory().clearContent(); player().inventoryMenu.setCarried(ItemStack.EMPTY);
-            player().inventoryMenu.broadcastChanges();
+            player().inventoryMenu.sendAllDataToRemote();
             return null;
-        }), () -> serverDone() && mc.player.isCreative(), () -> {}, 8);
+        }), () -> serverDone() && mc.player.isCreative()
+            && java.util.stream.IntStream.range(0,36).allMatch(index -> mc.player.getInventory().getItem(index).isEmpty()), () -> {}, 8);
         button("controller-navigation-Y-opens-creative-workspace", GamepadInputs.NORTH_BUTTON, () -> {
             check("creative-native-workspace-available", nativePointerReady());
             var creative = owner.desktop().contextualMenu(owner.model().playerInventory());
@@ -3068,6 +4260,7 @@ public final class ControlifyGameplayHarness {
         add("native-guide-creative-select-binding-restore", () -> {
             var binding = ControlifyBindings.INV_SELECT.on(controller); binding.setBoundInput(binding.defaultInput());
         }, () -> true, () -> {}, 3);
+        addCreativeCursorAndQuickMoveScenarios();
         add("creative-full-hotbar-fixture", () -> server(() -> {
             for (int i = 0; i < 9; i++) player().getInventory().setItem(i, new ItemStack(Items.BARRIER, 64));
             player().inventoryMenu.broadcastChanges(); return null;
@@ -3108,13 +4301,46 @@ public final class ControlifyGameplayHarness {
         }, 5);
         add("creative-right-stick-controlled-scroll", () -> {
             creativeNavigationScrollStarted = System.nanoTime();
+            scrollFixture.samplesBefore = driver.samples;
             driver.rightY = 1;
         }, () -> System.nanoTime() - creativeNavigationScrollStarted >= 450_000_000L, () -> {
             driver.rightY = 0;
             int rows = (Integer) field(creativeNavigationWindow(), "creativeScrollRow") - creativeNavigationScrollBefore;
-            check("creative-right-stick-scroll-rate-controlled", rows >= 1 && rows <= 3);
+            scrollFixture.fullRows = rows; scrollFixture.fullElapsed = System.nanoTime() - creativeNavigationScrollStarted;
+            record("creative-right-stick-full-speed-observation", "OBSERVED", "rows=" + rows + ",elapsedMs=" + scrollFixture.fullElapsed / 1_000_000.0
+                + ",nativeSamples=" + (driver.samples-scrollFixture.samplesBefore) + ",rawDeflection=1.0,processedDown="
+                + controller.input().orElseThrow().stateNow().getAxisState(GamepadInputs.RIGHT_STICK_AXIS_DOWN));
+            check("creative-right-stick-scroll-rate-controlled", rows >= 6 && rows <= 15);
+            check("creative-right-stick-full-deflection-faster-without-pause", rows >= 6);
             capture("29-creative-row-scroll");
         }, 0);
+        nativeCursorNeutralReady("creative-right-stick-release", () ->
+            scrollFixture.releasedRow = (Integer)field(creativeNavigationWindow(), "creativeScrollRow"));
+        add("creative-right-stick-release-stays-still", () -> {}, () -> true, () ->
+            check("creative-right-stick-neutral-release-no-stale-repeat", (Integer)field(creativeNavigationWindow(), "creativeScrollRow") == scrollFixture.releasedRow), 6);
+        add("creative-right-stick-gentle-proportional-scroll", () -> {
+            creativeNavigationPointCell(2, 0);
+            creativeNavigationScrollBefore = (Integer)field(creativeNavigationWindow(), "creativeScrollRow");
+            creativeNavigationScrollStarted = System.nanoTime(); scrollFixture.samplesBefore = driver.samples;
+            driver.rightY = 0.7f;
+        }, () -> System.nanoTime() - creativeNavigationScrollStarted >= 450_000_000L, () -> {
+            driver.rightY = 0;
+            int rows = (Integer)field(creativeNavigationWindow(), "creativeScrollRow") - creativeNavigationScrollBefore;
+            long elapsed = System.nanoTime() - creativeNavigationScrollStarted;
+            double fullRate = scrollFixture.fullRows * 1_000_000_000.0 / scrollFixture.fullElapsed;
+            double gentleRate = rows * 1_000_000_000.0 / elapsed;
+            record("creative-right-stick-gentle-speed-observation", "OBSERVED", "rows=" + rows + ",elapsedMs=" + elapsed / 1_000_000.0
+                + ",nativeSamples=" + (driver.samples-scrollFixture.samplesBefore) + ",rawDeflection=0.7,processedDown="
+                + controller.input().orElseThrow().stateNow().getAxisState(GamepadInputs.RIGHT_STICK_AXIS_DOWN)
+                + ",fullRowsPerSecond=" + fullRate + ",gentleRowsPerSecond=" + gentleRate);
+            check("creative-right-stick-gentle-deflection-scrolls", rows >= 1 && rows <= 8);
+            check("creative-right-stick-deflection-controls-speed", fullRate > gentleRate * 1.25);
+        }, 0);
+        nativeCursorNeutralReady("creative-right-stick-gentle-release", () ->
+            scrollFixture.releasedRow = (Integer)field(creativeNavigationWindow(), "creativeScrollRow"));
+        add("creative-right-stick-gentle-release-stays-still", () -> {}, () -> true, () ->
+            check("creative-right-stick-proportional-release-no-stale-repeat", (Integer)field(creativeNavigationWindow(), "creativeScrollRow") == scrollFixture.releasedRow), 4);
+        addCreativeSearchKeyboardScenarios();
         add("creative-RT-tab-wheel-open", () -> {
             creativeNavigationPointCell(0, 0); driver.rightTrigger = 1;
         }, () -> ((RadialInventoryScreen) mc.gui.screen()).contextualRadialActive(), () -> {
@@ -3170,20 +4396,12 @@ public final class ControlifyGameplayHarness {
             () -> !((RadialInventoryScreen) mc.gui.screen()).contextualRadialActive(), () -> check("creative-RT-release-retains-side-workspace", nativePointerReady()), 4);
         add("workspace-ui-actual-native-sounds-bounded",() -> {},() -> true,() -> {
             var sounds = QaVisualFeatureProbe.sounds();
-            var kinds = sounds.stream().map(row -> (String)row.get("action")).collect(java.util.stream.Collectors.toSet());
-            check("workspace-ui-appropriate-native-actions-have-subtle-sounds",kinds.containsAll(Set.of("OPEN","CLOSE","CYCLE","TUCK","RESTORE",
-                "NAVIGATE","SCROLL","CAROUSEL","CATEGORY","FILTER","CONFIRM","TAB","SORT","REJECT")));
-            long previous = Long.MIN_VALUE;
-            var previousKinds = new LinkedHashMap<String,Long>();
-            boolean rateBounded = true;
-            for (var row : sounds) {
-                long at = ((Number)row.get("atNanos")).longValue(); String kind = (String)row.get("action");
-                if (previous!=Long.MIN_VALUE) rateBounded &= at-previous>=43_000_000L;
-                Long prior = previousKinds.put(kind,at);
-                if (prior!=null) rateBounded &= at-prior >= (com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.valueOf(kind).intervalMillis()-2)*1_000_000L;
-                previous=at;
-            }
-            check("workspace-ui-native-sounds-global-and-action-rate-limited",rateBounded && !sounds.isEmpty());
+            var kinds = sounds.stream().map(row -> (String)row.get("identifier")).collect(java.util.stream.Collectors.toSet());
+            check("workspace-ui-appropriate-native-actions-have-subtle-sounds",kinds.containsAll(Set.of(
+                "salts_inventory_controlify:ui.navigate", "salts_inventory_controlify:ui.window_change", "salts_inventory_controlify:ui.open",
+                "salts_inventory_controlify:ui.close", "salts_inventory_controlify:ui.tuck", "salts_inventory_controlify:ui.restore",
+                "salts_inventory_controlify:ui.confirm", "salts_inventory_controlify:ui.craft_complete", "salts_inventory_controlify:ui.unavailable")));
+            check("workspace-ui-native-sounds-global-and-action-rate-limited",QaVisualFeatureProbe.soundPolicyBounded() && !sounds.isEmpty());
             check("workspace-ui-native-sound-source-volume-pitch-constrained",QaVisualFeatureProbe.violations().isEmpty());
             check("compact-native-guides-all-modes-with-plain-stick-glyphs",QaNativeGuideProbe.compactGuideFrames>0
                 && QaNativeGuideProbe.compactViolations.isEmpty());
@@ -3214,6 +4432,420 @@ public final class ControlifyGameplayHarness {
                 && QaContextualPresentationProbe.nativeSlots>0 && QaContextualPresentationProbe.nativeItems>0
                 && QaContextualPresentationProbe.violations().isEmpty());
         },2);
+    }
+
+    private static void addCreativeSearchKeyboardScenarios() {
+        final class SearchFixture {
+            RadialInventoryScreen parent;
+            Identifier tabBefore;
+            UUID focused, selected;
+            Set<UUID> windows;
+            Map<Integer, SessionIdentity> nativeSessions;
+            List<ItemStack> inventory;
+            ItemStack carried;
+            int sorts, creativeActions, cursorX, cursorY;
+            Component originalGlyph;
+            WorkspaceSearchKeyboard enterOverlay;
+            dev.isxander.controlify.bindings.input.Input nativeLeftBefore,nativeRightBefore;
+            String query() { return (String)field(creativeNavigationWindow(), "creativeSearch"); }
+            CreativeSearchTarget target() { return Objects.requireNonNull(CreativeSearchTarget.find(owner.desktop(), owner.windows().get(owner.model().playerInventory()))); }
+            dev.isxander.controlify.screenop.keyboard.KeyboardWidget keyboard() {
+                return mc.gui.screen().children().stream().filter(dev.isxander.controlify.screenop.keyboard.KeyboardWidget.class::isInstance)
+                    .map(dev.isxander.controlify.screenop.keyboard.KeyboardWidget.class::cast).findFirst().orElseThrow();
+            }
+            void neutral() { pointerFixture=null;driver.buttons.clear(); driver.stick(0,0); driver.trigger=driver.rightTrigger=driver.rightX=driver.rightY=driver.walk=0; }
+            void awaitOpeningNeutral(String name) {
+                add(name,this::neutral,() -> WorkspaceSearchKeyboard.activeFor(parent)
+                    && !((Boolean)field(mc.gui.screen(),"openingAwaitingNeutral")),() -> {},1);
+            }
+            void pointAtNativeEnter() {
+                var enter=keyboard().children().stream().filter(candidate -> candidate.getKeyFunction() instanceof
+                    dev.isxander.controlify.screenop.keyboard.KeyboardLayout.KeyFunction.SpecialFunc special
+                    && special.action()==dev.isxander.controlify.screenop.keyboard.KeyboardLayout.KeyFunction.SpecialFunc.Action.ENTER)
+                    .findFirst().orElseThrow();
+                int x=enter.getX()+enter.getWidth()/2,y=enter.getY()+enter.getHeight()/2;
+                Controlify.instance().virtualMouseHandler().snapToPoint(new SnapPoint(x,y,1),
+                    new Vector2d((double)mc.getWindow().getGuiScaledWidth()/mc.getWindow().getScreenWidth(),
+                        (double)mc.getWindow().getGuiScaledHeight()/mc.getWindow().getScreenHeight()));
+                mc.gui.screen().mouseMoved(x,y);
+            }
+            void setQuery(String value) {
+                check("creative-search-real-field-focus", target().focus(owner.desktop()));
+                owner.desktop().keyPressed(com.mojang.blaze3d.platform.InputConstants.KEY_A,0,com.mojang.blaze3d.platform.InputConstants.MOD_CONTROL);
+                owner.desktop().keyReleased(com.mojang.blaze3d.platform.InputConstants.KEY_A,0,com.mojang.blaze3d.platform.InputConstants.MOD_CONTROL);
+                owner.desktop().keyPressed(com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE,0,0);
+                owner.desktop().keyReleased(com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE,0,0);
+                value.codePoints().forEach(codepoint -> owner.desktop().charTyped(codepoint,0));
+                check("creative-search-real-field-replaces-query",query().equals(value));
+            }
+            void snapshot() {
+                focused=owner.model().focused(); selected=owner.model().selected(); windows=Set.copyOf(owner.windows().keySet()); nativeSessions=sessions();
+                inventory=java.util.stream.IntStream.range(0,mc.player.getInventory().getContainerSize()).mapToObj(index -> mc.player.getInventory().getItem(index).copy()).toList();
+                carried=owner.desktop().carriedStack().copy(); sorts=QaFeatureProbe.sortRequests().size();
+                creativeActions=((List<?>)field(QaFeatureProbe.class,"creativeActions")).size();
+            }
+            boolean sameItems(Container actual) {
+                return inventory.size()==actual.getContainerSize() && java.util.stream.IntStream.range(0,inventory.size()).allMatch(index -> {
+                    var before=inventory.get(index);var now=actual.getItem(index);
+                    return before.getCount()==now.getCount() && ItemStack.isSameItemSameComponents(before,now);
+                });
+            }
+            void unchanged(String name) {
+                check(name+"-windows-and-sessions", owner.workspaceActive() && owner.model().focused().equals(focused) && owner.model().selected().equals(selected)
+                    && owner.windows().keySet().equals(windows) && sessions().equals(nativeSessions));
+                check(name+"-items-and-cursor", sameItems(mc.player.getInventory()) && carried.getCount()==owner.desktop().carriedStack().getCount()
+                    && ItemStack.isSameItemSameComponents(carried,owner.desktop().carriedStack()));
+                check(name+"-no-sort-craft-drop-or-grant", QaFeatureProbe.sortRequests().size()==sorts
+                    && ((List<?>)field(QaFeatureProbe.class,"creativeActions")).size()==creativeActions && !owner.radialActive() && !parent.contextualRadialActive());
+            }
+            @SuppressWarnings("unchecked") List<ItemStack> catalog() {
+                try {
+                    Object window=creativeNavigationWindow();
+                    var method=InventoryDesktopScreen.class.getDeclaredMethod("creativeVisibleItems",window.getClass(),boolean.class);
+                    method.setAccessible(true); return (List<ItemStack>)method.invoke(InventoryDesktopScreen.current(mc),window,false);
+                } catch (ReflectiveOperationException failure) { throw new IllegalStateException("Observe actual native creative search catalog",failure); }
+            }
+        }
+        var fixture=new SearchFixture();
+        add("creative-search-select-native-search-tab", () -> {
+            fixture.neutral(); fixture.parent=(RadialInventoryScreen)mc.gui.screen();
+            fixture.tabBefore=owner.desktop().contextualMenu(owner.model().playerInventory()).tabs().stream().filter(tab -> tab.selected()).findFirst().orElseThrow().id();
+            var mouse=Controlify.instance().virtualMouseHandler();var window=mc.getWindow();
+            fixture.cursorX=(int)Math.round(mouse.getCurrentX(1f)*window.getGuiScaledWidth()/window.getScreenWidth());
+            fixture.cursorY=(int)Math.round(mouse.getCurrentY(1f)*window.getGuiScaledHeight()/window.getScreenHeight());
+            var searchId=net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.getKey(net.minecraft.world.item.CreativeModeTabs.searchTab());
+            check("creative-search-public-api-selects-search-tab", owner.desktop().selectContextualTab(owner.model().playerInventory(),searchId));
+            owner.desktop().visibleSlots(owner.model().playerInventory());
+        }, () -> CreativeSearchTarget.find(owner.desktop(),owner.windows().get(owner.model().playerInventory()))!=null, () -> {
+            fixture.setQuery("iro"); creativeNavigationPointCell(0,0);
+        },3);
+        nativeCursorNeutralReady("creative-search-catalog-ready", () -> creativeNavigationPointCell(0,0));
+        observeNativeGuide("creative-search-default", "SIDE", "Search");
+        add("creative-search-default-native-guide-glyph", () -> {}, () -> true, () -> {
+            fixture.originalGlyph=CreativeSearchBinding.SEARCH.on(controller).inputGlyph();
+            check("creative-search-guide-uses-native-X-glyph", QaNativeGuideProbe.workspace.glyph("Search",fixture.originalGlyph));
+            driver.buttons.add(GamepadInputs.WEST_BUTTON);
+        },1);
+        add("creative-search-X-opens-native-keyboard-held", () -> {}, WorkspaceSearchKeyboard::active, () -> {
+            check("creative-search-X-opens-native-KeyboardWidget", mc.gui.screen() instanceof WorkspaceSearchKeyboard
+                && WorkspaceSearchKeyboard.activeFor(fixture.parent) && fixture.keyboard().children().size()>26);
+            check("creative-search-opening-X-does-not-backspace-query", fixture.query().equals("iro"));
+            driver.buttons.remove(GamepadInputs.WEST_BUTTON);
+        },5);
+        add("creative-search-opening-neutral-consumed", () -> fixture.neutral(),
+            () -> WorkspaceSearchKeyboard.active() && !((Boolean)field(mc.gui.screen(),"openingAwaitingNeutral")), () -> {
+                var keyboard=fixture.keyboard();
+                var key=keyboard.children().stream().filter(candidate -> candidate.getKeyFunction() instanceof
+                    dev.isxander.controlify.screenop.keyboard.KeyboardLayout.KeyFunction.StringFunc string && string.string().equals("n")).findFirst().orElseThrow();
+                mc.gui.screen().setFocused(keyboard); keyboard.setFocused(key);
+            },1);
+        button("creative-search-native-OSK-A-types-letter", GamepadInputs.SOUTH_BUTTON, () -> {
+            check("creative-search-native-OSK-updates-Core-query", fixture.query().equals("iron"));
+            var catalog=fixture.catalog();
+            check("creative-search-native-query-filters-real-catalog", !catalog.isEmpty() && catalog.stream().anyMatch(stack -> stack.is(Items.IRON_INGOT))
+                && catalog.stream().allMatch(stack -> stack.getHoverName().getString().toLowerCase(Locale.ROOT).contains("iron")
+                    || net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString().contains("iron")));
+            check("creative-search-physical-text-path-updates-query", mc.gui.screen().charTyped(new net.minecraft.client.input.CharacterEvent(' ')) && fixture.query().equals("iron "));
+            capture("46-creative-search-native-osk");
+        });
+        button("creative-search-native-OSK-X-backspace", GamepadInputs.WEST_BUTTON, () ->
+            check("creative-search-native-backspace-edits-query", WorkspaceSearchKeyboard.active() && fixture.query().equals("iron")));
+        add("creative-search-keyboard-input-isolation", () -> {
+            fixture.snapshot();
+            driver.stick(.8f,.8f);driver.rightX=.8f;driver.rightY=.8f;driver.trigger=driver.rightTrigger=1;
+            driver.buttons.addAll(Set.of(GamepadInputs.LEFT_SHOULDER_BUTTON,GamepadInputs.RIGHT_SHOULDER_BUTTON,
+                GamepadInputs.SOUTH_BUTTON,GamepadInputs.NORTH_BUTTON,GamepadInputs.MISC_1_BUTTON));
+            var mouse=new net.minecraft.client.input.MouseButtonEvent(1,1,new net.minecraft.client.input.MouseButtonInfo(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT,0));
+            check("creative-search-outside-mouse-and-scroll-consumed", mc.gui.screen().mouseClicked(mouse,false)
+                && mc.gui.screen().mouseReleased(mouse) && mc.gui.screen().mouseScrolled(1,1,0,-20));
+        }, WorkspaceSearchKeyboard::active, () -> {
+            fixture.unchanged("creative-search-keyboard-isolates-underlying-input");
+            // Native GUI Back confirms on release; focus navigation cancels a pending press.
+            // Keep both triggers held for the exit quarantine while allowing a normal B click.
+            driver.stick(0,0); driver.rightX=driver.rightY=0;
+            driver.buttons.clear();driver.buttons.add(GamepadInputs.EAST_BUTTON);
+        },4);
+        add("creative-search-native-B-press-before-release",() -> {},WorkspaceSearchKeyboard::active,
+            () -> driver.buttons.remove(GamepadInputs.EAST_BUTTON),2);
+        add("creative-search-B-closes-keyboard-only", () -> {}, () -> mc.gui.screen()==fixture.parent && !WorkspaceSearchKeyboard.active(), () -> {
+            check("creative-search-B-returns-exact-parent", owner.workspaceActive() && !owner.radialActive() && !fixture.parent.contextualRadialActive());
+            check("creative-search-held-triggers-wait-for-neutral", WorkspaceSearchKeyboard.waitingNeutral());
+            fixture.unchanged("creative-search-held-exit-isolates-underlying-input");
+        },4);
+        add("creative-search-exit-neutral-restores-workspace",fixture::neutral, () -> !WorkspaceSearchKeyboard.waitingNeutral() && mc.gui.screen()==fixture.parent, () -> {
+            fixture.unchanged("creative-search-neutral-exit-preserves-workspace");
+            pointAtControl(owner.model().playerInventory(),fixture.target().field());
+        },2);
+        assertServer("creative-search-keyboard-server-items-and-cursor-preserved", () -> fixture.sameItems(player().getInventory()) && player().inventoryMenu.getCarried().isEmpty());
+        button("creative-search-A-field-opens-keyboard",GamepadInputs.SOUTH_BUTTON, () ->
+            check("creative-search-A-field-uses-same-native-keyboard", WorkspaceSearchKeyboard.activeFor(fixture.parent) && fixture.keyboard().children().size()>26));
+        fixture.awaitOpeningNeutral("creative-search-A-field-native-opening-neutral");
+        button("creative-search-A-field-B-return",GamepadInputs.EAST_BUTTON, () ->
+            check("creative-search-field-close-preserves-workspace",mc.gui.screen()==fixture.parent && owner.workspaceActive()));
+        add("creative-search-VM-Enter-reopen-ready",fixture::neutral,() -> !WorkspaceSearchKeyboard.waitingNeutral(),() -> {
+            record("creative-search-isolation-query-before-reset","OBSERVED","query="+fixture.query()+",catalogItems="+fixture.catalog().size());
+            fixture.setQuery("iron");
+        },2);
+        add("creative-search-VM-Enter-nonempty-catalog-ready",() -> {},() -> fixture.query().equals("iron") && !fixture.catalog().isEmpty()
+            && owner.desktop().controllerTargets(owner.model().playerInventory()).stream()
+                .anyMatch(target -> target.group().equals("creative-catalog") && target.row()==0 && target.column()==0),
+            () -> creativeNavigationPointCell(0,0),1);
+        button("creative-search-VM-Enter-reopen",GamepadInputs.WEST_BUTTON,() ->
+            check("creative-search-VM-Enter-native-keyboard-open",WorkspaceSearchKeyboard.activeFor(fixture.parent)));
+        add("creative-search-VM-Enter-pointer-ready",() -> {
+            fixture.neutral();
+            fixture.nativeLeftBefore=ControlifyBindings.VMOUSE_LCLICK.on(controller).boundInput();
+            fixture.nativeRightBefore=ControlifyBindings.VMOUSE_RCLICK.on(controller).boundInput();
+            ControlifyBindings.VMOUSE_LCLICK.on(controller).setBoundInput(new ButtonInput(GamepadInputs.SOUTH_BUTTON));
+            ControlifyBindings.VMOUSE_RCLICK.on(controller).setBoundInput(new ButtonInput(GamepadInputs.WEST_BUTTON));
+            Controlify.instance().virtualMouseHandler().enableVirtualMouse();
+        },() -> {
+            var mouse=Controlify.instance().virtualMouseHandler();
+            if (!mouse.isVirtualMouseEnabled()) { mouse.enableVirtualMouse(); return false; }
+            return WorkspaceSearchKeyboard.activeFor(fixture.parent) && !((Boolean)field(mc.gui.screen(),"openingAwaitingNeutral"))
+                && !ControlifyBindings.VMOUSE_LCLICK.on(controller).digitalNow() && !ControlifyBindings.VMOUSE_LCLICK.on(controller).digitalPrev()
+                && !ControlifyBindings.VMOUSE_RCLICK.on(controller).digitalNow() && !ControlifyBindings.VMOUSE_RCLICK.on(controller).digitalPrev();
+        },() -> {
+            fixture.enterOverlay=(WorkspaceSearchKeyboard)mc.gui.screen(); fixture.snapshot(); fixture.pointAtNativeEnter();
+        },2);
+        add("creative-search-VM-A-X-Enter-same-update",() -> {
+            observedSearchMouseOwner=fixture.enterOverlay; nativeSearchMouseEvents.clear();
+            fixture.pointAtNativeEnter();
+            driver.buttons.addAll(Set.of(GamepadInputs.SOUTH_BUTTON,GamepadInputs.WEST_BUTTON));
+        },() -> mc.gui.screen()==fixture.parent && !WorkspaceSearchKeyboard.active(),() -> {
+            record("creative-search-VM-A-X-Enter-input-observation","OBSERVED","virtualMouse="
+                +Controlify.instance().virtualMouseHandler().isVirtualMouseEnabled()+",leftClick="+ControlifyBindings.VMOUSE_LCLICK.on(controller).digitalNow()
+                +",rightClick="+ControlifyBindings.VMOUSE_RCLICK.on(controller).digitalNow()+",heldMouse="+field(fixture.enterOverlay,"heldMouseButtons")
+                +",nativeEvents="+nativeSearchMouseEvents);
+            check("creative-search-VM-A-X-Enter-closes-keyboard-only",owner.workspaceActive()
+                && WorkspaceSearchKeyboard.waitingNeutral() && !owner.radialActive() && !fixture.parent.contextualRadialActive());
+            var presses=nativeSearchMouseEvents.stream().filter(event -> event.action()==com.mojang.blaze3d.platform.InputConstants.PRESS).toList();
+            boolean sameNativeDispatch=presses.size()==2 && presses.get(0).button()==com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT
+                && presses.get(0).screen()==fixture.enterOverlay && presses.get(0).controllerDispatch() && presses.get(0).virtualMouse()
+                && presses.get(0).leftNow() && presses.get(0).rightNow()
+                && presses.get(1).button()==com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT
+                && presses.get(1).screen()==fixture.parent && presses.get(1).controllerDispatch()
+                && presses.get(0).sample()==presses.get(1).sample();
+            record("creative-search-VM-A-X-both-native-click-bindings",sameNativeDispatch?"PASS":"FAIL",
+                "Actual ordered native left press on OSK then right press on parent in one controller dispatch: "+nativeSearchMouseEvents);
+            observedSearchMouseOwner=null;
+            fixture.unchanged("creative-search-VM-Enter-preserves-workspace");
+        },2);
+        add("creative-search-VM-Enter-fresh-neutral",fixture::neutral,
+            () -> !WorkspaceSearchKeyboard.waitingNeutral() && mc.gui.screen()==fixture.parent,() -> {
+                check("creative-search-VM-Enter-neutral-clears-physical-quarantine",((Set<?>)field(fixture.enterOverlay,"heldMouseButtons")).isEmpty()
+                    && ((Map<?,?>)field(fixture.enterOverlay,"heldKeys")).isEmpty());
+                Object activeButton=field(mc.mouseHandler,"activeButton");
+                record("creative-search-VM-Enter-native-mouse-after-neutral","OBSERVED","activeButton="+activeButton
+                    +",leftPressed="+mc.mouseHandler.isLeftPressed()+",rightPressed="+mc.mouseHandler.isRightPressed());
+                check("creative-search-VM-Enter-neutral-clears-native-mouse-drag",activeButton==null);
+            },3);
+        nativeCursorNeutralReady("creative-search-VM-Enter-restored-navigation",() -> {
+            creativeNavigationPointCell(0,0);
+            var next=owner.desktop().controllerTargets(owner.model().playerInventory()).stream()
+                .filter(target -> target.group().equals("creative-catalog") && target.row()==0 && target.column()==1).findFirst().orElseThrow();
+            setDpadExpected(owner.model().playerInventory(),new DesktopWindowBounds(next.x(),next.y(),next.width(),next.height()));
+        });
+        button("creative-search-VM-Enter-restored-DPAD",GamepadInputs.DPAD_RIGHT_BUTTON,() -> {
+            verifyDpadTarget("creative-search-VM-Enter-neutral-restores-catalog-navigation");
+            ControlifyBindings.VMOUSE_LCLICK.on(controller).setBoundInput(fixture.nativeLeftBefore);
+            ControlifyBindings.VMOUSE_RCLICK.on(controller).setBoundInput(fixture.nativeRightBefore);
+        });
+        add("creative-search-rebind-shortcut",fixture::neutral,() -> !WorkspaceSearchKeyboard.waitingNeutral(),() -> {
+            CreativeSearchBinding.SEARCH.on(controller).setBoundInput(new ButtonInput(GamepadInputs.MISC_3_BUTTON));
+            creativeNavigationPointCell(0,0);
+        },2);
+        observeNativeGuide("creative-search-rebound","SIDE","Search");
+        add("creative-search-rebound-native-guide-glyph",() -> {},() -> true,() -> {
+            var glyph=CreativeSearchBinding.SEARCH.on(controller).inputGlyph();
+            check("creative-search-guide-follows-rebound-native-glyph",!glyph.equals(fixture.originalGlyph) && QaNativeGuideProbe.workspace.glyph("Search",glyph));
+        },1);
+        button("creative-search-old-X-after-rebind",GamepadInputs.WEST_BUTTON,() ->
+            check("creative-search-old-X-does-not-open",mc.gui.screen()==fixture.parent && !WorkspaceSearchKeyboard.active()));
+        button("creative-search-rebound-shortcut-opens",GamepadInputs.MISC_3_BUTTON,() ->
+            check("creative-search-rebound-opens-native-keyboard",WorkspaceSearchKeyboard.activeFor(fixture.parent)));
+        fixture.awaitOpeningNeutral("creative-search-rebound-native-opening-neutral");
+        button("creative-search-rebound-B-return",GamepadInputs.EAST_BUTTON,() ->
+            check("creative-search-rebound-close-preserves-workspace",mc.gui.screen()==fixture.parent && owner.workspaceActive()));
+        add("creative-search-wrong-tab-source",fixture::neutral,() -> !WorkspaceSearchKeyboard.waitingNeutral(),() -> {
+            var binding=CreativeSearchBinding.SEARCH.on(controller);binding.setBoundInput(binding.defaultInput());
+            fixture.setQuery("");owner.desktop().selectContextualTab(owner.model().playerInventory(),fixture.tabBefore);creativeNavigationPointCell(0,0);
+        },2);
+        button("creative-search-wrong-tab-X",GamepadInputs.WEST_BUTTON,() ->
+            check("creative-search-wrong-tab-does-not-open",mc.gui.screen()==fixture.parent && !WorkspaceSearchKeyboard.active()
+                && !((RadialInventoryScreen)mc.gui.screen()).controllerCreativeSearchAvailable()));
+        add("creative-search-wrong-window-source",() -> {
+            fixture.neutral();
+            var searchId=net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.getKey(net.minecraft.world.item.CreativeModeTabs.searchTab());
+            owner.desktop().selectContextualTab(owner.model().playerInventory(),searchId);
+        },() -> true,() -> {
+            UUID other=owner.model().selected().equals(owner.model().playerInventory())?owner.model().focused():owner.model().selected();
+            pointAtControl(other,owner.desktop().presentationBounds(other));
+        },12);
+        button("creative-search-wrong-window-X",GamepadInputs.WEST_BUTTON,() ->
+            check("creative-search-wrong-window-does-not-open",mc.gui.screen()==fixture.parent && !WorkspaceSearchKeyboard.active()
+                && !((RadialInventoryScreen)mc.gui.screen()).controllerCreativeSearchAvailable()));
+        add("creative-search-restore-catalog",fixture::neutral,() -> !WorkspaceSearchKeyboard.waitingNeutral(),() -> {
+            fixture.setQuery("");owner.desktop().selectContextualTab(owner.model().playerInventory(),fixture.tabBefore);
+            creativeNavigationPointCell(0,0);
+            var next=owner.desktop().controllerTargets(owner.model().playerInventory()).stream().filter(target -> target.group().equals("creative-catalog") && target.row()==0 && target.column()==1).findFirst().orElseThrow();
+            setDpadExpected(owner.model().playerInventory(),new DesktopWindowBounds(next.x(),next.y(),next.width(),next.height()));
+        },2);
+        button("creative-search-neutral-DPAD-normal-navigation",GamepadInputs.DPAD_RIGHT_BUTTON,() -> {
+            verifyDpadTarget("creative-search-neutral-restores-normal-catalog-navigation");
+            check("creative-search-query-cleared-and-tab-restored",fixture.query().isEmpty() && owner.desktop().contextualMenu(owner.model().playerInventory()).tabs().stream()
+                .anyMatch(tab -> tab.selected() && tab.id().equals(fixture.tabBefore)));
+            snapCursor(fixture.cursorX,fixture.cursorY);
+        });
+    }
+
+    private static final class CreativeRegressionFixture {
+        static List<ItemStack> inventoryBefore, chestBefore;
+        static ItemStack carriedBefore;
+        static UUID other;
+        static String sourceKey;
+    }
+
+    /** These presses use Controlify's real default A/Y bindings and the authenticated native menus. */
+    private static void addCreativeCursorAndQuickMoveScenarios() {
+        add("creative-regression-save-and-seed", () -> {
+            var quick = ControlifyBindings.INV_QUICK_MOVE.on(controller);
+            quick.setBoundInput(quick.defaultInput());
+            server(() -> {
+                Container inventory = player().getInventory(), chest = (Container) player().level().getBlockEntity(chestPos);
+                CreativeRegressionFixture.inventoryBefore = java.util.stream.IntStream.range(0, inventory.getContainerSize())
+                    .mapToObj(index -> inventory.getItem(index).copy()).toList();
+                CreativeRegressionFixture.chestBefore = java.util.stream.IntStream.range(0, chest.getContainerSize())
+                    .mapToObj(index -> chest.getItem(index).copy()).toList();
+                CreativeRegressionFixture.carriedBefore = player().inventoryMenu.getCarried().copy();
+                inventory.clearContent(); inventory.setItem(0, new ItemStack(Items.DIAMOND, 7));
+                inventory.setItem(2, new ItemStack(creativeNavigationItem, 3));
+                player().inventoryMenu.setCarried(ItemStack.EMPTY); player().inventoryMenu.broadcastChanges();
+                return null;
+            });
+        }, ControlifyGameplayHarness::serverDone, () -> {}, 8);
+        for (var clearButton : List.of(GamepadInputs.SOUTH_BUTTON, GamepadInputs.NORTH_BUTTON)) {
+            String action = clearButton.equals(GamepadInputs.SOUTH_BUTTON) ? "A" : "Y";
+            if (action.equals("Y")) add("creative-cursor-Y-refill-hotbar", () -> server(() -> {
+                player().getInventory().setItem(0, new ItemStack(Items.DIAMOND, 7));
+                player().inventoryMenu.broadcastChanges(); return null;
+            }), ControlifyGameplayHarness::serverDone, () -> {}, 8);
+            nativePointerClick("native-creative-cursor-" + action + "-pickup-existing", GamepadInputs.SOUTH_BUTTON,
+                () -> pointAtNativeSlot(owner.model().playerInventory(), slot -> slot.index == 36), () -> {});
+            assertServer("creative-cursor-" + action + "-carries-existing-hotbar-stack", () ->
+                player().inventoryMenu.getCarried().is(Items.DIAMOND) && player().inventoryMenu.getCarried().getCount() == 7
+                    && player().getInventory().getItem(0).isEmpty() && inventoryCount(creativeNavigationItem) == 3);
+            creativeHostPointerClick("native-creative-cursor-" + action + "-catalog-clears", clearButton,
+                () -> creativeNavigationPointCell(0, 0));
+            assertServer("creative-cursor-" + action + "-cleared-without-catalog-grant", () ->
+                player().inventoryMenu.getCarried().isEmpty() && inventoryCount(Items.DIAMOND) == 0
+                    && inventoryCount(creativeNavigationItem) == 3 && player().getInventory().getItem(0).isEmpty());
+        }
+        add("creative-hotbar-delete-preserves-cursor-fixture", () -> server(() -> {
+            player().getInventory().setItem(0, new ItemStack(Items.DIAMOND, 7));
+            player().getInventory().setItem(1, new ItemStack(Items.EMERALD, 5));
+            player().inventoryMenu.broadcastChanges(); return null;
+        }), ControlifyGameplayHarness::serverDone, () -> {}, 8);
+        nativePointerClick("native-creative-delete-cursor-pickup", GamepadInputs.SOUTH_BUTTON,
+            () -> pointAtNativeSlot(owner.model().playerInventory(), slot -> slot.index == 36), () -> {});
+        assertServer("creative-delete-cursor-fixture-owned", () -> player().inventoryMenu.getCarried().is(Items.DIAMOND)
+            && player().inventoryMenu.getCarried().getCount() == 7);
+        nativeCursorNeutralReady("creative-hotbar-delete-guide", () -> {
+            pointAtNativeSlot(owner.model().playerInventory(), slot -> slot.index == 37);
+            check("creative-regular-tab-hotbar-is-delete-target", ((RadialInventoryScreen) mc.gui.screen()).controllerGuideState().creativeHotbarDelete());
+        });
+        add("creative-hotbar-delete-guide-stable", () -> {}, () -> QaNativeGuideProbe.workspace != null
+            && QaNativeGuideProbe.workspace.label("Delete"), () ->
+                check("creative-hotbar-delete-guide-native-Y", QaNativeGuideProbe.workspace.glyph("Delete", ControlifyBindings.INV_QUICK_MOVE.on(controller).inputGlyph())), 2);
+        creativeHostPointerClick("native-creative-Y-deletes-only-hotbar", GamepadInputs.NORTH_BUTTON,
+            () -> pointAtNativeSlot(owner.model().playerInventory(), slot -> slot.index == 37));
+        assertServer("creative-Y-delete-preserves-carried-and-other-hotbar", () -> inventoryCount(Items.EMERALD) == 0
+            && player().getInventory().getItem(1).isEmpty() && inventoryCount(creativeNavigationItem) == 3
+            && player().inventoryMenu.getCarried().is(Items.DIAMOND) && player().inventoryMenu.getCarried().getCount() == 7);
+        creativeHostPointerClick("native-creative-delete-cursor-cleanup", GamepadInputs.SOUTH_BUTTON,
+            () -> creativeNavigationPointCell(0, 0));
+        assertServer("creative-delete-cursor-cleanup-no-catalog-grant", () -> player().inventoryMenu.getCarried().isEmpty()
+            && inventoryCount(creativeNavigationItem) == 3);
+
+        add("creative-regression-open-other-window", () -> server(() -> {
+            var player=player();var level=player.level();
+            CreativeRegressionFixture.sourceKey=DesktopContainerSessions.blockSourceKey(player,chestPos);
+            player.openMenu(Objects.requireNonNull(level.getBlockState(chestPos).getMenuProvider(level,chestPos)));return null;
+        }), () -> {
+            if(!serverDone() || !owner.workspaceActive()) return false;
+            for(var window:owner.windows().values()) {
+                if(window.kind()!=DesktopWorkspaceWindow.Kind.OTHER) continue;
+                var session=(DesktopContainerSession)field(nativeWindow(window.handle().instanceId()),"session");
+                if(session!=null && CreativeRegressionFixture.sourceKey.equals(session.sourceKey())) {
+                    CreativeRegressionFixture.other=window.handle().instanceId();return true;
+                }
+            }
+            return false;
+        }, () -> {
+            var session=(DesktopContainerSession)field(nativeWindow(CreativeRegressionFixture.other),"session");
+            check("creative-regression-opened-exact-authenticated-chest",session.sessionToken()!=0
+                && session.menu() instanceof net.minecraft.world.inventory.ChestMenu);
+        },12);
+        // Opening a native container already focuses the player catalog. The radial list
+        // excludes that center pane, so only select its opposite chest through LT.
+        selectPair("creative-regression-exact-pair", () -> CreativeRegressionFixture.other);
+        add("creative-regression-catalog-remains-focused", () -> {}, ControlifyGameplayHarness::nativePointerReady, () ->
+            check("creative-regression-native-pair-is-catalog-and-chest", owner.model().focused().equals(owner.model().playerInventory())
+                && owner.model().selected().equals(CreativeRegressionFixture.other)), 2);
+        add("creative-ordinary-move-fixture", () -> server(() -> {
+            var inventory = player().getInventory(); inventory.clearContent();
+            inventory.setItem(0, new ItemStack(Items.DIAMOND, 7)); inventory.setItem(9, new ItemStack(Items.GOLD_INGOT, 4));
+            var chest = (Container) player().level().getBlockEntity(chestPos); chest.clearContent();
+            chest.setItem(0, new ItemStack(Items.EMERALD, 5)); chest.setChanged();
+            player().inventoryMenu.broadcastChanges(); return null;
+        }), ControlifyGameplayHarness::serverDone, () -> {}, 8);
+        nativePointerClick("native-creative-Y-other-window-moves", GamepadInputs.NORTH_BUTTON, () -> {
+            pointAtItem(CreativeRegressionFixture.other, Items.EMERALD);
+            check("creative-other-window-is-never-delete-target", !((RadialInventoryScreen) mc.gui.screen()).controllerGuideState().creativeHotbarDelete());
+        }, () -> {});
+        assertServer("creative-Y-other-window-retains-ordinary-transfer", () -> count(chestPos, Items.EMERALD) == 0
+            && inventoryCount(Items.EMERALD) == 5 && inventoryCount(Items.DIAMOND) == 7 && inventoryCount(Items.GOLD_INGOT) == 4);
+        add("creative-regression-select-inventory-tab", () -> {
+            check("creative-regression-inventory-tab-selected", owner.desktop().selectContextualTab(owner.model().playerInventory(),
+                Identifier.withDefaultNamespace("inventory")));
+        }, () -> true, () -> {}, 4);
+        nativePointerClick("native-creative-inventory-tab-Y-hotbar-moves", GamepadInputs.NORTH_BUTTON, () -> {
+            pointAtNativeSlot(owner.model().playerInventory(), slot -> slot.index == 36);
+            check("creative-inventory-tab-hotbar-is-never-delete-target", !((RadialInventoryScreen) mc.gui.screen()).controllerGuideState().creativeHotbarDelete());
+        }, () -> {});
+        assertServer("creative-inventory-tab-Y-hotbar-retains-ordinary-transfer", () -> inventoryCount(Items.DIAMOND) == 0
+            && count(chestPos, Items.DIAMOND) == 7 && inventoryCount(Items.EMERALD) == 5);
+        nativePointerClick("native-creative-inventory-tab-Y-storage-moves", GamepadInputs.NORTH_BUTTON, () -> {
+            pointAtNativeSlot(owner.model().playerInventory(), slot -> slot.index == 9 && slot.getItem().is(Items.GOLD_INGOT));
+            check("creative-main-inventory-is-never-delete-target", !((RadialInventoryScreen) mc.gui.screen()).controllerGuideState().creativeHotbarDelete());
+        }, () -> {});
+        assertServer("creative-inventory-tab-Y-storage-retains-ordinary-transfer", () -> inventoryCount(Items.GOLD_INGOT) == 0
+            && count(chestPos, Items.GOLD_INGOT) == 4 && inventoryCount(Items.EMERALD) == 5);
+        add("creative-regression-restore-fixtures", () -> server(() -> {
+            Container inventory = player().getInventory(), chest = (Container) player().level().getBlockEntity(chestPos);
+            for (int i = 0; i < CreativeRegressionFixture.inventoryBefore.size(); i++) inventory.setItem(i, CreativeRegressionFixture.inventoryBefore.get(i).copy());
+            for (int i = 0; i < CreativeRegressionFixture.chestBefore.size(); i++) chest.setItem(i, CreativeRegressionFixture.chestBefore.get(i).copy());
+            chest.setChanged(); player().inventoryMenu.setCarried(CreativeRegressionFixture.carriedBefore.copy());
+            player().inventoryMenu.broadcastChanges(); return null;
+        }), ControlifyGameplayHarness::serverDone, () -> {
+            owner.desktop().selectContextualTab(owner.model().playerInventory(), creativeNavigationTabId);
+            ControlifyBindings.INV_QUICK_MOVE.on(controller).setBoundInput(new ButtonInput(GamepadInputs.MISC_1_BUTTON));
+            check("creative-regression-other-window-cleanly-closed", owner.windows().get(CreativeRegressionFixture.other).handle().close());
+        }, 8);
+        add("creative-regression-restored-original-workspace", () -> {}, () -> !owner.windows().containsKey(CreativeRegressionFixture.other), () -> {
+            check("creative-regression-original-catalog-count-restored", mc.player.getInventory().getItem(0).is(creativeNavigationItem));
+            pointerFixture = () -> creativeNavigationPointCell(0, 0);
+        }, 6);
+    }
+
+    /** Host-owned catalog/delete actions finish before upstream native slot processing runs. */
+    private static void creativeHostPointerClick(String name, Identifier button, Runnable preparePointer) {
+        nativeCursorNeutralReady(name, preparePointer);
+        add(name + "-press", () -> {
+            pointerFixture = null;
+            preparePointer.run(); driver.buttons.add(button);
+        }, () -> true, () -> {}, 2);
+        add(name, () -> driver.buttons.remove(button), () -> true, () -> {}, 3);
     }
 
     private static void nativeBrewingDpad(String name, int sourceSlot, int targetSlot, Runnable verify) {
@@ -3344,7 +4976,9 @@ public final class ControlifyGameplayHarness {
         }
         long failures = results.stream().filter(result -> result.get("status").equals("FAIL")).count();
         Map<String, Object> report = new LinkedHashMap<>();
-        report.put("scenario", "controlify-controller-world"); report.put("failures", failures); report.put("results", results);
+        String scope=System.getProperty("salts_inventory_controlify.qaScope","all");
+        report.put("scenario", "all".equals(scope)?"controlify-controller-world":"controlify-"+scope);
+        report.put("scope",scope);report.put("failures", failures); report.put("results", results);
         report.put("elapsedMs", System.currentTimeMillis() - started);
         report.put("coreCodeSource", InventoryDesktopScreen.class.getProtectionDomain().getCodeSource().getLocation().toString());
         report.put("companionCodeSource", SaltsControlifyClient.class.getProtectionDomain().getCodeSource().getLocation().toString());
@@ -3355,10 +4989,29 @@ public final class ControlifyGameplayHarness {
         report.put("javaRuntime", Map.of("version", System.getProperty("java.runtime.version"),
                 "vendor", System.getProperty("java.vendor"), "home", System.getProperty("java.home"),
                 "vmArguments", java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments()));
-        try { Files.writeString(output.resolve("results.json"), new GsonBuilder().setPrettyPrinting().create().toJson(report)); }
+        try { Files.writeString(output.resolve("results.json"), serializeReport(report)); }
         catch (Exception failure) { failure.printStackTrace(); }
+        // This disposable profile must not retain an audible opt-in test mix after the run.
+        try {
+            com.salts_inventory_update.controlify.WorkspaceUiSounds.stopPreview();
+            com.salts_inventory_update.controlify.WorkspaceUiSounds.reset();
+            com.salts_inventory_update.controlify.WorkspaceUiSounds.settings().resetToDefaults();
+            com.salts_inventory_update.controlify.WorkspaceUiSounds.settings().save();
+        } catch (Exception failure) {
+            System.err.println("CONTROLIFY_QA_SOUND_FIXTURE_CLEANUP " + failure);
+        }
         System.out.println("CONTROLIFY_QA_SUMMARY " + (failures == 0 ? "PASS" : "FAIL") + " records=" + results.size());
         mc.stop();
+    }
+    /** Unobserved floating-point metrics remain null without preventing a real failure report. */
+    private static String serializeReport(Map<String, Object> report) {
+        com.google.gson.JsonSerializer<Number> finiteNumber = (number, type, context) ->
+            number == null || !Double.isFinite(number.doubleValue()) ? com.google.gson.JsonNull.INSTANCE
+                : new com.google.gson.JsonPrimitive(number);
+        return new GsonBuilder().setPrettyPrinting().serializeNulls()
+            .registerTypeAdapter(Double.class, finiteNumber).registerTypeAdapter(double.class, finiteNumber)
+            .registerTypeAdapter(Float.class, finiteNumber).registerTypeAdapter(float.class, finiteNumber)
+            .create().toJson(report);
     }
     private static Object field(Object target, String name) {
         Class<?> type = target instanceof Class<?> clazz ? clazz : target.getClass();

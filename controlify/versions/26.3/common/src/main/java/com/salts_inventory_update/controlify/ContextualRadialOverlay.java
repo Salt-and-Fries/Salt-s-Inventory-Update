@@ -4,10 +4,12 @@ import com.salts_inventory_update.api.client.desktop.DesktopContextualMenu;
 import com.salts_inventory_update.api.client.desktop.DesktopWindowBounds;
 import com.salts_inventory_update.controlify.model.ContextualWheelSelection;
 import com.salts_inventory_update.controlify.model.AlphabeticalRecipeIndex;
+import com.salts_inventory_update.controlify.model.AlphabeticalRecipeCache;
 import com.salts_inventory_update.controlify.model.AlphabeticalMarkerLayout;
 import com.salts_inventory_update.controlify.model.ContextualPresentationLayout;
 import com.salts_inventory_update.controlify.model.ContextualPresentationTransition;
 import com.salts_inventory_update.controlify.model.CreativeTabLayers;
+import com.salts_inventory_update.controlify.model.RecipeFilter;
 import com.salts_inventory_update.controlify.WorkspaceUiSounds.Action;
 import com.salts_inventory_update.controlify.render.ContextualRadialAssets;
 import com.salts_inventory_update.controlify.render.ContextualRadialAssets.Element;
@@ -28,15 +30,16 @@ public final class ContextualRadialOverlay {
     private UUID source, destination;
     private DesktopContextualMenu snapshot = DesktopContextualMenu.NONE;
     private int category, creativeIndex;
-    private boolean craftableOnly;
+    private RecipeFilter filter = RecipeFilter.ALL;
     private long refreshedAt;
     private String status = "";
     private RecipeDisplayId hoverRecipe;
     private AlphabeticalRecipeIndex.Catalog<DesktopContextualMenu.Recipe> alphabetCatalog = AlphabeticalRecipeIndex.Catalog.empty();
+    private final AlphabeticalRecipeCache alphabetCache = new AlphabeticalRecipeCache();
     private List<DesktopContextualMenu.Recipe> indexedEntries = List.of();
     private DesktopContextualMenu indexedSnapshot;
     private int indexedCategory = -1;
-    private boolean indexedCraftable;
+    private RecipeFilter indexedFilter;
     private String indexedLanguage = "";
     private Language indexedLanguageInstance;
     private final ContextualPresentationTransition transition = new ContextualPresentationTransition();
@@ -108,7 +111,7 @@ public final class ContextualRadialOverlay {
         this.source = source; this.destination = destination; snapshot = content;
         inputActive = true;
         transition.target(true, now, owner.config().animationsEnabled());
-        category = 0; creativeIndex = 0; craftableOnly = false; selection.reset(); status = "";
+        category = 0; creativeIndex = 0; filter = owner.recipeFilter(); selection.reset(); status = "";
         invalidateCatalog();
         hoverRecipe = null;
         for (int i = 0; i < content.tabs().size(); i++) if (content.tabs().get(i).selected()) creativeIndex = i;
@@ -139,11 +142,11 @@ public final class ContextualRadialOverlay {
     }
     public void input(float rightX, float rightY, float leftX, float leftY,
                       boolean categoryLeft, boolean categoryRight, boolean toggleCraftable, boolean confirm) {
-        input(rightX, rightY, leftX, leftY, categoryLeft, categoryRight, toggleCraftable, confirm, false, false);
+        input(rightX, rightY, leftX, leftY, categoryLeft, categoryRight, toggleCraftable, confirm, false, false, false);
     }
     public void input(float rightX, float rightY, float leftX, float leftY,
                       boolean categoryLeft, boolean categoryRight, boolean toggleCraftable, boolean confirm,
-                      boolean rotateLeftHeld, boolean rotateRightHeld) {
+                      boolean rotateLeftHeld, boolean rotateRightHeld, boolean craftStack) {
         if (!active()) return;
         var sourceWindow = owner.windows().get(source);
         var destinationWindow = owner.windows().get(destination);
@@ -185,7 +188,7 @@ public final class ContextualRadialOverlay {
             int next = Math.floorMod(category + (categoryRight ? 1 : -1), Math.max(1, snapshot.categories().size()));
             if (next != category) { category = next; selection.reset(); status = ""; sound = Action.CATEGORY; }
         }
-        if (toggleCraftable) { craftableOnly = !craftableOnly; selection.reset(); status = ""; sound = Action.FILTER; }
+        if (toggleCraftable) { filter = owner.cycleRecipeFilter(); selection.reset(); status = ""; sound = Action.FILTER; }
         List<DesktopContextualMenu.Recipe> entries = filtered();
         int before = selection.selected(entries.size());
         selection.update(entries.size(), rightX, rightY, leftX, leftY, rotateLeftHeld, rotateRightHeld, now);
@@ -193,19 +196,25 @@ public final class ContextualRadialOverlay {
         int selected = selection.displayedSelected(entries.size());
         if (selected != before) status = "";
         if (sound == null && selection.selected(entries.size()) != before && selected >= 0) sound = Action.CAROUSEL;
-        if (confirm && selected >= 0) {
+        if ((confirm || craftStack && snapshot.kind() == DesktopContextualMenu.Kind.CRAFTING) && selected >= 0) {
             var recipe = entries.get(selected);
             String previousStatus = status;
             boolean accepted = false;
+            WorkspaceCraftFeedback.Attempt craftAttempt = null;
             if (!recipe.craftable()) status = "Missing ingredients";
             else if (snapshot.kind() == DesktopContextualMenu.Kind.COOKING) {
                 accepted = owner.desktop().prepareCookingRecipe(source, recipe.id());
                 status = accepted ? "" : "Ingredients unavailable";
             } else {
-                accepted = owner.desktop().craftToWindow(source, destination, recipe.id());
+                craftAttempt = owner.craftFeedback().before(owner.desktop(), source, destination, recipe.output());
+                accepted = craftStack && !confirm ? owner.desktop().craftStackToWindow(source, destination, recipe.id())
+                    : owner.desktop().craftToWindow(source, destination, recipe.id());
                 status = accepted ? "" : "Destination unavailable";
             }
-            if (accepted) sound = Action.CONFIRM;
+            if (accepted) {
+                if (snapshot.kind() == DesktopContextualMenu.Kind.COOKING) sound = Action.REQUEST;
+                else { owner.craftFeedback().accepted(craftAttempt); sound = null; }
+            }
             else if (!status.equals(previousStatus)) sound = Action.REJECT;
             refreshedAt = 0;
             if (accepted) hoverRecipe = null;
@@ -225,16 +234,17 @@ public final class ContextualRadialOverlay {
         category = Math.min(category, snapshot.categories().size() - 1);
         String language = Minecraft.getInstance().getLanguageManager().getSelected();
         Language languageInstance = Language.getInstance();
-        if (indexedSnapshot == snapshot && indexedCategory == category && indexedCraftable == craftableOnly
+        if (indexedSnapshot == snapshot && indexedCategory == category && indexedFilter == filter
                 && indexedLanguage.equals(language) && indexedLanguageInstance == languageInstance)
             return indexedEntries;
         var id = snapshot.categories().get(category).id();
-        var eligible = snapshot.recipes().stream().filter(recipe -> (category == 0 || id.equals(recipe.category())) && (!craftableOnly || recipe.craftable()))
+        var eligible = snapshot.recipes().stream().filter(recipe -> (category == 0 || id.equals(recipe.category()))
+            && filter.includes(recipe.craftable(), recipe.grid().stream().anyMatch(ingredient -> ingredient.available() > 0)))
             .map(recipe -> new AlphabeticalRecipeIndex.Entry<>(recipe, recipe.output().getHoverName().getString(), recipe.id().toString())).toList();
         var previousEntries = alphabetCatalog.entries();
         int previousSelected = selection.displayedSelected(previousEntries.size());
-        boolean sameContext = indexedCategory == category && indexedCraftable == craftableOnly;
-        alphabetCatalog = AlphabeticalRecipeIndex.build(eligible, language);
+        boolean sameContext = indexedCategory == category && indexedFilter == filter;
+        alphabetCatalog = alphabetCache.index(eligible, language, languageInstance);
         var entries = alphabetCatalog.entries();
         if (sameContext && !previousEntries.isEmpty()
                 && !previousEntries.stream().map(AlphabeticalRecipeIndex.Entry::stableKey).toList().equals(entries.stream().map(AlphabeticalRecipeIndex.Entry::stableKey).toList())) {
@@ -243,7 +253,7 @@ public final class ContextualRadialOverlay {
             for (int i = 0; i < entries.size(); i++) if (entries.get(i).stableKey().equals(selectedKey)) { anchor = i; break; }
             selection.reanchor(anchor, entries.size());
         }
-        indexedSnapshot = snapshot; indexedCategory = category; indexedCraftable = craftableOnly;
+        indexedSnapshot = snapshot; indexedCategory = category; indexedFilter = filter;
         indexedLanguage = language; indexedLanguageInstance = languageInstance;
         indexedEntries = entries.stream().map(AlphabeticalRecipeIndex.Entry::value).toList();
         return indexedEntries;
@@ -252,6 +262,9 @@ public final class ContextualRadialOverlay {
         indexedSnapshot = null; indexedCategory = -1; alphabetCatalog = AlphabeticalRecipeIndex.Catalog.empty(); indexedEntries = List.of();
     }
     public List<AlphabeticalRecipeIndex.Group> alphabetGroups() { filtered(); return alphabetCatalog.groups(); }
+    private String filterLabel() {
+        return Component.translatable("salts_inventory_controlify.recipe_filter." + filter.key()).getString();
+    }
     public void render(GuiGraphicsExtractor graphics, int width, int height) {
         if (!presenting()) return;
         if (presentationFrame == null) return;
@@ -365,7 +378,7 @@ public final class ContextualRadialOverlay {
             var recipe = entries.get(selected);
             renderSelectedRecipe(graphics, recipe);
         } else text(graphics, "No recipes in this category", 380, 229, theme.text());
-        text(graphics, craftableOnly ? "Craftable recipes" : "All recipes", 380, 394, theme.mutedText());
+        text(graphics, filterLabel(), 380, 394, theme.mutedText());
         text(graphics, status, 380, 410, 0xFF8F1E19);
     }
     private List<AlphabeticalMarkerLayout.Rect> alphabetObstacles(int recipeCount) {
@@ -380,7 +393,7 @@ public final class ContextualRadialOverlay {
             obstacles.add(new AlphabeticalMarkerLayout.Rect(x - half - 1, 59 - half - 1, half * 2 + 2, half * 2 + 2));
         }
         var font = Minecraft.getInstance().font;
-        String summary = craftableOnly ? "Craftable recipes" : "All recipes";
+        String summary = filterLabel();
         obstacles.add(new AlphabeticalMarkerLayout.Rect(380 - font.width(summary) / 2, 394, font.width(summary), font.lineHeight));
         obstacles.add(new AlphabeticalMarkerLayout.Rect(380 - font.width(status) / 2, 410, font.width(status), font.lineHeight));
         return obstacles;

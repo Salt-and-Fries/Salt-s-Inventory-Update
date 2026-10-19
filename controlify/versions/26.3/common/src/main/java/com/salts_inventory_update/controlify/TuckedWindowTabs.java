@@ -2,20 +2,18 @@ package com.salts_inventory_update.controlify;
 
 import com.salts_inventory_update.api.client.desktop.DesktopThemeAssets;
 import com.salts_inventory_update.api.client.desktop.DesktopWorkspaceWindow;
+import com.salts_inventory_update.api.client.desktop.DesktopWorkspace;
 import com.salts_inventory_update.controlify.model.TuckedTabsLayout;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 
-/** Read-only names for the live windows retained while the workspace is tucked. */
+/** Item tabs for live windows, continuing above the viewport while the workspace is tucked. */
 final class TuckedWindowTabs {
     private TuckedWindowTabs() { }
 
-    static void render(GuiGraphicsExtractor graphics, Map<UUID, DesktopWorkspaceWindow> windows) {
-        var font = Minecraft.getInstance().font;
+    static void render(GuiGraphicsExtractor graphics, Map<UUID, DesktopWorkspaceWindow> windows, DesktopWorkspace desktop) {
         graphics.nextStratum();
         for (var tab : layout(graphics.guiWidth(), windows)) {
             graphics.pose().pushMatrix();
@@ -23,13 +21,7 @@ final class TuckedWindowTabs {
                 graphics.pose().translate((float) tab.x(), (float) tab.y());
                 graphics.pose().scale((float) tab.scale(), (float) tab.scale());
                 frame(graphics, tab.width(), tab.height());
-                String title = windows.get(tab.window()).title();
-                int textWidth = tab.width() - TuckedTabsLayout.TEXT_PADDING * 2;
-                if (font.width(title) > textWidth) {
-                    String ellipsis = "…";
-                    title = font.plainSubstrByWidth(title, Math.max(0, textWidth - font.width(ellipsis))) + ellipsis;
-                }
-                graphics.text(font, title, (tab.width() - font.width(title)) / 2, 5, 0xFF111111, false);
+                graphics.item(desktop.previewIcon(tab.window()), 6, 8);
             } finally {
                 graphics.pose().popMatrix();
             }
@@ -42,10 +34,7 @@ final class TuckedWindowTabs {
     }
 
     private static java.util.List<TuckedTabsLayout.Tab<UUID>> layout(int viewportWidth, Map<UUID, DesktopWorkspaceWindow> windows) {
-        var font = Minecraft.getInstance().font;
-        Map<UUID, Integer> labelWidths = new LinkedHashMap<>();
-        windows.forEach((id, window) -> labelWidths.put(id, font.width(window.title())));
-        return TuckedTabsLayout.compute(viewportWidth, labelWidths);
+        return TuckedTabsLayout.compute(viewportWidth, windows.keySet());
     }
 
     /** Published Core window atlas: five-pixel edges surrounding a one-pixel center. */

@@ -15,7 +15,9 @@
     "issues": "https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/issues",
     "discord": "https://discord.gg/kfdE9gGGxP"
   },
-  "mixins": ["salts_inventory_compat.ae2.mixins.json"],
+  "mixins": [
+    "salts_inventory_compat.ae2.mixins.json"
+  ],
   "entrypoints": {
     "modmenu": [
       "com.salts_inventory_update.compat.modmenu.SaltsInventoryModMenu"
@@ -28,6 +30,9 @@
     ],
     "client": [
       "com.salts_inventory_update.compat.SaltsInventoryCompatibilityFabricClient"
+    ],
+    "rei_client": [
+      "com.salts_inventory_update.compat.rei.SaltsReiClientPlugin"
     ]
   },
   "custom": {

@@ -45,6 +45,7 @@ final class AlphabeticalMarkerLayoutTest {
         var layout = AlphabeticalMarkerLayout.layout(groups, 100_000, 10, 12, blocked);
         verify(groups, 100_000, layout, blocked);
         assertEquals(26, layout.stream().map(AlphabeticalMarkerLayout.Placement::backgroundBounds).distinct().count());
+        verifyFixedTracksAndClockwiseOrder(layout);
     }
     @Test void emptyCatalogNeedsNoLabelsAndInvalidAnchorsAreRejected() {
         assertTrue(AlphabeticalMarkerLayout.layout(List.of(), 0, 10, 12, obstacles()).isEmpty());
@@ -61,6 +62,57 @@ final class AlphabeticalMarkerLayoutTest {
         verify(groups, 1249, layout, blocked);
         var frame = new AlphabeticalMarkerLayout.Rect(208, 21, 344, 408);
         for (var marker : layout) assertTrue(frame.contains(marker.backgroundBounds()));
+        verifyFixedTracksAndClockwiseOrder(layout);
+    }
+    @Test void crowdedLettersShareAngularRoomWithoutZigzaggingBetweenArbitraryRadii() {
+        int[] firstIndices = {0, 11, 46, 125, 132, 138, 146, 160, 165, 178, 196, 198, 258,
+            310, 320, 329, 340, 385, 406, 429, 451, 463, 468, 485, 493, 507};
+        var groups = new ArrayList<AlphabeticalRecipeIndex.Group>();
+        for (int i = 0; i < firstIndices.length; i++)
+            groups.add(new AlphabeticalRecipeIndex.Group(Character.toString('A' + i), firstIndices[i]));
+        var blocked = new ArrayList<>(obstacles());
+        for (int x : new int[]{292, 336, 380, 424, 468})
+            blocked.add(new AlphabeticalMarkerLayout.Rect(x - 18, 41, 36, 36));
+        var layout = AlphabeticalMarkerLayout.layout(groups, 512, 10, 12, blocked);
+        verify(groups, 512, layout, blocked);
+        verifyFixedTracksAndClockwiseOrder(layout);
+        assertEquals(380, layout.getFirst().labelX());
+        assertEquals(89, layout.getFirst().labelY());
+        for (var label : layout) assertTrue(Math.hypot(label.labelX() - label.anchorX(), label.labelY() - label.anchorY()) < 38,
+            "Realistic crowded groups should keep short leaders: " + label);
+        assertEquals(layout, AlphabeticalMarkerLayout.layout(groups, 512, 10, 12, blocked));
+    }
+    @Test void labelsOnBothSidesOfNorthKeepTheirOrderAndUseInnerTrackToClearTabs() {
+        var groups = List.of(new AlphabeticalRecipeIndex.Group("A", 0), new AlphabeticalRecipeIndex.Group("B", 10),
+            new AlphabeticalRecipeIndex.Group("C", 100), new AlphabeticalRecipeIndex.Group("X", 450),
+            new AlphabeticalRecipeIndex.Group("Y", 485), new AlphabeticalRecipeIndex.Group("Z", 500));
+        var blocked = new ArrayList<>(obstacles());
+        blocked.add(new AlphabeticalMarkerLayout.Rect(285, 41, 190, 36));
+        var layout = AlphabeticalMarkerLayout.layout(groups, 512, 10, 12, blocked);
+        verify(groups, 512, layout, blocked);
+        verifyFixedTracksAndClockwiseOrder(layout);
+        assertEquals(AlphabeticalMarkerLayout.INSIDE_RADIUS, radius(layout.get(1).labelX(), layout.get(1).labelY()), 1);
+        assertEquals(AlphabeticalMarkerLayout.INSIDE_RADIUS, radius(layout.getLast().labelX(), layout.getLast().labelY()), 1);
+        assertEquals(380, layout.getFirst().labelX());
+        assertEquals(89, layout.getFirst().labelY());
+    }
+    private static void verifyFixedTracksAndClockwiseOrder(List<AlphabeticalMarkerLayout.Placement> layout) {
+        double total = 0;
+        for (int i = 0; i < layout.size(); i++) {
+            var current = layout.get(i);
+            double radius = radius(current.labelX(), current.labelY());
+            assertTrue(Math.abs(radius - AlphabeticalMarkerLayout.INSIDE_RADIUS) < 1
+                || Math.abs(radius - AlphabeticalMarkerLayout.OUTSIDE_RADIUS) < 1, "Label left its fixed track: " + current);
+            if (layout.size() > 1) {
+                var next = layout.get((i + 1) % layout.size());
+                double angle = Math.atan2(current.labelX() - 380, 221 - current.labelY());
+                double nextAngle = Math.atan2(next.labelX() - 380, 221 - next.labelY());
+                double clockwiseGap = (nextAngle - angle + Math.PI * 2) % (Math.PI * 2);
+                assertTrue(clockwiseGap > 0, "Two label centers share one bearing");
+                total += clockwiseGap;
+            }
+        }
+        if (layout.size() > 1) assertEquals(Math.PI * 2, total, .0001, "Alphabetical order must make exactly one clockwise circuit");
     }
     private static double radius(int x, int y) { return Math.hypot(x - 380, y - 221); }
     private static void verify(List<AlphabeticalRecipeIndex.Group> groups, int count,

@@ -4,6 +4,7 @@ import com.salts_inventory_update.api.client.desktop.DesktopContextualMenu;
 import com.salts_inventory_update.controlify.input.WorkspaceContainerScreen;
 import com.salts_inventory_update.controlify.input.ControlifyInputBridge;
 import com.salts_inventory_update.controlify.model.CompactGuideLayout;
+import dev.isxander.controlify.Controlify;
 import dev.isxander.controlify.api.ControlifyApi;
 import dev.isxander.controlify.api.bind.InputBinding;
 import dev.isxander.controlify.api.bind.InputBindingSupplier;
@@ -24,7 +25,9 @@ import java.util.function.Function;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.Slot;
@@ -36,6 +39,9 @@ public final class WorkspaceActionGuide {
     private static final Identifier CONTAINER_DOMAIN = Identifier.fromNamespaceAndPath("controlify", "container");
     private static final Identifier IN_GAME_DOMAIN = Identifier.fromNamespaceAndPath("controlify", "in_game");
     private static final Identifier ORDINARY_SIDE = id("guide/ordinary_side");
+    private static final Identifier ORDINARY_QUICK_MOVE = id("guide/ordinary_quick_move");
+    private static final Identifier SEARCH_NATIVE_AVAILABLE = id("guide/search_native_available");
+    private static final String WHOLE_DPAD = "salts_inventory_controlify:whole_dpad";
     private static ContextualDomainImpl<GuideContext> domain;
     private static final Map<WorkspaceContainerScreen, Session> sessions = new WeakHashMap<>();
     private static final Map<GuideInstance<?>, TuckedSession> tuckedSessions = new WeakHashMap<>();
@@ -44,7 +50,20 @@ public final class WorkspaceActionGuide {
     public enum Mode { SIDE, LT_RADIAL, RECIPE, COOKING, CREATIVE_TABS }
     public record State(Mode mode, DesktopContextualMenu.Kind quickAction, boolean highlightedWindow, boolean tuckHighlighted,
                         boolean closableHighlight, boolean sortableFocus, boolean creativeCatalogItem, boolean scrollableHover,
-                        boolean canConfirmContextual, Slot hoveredSlot, ItemStack carried) {
+                        boolean canConfirmContextual, Slot hoveredSlot, ItemStack carried, boolean creativeHotbarDelete,
+                        boolean creativeSearchAvailable) {
+        public State(Mode mode, DesktopContextualMenu.Kind quickAction, boolean highlightedWindow, boolean tuckHighlighted,
+                     boolean closableHighlight, boolean sortableFocus, boolean creativeCatalogItem, boolean scrollableHover,
+                     boolean canConfirmContextual, Slot hoveredSlot, ItemStack carried, boolean creativeHotbarDelete) {
+            this(mode, quickAction, highlightedWindow, tuckHighlighted, closableHighlight, sortableFocus, creativeCatalogItem,
+                scrollableHover, canConfirmContextual, hoveredSlot, carried, creativeHotbarDelete, false);
+        }
+        public State(Mode mode, DesktopContextualMenu.Kind quickAction, boolean highlightedWindow, boolean tuckHighlighted,
+                     boolean closableHighlight, boolean sortableFocus, boolean creativeCatalogItem, boolean scrollableHover,
+                     boolean canConfirmContextual, Slot hoveredSlot, ItemStack carried) {
+            this(mode, quickAction, highlightedWindow, tuckHighlighted, closableHighlight, sortableFocus, creativeCatalogItem,
+                scrollableHover, canConfirmContextual, hoveredSlot, carried, false);
+        }
         public State { carried = carried == null ? ItemStack.EMPTY : carried; }
     }
     public record GuideContext(State state, ControllerEntity controller, GuideVerbosity verbosity) implements Context { }
@@ -65,6 +84,7 @@ public final class WorkspaceActionGuide {
     private static final InputBindingSupplier FILTER = fixed("filter", GamepadInputs.DPAD_UP_BUTTON);
     private static InputBindingSupplier NAVIGATION;
     private static InputBindingSupplier CURSOR;
+    private static InputBindingSupplier CREATIVE_CLEAR;
     private static List<Definition> DEFINITIONS;
 
     /** Native bindings read Minecraft options during class initialization; wait for a live workspace. */
@@ -74,6 +94,7 @@ public final class WorkspaceActionGuide {
             ControlifyBindings.VMOUSE_SNAP_RIGHT, ControlifyBindings.VMOUSE_SNAP_DOWN, ControlifyBindings.VMOUSE_SNAP_LEFT);
         CURSOR = composite("cursor", ControlifyBindings.VMOUSE_MOVE_UP, ControlifyBindings.VMOUSE_MOVE_RIGHT,
             ControlifyBindings.VMOUSE_MOVE_DOWN, ControlifyBindings.VMOUSE_MOVE_LEFT);
+        CREATIVE_CLEAR = composite("creative_clear", ControlifyBindings.INV_SELECT, ControlifyBindings.INVENTORY);
         DEFINITIONS = List.of(
         row("close_all", ControlifyBindings.GUI_BACK, GuideLocation.LEFT, "Close all"),
         row("close_window", ControlifyBindings.GUI_BACK, GuideLocation.LEFT, "Close"),
@@ -95,15 +116,19 @@ public final class WorkspaceActionGuide {
         row("hold_tabs", ContextualRecipeBinding.OPEN_WHEEL, GuideLocation.LEFT, "Tabs"),
         row("return_pair", ContextualRecipeBinding.OPEN_WHEEL, GuideLocation.LEFT, "Return"),
         row("craft", ControlifyBindings.INV_SELECT, GuideLocation.LEFT, "Craft"),
+        row("craft_stack", ControlifyBindings.INV_QUICK_MOVE, GuideLocation.LEFT, "Craft Stack"),
         row("prepare_cooking", ControlifyBindings.INV_SELECT, GuideLocation.LEFT, "Load"),
         row("select_tab", ControlifyBindings.INV_SELECT, GuideLocation.LEFT, "Select"),
         row("creative_one", ControlifyBindings.INV_SELECT, GuideLocation.LEFT, "Add one"),
         row("creative_stack", ControlifyBindings.INVENTORY, GuideLocation.LEFT, "Add stack"),
+        row("creative_clear", CREATIVE_CLEAR, GuideLocation.LEFT, "Clear"),
+        row("creative_delete_hotbar", ControlifyBindings.INV_QUICK_MOVE, GuideLocation.RIGHT, "Delete"),
+        row("creative_search", CreativeSearchBinding.SEARCH, GuideLocation.LEFT, "Search"),
         row("browse_recipes", RIGHT_STICK, GuideLocation.RIGHT, "Browse"),
         row("choose_recipe", LEFT_STICK, GuideLocation.RIGHT, "Choose"),
         row("rotate_recipes", WINDOW_CYCLE, GuideLocation.RIGHT, "Rotate"),
         row("categories", CATEGORY, GuideLocation.RIGHT, "Category"),
-        row("craftable", FILTER, GuideLocation.RIGHT, "Craftable"),
+        row("craftable", FILTER, GuideLocation.RIGHT, "Filter"),
         row("tab_stick", LEFT_STICK, GuideLocation.RIGHT, "Choose"),
         row("tab_right_stick", RIGHT_STICK, GuideLocation.RIGHT, "Choose"),
         row("tab_dpad", CATEGORY, GuideLocation.RIGHT, "Cycle")
@@ -136,6 +161,7 @@ public final class WorkspaceActionGuide {
     }
 
     public static void render(WorkspaceContainerScreen screen, GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        if (screen instanceof net.minecraft.client.gui.screens.Screen nativeScreen && WorkspaceSearchKeyboard.activeFor(nativeScreen)) return;
         ControllerEntity controller = ControlifyApi.get().getCurrentController().orElse(null);
         if (controller == null || !ControlifyApi.get().currentInputMode().isController() || !controller.settings().generic.guide.showScreenGuides) return;
         update(screen, controller);
@@ -145,6 +171,10 @@ public final class WorkspaceActionGuide {
 
     /** Actual compact row clearance; retain its high-water mark within one mode to avoid hover oscillation. */
     public static int reservedBottomSpace(WorkspaceContainerScreen screen) {
+        if (screen instanceof net.minecraft.client.gui.screens.Screen nativeScreen && WorkspaceSearchKeyboard.activeFor(nativeScreen)) {
+            Reservation previous = reservations.get(screen);
+            return previous == null ? 0 : previous.band();
+        }
         var minecraft = Minecraft.getInstance();
         ControllerEntity controller = ControlifyApi.get().getCurrentController().orElse(null);
         if (controller == null || minecraft.gui.screen() != screen || !ControlifyApi.get().currentInputMode().isController()
@@ -207,6 +237,49 @@ public final class WorkspaceActionGuide {
     private static void compactEntry(GuiGraphicsExtractor graphics, Font font, Component glyph, Component label,
             int x, int y, int width, int height) {
         graphics.text(font, Component.empty().append(glyph).append(" ").append(label), x, y, 0xFFFFFFFF, true);
+        // All four directions share one native cross. Fill its three remaining arms from
+        // the matching controller font glyphs, retaining the selected controller/pack art.
+        var controller = ControlifyApi.get().getCurrentController().orElse(null);
+        if (controller == null) return;
+        var prefix = Component.empty();
+        glyph.visit((style, text) -> {
+            if (WHOLE_DPAD.equals(style.getInsertion())) {
+                int left = x + font.width(prefix), span = font.width(Component.literal(text).withStyle(style));
+                int inkSpan = Math.max(1, span - 1); // Native bitmap advance includes its trailing blank pixel.
+                int firstThird = Math.max(1, inkSpan / 3), lastThird = Math.max(firstThird + 1, inkSpan * 2 / 3);
+                clippedDpadArm(graphics, font, controller, GamepadInputs.DPAD_LEFT_BUTTON, left, y,
+                    left - 1, y - 8, left + firstThird, y + height + 8);
+                clippedDpadArm(graphics, font, controller, GamepadInputs.DPAD_RIGHT_BUTTON, left, y,
+                    left + lastThird, y - 8, left + span + 1, y + height + 8);
+                clippedDpadArm(graphics, font, controller, GamepadInputs.DPAD_DOWN_BUTTON, left, y,
+                    left + firstThird, y + 4, left + lastThird, y + height + 8);
+            }
+            prefix.append(Component.literal(text).withStyle(style));
+            return Optional.empty();
+        }, Style.EMPTY);
+    }
+
+    private static void clippedDpadArm(GuiGraphicsExtractor graphics, Font font, ControllerEntity controller, Identifier input,
+            int x, int y, int left, int top, int right, int bottom) {
+        if (right <= left || bottom <= top) return;
+        var clip = new ScreenRectangle(left, top, right - left, bottom - top).transformAxisAligned(graphics.pose());
+        var minecraft = Minecraft.getInstance();
+        var renderWindow = minecraft.gameRenderer.gameRenderState().windowRenderState;
+        int pixelScale = Math.max(1, renderWindow.guiScale);
+        // A queued resize can leave the GUI dimensions one frame behind its framebuffer.
+        // Match the renderer's pixel clipping before queuing a narrow scissored text draw.
+        int pixelWidth = Math.min(renderWindow.width, minecraft.getWindow().getWidth());
+        int pixelHeight = Math.min(renderWindow.height, minecraft.getWindow().getHeight());
+        if (pixelWidth <= 0 || pixelHeight <= 0
+                || Math.min(clip.right() * pixelScale, pixelWidth) <= Math.max(0, clip.left() * pixelScale)
+                || Math.min(clip.bottom() * pixelScale, pixelHeight) <= Math.max(0, clip.top() * pixelScale)) return;
+        graphics.enableScissor(left, top, right, bottom);
+        try {
+            int sampleX = Math.max(0, Math.min((pixelWidth - 1) / pixelScale, clip.left() + clip.width() / 2));
+            int sampleY = Math.max(0, Math.min((pixelHeight - 1) / pixelScale, clip.top() + clip.height() / 2));
+            if (graphics.containsPointInScissor(sampleX, sampleY))
+                graphics.text(font, wholeDpadGlyph(input), x, y, 0xFFFFFFFF, false);
+        } finally { graphics.disableScissor(); }
     }
 
     private static List<CompactEntry> compactEntries(GuideInstanceImpl<?> nativeGuide) {
@@ -222,7 +295,8 @@ public final class WorkspaceActionGuide {
         for (var line : lines.lines()) {
             var parts = line.text().getSiblings();
             if (parts.size() != 3) throw new IllegalStateException("Unexpected native guide component structure");
-            Component glyph = parts.get(glyphFirst ? 0 : 2), label = parts.get(glyphFirst ? 2 : 0);
+            Component glyph = displayGlyph(parts.get(glyphFirst ? 0 : 2),
+                ControlifyApi.get().getCurrentController().orElse(null)), label = parts.get(glyphFirst ? 2 : 0);
             Component text = Component.empty().append(glyph).append(" ").append(label);
             target.add(new CompactEntry(glyph, label, Math.max(1, font.width(text)), Math.max(9, line.height())));
         }
@@ -272,11 +346,17 @@ public final class WorkspaceActionGuide {
         boolean tabs = state.mode() == Mode.CREATIVE_TABS;
         boolean select = !conflictsWithClose(controller, ControlifyBindings.INV_SELECT);
         boolean inventory = !conflictsWithClose(controller, ControlifyBindings.INVENTORY);
+        boolean quickMove = !conflictsWithClose(controller, ControlifyBindings.INV_QUICK_MOVE);
         boolean contextual = !conflictsWithClose(controller, ContextualRecipeBinding.OPEN_WHEEL);
         boolean opening = ControlifyInputBridge.awaitingOpeningTriggerRelease();
+        InputBinding search = CreativeSearchBinding.SEARCH.onOrNull(controller);
+        boolean searchReady = side && state.creativeSearchAvailable() && search != null && !search.isUnbound()
+            && !conflictsWithClose(controller, CreativeSearchBinding.SEARCH)
+            && !(opening && search.boundInput().getRelevantInputs().contains(GamepadInputs.LEFT_TRIGGER_AXIS));
         boolean contextualOwnsWindowTrigger = state.quickAction() != DesktopContextualMenu.Kind.NONE && contextual
             && sameBinding(controller, ContextualRecipeBinding.OPEN_WHEEL, WINDOW_WHEEL);
         Map<String, Boolean> facts = new HashMap<>();
+        facts.put("creative_search", searchReady);
         facts.put("close_all", !windowWheel);
         facts.put("close_window", windowWheel && state.closableHighlight());
         facts.put("hold_windows", side && !opening && !conflictsWithClose(controller, WINDOW_WHEEL) && !contextualOwnsWindowTrigger);
@@ -300,11 +380,16 @@ public final class WorkspaceActionGuide {
         facts.put("hold_cooking", side && state.quickAction() == DesktopContextualMenu.Kind.COOKING && quickActionReady);
         facts.put("hold_tabs", side && state.quickAction() == DesktopContextualMenu.Kind.CREATIVE && quickActionReady);
         facts.put("return_pair", (recipes || tabs) && contextual);
-        facts.put("craft", state.mode() == Mode.RECIPE && state.canConfirmContextual() && select);
+        facts.put("craft", state.mode() == Mode.RECIPE && select);
+        facts.put("craft_stack", state.mode() == Mode.RECIPE && quickMove && !sameBinding(controller, ControlifyBindings.INV_SELECT, ControlifyBindings.INV_QUICK_MOVE));
         facts.put("prepare_cooking", state.mode() == Mode.COOKING && state.canConfirmContextual() && select);
         facts.put("select_tab", tabs && state.canConfirmContextual() && select);
-        facts.put("creative_one", side && state.creativeCatalogItem() && select && !sameBinding(controller, ControlifyBindings.INV_SELECT, ControlifyBindings.INVENTORY));
-        facts.put("creative_stack", side && state.creativeCatalogItem() && inventory);
+        boolean carriedCatalog = state.creativeCatalogItem() && !state.carried().isEmpty();
+        boolean distinctCatalogBindings = !sameBinding(controller, ControlifyBindings.INV_SELECT, ControlifyBindings.INVENTORY);
+        facts.put("creative_one", side && state.creativeCatalogItem() && !carriedCatalog && select && distinctCatalogBindings);
+        facts.put("creative_stack", side && state.creativeCatalogItem() && !carriedCatalog && inventory);
+        facts.put("creative_clear", side && carriedCatalog && (select || inventory));
+        facts.put("creative_delete_hotbar", side && state.creativeHotbarDelete() && quickMove);
         facts.put("browse_recipes", recipes);
         facts.put("choose_recipe", recipes);
         facts.put("rotate_recipes", recipes);
@@ -315,6 +400,8 @@ public final class WorkspaceActionGuide {
         facts.put("tab_dpad", tabs);
         for (Definition definition : DEFINITIONS) sink.contributeFact(id("guide/" + definition.fact()), facts.getOrDefault(definition.fact(), false));
         sink.contributeFact(ORDINARY_SIDE, side && !state.creativeCatalogItem());
+        sink.contributeFact(ORDINARY_QUICK_MOVE, !state.creativeHotbarDelete());
+        sink.contributeFact(SEARCH_NATIVE_AVAILABLE, !searchReady);
 
         // Resolve native item facts and resource-pack rules through the unchanged container domain.
         // Its guide instance/renderables are never mutated by this workspace domain.
@@ -329,11 +416,21 @@ public final class WorkspaceActionGuide {
 
     private static RuleEngine<GuideRule.Key, GuideRule> rules(ControllerEntity controller) {
         List<GuideRule> rules = new ArrayList<>();
-        for (Definition definition : DEFINITIONS) rules.add(new GuideRule(definition.binding(), definition.location(),
-            new ContextualPredicate.Fact(id("guide/" + definition.fact())), definitionText(definition, controller)));
+        for (Definition definition : DEFINITIONS) {
+            ContextualPredicate predicate = new ContextualPredicate.Fact(id("guide/" + definition.fact()));
+            if (!definition.fact().equals("creative_search") && sameBinding(controller, definition.binding(), CreativeSearchBinding.SEARCH))
+                predicate = new ContextualPredicate.Compound(Optional.of(Set.of(predicate,
+                    new ContextualPredicate.Fact(SEARCH_NATIVE_AVAILABLE))), Optional.empty(), Optional.empty());
+            rules.add(new GuideRule(definition.binding(), definition.location(), predicate, definitionText(definition, controller)));
+        }
         for (GuideRule rule : nativeRules().rules()) {
             if (conflictsWithClose(controller, rule.binding())) continue;
-            var condition = new ContextualPredicate.Compound(Optional.of(Set.of(rule.predicate(), new ContextualPredicate.Fact(ORDINARY_SIDE))), Optional.empty(), Optional.empty());
+            Set<ContextualPredicate> conditions = new HashSet<>(Set.of(rule.predicate(), new ContextualPredicate.Fact(ORDINARY_SIDE)));
+            if (sameBinding(controller, rule.binding(), ControlifyBindings.INV_QUICK_MOVE))
+                conditions.add(new ContextualPredicate.Fact(ORDINARY_QUICK_MOVE));
+            if (sameBinding(controller, rule.binding(), CreativeSearchBinding.SEARCH))
+                conditions.add(new ContextualPredicate.Fact(SEARCH_NATIVE_AVAILABLE));
+            var condition = new ContextualPredicate.Compound(Optional.of(conditions), Optional.empty(), Optional.empty());
             rules.add(new GuideRule(rule.binding(), rule.location(), condition, compactNativeText(rule.text())));
         }
         return new RuleEngine<>(rules);
@@ -426,7 +523,9 @@ public final class WorkspaceActionGuide {
             if (cached == null || !cached.inputs().equals(actual)) {
                 Input metadata = new GlyphInput(plainStickInputs(actual));
                 InputBinding binding = new InputBindingImpl(null, controller.info().type().namespace(), id, Component.empty(), Component.empty(),
-                    Component.empty(), () -> metadata, Set.of(), false);
+                    Component.empty(), () -> metadata, Set.of(), false) {
+                    @Override public Component inputGlyph() { return displayGlyph(super.inputGlyph(), controller); }
+                };
                 cached = new Cached(actual, binding); cache.put(controller, cached);
             }
             return cached.binding();
@@ -435,6 +534,53 @@ public final class WorkspaceActionGuide {
         @Override public Component inputGlyph() {
             return ControlifyApi.get().getCurrentController().map(controller -> onOrNull(controller)).map(InputBinding::inputGlyph).orElseGet(Component::empty);
         }
+    }
+
+    /** Native bitmap fonts contain only input symbols: their literal '+' separator has no glyph.
+     * Keep each input in its mapped font and put ordinary spacing in the default font. */
+    private static Component displayGlyph(Component original, ControllerEntity controller) {
+        List<Component> parts = new ArrayList<>();
+        original.visit((style, text) -> {
+            if (text.isEmpty()) return Optional.empty();
+            if (WHOLE_DPAD.equals(style.getInsertion())) parts.add(Component.literal(text).withStyle(style));
+            else for (String part : text.split("\\+", -1))
+                if (!part.isEmpty() && part.chars().anyMatch(code -> code != 32)) parts.add(Component.literal(part).withStyle(style));
+            return Optional.empty();
+        }, Style.EMPTY);
+        List<Component> dpad = controller == null ? List.of() : List.of(
+            nativeInputGlyph(controller, GamepadInputs.DPAD_UP_BUTTON), nativeInputGlyph(controller, GamepadInputs.DPAD_DOWN_BUTTON),
+            nativeInputGlyph(controller, GamepadInputs.DPAD_LEFT_BUTTON), nativeInputGlyph(controller, GamepadInputs.DPAD_RIGHT_BUTTON));
+        boolean whole = !dpad.isEmpty() && dpad.stream().allMatch(direction -> parts.stream().anyMatch(part -> sameGlyph(part, direction)));
+        var result = Component.empty();
+        boolean addedDpad = false;
+        for (Component part : parts) {
+            boolean dpadPart = whole && dpad.stream().anyMatch(direction -> sameGlyph(part, direction));
+            if (dpadPart && addedDpad) continue;
+            if (!result.getSiblings().isEmpty()) result.append(" ");
+            if (dpadPart) {
+                result.append(wholeDpadGlyph(GamepadInputs.DPAD_UP_BUTTON).withStyle(style -> style.withInsertion(WHOLE_DPAD)));
+                addedDpad = true;
+            } else result.append(part);
+        }
+        return result;
+    }
+    /** The default family supplies a complete cross; PlayStation direction glyphs are separate buttons. */
+    private static net.minecraft.network.chat.MutableComponent wholeDpadGlyph(Identifier input) {
+        return singleInputGlyph(Identifier.fromNamespaceAndPath("controlify", "default"), input).copy();
+    }
+    private static Component nativeInputGlyph(ControllerEntity controller, Identifier input) {
+        return singleInputGlyph(controller.info().type().namespace(), input);
+    }
+    private static Component singleInputGlyph(Identifier namespace, Identifier input) {
+        Component mapped = Controlify.instance().inputFontMapper().getComponentFromInputs(namespace, List.of(input));
+        // The pinned mapper wraps each styled input in an empty component. Compare and
+        // mark the actual glyph leaf with its inherited font, not that unstyled wrapper.
+        Optional<Component> leaf = mapped.visit((style, text) -> text.isEmpty() ? Optional.empty()
+            : Optional.of(Component.literal(text).withStyle(style)), Style.EMPTY);
+        return leaf.orElseGet(Component::empty);
+    }
+    private static boolean sameGlyph(Component first, Component second) {
+        return first.getString().equals(second.getString()) && Objects.equals(first.getStyle().getFont(), second.getStyle().getFont());
     }
 
     /** Native undirected joystick glyphs; metadata never turns these display IDs into button actions. */

@@ -137,8 +137,8 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
         // Ghosts and outgoing panes render beneath the two active panes.
         var drawOrder = new ArrayList<>(placements.windows().entrySet());
         drawOrder.sort(Comparator.comparingInt(entry -> owner.radialActive()
-                ? owner.model().highlighted().filter(entry.getKey()::equals).isPresent() ? 2
-                    : entry.getKey().equals(owner.model().focused()) ? 1 : 0
+                ? owner.model().highlighted().filter(entry.getKey()::equals).isPresent() ? 1
+                    : entry.getKey().equals(owner.model().focused()) ? 0 : 2
                 : entry.getKey().equals(owner.model().focused()) || entry.getKey().equals(owner.model().selected()) ? 1 : 0));
         for (var entry : drawOrder) {
             if (contextual.presenting() && (entry.getKey().equals(contextual.presentationSource())
@@ -245,6 +245,7 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
     }
 
     private void updateHover(double x, double y) {
+        if (WorkspaceSearchKeyboard.activeFor(this) || WorkspaceSearchKeyboard.waitingNeutral()) return;
         Slot previousSlot = hoveredSlot;
         hoveredWindow = null; hoveredSlot = null;
         if (placements == null || owner.radialActive() || owner.tuckedAway() || contextual.active()) return;
@@ -283,6 +284,7 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
     }
 
     @Override public SnapPoint controllerNavigate(net.minecraft.client.gui.navigation.ScreenDirection direction, double x, double y) {
+        if (WorkspaceSearchKeyboard.activeFor(this) || WorkspaceSearchKeyboard.waitingNeutral()) return null;
         if (placements == null || owner.radialActive() || owner.tuckedAway() || contextual.active()) return null;
         var targets = new ArrayList<LogicalMenuNavigation.Target>();
         for (UUID id : List.of(owner.model().focused(), owner.model().selected())) {
@@ -307,6 +309,7 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
     }
 
     @Override public boolean controllerScroll(double x, double y, int direction, boolean edgeOnly) {
+        if (WorkspaceSearchKeyboard.activeFor(this) || WorkspaceSearchKeyboard.waitingNeutral()) return false;
         if (placements == null || owner.radialActive() || owner.tuckedAway() || contextual.active()) return false;
         updateHover(x, y);
         boolean scrolled = hoveredWindow != null && owner.desktop().scrollController(hoveredWindow, nativeMouseX, nativeMouseY, direction, edgeOnly);
@@ -322,9 +325,46 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
     }
 
     @Override public boolean controllerCreativeHotbar(boolean stack) {
+        if (WorkspaceSearchKeyboard.activeFor(this) || WorkspaceSearchKeyboard.waitingNeutral()) return false;
         if (placements == null || owner.radialActive() || owner.tuckedAway() || contextual.active()) return false;
         updateControllerHover();
         return creativeHotbarAtHover(stack);
+    }
+
+    private CreativeSearchTarget hoveredCreativeSearch() {
+        if (WorkspaceSearchKeyboard.activeFor(this) || WorkspaceSearchKeyboard.waitingNeutral()) return null;
+        if (placements == null || !owner.workspaceActive() || owner.radialActive() || owner.tuckedAway() || contextual.active()) return null;
+        return hoveredWindow == null ? null : CreativeSearchTarget.find(owner.desktop(), owner.windows().get(hoveredWindow));
+    }
+
+    @Override public boolean controllerCreativeSearchAvailable() {
+        updateControllerHover();
+        return hoveredCreativeSearch() != null;
+    }
+
+    @Override public boolean controllerCreativeSearch(boolean fieldOnly) {
+        updateControllerHover();
+        return openCreativeSearch(fieldOnly);
+    }
+
+    private boolean openCreativeSearch(boolean fieldOnly) {
+        var target = hoveredCreativeSearch();
+        if (target == null || fieldOnly && !target.contains(nativeMouseX, nativeMouseY)) return false;
+        owner.desktop().cancelInput();
+        capturedWindow = null;
+        hoveredSlot = null;
+        WorkspaceSearchKeyboard.open(this, owner.desktop(), target.window(), target.field());
+        return true; // An attempted Search action must never fall through into an item click.
+    }
+
+    @Override public boolean controllerCreativeDeleteHotbar() {
+        if (WorkspaceSearchKeyboard.activeFor(this) || WorkspaceSearchKeyboard.waitingNeutral()) return false;
+        if (placements == null || owner.radialActive() || owner.tuckedAway() || contextual.active()) return false;
+        updateControllerHover();
+        if (hoveredWindow == null || !owner.desktop().creativeHotbarDeleteAt(hoveredWindow, nativeMouseX, nativeMouseY)) return false;
+        owner.desktop().clickAt(hoveredWindow, nativeMouseX, nativeMouseY, 0, net.minecraft.world.inventory.ContainerInput.QUICK_MOVE);
+        WorkspaceUiSounds.play(WorkspaceUiSounds.Action.CONFIRM);
+        return true;
     }
 
     private boolean creativeHotbarAtHover(boolean stack) {
@@ -332,11 +372,13 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
         if (hoveredWindow == null || player == null) return false;
         int before = 0;
         for (int slot = 0; slot < 9; slot++) before += player.getInventory().getItem(slot).getCount();
+        boolean carriedBefore = !owner.desktop().carriedStack().isEmpty();
         boolean handled = owner.desktop().creativeHotbarAt(hoveredWindow, nativeMouseX, nativeMouseY, stack);
         if (handled) {
             int after = 0;
             for (int slot = 0; slot < 9; slot++) after += player.getInventory().getItem(slot).getCount();
-            WorkspaceUiSounds.play(after > before ? WorkspaceUiSounds.Action.CONFIRM : WorkspaceUiSounds.Action.REJECT);
+            boolean clearedCursor = carriedBefore && owner.desktop().carriedStack().isEmpty();
+            WorkspaceUiSounds.play(after > before || clearedCursor ? WorkspaceUiSounds.Action.CONFIRM : WorkspaceUiSounds.Action.REJECT);
         }
         return handled;
     }
@@ -368,18 +410,20 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
                     false, false, false, null, desktop.carriedStack());
         }
         updateControllerHover();
-        boolean creative = false, scrollable = false;
+        boolean creative = false, scrollable = false, creativeHotbarDelete = false;
         if (hoveredWindow != null) {
             var hint = desktop.contextualBookHint(hoveredWindow);
             if (hint != null) quick = hint.kind();
             creative = desktop.creativeCatalogAt(hoveredWindow, nativeMouseX, nativeMouseY);
+            creativeHotbarDelete = desktop.creativeHotbarDeleteAt(hoveredWindow, nativeMouseX, nativeMouseY);
             scrollable = desktop.controllerScrollAvailable(hoveredWindow, nativeMouseX, nativeMouseY);
         }
         return new WorkspaceActionGuide.State(mode, quick, false, false, false, false, creative, scrollable, false,
-                hoveredSlot, desktop.carriedStack());
+                hoveredSlot, desktop.carriedStack(), creativeHotbarDelete, hoveredCreativeSearch() != null);
     }
 
     @Override public boolean controllerCanOpenContextual() {
+        if (WorkspaceSearchKeyboard.activeFor(this) || WorkspaceSearchKeyboard.waitingNeutral()) return false;
         if (placements == null || !owner.workspaceActive() || owner.radialActive() || owner.tuckedAway()) return false;
         updateControllerHover();
         if (hoveredWindow == null) return false;
@@ -389,7 +433,8 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
 
     @Override public boolean controllerContextualInput(boolean held, float rightX, float rightY, float leftX, float leftY,
             boolean categoryLeft, boolean categoryRight, boolean toggleCraftable, boolean confirm,
-            boolean rotateLeftHeld, boolean rotateRightHeld) {
+            boolean rotateLeftHeld, boolean rotateRightHeld, boolean craftStack) {
+        if (WorkspaceSearchKeyboard.activeFor(this) || WorkspaceSearchKeyboard.waitingNeutral()) return false;
         if (!held) contextualRequiresRelease = false;
         if (!held || !owner.workspaceActive() || owner.radialActive() || owner.tuckedAway()) {
             if (!owner.workspaceActive() || owner.radialActive() || owner.tuckedAway()) contextual.finishImmediately();
@@ -421,7 +466,7 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
         }
         // A rebound hold action may share Select. Opening must never confirm a recipe.
         contextual.input(rightX, rightY, leftX, leftY, categoryLeft, categoryRight, toggleCraftable, confirm && !openedNow,
-                rotateLeftHeld, rotateRightHeld);
+                rotateLeftHeld, rotateRightHeld, craftStack && !openedNow);
         if (!contextual.active()) contextualRequiresRelease = true;
         return true;
     }
@@ -443,6 +488,7 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
 
     @Override public Slot controllerHoveredSlot() { return hoveredSlot; }
     @Override public void controllerClickSlot(Slot slot, int slotId, int button, ContainerInput type) {
+        if (WorkspaceSearchKeyboard.activeFor(this) || WorkspaceSearchKeyboard.waitingNeutral()) return;
         if (owner.radialActive() || contextual.active()) return;
         if (button == 0 && type == ContainerInput.PICKUP && controllerCreativeHotbar(false)) return;
         if (slot == null && slotId == -999) owner.desktop().dropCarried(button == 0
@@ -453,8 +499,11 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
     @Override protected void slotClicked(Slot slot, int slotId, int button, ContainerInput type) { controllerClickSlot(slot, slotId, button, type); }
 
     private boolean pointer(DesktopWorkspace.PointerAction action, double x, double y, int button, double dx, double dy) {
+        if (WorkspaceSearchKeyboard.activeFor(this) || WorkspaceSearchKeyboard.waitingNeutral()) return true;
         if (owner.radialActive() || owner.tuckedAway() || contextual.active()) return true;
         updateHover(x, y);
+        if (action == DesktopWorkspace.PointerAction.PRESS && button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT
+                && ControlifyInputBridge.usingController() && openCreativeSearch(true)) return true;
         if (action == DesktopWorkspace.PointerAction.PRESS && button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && hoveredWindow != null
                 && ControlifyInputBridge.usingController()
                 && creativeHotbarAtHover(false)) return true;
@@ -480,16 +529,44 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
         double localX = (x - placement.x()) / placement.scale() + bounds.x();
         double localY = (y - placement.y()) / placement.scale() + bounds.y();
         if (action == DesktopWorkspace.PointerAction.PRESS) capturedWindow = id;
+        boolean keyboardClick=action==DesktopWorkspace.PointerAction.PRESS && button==com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT
+            && ControlifyInputBridge.usingController();
+        boolean wasEditing=keyboardClick && owner.desktop().textInputActive(id);
+        var editors=keyboardClick?owner.desktop().textInputBounds(id):List.<DesktopWindowBounds>of();
         boolean result = owner.desktop().pointer(id, action, localX, localY, button, dx / placement.scale(), dy / placement.scale());
+        if (keyboardClick && com.salts_inventory_update.controlify.model.KeyboardActivation.shouldOpen(wasEditing,owner.desktop().textInputActive(id),
+                !editors.isEmpty(),editors.stream().anyMatch(field -> localX>=field.x() && localX<field.x()+field.width()
+                    && localY>=field.y() && localY<field.y()+field.height()))) {
+            owner.desktop().pointer(id, DesktopWorkspace.PointerAction.RELEASE, localX, localY, button, 0, 0);
+            capturedWindow = null;
+            hoveredSlot = null;
+            WorkspaceSearchKeyboard.openFocused(this, owner.desktop(), id, localX, localY);
+            return true;
+        }
         if (action == DesktopWorkspace.PointerAction.RELEASE) capturedWindow = null;
         return result;
     }
-    @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) { return pointer(DesktopWorkspace.PointerAction.PRESS, event.x(), event.y(), event.button(), 0, 0); }
-    @Override public boolean mouseReleased(MouseButtonEvent event) { return pointer(DesktopWorkspace.PointerAction.RELEASE, event.x(), event.y(), event.button(), 0, 0); }
+    @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        return WorkspaceSearchKeyboard.suppressWorkspaceMouse(event, false)
+            || pointer(DesktopWorkspace.PointerAction.PRESS, event.x(), event.y(), event.button(), 0, 0);
+    }
+    @Override public boolean mouseReleased(MouseButtonEvent event) {
+        return WorkspaceSearchKeyboard.suppressWorkspaceMouse(event, true)
+            || pointer(DesktopWorkspace.PointerAction.RELEASE, event.x(), event.y(), event.button(), 0, 0);
+    }
     @Override public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) { return pointer(DesktopWorkspace.PointerAction.DRAG, event.x(), event.y(), event.button(), dx, dy); }
     @Override public void mouseMoved(double x, double y) { pointer(DesktopWorkspace.PointerAction.MOVE, x, y, 0, 0, 0); }
     @Override public boolean mouseScrolled(double x, double y, double dx, double dy) { return pointer(DesktopWorkspace.PointerAction.SCROLL, x, y, 0, dx, dy); }
-    @Override public boolean keyPressed(KeyEvent event) { return owner.desktop().keyPressed(event.key(), event.keycode(), event.modifiers()); }
-    @Override public boolean keyReleased(KeyEvent event) { return owner.desktop().keyReleased(event.key(), event.keycode(), event.modifiers()); }
-    @Override public boolean charTyped(CharacterEvent event) { return owner.desktop().charTyped(event.codepoint(), 0); }
+    @Override public boolean keyPressed(KeyEvent event) {
+        return WorkspaceSearchKeyboard.suppressWorkspaceKey(event, false) || WorkspaceSearchKeyboard.activeFor(this)
+            || owner.desktop().keyPressed(event.key(), event.keycode(), event.modifiers());
+    }
+    @Override public boolean keyReleased(KeyEvent event) {
+        return WorkspaceSearchKeyboard.suppressWorkspaceKey(event, true) || WorkspaceSearchKeyboard.activeFor(this)
+            || owner.desktop().keyReleased(event.key(), event.keycode(), event.modifiers());
+    }
+    @Override public boolean charTyped(CharacterEvent event) {
+        return WorkspaceSearchKeyboard.activeFor(this) || WorkspaceSearchKeyboard.waitingNeutral()
+            || owner.desktop().charTyped(event.codepoint(), 0);
+    }
 }

@@ -37,6 +37,10 @@ public interface DesktopWorkspace {
     boolean charTyped(char character, int modifiers);
     /** Preserves the native Unicode code point on modern text-input events. */
     boolean charTyped(int codepoint, int modifiers);
+    /** True only while this window owns an editable text field, rather than a modal dialog or button. */
+    default boolean textInputActive(UUID id) { return false; }
+    /** Current editable field rectangles, before presentation transforms; empty when an owner supplies focus only. */
+    default List<DesktopWindowBounds> textInputBounds(UUID id) { return List.of(); }
     net.minecraft.world.inventory.Slot hoveredSlot(UUID id, double x, double y);
     /** Visible native slot geometry for cursor snapping; coordinates are before presentation transforms. */
     List<DesktopSlotHit> visibleSlots(UUID id);
@@ -54,12 +58,16 @@ public interface DesktopWorkspace {
      * Coordinates are before presentation transforms; custom handlers are not invoked as probes.
      */
     default boolean controllerScrollAvailable(UUID id, double x, double y) { return false; }
-    /** Adds a creative catalog item directly to a compatible or empty hotbar slot.
+    /** Clears an occupied creative cursor, otherwise adds a catalog item to a compatible or empty hotbar slot.
      * Returns true when the pointer belongs to the catalog, including a full-hotbar rejection.
      */
     boolean creativeHotbarAt(UUID id, double x, double y, boolean stack);
     /** Read-only creative catalog hit test, without adding an item or changing the selected tab. */
     default boolean creativeCatalogAt(UUID id, double x, double y) { return false; }
+    /** Read-only test for quick-move deleting an unlocked hotbar stack in a regular creative tab.
+     * Other windows and the creative Inventory tab retain normal quick-move behavior.
+     */
+    default boolean creativeHotbarDeleteAt(UUID id, double x, double y) { return false; }
     /** Native visual extent of the window and attached panels, before presentation transforms. */
     DesktopWindowBounds presentationBounds(UUID id);
     void clickAt(UUID id, double x, double y, int button, net.minecraft.world.inventory.ContainerInput type);
@@ -79,6 +87,8 @@ public interface DesktopWorkspace {
     DesktopContextualMenu contextualMenu(UUID id);
     /** Crafts one native recipe operation and routes its complete result to the opposite window. */
     boolean craftToWindow(UUID source, UUID destination, net.minecraft.world.item.crafting.display.RecipeDisplayId recipe);
+    /** Crafts complete native batches up to one output stack, stopping at supply/destination limits. */
+    default boolean craftStackToWindow(UUID source, UUID destination, net.minecraft.world.item.crafting.display.RecipeDisplayId recipe) { return false; }
     /** Places one cooking input and fuel when needed; native furnace timing and output remain untouched. */
     boolean prepareCookingRecipe(UUID source, net.minecraft.world.item.crafting.display.RecipeDisplayId recipe);
     /** Starts a server-owned reversible recipe preview, safely clearing native inputs/output. */

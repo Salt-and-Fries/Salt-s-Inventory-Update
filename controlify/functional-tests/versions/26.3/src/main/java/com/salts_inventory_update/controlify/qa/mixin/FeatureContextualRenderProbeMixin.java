@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** Counts the actual category row and distinguishes native active tabs from stick hover frames. */
 @Mixin(targets = "com.salts_inventory_update.controlify.ContextualRadialOverlay", remap = false)
 public abstract class FeatureContextualRenderProbeMixin {
-    @com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation(method="input(FFFFZZZZZZ)V",at=@At(value="INVOKE",
+    @com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation(method="input(FFFFZZZZZZZ)V",at=@At(value="INVOKE",
         target="Lcom/salts_inventory_update/api/client/desktop/DesktopWorkspace;recipeHoverRejected(Ljava/util/UUID;)Z"),remap=false)
     private boolean hoverRejected(com.salts_inventory_update.api.client.desktop.DesktopWorkspace desktop,java.util.UUID source,
         com.llamalad7.mixinextras.injector.wrapoperation.Operation<Boolean> original) {

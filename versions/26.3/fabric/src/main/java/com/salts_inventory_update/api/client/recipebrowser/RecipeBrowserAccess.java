@@ -69,6 +69,10 @@ public interface RecipeBrowserAccess {
     RecipeBrowserTransferPlan recipeTransferPlan(RecipeBrowserRecipe recipe, AbstractContainerMenu menu);
 
     RecipeBrowserEntry recipeIngredientAt(RecipeBrowserRecipe recipe, int x, int y, int mouseX, int mouseY);
+    /** Visible virtual ingredient rectangles in native GUI coordinates, without inventing real menu slots. */
+    default List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> recipeIngredientBounds(RecipeBrowserRecipe recipe,int x,int y) {
+        return List.of();
+    }
 
     boolean handleRecipeMouseScrolled(RecipeBrowserRecipe recipe, int x, int y, double mouseX, double mouseY, double scrollX, double scrollY);
 

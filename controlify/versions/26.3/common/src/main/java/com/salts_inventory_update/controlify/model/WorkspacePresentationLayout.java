@@ -42,7 +42,7 @@ public final class WorkspacePresentationLayout {
             double angle = RadialWorkspace.radialAngle(i, order.size());
             double scale = Math.min(sizeMultiplier * 0.42, previewDiagonal / Math.hypot(size.width(), size.height()));
             result.put(id, centered(cx + radius * Math.cos(angle), cy + radius * Math.sin(angle),
-                    size, scale, 0.56, 0));
+                    size, scale, 1, 0));
         }
         result.put(workspace.focused(), focus);
         workspace.highlighted().filter(order::contains).ifPresent(id -> {
@@ -68,7 +68,47 @@ public final class WorkspacePresentationLayout {
             result.replaceAll((id, placement) -> placement.withOpacity(0));
             tuck = tuck.withOpacity(0);
         }
-        return new WorkspaceLayout<>(result, tuck);
+        return constrainRadial(workspace, sizes, new WorkspaceLayout<>(result, tuck), viewportWidth, viewportHeight);
+    }
+
+    /** Cap the center on sampled animation frames too, not just the final radial target. */
+    public <K> WorkspaceLayout<K> constrainRadial(RadialWorkspace<K> workspace, Map<K, WindowSize> sizes,
+            WorkspaceLayout<K> frame, double width, double height) {
+        if (workspace.mode() != RadialWorkspace.Mode.RADIAL || !workspace.active()) return frame;
+        Map<K, WindowPlacement> placements = new LinkedHashMap<>(frame.windows());
+        WindowSize focusSize = sizes.getOrDefault(workspace.focused(), FALLBACK_SIZE);
+        WindowPlacement focus = placements.get(workspace.focused());
+        double extent = Math.min(width, height), gap = Math.min(4, extent * .008);
+        double sourceCx = focus.x() + focusSize.width() * focus.scale() / 2;
+        double sourceCy = focus.y() + focusSize.height() * focus.scale() / 2;
+        double cx = width / 2, cy = height / 2;
+        double ringRadius = extent * .39;
+        // Reserve the largest icon, independent of its animated scale or which choice is
+        // highlighted. A shrinking former preview must never resize the center pane.
+        double iconHalfDiagonal = Math.max(WorkspacePreviewGeometry.MAX_ICON_SIZE,
+                WorkspacePreviewGeometry.TUCK_FRAME_SIZE * 1.15) / Math.sqrt(2);
+        List<K> order = workspace.radialOrder();
+        for (int i = 0; i < order.size(); i++) {
+            K id = order.get(i);
+            var placement = placements.get(id);
+            if (placement == null) continue;
+            if (workspace.highlighted().filter(id::equals).isPresent()) {
+                placements.put(id, placement.withOpacity(1));
+                continue;
+            }
+            // Icons occupy their ring from the first frame. Moving a former ghost
+            // through the center would otherwise intersect even a tiny center pane.
+            double angle = RadialWorkspace.radialAngle(i, order.size());
+            placement = centered(cx + ringRadius * Math.cos(angle), cy + ringRadius * Math.sin(angle),
+                sizes.getOrDefault(id, FALLBACK_SIZE), placement.scale(), 1, placement.highlight());
+            placements.put(id, placement);
+        }
+        double scale = Math.min(focus.scale(), 2 * Math.max(.01, ringRadius - iconHalfDiagonal - gap)
+                / Math.hypot(focusSize.width(), focusSize.height()));
+        double arrival = 1 - Math.min(1, Math.hypot(sourceCx - cx, sourceCy - cy) / Math.max(1, width * .25));
+        scale *= .85 + .15 * arrival;
+        placements.put(workspace.focused(), centered(cx, cy, focusSize, scale, 1, focus.highlight()));
+        return new WorkspaceLayout<>(placements, frame.tuck());
     }
 
     /** Negative cycle steps appear above the selection; positive steps appear below it. */

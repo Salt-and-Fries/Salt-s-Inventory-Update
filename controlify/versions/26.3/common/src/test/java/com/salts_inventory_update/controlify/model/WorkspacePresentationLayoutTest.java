@@ -10,6 +10,64 @@ class WorkspacePresentationLayoutTest {
     private static final WindowSize STANDARD = new WindowSize(176, 166);
     private final WorkspacePresentationLayout layout = new WorkspacePresentationLayout();
 
+    @Test void rapidHighlightChangesNeverResizeTheSettledCenter() {
+        var workspace = workspace(8);
+        var sizes = uniformSizes(workspace);
+        sizes.put("player", new WindowSize(423, 108));
+        sizes.put("window0", new WindowSize(500, 100));
+        sizes.put("window1", new WindowSize(100, 400));
+        workspace.beginRadial();
+        var animator = new WorkspaceAnimator<String>();
+        var initial = layout.compute(workspace, sizes, 854, 480, 1);
+        animator.animate(initial, 0, false, 220);
+        var center = initial.windows().get("player");
+        long time = 0;
+        for (int repeat = 0; repeat < 3; repeat++) {
+            for (int i = 0; i < workspace.radialOrder().size(); i++) {
+                double angle = RadialWorkspace.radialAngle(i, workspace.radialOrder().size());
+                workspace.pointStick(Math.cos(angle), Math.sin(angle), .2);
+                var target = layout.compute(workspace, sizes, 854, 480, 1);
+                for (int ms = 0; ms <= 40; ms += 5) {
+                    var frame = layout.constrainRadial(workspace, sizes,
+                        animator.animate(target, time + ms * 1_000_000L, true, 220), 854, 480);
+                    var sampled = frame.windows().get("player");
+                    assertEquals(center.scale(), sampled.scale(), 1e-10, "Changing highlight must not resize center");
+                    assertEquals(center.x(), sampled.x(), 1e-10);
+                    assertEquals(center.y(), sampled.y(), 1e-10);
+                }
+                time += 45_000_000L;
+            }
+        }
+    }
+
+    @Test void centerStaysInsideOpaqueIconRingIncludingAnimatedFrames() {
+        for (int count : List.of(1, 4, 12, 24)) {
+            var workspace = workspace(count);
+            var sizes = uniformSizes(workspace);
+            sizes.put("player", new WindowSize(423, 108));
+            var animator = new WorkspaceAnimator<String>();
+            animator.animate(layout.compute(workspace, sizes, 854, 480, 1), 0, false, 220);
+            workspace.beginRadial();
+            var target = layout.compute(workspace, sizes, 854, 480, 1);
+            for (int ms = 0; ms <= 240; ms += 10) {
+                var frame = layout.constrainRadial(workspace, sizes,
+                    animator.animate(target, ms * 1_000_000L, true, 220), 854, 480);
+                var focus = frame.windows().get("player");
+                assertTrue(Math.hypot(423 * focus.scale(), 108 * focus.scale()) < 2 * 480 * .39);
+                for (String id : workspace.radialOrder()) {
+                    var placement = frame.windows().get(id);
+                    assertEquals(1, placement.opacity(), "Window icons remain opaque");
+                    if (workspace.highlighted().filter(id::equals).isPresent()) continue; // Rendered as a live pane, not an icon.
+                    var icon = WorkspacePreviewGeometry.icon(placement, sizes.get(id));
+                    assertTrue(focus.x() + 423 * focus.scale() <= icon.x()
+                        || focus.x() >= icon.x() + icon.size()
+                        || focus.y() + 108 * focus.scale() <= icon.y()
+                        || focus.y() >= icon.y() + icon.size(), "Center must not cover " + id + " at " + ms);
+                }
+            }
+        }
+    }
+
     @Test void sideShowsTwoSuccessiveGhostsPerDirectionWithDecreasingScaleAndOpacity() {
         var workspace = workspace(7);
         workspace.open("window2");
@@ -95,7 +153,7 @@ class WorkspacePresentationLayoutTest {
         assertTrue(highlighted.scale() > ordinary.scale() * 4);
         assertTrue(focus.scale() > ordinary.scale() * 5);
         assertEquals(1, highlighted.opacity());
-        assertTrue(ordinary.opacity() < 0.6);
+        assertEquals(1, ordinary.opacity());
         assertSeparate("focus", focus, STANDARD, "highlighted", highlighted, STANDARD);
     }
 

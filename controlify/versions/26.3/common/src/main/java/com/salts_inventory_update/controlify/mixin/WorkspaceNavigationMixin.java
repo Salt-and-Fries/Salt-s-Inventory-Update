@@ -63,7 +63,7 @@ public abstract class WorkspaceNavigationMixin {
             saltsControlify$scrollRepeat.reset();
             return;
         }
-        // Native fractional scroll builds up each frame; replace it throughout this workspace.
+        // Own native scrolling here, so analog speed never also scrolls a second time upstream.
         preventScrollingThisTick();
         if (workspace.contextualRadialActive()) {
             saltsControlify$scrollRepeat.reset();
@@ -73,16 +73,24 @@ public abstract class WorkspaceNavigationMixin {
         var state = controller.input().orElseThrow().stateNow();
         double vertical = state.getAxisState(GamepadInputs.RIGHT_STICK_AXIS_DOWN)
             - state.getAxisState(GamepadInputs.RIGHT_STICK_AXIS_UP);
-        int direction = saltsControlify$scrollRepeat.update(vertical, System.nanoTime() / 1_000_000L);
-        if (direction != 0) {
+        int rows = saltsControlify$scrollRepeat.update(vertical, System.nanoTime() / 1_000_000L);
+        if (rows != 0) {
             var window = minecraft.getWindow();
-            workspace.controllerScroll(getCurrentX(1f) * (double) window.getGuiScaledWidth() / window.getScreenWidth(),
-                getCurrentY(1f) * (double) window.getGuiScaledHeight() / window.getScreenHeight(), direction, false);
+            double x = getCurrentX(1f) * (double) window.getGuiScaledWidth() / window.getScreenWidth();
+            double y = getCurrentY(1f) * (double) window.getGuiScaledHeight() / window.getScreenHeight();
+            // Core's existing API consumes exactly one row per call. Preserve that contract
+            // while allowing a bounded elapsed-time batch at full stick or lower frame rates.
+            for (int row = 0; row < Math.abs(rows); row++) {
+                if (!workspace.controllerScroll(x, y, Integer.signum(rows), false)) {
+                    saltsControlify$scrollRepeat.reset();
+                    break;
+                }
+            }
         }
         callback.cancel();
     }
 
-    @Inject(method = "onScreenChanged", at = @At("HEAD"), remap = false)
+    @Inject(method = {"onScreenChanged", "disableVirtualMouse"}, at = @At("HEAD"), remap = false)
     private void saltsControlify$resetScrolling(CallbackInfo callback) {
         saltsControlify$scrollRepeat.reset();
     }

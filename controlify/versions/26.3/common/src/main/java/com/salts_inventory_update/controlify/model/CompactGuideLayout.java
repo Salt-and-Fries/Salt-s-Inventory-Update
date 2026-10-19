@@ -10,6 +10,7 @@ public final class CompactGuideLayout {
     public static final double ROW_GAP = 3;
     public static final double BOTTOM_MARGIN = 5;
     public static final double CONTENT_GAP = 4;
+    public static final double MIN_SINGLE_ROW_SCALE_RATIO = .80;
 
     public record Size(double width, double height) {
         public Size {
@@ -32,7 +33,10 @@ public final class CompactGuideLayout {
         double usableWidth = Math.max(1, width - INSET * 2);
         int split = entries.size();
         double widest = rowWidth(entries, 0, split);
-        if (entries.size() > 1 && widest * preferredScale > usableWidth) {
+        // A small reduction keeps common recipe guides below the gameplay HUD instead
+        // of lifting a second row through it. Narrow viewports still get readable rows.
+        double singleRowScale = Math.min(preferredScale, usableWidth / widest);
+        if (entries.size() > 1 && singleRowScale < preferredScale * MIN_SINGLE_ROW_SCALE_RATIO) {
             double bestWidth = Double.POSITIVE_INFINITY;
             for (int candidate = 1; candidate < entries.size(); candidate++) {
                 double maximum = Math.max(rowWidth(entries, 0, candidate), rowWidth(entries, candidate, entries.size()));

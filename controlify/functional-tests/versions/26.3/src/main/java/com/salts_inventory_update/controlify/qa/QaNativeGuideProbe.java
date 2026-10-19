@@ -22,6 +22,12 @@ public final class QaNativeGuideProbe {
         public boolean glyph(String label, Component expected) {
             return draws.stream().anyMatch(draw -> matches(draw, label) && contains(draw.text(), expected));
         }
+        public boolean wholeDpad(String label) {
+            return draws.stream().anyMatch(draw -> matches(draw, label) && nativeSymbols(draw.text()) == 1 && wholeDpadSymbols(draw.text()) == 1);
+        }
+        public boolean adjacentButtons(String label, int count) {
+            return draws.stream().anyMatch(draw -> matches(draw, label) && nativeSymbols(draw.text()) == count && validNativeSpacing(draw.text()));
+        }
         public boolean bothColumns() { return draws.stream().anyMatch(Draw::right) && draws.stream().anyMatch(draw -> !draw.right()); }
         public boolean horizontal() {
             return compact && draws.size() > 1 && java.util.stream.IntStream.range(1, draws.size())
@@ -40,11 +46,11 @@ public final class QaNativeGuideProbe {
         Map.entry("Navigate slots / controls", "Navigate"), Map.entry("Navigate / scroll rows", "Navigate"),
         Map.entry("Scroll list", "Scroll"), Map.entry("Hold: recipe wheel", "Recipes"),
         Map.entry("Hold: cooking wheel", "Cooking"), Map.entry("Hold: creative tab wheel", "Tabs"),
-        Map.entry("Craft into opposite window", "Craft"), Map.entry("Load cooking ingredients", "Load"),
+        Map.entry("Craft into opposite window", "Craft"), Map.entry("Craft stack into opposite window", "Craft Stack"), Map.entry("Load cooking ingredients", "Load"),
         Map.entry("Select creative tab", "Select"), Map.entry("Add one to hotbar", "Add one"),
         Map.entry("Add stack to hotbar", "Add stack"), Map.entry("Browse recipes", "Browse"),
         Map.entry("Choose recipe", "Choose"), Map.entry("Hold: rotate recipes", "Rotate"),
-        Map.entry("Change recipe category", "Category"), Map.entry("Toggle craftable recipes", "Craftable"),
+        Map.entry("Change recipe category", "Category"), Map.entry("Toggle craftable recipes", "Filter"),
         Map.entry("Choose creative tab", "Choose"), Map.entry("Previous / next creative tab", "Cycle"),
         Map.entry("Previous window", "Previous"), Map.entry("Next window", "Next"),
         Map.entry("Hold: rotate counterclockwise", "Rotate left"), Map.entry("Hold: rotate clockwise", "Rotate right"),
@@ -59,6 +65,7 @@ public final class QaNativeGuideProbe {
     private static final List<String> unexpected = new ArrayList<>();
     public static long frames, workspaceFrames, gameplayFrames, rawPaneBookDraws, manualControlTextDraws;
     public static long compactGuideFrames, compactEntryDraws, compactNativeTextDraws;
+    public static long wholeDpadEntries, adjacentButtonEntries;
     public static long compactLayoutFrames;
     public static int compactRows, compactReservedHeight, compactWidth, compactHeight;
     public static final List<String> compactViolations = new ArrayList<>();
@@ -104,6 +111,10 @@ public final class QaNativeGuideProbe {
         var draw = new Draw(Component.empty().append(glyph.copy()).append(" ").append(label.copy()), value, false,
             Math.min(left,rightEdge), Math.min(top,bottomEdge), Math.max(left,rightEdge), Math.max(top,bottomEdge));
         current.add(draw); compactEntryDraws++;
+        if (wholeDpadSymbols(glyph) == 1) wholeDpadEntries++;
+        if (nativeSymbols(glyph) >= 2 && validNativeSpacing(glyph)) adjacentButtonEntries++;
+        if (!validNativeSpacing(glyph) && compactViolations.size() < 32)
+            compactViolations.add("scenario=" + QaFeatureProbe.scenario + ",unsupported controller-font separator=" + glyph);
         if ((value.isEmpty() || value.split("\\s+").length > 2 || glyph.getString().isEmpty()
                 || draw.left() < -.5 || draw.top() < -.5 || draw.rightEdge() > graphics.guiWidth()+.5
                 || draw.bottom() > graphics.guiHeight()+.5) && compactViolations.size() < 32)
@@ -154,7 +165,12 @@ public final class QaNativeGuideProbe {
     }
     public static void text(GuiGraphicsExtractor graphics, Font font, Component text, int x, int y) {
         if (overlayScope) surface(graphics, x, y, font.width(text), font.lineHeight);
-        if (extracting && compactScope) { compactNativeTextDraws++; return; }
+        if (extracting && compactScope) {
+            compactNativeTextDraws++;
+            if (!validNativeSpacing(text) && compactViolations.size() < 32)
+                compactViolations.add("scenario=" + QaFeatureProbe.scenario + ",actual native draw has unsupported separator=" + text);
+            return;
+        }
         if (extracting) {
             var pose = graphics.pose();
             float width = font.width(text), height = rowHeights.getOrDefault(text, font.lineHeight);
@@ -236,6 +252,34 @@ public final class QaNativeGuideProbe {
         var pose = graphics.pose();
         tabsBottom = Math.max(tabsBottom, Math.max(pose.m21(), pose.m01()*width + pose.m11()*height + pose.m21()));
     }
+    private static boolean controllerFont(net.minecraft.network.chat.Style style) {
+        return style.getFont().toString().contains("controller/");
+    }
+    private static int nativeSymbols(Component text) {
+        int[] symbols = {0};
+        text.visit((style, value) -> {
+            if (controllerFont(style)) symbols[0] += value.codePointCount(0, value.length());
+            return java.util.Optional.empty();
+        }, net.minecraft.network.chat.Style.EMPTY);
+        return symbols[0];
+    }
+    private static int wholeDpadSymbols(Component text) {
+        int[] symbols = {0};
+        text.visit((style, value) -> {
+            if ("salts_inventory_controlify:whole_dpad".equals(style.getInsertion()))
+                symbols[0] += value.codePointCount(0, value.length());
+            return java.util.Optional.empty();
+        }, net.minecraft.network.chat.Style.EMPTY);
+        return symbols[0];
+    }
+    private static boolean validNativeSpacing(Component text) {
+        boolean[] valid = {true};
+        text.visit((style, value) -> {
+            if (controllerFont(style) && (value.indexOf('+') >= 0 || value.indexOf(' ') >= 0)) valid[0] = false;
+            return java.util.Optional.empty();
+        }, net.minecraft.network.chat.Style.EMPTY);
+        return valid[0];
+    }
     private static boolean contains(Component actual, Component expected) {
         if (actual.equals(expected)) return true;
         if (!expected.getString().isEmpty() && actual.getString().equals(expected.getString())
@@ -248,7 +292,9 @@ public final class QaNativeGuideProbe {
         result.put("nativeWorkspaceGuideFrames", workspaceFrames); result.put("nativeGameplayGuideFrames", gameplayFrames);
         result.put("nativeWorkspaceGuideModeFrames", Map.copyOf(modeFrames)); result.put("removedPaneBookDraws", rawPaneBookDraws);
         result.put("compactGuideFrames", compactGuideFrames); result.put("compactGuideEntryDraws", compactEntryDraws);
-        result.put("compactGuideNativeTextDraws", compactNativeTextDraws); result.put("compactGuideViolations", List.copyOf(compactViolations));
+        result.put("compactGuideNativeTextDraws", compactNativeTextDraws);
+        result.put("nativeWholeDpadGuideEntries", wholeDpadEntries);
+        result.put("nativeAdjacentButtonGuideEntries", adjacentButtonEntries); result.put("compactGuideViolations", List.copyOf(compactViolations));
         result.put("compactGuideLayoutFrames",compactLayoutFrames); result.put("compactGuideLastRows",compactRows);
         result.put("compactGuideReservedHeight",compactReservedHeight); result.put("compactGuideViewport",compactWidth+","+compactHeight);
         result.put("nativeTuckedTopGuideFrames", tuckedTopFrames); result.put("nativeTuckedBottomGuideFrames", tuckedBottomFrames);

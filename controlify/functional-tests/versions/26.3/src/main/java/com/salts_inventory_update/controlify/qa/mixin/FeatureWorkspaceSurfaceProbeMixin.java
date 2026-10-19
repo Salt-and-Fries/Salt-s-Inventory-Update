@@ -47,7 +47,7 @@ public abstract class FeatureWorkspaceSurfaceProbeMixin {
     @org.spongepowered.asm.mixin.Shadow @org.spongepowered.asm.mixin.Final private com.salts_inventory_update.controlify.ContextualRadialOverlay contextual;
     @Inject(method="controllerContextualInput",at=@At("RETURN"),remap=false)
     private void contextualRelease(boolean held,float rx,float ry,float lx,float ly,boolean cl,boolean cr,boolean filter,
-        boolean confirm,boolean leftHeld,boolean rightHeld,CallbackInfoReturnable<Boolean> callback) {
+        boolean confirm,boolean leftHeld,boolean rightHeld,boolean craftStack,CallbackInfoReturnable<Boolean> callback) {
         com.salts_inventory_update.controlify.qa.QaContextualPresentationProbe.releaseResult(held,callback.getReturnValue(),contextual);
     }
     @Inject(method="controllerClickSlot",at=@At("HEAD"),remap=false)

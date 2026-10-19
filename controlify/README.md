@@ -66,8 +66,9 @@ presentation is enabled. Controller recipe-book windows use the contextual wheel
 described below. The native Controlify cursor scales with the hovered pane's slots.
 
 Tucked gameplay keeps a small Core-textured tab for every retained window, including
-Inventory, Character, containers and client UI views. Tabs spread across the top and
-compress as more windows join the workspace; they persist with animations disabled.
+Inventory, Character, containers and client UI views. Each tab hangs down from the
+top edge and shows the same item icon as the window wheel. Tabs spread across the
+top and shrink together when crowded; they persist with animations disabled.
 
 While holding LT, the configured inventory button (normally Y) sorts the focused
 middle window into all eligible open storage containers through Core's regular sort
@@ -91,12 +92,52 @@ shrinks with its animated selection.
 D-pad navigation follows authored logical rows in native workstations, including
 the three staggered brewing bottle slots, and covers creative tabs and item grids.
 At a scrollable grid's visible edge, D-pad up/down scrolls one row before leaving
-the grid. The **right stick** scrolls the list under the cursor with a deadzone and
-controlled repeat speed. The left stick remains the native cursor control.
+the grid. The **right stick** scrolls the list under the cursor at a steady analog
+rate, increasing from 4 to 24 rows per second as the stick moves farther. Scrolling
+starts immediately without a repeat delay and stops on release. A deadzone prevents
+drift; elapsed-time updates preserve the speed across frame rates without queuing
+a jump after a pause. The left stick remains the native cursor control.
+
+When player Inventory is paired with Character or a crafting table, Quick Move
+(Y by default) moves inventory stacks between the hotbar and main inventory.
+Crafted output sent to player Inventory fills compatible or empty hotbar slots
+first, then uses main inventory space. Character crafting inputs are returned to
+the player's inventory on close, with overflow dropped using vanilla's rules.
+Tucking keeps those windows open. These changes require the updated **26.3 Core**
+JAR; the cleanup also applies to the ordinary keyboard/mouse character window.
 
 In the creative catalog, A adds one item directly to an available hotbar slot and
 Y adds a legal full stack. Compatible stacks and empty slots are used without
 replacing unrelated items; a full hotbar leaves the catalog item unchanged.
+If the cursor already carries a stack, a catalog grab clears it without granting
+the catalog item. In regular creative tabs, Quick Move (Y by default) deletes only
+the hovered hotbar stack, preserving a carried stack. Other windows and the
+creative Inventory tab retain normal Quick Move transfers.
+
+With the creative **Search** tab selected, hovering its window exposes **Search**
+(X by default). This rebindable action focuses the real search field and opens
+Controlify's native on-screen keyboard. Selecting the field with A opens the same
+keyboard. While it is open, controller input, clicks and scrolling belong only
+to the keyboard. Closing it restores the same workspace; held opening/closing
+inputs must return to neutral before inventory controls resume. X retains its
+ordinary action outside this context. Rebind **Creative search** in Controlify's
+Salt's Inventory binding category.
+
+In **26.3**, selecting a modded text field with A also opens Controlify's native
+keyboard. This uses the window's public API editor bounds and focus state, including
+search fields in the recipe browser, Tom's terminals, Sophisticated containers and
+AE2. The field continues to own its text, caret and filtering. Inventory actions
+stay captured by the keyboard until it closes and held inputs return to neutral.
+Clicking an item beside an automatically focused search field keeps normal item
+interaction.
+
+Custom API windows expose their current controls, virtual entries, scroll viewport
+and editor bounds through Core's desktop API. Controlify consumes those queries
+without per-mod checks. Extended supplies the native adapters for supported mods;
+an arbitrary unregistered mod screen still needs an API integration. See the
+[controller API contract](../docs/markdown/desktop_window_api.md#controller-navigation-and-editors-263).
+When installing this compatibility pass, replace the matching **26.3 Core and
+Controlify** JARs and **Extended** if you use it.
 
 Hold the quick-action binding (RT by default) over a supported crafting, cooking,
 or creative window to open its wheel. Controlify's native action lists show the
@@ -109,6 +150,10 @@ navigation, scrolling, creative hotbar actions, and every wheel control. Short
 one- or two-word labels fill centered horizontal rows along the bottom, wrapping
 into two rows and scaling when necessary to preserve the inventory area. Stick
 controls use one plain LS/RS glyph rather than four directional glyphs.
+Four-direction navigation uses one complete D-pad icon. Multi-button actions show
+adjacent icons with ordinary spacing outside the controller bitmap font. Craft
+and Craft Stack remain visible throughout crafting-wheel browsing, even when a
+recipe is unavailable, keeping the action rows stable.
 Hints change with the active mode and hovered window, use the actual configured
 bindings, and respect Controlify's screen-guide visibility and scale preferences.
 While tucked, the native inventory action becomes Restore; top-aligned
@@ -125,7 +170,8 @@ inward spring movement, keeping the selected recipe stable when the stick is rel
 Recipes are sorted by their displayed localized names. The outer ring marks the
 start of each available A–Z group, skipping empty groups; categories and the
 craftable filter rebuild these markers without changing continuous browsing.
-Letters alternate inside and outside the ring with small connecting lines. Aiming
+Letters use two fixed inner/outer tracks with consistent spacing and short
+connecting lines, staying clear of the category tabs. Aiming
 at a letter centers its first recipe at the top of the carousel. The highlighted
 arc covers the visible range: it shrinks for larger catalogs and grows for smaller
 ones. The separate outer marker is removed.
@@ -146,9 +192,28 @@ places available ingredients into its native slots; missing ingredients appear a
 translucent red previews. Changing recipes, releasing the wheel or interrupting it
 returns unused ingredients to their original containers. A requests one native
 craft into the opposite displayed storage window, or supplies needed fuel for
-cooking. Native processing, recipe remainders, statistics and XP remain intact;
+cooking. In crafting wheels, Quick Move (Y by default) is **Craft Stack**: one
+press crafts complete batches up to the result's native stack limit (64, 16 or 1,
+for example), stopping earlier when ingredients or destination space run out.
+Multi-output recipes never exceed that limit; six-item batches stop at 60 of 64.
+Native processing, recipe remainders, statistics and XP remain intact;
 consumed ingredients are never restored. If storage cannot hold the existing
 items, opening is rejected without changing them.
+
+In 26.3, **D-pad Up** cycles **All → Contains Parts → Craftable → All**.
+Contains Parts includes recipes for which at least one matching ingredient is
+available across the open containers, even if there is not enough to craft it.
+Furnace fuel alone does not count as a recipe ingredient. The filter is shared by
+the crafting and cooking wheels and survives closing windows and restarting the
+game, in `config/salts_inventory_controlify_recipes.properties`.
+The LT wheel keeps its center preview inside the ring of opaque window icons,
+including during transitions. Its size limit reserves the largest icon and stays
+fixed when the highlighted choice changes. Hover checks use the cheap window-kind hint before
+requesting creative tabs, so hovering crafting/furnace windows does not build a
+recipe catalog.
+Recipe wheels reuse alphabetical sorting and letter positions across unchanged
+catalog refreshes and reopening. Recipe values and ingredient availability always
+come from the fresh native snapshot; language/resource changes invalidate the index.
 
 The wheel and ingredients panels use Core's ordinary dynamic window frame and
 title renderer. The remaining right-trigger wheel artwork uses editable PNGs:
@@ -168,10 +233,26 @@ Holding the same action over creative inventory opens its tab wheel. The active 
 remains highlighted separately from the hovered choice. Release the action to return
 to side-by-side view. The carousel rendering keeps separate texture hooks for future
 artwork. Its control instructions appear in the native guide lists.
-Subtle native UI sounds accompany window selection and switching, tucking/restoring,
-slot navigation, scrolling, carousel/category/filter changes and appropriate
-confirm/close actions. Held input is rate limited, unchanged selections stay quiet,
-and the game's Master/UI volume settings apply.
+The **26.3 Fabric and NeoForge companion** uses nine dedicated UI events
+for navigation, window changes, opening, closing, tucking, restoring, confirmation,
+observed crafting output and unavailable actions. Opening and closing use Minecraft's
+classic button click; the other seven recordings retain their CC0-derived palette.
+**Inventory sounds are off by default.** New installs and Restore defaults use the
+Off preset; selecting Quiet, Standard or Minimal opts in. Saved audible preferences
+are preserved. When enabled, recipe-wheel and scroll selection interrupt the previous
+selection cue and restart immediately on the next update, with no browsing cooldown.
+Other navigation stays limited to five cues per second. Unchanged selections and
+idle wheels stay silent, and cursor-hover audio is off by default. One cue wins each client tick,
+with action feedback taking priority over transitions and navigation.
+Open **Options → Music & Sounds → Controller sounds** for presets, companion volume,
+separate Navigation/Windows/Actions levels, and one-cue preview, Stop and reset.
+Minecraft's Master and UI levels still apply. Craft completion follows an observed
+increase in matching output in the destination; sending a request alone does not
+play success, and uncertain results remain silent. This client observation is not
+a Core server acknowledgment.
+This audio pass changes only the 26.3 companion JAR. Core, Extended and other
+Minecraft versions receive no sound changes. The [sound guide](versions/26.3/common/UI_SOUNDS.md)
+documents all event IDs, settings, resource-pack replacement and editable sources.
 The [texture asset guide](versions/26.3/common/CONTEXTUAL_RADIAL_ASSETS.md) lists the
 runtime PNG paths, source sizes and editable tuck sprite.
 
@@ -266,7 +347,17 @@ gameplay scenarios, artifact isolation checks and SHA-256 hashes.
 `collectControlifyTestJars` gathers the rebuilt matching core and controller JARs
 in separate folders under `dist/controlify-test/`. The public workspace API added
 for this integration requires this rebuilt core. For disposable in-world QA,
-use the separate test-only initializer and packaged launch profile:
+use the separate test-only initializer and packaged launch profile. For ordinary
+changes, run only an affected-menu scope. The 26.3 crafting/cooking hover, recipe
+filters and LT window wheel have a focused scope:
+
+```powershell
+.\gradlew.bat -I controlify/functional-tests/controlify-qa.init.gradle :controlify:26.3:fabric:runPackagedControlifyQa -PcontrolifyQaScope=wheel-polish
+```
+
+Replace `fabric` with `neoforge` for that loader. Its reports and screenshots go
+to `build/controlify-qa/26.3-<loader>-wheel-polish`, preserving the full-scope
+reports separately. Run a complete functional scope only on explicit request:
 
 ```powershell
 .\gradlew.bat -I controlify/functional-tests/controlify-qa.init.gradle :controlify:1.21.1:fabric:runPackagedControlifyQa

@@ -10,11 +10,11 @@ final class TuckedGuideReservationTest {
         Map<String, Integer> labels = new LinkedHashMap<>();
         for (int count : new int[]{2, 10, 40, 200}) {
             while (labels.size() < count) labels.put("window" + labels.size(), 130);
-            var tabs = TuckedTabsLayout.compute(320, labels);
+            var tabs = TuckedTabsLayout.compute(320, labels.keySet());
             double bottom = tabs.stream().mapToDouble(tab -> tab.y() + tab.height() * tab.scale()).max().orElse(0);
             assertEquals((int) Math.ceil(bottom + 3), TuckedGuideReservation.inset(320, 180, bottom, null, Map.of()));
-            assertTrue(bottom <= 20);
-            if (count == 200) assertTrue(bottom < 4, "Crowded tabs use their drawn size rather than a fixed 18px row");
+            assertTrue(bottom <= 24);
+            if (count == 200) assertTrue(bottom < 4, "Crowded tabs reserve their actual clipped height");
         }
     }
     @Test void largeDepartingPaneAndHighlightBorderReserveUntilTheirVisibleBottomLeavesScreen() {

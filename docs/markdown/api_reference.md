@@ -306,6 +306,18 @@ public final class DesktopWindowTasks implements AutoCloseable {
 }
 ```
 
+## DesktopWorkspaceWindow
+
+`com.salts_inventory_update.api.client.desktop`. Shared; no native Minecraft types. [Source](../../versions/common/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopWorkspaceWindow.java).
+
+```java
+public record DesktopWorkspaceWindow(DesktopWindowHandle handle, Kind kind, String title, boolean closable) {
+    public enum Kind {
+        PLAYER_INVENTORY, CHARACTER, OTHER
+    }
+}
+```
+
 ## DesktopScrollState
 
 `com.salts_inventory_update.api.client.desktop.widget`. Shared; no native Minecraft types. [Source](../../versions/common/src/main/java/com/salts_inventory_update/api/client/desktop/widget/DesktopScrollState.java).
@@ -430,6 +442,11 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 public final class DesktopClientApi {
+    public static void setWorkspaceHost(DesktopWorkspaceHost host);
+    public static DesktopWorkspaceHost workspaceHost();
+    public static void openPlayerWorkspace();
+    public static void onClientTick(java.util.function.Consumer<net.minecraft.client.Minecraft> action);
+    public static java.util.Optional<DesktopWorkspace> currentWorkspace();
     public static boolean canDispatchOptimisticMutationNow();
     public static net.minecraft.client.gui.screens.Screen createConfigScreen(net.minecraft.client.gui.screens.Screen parent);
     public static void onClientStarted(java.util.function.Consumer<net.minecraft.client.Minecraft> action);
@@ -442,6 +459,67 @@ public final class DesktopClientApi {
     public static synchronized List<String> supportedMenuIds();
     public static synchronized <M, S> void registerView(Identifier id, Class<M> modelType, DesktopWindowDefinition<M, S> definition);
     ) public static java.util.Optional<DesktopWindowHandle> openView(Identifier id, String instanceKey, Object model, net.minecraft.network.chat.Component title);
+}
+```
+
+## DesktopContextualBookHint
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopContextualBookHint.java).
+
+```java
+public record DesktopContextualBookHint(DesktopContextualMenu.Kind kind, DesktopWindowBounds activationBounds, DesktopWindowBounds iconBounds) {
+}
+```
+
+## DesktopContextualMenu
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopContextualMenu.java).
+
+```java
+import java.util.List;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.display.RecipeDisplayId;
+public record DesktopContextualMenu(Kind kind, List<Category> categories, List<Recipe> recipes, List<Tab> tabs, Station station) {
+    public static final DesktopContextualMenu NONE = new DesktopContextualMenu(Kind.NONE, List.of(), List.of(), List.of());
+    public DesktopContextualMenu(Kind kind, List<Category> categories, List<Recipe> recipes, List<Tab> tabs);
+    public DesktopContextualMenu(Kind kind, List<Category> categories, List<Recipe> recipes, List<Tab> tabs, Station station);
+    public enum Kind {
+        NONE, CRAFTING, COOKING, CREATIVE
+    }
+    public record Station(int gridWidth, int gridHeight, ItemStack input, ItemStack fuel, ItemStack output, float burnProgress, float litProgress) {
+        public static final Station NONE = new Station(0, 0, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, 0, 0);
+        public Station(int gridWidth, int gridHeight, ItemStack input, ItemStack fuel, ItemStack output, float burnProgress, float litProgress);
+        @Override public ItemStack input();
+        @Override public ItemStack fuel();
+        @Override public ItemStack output();
+    }
+    public record Category(Identifier id, String title, ItemStack icon) {
+        public Category(Identifier id, String title, ItemStack icon);
+        @Override public ItemStack icon();
+    }
+    public record Ingredient(List<ItemStack> alternatives, int required, int available) {
+        public Ingredient(List<ItemStack> alternatives, int required, int available);
+        @Override public List<ItemStack> alternatives();
+    }
+    public record Recipe(RecipeDisplayId id, Identifier category, ItemStack output, int gridWidth, int gridHeight, List<Ingredient> grid, List<Ingredient> requirements, boolean craftable) {
+        public Recipe(RecipeDisplayId id, Identifier category, ItemStack output, int gridWidth, int gridHeight, List<Ingredient> grid, List<Ingredient> requirements, boolean craftable);
+        @Override public ItemStack output();
+    }
+    public record Tab(Identifier id, String title, ItemStack icon, boolean selected) {
+        public Tab(Identifier id, String title, ItemStack icon, boolean selected);
+        @Override public ItemStack icon();
+    }
+}
+```
+
+## DesktopControllerTarget
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopControllerTarget.java).
+
+```java
+public record DesktopControllerTarget(String group, int row, int column, int x, int y, int width, int height) {
+    public DesktopControllerTarget(String group, int row, int column, int x, int y, int width, int height);
 }
 ```
 
@@ -551,6 +629,18 @@ public interface DesktopNativeRenderContext {
 }
 ```
 
+## DesktopRecipeGhost
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopRecipeGhost.java).
+
+```java
+import net.minecraft.world.item.ItemStack;
+public record DesktopRecipeGhost(int slotIndex, ItemStack item) {
+    public DesktopRecipeGhost(int slotIndex, ItemStack item);
+    @Override public ItemStack item();
+}
+```
+
 ## DesktopRenderContext
 
 `com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopRenderContext.java).
@@ -600,6 +690,19 @@ public interface DesktopRenderContext<T, S> extends DesktopWindowContext<T, S>, 
 ```java
 public enum DesktopResizePolicy {
     FIXED, FREE, STORAGE_GRID
+}
+```
+
+## DesktopScrollRegion
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopScrollRegion.java).
+
+```java
+public record DesktopScrollRegion(int x, int y, int width, int height, int rowHeight, boolean canScrollUp, boolean canScrollDown, double nativeScrollStep) {
+    public DesktopScrollRegion(int x,int y,int width,int height,int rowHeight,boolean canScrollUp,boolean canScrollDown);
+    public DesktopScrollRegion(int x, int y, int width, int height, int rowHeight, boolean canScrollUp, boolean canScrollDown, double nativeScrollStep);
+    public boolean contains(double px, double py);
+    public boolean accepts(double px, double py, int direction, boolean edgeOnly);
 }
 ```
 
@@ -739,6 +842,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 public interface DesktopWindowDefinition<T, S> {
+    default java.util.List<DesktopScrollRegion> controllerScrollRegions(DesktopWindowContext<T, S> context);
+    default java.util.List<DesktopWindowBounds> textInputBounds(DesktopWindowContext<T,S> context);
     default java.util.List<DesktopSurfaceControl> managementControls(DesktopWindowContext<T, S> context);
     default void renderManagementControls(DesktopRenderContext<T, S> context, java.util.List<DesktopControlState> controls);
     default java.util.List<DesktopPopup> popups(DesktopWindowContext<T, S> context);
@@ -857,6 +962,87 @@ import net.minecraft.world.inventory.Slot;
 public record DesktopWindowSetupContext<T>( Minecraft minecraft, T model, Component originalTitle, int sessionId, String sourceKey, List<Slot> containerSlots, int defaultContentWidth, int defaultContentHeight, int defaultWindowWidth, int defaultWindowHeight ) {
     public DesktopWindowSetupContext( Minecraft minecraft, T model, Component originalTitle, int sessionId, String sourceKey, List<Slot> containerSlots, int defaultContentWidth, int defaultContentHeight, int defaultWindowWidth, int defaultWindowHeight );
     public boolean inventoryAvailable();
+}
+```
+
+## DesktopWorkspace
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopWorkspace.java).
+
+```java
+import java.util.List;
+import java.util.UUID;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+public interface DesktopWorkspace {
+    List<DesktopWorkspaceWindow> windows();
+    DesktopWindowHandle ensureWindow(DesktopWorkspaceWindow.Kind kind);
+    void restoreWindow(UUID id);
+    void initialize(int width, int height);
+    void tick();
+    void renderWindow(UUID id, GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick);
+    void renderWindowFrame(GuiGraphicsExtractor graphics, DesktopWindowBounds bounds, Component title);
+    default ItemStack previewIcon(UUID id);
+    void renderCarried(GuiGraphicsExtractor graphics, int mouseX, int mouseY);
+    boolean containsPointer(UUID id, double x, double y);
+    boolean dismissOutsidePointer(UUID id, double x, double y);
+    boolean pointer(UUID id, PointerAction action, double x, double y, int button, double deltaX, double deltaY);
+    boolean keyPressed(int key, int scanCode, int modifiers);
+    boolean keyReleased(int key, int scanCode, int modifiers);
+    boolean charTyped(char character, int modifiers);
+    boolean charTyped(int codepoint, int modifiers);
+    default boolean textInputActive(UUID id);
+    default List<DesktopWindowBounds> textInputBounds(UUID id);
+    net.minecraft.world.inventory.Slot hoveredSlot(UUID id, double x, double y);
+    List<DesktopSlotHit> visibleSlots(UUID id);
+    List<DesktopWindowBounds> visibleControls(UUID id);
+    List<DesktopControllerTarget> controllerTargets(UUID id);
+    boolean scrollController(UUID id, double x, double y, int direction, boolean edgeOnly);
+    default boolean controllerScrollAvailable(UUID id, double x, double y);
+    boolean creativeHotbarAt(UUID id, double x, double y, boolean stack);
+    default boolean creativeCatalogAt(UUID id, double x, double y);
+    default boolean creativeHotbarDeleteAt(UUID id, double x, double y);
+    DesktopWindowBounds presentationBounds(UUID id);
+    void clickAt(UUID id, double x, double y, int button, net.minecraft.world.inventory.ContainerInput type);
+    void dropCarried(int button);
+    default ItemStack carriedStack();
+    void cancelInput();
+    void transferPair(UUID first, UUID second);
+    boolean sortWindow(UUID source, boolean force);
+    default boolean canSortWindow(UUID source);
+    DesktopContextualMenu contextualMenu(UUID id);
+    boolean craftToWindow(UUID source, UUID destination, net.minecraft.world.item.crafting.display.RecipeDisplayId recipe);
+    default boolean craftStackToWindow(UUID source, UUID destination, net.minecraft.world.item.crafting.display.RecipeDisplayId recipe);
+    boolean prepareCookingRecipe(UUID source, net.minecraft.world.item.crafting.display.RecipeDisplayId recipe);
+    boolean beginRecipeHover(UUID source);
+    boolean updateRecipeHover(UUID source, net.minecraft.world.item.crafting.display.RecipeDisplayId recipe);
+    void endRecipeHover(UUID source);
+    List<DesktopRecipeGhost> recipeHoverGhosts(UUID source);
+    default boolean recipeHoverRejected(UUID source);
+    void setContextualRecipePresentation(boolean enabled);
+    DesktopContextualBookHint contextualBookHint(UUID id);
+    boolean selectContextualTab(UUID id, net.minecraft.resources.Identifier tab);
+    void protectWindow(UUID id);
+    void forceInventoryHud(boolean enabled);
+    long closeAllHoldMillis();
+    void closeClosableWindows();
+    boolean isValid();
+    boolean isNativeScreenActive();
+    enum PointerAction {
+        PRESS, RELEASE, MOVE, DRAG, SCROLL
+    }
+}
+```
+
+## DesktopWorkspaceHost
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopWorkspaceHost.java).
+
+```java
+public interface DesktopWorkspaceHost {
+    boolean enabled();
+    void opened(DesktopWorkspace workspace);
 }
 ```
 
@@ -1049,6 +1235,7 @@ public interface RecipeBrowserAccess {
     void toggleRecipeSortStage(RecipeBrowserSortStage stage);
     RecipeBrowserTransferPlan recipeTransferPlan(RecipeBrowserRecipe recipe, AbstractContainerMenu menu);
     RecipeBrowserEntry recipeIngredientAt(RecipeBrowserRecipe recipe, int x, int y, int mouseX, int mouseY);
+    default List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> recipeIngredientBounds(RecipeBrowserRecipe recipe,int x,int y);
     boolean handleRecipeMouseScrolled(RecipeBrowserRecipe recipe, int x, int y, double mouseX, double mouseY, double scrollX, double scrollY);
     boolean handleRecipeMouseClicked(RecipeBrowserRecipe recipe, int x, int y, MouseButtonEvent event, boolean doubleClick);
     boolean handleRecipeMouseReleased(RecipeBrowserRecipe recipe, int x, int y, MouseButtonEvent event);

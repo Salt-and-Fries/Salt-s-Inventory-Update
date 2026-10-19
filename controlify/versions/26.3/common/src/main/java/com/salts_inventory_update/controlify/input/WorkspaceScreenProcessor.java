@@ -31,6 +31,14 @@ final class WorkspaceScreenProcessor<M extends AbstractContainerMenu, T extends 
     @Override public void onInputModeChanged(InputMode mode) { }
 
     @Override
+    public boolean tryOpenKeyboard(ControllerEntity controller,
+            net.minecraft.client.gui.components.events.GuiEventListener component) {
+        // Let the hosted widget acquire native focus first. The workspace then opens its
+        // keyboard through the API owner, preserving modal input and the correct text target.
+        return false;
+    }
+
+    @Override
     protected void handleTabNavigation(ControllerEntity controller) {
         // Physical LB/RB are reserved for cycling workspace windows.
     }

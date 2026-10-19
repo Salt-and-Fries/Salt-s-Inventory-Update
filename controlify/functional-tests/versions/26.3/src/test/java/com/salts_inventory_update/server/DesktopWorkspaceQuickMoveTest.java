@@ -48,7 +48,7 @@ final class DesktopWorkspaceQuickMoveTest {
     @BeforeAll static void bootstrap() throws Exception {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
-        for (var item : List.of(Items.DIRT, Items.SAND, Items.OAK_PLANKS, Items.IRON_INGOT, Items.BANNER.white())) {
+        for (var item : List.of(Items.DIRT, Items.SAND, Items.OAK_LOG, Items.OAK_PLANKS, Items.IRON_INGOT, Items.BANNER.white())) {
             item.builtInRegistryHolder().bindComponents(net.minecraft.core.component.DataComponentMap.builder()
                     .set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, item == Items.BANNER.white() ? 16 : 64).build());
         }
@@ -247,6 +247,38 @@ final class DesktopWorkspaceQuickMoveTest {
             11, 202, 5, 0, 0, 7, new net.minecraft.world.item.crafting.display.RecipeDisplayId(8)));
         assertThrows(IllegalArgumentException.class, () -> new DesktopPackets.DesktopCraftToWindowPayload(101, 1, 303,
             11, 202, 5, 0, 303, -1, new net.minecraft.world.item.crafting.display.RecipeDisplayId(8)));
+    }
+
+    @Test void stackCraftSelectsOnlyCapacityNeededFromLargeDestinations() throws Exception {
+        var container = new SimpleContainer(100);
+        java.util.List<Slot> slots = new java.util.ArrayList<>();
+        for (int i=0;i<100;i++) slots.add(new Slot(container,i,0,0));
+        Object selected = invoke("contextualCraftTargets",player,new ItemStack(Items.OAK_PLANKS,4),slots,java.util.Map.of());
+        assertEquals(java.util.List.of(slots.getFirst()),selected,"Large destinations must not multiply transactional validation for every batch");
+        assertTrue(container.isEmpty());
+    }
+
+    @Test void stackCraftCanUseCapacityFreedByTheLastIngredientInAnotherView() throws Exception {
+        var container = new SimpleContainer(1);
+        container.setItem(0,new ItemStack(Items.OAK_LOG));
+        Slot target = new Slot(container,0,0,0), ingredient = new Slot(container,0,0,0);
+        assertEquals(false,invoke("craftOutputFits",player,new ItemStack(Items.OAK_PLANKS,4),java.util.List.of(target)));
+        assertEquals(java.util.List.of(target),invoke("contextualCraftTargets",player,new ItemStack(Items.OAK_PLANKS,4),
+            java.util.List.of(target),java.util.Map.of(ingredient,ItemStack.EMPTY)));
+        assertTrue(container.getItem(0).is(Items.OAK_LOG),"Capacity planning cannot mutate the ingredient");
+    }
+
+    @Test void stackCraftUsesSeparateChannelAndRetainsBothAuthenticatedMenuIdentities() {
+        var single = new DesktopPackets.DesktopCraftToWindowPayload(101,1,303,11,202,5,0,303,7,
+            new net.minecraft.world.item.crafting.display.RecipeDisplayId(8));
+        var packet = new DesktopPackets.DesktopCraftStackToWindowPayload(single);
+        RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(),RegistryAccess.EMPTY);
+        try {
+            DesktopPackets.DesktopCraftStackToWindowPayload.CODEC.encode(buffer,packet);
+            assertEquals(packet,DesktopPackets.DesktopCraftStackToWindowPayload.CODEC.decode(buffer));
+            assertNotEquals(single.type(),packet.type());
+        } finally {buffer.release();}
+        assertThrows(NullPointerException.class,() -> new DesktopPackets.DesktopCraftStackToWindowPayload((DesktopPackets.DesktopCraftToWindowPayload)null));
     }
 
     @Test void contextualCharacterPacketCanTargetPlayerStorageWithinSameAuthorizedMenu() {
@@ -488,17 +520,67 @@ final class DesktopWorkspaceQuickMoveTest {
         assertEquals(0, player.droppedCount, "Unmoved furnace output remains in its source slot");
     }
 
-    @Test void onlyPlayerStorageAndDefaultMayUseNativeResultShortcut() throws Exception {
+    @Test void craftingUsesExplicitHotbarPriorityWhileDefaultRetainsNativeShortcut() throws Exception {
         AbstractContainerMenu source = resultMenu(CraftingMenu.class, 0, new ItemStack(Items.OAK_PLANKS, 4),
                 new int[1], new int[1], null);
         Object slotSource = construct("SlotSource", 11, source, source.slots.getFirst(), null);
-        for (int kind : new int[]{DesktopPackets.QUICK_TARGET_DEFAULT, DesktopPackets.QUICK_TARGET_PLAYER_STORAGE}) {
-            assertEquals(true, invoke("usesNativeResultQuickMove", kind, slotSource, 0));
-        }
+        assertEquals(true, invoke("usesNativeResultQuickMove", DesktopPackets.QUICK_TARGET_DEFAULT, slotSource, 0));
+        assertEquals(false, invoke("usesNativeResultQuickMove", DesktopPackets.QUICK_TARGET_PLAYER_STORAGE, slotSource, 0));
         for (int kind : new int[]{DesktopPackets.QUICK_TARGET_PLAYER_EQUIPMENT, DesktopPackets.QUICK_TARGET_SESSION,
                 DesktopPackets.QUICK_TARGET_HOTBAR}) {
             assertEquals(false, invoke("usesNativeResultQuickMove", kind, slotSource, 0));
         }
+    }
+
+    @Test void playerStorageQuickMoveSwapsOnlyBetweenHotbarAndMainInventory() throws Exception {
+        Slot main = player.inventoryMenu.getSlot(9), hotbar = player.inventoryMenu.getSlot(36);
+        main.set(new ItemStack(Items.DIRT, 17));
+        Object source = construct("SlotSource", 0, player.inventoryMenu, main, null);
+        @SuppressWarnings("unchecked") var targets = (List<Slot>) invoke("quickMoveTargets", player, sessions, source,
+            DesktopPackets.QUICK_TARGET_PLAYER_STORAGE, 0);
+        assertEquals(player.inventoryMenu.slots.subList(36, 45), targets);
+        assertTrue((Boolean) invoke("moveSlotStack", player, sessions, source, player.inventoryMenu, targets, construct("QuickMoveWorkBudget", 100_000)));
+        assertEquals(17, hotbar.getItem().getCount());
+        assertTrue(main.getItem().isEmpty());
+        source = construct("SlotSource", 0, player.inventoryMenu, hotbar, null);
+        @SuppressWarnings("unchecked") var back = (List<Slot>) invoke("quickMoveTargets", player, sessions, source,
+            DesktopPackets.QUICK_TARGET_PLAYER_STORAGE, 0);
+        assertEquals(player.inventoryMenu.slots.subList(9, 36), back);
+        assertTrue((Boolean) invoke("moveSlotStack", player, sessions, source, player.inventoryMenu, back, construct("QuickMoveWorkBudget", 100_000)));
+        assertEquals(17, main.getItem().getCount());
+        assertTrue(hotbar.getItem().isEmpty());
+        assertEquals(0, count(targets(new TestMenu(), DesktopPackets.QUICK_TARGET_PLAYER_EQUIPMENT)));
+    }
+
+    @Test void craftedOutputUsesEmptyHotbarBeforeMergingIntoMainInventory() throws Exception {
+        player.inventoryMenu.getSlot(9).set(new ItemStack(Items.OAK_PLANKS, 12));
+        var source = resultMenu(CraftingMenu.class, 0, new ItemStack(Items.OAK_PLANKS, 4), new int[1], new int[1], () -> ItemStack.EMPTY);
+        assertTrue(transfer(source, DesktopPackets.QUICK_TARGET_PLAYER_STORAGE));
+        assertEquals(4, player.inventoryMenu.getSlot(36).getItem().getCount());
+        assertEquals(12, player.inventoryMenu.getSlot(9).getItem().getCount());
+    }
+
+    @Test void recipeWheelCapacitySelectionReservesHotbarBeforeMainMerges() throws Exception {
+        player.inventoryMenu.getSlot(9).set(new ItemStack(Items.OAK_PLANKS, 12));
+        var source = resultMenu(CraftingMenu.class, 0, new ItemStack(Items.OAK_PLANKS, 4), new int[1], new int[1], () -> ItemStack.EMPTY);
+        var candidates = targets(source, DesktopPackets.QUICK_TARGET_PLAYER_STORAGE);
+        assertEquals(List.of(player.inventoryMenu.getSlot(36)), invoke("contextualCraftTargets", player,
+            new ItemStack(Items.OAK_PLANKS,4), candidates, java.util.Map.of()));
+        for (int i=36;i<45;i++) player.inventoryMenu.getSlot(i).set(new ItemStack(Items.SAND,64));
+        player.inventoryMenu.getSlot(36).set(new ItemStack(Items.OAK_PLANKS,63));
+        assertEquals(List.of(player.inventoryMenu.getSlot(36),player.inventoryMenu.getSlot(9)), invoke("contextualCraftTargets", player,
+            new ItemStack(Items.OAK_PLANKS,4), candidates, java.util.Map.of()));
+    }
+
+    @Test void craftedOutputFillsHotbarCapacityThenOverflowsToMainInventory() throws Exception {
+        for (int i = 36; i < 45; i++) player.inventoryMenu.getSlot(i).set(new ItemStack(Items.SAND, 64));
+        player.inventoryMenu.getSlot(36).set(new ItemStack(Items.OAK_PLANKS, 63));
+        player.inventoryMenu.getSlot(9).set(new ItemStack(Items.OAK_PLANKS, 12));
+        var source = resultMenu(CraftingMenu.class, 0, new ItemStack(Items.OAK_PLANKS, 4), new int[1], new int[1], () -> ItemStack.EMPTY);
+        assertTrue(transfer(source, DesktopPackets.QUICK_TARGET_PLAYER_STORAGE));
+        assertEquals(64, player.inventoryMenu.getSlot(36).getItem().getCount());
+        assertEquals(15, player.inventoryMenu.getSlot(9).getItem().getCount());
+        assertEquals(0, player.droppedCount);
     }
 
     @Test void ordinaryFakeUiSourceCannotUseVanillaResultException() throws Exception {

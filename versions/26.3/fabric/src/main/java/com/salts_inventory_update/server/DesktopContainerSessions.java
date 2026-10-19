@@ -241,6 +241,12 @@ public final class DesktopContainerSessions {
                 () -> craftToWindow(context.player(), payload)
             ))
         );
+        ServerPlayNetworking.registerGlobalReceiver(DesktopPackets.DesktopCraftStackToWindowPayload.TYPE, (payload, context) ->
+            context.server().execute(() -> handleMutation(
+                context.player(), payload.request().connectionNonce(), payload.request().playerSessionToken(), payload.request().mutationId(), "craft-stack-to-window",
+                () -> craftToWindow(context.player(), payload.request(), true)
+            ))
+        );
         ServerPlayNetworking.registerGlobalReceiver(DesktopJeiTransferPayload.TYPE, (payload, context) ->
             context.server().execute(() -> handleMutation(
                 context.player(), payload.connectionNonce(), payload.playerSessionToken(), payload.mutationId(), "jei-transfer",
@@ -1160,7 +1166,7 @@ public final class DesktopContainerSessions {
                 if (preAuthorizationCost <= 0.0D
                     || sessions.allowOperation(player, operation + "-preauthorize", preAuthorizationCost)) {
                     mutation.run();
-                    if (operation.equals("craft-to-window") && sessions.recipeHover != null) {
+                    if ((operation.equals("craft-to-window") || operation.equals("craft-stack-to-window")) && sessions.recipeHover != null) {
                         RecipeHover hover = sessions.recipeHover;
                         restoreRecipeHoverIngredients(player, sessions, hover);
                         stageRecipeHover(player, sessions, hover);
@@ -2915,7 +2921,8 @@ public final class DesktopContainerSessions {
     }
 
     private static boolean usesNativeResultQuickMove(int targetKind, SlotSource source, int slotIndex) {
-        return (targetKind == DesktopPackets.QUICK_TARGET_DEFAULT || targetKind == DesktopPackets.QUICK_TARGET_PLAYER_STORAGE)
+        return (targetKind == DesktopPackets.QUICK_TARGET_DEFAULT || targetKind == DesktopPackets.QUICK_TARGET_PLAYER_STORAGE
+            && !(source.menu instanceof AbstractCraftingMenu))
             && isVanillaResultSource(source, slotIndex);
     }
 
@@ -3201,6 +3208,10 @@ public final class DesktopContainerSessions {
     }
 
     private static void craftToWindow(ServerPlayer player, DesktopPackets.DesktopCraftToWindowPayload payload) {
+        craftToWindow(player, payload, false);
+    }
+
+    private static void craftToWindow(ServerPlayer player, DesktopPackets.DesktopCraftToWindowPayload payload, boolean stack) {
         PlayerSessions sessions = PLAYERS.get(player);
         if (sessions == null || !mayMutateInventory(player) || !sessions.allowOperation(player, "craft-to-window", 4.0D)
             || !player.inventoryMenu.getCarried().isEmpty()) return;
@@ -3219,44 +3230,84 @@ public final class DesktopContainerSessions {
             || displayInfo.parent().value().placementInfo().isImpossibleToPlace()) return;
         List<Slot> grid = crafting.getInputGridSlots();
         if (grid.stream().anyMatch(slot -> !slot.isActive() || slot.isFake() || !slot.mayPickup(player) || DesktopItemSourceLocks.isSlotLocked(player, slot))) return;
-        List<Slot> ingredientSources = contextualRecipeSourceSlots(player, sessions, new HashSet<>(grid));
-        List<JeiTransferRequirement> requirements = contextualCraftingRequirements(crafting, recipe, ingredientSources);
-        if (requirements == null) return;
-        JeiTransferSimulation placement = simulateJeiTransfer(player, grid, requirements, ingredientSources, false, 1);
-        if (placement == null) return;
-        var simulatedInput = net.minecraft.world.item.crafting.CraftingInput.of(crafting.getGridWidth(), crafting.getGridHeight(),
-            grid.stream().map(slot -> placement.targetStacks().getOrDefault(slot, ItemStack.EMPTY)).toList());
-        if (!recipe.matches(simulatedInput, player.level())) return;
         SlotSource source = resolveSlot(player, sessions, payload.sourceSessionId(), crafting.getResultSlot().index);
         if (source == null || !allowsQuickMoveRouting(crafting, source.slot,
             payload.targetSessionId() == DesktopPackets.PLAYER_MENU_SESSION ? DesktopPackets.QUICK_TARGET_PLAYER_STORAGE : DesktopPackets.QUICK_TARGET_SESSION)) return;
         List<Slot> targets = quickMoveTargets(player, sessions, source,
             payload.targetSessionId() == DesktopPackets.PLAYER_MENU_SESSION ? DesktopPackets.QUICK_TARGET_PLAYER_STORAGE : DesktopPackets.QUICK_TARGET_SESSION,
             payload.targetSessionId());
-        targets = uniqueQuickMoveTargets(source, targetAuthorization.menu(), targets);
-        ItemStack preview = recipe.assemble(simulatedInput);
-        // Check before moving any ingredients. Partial output insertion must never consume a recipe.
-        if (preview.isEmpty() || !craftOutputFits(player, preview, targets)) return;
-        List<Slot> acceptedTargets = targets;
-        Map<Slot, ItemStack> originals = contextualOriginalStacks(placement);
-        boolean[] extractionStarted = {false};
-        runGestureMutation(player, sessions, "craft-to-window", () -> {
-            withMenuNetworkSession(player, sessions, crafting, () -> applyJeiTransferSimulation(placement));
-            ItemStack output = crafting.getResultSlot().getItem();
-            if (!output.isEmpty()
-                && ItemStack.isSameItemSameComponents(preview, output) && preview.getCount() == output.getCount()
-                && craftOutputFits(player, output, acceptedTargets)) {
-                extractionStarted[0] = true;
-                if (!moveSlotStack(player, sessions, source, targetAuthorization.menu(), acceptedTargets,
-                    new QuickMoveWorkBudget(MAX_QUICK_MOVE_TRANSACTION_WORK))) {
-                    extractionStarted[0] = false; restoreContextualStacks(originals);
-                }
-            } else {
-                restoreContextualStacks(originals);
+        List<Slot> acceptedTargets = uniqueQuickMoveTargets(source, targetAuthorization.menu(), targets);
+        QuickMoveWorkBudget workBudget = new QuickMoveWorkBudget(MAX_QUICK_MOVE_TRANSACTION_WORK);
+        ItemStack firstOutput = ItemStack.EMPTY;
+        int produced = 0, outputLimit = 0;
+        // Re-simulate after each complete native onTake operation. This respects recipe remainders,
+        // changing alternatives, source locks, destination capacity, and the real output stack limit.
+        do {
+            if (!contextualCraftSessionLive(player, sessions, sourceAuthorization)
+                || !contextualCraftSessionLive(player, sessions, targetAuthorization)) break;
+            List<Slot> ingredientSources = contextualRecipeSourceSlots(player, sessions, new HashSet<>(grid));
+            List<JeiTransferRequirement> requirements = contextualCraftingRequirements(crafting, recipe, ingredientSources);
+            if (requirements == null) break;
+            JeiTransferSimulation placement = simulateJeiTransfer(player, grid, requirements, ingredientSources, false, 1);
+            if (placement == null) break;
+            var simulatedInput = net.minecraft.world.item.crafting.CraftingInput.of(crafting.getGridWidth(), crafting.getGridHeight(),
+                grid.stream().map(slot -> placement.targetStacks().getOrDefault(slot, ItemStack.EMPTY)).toList());
+            if (!recipe.matches(simulatedInput, player.level())) break;
+            ItemStack preview = recipe.assemble(simulatedInput);
+            if (preview.isEmpty() || preview.getCount() <= 0) break;
+            if (firstOutput.isEmpty()) {
+                firstOutput = preview.copyWithCount(1);
+                outputLimit = stack ? preview.getMaxStackSize() : preview.getCount();
             }
-            clearDetachedCarried(sessions);
-            broadcastGesture(player, sessions);
-        }, () -> { if (!extractionStarted[0]) restoreContextualStacks(originals); });
+            if (!ItemStack.isSameItemSameComponents(firstOutput, preview) || preview.getCount() > outputLimit - produced) break;
+            List<Slot> batchTargets = contextualCraftTargets(player, preview, acceptedTargets, placement.sourceStacks());
+            if (batchTargets.isEmpty()) break;
+            Map<Slot, ItemStack> originals = contextualOriginalStacks(placement);
+            boolean[] extractionStarted = {false}, moved = {false};
+            boolean completed = runGestureMutation(player, sessions, "craft-to-window", () -> {
+                withMenuNetworkSession(player, sessions, crafting, () -> applyJeiTransferSimulation(placement));
+                ItemStack output = crafting.getResultSlot().getItem();
+                if (!output.isEmpty() && ItemStack.isSameItemSameComponents(preview, output) && preview.getCount() == output.getCount()
+                    && contextualCraftSessionLive(player, sessions, sourceAuthorization) && contextualCraftSessionLive(player, sessions, targetAuthorization)
+                    && craftOutputFits(player, output, batchTargets)) {
+                    extractionStarted[0] = true;
+                    moved[0] = moveSlotStack(player, sessions, source, targetAuthorization.menu(), batchTargets, workBudget);
+                    if (!moved[0]) { extractionStarted[0] = false; restoreContextualStacks(originals); }
+                } else restoreContextualStacks(originals);
+            }, () -> { if (!extractionStarted[0]) restoreContextualStacks(originals); });
+            if (!completed || !moved[0]) break;
+            produced += preview.getCount();
+        } while (stack && produced < outputLimit);
+        clearDetachedCarried(sessions);
+        broadcastGesture(player, sessions);
+    }
+
+    private static boolean contextualCraftSessionLive(ServerPlayer player, PlayerSessions sessions, SessionAuthorization authorization) {
+        if (PLAYERS.get(player) != sessions) return false;
+        Session session = authorization.session();
+        if (session == null) return authorization.menu() == player.inventoryMenu;
+        return sessions.sessions.get(session.sessionId) == session && session.menu == authorization.menu()
+            && session.visibleToClient && companionTransferAuthorized(player, sessions, session) && session.menu.stillValid(player);
+    }
+
+    /** Select only enough real capacity for one batch, including space freed by its ingredient placement. */
+    private static List<Slot> contextualCraftTargets(ServerPlayer player, ItemStack output, List<Slot> candidates, Map<Slot, ItemStack> consumedSources) {
+        List<Slot> result = new ArrayList<>();
+        long capacity = 0;
+        boolean hotbarFirst = candidates.stream().anyMatch(slot -> isPlayerHotbarSlot(player, slot));
+        for (int pass = 0; pass < (hotbarFirst ? 4 : 2); pass++) for (Slot slot : candidates) {
+            if (hotbarFirst && isPlayerHotbarSlot(player, slot) != (pass < 2)) continue;
+            if (!slot.isActive() || slot.isFake() || DesktopItemSourceLocks.isSlotLocked(player, slot) || !slot.mayPlace(output)) continue;
+            ItemStack present = slot.getItem();
+            for (var entry : consumedSources.entrySet()) if (entry.getKey().container == slot.container
+                && entry.getKey().getContainerSlot() == slot.getContainerSlot()) { present = entry.getValue(); break; }
+            if (present.isEmpty() != (pass % 2 == 1) || !present.isEmpty() && !ItemStack.isSameItemSameComponents(present, output)) continue;
+            int available = Math.max(0, Math.min(output.getMaxStackSize(), slot.getMaxStackSize(output)) - present.getCount());
+            if (available == 0) continue;
+            result.add(slot); capacity += available;
+            if (capacity >= output.getCount()) return result;
+        }
+        return List.of();
     }
 
     private static List<Slot> contextualRecipeSourceSlots(ServerPlayer player, PlayerSessions sessions, Set<Slot> excluded) {
@@ -4207,6 +4258,9 @@ public final class DesktopContainerSessions {
             return equipment;
         }
         if (targetKind == DesktopPackets.QUICK_TARGET_PLAYER_STORAGE) {
+            if (InventoryExpansion.isMainInventorySlot(player, source.slot)
+                || isPlayerInventorySlot(player, source.slot) && source.slot.getContainerSlot() < 9)
+                return defaultPlayerTargets(player, source.slot);
             List<Slot> storage = new ArrayList<>(mainInventorySlots(player));
             storage.addAll(hotbarSlots(player));
             return storage;
@@ -4308,12 +4362,20 @@ public final class DesktopContainerSessions {
         }
 
         try {
+            boolean hotbarFirst = nativeResult && source.menu instanceof AbstractCraftingMenu
+                && targetMenu == player.inventoryMenu && uniqueTargets.stream().anyMatch(slot -> isPlayerHotbarSlot(player, slot));
+            java.util.function.Predicate<Slot> first = slot -> !hotbarFirst || isPlayerHotbarSlot(player, slot);
             int moved = insertIntoMatchingSlots(
-                player, sessions, source, targetMenu, plans, moving, carriedBefore
+                player, sessions, source, targetMenu, plans, moving, carriedBefore, first
             );
             moved += insertIntoEmptySlots(
-                player, sessions, source, targetMenu, plans, moving, carriedBefore
+                player, sessions, source, targetMenu, plans, moving, carriedBefore, first
             );
+            if (hotbarFirst) {
+                java.util.function.Predicate<Slot> remaining = slot -> !isPlayerHotbarSlot(player, slot);
+                moved += insertIntoMatchingSlots(player, sessions, source, targetMenu, plans, moving, carriedBefore, remaining);
+                moved += insertIntoEmptySlots(player, sessions, source, targetMenu, plans, moving, carriedBefore, remaining);
+            }
             // Even a target that reports a zero insertion may have run arbitrary container
             // callbacks. Validate the complete source/target set before treating this as a no-op.
             verifyQuickMoveTransaction(player, carriedBefore, source, moving, plans);
@@ -4411,7 +4473,8 @@ public final class DesktopContainerSessions {
         AbstractContainerMenu targetMenu,
         List<QuickMoveTargetPlan> targets,
         ItemStack moving,
-        ItemStack carriedBefore
+        ItemStack carriedBefore,
+        java.util.function.Predicate<Slot> eligible
     ) {
         if (!moving.isStackable()) {
             return 0;
@@ -4423,6 +4486,7 @@ public final class DesktopContainerSessions {
                 break;
             }
             Slot target = plan.slot();
+            if (!eligible.test(target)) continue;
             if (!ItemStack.matches(plan.expected(), target.getItem())) {
                 throw new IllegalStateException("Quick-move target changed before matching-slot insertion");
             }
@@ -4450,7 +4514,8 @@ public final class DesktopContainerSessions {
         AbstractContainerMenu targetMenu,
         List<QuickMoveTargetPlan> targets,
         ItemStack moving,
-        ItemStack carriedBefore
+        ItemStack carriedBefore,
+        java.util.function.Predicate<Slot> eligible
     ) {
         int moved = 0;
         for (QuickMoveTargetPlan plan : targets) {
@@ -4458,6 +4523,7 @@ public final class DesktopContainerSessions {
                 break;
             }
             Slot target = plan.slot();
+            if (!eligible.test(target)) continue;
             if (!ItemStack.matches(plan.expected(), target.getItem())) {
                 throw new IllegalStateException("Quick-move target changed before empty-slot insertion");
             }
@@ -4955,6 +5021,20 @@ public final class DesktopContainerSessions {
         ));
     }
 
+    private static boolean isPlayerHotbarSlot(ServerPlayer player, Slot slot) {
+        return isPlayerInventorySlot(player, slot) && slot.getContainerSlot() >= 0 && slot.getContainerSlot() < 9;
+    }
+
+    /** Vanilla owns the grid return/drop rules; the retained desktop cursor has separate ownership. */
+    private static void settlePlayerCraftingGrid(ServerPlayer player, PlayerSessions sessions) {
+        endRecipeHover(player, sessions);
+        ItemStack carried = player.inventoryMenu.getCarried().copy();
+        player.inventoryMenu.setCarried(ItemStack.EMPTY);
+        try { player.inventoryMenu.removed(player); }
+        finally { setSharedCarried(player, sessions, carried); }
+        broadcastGesture(player, sessions);
+    }
+
     private static void closeSession(ServerPlayer player, DesktopCloseSessionPayload payload) {
         PlayerSessions sessions = PLAYERS.get(player);
         if (sessions == null
@@ -4963,6 +5043,10 @@ public final class DesktopContainerSessions {
             || authorizeSession(
                 player, sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(), 0L, false, "close"
             ) == null) {
+            return;
+        }
+        if (payload.sessionId() == DesktopPackets.PLAYER_MENU_SESSION) {
+            settlePlayerCraftingGrid(player, sessions);
             return;
         }
         Session closing = sessions.sessions.get(payload.sessionId());

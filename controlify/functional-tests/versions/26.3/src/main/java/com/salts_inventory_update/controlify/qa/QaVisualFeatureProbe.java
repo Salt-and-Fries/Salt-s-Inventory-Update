@@ -48,7 +48,12 @@ public final class QaVisualFeatureProbe {
     private static String soundAction;
     private static long soundStarted;
     private static int soundCalls;
+    private static boolean soundPreview;
+    private static long soundGeneration;
     private static final List<Map<String,Object>> acceptedSounds = new ArrayList<>();
+    private static final Map<SoundInstance,Long> soundInstances = new java.util.IdentityHashMap<>();
+    private static final List<Map<String,Object>> nativeSoundStops = new ArrayList<>();
+    private static long nativeSoundOrder, nextSoundInstance;
     private static final Map<String,Long> soundRequests = new LinkedHashMap<>(), soundAccepted = new LinkedHashMap<>();
     private static long rejectedSoundRequests;
     private static AlphabeticalRecipeIndex.Group alphabetGroup;
@@ -146,8 +151,13 @@ public final class QaVisualFeatureProbe {
         } catch (Exception failure) { throw new IllegalStateException("Decode actual runtime tuck texture "+id,failure); }
     }
 
-    public static void soundBefore(String action) {
-        soundAction = action; soundStarted = System.nanoTime(); soundCalls = 0; soundRequests.merge(action,1L,Long::sum);
+    public static void soundRequested(String action, boolean retained) {
+        soundRequests.merge(action,1L,Long::sum);
+        if (!retained) rejectedSoundRequests++;
+    }
+    public static void soundBefore(String action, boolean preview, long generation) {
+        soundAction = action; soundStarted = System.nanoTime(); soundCalls = 0;
+        soundPreview = preview; soundGeneration = generation;
     }
     public static void nativeSound(SoundInstance sound) {
         if (soundAction == null) return;
@@ -156,13 +166,35 @@ public final class QaVisualFeatureProbe {
         float volume = request.saltsQaRequestVolume(), pitch = request.saltsQaRequestPitch();
         var row = new LinkedHashMap<String,Object>();
         row.put("action",soundAction); row.put("scenario",QaFeatureProbe.scenario); row.put("atNanos",soundStarted);
+        var action = com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.valueOf(soundAction);
+        row.put("preview",soundPreview); row.put("generation",soundGeneration); row.put("priority",action.priority().name());
+        row.put("instance",soundInstances.computeIfAbsent(sound, ignored -> ++nextSoundInstance));
+        row.put("nativeOrder",++nativeSoundOrder);
         row.put("identifier",sound.getIdentifier().toString()); row.put("volume",volume); row.put("pitch",pitch);
         row.put("measurement","native-request-fields");
         row.put("source",sound.getSource().name()); row.put("relative",sound.isRelative()); row.put("looping",sound.isLooping());
         row.put("delay",sound.getDelay()); acceptedSounds.add(Map.copyOf(row)); soundAccepted.merge(soundAction,1L,Long::sum);
-        if (!sound.getIdentifier().toString().equals("minecraft:ui.button.click") || volume <= 0 || volume > .180001
-                || pitch < .64999 || pitch > 1.30001 || !sound.getSource().name().equals("UI")
+        if (!sound.getIdentifier().equals(action.event()) || volume <= 0 || volume > action.volume()+.000001
+                || Math.abs(pitch-1)> .000001 || !sound.getSource().name().equals("UI")
                 || !sound.isRelative() || sound.isLooping() || sound.getDelay()!=0) violation("unexpected actual native workspace sound="+row);
+    }
+    public static void nativeStop(SoundInstance sound) {
+        Long instance = soundInstances.get(sound);
+        if (instance == null) return;
+        nativeSoundStops.add(Map.of("instance",instance,"nativeOrder",++nativeSoundOrder,"atNanos",System.nanoTime(),
+            "identifier",sound.getIdentifier().toString(),"scenario",QaFeatureProbe.scenario,
+            "duringAction",soundAction == null ? "" : soundAction));
+    }
+    public static boolean navigationRestartsAreOrdered(List<Map<String,Object>> burst) {
+        if (burst.size() < 2) return false;
+        for (int index=1;index<burst.size();index++) {
+            var before=burst.get(index-1); var after=burst.get(index);
+            long beforeOrder=((Number)before.get("nativeOrder")).longValue(),afterOrder=((Number)after.get("nativeOrder")).longValue();
+            if (nativeSoundStops.stream().noneMatch(stop -> stop.get("instance").equals(before.get("instance"))
+                    && ((Number)stop.get("nativeOrder")).longValue()>beforeOrder && ((Number)stop.get("nativeOrder")).longValue()<afterOrder
+                    && stop.get("scenario").equals(after.get("scenario")))) return false;
+        }
+        return true;
     }
     public static void soundAfter(boolean played) {
         if (soundAction == null) return;
@@ -172,6 +204,33 @@ public final class QaVisualFeatureProbe {
     public static List<Map<String,Object>> sounds() { return List.copyOf(acceptedSounds); }
     public static long acceptedSoundCount() { return soundAccepted.values().stream().mapToLong(Long::longValue).sum(); }
     public static long rejectedSoundCount() { return rejectedSoundRequests; }
+    public static boolean soundPolicyBounded() {
+        Long generation=null, previous=null, navigation=null, result=null;
+        com.salts_inventory_update.controlify.model.UiSoundPolicy.Priority previousPriority=null;
+        var previousKinds = new LinkedHashMap<String,Long>();
+        for (var row : acceptedSounds) {
+            if (Boolean.TRUE.equals(row.get("preview"))) continue;
+            long epoch=((Number)row.get("generation")).longValue(),at=((Number)row.get("atNanos")).longValue();
+            if (generation==null || generation!=epoch) { previous=navigation=result=null;previousPriority=null;previousKinds.clear();generation=epoch; }
+            var action=com.salts_inventory_update.controlify.WorkspaceUiSounds.Action.valueOf((String)row.get("action"));
+            Long prior=previousKinds.put(action.name(),at);
+            if (prior!=null && at-prior<(action.intervalMillis()-2)*1_000_000L) return false;
+            if (action.priority()==com.salts_inventory_update.controlify.model.UiSoundPolicy.Priority.RESULT) {
+                if(result!=null && at-result<88_000_000L) return false;
+                result=at;
+            } else {
+                boolean fast=action.priority()==com.salts_inventory_update.controlify.model.UiSoundPolicy.Priority.NAVIGATION && action.intervalMillis()==0;
+                if(previous!=null && !(fast && previousPriority==com.salts_inventory_update.controlify.model.UiSoundPolicy.Priority.NAVIGATION)
+                    && at-previous<88_000_000L) return false;
+                if(action.priority()==com.salts_inventory_update.controlify.model.UiSoundPolicy.Priority.NAVIGATION) {
+                    if(!fast && navigation!=null && at-navigation<198_000_000L)return false;
+                    navigation=at;
+                }
+            }
+            previous=at; previousPriority=action.priority();
+        }
+        return !acceptedSounds.isEmpty();
+    }
     public static void overlayViewport(int width,int height) { overlayWidth = width; overlayHeight = height; }
     public static void alphabetBegin() { alphabetGroups.clear(); alphabetBounds.clear(); }
     private static final List<Map<String,Object>> alphabetLanes=new ArrayList<>();
@@ -248,6 +307,7 @@ public final class QaVisualFeatureProbe {
         result.put("texturedTuckAtlasFrames",List.copyOf(tuckStateFrames));
         result.put("workspaceUiSoundRequests",Map.copyOf(soundRequests)); result.put("workspaceUiSoundAccepted",Map.copyOf(soundAccepted));
         result.put("workspaceUiSoundSuppressedRequests",rejectedSoundRequests); result.put("workspaceUiNativeSounds",List.copyOf(acceptedSounds));
+        result.put("workspaceUiNativeSoundStops",List.copyOf(nativeSoundStops));
         result.put("nativeAlphabetFrames",alphabetFrames); result.put("nativeAlphabetMarkers",alphabetMarkers);
         result.put("nativeAlphabetTextDraws",alphabetNativeTextDraws); result.put("lastNativeAlphabetGroups",List.copyOf(alphabetGroups));
         result.put("nativeAlphabetLabelBoundsFrames",alphabetBoundsFrames); result.put("nativeAlphabetAnchorTicks",alphabetAnchorTicks);

@@ -66,6 +66,7 @@ public final class DesktopPackets {
         PayloadTypeRegistry.serverboundPlay().register(DesktopButtonPayload.TYPE, DesktopButtonPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopPlaceRecipePayload.TYPE, DesktopPlaceRecipePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopCraftToWindowPayload.TYPE, DesktopCraftToWindowPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopCraftStackToWindowPayload.TYPE, DesktopCraftStackToWindowPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopCookingRecipePayload.TYPE, DesktopCookingRecipePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopRecipeHoverPayload.TYPE, DesktopRecipeHoverPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopJeiTransferPayload.TYPE, DesktopJeiTransferPayload.CODEC);
@@ -843,6 +844,17 @@ public final class DesktopPackets {
             buf.writeVarInt(targetSessionId); buf.writeLong(targetSessionToken); buf.writeVarInt(targetStateId);
             RecipeDisplayId.STREAM_CODEC.encode(buf, recipeId);
         }
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    /** Separate opt-in packet keeps single-craft wire compatibility unchanged. */
+    public record DesktopCraftStackToWindowPayload(DesktopCraftToWindowPayload request) implements CustomPacketPayload {
+        public static final Type<DesktopCraftStackToWindowPayload> TYPE = new Type<>(id("desktop_craft_stack_to_window"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopCraftStackToWindowPayload> CODEC = CustomPacketPayload.codec(
+            DesktopCraftStackToWindowPayload::write, DesktopCraftStackToWindowPayload::new);
+        public DesktopCraftStackToWindowPayload { java.util.Objects.requireNonNull(request); }
+        private DesktopCraftStackToWindowPayload(RegistryFriendlyByteBuf buf) { this(new DesktopCraftToWindowPayload(buf)); }
+        private void write(RegistryFriendlyByteBuf buf) { request.write(buf); }
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 

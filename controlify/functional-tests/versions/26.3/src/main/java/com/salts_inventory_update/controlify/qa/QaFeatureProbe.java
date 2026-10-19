@@ -13,10 +13,15 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 public final class QaFeatureProbe {
     public static long tabFrames, tooltipCalls, cursorCalls;
     public static Map<UUID, String> tabNames = Map.of();
+    public record TabIcon(net.minecraft.world.item.ItemStack stack, double top, double bottom, double iconTop) { }
+    public static final Map<UUID, TabIcon> tabIcons = new LinkedHashMap<>();
+    public static boolean renderingTabs;
+    public static int tabTextDraws;
     public static int tabCount, tooltipX, tooltipY, tooltipCursorX, tooltipCursorY;
     public static float cursorScaleX, cursorScaleY, cursorExpectedScale;
     public static int cursorGuiX, cursorGuiY;
     private static int extractingTabs;
+    private static java.util.List<UUID> extractingTabOrder = java.util.List.of();
     private static final java.util.List<String> sortRequests = new java.util.ArrayList<>();
     private static final java.util.List<String> creativeActions = new java.util.ArrayList<>();
     private static final java.util.List<String> navigationCalls = new java.util.ArrayList<>();
@@ -54,10 +59,17 @@ public final class QaFeatureProbe {
     public static void beginTabs(Map<UUID, DesktopWorkspaceWindow> windows) {
         var names = new LinkedHashMap<UUID, String>();
         windows.forEach((id, window) -> names.put(id, window.title()));
-        tabNames = Map.copyOf(names); extractingTabs = 0;
+        tabNames = Map.copyOf(names); extractingTabOrder = java.util.List.copyOf(windows.keySet());
+        extractingTabs = 0; tabIcons.clear(); tabTextDraws = 0; renderingTabs = true;
     }
     public static void tab() { extractingTabs++; }
-    public static void finishTabs() { tabCount = extractingTabs; tabFrames++; }
+    public static void finishTabs() { tabCount = extractingTabs; tabFrames++; renderingTabs = false; }
+    public static void tabIcon(GuiGraphicsExtractor graphics, net.minecraft.world.item.ItemStack stack) {
+        if (!renderingTabs) return;
+        UUID window = extractingTabOrder.get(extractingTabs - 1);
+        var pose = graphics.pose();
+        tabIcons.put(window, new TabIcon(stack.copy(), pose.m21(), pose.m21() + 30 * pose.m11(), pose.m21() + 8 * pose.m11()));
+    }
     public static void tooltip(int x, int y) {
         if (!(Minecraft.getInstance().gui.screen() instanceof RadialInventoryScreen)) return;
         var mouse = Controlify.instance().virtualMouseHandler();

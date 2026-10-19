@@ -19,6 +19,9 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import com.salts_inventory_update.controlify.model.RadialStickDirection;
 import com.salts_inventory_update.controlify.ContextualRecipeBinding;
+import com.salts_inventory_update.controlify.WorkspaceUiSounds;
+import com.salts_inventory_update.controlify.CreativeSearchBinding;
+import com.salts_inventory_update.controlify.WorkspaceSearchKeyboard;
 
 import java.util.Objects;
 
@@ -38,6 +41,7 @@ public final class ControlifyInputBridge {
         }
         actions = Objects.requireNonNull(workspace, "workspace");
         ContextualRecipeBinding.initialize();
+        CreativeSearchBinding.initialize();
         router = new RadialSortInputRouter(workspace);
         ScreenProcessorProvider.registerProvider(screenClass, screen -> new WorkspaceScreenProcessor<>(screen));
 
@@ -65,6 +69,8 @@ public final class ControlifyInputBridge {
     public static void hoveredSlotChanged(AbstractContainerScreen<?> screen, Slot current, Slot previous) {
         if (current != previous && ScreenProcessorProvider.provide(screen) instanceof AbstractContainerScreenProcessor<?> processor) {
             processor.onHoveredSlotChanged(current, previous);
+            if (current != null && screen instanceof WorkspaceContainerScreen && usingController())
+                WorkspaceUiSounds.play(WorkspaceUiSounds.Action.HOVER);
         }
     }
 
@@ -82,6 +88,7 @@ public final class ControlifyInputBridge {
         ControllerStateView current = input.stateNow();
         ControllerStateView previous = input.stateThen();
         float threshold = input.settings().buttonActivationThreshold;
+        if (WorkspaceSearchKeyboard.suppressWorkspaceInput(current, threshold)) return true;
         InputBinding close = ControlifyBindings.GUI_BACK.on(controller);
         InputBinding inventory = ControlifyBindings.INVENTORY.on(controller);
         var nativeScreen = Minecraft.getInstance().gui.screen();
@@ -97,12 +104,24 @@ public final class ControlifyInputBridge {
             // Hand the release sample back before workspace routing too, so fresh bumpers/LT
             // and native inventory actions all apply in SIDE mode immediately.
             workspaceScreen.controllerContextualInput(false, 0, 0, 0, 0,
-                    false, false, false, false, false, false);
+                    false, false, false, false, false, false, false);
             contextual = false;
         }
         boolean recipeOwns = contextual || recipeHeld && workspaceScreen != null && workspaceScreen.controllerCanOpenContextual();
         InputBinding select = ControlifyBindings.INV_SELECT.on(controller);
+        InputBinding quickMove = ControlifyBindings.INV_QUICK_MOVE.on(controller);
+        boolean craftStackPressed = quickMove.boundInput().state(current) > threshold && quickMove.boundInput().state(previous) <= threshold;
         boolean confirmPressed = select.boundInput().state(current) > threshold && select.boundInput().state(previous) <= threshold;
+        boolean closeOwns = close.boundInput().state(current) > threshold || close.boundInput().state(previous) > threshold;
+        if (!closeOwns && !contextual && !actions.radialActive() && workspaceScreen != null) {
+            InputBinding search = CreativeSearchBinding.SEARCH.on(controller);
+            boolean openingSearchBlocked = router.awaitingOpeningTriggerRelease()
+                && search.boundInput().getRelevantInputs().contains(GamepadInputs.LEFT_TRIGGER_AXIS);
+            boolean searchPressed = !openingSearchBlocked && search.boundInput().state(current) > threshold
+                && search.boundInput().state(previous) <= threshold;
+            if (searchPressed && workspaceScreen.controllerCreativeSearch(false)) return true;
+            if (confirmPressed && workspaceScreen.controllerCreativeSearch(true)) return true;
+        }
         boolean consumed = router.update(new ControllerInputFrame(
                 !recipeOwns && leftTriggerHeld,
                 current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_RIGHT) - current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_LEFT),
@@ -135,7 +154,10 @@ public final class ControlifyInputBridge {
                 justPressed(current, previous, GamepadInputs.DPAD_RIGHT_BUTTON),
                 justPressed(current, previous, GamepadInputs.DPAD_UP_BUTTON), confirmPressed,
                 current.isButtonDown(GamepadInputs.LEFT_SHOULDER_BUTTON),
-                current.isButtonDown(GamepadInputs.RIGHT_SHOULDER_BUTTON))) return true;
+                current.isButtonDown(GamepadInputs.RIGHT_SHOULDER_BUTTON), craftStackPressed)) return true;
+        // Native Quick Move and cursor-drop can share Y and both run in one native sample.
+        // A creative hotbar deletion must own that sample, preserving any carried stack.
+        if (craftStackPressed && workspaceScreen.controllerCreativeDeleteHotbar()) return true;
         // Catalog actions use the same configured bindings as their native guide rows.
         // The full-stack action wins when both bindings share an input or fire together.
         if (inventory.boundInput().state(current) > threshold && inventory.boundInput().state(previous) <= threshold
@@ -208,6 +230,7 @@ public final class ControlifyInputBridge {
     }
 
     public static void reset() {
+        WorkspaceUiSounds.reset();
         if (router != null) {
             router.reset();
         }

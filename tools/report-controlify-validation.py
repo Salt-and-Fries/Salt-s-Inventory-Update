@@ -97,13 +97,16 @@ def gameplay(targets, args, runtime):
     rows = []
     for target in targets:
         name = f"{target['minecraft']}-{target['loader']}"
-        report = args.results_root / name / "results.json"
+        extended = args.extended_26_3 and target['minecraft'] == '26.3'
+        suffix = '-extended' if extended else ''
+        report = args.results_root / (name + suffix) / "results.json"
         row = {"minecraft": target["minecraft"], "loader": target["loader"], "status": "Pending"}
         if report.is_file():
             row["report"] = relative(report)
             try:
                 with contextlib.redirect_stdout(io.StringIO()):
-                    row.update(runtime.validate(target, args.results_root, args.artifacts, args.run_profile))
+                    profile = 'packaged-controlify-' + name + suffix if extended else args.run_profile
+                    row.update(runtime.validate(target, args.results_root, args.artifacts, profile, suffix, extended))
                 row["status"] = "Passed"
             except (AssertionError, OSError, ValueError, KeyError, TypeError) as error:
                 row["status"], row["details"] = "Needs rerun", str(error)
@@ -120,9 +123,11 @@ def markdown(summary, document):
     runs = summary["runtime"]
     verified = sum(row["status"] == "Passed" for row in runs)
     present = sum(row["status"] == "Present" for row in artifacts)
+    refresh = 'python tools/report-controlify-validation.py'
+    if summary.get('extended_26_3'): refresh += ' --extended-26-3 --artifacts dist'
     lines = ["# Controlify integration validation", "",
-             f"Generated from local evidence at {summary['generated_at']}. Refresh with "
-             "`python tools/report-controlify-validation.py`.", "",
+             f"Generated from local evidence at {summary['generated_at']}. Refresh with " +
+             f"`{refresh}`.", "",
              f"The complete target inventory contains **12 Minecraft/loader combinations**. "
              f"**{present}/12 matching Core and companion artifact pairs** are collected. "
              f"Packaged gameplay is verified for **{verified}/12 targets** against those exact artifacts.", ""]
@@ -130,7 +135,7 @@ def markdown(summary, document):
         lines += ["Full runtime matrix verification remains incomplete. Pending or stale/failed reports "
                   "below do not establish working gameplay for that target.", ""]
     lines += ["## Automated tests", "",
-              f"The seven scoped JUnit XML directories contain **{total['tests']} tests**, "
+              f"The {len(summary['junit'])} scoped JUnit XML directories contain **{total['tests']} tests**, "
               f"with {total['failures']} failures, {total['errors']} errors and {total['skipped']} skips. "
               f"All suites {'passed' if passed_tests else 'have not passed'}.", "",
               "| Suite | Tests | Status | Report |", "| --- | ---: | --- | --- |"]
@@ -229,6 +234,7 @@ def main():
     parser.add_argument("--artifacts", type=Path, default=ROOT / "dist/controlify-test")
     parser.add_argument("--companions", type=Path, default=ROOT / "dist/controlify")
     parser.add_argument("--run-profile", default="packaged-controlify")
+    parser.add_argument("--extended-26-3", action="store_true", help="Use the retained full 26.3 runs with the Extended module")
     parser.add_argument("--output", type=Path, default=ROOT / "controlify/VALIDATION.md")
     parser.add_argument("--summary", type=Path, default=ROOT / "build/controlify-validation.json")
     parser.add_argument("--require-runtime", action="store_true", help="Reject any missing, stale or failed gameplay target")
@@ -240,8 +246,10 @@ def main():
     targets = list(boundary.matrix(args.targets).values())
     suites = [junit("Controller model/input/render", ROOT / "controlify/model/build/test-results/test")]
     suites += [junit(f"Core {game}", ROOT / f"versions/{game}/fabric/build/test-results/test") for game in VERSIONS]
+    if args.extended_26_3:
+        suites += [junit("Extended 26.3 providers", ROOT / "compatibility/versions/26.3/fabric/build/test-results/test")]
     artifacts = inventory(targets, args.artifacts, args.companions, runtime)
-    summary = {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    summary = {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "extended_26_3": args.extended_26_3,
                "runtime_feature_areas_26_3": len(runtime.FEATURE_COVERAGE_26_3),
                "junit": suites, "junit_total": {key: sum(row[key] for row in suites)
                                                for key in ("tests", "failures", "errors", "skipped")},

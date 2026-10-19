@@ -771,13 +771,22 @@ public final class DesktopContainerClient {
     }
 
     public static boolean craftToWindow(int sourceSession, int targetSession, RecipeDisplayId recipe) {
+        return craftToWindow(sourceSession, targetSession, recipe, false);
+    }
+
+    public static boolean craftStackToWindow(int sourceSession, int targetSession, RecipeDisplayId recipe) {
+        return craftToWindow(sourceSession, targetSession, recipe, true);
+    }
+
+    private static boolean craftToWindow(int sourceSession, int targetSession, RecipeDisplayId recipe, boolean stack) {
         if (recipe == null || sourceSession == targetSession && sourceSession != DesktopPackets.PLAYER_MENU_SESSION || sessionAuth(sourceSession) == null || sessionAuth(targetSession) == null
-            || !ClientPlayNetworking.canSend(DesktopPackets.DesktopCraftToWindowPayload.TYPE)) return false;
+            || !ClientPlayNetworking.canSend(stack ? DesktopPackets.DesktopCraftStackToWindowPayload.TYPE : DesktopPackets.DesktopCraftToWindowPayload.TYPE)) return false;
         return queueMutation("craft-to-window", Set.copyOf(List.of(sourceSession, targetSession)), mutationId -> {
             SessionAuth source = sessionAuth(sourceSession), target = sessionAuth(targetSession);
             if (source == null || target == null || !CONNECTION.authorizes(CONNECTION.connectionNonce(), DesktopProtocol.CAP_RECIPE_TRANSFER, true)) return null;
-            return new DesktopPackets.DesktopCraftToWindowPayload(CONNECTION.connectionNonce(), mutationId, playerSessionToken,
+            var request = new DesktopPackets.DesktopCraftToWindowPayload(CONNECTION.connectionNonce(), mutationId, playerSessionToken,
                 sourceSession, source.token(), source.stateId(), targetSession, target.token(), target.stateId(), recipe);
+            return stack ? new DesktopPackets.DesktopCraftStackToWindowPayload(request) : request;
         });
     }
 

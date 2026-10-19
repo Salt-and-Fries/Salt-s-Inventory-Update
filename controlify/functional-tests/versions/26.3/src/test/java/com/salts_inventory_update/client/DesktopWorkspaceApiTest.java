@@ -655,6 +655,51 @@ final class DesktopWorkspaceApiTest {
         assertEquals(0x1F600, received.get(), "Native text events must not truncate a supplementary character to a UTF-16 char");
     }
 
+    @Test void dynamicApiControlsAndVirtualEntriesFollowCommittedSurfaceWithoutCreatingSlots() throws Exception {
+        InventoryDesktopScreen screen=screen();Object view=window(screen,"CLIENT_API","Unknown controls");
+        DesktopWindowSurface surface=DesktopWindowSurface.SALT.withRegions(List.of(
+            DesktopWindowRegion.interactive(12,24,32,16).withRole(DesktopHitRole.CONTROL),
+            DesktopWindowRegion.interactive(12,64,16,16).withRole(DesktopHitRole.SLOT),
+            DesktopWindowRegion.visual(80,20,32,16),DesktopWindowRegion.interactive(0,0,100,100)));
+        set(view,"apiSurface",surface);set(view,"apiDefinition",nativeDefinition(surface,new AtomicInteger(),new AtomicInteger(),List.of()));
+        DesktopWorkspace workspace=screen.workspaceAccess();
+        workspace.transferPair(id(view),id(view));
+        var first=workspace.visibleControls(id(view));assertEquals(2,first.size());
+        int x=(Integer)field(view,"x"),y=(Integer)field(view,"y");
+        assertEquals(new DesktopWindowBounds(x+12,y+24,32,16),first.getFirst());
+        assertNull(workspace.hoveredSlot(id(view),x+20,y+72),"A virtual API entry must retain its native handler, not invent an inventory slot");
+        set(view,"x",x+37);set(view,"y",y+13);
+        assertEquals(new DesktopWindowBounds(x+49,y+37,32,16),workspace.visibleControls(id(view)).getFirst());
+        set(view,"ghosted",true);assertTrue(workspace.visibleControls(id(view)).isEmpty());
+    }
+
+    @Test void adjacentVirtualEntriesKeepDistinctColumnsAtNativeSpacing() throws Exception {
+        InventoryDesktopScreen screen=screen();Object view=window(screen,"CLIENT_API","Virtual grid");
+        var emptyMenu=new TestMenu();emptyMenu.slots.clear();set(view,"legacyMenu",emptyMenu);
+        var regions=java.util.stream.IntStream.range(0,5).mapToObj(i ->
+            DesktopWindowRegion.interactive(7+i*18,24,18,18).withRole(DesktopHitRole.SLOT)).toList();
+        var surface=DesktopWindowSurface.SALT.withRegions(regions);
+        set(view,"apiSurface",surface);set(view,"apiDefinition",nativeDefinition(surface,new AtomicInteger(),new AtomicInteger(),List.of()));
+        var workspace=screen.workspaceAccess();workspace.transferPair(id(view),id(view));
+        var targets=workspace.controllerTargets(id(view));
+        assertEquals(5,targets.size());
+        assertEquals(5,targets.stream().map(t -> t.column()).distinct().count(),"Native spacing must not merge adjacent controls");
+        assertEquals(1,targets.stream().map(t -> t.row()).distinct().count());
+    }
+
+    @Test void onlyTheFocusedApiEditorRequestsAKeyboard() throws Exception {
+        InventoryDesktopScreen screen=screen();Object view=window(screen,"CLIENT_API","Editor");
+        Object other=window(screen,"CLIENT_API","Modal buttons");
+        var editing=new java.util.concurrent.atomic.AtomicBoolean();
+        set(view,"apiDefinition",Proxy.newProxyInstance(DesktopWindowDefinition.class.getClassLoader(),new Class<?>[]{DesktopWindowDefinition.class},
+            (proxy,method,args) -> method.getName().equals("wantsTextInput") ? editing.get() : method.getReturnType()==boolean.class?false:null));
+        set(screen,"apiKeyboardFocusWindow",view);DesktopWorkspace workspace=screen.workspaceAccess();
+        workspace.transferPair(id(view),id(other));
+        assertFalse(workspace.textInputActive(id(view)));editing.set(true);
+        assertTrue(workspace.textInputActive(id(view)));assertFalse(workspace.textInputActive(id(other)));
+        set(screen,"apiKeyboardFocusWindow",other);assertFalse(workspace.textInputActive(id(view)));
+    }
+
     private static Object nativeDefinition(DesktopWindowSurface surface, AtomicInteger clicks, AtomicInteger paints,
                                             List<DesktopSurfaceControl> controls) {
         return Proxy.newProxyInstance(DesktopWindowDefinition.class.getClassLoader(), new Class<?>[]{DesktopWindowDefinition.class},
@@ -664,7 +709,7 @@ final class DesktopWorkspaceApiTest {
                     case "resizePolicy" -> DesktopResizePolicy.FREE;
                     case "minSize" -> DesktopWindowSize.of(64, 48);
                     case "managementControls" -> controls;
-                    case "popups" -> List.of();
+                    case "popups", "controllerScrollRegions", "textInputBounds" -> List.of();
                     case "mouseClicked" -> { clicks.incrementAndGet(); yield true; }
                     case "renderManagementControls" -> { paints.incrementAndGet(); yield null; }
                     default -> method.getReturnType() == boolean.class ? false : null;

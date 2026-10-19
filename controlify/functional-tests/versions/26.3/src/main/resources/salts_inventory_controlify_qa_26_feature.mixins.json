@@ -16,6 +16,8 @@
     "FeatureCompactGuideProbeMixin",
     "FeatureWorkspacePreviewProbeMixin",
     "FeatureWorkspaceSurfaceProbeMixin",
+    "FeatureWorkspaceCloseTimingMixin",
+    "FeatureSearchMouseProbeMixin",
     "FeatureWorkspaceSoundProbeMixin",
     "FeatureNativeWorkspaceSoundProbeMixin",
     "FeatureSoundRequestAccessor",

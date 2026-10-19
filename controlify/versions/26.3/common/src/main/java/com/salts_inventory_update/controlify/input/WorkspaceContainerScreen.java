@@ -22,6 +22,15 @@ public interface WorkspaceContainerScreen {
     /** One/full creative catalog stack into the hotbar, using the current controller cursor. */
     default boolean controllerCreativeHotbar(boolean stack) { return false; }
 
+    /** Owns Quick Move before native cursor-drop handling for eligible creative hotbar slots. */
+    default boolean controllerCreativeDeleteHotbar() { return false; }
+
+    /** Only the hovered creative window with its Search tab selected exposes this action. */
+    default boolean controllerCreativeSearchAvailable() { return false; }
+
+    /** Field-only requests implement Select/A without changing ordinary catalog clicks. */
+    default boolean controllerCreativeSearch(boolean fieldOnly) { return false; }
+
     default boolean contextualRadialActive() { return false; }
     default boolean controllerCanOpenContextual() { return false; }
 
@@ -30,5 +39,5 @@ public interface WorkspaceContainerScreen {
 
     default boolean controllerContextualInput(boolean held, float rightX, float rightY, float leftX, float leftY,
             boolean categoryLeft, boolean categoryRight, boolean toggleCraftable, boolean confirm,
-            boolean rotateLeftHeld, boolean rotateRightHeld) { return false; }
+            boolean rotateLeftHeld, boolean rotateRightHeld, boolean craftStack) { return false; }
 }

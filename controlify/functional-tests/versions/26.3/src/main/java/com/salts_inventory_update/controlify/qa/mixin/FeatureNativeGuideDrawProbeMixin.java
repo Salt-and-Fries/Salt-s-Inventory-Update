@@ -45,11 +45,13 @@ public abstract class FeatureNativeGuideDrawProbeMixin {
     }
     @Inject(method = "item(Lnet/minecraft/world/item/ItemStack;II)V", at = @At("HEAD"))
     private void item(ItemStack stack, int x, int y, CallbackInfo callback) {
+        com.salts_inventory_update.controlify.qa.QaFeatureProbe.tabIcon((GuiGraphicsExtractor)(Object)this,stack);
         QaVisualFeatureProbe.item((GuiGraphicsExtractor)(Object)this,stack,x,y);
         com.salts_inventory_update.controlify.qa.QaContextualPresentationProbe.nativeItem(stack);
     }
     @Inject(method = "text(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIIZ)V", at = @At("HEAD"))
     private void text(Font font, Component text, int x, int y, int color, boolean shadow, CallbackInfo callback) {
+        if (com.salts_inventory_update.controlify.qa.QaFeatureProbe.renderingTabs) com.salts_inventory_update.controlify.qa.QaFeatureProbe.tabTextDraws++;
         QaNativeGuideProbe.text((GuiGraphicsExtractor)(Object)this, font, text, x, y);
         QaVisualFeatureProbe.alphabetText((GuiGraphicsExtractor)(Object)this,font,text,x,y,color);
         com.salts_inventory_update.controlify.qa.QaContextualPresentationProbe.nativeFrameText(text.getString(),x,y,color);
@@ -57,6 +59,7 @@ public abstract class FeatureNativeGuideDrawProbeMixin {
     }
     @Inject(method = "text(Lnet/minecraft/client/gui/Font;Ljava/lang/String;IIIZ)V", at = @At("HEAD"))
     private void stringText(Font font, String text, int x, int y, int color, boolean shadow, CallbackInfo callback) {
+        if (com.salts_inventory_update.controlify.qa.QaFeatureProbe.renderingTabs) com.salts_inventory_update.controlify.qa.QaFeatureProbe.tabTextDraws++;
         QaNativeGuideProbe.text((GuiGraphicsExtractor)(Object)this, font, Component.literal(text), x, y);
         QaVisualFeatureProbe.alphabetText((GuiGraphicsExtractor)(Object)this,font,Component.literal(text),x,y,color);
         com.salts_inventory_update.controlify.qa.QaContextualPresentationProbe.nativeFrameText(text,x,y,color);
