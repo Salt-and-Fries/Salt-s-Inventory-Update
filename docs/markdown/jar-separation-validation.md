@@ -161,7 +161,7 @@ and a specific successful interaction must be distinguished when interpreting
 coverage. Production gameplay here uses Fabric's development game launcher,
 not an installed consumer launcher.
 
-## AE2 extension completion — 2026-10-12
+## AE2 extension completion â€” 2026-10-12
 
 The [AE2 validation report](ae2-extension-validation.md) records the subsequent
 native integration work, version-specific UI policy, enabled legacy adapters,

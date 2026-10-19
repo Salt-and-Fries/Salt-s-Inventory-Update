@@ -1,4 +1,4 @@
-# AE2 extension validation — 2026-10-12
+# AE2 extension validation â€” 2026-10-12
 
 Implemented on `Jar-Seperation-Experiment`, version `0.1.4`. AE2 compatibility
 is an optional consumer of Core's public API and of an unmodified upstream AE2
