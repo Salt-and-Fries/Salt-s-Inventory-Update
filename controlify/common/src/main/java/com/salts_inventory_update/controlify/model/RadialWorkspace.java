@@ -23,6 +23,7 @@ public final class RadialWorkspace<K> {
     private final K playerInventory;
     private final K character;
     private final Map<K, Boolean> windows = new LinkedHashMap<>();
+    private List<K> radialPresentationOrder = List.of();
     private Mode mode = Mode.SIDE_BY_SIDE;
     private boolean active;
     private K focused;
@@ -158,6 +159,11 @@ public final class RadialWorkspace<K> {
             return false;
         }
         K previous = focused;
+        // Exchange the two visual positions as well as their roles. Otherwise the
+        // unchanged stick points at a different icon on the very next input sample.
+        List<K> order = presentationOrder();
+        Collections.swap(order, order.indexOf(previous), order.indexOf(highlighted));
+        radialPresentationOrder = List.copyOf(order);
         focused = highlighted;
         selected = previous;
         highlighted = previous;
@@ -252,9 +258,16 @@ public final class RadialWorkspace<K> {
     public List<K> windows() { return List.copyOf(windows.keySet()); }
 
     public List<K> radialOrder() {
-        List<K> order = new ArrayList<>(windows.keySet());
+        List<K> order = presentationOrder();
         order.remove(focused);
         return Collections.unmodifiableList(order);
+    }
+
+    private List<K> presentationOrder() {
+        List<K> order = new ArrayList<>(windows.size());
+        for (K id : radialPresentationOrder) if (windows.containsKey(id)) order.add(id);
+        for (K id : windows.keySet()) if (!order.contains(id)) order.add(id);
+        return order;
     }
 
     /** Angle in screen coordinates, shared with the renderer to avoid visual/navigation drift. */

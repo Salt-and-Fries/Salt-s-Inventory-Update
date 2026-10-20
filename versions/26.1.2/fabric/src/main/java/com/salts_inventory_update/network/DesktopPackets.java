@@ -72,6 +72,7 @@ public final class DesktopPackets {
         PayloadTypeRegistry.serverboundPlay().register(DesktopJeiTransferPayload.TYPE, DesktopJeiTransferPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopRenamePayload.TYPE, DesktopRenamePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopFinishWorkspacePayload.TYPE, DesktopFinishWorkspacePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopSessionPinPayload.TYPE, DesktopSessionPinPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopOpenLinkedSourcesPayload.TYPE, DesktopOpenLinkedSourcesPayload.CODEC);
@@ -1058,6 +1059,29 @@ public final class DesktopPackets {
         );
 
         private DesktopCloseSessionPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readVarInt(), buf.readLong());
+        }
+
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(this.connectionNonce);
+            buf.writeVarInt(this.sessionId);
+            buf.writeLong(this.sessionToken);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record DesktopFinishWorkspacePayload(long connectionNonce, int sessionId, long sessionToken) implements CustomPacketPayload {
+        public static final Type<DesktopFinishWorkspacePayload> TYPE = new Type<>(id("desktop_finish_workspace"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopFinishWorkspacePayload> CODEC = CustomPacketPayload.codec(
+            DesktopFinishWorkspacePayload::write,
+            DesktopFinishWorkspacePayload::new
+        );
+
+        private DesktopFinishWorkspacePayload(RegistryFriendlyByteBuf buf) {
             this(buf.readLong(), buf.readVarInt(), buf.readLong());
         }
 

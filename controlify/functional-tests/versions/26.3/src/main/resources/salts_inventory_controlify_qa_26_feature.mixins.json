@@ -29,7 +29,10 @@
     "FeatureVanillaBookSpriteProbeMixin",
     "FeatureLiveSourceSlotProbeMixin",
     "FeatureLiveSourceCookingProbeMixin",
-    "FeatureCoreFrameProbeMixin"
+    "FeatureCoreFrameProbeMixin",
+    "FeatureStatusEffectPrototypeMixin",
+    "FeaturePlaytestCarriedMixin",
+    "FeatureEffectsTrayProbeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -103,6 +103,8 @@ public interface DesktopWorkspace {
     default boolean recipeHoverRejected(UUID source) { return false; }
     /** Replaces the normal guide button/panel only while an external host opts in. */
     void setContextualRecipePresentation(boolean enabled);
+    /** Lets an external presentation draw Character effects separately; native desktop rendering stays unchanged. */
+    default void setCharacterEffectsPresentation(boolean enabled) {}
     /** Null for unsupported windows. Bounds are native coordinates, before host transforms. */
     DesktopContextualBookHint contextualBookHint(UUID id);
     boolean selectContextualTab(UUID id, net.minecraft.resources.Identifier tab);

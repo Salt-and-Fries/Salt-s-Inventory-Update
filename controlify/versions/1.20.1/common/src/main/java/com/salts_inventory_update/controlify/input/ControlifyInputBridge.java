@@ -30,6 +30,8 @@ public final class ControlifyInputBridge {
     private static RadialWorkspaceActions actions;
     private static RadialSortInputRouter router;
     private static String lastControllerUid;
+    private static final com.salts_inventory_update.controlify.model.TriggerToggle windowTrigger = new com.salts_inventory_update.controlify.model.TriggerToggle();
+    private static final com.salts_inventory_update.controlify.model.TriggerToggle recipeTrigger = new com.salts_inventory_update.controlify.model.TriggerToggle();
 
     private ControlifyInputBridge() {
     }
@@ -82,13 +84,17 @@ public final class ControlifyInputBridge {
     static boolean update(ControllerEntity controller) {
         if (!controller.uid().equals(lastControllerUid)) {
             router.reset();
+            cancelWheelToggles();
             lastControllerUid = controller.uid();
         }
         InputComponent input = controller.input().orElseThrow();
         ControllerStateView current = input.stateNow();
         ControllerStateView previous = input.stateThen();
         float threshold = input.config().config().buttonActivationThreshold;
-        if (WorkspaceSearchKeyboard.suppressWorkspaceInput(current, threshold)) return true;
+        if (WorkspaceSearchKeyboard.suppressWorkspaceInput(current, threshold)) {
+            cancelWheelToggles();
+            return true;
+        }
         InputBinding close = ControlifyBindings.GUI_BACK.on(controller);
         InputBinding inventory = ControlifyBindings.INVENTORY.on(controller);
         var nativeScreen = Minecraft.getInstance().screen;
@@ -99,7 +105,11 @@ public final class ControlifyInputBridge {
         InputBinding recipe = ContextualRecipeBinding.OPEN_WHEEL.on(controller);
         boolean openingRecipeBlocked = router.awaitingOpeningTriggerRelease()
                 && recipe.boundInput().getRelevantInputs().contains(GamepadInputs.LEFT_TRIGGER_AXIS);
-        boolean recipeHeld = !openingRecipeBlocked && recipe.boundInput().state(current) > threshold;
+        boolean recipeHeld = recipeTrigger.update(recipe.boundInput().state(current) > threshold,
+                actions.toggleRecipeWheel(), !openingRecipeBlocked && workspaceScreen != null
+                    && (contextual || !actions.radialActive() && workspaceScreen.controllerCanOpenContextual()));
+        boolean windowWheelHeld = windowTrigger.update(leftTriggerHeld, actions.toggleWindowWheel(),
+                !recipeHeld && actions.workspaceActive() && !actions.tuckedAway() && !router.awaitingOpeningTriggerRelease());
         if (contextual && !recipeHeld) {
             // Hand the release sample back before workspace routing too, so fresh bumpers/LT
             // and native inventory actions all apply in SIDE mode immediately.
@@ -123,7 +133,7 @@ public final class ControlifyInputBridge {
             if (confirmPressed && workspaceScreen.controllerCreativeSearch(true)) return true;
         }
         boolean consumed = router.update(new ControllerInputFrame(
-                !recipeOwns && leftTriggerHeld,
+                !recipeOwns && windowWheelHeld,
                 current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_RIGHT) - current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_LEFT),
                 current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_DOWN) - current.getAxisState(GamepadInputs.LEFT_STICK_AXIS_UP),
                 !recipeOwns && justPressed(current, previous, GamepadInputs.LEFT_SHOULDER_BUTTON),
@@ -180,10 +190,12 @@ public final class ControlifyInputBridge {
         // this controller. Preserve the opening latch across that first processor update.
         if (controller != null && !controller.uid().equals(lastControllerUid)) {
             router.reset();
+            cancelWheelToggles();
             lastControllerUid = controller.uid();
         }
         boolean held = controller != null && controller.input().map(input ->
                 input.stateNow().getAxisState(GamepadInputs.LEFT_TRIGGER_AXIS) > input.config().config().buttonActivationThreshold).orElse(false);
+        cancelWheelToggles();
         router.workspaceOpened(held);
     }
 
@@ -212,6 +224,7 @@ public final class ControlifyInputBridge {
 
     private static void restoreBeforeGameplayInput(ControllerEntity controller) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || minecraft.gameMode == null) return;
         if (minecraft.screen != null
                 || ControlifyApi.get().getCurrentController().orElse(null) != controller) {
             return;
@@ -229,7 +242,14 @@ public final class ControlifyInputBridge {
         }
     }
 
+    public static void cancelWheelToggles() {
+        // Require a neutral sample after screen/modal changes, even if the processor missed an input.
+        windowTrigger.cancel(true);
+        recipeTrigger.cancel(true);
+    }
+
     public static void reset() {
+        cancelWheelToggles();
         WorkspaceUiSounds.reset();
         if (router != null) {
             router.reset();

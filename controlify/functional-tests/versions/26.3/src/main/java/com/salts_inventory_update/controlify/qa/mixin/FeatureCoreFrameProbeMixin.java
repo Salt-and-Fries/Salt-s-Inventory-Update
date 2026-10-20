@@ -11,5 +11,6 @@ public abstract class FeatureCoreFrameProbeMixin {
     @Inject(method="renderSaltWindowFrame",at=@At("HEAD"),remap=false)
     private void coreFrame(GuiGraphicsExtractor graphics,int x,int y,int width,int height,String title,CallbackInfo callback) {
         QaContextualPresentationProbe.nativeFrameCore(x,y,width,height,title);
+        com.salts_inventory_update.controlify.qa.QaPlaytestProbe.trayFrame(x,y,width,height);
     }
 }

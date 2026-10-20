@@ -77,6 +77,21 @@ final class DesktopWorkspaceQuickMoveTest {
         sessions = construct("PlayerSessions");
     }
 
+    @Test void workspaceFinishPacketRetainsBothAuthenticationTokens() {
+        var packet = new DesktopPackets.DesktopFinishWorkspacePayload(101L, DesktopPackets.PLAYER_MENU_SESSION, 303L);
+        RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), RegistryAccess.EMPTY);
+        try {
+            DesktopPackets.DesktopFinishWorkspacePayload.CODEC.encode(buffer, packet);
+            var decoded = DesktopPackets.DesktopFinishWorkspacePayload.CODEC.decode(buffer);
+            assertEquals(packet, decoded);
+            assertEquals(101L, decoded.connectionNonce());
+            assertEquals(303L, decoded.sessionToken());
+            assertEquals(DesktopPackets.PLAYER_MENU_SESSION, decoded.sessionId());
+            assertNotEquals(DesktopPackets.DesktopCloseSessionPayload.TYPE, decoded.type());
+            assertEquals(0, buffer.readableBytes());
+        } finally { buffer.release(); }
+    }
+
     @Test void equipmentDestinationIncludesOnlyCharacterInputsArmorAndOffhand() throws Exception {
         TestMenu source = new TestMenu();
         List<Slot> targets = targets(source, DesktopPackets.QUICK_TARGET_PLAYER_EQUIPMENT);

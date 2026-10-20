@@ -39,6 +39,7 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopSortWindowsPaylo
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotReference;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionReference;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopFinishWorkspacePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopGhostRecipePayload;
@@ -857,6 +858,11 @@ public final class DesktopContainerClient {
         send(new DesktopCloseSessionPayload(sessionId), "close");
     }
 
+    public static void finishWorkspace() {
+        DesktopDebug.log("client send close session={}", DesktopPackets.PLAYER_MENU_SESSION);
+        send(new DesktopFinishWorkspacePayload(DesktopPackets.PLAYER_MENU_SESSION), "finish-workspace");
+    }
+
     public static void setSessionPinMode(int sessionId, PinMode pinMode) {
         DesktopDebug.trace("client send pin session={} pin={}", sessionId, pinMode);
         send(new DesktopSessionPinPayload(sessionId, pinModeToPacket(pinMode)), "pin");
@@ -1027,6 +1033,8 @@ public final class DesktopContainerClient {
         } else if (payload instanceof DesktopCustomPayload value) {
             primary = value.sessionId();
         } else if (payload instanceof DesktopCloseSessionPayload value) {
+            primary = value.sessionId();
+        } else if (payload instanceof DesktopFinishWorkspacePayload value) {
             primary = value.sessionId();
         } else if (payload instanceof DesktopSessionPinPayload value) {
             primary = value.sessionId();

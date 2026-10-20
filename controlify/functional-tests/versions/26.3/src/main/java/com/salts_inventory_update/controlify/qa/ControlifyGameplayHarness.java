@@ -8,6 +8,7 @@ import com.salts_inventory_update.controlify.RadialInventoryScreen;
 import com.salts_inventory_update.controlify.CreativeSearchBinding;
 import com.salts_inventory_update.controlify.CreativeSearchTarget;
 import com.salts_inventory_update.controlify.WorkspaceSearchKeyboard;
+import com.salts_inventory_update.controlify.WorkspaceActionGuide;
 import com.salts_inventory_update.controlify.model.RecipeFilter;
 import com.salts_inventory_update.controlify.model.RecipeFilterSettings;
 import com.salts_inventory_update.api.client.desktop.DesktopWorkspace;
@@ -261,6 +262,13 @@ public final class ControlifyGameplayHarness {
                     mc.getSingleplayerServer().createCommandSourceStack().withSuppressedOutput(), "recipe give @a *");
             return null;
         }), ControlifyGameplayHarness::serverDone, () -> {}, 10);
+        if ("status-tray".equals(System.getProperty("salts_inventory_controlify.qaScope"))) {
+            addStatusTrayScenarios();return;
+        }
+        if ("playtest-fixes".equals(System.getProperty("salts_inventory_controlify.qaScope"))) {
+            addPlaytestFixScenarios();
+            return;
+        }
         if ("wheel-polish".equals(System.getProperty("salts_inventory_controlify.qaScope"))) {
             addWheelPolishScenarios();
             return;
@@ -1301,7 +1309,9 @@ public final class ControlifyGameplayHarness {
         assertServer("qol-full-inventory-drops-exact-overflow",() -> player().inventoryMenu.getInputGridSlots().stream().noneMatch(Slot::hasItem)
             && player().level().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,player().getBoundingBox().inflate(16),e -> e.getItem().is(Items.DIAMOND))
                 .stream().mapToInt(e -> e.getItem().getCount()).sum()==7
-            && player().inventoryMenu.getCarried().is(Items.DIRT) && player().inventoryMenu.getCarried().getCount()==5);
+            && player().inventoryMenu.getCarried().isEmpty()
+            && player().level().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,player().getBoundingBox().inflate(16),e -> e.getItem().is(Items.DIRT))
+                .stream().mapToInt(e -> e.getItem().getCount()).sum()==5);
         fixture.seed("qol-keyboard-close-fixture",() -> player().inventoryMenu.getInputGridSlots().getFirst().set(new ItemStack(Items.EMERALD,3)));
         button("qol-reopen-for-keyboard",GamepadInputs.NORTH_BUTTON,() -> {});
         add("qol-keyboard-mode",() -> Controlify.instance().setInputMode(InputMode.KEYBOARD_MOUSE),
@@ -1311,6 +1321,267 @@ public final class ControlifyGameplayHarness {
             () -> true,() -> {},6);
         assertServer("qol-keyboard-close-also-clears-grid",() -> player().inventoryMenu.getInputGridSlots().stream().noneMatch(Slot::hasItem)
             && java.util.stream.IntStream.range(0,36).map(i -> player().getInventory().getItem(i).is(Items.EMERALD)?player().getInventory().getItem(i).getCount():0).sum()==3);
+    }
+
+    private static void addStatusTrayScenarios() {
+        button("tray-open-character",GamepadInputs.NORTH_BUTTON,() -> {});
+        focusPair("tray-character-pair",() -> owner.model().character(),() -> owner.model().playerInventory());
+        for (int size : new int[]{1280,960}) {
+            final double[] originalScale={0};
+            add("tray-viewport-"+size,() -> {
+                mc.getWindow().setWindowed(size,size==1280?900:720);
+                server(() -> {player().removeAllEffects();return null;});
+            },() -> serverDone() && mc.player.getActiveEffects().isEmpty(),
+                () -> originalScale[0]=renderedLayout().windows().get(owner.model().character()).scale(),25);
+            add("tray-statuses-"+size,() -> server(() -> {
+                var effects=List.of(net.minecraft.world.effect.MobEffects.SPEED,net.minecraft.world.effect.MobEffects.HASTE,
+                    net.minecraft.world.effect.MobEffects.STRENGTH,net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE,
+                    net.minecraft.world.effect.MobEffects.WATER_BREATHING,net.minecraft.world.effect.MobEffects.NIGHT_VISION);
+                for (int i=0;i<effects.size();i++) player().addEffect(new net.minecraft.world.effect.MobEffectInstance(effects.get(i),12000+i*1200,i==2?1:0));
+                return null;
+            }),() -> serverDone() && mc.player.getActiveEffects().size()==6,() -> {
+                QaPlaytestProbe.trayFrames=0;QaPlaytestProbe.sideEffectsBodies=0;
+                QaPlaytestProbe.trayDark=true;QaPlaytestProbe.trayNoShadow=true;
+            },8);
+            add("tray-render-"+size,() -> {},() -> QaPlaytestProbe.trayFrames>4,() -> {
+                var pane=renderedLayout().windows().get(owner.model().character());
+                var bounds=owner.desktop().presentationBounds(owner.model().character());
+                check("tray-six-countdowns-"+size,QaPlaytestProbe.trayTexts==6);
+                check("tray-dark-grey-"+size,QaPlaytestProbe.trayDark);
+                check("tray-no-shadow-"+size,QaPlaytestProbe.trayNoShadow);
+                check("tray-keeps-character-scale-"+size,Math.abs(originalScale[0]-pane.scale())<1e-9);
+                check("tray-below-character-"+size,QaPlaytestProbe.trayY>=pane.y()+bounds.height()*pane.scale());
+                check("tray-fits-screen-"+size,QaPlaytestProbe.trayX>=0 && QaPlaytestProbe.trayY>=0
+                    && QaPlaytestProbe.trayX+QaPlaytestProbe.trayWidth<=mc.getWindow().getGuiScaledWidth()
+                    && QaPlaytestProbe.trayY+QaPlaytestProbe.trayHeight<=mc.getWindow().getGuiScaledHeight()-WorkspaceActionGuide.reservedBottomSpace((RadialInventoryScreen)mc.gui.screen()));
+                check("tray-replaces-old-side-list-"+size,QaPlaytestProbe.sideEffectsBodies==0);
+                capture("effects-tray-dark-text-"+size);
+            },5);
+        }
+        add("tray-native-api-off",() -> {owner.desktop().setCharacterEffectsPresentation(false);QaPlaytestProbe.sideEffectsBodies=0;},
+            () -> QaPlaytestProbe.sideEffectsBodies>3,() -> check("tray-native-list-opt-out-restores",true),5);
+        add("tray-native-api-on",() -> {owner.desktop().setCharacterEffectsPresentation(true);QaPlaytestProbe.sideEffectsBodies=0;},
+            () -> true,() -> check("tray-api-ownership-restored",QaPlaytestProbe.sideEffectsBodies==0),8);
+        add("tray-clear-effects",() -> server(() -> {player().removeAllEffects();return null;}),
+            () -> serverDone() && mc.player.getActiveEffects().isEmpty(),() -> QaPlaytestProbe.trayFrames=0,10);
+        add("tray-empty",() -> {},() -> true,() -> check("tray-hidden-without-effects",QaPlaytestProbe.trayFrames==0),8);
+    }
+
+    private static void addPlaytestFixScenarios() {
+        button("playtest-open-character", GamepadInputs.NORTH_BUTTON, () -> {});
+        focusPair("playtest-character-pair", () -> owner.model().character(), () -> owner.model().playerInventory());
+        add("effects-six-native-statuses", () -> server(() -> {
+            var effects = List.of(net.minecraft.world.effect.MobEffects.SPEED, net.minecraft.world.effect.MobEffects.HASTE,
+                net.minecraft.world.effect.MobEffects.STRENGTH, net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE,
+                net.minecraft.world.effect.MobEffects.WATER_BREATHING, net.minecraft.world.effect.MobEffects.NIGHT_VISION);
+            for (int i=0;i<effects.size();i++) player().addEffect(new net.minecraft.world.effect.MobEffectInstance(effects.get(i), 12000 + i * 1200, i == 2 ? 1 : 0));
+            return null;
+        }), () -> serverDone() && mc.player.getActiveEffects().size() == 6, () -> QaStatusEffectLayouts.install(owner), 8);
+        final double[] characterScale = {0};
+        for (int scale : new int[]{2,3}) {
+            add("effects-gui-scale-"+scale, () -> {mc.getWindow().setWindowed(scale == 2 ? 1280 : 960, scale == 2 ? 900 : 720);},
+                () -> true, () -> characterScale[0] = renderedLayout().windows().get(owner.model().character()).scale(), 25);
+            for (int option=1;option<=4;option++) {
+                int mode = option;
+                add("effects-option-"+mode+"-scale-"+scale, () -> {QaStatusEffectLayouts.mode=mode;QaStatusEffectLayouts.frames=0;QaStatusEffectLayouts.fits=true;},
+                    () -> QaStatusEffectLayouts.frames>4, () -> {
+                        check("effects-option-"+mode+"-fits-scale-"+scale, QaStatusEffectLayouts.fits);
+                        check("effects-option-"+mode+"-preserves-character-scale-"+scale,
+                            Math.abs(characterScale[0]-renderedLayout().windows().get(owner.model().character()).scale())<1e-9);
+                        capture("effects-option-"+mode+"-scale-"+scale);
+                    }, 4);
+            }
+        }
+        add("effects-experiment-end", () -> {
+            QaStatusEffectLayouts.mode=0;mc.getWindow().setWindowed(1280,900);
+            server(() -> {player().removeAllEffects();return null;});
+        }, ControlifyGameplayHarness::serverDone, () -> {}, 12);
+        add("playtest-crafting-resources", () -> server(() -> {
+            player().getInventory().setItem(9,new ItemStack(Items.OAK_LOG,1));
+            player().getInventory().setItem(10,new ItemStack(Items.OAK_PLANKS,12));
+            player().inventoryMenu.broadcastChanges();return null;
+        }), ControlifyGameplayHarness::serverDone, () -> {
+            try {((RecipeFilterSettings)field(field(owner,"value"),"recipeFilters")).set(RecipeFilter.CRAFTABLE);}
+            catch (Exception failure) {throw new IllegalStateException(failure);}
+        },8);
+        final List<String> recipeOrder = new ArrayList<>();
+        final double[] wheelPosition = {0};
+        final Object[] selectedRecipe = {null};
+        add("playtest-enable-trigger-toggles", () -> {
+            try {owner.config().setToggleWindowWheel(true);owner.config().setToggleRecipeWheel(true);}
+            catch (Exception failure) {throw new IllegalStateException(failure);}
+        }, () -> true, () -> {}, 3);
+        add("playtest-LT-toggle-on", () -> driver.trigger=1, () -> owner.radialActive(), () -> {}, 3);
+        add("playtest-LT-release-stays-open", () -> driver.trigger=0, () -> true,
+            () -> check("LT-toggle-remains-open-after-release", owner.radialActive()), 6);
+        add("playtest-LT-toggle-off", () -> driver.trigger=1, () -> !owner.radialActive(), () -> {}, 4);
+        add("playtest-LT-neutral", () -> driver.trigger=0, () -> true, () -> {}, 5);
+        nativeCursorNeutralReady("playtest-hover-character-grid", () -> pointAtControl(owner.model().character(),
+            owner.desktop().contextualBookHint(owner.model().character()).activationBounds()));
+        add("playtest-RT-toggle-on", () -> driver.rightTrigger=1, () -> contextualOverlay().active(), () -> {}, 5);
+        add("playtest-RT-release-stays-open", () -> driver.rightTrigger=0, () -> true,
+            () -> check("RT-toggle-remains-open-after-release", contextualOverlay().active()), 6);
+        add("playtest-select-planks", () -> aimContextualRecipe(Items.OAK_PLANKS,true),
+            () -> contextualRecipeReady(Items.OAK_PLANKS,true), () -> {driver.rightX=driver.rightY=0;driver.stick(0,0);},8);
+        add("playtest-stable-wheel-before-craft", () -> {}, () -> true, () -> {
+            recipeOrder.addAll(contextualEntries().stream().map(recipe -> recipe.id().toString()).toList());
+            var selection=(com.salts_inventory_update.controlify.model.ContextualWheelSelection)field(contextualOverlay(),"selection");
+            wheelPosition[0]=selection.position();
+            selectedRecipe[0]=contextualEntries().get(selection.displayedSelected(contextualEntries().size())).id();
+        },5);
+        button("playtest-craft-native-A",GamepadInputs.SOUTH_BUTTON,() -> {});
+        add("playtest-stable-wheel-after-craft", () -> {}, () -> true, () -> {
+            var entries=contextualEntries();
+            var selection=(com.salts_inventory_update.controlify.model.ContextualWheelSelection)field(contextualOverlay(),"selection");
+            check("playtest-crafting-keeps-catalog-membership",recipeOrder.equals(entries.stream().map(recipe -> recipe.id().toString()).toList()));
+            check("playtest-crafting-keeps-wheel-angle",Math.abs(wheelPosition[0]-selection.position())<1e-8);
+            check("playtest-crafting-keeps-selected-recipe",selectedRecipe[0].equals(entries.get(selection.displayedSelected(entries.size())).id()));
+            check("playtest-depleted-recipe-updates-availability",!entries.get(selection.displayedSelected(entries.size())).craftable());
+        },12);
+        assertServer("playtest-craft-produced-exactly-four-planks", () -> player().getInventory().getItem(0).is(Items.OAK_PLANKS)
+            && player().getInventory().getItem(0).getCount()==4);
+        add("playtest-RT-toggle-off", () -> driver.rightTrigger=1, () -> !contextualOverlay().active(), () -> {}, 5);
+        add("playtest-restore-hold-default", () -> {
+            driver.rightTrigger=0;
+            try {owner.config().setToggleWindowWheel(false);owner.config().setToggleRecipeWheel(false);}
+            catch (Exception failure) {throw new IllegalStateException(failure);}
+        }, () -> true, () -> {}, 8);
+        add("playtest-cursor-return-fixture", () -> server(() -> {
+            player().getInventory().clearContent();player().inventoryMenu.setCarried(ItemStack.EMPTY);
+            player().getInventory().setItem(9,new ItemStack(Items.DIAMOND,7));
+            player().inventoryMenu.getInputGridSlots().getFirst().set(new ItemStack(Items.EMERALD,3));
+            player().inventoryMenu.broadcastChanges();return null;
+        }), ControlifyGameplayHarness::serverDone, () -> {}, 10);
+        nativeCursorNeutralReady("playtest-pick-up-carried-stack", () -> pointAtItem(owner.model().playerInventory(),Items.DIAMOND));
+        button("playtest-native-pick-up-A",GamepadInputs.SOUTH_BUTTON,() -> {});
+        assertServer("playtest-native-pick-up-owns-seven-diamonds",() -> player().inventoryMenu.getCarried().is(Items.DIAMOND)
+            && player().inventoryMenu.getCarried().getCount()==7);
+        nativeCursorNeutralReady("playtest-hover-with-carried-stack", () -> pointAtControl(owner.model().playerInventory(),
+            owner.desktop().presentationBounds(owner.model().playerInventory())));
+        add("playtest-carried-stack-scale", () -> QaPlaytestProbe.carriedFrames=0,
+            () -> QaPlaytestProbe.carriedFrames>3, () -> {
+                var screen=(RadialInventoryScreen)mc.gui.screen();
+                check("playtest-carried-item-uses-cursor-scale",Math.abs(QaPlaytestProbe.carriedScale
+                    -screen.controllerCursorScale(QaFeatureProbe.cursorGuiX,QaFeatureProbe.cursorGuiY))<.001);
+                capture("playtest-carried-item-matches-cursor");
+            },4);
+        button("playtest-B-returns-cursor", GamepadInputs.EAST_BUTTON, () -> check("playtest-workspace-closed", !owner.workspaceActive()));
+        assertServer("playtest-cursor-and-character-grid-returned", () -> {
+            var inventory=player().getInventory();int diamonds=0,emeralds=0;
+            for(int i=0;i<36;i++) {var item=inventory.getItem(i);if(item.is(Items.DIAMOND)) diamonds+=item.getCount();if(item.is(Items.EMERALD)) emeralds+=item.getCount();}
+            return diamonds==7 && emeralds==3 && player().inventoryMenu.getCarried().isEmpty()
+                && player().inventoryMenu.getInputGridSlots().stream().noneMatch(Slot::hasItem);
+        });
+        openContainer("playtest-open-furnace", () -> furnacePos, () -> furnaceWindow=newestOther());
+        selectPair("playtest-furnace-destination", () -> furnaceWindow);
+        add("playtest-fuel-fixture", () -> server(() -> {
+            player().getInventory().setItem(9,new ItemStack(Items.COAL,11));
+            player().inventoryMenu.broadcastChanges();return null;
+        }), ControlifyGameplayHarness::serverDone, () -> {}, 8);
+        add("playtest-configure-native-quick-move", () -> ControlifyBindings.INV_QUICK_MOVE.on(controller)
+            .setBoundInput(new ButtonInput(GamepadInputs.MISC_1_BUTTON)), () -> true, () -> {},3);
+        quickMove("playtest-native-fuel-quick-move", () -> owner.model().playerInventory(), Items.COAL);
+        assertServer("playtest-coal-routes-only-to-fuel", () -> {
+            var menu=serverMenu(FurnaceMenu.class);
+            return menu.slots.get(0).getItem().isEmpty() && menu.slots.get(1).getItem().is(Items.COAL)
+                && menu.slots.get(1).getItem().getCount()==11;
+        });
+        add("playtest-full-fuel-slot-fixture", () -> server(() -> {
+            var menu=serverMenu(FurnaceMenu.class);
+            menu.slots.get(1).set(new ItemStack(Items.COAL,64));
+            player().getInventory().setItem(9,new ItemStack(Items.COAL,7));
+            menu.broadcastChanges();player().inventoryMenu.broadcastChanges();return null;
+        }),ControlifyGameplayHarness::serverDone,() -> {},8);
+        quickMove("playtest-full-fuel-slot-quick-move",() -> owner.model().playerInventory(),Items.COAL);
+        assertServer("playtest-full-fuel-does-not-spill-into-input",() -> {
+            var menu=serverMenu(FurnaceMenu.class);
+            return menu.slots.get(0).getItem().isEmpty() && menu.slots.get(1).getItem().getCount()==64
+                && player().getInventory().getItem(9).is(Items.COAL) && player().getInventory().getItem(9).getCount()==7;
+        });
+        final UUID[] previousFocus={null};
+        final List<UUID> priorRing=new ArrayList<>();
+        add("playtest-focus-swap-aim",() -> {
+            previousFocus[0]=owner.model().focused();
+            priorRing.addAll(owner.model().radialOrder());
+            driver.trigger=1;aimWindow(furnaceWindow);
+        },() -> owner.radialActive() && owner.model().highlighted().filter(furnaceWindow::equals).isPresent(),() -> {},8);
+        button("playtest-focus-swap-A",GamepadInputs.SOUTH_BUTTON,() -> {});
+        add("playtest-focus-swap-still-held",() -> {},() -> true,() -> {
+            check("playtest-focus-swap-preserves-held-direction",owner.model().focused().equals(furnaceWindow)
+                && owner.model().highlighted().filter(previousFocus[0]::equals).isPresent());
+            var expected=new ArrayList<>(priorRing);expected.set(priorRing.indexOf(furnaceWindow),previousFocus[0]);
+            check("playtest-focus-swap-preserves-other-ring-positions",expected.equals(owner.model().radialOrder()));
+            capture("playtest-focus-swap-held-stick");
+        },6);
+        add("playtest-focus-swap-release",() -> {driver.trigger=0;driver.stick(0,0);},() -> !owner.radialActive(),() -> {},8);
+        final UUID[] oldSelected={null};
+        add("playtest-cycle-native-pane",() -> {
+            oldSelected[0]=owner.model().selected();driver.buttons.add(GamepadInputs.RIGHT_SHOULDER_BUTTON);
+        },() -> !owner.model().selected().equals(oldSelected[0]),() -> driver.buttons.clear(),0);
+        add("playtest-cycle-crossfade-frame",() -> {},() -> true,() -> {
+            check("playtest-cycle-keeps-outgoing-native-pane-during-transition",QaVisualFeatureProbe.nativePanes().contains(oldSelected[0]));
+            check("playtest-cycle-fades-in-incoming-native-pane",QaVisualFeatureProbe.nativePanes().contains(owner.model().selected()));
+            capture("playtest-window-cycle-transition");
+        },0);
+        add("playtest-cycle-finished",() -> {},() -> true,() -> {
+            check("playtest-cycle-finishes-with-one-selected-native-pane",!QaVisualFeatureProbe.nativePanes().contains(oldSelected[0])
+                && QaVisualFeatureProbe.nativePanes().contains(owner.model().selected()));
+            capture("playtest-window-cycle-settled");
+        },8);
+        add("playtest-cursor-overflow-fixture",() -> server(() -> {
+            for(int i=0;i<36;i++) player().getInventory().setItem(i,new ItemStack(Items.SAND,64));
+            player().inventoryMenu.setCarried(new ItemStack(Items.DIAMOND,7));
+            player().inventoryMenu.getInputGridSlots().getFirst().set(new ItemStack(Items.EMERALD,3));
+            player().inventoryMenu.broadcastChanges();return null;
+        }),ControlifyGameplayHarness::serverDone,() -> {},8);
+        button("playtest-close-full-inventory",GamepadInputs.EAST_BUTTON,() -> {});
+        assertServer("playtest-cursor-overflow-drops-exactly-once",() -> {
+            var drops=player().level().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,player().getBoundingBox().inflate(16));
+            int diamonds=drops.stream().filter(e -> e.getItem().is(Items.DIAMOND)).mapToInt(e -> e.getItem().getCount()).sum();
+            int emeralds=drops.stream().filter(e -> e.getItem().is(Items.EMERALD)).mapToInt(e -> e.getItem().getCount()).sum();
+            return player().inventoryMenu.getCarried().isEmpty() && diamonds==7 && emeralds==3
+                && player().inventoryMenu.getInputGridSlots().stream().noneMatch(Slot::hasItem);
+        });
+        add("playtest-disconnect-to-main-menu", () -> {
+            driver.buttons.clear();driver.trigger=driver.rightTrigger=0;
+            mc.disconnect(new net.minecraft.client.gui.screens.TitleScreen(),false);
+        }, () -> mc.player==null && mc.gui.screen() instanceof net.minecraft.client.gui.screens.TitleScreen, () -> {},8);
+        final net.minecraft.client.gui.screens.DirectJoinServerScreen[] addressScreen={null};
+        final net.minecraft.client.gui.components.EditBox[] address={null};
+        add("playtest-main-menu-address-field", () -> {
+            addressScreen[0]=new net.minecraft.client.gui.screens.DirectJoinServerScreen(mc.gui.screen(),
+                accepted -> {},new net.minecraft.client.multiplayer.ServerData("QA","",net.minecraft.client.multiplayer.ServerData.Type.OTHER));
+            mc.gui.setScreen(addressScreen[0]);
+            address[0]=(net.minecraft.client.gui.components.EditBox)field(addressScreen[0],"ipEdit");
+            address[0].setValue("");addressScreen[0].setFocused(address[0]);address[0].setFocused(true);
+            addressScreen[0].charTyped(new net.minecraft.client.input.CharacterEvent('a'));
+        }, () -> true, () -> check("playtest-main-menu-physical-text-path",address[0].getValue().equals("a")),4);
+        add("playtest-main-menu-native-keyboard", () -> {
+            check("playtest-main-menu-native-keyboard-opens",ScreenProcessorProvider.provide(addressScreen[0]).tryOpenKeyboard(controller,address[0]));
+        }, () -> mc.gui.screen() instanceof dev.isxander.controlify.screenop.keyboard.KeyboardOverlayScreen, () -> {
+            var target=(dev.isxander.controlify.screenop.keyboard.InputTarget)field(mc.gui.screen(),"inputTarget");
+            target.acceptChar('b',0);
+            check("playtest-main-menu-native-keyboard-types",address[0].getValue().equals("ab"));
+            check("playtest-main-menu-overlay-accepts-physical-character",mc.gui.screen().charTyped(new net.minecraft.client.input.CharacterEvent('x'))
+                && address[0].getValue().equals("abx"));
+            // SDL separates the physical scan code from the logical backspace keycode.
+            mc.gui.screen().keyPressed(new net.minecraft.client.input.KeyEvent(InputConstants.KEY_BACKSPACE,'\b',0));
+            check("playtest-main-menu-overlay-accepts-physical-backspace",address[0].getValue().equals("ab"));
+            capture("playtest-main-menu-keyboard");
+        },8);
+        add("playtest-main-menu-keyboard-close", () -> mc.gui.screen().onClose(), () -> mc.gui.screen()==addressScreen[0], () -> {
+            addressScreen[0].charTyped(new net.minecraft.client.input.CharacterEvent('c'));
+            check("playtest-main-menu-typing-resumes-after-keyboard",address[0].getValue().equals("abc"));
+        },5);
+        add("playtest-native-controls-entry", () -> mc.gui.setScreen(new net.minecraft.client.gui.screens.options.controls.ControlsScreen(addressScreen[0],mc.options)),
+            () -> true, () -> {
+                var entry=mc.gui.screen().children().stream().filter(child -> child instanceof net.minecraft.client.gui.components.Button button
+                    && button.getMessage().equals(Component.translatable("salts_inventory_controlify.controls.entry"))).map(child -> (net.minecraft.client.gui.components.Button)child).findFirst().orElseThrow();
+                check("playtest-controls-entry-visible-and-active",entry.active && entry.visible);
+                entry.onPress(new net.minecraft.client.input.KeyEvent(com.mojang.blaze3d.platform.InputConstants.KEY_RETURN,0,0));
+            },5);
+        add("playtest-native-controls-settings", () -> {}, () -> mc.gui.screen() instanceof com.salts_inventory_update.controlify.WorkspaceControlsScreen,
+            () -> capture("playtest-native-trigger-options"),5);
     }
 
     /** Only the center preview, recipe indexing and tucked HUD changed in this pass. */
@@ -3869,7 +4140,10 @@ public final class ControlifyGameplayHarness {
         owner = new QaWorkspaceOwner((SaltsControlifyClient) field(SaltsControlifyClient.class, "instance"));
         QaVisualFeatureProbe.install(owner);
         QaContextualPresentationProbe.install(owner);
-        try { owner.config().setAnimationsEnabled(true); } catch (Exception failure) { throw new IllegalStateException(failure); }
+        try {
+            owner.config().setAnimationsEnabled(true);
+            owner.config().setToggleWindowWheel(false);owner.config().setToggleRecipeWheel(false);
+        } catch (Exception failure) { throw new IllegalStateException(failure); }
         Controlify controlify = Controlify.instance();
         nativeUiMasterVolumeBefore = mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.MASTER).get();
         nativeUiVolumeBefore = mc.options.getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.UI).get();

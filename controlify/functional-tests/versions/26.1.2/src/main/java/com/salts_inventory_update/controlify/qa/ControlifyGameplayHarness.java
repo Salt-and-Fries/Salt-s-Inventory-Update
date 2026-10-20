@@ -1302,7 +1302,9 @@ public final class ControlifyGameplayHarness {
         assertServer("qol-full-inventory-drops-exact-overflow",() -> player().inventoryMenu.getInputGridSlots().stream().noneMatch(Slot::hasItem)
             && player().level().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,player().getBoundingBox().inflate(16),e -> e.getItem().is(Items.DIAMOND))
                 .stream().mapToInt(e -> e.getItem().getCount()).sum()==7
-            && player().inventoryMenu.getCarried().is(Items.DIRT) && player().inventoryMenu.getCarried().getCount()==5);
+            && player().inventoryMenu.getCarried().isEmpty()
+            && player().level().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,player().getBoundingBox().inflate(16),e -> e.getItem().is(Items.DIRT))
+                .stream().mapToInt(e -> e.getItem().getCount()).sum()==5);
         fixture.seed("qol-keyboard-close-fixture",() -> player().inventoryMenu.getInputGridSlots().getFirst().set(new ItemStack(Items.EMERALD,3)));
         button("qol-reopen-for-keyboard",GamepadInputs.NORTH_BUTTON,() -> {});
         add("qol-keyboard-mode",() -> Controlify.instance().setInputMode(InputMode.KEYBOARD_MOUSE),

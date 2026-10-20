@@ -119,6 +119,7 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopSortWindowsPaylo
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotReference;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionReference;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopFinishWorkspacePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
@@ -216,6 +217,7 @@ public final class DesktopContainerSessions {
         registerMutation(DesktopJeiTransferPayload.TYPE, DesktopJeiTransferPayload::new, DesktopProtocol.CAP_RECIPE_TRANSFER, DesktopJeiTransferPayload::targetSessionId, null, DesktopContainerSessions::transferJeiRecipe);
         registerMutation(DesktopRenamePayload.TYPE, DesktopRenamePayload::new, 0L, DesktopRenamePayload::sessionId, null, DesktopContainerSessions::rename);
         registerMutation(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload::new, 0L, DesktopCloseSessionPayload::sessionId, null, DesktopContainerSessions::closeSessionFromClient);
+        registerMutation(DesktopFinishWorkspacePayload.TYPE, DesktopFinishWorkspacePayload::new, 0L, DesktopFinishWorkspacePayload::sessionId, null, DesktopContainerSessions::finishWorkspace);
         registerMutation(DesktopSessionPinPayload.TYPE, DesktopSessionPinPayload::new, DesktopProtocol.CAP_LINK_GRAPH, DesktopSessionPinPayload::sessionId, null, DesktopContainerSessions::setSessionPin);
         registerMutation(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload::new, DesktopProtocol.CAP_LINK_GRAPH, DesktopSessionVisibilityPayload::sessionId, null, DesktopContainerSessions::setSessionVisibility);
         registerMutation(DesktopSourceLinkPayload.TYPE, DesktopSourceLinkPayload::new, DesktopProtocol.CAP_LINK_GRAPH, DesktopSourceLinkPayload::firstSessionId, DesktopSourceLinkPayload::secondSessionId, DesktopContainerSessions::setSourceLink);
@@ -2818,6 +2820,11 @@ public final class DesktopContainerSessions {
             }
             Session targetSession = sessions.sessions.get(payload.targetSessionId());
             if (targetSession != null && targetSession.visibleToClient && targetSession.menu.stillValid(player)) {
+                if (targetSession.menu instanceof net.minecraft.world.inventory.AbstractFurnaceMenu
+                        && targetSession.menu.slots.size() > 1) {
+                    Slot fuel = targetSession.menu.slots.get(1);
+                    if (fuel.mayPlace(source.slot.getItem())) return List.of(fuel);
+                }
                 return containerSlots(targetSession.menu, player);
             }
             return List.of();
@@ -3752,6 +3759,17 @@ public final class DesktopContainerSessions {
             DesktopDebug.log("server close request player={} session={} notify={}", player.getName().getString(), sessionId, notifyClient);
             sessions.close(player, sessionId, notifyClient);
         }
+    }
+
+    /** Authenticated cleanup keeps cursor ownership on the server and uses vanilla overflow drops. */
+    private static void finishWorkspace(ServerPlayer player, DesktopFinishWorkspacePayload payload) {
+        PlayerSessions sessions = existingSessions(player);
+        if (payload.sessionId() != DesktopPackets.PLAYER_MENU_SESSION || sessions == null
+                || !sessions.isReady() || !sessions.controlRate.tryConsume(System.nanoTime())) return;
+        endRecipeHover(player, sessions);
+        player.inventoryMenu.removed(player);
+        setSharedCarried(player, sessions, ItemStack.EMPTY);
+        sessions.broadcastAll(player);
     }
 
     private static void closeSessionFromClient(ServerPlayer player, DesktopCloseSessionPayload payload) {
@@ -4693,7 +4711,7 @@ public final class DesktopContainerSessions {
                     && sessions.recipeHover!=null&&sessions.recipeHover.sessionId==hover.sessionId()&&sessions.recipeHover.epoch==hover.epoch();
                 // Closing a real authenticated owner is cleanup. Its input-return callbacks
                 // must remain possible after an in-flight preview advanced the menu state.
-                boolean closingOwner=payload instanceof DesktopCloseSessionPayload;
+                boolean closingOwner=payload instanceof DesktopCloseSessionPayload || payload instanceof DesktopFinishWorkspacePayload;
                 if ((!primaryCurrent || !secondaryCurrent) && !hoverCleanup && !closingOwner) {
                     DesktopDebug.trace("server mutation rejected player={} type={} reason=stale-state", player.getName().getString(), envelope.innerType());
                     if (sessions.resyncRate.tryConsume(System.nanoTime())) {

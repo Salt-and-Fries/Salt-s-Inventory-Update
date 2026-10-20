@@ -478,13 +478,19 @@ A mod-owned surface supplies its own row selection and `DesktopSurfaceControl` b
 
 ### Versioning, threading and verification
 
-The public integration descriptor now uses `apiVersion=5`; the wire protocol is version 4 because authenticated opening/ownership metadata changed. Recompile consumers against the matching game/loader API5 artifact and update the descriptor explicitly. No mixed-protocol compatibility layer is supplied. Salt remains compile-only and optional; common providers must not resolve client classes on a dedicated server, and ordinary loader entrypoints must not reference either Salt provider. The standalone jar has no required Salt dependency and includes no Salt classes.
+The public integration descriptor now uses `apiVersion=5`; the wire protocol is version 5, which also adds authenticated whole-workspace cursor and crafting-grid cleanup. Recompile consumers against the matching game/loader API5 artifact and update the descriptor explicitly. No mixed-protocol compatibility layer is supplied. Salt remains compile-only and optional; common providers must not resolve client classes on a dedicated server, and ordinary loader entrypoints must not reference either Salt provider. The standalone jar has no required Salt dependency and includes no Salt classes.
 
 Client layout, rendering, input, handles and widget mutation use the client main thread. Server acquisition, release, guards, menu creation and server callbacks use the server main thread. `DesktopWindowHandle.schedule` remains the thread-safe way to enqueue a lifetime-checked client update. Do asynchronous backend work using immutable inputs and marshal validated results onto the appropriate main thread before inventory mutation.
 
 Resource reload re-prepares retained surfaces and controls and delivers the new resource revision; re-resolve consumer caches there. The demonstration retains original 176-GUI-pixel texture/slot dimensions through GUI scales 2/3/4. Constrained viewports may require the consumer to select a compact layout through ADAPT; preserving native pixels does not guarantee that several full windows fit beside one another. Native/runtime acceptance evidence is maintained in [the companion implementation audit](../../API-COMPANIONS-0.1.4-PLAN.md). Compilation and headless routing tests are separate from actual inventory/network/lifecycle and rendered-image proof.
 
 ## Controller navigation and editors
+
+An external workspace can call `setCharacterEffectsPresentation(true)` when it
+renders Character's status effects in its own layout. Core then omits its attached
+effect list only while externally presented. Set the flag to `false` when returning
+presentation ownership; ordinary native desktop rendering retains its effect list.
+This flag changes rendering only and does not change Character's measured bounds.
 
 The Controlify companion uses the public workspace API for every window across all twelve supported version/loader targets. Compile the integration against the matching Core API; native input, rendering and recipe types still vary by game version. These hooks do not require a dependency on Controlify or its implementation classes. A definition can expose its current tabs, buttons and virtual entries through its committed `surface` regions: use `DesktopHitRole.CONTROL` for a control and `DesktopHitRole.SLOT` for an entry. Coordinates are relative to the window. Publish only visible, enabled targets and update them when layout, scrolling or tab state changes. Salt transforms these same rectangles for controller snapping; the companion needs no mod ID or screen-class check. Native menu slots remain discoverable through `slotAt`.
 

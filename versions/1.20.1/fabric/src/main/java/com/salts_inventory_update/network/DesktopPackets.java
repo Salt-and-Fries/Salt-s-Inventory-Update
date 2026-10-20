@@ -664,6 +664,24 @@ public final class DesktopPackets {
         }
     }
 
+    public record DesktopFinishWorkspacePayload(int sessionId) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_finish_workspace");
+
+        public DesktopFinishWorkspacePayload(FriendlyByteBuf buf) {
+            this(buf.readVarInt());
+        }
+
+        @Override
+        public ResourceLocation id() {
+            return TYPE;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buf) {
+            buf.writeVarInt(this.sessionId);
+        }
+    }
+
     public record DesktopSessionPinPayload(int sessionId, int pinMode) implements DesktopPacket {
         public static final ResourceLocation TYPE = DesktopPackets.id("desktop_session_pin");
 

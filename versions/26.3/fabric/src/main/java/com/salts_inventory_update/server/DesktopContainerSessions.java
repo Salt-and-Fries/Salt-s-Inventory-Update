@@ -105,6 +105,7 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopBundleSelectPayl
 import com.salts_inventory_update.network.DesktopPackets.DesktopCarriedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopClickPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopFinishWorkspacePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopMerchantOffersPayload;
@@ -270,6 +271,9 @@ public final class DesktopContainerSessions {
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopCloseSessionPayload.TYPE, (payload, context) ->
             context.server().execute(() -> closeSession(context.player(), payload))
+        );
+        ServerPlayNetworking.registerGlobalReceiver(DesktopFinishWorkspacePayload.TYPE, (payload, context) ->
+            context.server().execute(() -> finishWorkspace(context.player(), payload))
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopSessionPinPayload.TYPE, (payload, context) ->
             context.server().execute(() -> setSessionPin(context.player(), payload))
@@ -4285,6 +4289,11 @@ public final class DesktopContainerSessions {
         if (targetKind == DesktopPackets.QUICK_TARGET_SESSION) {
             Session targetSession = sessions.sessions.get(targetSessionId);
             if (targetSession != null && targetSession.visibleToClient && targetSession.menu.stillValid(player)) {
+                if (targetSession.menu instanceof net.minecraft.world.inventory.AbstractFurnaceMenu
+                        && targetSession.menu.slots.size() > 1) {
+                    Slot fuel = targetSession.menu.slots.get(1);
+                    if (fuel.mayPlace(source.slot.getItem())) return List.of(fuel);
+                }
                 return containerSlots(targetSession.menu, player);
             }
             return List.of();
@@ -5070,6 +5079,23 @@ public final class DesktopContainerSessions {
         if (closing != null && closing.companion != null) return;
         DesktopDebug.log("server close request player={} session={}", player.getName().getString(), payload.sessionId());
         sessions.close(player, payload.sessionId(), true);
+    }
+
+    private static void finishWorkspace(ServerPlayer player, DesktopFinishWorkspacePayload payload) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (payload.sessionId() != DesktopPackets.PLAYER_MENU_SESSION || sessions == null
+            || !preauthorizesSession(sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(), 0L, false)
+            || !sessions.allowControl(player, "close", 1.0D)
+            || authorizeSession(
+                player, sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(), 0L, false, "close"
+            ) == null) {
+            return;
+        }
+        endRecipeHover(player, sessions);
+        // Vanilla returns the shared cursor and 2x2 inputs, dropping only overflow.
+        player.inventoryMenu.removed(player);
+        setSharedCarried(player, sessions, ItemStack.EMPTY);
+        broadcastGesture(player, sessions);
     }
 
     private static void setSessionPin(ServerPlayer player, DesktopSessionPinPayload payload) {

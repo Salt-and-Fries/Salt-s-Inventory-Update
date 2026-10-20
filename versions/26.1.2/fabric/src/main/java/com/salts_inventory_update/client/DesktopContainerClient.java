@@ -35,6 +35,7 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopBundleSelectPayl
 import com.salts_inventory_update.network.DesktopPackets.DesktopCarriedPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopClickPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopFinishWorkspacePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCustomPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopDataPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopGhostRecipePayload;
@@ -516,6 +517,7 @@ public final class DesktopContainerClient {
                 && ClientPlayNetworking.canSend(DesktopJeiTransferPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopRenamePayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE)
+                && ClientPlayNetworking.canSend(DesktopFinishWorkspacePayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopSessionPinPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopSessionVisibilityPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopOpenLinkedSourcesPayload.TYPE)
@@ -1012,6 +1014,16 @@ public final class DesktopContainerClient {
         }
         DesktopDebug.log("client send close session={}", sessionId);
         send(new DesktopCloseSessionPayload(CONNECTION.connectionNonce(), sessionId, auth.token()), "close");
+    }
+
+    public static void finishWorkspace() {
+        discardPendingMutations("workspace-closed");
+        SessionAuth auth = sessionAuth(DesktopPackets.PLAYER_MENU_SESSION);
+        if (auth == null) {
+            return;
+        }
+        DesktopDebug.log("client send close session={}", DesktopPackets.PLAYER_MENU_SESSION);
+        send(new DesktopFinishWorkspacePayload(CONNECTION.connectionNonce(), DesktopPackets.PLAYER_MENU_SESSION, auth.token()), "finish-workspace");
     }
 
     public static void setSessionPinMode(int sessionId, PinMode pinMode) {

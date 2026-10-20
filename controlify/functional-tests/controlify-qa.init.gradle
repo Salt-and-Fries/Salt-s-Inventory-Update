@@ -59,6 +59,7 @@ gradle.projectsEvaluated {
         }
         def featurePass26 = pin.minecraft in ['26.1.2', '26.2', '26.3']
         if (featurePass26) {
+            if (pin.minecraft == '26.3') qa.java.include('**/QaStatusEffectLayouts.java', '**/FeatureStatusEffectPrototypeMixin.java', '**/QaPlaytestProbe.java', '**/FeaturePlaytestCarriedMixin.java', '**/FeatureEffectsTrayProbeMixin.java')
             qa.java.include('**/FeatureWorkspaceCloseTimingMixin.java')
             qa.java.include('**/FeatureSearchMouseProbeMixin.java')
             qa.java.include('**/QaHoverPacketProbe.java', '**/FeatureHoverPacketProbeMixin.java', '**/FeatureHoverServerProbeMixin.java')
@@ -133,9 +134,10 @@ displayName="Salt Controller QA"
         def run = target.tasks.named('runClient').get()
         target.tasks.register('runPackagedControlifyQa', JavaExec) {
             def scope = root.providers.gradleProperty('controlifyQaScope').getOrElse('all')
-            if (!(scope in ['all', 'feature-parity', 'public-api', 'wheel-polish', 'wheel-stability', 'crafting-qol', 'mod-compat', 'creative-regression', 'browser-render'])
-                || scope != 'all' && scope != 'feature-parity' && !featurePass26
-                || scope == 'feature-parity' && featurePass26)
+            if (!(scope in ['all', 'feature-parity', 'public-api', 'wheel-polish', 'wheel-stability', 'crafting-qol', 'mod-compat', 'creative-regression', 'browser-render', 'playtest-fixes', 'playtest-adapters', 'status-tray'])
+                || scope != 'all' && !(scope in ['feature-parity', 'playtest-adapters']) && !featurePass26
+                || scope in ['feature-parity', 'playtest-adapters'] && featurePass26
+                || scope in ['playtest-fixes', 'status-tray'] && pin.minecraft != '26.3')
                 throw new GradleException('Unsupported controller QA scope: ' + scope)
             def withExtension = root.providers.gradleProperty('controlifyQaExtension').map { it.toBoolean() }.getOrElse(false)
             def fixtures = root.providers.gradleProperty('controlifyQaFixtures').getOrElse('')
@@ -183,7 +185,7 @@ displayName="Salt Controller QA"
                 }
                 if (featurePass26) {
                     def config = new groovy.json.JsonSlurper().parse(root.file(
-                            'controlify/functional-tests/versions/26.3/src/main/resources/salts_inventory_controlify_qa_26_feature.mixins.json'))
+                            "controlify/functional-tests/versions/${pin.minecraft}/src/main/resources/salts_inventory_controlify_qa_26_feature.mixins.json"))
                     config.client.each { mixin ->
                         def path = (config.package + '.' + mixin).replace('.', '/') + '.class'
                         if (!qa.output.classesDirs.files.any { new File(it, path).isFile() })

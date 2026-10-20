@@ -1,6 +1,82 @@
 # Controlify integration validation
 
-## All-version controller port (2026-10-19)
+## Playtest follow-up (2026-10-19)
+
+The playtest changes are on `controlify-playtest-fixes`. All twelve matching Core,
+Extended and Controlify targets build, and `dist/salts-inventory-all-latest.zip`
+contains 36 production JARs with verified module checksums. The all-target build
+used `bundleLatestMods -x test`: it ran package isolation/native symbol checks,
+without running the full functional or JUnit suites.
+
+**Selected status-effects design: tray below Character.** The user chose the tray
+and requested dark-grey countdowns without shadows. It is now implemented in all
+twelve companion targets, using Core's dynamic frame through the public workspace
+API. Character's measured size and scale do not change. Icon tooltips provide names,
+levels and remaining time; constrained layouts wrap or expose an overflow tooltip.
+The tray hides with Character's icon preview and may use the space above when no
+complete row fits underneath.
+
+**Final tray checks:** four focused layout tests passed. Packaged 26.3 Fabric and
+NeoForge each passed **47 distinct checks** and retained **two native screenshots**,
+at 1280x900 and 960x720. Actual rendering probes verified six dark-grey countdowns
+with no shadows, below-Character placement, screen bounds, unchanged Character
+scale, suppression/restoration of the old attached list through API ownership, and
+no tray after effects clear. The strict verifier matched the current JARs in `dist`,
+pinned upstream dependencies, loaded code sources and PNG captures. See
+`build/controlify-status-tray-validation.json` and
+`build/controlify-qa/26.3-{fabric,neoforge}-status-tray-extended/`.
+The complete functional suite was not run for this rendering change.
+
+The following seven-fix checks preceded the tray addition. Their exact tested JARs
+and headless reports are preserved under `tmp/controlify-pre-tray-artifacts/`;
+the eight-profile verifier was rerun against that snapshot. They establish the
+functional fixes before the isolated tray/API rendering change, not a fresh
+all-menu certification of the final tray builds.
+
+**Earlier focused headless checks: 61 passed.** These cover the changed controller
+state/animation/recipe models, the protocol handshake and the authenticated
+workspace-finish packet.
+
+**Earlier packaged focused gameplay: 26.3 Fabric and NeoForge passed**, with Core,
+Extended and Controlify loaded together. Each loader recorded **139 distinct PASS
+checks and 14 native screenshots**. The strict verifier checked the exact
+tested JARs in the preserved snapshot, native loaded code sources, pinned upstream
+artifacts and complete PNG captures. Evidence is retained under
+`build/controlify-qa/26.3-{fabric,neoforge}-playtest-fixes-extended/`, with the
+combined verification in `build/controlify-playtest-validation.json`.
+
+This pass exercised trigger modes, native crafting and catalog stability, cursor
+pickup/scaling/return/overflow, furnace fuel routing (including a full fuel slot),
+focus swaps with a held stick, pane/icon transitions, main-menu native keyboard
+text entry and physical character/backspace callbacks, and the native controls
+settings entry.
+
+**Additional focused adapter checks passed on all six older loader targets:**
+1.20.1 Fabric/Forge recorded 74 distinct PASS checks each; 1.21.1 and 1.21.11
+Fabric/NeoForge recorded 72 each. Every profile retained four native screenshots.
+These `playtest-adapters` scenarios exercise the native controls entry, LT/RT
+toggle and hold behavior, crafting selection stability and availability refresh,
+cursor and Character grid cleanup, fuel routing/full-slot behavior, and focus
+swaps with a held stick. They do not run the broader feature-parity suite. The
+strict verifier checked the preserved tested JARs and pinned native dependencies for
+all eight profiles; their combined result is in
+`build/controlify-playtest-validation.json`. The older evidence is retained under
+`build/controlify-qa/{game}-{loader}-playtest-adapters-extended/`.
+
+26.1.2 and 26.2 were compiled and checked for native API compatibility, but were
+not freshly playtested in this follow-up. The runtime fixtures inject synthetic
+controller input into native Controlify; they do not substitute for physical
+controller or long-session playtesting. Legacy Controlify versions do not have
+the native main-menu keyboard overlay that the 26.x typing fix targets.
+
+The original ribbon, tray and expandable-list comparisons remain QA-only historical
+experiments. The selected production tray and its updated text are verified above.
+
+The all-version section below records the earlier port baseline. Its full-suite
+counts and gameplay evidence are historical, not a fresh full-suite certification
+of this follow-up.
+
+## Historical baseline: all-version controller port (2026-10-19)
 
 The current port implements the controller feature set across **all twelve pinned
 Minecraft/loader targets**. Core, Extended and the Controlify companion are
@@ -11,7 +87,7 @@ Controlify, keyboard, guide, rendering and recipe differences, and the shared
 editable assets that remain in their original 26.3 source directory.
 
 **Headless checks: 1,435 tests passed, with zero failures, errors or skips.** The
-current JUnit XML contains 216 shared controller model/input/render tests, 972 Core
+baseline JUnit XML contained 216 shared controller model/input/render tests, 972 Core
 tests across the six game versions, and 247 Extended provider tests. Core tests
 run once per game version through the Fabric test source set; native compilation,
 packaged JAR checks and gameplay on the other loaders are separate evidence.

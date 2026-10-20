@@ -93,5 +93,11 @@
   "salts_inventory_controlify.sounds.preview.stop": "Stop",
   "salts_inventory_controlify.sounds.preview.stop.description": "Stop the preview sound.",
   "salts_inventory_controlify.sounds.reset": "Restore defaults",
-  "salts_inventory_controlify.sounds.reset.description": "Restore the Off preset. Inventory sounds and cursor-hover feedback stay silent."
+  "salts_inventory_controlify.sounds.reset.description": "Restore the Off preset. Inventory sounds and cursor-hover feedback stay silent.",
+  "salts_inventory_controlify.controls.entry": "Inventory controls…",
+  "salts_inventory_controlify.controls.title": "Controller Inventory Controls",
+  "salts_inventory_controlify.controls.windows": "Window wheel: %s",
+  "salts_inventory_controlify.controls.recipe": "Quick actions: %s",
+  "salts_inventory_controlify.controls.hold": "Hold",
+  "salts_inventory_controlify.controls.toggle": "Toggle"
 }

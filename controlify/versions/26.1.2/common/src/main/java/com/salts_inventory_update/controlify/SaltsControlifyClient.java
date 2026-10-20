@@ -80,6 +80,7 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
                     || w.handle().state().keyboardFocused()).map(w -> w.handle().instanceId()).reduce((a, b) -> b).orElse(null);
             desktop.forceInventoryHud(true);
             desktop.setContextualRecipePresentation(true);
+            desktop.setCharacterEffectsPresentation(true);
             controllerPresentationActive = true;
             desktop.initialize(Minecraft.getInstance().getWindow().getGuiScaledWidth(), Minecraft.getInstance().getWindow().getGuiScaledHeight());
             Set<UUID> before = new LinkedHashSet<>(windows.keySet());
@@ -126,6 +127,7 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
         if (!desktop.isValid() || minecraft.player == null) {
             craftFeedback.reset(); WorkspaceUiSounds.reset();
             desktop.setContextualRecipePresentation(false);
+            desktop.setCharacterEffectsPresentation(false);
             controllerPresentationActive = false;
             if (minecraft.screen == screen || WorkspaceSearchKeyboard.activeFor(screen)) minecraft.setScreen(null);
             WorkspaceSearchKeyboard.resetFor(screen);
@@ -138,6 +140,7 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
             craftFeedback.reset(); WorkspaceUiSounds.reset();
             desktop.forceInventoryHud(false);
             desktop.setContextualRecipePresentation(false);
+            desktop.setCharacterEffectsPresentation(false);
             controllerPresentationActive = false;
             if (model != null && model.active()) {
                 boolean wasVisible = !tuckedAway();
@@ -149,6 +152,7 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
         }
         if (!controllerPresentationActive) {
             desktop.setContextualRecipePresentation(true);
+            desktop.setCharacterEffectsPresentation(true);
             controllerPresentationActive = true;
         }
         if (!model.active() && desktop.isNativeScreenActive()) opened(desktop);
@@ -234,6 +238,9 @@ public final class SaltsControlifyClient implements DesktopWorkspaceHost, Radial
     Map<UUID, DesktopWorkspaceWindow> windows() { return Collections.unmodifiableMap(windows); }
     RadialWorkspace<UUID> model() { return model; }
     ControlifyConfig config() { return config; }
+    public static ControlifyConfig preferences() { return instance.config; }
+    @Override public boolean toggleWindowWheel() { return config.toggleWindowWheel(); }
+    @Override public boolean toggleRecipeWheel() { return config.toggleRecipeWheel(); }
     WorkspaceCraftFeedback craftFeedback() { return craftFeedback; }
 
     @Override public boolean workspaceActive() { return model != null && model.active(); }

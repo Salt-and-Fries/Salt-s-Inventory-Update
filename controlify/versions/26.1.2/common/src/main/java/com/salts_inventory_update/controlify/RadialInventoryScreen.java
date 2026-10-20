@@ -27,6 +27,7 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
     private UUID capturedWindow;
     private ScreenProcessor<RadialInventoryScreen> controllerProcessor;
     private final ContextualRadialOverlay contextual;
+    private final com.salts_inventory_update.controlify.model.WorkspaceSurfaceTransition<UUID> surfaces = new com.salts_inventory_update.controlify.model.WorkspaceSurfaceTransition<>();
     private boolean contextualRequiresRelease;
 
     @Override public ScreenProcessor<RadialInventoryScreen> screenProcessor() {
@@ -59,6 +60,8 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
         capturedWindow = null; hoveredWindow = null; hoveredSlot = null; placements = null;
         contextualRequiresRelease = false;
         contextual.finishImmediately();
+        surfaces.reset();
+        ControlifyInputBridge.cancelWheelToggles();
     }
     @Override public void containerTick() { owner.desktop().tick(); }
 
@@ -81,7 +84,18 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
                 graphics.disableScissor();
             }
         }
-        if (!owner.radialActive() && !contextual.active()) owner.desktop().renderCarried(graphics, mouseX, mouseY);
+        WorkspaceEffectsTray.render(owner, placements, graphics, mouseX, mouseY,
+                Math.max(1, height - WorkspaceActionGuide.reservedBottomSpace(this)));
+        if (!owner.radialActive() && !contextual.active()) {
+            float scale = controllerCursorScale(mouseX, mouseY);
+            graphics.pose().pushMatrix();
+            try {
+                graphics.pose().translate(mouseX, mouseY);
+                graphics.pose().scale(scale, scale);
+                graphics.pose().translate(-mouseX, -mouseY);
+                owner.desktop().renderCarried(graphics, mouseX, mouseY);
+            } finally { graphics.pose().popMatrix(); }
+        }
         if (!owner.radialActive() && !contextual.active()) for (var renderable : ((dev.isxander.controlify.mixins.feature.screenop.ScreenAccessor) (Object) this).controlify$getRenderables())
             renderable.extractRenderState(graphics, mouseX, mouseY, partialTick);
         WorkspaceActionGuide.render(this, graphics, mouseX, mouseY, partialTick);
@@ -134,6 +148,8 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
     }
 
     private void renderWorkspaceContents(GuiGraphicsExtractor graphics, float partialTick) {
+        surfaces.retain(placements.windows().keySet());
+        long surfaceNow = System.nanoTime();
         // Ghosts and outgoing panes render beneath the two active panes.
         var drawOrder = new ArrayList<>(placements.windows().entrySet());
         drawOrder.sort(Comparator.comparingInt(entry -> owner.radialActive()
@@ -152,13 +168,14 @@ public final class RadialInventoryScreen extends AbstractContainerScreen<Invento
             boolean fullSurface = entry.getKey().equals(owner.model().focused())
                     || (owner.radialActive() ? owner.model().highlighted().filter(entry.getKey()::equals).isPresent()
                     : entry.getKey().equals(owner.model().selected()));
-            if (!fullSurface) {
+            double live = surfaces.value(entry.getKey(), fullSurface, surfaceNow, owner.config().animationsEnabled());
+            if (live < .995) {
                 com.salts_inventory_update.controlify.render.WorkspacePreviewRenderer.renderWindowIcon(
-                        entry.getKey(), owner.desktop().previewIcon(entry.getKey()), placement, bounds, graphics);
-                continue;
+                        entry.getKey(), owner.desktop().previewIcon(entry.getKey()),
+                        placement.withOpacity(placement.opacity() * (1 - live)), bounds, graphics);
             }
-
-            renderNativeWindow(graphics, entry.getKey(), placement, partialTick);
+            if (live < .005) continue;
+            renderNativeWindow(graphics, entry.getKey(), placement.withOpacity(placement.opacity() * live), partialTick);
             if (placement.highlight() > 0.001) {
                 int alpha = (int) (255 * placement.highlight());
                 graphics.outline((int) placement.x() - 2, (int) placement.y() - 2,

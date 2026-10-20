@@ -2,7 +2,8 @@ package com.salts_inventory_update.protocol;
 
 /** Mapping-independent desktop protocol contract shared by every game version. */
 public final class DesktopProtocol {
-    public static final int VERSION = 4;
+    // Version 5 adds authenticated whole-workspace cleanup, including the shared cursor.
+    public static final int VERSION = 5;
     public static final int HELLO_TIMEOUT_TICKS = 100;
 
     public static final long CAP_INVENTORY_TOPOLOGY = 1L;

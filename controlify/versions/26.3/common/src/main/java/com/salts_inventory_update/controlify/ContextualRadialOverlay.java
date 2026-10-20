@@ -27,6 +27,7 @@ import net.minecraft.world.item.ItemStack;
 public final class ContextualRadialOverlay {
     private final SaltsControlifyClient owner;
     private final ContextualWheelSelection selection = new ContextualWheelSelection();
+    private final com.salts_inventory_update.controlify.model.StableRecipeOrder<DesktopContextualMenu.Recipe> recipeOrder = new com.salts_inventory_update.controlify.model.StableRecipeOrder<>();
     private UUID source, destination;
     private DesktopContextualMenu snapshot = DesktopContextualMenu.NONE;
     private int category, creativeIndex;
@@ -238,27 +239,26 @@ public final class ContextualRadialOverlay {
                 && indexedLanguage.equals(language) && indexedLanguageInstance == languageInstance)
             return indexedEntries;
         var id = snapshot.categories().get(category).id();
-        var eligible = snapshot.recipes().stream().filter(recipe -> (category == 0 || id.equals(recipe.category()))
-            && filter.includes(recipe.craftable(), recipe.grid().stream().anyMatch(ingredient -> ingredient.available() > 0)))
-            .map(recipe -> new AlphabeticalRecipeIndex.Entry<>(recipe, recipe.output().getHoverName().getString(), recipe.id().toString())).toList();
-        var previousEntries = alphabetCatalog.entries();
-        int previousSelected = selection.displayedSelected(previousEntries.size());
-        boolean sameContext = indexedCategory == category && indexedFilter == filter;
-        alphabetCatalog = alphabetCache.index(eligible, language, languageInstance);
+        var available = snapshot.recipes().stream()
+            .filter(recipe -> category == 0 || id.equals(recipe.category())).toList();
+        var eligible = available.stream().filter(recipe -> filter.includes(recipe.craftable(),
+            recipe.grid().stream().anyMatch(ingredient -> ingredient.available() > 0))).toList();
+        boolean sameContext = indexedCategory == category && indexedFilter == filter
+            && indexedLanguage.equals(language) && indexedLanguageInstance == languageInstance;
+        if (!sameContext) recipeOrder.reset();
+        // Refresh availability and counts without moving cards when crafting consumes ingredients.
+        // A new opening, category or filter takes a fresh membership snapshot.
+        var pinned = recipeOrder.update(available, eligible, recipe -> recipe.id().toString());
+        alphabetCatalog = alphabetCache.index(pinned.stream().map(recipe -> new AlphabeticalRecipeIndex.Entry<>(
+            recipe, recipe.output().getHoverName().getString(), recipe.id().toString())).toList(), language, languageInstance);
         var entries = alphabetCatalog.entries();
-        if (sameContext && !previousEntries.isEmpty()
-                && !previousEntries.stream().map(AlphabeticalRecipeIndex.Entry::stableKey).toList().equals(entries.stream().map(AlphabeticalRecipeIndex.Entry::stableKey).toList())) {
-            String selectedKey = previousSelected < 0 ? "" : previousEntries.get(previousSelected).stableKey();
-            int anchor = Math.min(Math.max(0, previousSelected), Math.max(0, entries.size() - 1));
-            for (int i = 0; i < entries.size(); i++) if (entries.get(i).stableKey().equals(selectedKey)) { anchor = i; break; }
-            selection.reanchor(anchor, entries.size());
-        }
         indexedSnapshot = snapshot; indexedCategory = category; indexedFilter = filter;
         indexedLanguage = language; indexedLanguageInstance = languageInstance;
         indexedEntries = entries.stream().map(AlphabeticalRecipeIndex.Entry::value).toList();
         return indexedEntries;
     }
     private void invalidateCatalog() {
+        recipeOrder.reset();
         indexedSnapshot = null; indexedCategory = -1; alphabetCatalog = AlphabeticalRecipeIndex.Catalog.empty(); indexedEntries = List.of();
     }
     public List<AlphabeticalRecipeIndex.Group> alphabetGroups() { filtered(); return alphabetCatalog.groups(); }

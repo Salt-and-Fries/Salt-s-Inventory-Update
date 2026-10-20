@@ -34,6 +34,7 @@ public abstract class FeatureWorkspaceSurfaceProbeMixin {
     @Inject(method="extractRenderState",at=@At("RETURN"),remap=false)
     private void backdropAfter(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float tick,CallbackInfo callback) {
         com.salts_inventory_update.controlify.qa.QaContextualPresentationProbe.workspaceAfter(contextual);
+        com.salts_inventory_update.controlify.qa.QaStatusEffectLayouts.render(graphics);
     }
     @Inject(method="renderLiveDestination",at=@At("HEAD"),remap=false)
     private void destinationBefore(GuiGraphicsExtractor graphics,UUID id,com.salts_inventory_update.controlify.model.ContextualPresentationLayout.Rect rect,float tick,CallbackInfo callback) {

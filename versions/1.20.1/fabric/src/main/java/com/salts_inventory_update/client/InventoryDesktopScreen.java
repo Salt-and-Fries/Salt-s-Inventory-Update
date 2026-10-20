@@ -999,6 +999,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable SlotKey hoveredBundleSlotKey;
     private ItemStack sharedCarried = ItemStack.EMPTY;
     private boolean contextualRecipePresentation;
+    private boolean characterEffectsPresentation;
     private @Nullable UUID contextualHoverSource;
     private int contextualHoverSession = Integer.MIN_VALUE;
     private ItemStack lastQuickMoved = ItemStack.EMPTY;
@@ -1427,6 +1428,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 return sourceId != null && sourceId.equals(contextualHoverSource)
                     && DesktopContainerClient.recipeHoverRejected(contextualHoverSession);
             }
+            @Override public void setCharacterEffectsPresentation(boolean enabled) {
+                characterEffectsPresentation = enabled;
+            }
             @Override public void setContextualRecipePresentation(boolean enabled) {
                 contextualRecipePresentation = enabled;
                 if (!enabled) clearContextualHover();
@@ -1450,7 +1454,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 for (InventoryWindow window : List.copyOf(InventoryDesktopScreen.this.windows)) {
                     if (!workspaceProtectedWindows.contains(window.apiInstanceId) && apiOptions(window).closable()) closeWindow(window, "external-close-all", true);
                 }
-                DesktopContainerClient.closeSession(DesktopPackets.PLAYER_MENU_SESSION);
+                DesktopContainerClient.finishWorkspace();
                 cancelInput();
             }
         };
@@ -17659,6 +17663,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void renderCharacterEffects(GuiGraphicsExtractor graphics, InventoryWindow window) {
+        if (this.characterEffectsPresentation && this.externallyPresented()) return;
         Player player = this.minecraft.player;
         if (player == null || player.getActiveEffects().isEmpty()) {
             return;

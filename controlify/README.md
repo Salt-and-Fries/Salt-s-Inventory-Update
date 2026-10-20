@@ -22,6 +22,31 @@ rendering and routing input to existing windows. It contains no controller layou
 inputs or animations. Older core 0.1.4 archives without these hooks are insufficient;
 use the core JAR produced by this branch's build together with the controller JAR.
 
+## Playtest controls and cleanup
+
+**Controls > Inventory controls** offers independent Hold/Toggle modes for the window
+wheel and quick actions. Both default to Hold. In Toggle mode, press the trigger again
+to finish selecting a window or close quick actions; releasing it keeps the wheel open.
+
+Closing the whole controller workspace returns the carried stack and Character crafting
+inputs to player storage, using vanilla ground drops when storage is full. Tucking the
+workspace or closing one container keeps the shared cursor intact. Quick-moving fuel
+into a paired vanilla furnace uses its native fuel slot and does not spill into the
+input slot when the fuel slot is full.
+
+A recipe wheel keeps its recipe positions throughout that opening, while refreshing
+availability and ingredient counts. Changing category/filter or reopening takes a fresh
+filtered list. This prevents crafting from moving the ring underneath the cursor.
+
+Active status effects appear in a compact tray below the displayed Character window.
+Countdowns use dark-grey text without a shadow; hovering an icon shows its name,
+level and remaining time. The tray does not reduce Character's size. It wraps or
+uses an overflow tooltip when space is limited, and can use the space above the
+window when a complete row cannot fit below. It hides with Character's icon preview.
+
+These builds use desktop protocol **5**. Replace Core on both client and server with the
+matching rebuilt JAR; older protocol builds are rejected by the version handshake.
+
 ## Controls
 
 Opening a supported container or UI focuses player inventory on the left and places

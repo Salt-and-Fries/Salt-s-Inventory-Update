@@ -14,7 +14,8 @@
     "WorkspaceKeyboardTextureMixin",
     "WorkspaceNativeCursorWarpMixin",
     "WorkspaceMouseCallbackMixin",
-    "WorkspaceKnownWarpInputMixin"
+    "WorkspaceKnownWarpInputMixin",
+    "WorkspaceControlsOptionsMixin"
   ],
   "injectors": {
     "defaultRequire": 1

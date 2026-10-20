@@ -1021,6 +1021,7 @@ public interface DesktopWorkspace {
     List<DesktopRecipeGhost> recipeHoverGhosts(UUID source);
     default boolean recipeHoverRejected(UUID source);
     void setContextualRecipePresentation(boolean enabled);
+    default void setCharacterEffectsPresentation(boolean enabled);
     DesktopContextualBookHint contextualBookHint(UUID id);
     boolean selectContextualTab(UUID id, net.minecraft.resources.Identifier tab);
     void protectWindow(UUID id);

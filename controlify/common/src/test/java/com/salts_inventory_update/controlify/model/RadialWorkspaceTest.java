@@ -85,7 +85,7 @@ class RadialWorkspaceTest {
         assertTrue(workspace.swapHighlighted());
         assertEquals("chest", workspace.focused());
         assertEquals("player", workspace.highlighted().orElseThrow());
-        assertEquals(List.of("player", "character"), workspace.radialOrder());
+        assertEquals(List.of("character", "player"), workspace.radialOrder());
         assertTrue(workspace.releaseRadial());
         assertEquals("chest", workspace.focused());
         assertEquals("player", workspace.selected());

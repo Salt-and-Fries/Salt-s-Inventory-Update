@@ -211,7 +211,7 @@ public final class ControlifyGameplayHarness {
                     mc.getSingleplayerServer().createCommandSourceStack().withSuppressedOutput(), "time set noon");
             return null;
         }), ControlifyGameplayHarness::serverDone, () -> {}, 10);
-        if("feature-parity".equals(System.getProperty("salts_inventory_controlify.qaScope",""))){
+        if(java.util.Set.of("feature-parity", "playtest-adapters").contains(System.getProperty("salts_inventory_controlify.qaScope", ""))){
             add("parity-native-bindings-fixture",()->{
                 ControlifyBindings.INV_QUICK_MOVE.on(controller).setBoundInput(new ButtonInput(GamepadInputs.MISC_1_BUTTON));
                 ControlifyBindings.GUI_BACK.on(controller).setBoundInput(new ButtonInput(GamepadInputs.EAST_BUTTON));

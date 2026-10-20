@@ -249,7 +249,8 @@ def validate(folder, artifacts, pins=None):
     pins = pins if pins is not None else pinned_matrix()
     assert (game, loader) in pins, f"{name}: unsupported target"
     pin = pins[game, loader]
-    allowed_scopes = {"feature-parity"} if game in LEGACY else {"public-api", "wheel-polish"}
+    allowed_scopes = {"feature-parity", "playtest-adapters"} if game in LEGACY else {"public-api", "wheel-polish"}
+    if game == "26.3": allowed_scopes = allowed_scopes | {"playtest-fixes", "status-tray"}
     assert scope in allowed_scopes, f"{name}: unsupported focused scope {scope}"
     expected_scenario = "controlify-controller-world" if game in LEGACY else "controlify-" + scope
     assert report.get("scenario") == expected_scenario, f"{name}: unexpected gameplay harness"
@@ -271,8 +272,43 @@ def validate(folder, artifacts, pins=None):
         f"{name}: missing actual native controller/server setup"
     if scope == "feature-parity":
         runtime.legacy_feature_parity(passed, name)
+    elif scope == "playtest-adapters":
+        required = {
+            "controls-entry-visible", "native-settings-open", "LT-stays-open-after-release",
+            "RT-stays-open-after-release", "LT-toggle-off", "RT-toggle-off", "crafts-four-planks",
+            "catalog-does-not-move", "wheel-angle-does-not-move", "selected-recipe-does-not-move",
+            "recipe-availability-refreshes", "native-cursor-holds-seven", "close-settles-cursor-and-grid",
+            "fuel-reaches-fuel-slot", "full-fuel-preserves-source", "swap-keeps-held-direction",
+        }
+        compat_runtime.require(passed, {"parity-playtest-" + check for check in required}, name)
     elif scope == "public-api":
         compat_runtime.require(passed, compat_runtime.API_CHECKS, name)
+    elif scope == "status-tray":
+        required = {"tray-" + check + "-" + str(size)
+            for size in (1280, 960) for check in ("six-countdowns", "dark-grey", "no-shadow", "keeps-character-scale",
+                "below-character", "fits-screen", "replaces-old-side-list")}
+        required |= {"tray-native-list-opt-out-restores", "tray-api-ownership-restored", "tray-hidden-without-effects"}
+        compat_runtime.require(passed, required, name)
+    elif scope == "playtest-fixes":
+        required = {
+            "LT-toggle-remains-open-after-release", "RT-toggle-remains-open-after-release",
+            "playtest-LT-toggle-off", "playtest-RT-toggle-off",
+            "playtest-crafting-keeps-catalog-membership", "playtest-crafting-keeps-wheel-angle",
+            "playtest-crafting-keeps-selected-recipe", "playtest-depleted-recipe-updates-availability",
+            "playtest-craft-produced-exactly-four-planks", "playtest-carried-item-uses-cursor-scale",
+            "playtest-cursor-and-character-grid-returned", "playtest-coal-routes-only-to-fuel",
+            "playtest-full-fuel-does-not-spill-into-input", "playtest-cursor-overflow-drops-exactly-once",
+            "playtest-focus-swap-preserves-held-direction", "playtest-focus-swap-preserves-other-ring-positions",
+            "playtest-cycle-keeps-outgoing-native-pane-during-transition",
+            "playtest-cycle-fades-in-incoming-native-pane", "playtest-cycle-finishes-with-one-selected-native-pane",
+            "playtest-main-menu-physical-text-path", "playtest-main-menu-native-keyboard-types",
+            "playtest-main-menu-overlay-accepts-physical-character", "playtest-main-menu-overlay-accepts-physical-backspace",
+            "playtest-main-menu-typing-resumes-after-keyboard", "playtest-controls-entry-visible-and-active",
+            "playtest-native-controls-settings",
+        }
+        required |= {f"effects-option-{option}-{check}-scale-{scale}"
+            for option in range(1, 5) for check in ("fits", "preserves-character") for scale in (2, 3)}
+        compat_runtime.require(passed, required, name)
     else:
         compat_runtime.require(passed, compat_runtime.FOCUSED_CHECKS[scope], name)
     isolation = runtime.host_motion_isolation(report, name)

@@ -14,7 +14,10 @@
     "WorkspacePictureScaleMixin",
     "WorkspaceSoundOptionsMixin",
     "WorkspaceUpstreamSoundMixin",
-    "WorkspaceMouseHandlerAccessor"
+    "WorkspaceMouseHandlerAccessor",
+    "WorkspaceControlsOptionsMixin",
+    "NativeKeyboardTypingMixin",
+    "DelegatedInputTargetAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -56,7 +56,166 @@ public final class QaFeatureParity {
     private Object wheel;
     private Item creativeItem;
     private QaFeatureParity(Harness harness) { h = harness; }
-    public static void append(Harness harness) { new QaFeatureParity(harness).scenarios(); }
+    public static void append(Harness harness) {
+        var fixture = new QaFeatureParity(harness);
+        if ("playtest-adapters".equals(System.getProperty("salts_inventory_controlify.qaScope"))) fixture.playtestAdapters();
+        else fixture.scenarios();
+    }
+
+    /** Only the playtest changes; deliberately excludes the broader feature-parity scenarios. */
+    private void playtestAdapters() {
+        step("playtest-hold-default", () -> {
+            try { h.owner().config().setToggleWindowWheel(false); h.owner().config().setToggleRecipeWheel(false); }
+            catch (Exception failure) { throw new IllegalStateException(failure); }
+        }, () -> true, () -> {}, 2);
+        controlsSettings();
+        h.openContainer("parity-playtest-open-chest", "chest");
+        h.openContainer("parity-playtest-open-table", "table");
+        pair("table", "inventory");
+        server("playtest-recipe-materials", () -> {
+            h.player().getInventory().clearContent();
+            h.storage().clearContent();
+            h.player().getInventory().setItem(9, new ItemStack(Items.OAK_LOG, 1));
+            h.player().getInventory().setItem(10, new ItemStack(Items.OAK_PLANKS, 12));
+            h.awardRecipes(); h.player().inventoryMenu.broadcastChanges();
+        }, () -> {
+            try {
+                var preferences = (com.salts_inventory_update.controlify.model.RecipeFilterSettings)
+                    field(field(h.owner(), "value"), "recipeFilters");
+                preferences.set(RecipeFilter.CRAFTABLE);
+                h.owner().config().setToggleWindowWheel(true); h.owner().config().setToggleRecipeWheel(true);
+            } catch (Exception failure) { throw new IllegalStateException(failure); }
+        });
+        step("playtest-LT-toggle-on", () -> h.leftTrigger(1), () -> h.owner().radialActive(), () -> {}, 3);
+        step("playtest-LT-toggle-release", h::neutral, () -> true,
+            () -> check("playtest-LT-stays-open-after-release", h.owner().radialActive()), 6);
+        step("playtest-LT-toggle-off", () -> h.leftTrigger(1), this::side, () -> {}, 4);
+        step("playtest-LT-neutral", h::neutral, this::side, () -> {}, 4);
+        step("playtest-RT-toggle-on", () -> { pointBook("table"); h.rightTrigger(1); }, this::contextualActive,
+            () -> wheel = field(h.screen(), "contextual"), 6);
+        step("playtest-RT-toggle-release", h::neutral, () -> true,
+            () -> check("playtest-RT-stays-open-after-release", contextualActive()), 6);
+        step("playtest-aim-planks", () -> aimRecipe(Items.OAK_PLANKS), () -> selected(Items.OAK_PLANKS), h::neutral, 8);
+        List<String> order = new ArrayList<>();
+        final Object[] selectedId = {null};
+        step("playtest-remember-carousel", () -> {}, () -> true, () -> {
+            order.addAll(entries().stream().map(r -> r.id().toString()).toList());
+            positionBefore = selection().position(); selectedId[0] = entries().get(selection().displayedSelected(entries().size())).id();
+        }, 4);
+        button("playtest-craft-A", "SOUTH_BUTTON", () -> {});
+        serverAssert("playtest-crafts-four-planks", () -> h.player().getInventory().getItem(0).is(Items.OAK_PLANKS)
+            && h.player().getInventory().getItem(0).getCount() == 4);
+        step("playtest-carousel-after-crafting", h::neutral, () -> true, () -> {
+            check("playtest-catalog-does-not-move", order.equals(entries().stream().map(r -> r.id().toString()).toList()));
+            check("playtest-wheel-angle-does-not-move", Math.abs(selection().position() - positionBefore) < .0001);
+            var recipe = entries().get(selection().displayedSelected(entries().size()));
+            check("playtest-selected-recipe-does-not-move", selectedId[0].equals(recipe.id()));
+            check("playtest-recipe-availability-refreshes", !recipe.craftable());
+            h.capture("playtest-adapter-stable-crafting");
+        }, 10);
+        step("playtest-RT-toggle-off", () -> h.rightTrigger(1), () -> !contextualActive(), () -> {}, 5);
+        step("playtest-restore-hold-mode", () -> {
+            h.neutral();
+            try { h.owner().config().setToggleWindowWheel(false); h.owner().config().setToggleRecipeWheel(false); }
+            catch (Exception failure) { throw new IllegalStateException(failure); }
+        }, this::side, () -> {}, 6);
+        server("playtest-pickup-fixture", () -> {
+            h.player().getInventory().clearContent(); h.player().inventoryMenu.setCarried(ItemStack.EMPTY);
+            h.player().getInventory().setItem(9, new ItemStack(Items.DIAMOND, 7));
+            h.player().inventoryMenu.slots.get(1).set(new ItemStack(Items.EMERALD, 3));
+            h.player().inventoryMenu.broadcastChanges();
+        }, () -> {});
+        step("playtest-pickup-point", () -> pointItem(Items.DIAMOND), () -> true, () -> {}, 5);
+        button("playtest-pickup-A", "SOUTH_BUTTON", () -> {});
+        serverAssert("playtest-native-cursor-holds-seven", () -> h.player().inventoryMenu.getCarried().is(Items.DIAMOND)
+            && h.player().inventoryMenu.getCarried().getCount() == 7);
+        step("playtest-cursor-preview", h::neutral, () -> !workspace().carriedStack().isEmpty(),
+            () -> h.capture("playtest-adapter-carried-item"), 6);
+        closeWorkspace("playtest-close-cursor");
+        serverAssert("playtest-close-settles-cursor-and-grid", () -> h.player().inventoryMenu.getCarried().isEmpty()
+            && h.player().inventoryMenu.slots.subList(1, 5).stream().noneMatch(s -> s.hasItem())
+            && inventoryCount(Items.DIAMOND) == 7 && inventoryCount(Items.EMERALD) == 3);
+        h.openContainer("parity-playtest-open-furnace", "furnace");
+        server("playtest-fuel-fixture", () -> {
+            h.player().getInventory().setItem(9, new ItemStack(Items.COAL, 11));
+            h.player().inventoryMenu.broadcastChanges();
+        }, () -> {});
+        step("playtest-fuel-point", () -> pointItem(Items.COAL), () -> true, () -> {}, 5);
+        button("playtest-fuel-quick-move", "MISC_1_BUTTON", () -> {});
+        serverAssert("playtest-fuel-reaches-fuel-slot", () -> h.menu(FurnaceMenu.class).slots.get(0).getItem().isEmpty()
+            && h.menu(FurnaceMenu.class).slots.get(1).getItem().is(Items.COAL)
+            && h.menu(FurnaceMenu.class).slots.get(1).getItem().getCount() == 11);
+        server("playtest-full-fuel-fixture", () -> {
+            h.menu(FurnaceMenu.class).slots.get(1).set(new ItemStack(Items.COAL, 64));
+            h.player().getInventory().setItem(9, new ItemStack(Items.COAL, 7));
+            h.menu(FurnaceMenu.class).broadcastChanges(); h.player().inventoryMenu.broadcastChanges();
+        }, () -> {});
+        step("playtest-full-fuel-point", () -> pointItem(Items.COAL), () -> true, () -> {}, 5);
+        button("playtest-full-fuel-quick-move", "MISC_1_BUTTON", () -> {});
+        serverAssert("playtest-full-fuel-preserves-source", () -> h.menu(FurnaceMenu.class).slots.get(0).getItem().isEmpty()
+            && h.menu(FurnaceMenu.class).slots.get(1).getItem().getCount() == 64
+            && h.player().getInventory().getItem(9).is(Items.COAL) && h.player().getInventory().getItem(9).getCount() == 7);
+        final UUID[] previousFocus = {null};
+        step("playtest-swap-aim", () -> { previousFocus[0] = h.owner().model().focused(); h.leftTrigger(1); h.aimWindow(h.window("furnace")); },
+            () -> h.owner().radialActive(), () -> {}, 5);
+        button("playtest-swap-A", "SOUTH_BUTTON", () -> {});
+        step("playtest-swap-stick-held", () -> {}, () -> true, () -> {
+            check("playtest-swap-keeps-held-direction", h.owner().model().focused().equals(h.window("furnace"))
+                && h.owner().model().highlighted().filter(previousFocus[0]::equals).isPresent());
+            h.capture("playtest-adapter-swap");
+        }, 6);
+        step("playtest-swap-release", h::neutral, this::side, () -> {}, 6);
+        closeWorkspace("playtest-finish");
+    }
+
+    private void pointBook(String name) {
+        var bounds = workspace().contextualBookHint(h.window(name)).activationBounds();
+        h.point(h.window(name), bounds.x() + bounds.width() / 2.0, bounds.y() + bounds.height() / 2.0);
+    }
+
+    private void pointItem(Item item) {
+        for (var hit : workspace().visibleSlots(inventory())) {
+            var slot = workspace().hoveredSlot(inventory(), hit.x() + 8, hit.y() + 8);
+            if (slot != null && slot.getItem().is(item)) { h.point(inventory(), hit.x() + 8, hit.y() + 8); return; }
+        }
+        throw new IllegalStateException("Missing native inventory item: " + item);
+    }
+
+    private void controlsSettings() {
+        step("playtest-native-controls-open", () -> {
+            var mc = net.minecraft.client.Minecraft.getInstance();
+            try {
+                Class<?> type;
+                try { type = Class.forName("net.minecraft.client.gui.screens.options.controls.ControlsScreen"); }
+                catch (ClassNotFoundException legacy) { type = Class.forName("net.minecraft.client.gui.screens.controls.ControlsScreen"); }
+                mc.setScreen((Screen) type.getConstructor(Screen.class, net.minecraft.client.Options.class).newInstance(mc.screen, mc.options));
+            } catch (ReflectiveOperationException failure) { throw new IllegalStateException(failure); }
+        }, () -> true, () -> {
+            var entry = h.screen().children().stream().filter(c -> c instanceof net.minecraft.client.gui.components.Button button
+                && button.getMessage().equals(net.minecraft.network.chat.Component.translatable("salts_inventory_controlify.controls.entry")))
+                .map(c -> (net.minecraft.client.gui.components.Button) c).findFirst().orElseThrow();
+            check("playtest-controls-entry-visible", entry.visible && entry.active);
+            pressNativeButton(entry);
+        }, 5);
+        step("playtest-native-controls-settings", () -> {},
+            () -> h.screen().getClass().getSimpleName().equals("WorkspaceControlsScreen"),
+            () -> { check("playtest-native-settings-open", true); h.capture("playtest-adapter-settings"); h.screen().onClose(); }, 5);
+        step("playtest-leave-native-controls", () -> h.screen().onClose(), () -> h.screen() == null, () -> {}, 5);
+    }
+
+    private static void pressNativeButton(net.minecraft.client.gui.components.Button button) {
+        try {
+            for (Method method : button.getClass().getMethods()) if (method.getName().equals("onPress")) {
+                if (method.getParameterCount() == 0) { method.invoke(button); return; }
+                if (method.getParameterCount() == 1) {
+                    Class<?> event = Class.forName("net.minecraft.client.input.KeyEvent");
+                    Object input = event.getConstructor(int.class, int.class, int.class).newInstance(com.mojang.blaze3d.platform.InputConstants.KEY_RETURN, 0, 0);
+                    method.invoke(button, input); return;
+                }
+            }
+            throw new NoSuchMethodException("Button.onPress");
+        } catch (ReflectiveOperationException failure) { throw new IllegalStateException(failure); }
+    }
     private void step(String name, Runnable start, BooleanSupplier ready, Runnable verify, int settle) {
         h.step("parity-" + name, start, ready, verify, settle);
     }

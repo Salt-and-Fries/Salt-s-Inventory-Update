@@ -59,6 +59,7 @@ public abstract class FeatureNativeGuideDrawProbeMixin {
     }
     @Inject(method = "text(Lnet/minecraft/client/gui/Font;Ljava/lang/String;IIIZ)V", at = @At("HEAD"))
     private void stringText(Font font, String text, int x, int y, int color, boolean shadow, CallbackInfo callback) {
+        com.salts_inventory_update.controlify.qa.QaPlaytestProbe.trayText(text,color,shadow);
         if (com.salts_inventory_update.controlify.qa.QaFeatureProbe.renderingTabs) com.salts_inventory_update.controlify.qa.QaFeatureProbe.tabTextDraws++;
         QaNativeGuideProbe.text((GuiGraphicsExtractor)(Object)this, font, Component.literal(text), x, y);
         QaVisualFeatureProbe.alphabetText((GuiGraphicsExtractor)(Object)this,font,Component.literal(text),x,y,color);
