@@ -24,6 +24,19 @@ plugins {
 group = "com.salts_inventory_update"
 version = "0.1.4"
 
+// QA snapshots can require a newer installed loader/API than the release compile baseline.
+// Ordinary builds do not read or apply any runtime override.
+@Suppress("UNCHECKED_CAST")
+val compatibilityQaManifest = providers.gradleProperty("compatibilityQaManifest").orNull?.let {
+    JsonSlurper().parse(file(it)) as Map<String, Any>
+}
+fun qaRuntimeVersion(minecraft: String, dependency: String, baseline: String): String {
+    val snapshot = compatibilityQaManifest ?: return baseline
+    if (snapshot["minecraft"] != minecraft) return baseline
+    val runtime = snapshot["runtime"] as? Map<*, *> ?: return baseline
+    return runtime[dependency] as? String ?: baseline
+}
+
 @Suppress("UNCHECKED_CAST")
 val controlifyTargetPins = (JsonSlurper().parse(rootProject.file("controlify/targets.json")) as Map<*, *>)
     .get("targets") as List<Map<String, Any>>
@@ -152,66 +165,69 @@ prism {
 
     version("26.1.2") {
         fabric {
-            loaderVersion = "0.19.2"
-            fabricApi("0.149.0+26.1.2")
+            loaderVersion = qaRuntimeVersion("26.1.2", "fabric_loader", "0.19.2")
+            fabricApi(qaRuntimeVersion("26.1.2", "fabric_api", "0.149.0+26.1.2"))
         }
         neoforge {
-            loaderVersion = "26.1.2.59-beta"
+            loaderVersion = qaRuntimeVersion("26.1.2", "neoforge", "26.1.2.59-beta")
         }
     }
 
     version("26.2") {
         fabric {
-            loaderVersion = "0.19.3"
-            fabricApi("0.153.0+26.2")
+            loaderVersion = qaRuntimeVersion("26.2", "fabric_loader", "0.19.3")
+            fabricApi(qaRuntimeVersion("26.2", "fabric_api", "0.153.0+26.2"))
         }
         neoforge {
-            loaderVersion = "26.2.0.90"
+            loaderVersion = qaRuntimeVersion("26.2", "neoforge", "26.2.0.90")
         }
     }
 
     version("26.3") {
         neoFormVersion = "26.3-1"
         fabric {
-            loaderVersion = "0.19.5"
-            fabricApi("0.161.0+26.3")
+            loaderVersion = qaRuntimeVersion("26.3", "fabric_loader", "0.19.5")
+            fabricApi(qaRuntimeVersion("26.3", "fabric_api", "0.161.0+26.3"))
         }
         neoforge {
-            loaderVersion = "26.3.0.76"
+            loaderVersion = qaRuntimeVersion("26.3", "neoforge", "26.3.0.76")
         }
     }
 
     version("1.21.11") {
         fabric {
-            loaderVersion = "0.19.2"
-            fabricApi("0.141.4+1.21.11")
+            loaderVersion = qaRuntimeVersion("1.21.11", "fabric_loader", "0.19.2")
+            fabricApi(qaRuntimeVersion("1.21.11", "fabric_api", "0.141.4+1.21.11"))
         }
         neoforge {
-            loaderVersion = "21.11.42"
+            loaderVersion = qaRuntimeVersion("1.21.11", "neoforge", "21.11.42")
         }
     }
 
     version("1.21.1") {
         fabric {
-            loaderVersion = "0.16.10"
-            fabricApi("0.116.1+1.21.1")
+            loaderVersion = qaRuntimeVersion("1.21.1", "fabric_loader", "0.16.10")
+            fabricApi(qaRuntimeVersion("1.21.1", "fabric_api", "0.116.1+1.21.1"))
         }
         neoforge {
-            loaderVersion = "21.1.229"
+            loaderVersion = qaRuntimeVersion("1.21.1", "neoforge", "21.1.229")
         }
     }
 
     version("1.20.1") {
         fabric {
-            loaderVersion = "0.16.10"
-            fabricApi("0.92.6+1.20.1")
+            loaderVersion = qaRuntimeVersion("1.20.1", "fabric_loader", "0.16.10")
+            fabricApi(qaRuntimeVersion("1.20.1", "fabric_api", "0.92.6+1.20.1"))
         }
         forge {
             loaderVersion = "47.4.0"
         }
     }
     mod("controlify") {
+        version = providers.gradleProperty("controlifyVersion").get()
         metadata {
+            // Companion releases have their own version; Core retains the root version.
+            expand("core_version", rootProject.version.toString())
             modId = "salts_inventory_controlify"
             name = "Salt's Inventory Controlify"
             description = "Controller radial inventory workspace for Salt's Inventory Update. Requires the matching core mod and Controlify."
@@ -266,7 +282,10 @@ prism {
         }
     }
     mod("compatibility") {
+        version = providers.gradleProperty("compatibilityVersion").get()
         metadata {
+            // The extension is versioned independently; its Core dependency uses the root version.
+            expand("core_version", rootProject.version.toString())
             modId = "salts_inventory_compat"
             name = "Salt's Inventory Compatibility"
             description = "Optional third-party inventory and recipe-browser integrations for Salt's Inventory Update. Requires the matching core mod."
@@ -274,59 +293,59 @@ prism {
         }
         version("26.1.2") {
             fabric {
-                loaderVersion = "0.19.2"
-                fabricApi("0.149.0+26.1.2")
+                loaderVersion = qaRuntimeVersion("26.1.2", "fabric_loader", "0.19.2")
+                fabricApi(qaRuntimeVersion("26.1.2", "fabric_api", "0.149.0+26.1.2"))
             }
             neoforge {
-                loaderVersion = "26.1.2.59-beta"
+                loaderVersion = qaRuntimeVersion("26.1.2", "neoforge", "26.1.2.59-beta")
             }
         }
 
         version("26.2") {
             fabric {
-                loaderVersion = "0.19.3"
-                fabricApi("0.153.0+26.2")
+                loaderVersion = qaRuntimeVersion("26.2", "fabric_loader", "0.19.3")
+                fabricApi(qaRuntimeVersion("26.2", "fabric_api", "0.153.0+26.2"))
             }
             neoforge {
-                loaderVersion = "26.2.0.90"
+                loaderVersion = qaRuntimeVersion("26.2", "neoforge", "26.2.0.90")
             }
         }
 
         version("26.3") {
             neoFormVersion = "26.3-1"
             fabric {
-                loaderVersion = "0.19.5"
-                fabricApi("0.161.0+26.3")
+                loaderVersion = qaRuntimeVersion("26.3", "fabric_loader", "0.19.5")
+                fabricApi(qaRuntimeVersion("26.3", "fabric_api", "0.161.0+26.3"))
             }
             neoforge {
-                loaderVersion = "26.3.0.76"
+                loaderVersion = qaRuntimeVersion("26.3", "neoforge", "26.3.0.76")
             }
         }
 
         version("1.21.11") {
             fabric {
-                loaderVersion = "0.19.2"
-                fabricApi("0.141.4+1.21.11")
+                loaderVersion = qaRuntimeVersion("1.21.11", "fabric_loader", "0.19.2")
+                fabricApi(qaRuntimeVersion("1.21.11", "fabric_api", "0.141.4+1.21.11"))
             }
             neoforge {
-                loaderVersion = "21.11.42"
+                loaderVersion = qaRuntimeVersion("1.21.11", "neoforge", "21.11.42")
             }
         }
 
         version("1.21.1") {
             fabric {
-                loaderVersion = "0.16.10"
-                fabricApi("0.116.1+1.21.1")
+                loaderVersion = qaRuntimeVersion("1.21.1", "fabric_loader", "0.16.10")
+                fabricApi(qaRuntimeVersion("1.21.1", "fabric_api", "0.116.1+1.21.1"))
             }
             neoforge {
-                loaderVersion = "21.1.229"
+                loaderVersion = qaRuntimeVersion("1.21.1", "neoforge", "21.1.229")
             }
         }
 
         version("1.20.1") {
             fabric {
-                loaderVersion = "0.16.10"
-                fabricApi("0.92.6+1.20.1")
+                loaderVersion = qaRuntimeVersion("1.20.1", "fabric_loader", "0.16.10")
+                fabricApi(qaRuntimeVersion("1.20.1", "fabric_api", "0.92.6+1.20.1"))
             }
             forge {
                 loaderVersion = "47.4.0"
@@ -746,9 +765,10 @@ subprojects {
     }
 
     val emiVersions = mapOf(
+        "1.20.1" to "1.1.24+1.20.1",
         "1.21.1" to "1.1.24+1.21.1"
     )
-    if (compatibilityModule && minecraftVersion != null && (name == "fabric" || name == "neoforge")) {
+    if (compatibilityModule && minecraftVersion != null && name in setOf("fabric", "forge", "neoforge")) {
         afterEvaluate {
             emiVersions[minecraftVersion]?.let { emiVersion ->
                 val apiConfiguration = if (name == "fabric" && configurations.findByName("modCompileOnly") != null) {
@@ -758,12 +778,25 @@ subprojects {
                 }
                 dependencies.add(apiConfiguration, "dev.emi:emi-$name:$emiVersion:api")
                 if (includeEmiRuntime.get()) {
-                    val runtimeConfiguration = if (name == "fabric" && configurations.findByName("modRuntimeOnly") != null) {
-                        "modRuntimeOnly"
+                    if (name == "forge") {
+                        @Suppress("UNCHECKED_CAST")
+                        val mappingsType = Class.forName("net.neoforged.moddevgradle.legacyforge.internal.MinecraftMappings") as Class<Named>
+                        val mappingsAttribute = Attribute.of("net.neoforged.moddevgradle.legacy.minecraft_mappings.v2", mappingsType)
+                        val emiForgeRuntimeNamed = configurations.maybeCreate("emiForgeRuntimeNamed").apply {
+                            isCanBeConsumed = false
+                            isCanBeResolved = true
+                            attributes {
+                                attribute(mappingsAttribute, objects.named(mappingsType, "named"))
+                                attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
+                                attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
+                            }
+                        }
+                        dependencies.add(emiForgeRuntimeNamed.name, "dev.emi:emi-forge:$emiVersion")
+                        tasks.named<JavaExec>("runClient") { classpath += files(emiForgeRuntimeNamed) }
                     } else {
-                        "runtimeOnly"
+                        val runtimeConfiguration = if (configurations.findByName("modRuntimeOnly") != null) "modRuntimeOnly" else "runtimeOnly"
+                        dependencies.add(runtimeConfiguration, "dev.emi:emi-$name:$emiVersion")
                     }
-                    dependencies.add(runtimeConfiguration, "dev.emi:emi-$name:$emiVersion")
                 }
             }
         }
@@ -1252,4 +1285,5 @@ gradle.projectsEvaluated {
 }
 
 apply(from = "gradle/compatibility.gradle")
+apply(from = "gradle/sophisticated-fabric.gradle")
 apply(from = "gradle/controlify.gradle")

@@ -19,7 +19,6 @@ public final class TomsStorageClientCompat {
         }
 
         TomsStorageCompat.info("client compat initialize");
-        registerAll("initializer");
         if (!lifecycleHookRegistered) {
             lifecycleHookRegistered = true;
             DesktopClientApi.registerHelpPage(TomsStorageCompat.id("instructions"),
@@ -27,7 +26,7 @@ public final class TomsStorageClientCompat {
                     new com.salts_inventory_update.api.client.desktop.DesktopHelpPage.Section("When installed", java.util.List.of(
                         "Storage and crafting terminals appear as Salt windows.", "Terminal search, sorting, and recipes stay inside the window.")),
                     new com.salts_inventory_update.api.client.desktop.DesktopHelpPage.Section("Other supported screens", java.util.List.of(
-                        "Filters, inventory links, level emitters, and filing cabinets use Salt layouts.")))));
+                        "Filters, inventory links and level emitters use Salt layouts.")))));
             DesktopClientApi.onClientStarted(client -> registerAll("client-started"));
         }
     }
@@ -42,10 +41,9 @@ public final class TomsStorageClientCompat {
         count += register(TomsStorageCompat.INVENTORY_LINK, new TomsStorageDesktopWindows.InventoryLink()) ? 1 : 0;
         count += register(TomsStorageCompat.ITEM_FILTER, new TomsStorageDesktopWindows.ItemFilter()) ? 1 : 0;
         count += register(TomsStorageCompat.TAG_ITEM_FILTER, new TomsStorageDesktopWindows.TagItemFilter()) ? 1 : 0;
-        count += register(TomsStorageCompat.FILING_CABINET, new TomsStorageDesktopWindows.FilingCabinet()) ? 1 : 0;
         TomsStorageCompat.info("client compat registered phase={} menuCount={}", phase, count);
-        if (count < 8) {
-            TomsStorageCompat.warn("client compat registered fewer menus than expected phase={} menuCount={} expected=8", phase, count);
+        if (count < TomsStorageCompat.NATIVE_MENU_COUNT) {
+            TomsStorageCompat.warn("client compat registered fewer menus than expected phase={} menuCount={} expected=7", phase, count);
         }
     }
 

@@ -4,7 +4,7 @@ Salt's Inventory Update is a multi-version, multi-loader inventory framework. It
 
 Salt's Inventory Controlify provides the controller workspace across all twelve Minecraft and loader targets. Its [installation, controls and build guide](controlify/README.md) describes the radial presentation, separate JARs and pinned upstream dependencies. Install the matching rebuilt core from this branch alongside the native Controlify build, YACL and the controller JAR.
 
-Core provides inventory expansion, vanilla desktop windows, configuration, networking, persistence and the public API. Compatibility contains Tom's Simple Storage, JEI, REI, EMI, Mod Menu, Applied Energistics 2 and the supported Forge/NeoForge Sophisticated integrations. AE2 support follows the [reviewed upstream version matrix](compatibility/ae2/README.md#reviewed-upstream-targets). Install matching core and extension versions to enable these integrations; core works on its own. Supported third-party mods remain optional.
+Core provides inventory expansion, vanilla desktop windows, configuration, networking, persistence and the public API. Compatibility contains Tom's Simple Storage, JEI, REI, EMI, Mod Menu, Applied Energistics 2 and the supported Sophisticated integrations, including the maintained Fabric ports on 1.20.1 and 1.21.1. The [coverage audit](docs/markdown/compatibility-coverage.md) records upstream availability for every target. AE2 support follows the [reviewed upstream version matrix](compatibility/ae2/README.md#reviewed-upstream-targets). Install Core 0.1.4 and Compatibility 0.1.0 for the same Minecraft version and loader to enable these integrations; core works on its own. Supported third-party mods remain optional.
 
 ## Layout
 
@@ -38,6 +38,7 @@ versions/
 compatibility/
   ae2/                 Shared desktop additions and version-specific native AE2 adapters
   fabric-modmenu/       Shared Fabric Mod Menu consumer
+  sophisticated-fabric/ Native Fabric port adapters, separate from Forge/NeoForge
   versions/<version>/
     common/            Compatibility module's loader-neutral source/resource root
     fabric/            Shared integration implementations and Fabric metadata/entrypoints
@@ -69,6 +70,8 @@ This keeps version API differences contained while still letting you share most 
 
 ## Useful Commands
 
+Build with JDK 25 installed. Gradle daemon criteria select Java 25 for Prism 0.6.4 and Loom 1.18.2; individual Minecraft compilation and game runtimes retain their version-specific toolchains. Gradle 9.7 is supplied by the wrapper. This toolchain can remap current upstream Fabric dependencies, including JEI releases built with static mixin remapping.
+
 ```powershell
 .\gradlew.bat projects
 .\gradlew.bat tasks
@@ -77,7 +80,7 @@ This keeps version API differences contained while still letting you share most 
 
 The ordinary root `build` compiles and tests all three mods on all twelve targets, producing **36 production JARs**. It also compiles the API examples, checks source parity, remaps production artifacts and verifies JAR contents. The 26.3 artifact task uses ModDevGradle's supported binary patch pipeline automatically; `CI=true` is no longer needed.
 
-Production JARs appear in `dist/core`, `dist/compatibility` and `dist/controlify`, with filenames such as `salts_inventory_update-1.21.1-Fabric-0.1.4.jar`, `salts_inventory_compat-1.21.1-Fabric-0.1.4.jar` and `salts_inventory_controlify-1.21.1-Fabric-0.1.4.jar`. Each directory has `SHA256SUMS.txt`. The root release build clears `dist` before building and synchronizes exact production task outputs, preventing old, development or sources JARs from entering a release. `build/release/0.1.4` remains the legacy core-only release bundle.
+Production JARs appear in `dist/core`, `dist/compatibility` and `dist/controlify`, with filenames such as `salts_inventory_update-1.21.1-Fabric-0.1.4.jar`, `salts_inventory_compat-1.21.1-Fabric-0.1.0.jar` and `salts_inventory_controlify-1.21.1-Fabric-0.1.0.jar`. Each directory has `SHA256SUMS.txt`. The root release build clears `dist` before building and synchronizes exact production task outputs, preventing old, development or sources JARs from entering a release. `build/release/0.1.4` remains the legacy core-only release bundle.
 
 The [combined latest archive](dist/salts-inventory-all-latest.zip) groups all 36 production JARs by Minecraft version and loader. Select the folder matching your installation; the extension and controller companion are optional. The archive contains JARs rather than gameplay screenshots, and upstream mod dependencies are installed separately as described in their guides.
 

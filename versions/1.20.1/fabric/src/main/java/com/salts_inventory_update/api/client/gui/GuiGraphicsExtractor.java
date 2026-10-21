@@ -22,6 +22,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
+import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
+import com.salts_inventory_update.mixin.client.GuiGraphicsAccessor;
 import net.minecraft.client.model.BookModel;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -354,6 +357,12 @@ public final class GuiGraphicsExtractor {
     public void setTooltipForNextFrame(Font font, Component tooltip, int mouseX, int mouseY, ResourceLocation texture) {
         logTextureLookup("tooltip-texture", texture);
         this.graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+    }
+
+    /** Preserves native image and text components supplied by external UI providers. */
+    public void setClientTooltipForNextFrame(Font font, List<ClientTooltipComponent> components, int mouseX, int mouseY) {
+        ((GuiGraphicsAccessor) this.graphics).salts_inventory_update$invokeRenderTooltipInternal(
+            font, components, mouseX, mouseY, DefaultTooltipPositioner.INSTANCE);
     }
 
     public void setComponentTooltipForNextFrame(Font font, List<Component> lines, int mouseX, int mouseY) {

@@ -1,0 +1,68 @@
+{
+  "captureDate": "2026-10-20",
+  "coreVersion": "0.1.4",
+  "compatibilityVersion": "0.1.4",
+  "processing": "Cropped from fresh native Minecraft framebuffer captures; no resampling, retouching or generated UI.",
+  "screenshots": [
+    {
+      "asset": "ae2-pattern-terminal.png",
+      "source": "build/compatibility-marketing/2026-10-20/ae2/atlas/01-pattern-encoding-terminal.png",
+      "minecraft": "26.3",
+      "loader": "neoforge",
+      "captured": "2026-10-20",
+      "crop": [
+        358,
+        0,
+        1004,
+        400
+      ],
+      "sourceSha256": "56597419dde87101d66a940884771e4b6e116cdaf76a2379a9249d3e7e75a1ff",
+      "assetSha256": "cdaac821c90067ea37bfb34f5d370bbf49082bbf3dec37091757490a18304c68"
+    },
+    {
+      "asset": "jei-recipe-browser.png",
+      "source": "build/compatibility-marketing/2026-10-20/browser-jei/screenshots/recipe-view.png",
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "captured": "2026-10-20",
+      "crop": [
+        330,
+        74,
+        834,
+        498
+      ],
+      "sourceSha256": "057103fba6c2a5a956aec485e324bdd74700c67b2f5dd1181fa11df7b39f83eb",
+      "assetSha256": "3170c9abef6230947e47ed9c8b1b4e00e52dc8c686c75cb30013c98c09139d22"
+    },
+    {
+      "asset": "sophisticated-backpack.png",
+      "source": "build/compatibility-marketing/2026-10-20/sophisticated/screenshots/backpack-crafting-upgrade-panel.png",
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "captured": "2026-10-20",
+      "crop": [
+        40,
+        154,
+        988,
+        552
+      ],
+      "sourceSha256": "78b6785fbd9caebce7a4dcab9a56211be1d6c0551799a247d946ca486cf6b8b4",
+      "assetSha256": "9b348a90cbcb67c55447848c57258a89b3cfca7188a780e5867e414664ef7e3d"
+    },
+    {
+      "asset": "toms-crafting-terminal.png",
+      "source": "build/compatibility-marketing/2026-10-20/toms/screenshots/toms-crafting_terminal.png",
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "captured": "2026-10-20",
+      "crop": [
+        244,
+        154,
+        716,
+        540
+      ],
+      "sourceSha256": "aea5edac47f1f66635c9890093e1b5cb6fdf141fb4e830d822a6d5d8600a1c97",
+      "assetSha256": "4b366e6146f6a66b8aca3765f0ccdab446397e0e18d9b7b889b050de2b06a585"
+    }
+  ]
+}

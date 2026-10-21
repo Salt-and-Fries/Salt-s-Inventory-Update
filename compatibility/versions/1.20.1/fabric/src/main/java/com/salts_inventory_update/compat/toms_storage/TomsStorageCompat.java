@@ -27,6 +27,14 @@ public final class TomsStorageCompat {
     public static final String ITEM_FILTER = "item_filter";
     public static final String TAG_ITEM_FILTER = "tag_item_filter";
     public static final String FILING_CABINET = "filing_cabinet";
+    public static final int NATIVE_MENU_COUNT = 7;
+    public static final ResourceLocation LINK_METADATA_CHANNEL = id("toms_storage_link_metadata");
+    public static final ResourceLocation EMITTER_SNAPSHOT_CHANNEL = id("toms_storage_emitter_snapshot");
+
+    /** The 1.7.x native registry predates the plain IDs used by Tom's 2.x. */
+    public static ResourceLocation menuId(String path) {
+        return id("ts." + (path.equals(INVENTORY_CONFIGURATOR) ? "inv_connector_filter" : path) + ".container");
+    }
 
     private TomsStorageCompat() {
     }
@@ -52,7 +60,7 @@ public final class TomsStorageCompat {
             return null;
         }
 
-        ResourceLocation id = id(path);
+        ResourceLocation id = menuId(path);
         MenuType<?> menuType = BuiltInRegistries.MENU.get(id);
         if (menuType == null) {
             CompatibilityLog.warn("Tom's Storage compat missing menu id={}", id);
@@ -63,7 +71,7 @@ public final class TomsStorageCompat {
 
     public static boolean isMenu(MenuType<?> menuType, String path) {
         ResourceLocation key = BuiltInRegistries.MENU.getKey(menuType);
-        return id(path).equals(key);
+        return menuId(path).equals(key);
     }
 
     public static boolean isTerminal(MenuType<?> menuType) {

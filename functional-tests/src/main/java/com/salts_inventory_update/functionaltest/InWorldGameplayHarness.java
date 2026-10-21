@@ -44,7 +44,11 @@ public final class InWorldGameplayHarness {
     private static int clicks;
     private static int beforeX, beforeY, beforeWidth, beforeHeight;
     private static int beforeExtra;
+    private static Runnable clearQaToasts=()->{};
+    private static com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserAccess tooltipProbeOriginal;
+    private static final java.util.concurrent.atomic.AtomicInteger TOOLTIP_PROBE_DRAWS=new java.util.concurrent.atomic.AtomicInteger();
     private static final java.util.concurrent.atomic.AtomicInteger PENDING_CAPTURES=new java.util.concurrent.atomic.AtomicInteger();
+    private static final Map<String,Consumer<Path>> CAPTURE_CHECKS=new java.util.concurrent.ConcurrentHashMap<>();
     private static final String SCENARIO = Optional.ofNullable(System.getenv("SIU_QA_SCENARIO")).orElse("core");
 
     private InWorldGameplayHarness() { }
@@ -84,6 +88,7 @@ public final class InWorldGameplayHarness {
             command("gamerule doDaylightCycle false"); command("time set noon"); command("weather clear");
             return null;
         }), InWorldGameplayHarness::taskDone, () -> check("disposable-fixture-ready", origin != null), 10);
+        if (!Boolean.parseBoolean(System.getenv("SIU_QA_INTEGRATION_ONLY"))) {
         addLocalWindows();
         addExpansion();
         addContainer("chest", "minecraft:chest", 0);
@@ -95,6 +100,7 @@ public final class InWorldGameplayHarness {
             addContainer(block, "minecraft:"+block, 0);
         }
         for(String mount:List.of("horse","donkey","llama","camel"))addMount(mount);
+        }
         addIntegrations();
         add("resource-pack-reload", () -> {
             closeWindows(); task=(CompletableFuture<?>)call(mc,"reloadResourcePacks");
@@ -171,7 +177,8 @@ public final class InWorldGameplayHarness {
             Object entity=level.getBlockEntity(pos);
                 Object provider=call(level.getBlockState(pos),"getMenuProvider",level,pos);
                 if(provider==null && entity instanceof net.minecraft.world.MenuProvider) provider=entity;
-                if(provider!=null) p.openMenu((net.minecraft.world.MenuProvider)provider);
+                // Sophisticated chests build a different provider during real block use, including opening data.
+                if(provider!=null && !label.startsWith("sophisticated-")) p.openMenu((net.minecraft.world.MenuProvider)provider);
                 else {
                     Object vec=construct(ClassFor("net.minecraft.world.phys.Vec3"),pos.getX()+0.5,pos.getY()+0.5,pos.getZ()+0.5);
                     Object hit=construct(ClassFor("net.minecraft.world.phys.BlockHitResult"),vec,enumValue("net.minecraft.core.Direction","UP"),pos,false);
@@ -186,11 +193,22 @@ public final class InWorldGameplayHarness {
             check(label+"-captured-session",activeWindow!=null && currentSession().menu()!=null);
             check(label+"-window-size-positive",((Number)field(activeWindow,"width")).intValue()>0 && ((Number)field(activeWindow,"height")).intValue()>0);
             if(label.startsWith("toms-")||label.startsWith("sophisticated-")||label.startsWith("ae2-"))check(label+"-api-definition",field(activeWindow,"apiDefinition")!=null);
+            if(label.equals("toms-level_emitter")||label.equals("toms-inventory_cable_connector")) {
+                Object context=call(screen(),"apiContext",activeWindow,null,0,0);
+                int rightExtent=label.equals("toms-level_emitter")?132:164,bottomExtent=label.equals("toms-level_emitter")?60:130;
+                check(label+"-controls-inside-frame",((Number)call(context,"contentX")).doubleValue()+8+rightExtent<=number(activeWindow,"x")+number(activeWindow,"width")-4
+                    && ((Number)call(context,"contentY")).doubleValue()+8+bottomExtent<=number(activeWindow,"y")+number(activeWindow,"height")-4);
+                if(label.equals("toms-level_emitter"))registerEmitterPixelChecks(context,label);
+            }
             capture(label);
         }, label.equals("toms-inventory_cable_connector")?100:12);
         if(label.equals("crafting_table")) addCrafting();
         if(label.equals("furnace")) addSmelting();
         if(label.equals("toms-storage_terminal"))addTerminalInteractions();
+        if(VersionInfo.MINECRAFT_VERSION.equals("1.20.1")) {
+            if(label.equals("toms-inventory_cable_connector_filtered"))addTomLegacyConnectorControls();
+            if(label.equals("toms-level_emitter"))addTomLegacyEmitterControls();
+        }
         if(label.equals("ae2-sky_stone_chest")) {
             add("ae2-native-slot-pickup",()->clickSlot(0,left()),()->carried()==32,()->{
                 var actual=server(()->player().inventoryMenu.getCarried().getCount());
@@ -273,6 +291,15 @@ public final class InWorldGameplayHarness {
         if(SCENARIO.equals("core"))return;
         add("extension-loaded",()->{},()->true,()->{
             check("extension-present",com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("salts_inventory_compat"));
+            String expectedMod=switch(SCENARIO) {
+                case "browser-jei" -> "jei";case "browser-rei" -> "roughlyenoughitems";case "browser-emi" -> "emi";
+                case "toms" -> "toms_storage";case "sophisticated" -> "sophisticatedcore";case "ae2","ae2-atlas" -> "ae2";default -> null;
+            };
+            if(expectedMod!=null) {
+                boolean present=com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded(expectedMod);
+                check("requested-upstream-mod-present",present);
+                if(!present){finish();return;}
+            }
             if(SCENARIO.equals("extension-empty")){
                 for(String id:List.of("ae2","toms_storage","sophisticatedbackpacks","sophisticatedstorage","jei","emi","roughlyenoughitems","modmenu"))
                     check("optional-absent-"+id,!com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded(id));
@@ -299,9 +326,10 @@ public final class InWorldGameplayHarness {
                 Container c=(Container)serverLevel().getBlockEntity(networkStoragePos);
                 c.setItem(0,new ItemStack(Items.DIRT,32));c.setItem(1,new ItemStack(Items.OAK_PLANKS,32));c.setChanged();return null;
             }),InWorldGameplayHarness::taskDone,()->{},40);
-            for(String id:List.of("storage_terminal","crafting_terminal","level_emitter","filing_cabinet"))
+            boolean legacy=VersionInfo.MINECRAFT_VERSION.equals("1.20.1");
+            for(String id:legacy?List.of("storage_terminal","crafting_terminal","level_emitter","inventory_cable_connector_filtered"):List.of("storage_terminal","crafting_terminal","level_emitter","filing_cabinet"))
                 addContainer("toms-"+id,"toms_storage:"+id,0);
-            for(String id:List.of("item_filter","tag_item_filter","inventory_configurator"))addItemIntegration("toms-"+id,"toms_storage:"+id);
+            for(String id:legacy?List.of("item_filter","tag_item_filter"):List.of("item_filter","tag_item_filter","inventory_configurator"))addItemIntegration("toms-"+id,"toms_storage:"+id);
             addContainer("toms-inventory_cable_connector","toms_storage:inventory_cable_connector",0);
         }
         if(SCENARIO.equals("sophisticated")){
@@ -350,7 +378,13 @@ public final class InWorldGameplayHarness {
             });
         },()->taskDone()&&!sessions().isEmpty(),()->{
             activeSession=sessions().get(sessions().size()-1);activeWindow=windowSession(activeSession.sessionId());
-            check(label+"-api-definition",field(activeWindow,"apiDefinition")!=null);capture(label);
+            check(label+"-api-definition",field(activeWindow,"apiDefinition")!=null);
+            if(label.equals("toms-tag_item_filter")) {
+                Object context=call(screen(),"apiContext",activeWindow,null,0,0);
+                check("tag-filter-panels-inside-frame",((Number)call(context,"contentX")).doubleValue()+8+184<=number(activeWindow,"x")+number(activeWindow,"width")-4
+                    && ((Number)call(context,"contentY")).doubleValue()+8+64<=number(activeWindow,"y")+number(activeWindow,"height")-4);
+            }
+            capture(label);
         },15);
         if(label.equals("sophisticated-backpack")){
             addDrag("backpack-left-drag",left(),30,List.of(10,10,10));
@@ -391,6 +425,32 @@ public final class InWorldGameplayHarness {
             return ((Optional<?>)call(tabs,"getOpenTab")).isPresent();
         },()->capture("backpack-crafting-upgrade-panel"),12);
     }
+    private static void addTomLegacyConnectorControls() {
+        var expected=new java.util.concurrent.atomic.AtomicBoolean();
+        add("legacy-connector-allowlist-click",()->{
+            check("legacy-connector-nine-filter-slots",currentSession().menu().slots.stream().filter(slot->!(slot.container instanceof net.minecraft.world.entity.player.Inventory)).count()==9);
+            expected.set(!(Boolean)field(currentSession().menu(),"allowList"));
+            Object context=call(screen(),"apiContext",windowSession(activeSession.sessionId()),null,0,0);
+            clickAt(((Number)call(context,"contentX")).doubleValue()+16,((Number)call(context,"contentY")).doubleValue()+16);
+        },()->((Boolean)field(currentSession().menu(),"allowList"))==expected.get(),()->{
+            var actual=server(()->call(field(serverMenu(),"te"),"isAllowList"));
+            addFirst("legacy-connector-authoritative",()->{},actual::isDone,()->check("legacy-connector-native-filter-updated",actual.join().equals(expected.get())),3);
+            capture("toms-legacy-connector-filter-updated");
+        },8);
+    }
+    private static void addTomLegacyEmitterControls() {
+        var expected=new java.util.concurrent.atomic.AtomicInteger();
+        add("legacy-emitter-increase-click",()->{
+            Object state=field(windowSession(activeSession.sessionId()),"apiState");expected.set(((Number)field(state,"count")).intValue()+1);
+            Object context=call(screen(),"apiContext",windowSession(activeSession.sessionId()),null,0,0);
+            clickAt(((Number)call(context,"contentX")).doubleValue()+92,((Number)call(context,"contentY")).doubleValue()+59);
+        },()->((Number)field(field(windowSession(activeSession.sessionId()),"apiState"),"count")).intValue()==expected.get(),()->{
+            var actual=server(()->call(field(serverMenu(),"te"),"getCount"));
+            addFirst("legacy-emitter-authoritative",()->{},actual::isDone,()->check("legacy-emitter-native-count-updated",actual.join().equals(expected.get())),3);
+            capture("toms-legacy-emitter-updated");
+        },12);
+    }
+
     private static void addTerminalInteractions(){
         add("terminal-network-snapshot",()->{},()->!((List<?>)field(field(windowSession(activeSession.sessionId()),"apiState"),"entries")).isEmpty(),
             ()->{check("terminal-two-item-types",((List<?>)field(field(windowSession(activeSession.sessionId()),"apiState"),"entries")).size()==2);capture("toms-connected-terminal");},5);
@@ -444,6 +504,8 @@ public final class InWorldGameplayHarness {
             ()->windowKind("JEI")!=null,()->{
                 var access=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access();
                 check("recipe-provider-available",access.isAvailable());record("recipe-provider","PASS",access.source().id());access.setFilterText("");
+                String expected=SCENARIO.equals("browser-rei")?"roughlyenoughitems":SCENARIO.substring("browser-".length());
+                check("requested-provider-active",expected.equals(access.source().id()));
             },15);
         add("recipe-browser-item-tab",()->{
             var access=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access();var tabs=access.tabs();Object w=windowKind("JEI");
@@ -476,9 +538,121 @@ public final class InWorldGameplayHarness {
                 check("recipe-bookmark-toggle",access.isRecipeBookmarked(recipe)!=before);access.toggleRecipeBookmark(recipe);
             }
         },10);
+        if (VersionInfo.MINECRAFT_VERSION.equals("1.20.1")) addPublicTooltipApiProbe();
+        addRecipeBrowserTransfer();
         add("recipe-browser-close",InWorldGameplayHarness::closeWindows,()->true,()->{},3);
-        if(com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("modmenu"))
-            add("modmenu-config-factory",()->setNativeScreen(com.salts_inventory_update.client.WindowedInventoryClient.createConfigScreen(null)),()->nativeScreen()!=null,()->capture("modmenu-configuration"),8);
+        if(com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("modmenu")) {
+            add("modmenu-config-factory",()->{
+                Object plugin=construct(ClassFor("com.salts_inventory_update.compat.modmenu.SaltsInventoryModMenu"));
+                Object factory=call(plugin,"getModConfigScreenFactory");
+                setNativeScreen(call(factory,"create",(Object)null));
+            },()->nativeScreen()!=null,()->capture("modmenu-configuration"),8);
+            add("modmenu-config-close",()->call(nativeScreen(),"onClose"),()->nativeScreen()==null,()->{},3);
+        }
+    }
+
+    /** Exercises the public legacy native-component tooltip API during a real recipe render. */
+    private static void addPublicTooltipApiProbe() {
+        add("public-tooltip-api-probe",()->{
+            tooltipProbeOriginal=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access();
+            TOOLTIP_PROBE_DRAWS.set(0);
+            var api=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserAccess.class;
+            var probe=(com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserAccess)Proxy.newProxyInstance(
+                api.getClassLoader(),new Class<?>[]{api},(proxy,method,args)->{
+                    Object result;
+                    try { result=method.invoke(tooltipProbeOriginal,args); }
+                    catch(InvocationTargetException failure) { throw failure.getCause(); }
+                    if(method.getName().equals("renderRecipe")) {
+                        Object component=call(ClassFor("net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent"),"create",
+                            net.minecraft.network.chat.Component.literal("Public API tooltip components").getVisualOrderText());
+                        call(args[0],"setClientTooltipForNextFrame",mc.font,List.of(component),24,80);
+                        TOOLTIP_PROBE_DRAWS.incrementAndGet();
+                    }
+                    return result;
+                });
+            com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.install(tooltipProbeOriginal.source(),probe);
+        },()->TOOLTIP_PROBE_DRAWS.get()>0,()->{
+            check("native-tooltip-invoker-resolves",TOOLTIP_PROBE_DRAWS.get()>0);
+            capture("public-api-tooltip-probe");
+        },4);
+        add("public-tooltip-api-restore",()->
+            com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.install(tooltipProbeOriginal.source(),tooltipProbeOriginal),
+            ()->true,()->{},2);
+    }
+
+    /** Uses a visible provider transfer button, then checks native server crafting and the shared cursor. */
+    private static void addRecipeBrowserTransfer() {
+        add("recipe-transfer-fixture", () -> {
+            closeWindows();
+            server(() -> {
+                var player=player();var level=serverLevel(player);
+                player.getInventory().clearContent();player.getInventory().setItem(0,new ItemStack(Items.OAK_PLANKS,4));
+                player.inventoryMenu.setCarried(ItemStack.EMPTY);player.inventoryMenu.broadcastFullState();
+                level.setBlock(origin,net.minecraft.world.level.block.Blocks.CRAFTING_TABLE.defaultBlockState(),3);
+                player.openMenu((net.minecraft.world.MenuProvider)call(level.getBlockState(origin),"getMenuProvider",level,origin));
+                return null;
+            });
+        }, () -> taskDone() && sessions().stream().anyMatch(s -> s.menu() instanceof net.minecraft.world.inventory.CraftingMenu), () -> {
+            activeSession=sessions().stream().filter(s -> s.menu() instanceof net.minecraft.world.inventory.CraftingMenu).findFirst().orElseThrow();
+            moveQaWindow(windowSession(activeSession.sessionId()),12,50);
+        },12);
+        add("recipe-transfer-open-browser", () -> {
+            InventoryDesktopScreen.openOrToggleJei(mc);
+            var access=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access();
+            access.setFilterText("");
+            Object window=windowKind("JEI");
+            call(screen(),"enterJeiRecipeView",window,access.entryForItemStack(new ItemStack(Items.CRAFTING_TABLE)),
+                com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserMode.RECIPES);
+            moveQaWindow(window,Math.max(8,number(screen(),"width")-number(window,"width")-8),20);
+        }, () -> windowKind("JEI")!=null, () -> capture("recipe-transfer-ready"),12);
+        add("recipe-transfer-click", () -> {
+            Object window=windowKind("JEI");
+            Object category=call(screen(),"selectedRecipeBrowserCategory",window);
+            var access=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access();
+            for(Object placement:(List<?>)call(screen(),"visibleJeiRecipePlacements",window,category)) {
+                var recipe=(com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserRecipe)call(placement,"recipe");
+                var plan=access.recipeTransferPlan(recipe,currentSession().menu());
+                if(plan==null)continue;
+                Object rect=call(screen(),"jeiRecipeTransferButtonRect",placement,plan);
+                double x=((Number)call(rect,"x")).doubleValue()+((Number)call(rect,"width")).doubleValue()/2;
+                double y=((Number)call(rect,"y")).doubleValue()+((Number)call(rect,"height")).doubleValue()/2;
+                Object hit=call(screen(),"jeiRecipeTransferButtonAt",window,x,y);
+                if(hit==null || !Boolean.TRUE.equals(call(call(hit,"availability"),"craftable")))continue;
+                check("provider-transfer-plan-present",!plan.requirements().isEmpty());
+                clickAt(x,y);return;
+            }
+            throw new IllegalStateException("No craftable provider transfer button for four oak planks");
+        }, () -> currentSession().menu().getSlot(0).getItem().is(Items.CRAFTING_TABLE) && DesktopContainerClient.canDispatchOptimisticMutationNow(), () -> {
+            var state=server(() -> {
+                var menu=serverMenu();int grid=0,inventory=0;
+                for(int i=1;i<=9;i++)grid+=menu.getSlot(i).getItem().getCount();
+                for(int i=0;i<player().getInventory().getContainerSize();i++)
+                    if(player().getInventory().getItem(i).is(Items.OAK_PLANKS))inventory+=player().getInventory().getItem(i).getCount();
+                return List.of(grid,inventory,menu.getSlot(0).getItem().is(Items.CRAFTING_TABLE)?1:0);
+            });
+            addFirst("recipe-transfer-authoritative",()->{},state::isDone,()->{
+                check("recipe-transfer-server-grid-and-conservation",state.join().equals(List.of(4,0,1)));
+                capture("recipe-transferred");
+            },3);
+        },12);
+        add("recipe-transfer-close-browser",()->InventoryDesktopScreen.openOrToggleJei(mc),()->windowKind("JEI")==null,()->{},3);
+        add("recipe-transfer-craft-result",()->clickSlot(0,left()),()->carried()==1,()->{
+            var state=server(()->{
+                var menu=serverMenu();boolean empty=true;
+                for(int i=1;i<=9;i++)empty &= menu.getSlot(i).getItem().isEmpty();
+                return empty && player().inventoryMenu.getCarried().is(Items.CRAFTING_TABLE);
+            });
+            addFirst("recipe-transfer-crafted-authoritative",()->{},state::isDone,()->check("recipe-transfer-crafted-on-server",state.join()),3);
+        },8);
+        add("recipe-transfer-store-output",InWorldGameplayHarness::storeInPlayer,()->carried()==0,()->capture("recipe-transfer-complete"),8);
+    }
+
+    private static void moveQaWindow(Object window,int targetX,int targetY) {
+        double x=number(window,"x")+25,y=number(window,"y")+5;
+        double dx=targetX-number(window,"x"),dy=targetY-number(window,"y");
+        mouse("mouseClicked",x,y,left(),0,0);
+        mouse("mouseDragged",x+dx,y+dy,left(),dx,dy);
+        mouse("mouseReleased",x+dx,y+dy,left(),0,0);
     }
 
     private static void addChestInteractions() {
@@ -551,6 +725,7 @@ public final class InWorldGameplayHarness {
     private static void tick(Minecraft client) {
         if(finished||!clientReady) return;
         mc=client; elapsedTicks++;
+        clearQaToasts.run();
         if(Files.exists(output.resolve("abort.request"))){record("suite-aborted","FAIL","Explicit QA abort requested");finish();return;}
         if(elapsedTicks<15) return;
         // Creating a world while the initial splash overlay is still present leaves
@@ -602,8 +777,19 @@ public final class InWorldGameplayHarness {
     }
     private static void createWorld() {
         mc.options.pauseOnLostFocus=false;
+        mc.options.renderDistance().set(2);
+        mc.options.simulationDistance().set(5);
         try {call(mc.getWindow(),"setWindowed",1280,SCENARIO.equals("ae2-atlas") ? 960 : 900);} catch(Throwable ignored){}
         mc.options.guiScale().set(2);
+        try { call(mc,"resizeDisplay"); } catch(IllegalArgumentException ignored) { }
+        try { call(call(mc,"getTutorial"),"setStep",enumValue("net.minecraft.client.tutorial.TutorialSteps","NONE")); } catch(Throwable ignored) { }
+        for(String getter:List.of("getToasts","getToastManager")) {
+            try {
+                Object manager=call(mc,getter);Method clear=manager.getClass().getMethod("clear");
+                clearQaToasts=()->{try{clear.invoke(manager);}catch(ReflectiveOperationException failure){throw new IllegalStateException(failure);}};
+                break;
+            } catch(ReflectiveOperationException|IllegalArgumentException ignored) { }
+        }
         SaltsInventoryConfig.update(config->{config.enableMod=true;config.openUnlocked=true;config.allowResizing=true;config.enableGhostPins=true;config.minimizableWindows=true;config.expandableInventory=true;});
         if (SCENARIO.equals("ae2-atlas")) SaltsInventoryConfig.update(config -> {
             config.openUnlocked=false; config.minimizableWindows=false; config.expandableInventory=false;
@@ -740,7 +926,30 @@ public final class InWorldGameplayHarness {
     private static void writeCapture(Object image,Path p,String label){
         try{try{call(image,"writeToFile",p);}catch(IllegalArgumentException legacy){call(image,"writeToFile",p.toFile());}}
         finally{call(image,"close");}
+        Consumer<Path> verify=CAPTURE_CHECKS.remove(label);if(verify!=null)verify.accept(p);
         Map<String,Object> result=new LinkedHashMap<>();result.put("name",label+"-framebuffer");result.put("status","CAPTURED");result.put("path",p.toString());RESULTS.add(result);
+    }
+    private static void registerEmitterPixelChecks(Object context,String label){
+        int x=((Number)call(context,"contentX")).intValue()+8,y=((Number)call(context,"contentY")).intValue()+8;
+        int guiWidth=((Number)call(mc.getWindow(),"getGuiScaledWidth")).intValue();
+        CAPTURE_CHECKS.put(label,path->{
+            try{
+                var image=javax.imageio.ImageIO.read(path.toFile());
+                double scale=image.getWidth()/(double)guiWidth;
+                assertTextPixels(image,scale,"toms-emitter-label-visible",x+28,y+10,84,9,false);
+                assertTextPixels(image,scale,"toms-emitter-count-visible",x+32,y+28,50,9,true);
+                for(int i=0;i<4;i++)assertTextPixels(image,scale,"toms-emitter-adjustment-"+i+"-visible",x+31+i*24,y+49,16,9,true);
+            }catch(java.io.IOException failure){throw new IllegalStateException("Cannot inspect emitter framebuffer",failure);}
+        });
+    }
+    private static void assertTextPixels(java.awt.image.BufferedImage image,double scale,String name,int x,int y,int width,int height,boolean light){
+        int pixels=0;
+        for(int py=Math.max(0,(int)Math.floor(y*scale));py<Math.min(image.getHeight(),(int)Math.ceil((y+height)*scale));py++)
+            for(int px=Math.max(0,(int)Math.floor(x*scale));px<Math.min(image.getWidth(),(int)Math.ceil((x+width)*scale));px++){
+                int rgb=image.getRGB(px,py),r=(rgb>>16)&255,g=(rgb>>8)&255,b=rgb&255;
+                if(light?r>225&&g>225&&b>225:r<100&&g<100&&b<100)pixels++;
+            }
+        record(name,pixels>8?"PASS":"FAIL","visible text pixels="+pixels);
     }
     private static void check(String name,boolean condition){record(name,condition?"PASS":"FAIL",condition?"assertion true":"assertion false");}
     private static void record(String name,String status,String details){
@@ -753,7 +962,8 @@ public final class InWorldGameplayHarness {
         Map<String,Object> report=new LinkedHashMap<>();report.put("scenario",SCENARIO);report.put("minecraft",VersionInfo.MINECRAFT_VERSION);report.put("loader",System.getenv("SIU_FUNCTIONAL_TEST_LOADER"));report.put("results",RESULTS);report.put("failures",failures);report.put("elapsedMs",System.currentTimeMillis()-startedAt);
         report.put("coreCodeSource",SaltsInventoryUpdate.class.getProtectionDomain().getCodeSource().getLocation().toString());
         report.put("runDirectory",Path.of("").toAbsolutePath().toString());
-        report.put("loadedMods",loadedMods());
+        Map<String,String> mods=loadedMods();report.put("loadedMods",mods);
+        if(mods.containsKey("salts_inventory_compat"))report.put("compatibilityCodeSource",ClassFor("com.salts_inventory_update.compat.CompatibilityBootstrap").getProtectionDomain().getCodeSource().getLocation().toString());
         try{Files.writeString(output.resolve("results.json"),new GsonBuilder().setPrettyPrinting().create().toJson(report));}catch(Exception e){SaltsInventoryUpdate.LOGGER.error("Cannot save QA result",e);}
         SaltsInventoryUpdate.LOGGER.info("SIU_GAMEPLAY_SUMMARY status={} failures={} records={} output={}",failures==0?"PASS":"FAIL",failures,RESULTS.size(),output);
         mc.stop();
@@ -771,7 +981,7 @@ public final class InWorldGameplayHarness {
     }
     private static void add(String n,Runnable s,BooleanSupplier r,Runnable v,int t){STEPS.addLast(new Step(n,s,r,v,t));}
     private static void addFirst(String n,Runnable s,BooleanSupplier r,Runnable v,int t){STEPS.addFirst(new Step(n,s,r,v,t));}
-    private static Object registryValue(String registry,String id){Object values=field(ClassFor("net.minecraft.core.registries.BuiltInRegistries"),registry);for(Object value:(Iterable<?>)values)if(id.equals(call(values,"getKey",value).toString()))return value;return null;}
+    private static Object registryValue(String registry,String id){if(VersionInfo.MINECRAFT_VERSION.equals("1.20.1")&&id.startsWith("toms_storage:")&&!id.startsWith("toms_storage:ts."))id=id.replace("toms_storage:","toms_storage:ts.");Object values=field(ClassFor("net.minecraft.core.registries.BuiltInRegistries"),registry);for(Object value:(Iterable<?>)values)if(id.equals(call(values,"getKey",value).toString()))return value;return null;}
     private static Class<?> ClassFor(String name){try{return Class.forName(name);}catch(Exception e){throw new IllegalStateException(e);}}
     private static Object enumValue(String type,String name){return Enum.valueOf((Class)ClassFor(type),name);}
     private static Object construct(Class<?> type,Object...args){for(Constructor<?> c:type.getDeclaredConstructors())if(matches(c.getParameterTypes(),args)){try{c.setAccessible(true);return c.newInstance(args);}catch(ReflectiveOperationException e){throw new IllegalStateException(e);}}throw new IllegalArgumentException("Constructor not found: "+type);}

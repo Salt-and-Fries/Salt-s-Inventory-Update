@@ -33,7 +33,10 @@ gradle.projectsEvaluated {
                 root.file("controlify/functional-tests/versions/${target.parent.name}/src/test/java"))
     }
     def productionJar = { target ->
-        target.tasks.named(target.tasks.findByName('remapJar') != null ? 'remapJar' : 'jar', AbstractArchiveTask)
+        // Legacy Forge's jar task writes named development bytecode to devlibs.
+        def archiveTask = target.tasks.findByName('remapJar') != null ? 'remapJar' :
+                target.tasks.findByName('reobfJar') != null ? 'reobfJar' : 'jar'
+        target.tasks.named(archiveTask, AbstractArchiveTask)
     }
     targets.each { target ->
         // Prism's optional modules are intentionally isolated from shared core.
@@ -136,7 +139,8 @@ gradle.projectsEvaluated {
         dependsOn(targets.collect { productionJar(it) }, targets.collect { it.tasks.named('writeControlifyClasspath') })
         dependsOn(targets.collect { productionJar(root.project(":${it.parent.name}:${it.name}")) })
         doFirst {
-            commandLine(['python', root.file('tools/verify-controlify-boundaries.py'), '--matrix'] +
+            commandLine(['python', root.file('tools/verify-controlify-boundaries.py'), '--matrix',
+                         '--core-version', root.version.toString()] +
                     targets.collectMany { ['--jar', productionJar(it).get().archiveFile.get().asFile,
                                           '--classpath', it.layout.buildDirectory.file('controlify-compile-classpath.txt').get().asFile,
                                           '--native-classpath', it.tasks.named('jar', AbstractArchiveTask).get().archiveFile.get().asFile,

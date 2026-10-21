@@ -15,15 +15,8 @@ final class TomsStorageClientReflect {
 
     static @Nullable RecipeBookComponent createCraftingTerminalRecipeBook(AbstractContainerMenu menu) {
         try {
-            Class<?> menuClass = Class.forName("com.tom.storagemod.menu.CraftingTerminalMenu");
-            if (!menuClass.isInstance(menu)) {
-                return null;
-            }
-
-            Class<?> widgetClass = Class.forName("com.tom.storagemod.screen.widget.CraftingTerminalRecipeBookWidget");
-            Constructor<?> constructor = widgetClass.getConstructor(menuClass);
-            Object widget = constructor.newInstance(menu);
-            return widget instanceof RecipeBookComponent recipeBook ? recipeBook : null;
+            Class<?> menuClass = Class.forName("com.tom.storagemod.gui.CraftingTerminalMenu");
+            return menuClass.isInstance(menu) ? new RecipeBookComponent() : null;
         } catch (ReflectiveOperationException exception) {
             CompatibilityLog.warn("Tom's Storage compat failed recipe book create menu={} reason={}", menu.getClass().getName(), exception.toString());
             return null;

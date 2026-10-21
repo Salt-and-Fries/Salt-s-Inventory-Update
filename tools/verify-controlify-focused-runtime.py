@@ -372,7 +372,7 @@ def validate(folder, artifacts, pins=None):
     assert mods.get("minecraft") == game and {"controlify", "yet_another_config_lib_v3", *SALT_MODULES.values()} <= mods.keys(), \
         f"{name}: matching native Minecraft, Core, Extended, companion or dependency did not load"
     version = mods["salts_inventory_update"]
-    assert all(mods[mod_id] == version for mod_id in SALT_MODULES.values()), f"{name}: Salt artifact versions differ"
+    assert mods["salts_inventory_compat"] == version, f"{name}: Core and Extended artifact versions differ"
     expected_controller = pin["controller"]["version"].split("-mc", 1)[0] if pin.get("native_forge_port") else pin["controller"]["version"]
     assert mods["controlify"] == expected_controller or mods["controlify"].startswith(expected_controller + "+"), \
         f"{name}: wrong native controller version"
@@ -381,11 +381,13 @@ def validate(folder, artifacts, pins=None):
         assert mods.get(dependency["mod_id"]) == dependency["version"], f"{name}: required runtime shim did not load"
     artifact_hashes, artifact_lineage, salt_files = {}, {}, set()
     for family, mod_id in SALT_MODULES.items():
-        filename = f"{mod_id}-{game}-{runtime.LOADER_NAMES[loader]}-{version}.jar"
+        filename = f"{mod_id}-{game}-{runtime.LOADER_NAMES[loader]}-{mods[mod_id]}.jar"
         release = artifacts / family / filename
         assert release.is_file() and filename in staged, f"{name}: missing final or staged {family}"
         artifact_lineage[family] = runtime.artifact_match(family, release, preserved[filename])
         assert artifact_lineage[family]["mode"] == "exact", f"{name}: focused runs require exact final artifact bytes"
+        if family == "controlify":
+            runtime.companion_versions(release, loader, version, mods[mod_id])
         artifact_hashes[family] = runtime.digest(release)
         required_files.add(filename)
         salt_files.add(filename)

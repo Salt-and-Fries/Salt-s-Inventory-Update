@@ -543,7 +543,7 @@ public final class TomsStorageDesktopWindows {
         }
 
         private void renderCraftingArea(DesktopRenderContext<AbstractContainerMenu, TerminalState> context, int x, int y) {
-            context.text(Component.literal("Craft"), x, y - 10, 0x404040, false);
+            context.text(Component.literal("Craft"), x, y - 10, 0xFF404040, false);
             renderRecipeBookButton(context, this.craftingRecipeBookButtonX(context), this.craftingRecipeBookButtonY(context));
             for (int i = 0; i < 9; i++) {
                 context.slot(i + 1, x + CRAFTING_TERMINAL_CRAFT_INPUT_X + i % 3 * SLOT, y + CRAFTING_TERMINAL_CRAFT_INPUT_Y + i / 3 * SLOT);
@@ -668,7 +668,7 @@ public final class TomsStorageDesktopWindows {
                 int warningY = this.crafting
                     ? this.craftingAreaY(context) + CRAFTING_TERMINAL_CRAFT_HEIGHT + 4
                     : gridY + gridHeight + 4;
-                context.text(Component.literal("Large network truncated"), x, warningY, 0xFFAA00, false);
+                context.text(Component.literal("Large network truncated"), x, warningY, 0xFFFFAA00, false);
             }
             renderTerminalSearchPopup(context, state, this.terminalControlsX(context), y);
         }
@@ -825,7 +825,7 @@ public final class TomsStorageDesktopWindows {
         public void render(DesktopRenderContext<AbstractContainerMenu, Void> context) {
             int x = context.contentX() + 34;
             int y = context.contentY() + 24;
-            context.text(Component.literal("Connector Filter"), context.contentX() + PAD, context.contentY() + PAD, 0x404040, false);
+            context.text(Component.literal("Connector Filter"), context.contentX() + PAD, context.contentY() + PAD, 0xFF404040, false);
             context.slotBackground(x, y);
             context.slot(0, x, y);
             int bx = context.contentX() + PAD;
@@ -875,8 +875,13 @@ public final class TomsStorageDesktopWindows {
         }
 
         @Override
+        public DesktopWindowSize minSize(DesktopWindowContext<AbstractContainerMenu, LevelEmitterState> context) {
+            return DesktopWindowSize.of(160, 104);
+        }
+
+        @Override
         public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return DesktopWindowSize.of(150, 86);
+            return DesktopWindowSize.of(160, 104);
         }
 
         @Override
@@ -886,9 +891,9 @@ public final class TomsStorageDesktopWindows {
             int count = TomsStorageReflect.intField(context.model(), "count", 0);
             boolean lessThan = TomsStorageReflect.booleanField(context.model(), "lessThan", false);
             context.slot(0, x, y + 24);
-            context.text(Component.literal(lessThan ? "Emit below" : "Emit above"), x + 28, y + 10, 0x404040, false);
+            context.text(Component.literal(lessThan ? "Emit below" : "Emit above"), x + 28, y + 10, 0xFF404040, false);
             context.fill(x + 28, y + 25, x + 112, y + 38, 0xFF8F8F8F);
-            context.text(Integer.toString(count), x + 32, y + 28, 0xFFFFFF, false);
+            context.text(Integer.toString(count), x + 32, y + 28, 0xFFFFFFFF, false);
             renderCycleButton(context, x + 116, y + 24, TomsStorageCompat.id(lessThan ? "icons/less_than" : "icons/greater_than"), lessThan);
             for (int i = 0; i < 4; i++) {
                 int value = switch (i) {
@@ -899,7 +904,7 @@ public final class TomsStorageDesktopWindows {
                 };
                 int bx = x + 28 + i * 24;
                 context.fill(bx, y + 46, bx + 22, y + 60, 0xFF777777);
-                context.text((value > 0 ? "+" : "") + value, bx + 3, y + 49, 0xFFFFFF, false);
+                context.text((value > 0 ? "+" : "") + value, bx + 3, y + 49, 0xFFFFFFFF, false);
             }
         }
 
@@ -944,8 +949,13 @@ public final class TomsStorageDesktopWindows {
         }
 
         @Override
+        public DesktopWindowSize minSize(DesktopWindowContext<AbstractContainerMenu, InventoryLinkState> context) {
+            return DesktopWindowSize.of(192, 174);
+        }
+
+        @Override
         public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return DesktopWindowSize.of(192, 146);
+            return DesktopWindowSize.of(192, 174);
         }
 
         @Override
@@ -953,7 +963,7 @@ public final class TomsStorageDesktopWindows {
             InventoryLinkState state = context.state();
             int x = context.contentX() + PAD;
             int y = context.contentY() + PAD;
-            context.text(Component.literal("Beacon " + TomsStorageReflect.intField(context.model(), "beaconLvl", 0)), x, y, 0x404040, false);
+            context.text(Component.literal("Beacon " + TomsStorageReflect.intField(context.model(), "beaconLvl", 0)), x, y, 0xFF404040, false);
             state.nameBox.text(state.name);
             state.nameBox.focused(state.nameFocused);
             DesktopWidgets.renderTextBox(context, state.nameBox, x, y + 14, 106);
@@ -968,7 +978,7 @@ public final class TomsStorageDesktopWindows {
                 context.fill(x, rowY, x + 164, rowY + 15, selected ? 0xFF7A7A7A : 0xFF9A9A9A);
                 if (index < state.channels.size()) {
                     LinkChannel channel = state.channels.get(index);
-                    context.text(channel.name(), x + 4, rowY + 3, 0xFFFFFF, false);
+                    context.text(channel.name(), x + 4, rowY + 3, 0xFFFFFFFF, false);
                     context.sprite(TomsStorageCompat.id(channel.publicChannel() ? "icons/allow" : "icons/deny"), x + 146, rowY, 14, 14);
                 }
             }
@@ -1150,8 +1160,13 @@ public final class TomsStorageDesktopWindows {
         }
 
         @Override
+        public DesktopWindowSize minSize(DesktopWindowContext<AbstractContainerMenu, TagFilterState> context) {
+            return DesktopWindowSize.of(212, 104);
+        }
+
+        @Override
         public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return DesktopWindowSize.of(198, 104);
+            return DesktopWindowSize.of(212, 104);
         }
 
         @Override
@@ -1769,7 +1784,7 @@ public final class TomsStorageDesktopWindows {
             if (tag.equals(selected)) {
                 context.fill(x, rowY, x + width, rowY + 12, 0xFF8F8265);
             }
-            context.text(shorten(tag, 12), x + 2, rowY + 2, 0xFFFFFF, false);
+            context.text(shorten(tag, 12), x + 2, rowY + 2, 0xFFFFFFFF, false);
         }
     }
 

@@ -16,6 +16,27 @@ ROOT = Path(__file__).resolve().parents[1]
 LOADER_NAMES = {"fabric": "Fabric", "forge": "Forge", "neoforge": "NeoForge"}
 
 
+def companion_versions(path, loader, core_version, companion_version):
+    """Check independent release labels against the actual packaged Core dependency."""
+    with ZipFile(path) as archive:
+        if loader == "fabric":
+            metadata = json.loads(archive.read("fabric.mod.json"))
+            version = metadata["version"]
+            required_core = metadata["depends"]["salts_inventory_update"]
+            expected_core = "=" + core_version
+        else:
+            resource = "META-INF/mods.toml" if loader == "forge" else "META-INF/neoforge.mods.toml"
+            metadata = tomllib.loads(archive.read(resource).decode("utf-8"))
+            version = next(mod["version"] for mod in metadata["mods"]
+                           if mod["modId"] == "salts_inventory_controlify")
+            dependencies = metadata["dependencies"]["salts_inventory_controlify"]
+            required_core = next(dep["versionRange"] for dep in dependencies
+                                 if dep["modId"] == "salts_inventory_update")
+            expected_core = f"[{core_version}]"
+        assert version == companion_version, f"{path}: packaged and loaded companion versions differ"
+        assert required_core == expected_core, f"{path}: packaged companion requires a different Core release"
+
+
 def host_motion_isolation(report, name):
     """Accept unfiltered successful evidence; validate the bounded opt-in QA policy when disclosed."""
     isolation = report.get("feature26Probe", {}).get("hostSdlMotionIsolation")
@@ -754,7 +775,6 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
     assert mods["minecraft"] == game, f"{name}: wrong Minecraft runtime"
     assert {"salts_inventory_update", "salts_inventory_controlify", "controlify", "yet_another_config_lib_v3"}.issubset(mods), \
         f"{name}: missing actual required runtime mods"
-    assert mods["salts_inventory_update"] == mods["salts_inventory_controlify"], f"{name}: mismatched Salt versions"
     expected_version = target["controller"]["version"]
     if target.get("native_forge_port"):
         expected_version = expected_version.split("-mc", 1)[0]
@@ -836,7 +856,7 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
         assert mods.get('salts_inventory_compat') == version, f'{name}: matching Extended jar did not load'
         modules.append(('compatibility','salts_inventory_compat'))
     for module, prefix in modules:
-        filename = f"{prefix}-{game}-{LOADER_NAMES[loader]}-{version}.jar"
+        filename = f"{prefix}-{game}-{LOADER_NAMES[loader]}-{mods[prefix]}.jar"
         release, runtime = artifacts / module / filename, mods_folder / filename
         assert release.is_file() and runtime.is_file(), f"{name}: missing final {module} production JAR"
         preserved = originals.get(filename, runtime)
@@ -868,10 +888,12 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
                 assert not any(f"assets/salts_inventory_controlify/textures/gui/contextual/wheel/{retired}.png" in jar.namelist()
                     for retired in ("panel","wheel_panel","arc_boundary","outer_marker")), \
                     f"{name}: retired panel/boundary textures remain in the final26.3 companion"
+        if module == "controlify":
+            companion_versions(release, loader, version, mods[prefix])
         matching[module] = digest(release)
     expected_sources = {
         "coreCodeSource": mods_folder / f"salts_inventory_update-{game}-{LOADER_NAMES[loader]}-{version}.jar",
-        "companionCodeSource": mods_folder / f"salts_inventory_controlify-{game}-{LOADER_NAMES[loader]}-{version}.jar",
+        "companionCodeSource": mods_folder / f"salts_inventory_controlify-{game}-{LOADER_NAMES[loader]}-{mods['salts_inventory_controlify']}.jar",
         "controlifyCodeSource": mods_folder / hashes[target["controller"]["sha512"]].name,
     }
     if with_extension and "extensionCodeSource" in report:

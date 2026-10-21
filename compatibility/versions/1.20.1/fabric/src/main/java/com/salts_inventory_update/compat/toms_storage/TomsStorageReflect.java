@@ -117,7 +117,7 @@ public final class TomsStorageReflect {
 
     public static @Nullable Object newStoredStack(ItemStack stack, long quantity) {
         try {
-            Class<?> clazz = Class.forName("com.tom.storagemod.inventory.StoredItemStack");
+            Class<?> clazz = Class.forName("com.tom.storagemod.util.StoredItemStack");
             Constructor<?> constructor = clazz.getConstructor(ItemStack.class, long.class);
             return constructor.newInstance(stack.copyWithCount(1), quantity);
         } catch (ReflectiveOperationException exception) {
@@ -138,7 +138,6 @@ public final class TomsStorageReflect {
         setField(menu, "itemList", storedStacks);
         setField(menu, "itemListClient", new ArrayList<>(storedStacks));
         setField(menu, "itemListClientSorted", new ArrayList<>(storedStacks));
-        setField(menu, "itemsLoaded", true);
         CompatibilityLog.trace(
             "Tom's Storage compat synced client terminal items menu={} entries={} storedStacks={}",
             menu.getClass().getName(),
@@ -150,8 +149,8 @@ public final class TomsStorageReflect {
     public static boolean invokeTerminalAction(AbstractContainerMenu menu, String action, boolean modifier, ItemStack stack, long quantity) {
         Object storedStack = stack.isEmpty() ? null : newStoredStack(stack, quantity);
         try {
-            Class<?> storedClass = Class.forName("com.tom.storagemod.inventory.StoredItemStack");
-            Class<?> actionClass = Class.forName("com.tom.storagemod.util.TerminalSyncManager$SlotAction");
+            Class<?> storedClass = Class.forName("com.tom.storagemod.util.StoredItemStack");
+            Class<?> actionClass = Class.forName("com.tom.storagemod.gui.StorageTerminalMenu$SlotAction");
             Object actionValue = Enum.valueOf((Class) actionClass.asSubclass(Enum.class), action);
             Method method = menu.getClass().getMethod("onInteract", storedClass, actionClass, boolean.class);
             method.invoke(menu, storedStack, actionValue, modifier);
@@ -183,7 +182,15 @@ public final class TomsStorageReflect {
         Object sync = field(menu, "sync");
         Object items = field(sync, "items");
         if (items instanceof Map<?, ?> map) {
-            return (Collection<Object>) map.values();
+            List<Object> stacks = new ArrayList<>();
+            map.forEach((key, value) -> {
+                ItemStack stack = storedStack(key);
+                if (stack != null && value instanceof Number count) {
+                    Object nativeStack = newStoredStack(stack, count.longValue());
+                    if (nativeStack != null) stacks.add(nativeStack);
+                }
+            });
+            return stacks;
         }
         return List.of();
     }
@@ -197,29 +204,18 @@ public final class TomsStorageReflect {
     @SuppressWarnings("unchecked")
     public static List<TomsStoragePayloads.LinkChannel> inventoryLinkChannels(ServerPlayer player) {
         try {
-            Class<?> remoteConnectionsClass = Class.forName("com.tom.storagemod.inventory.RemoteConnections");
-            Method get = remoteConnectionsClass.getMethod("get", net.minecraft.world.level.Level.class);
-            Object remoteConnections = get.invoke(null, player.level());
-            Method streamChannels = remoteConnectionsClass.getMethod("streamChannels", net.minecraft.world.entity.player.Player.class);
-            Object streamObject = streamChannels.invoke(remoteConnections, player);
-            if (!(streamObject instanceof Stream<?> stream)) {
-                return List.of();
+            Class<?> type = Class.forName("com.tom.storagemod.util.RemoteConnections");
+            Object connections = type.getMethod("get", net.minecraft.world.level.Level.class).invoke(null, player.level());
+            var tags = (net.minecraft.nbt.ListTag)type.getMethod("listChannels", net.minecraft.world.entity.player.Player.class).invoke(connections, player);
+            String idKey=(String)type.getField("CHANNEL_ID").get(null);
+            String nameKey=(String)type.getField("DISPLAY_NAME").get(null);
+            String publicKey=(String)type.getField("PUBLIC_TAG").get(null);
+            List<TomsStoragePayloads.LinkChannel> channels = new ArrayList<>();
+            for (int i=0;i<tags.size();i++) {
+                CompoundTag tag=tags.getCompound(i);
+                channels.add(new TomsStoragePayloads.LinkChannel(tag.getUUID(idKey),tag.getString(nameKey),tag.getBoolean(publicKey),null));
             }
-
-            return stream
-                .map(entry -> {
-                    if (!(entry instanceof Map.Entry<?, ?> mapEntry) || !(mapEntry.getKey() instanceof UUID uuid)) {
-                        return null;
-                    }
-                    Object channel = mapEntry.getValue();
-                    String name = stringField(channel, "displayName", "Channel");
-                    String ownerName = stringField(channel, "ownerName", null);
-                    boolean publicChannel = booleanField(channel, "publicChannel", false);
-                    return new TomsStoragePayloads.LinkChannel(uuid, name, publicChannel, ownerName);
-                })
-                .filter(TomsStoragePayloads.LinkChannel.class::isInstance)
-                .map(TomsStoragePayloads.LinkChannel.class::cast)
-                .toList();
+            return channels;
         } catch (ReflectiveOperationException exception) {
             CompatibilityLog.warn("Tom's Storage compat failed inventory link channel snapshot reason={}", exception.toString());
             return List.of();

@@ -68,9 +68,9 @@ def inventory(targets, artifacts, companions, runtime):
             dedicated = companions / Path(row["controlify"]["path"]).name
             assert dedicated.is_file() and runtime.digest(dedicated) == row["controlify"]["sha256"], \
                 f"{game}-{loader}: dedicated companion differs from installation bundle"
-            core_version = Path(row["core"]["path"]).name.split(f"-{LOADERS[loader]}-", 1)[1]
-            companion_version = Path(row["controlify"]["path"]).name.split(f"-{LOADERS[loader]}-", 1)[1]
-            assert core_version == companion_version, f"{game}-{loader}: collected Salt versions differ"
+            core_version = Path(row["core"]["path"]).stem.split(f"-{LOADERS[loader]}-", 1)[1]
+            companion_version = Path(row["controlify"]["path"]).stem.split(f"-{LOADERS[loader]}-", 1)[1]
+            runtime.companion_versions(ROOT / row["controlify"]["path"], loader, core_version, companion_version)
         except (AssertionError, OSError, zipfile.BadZipFile) as error:
             row["status"], row["details"] = "Needs attention", str(error)
         rows.append(row)
@@ -85,7 +85,8 @@ def boundaries(targets, rows, tool):
             tool.matrix_sources([(target["minecraft"], target["loader"]) for target in targets])
             for row in rows:
                 assert row["status"] == "Present", row.get("details", "Missing artifacts")
-                tool.jar(ROOT / row["controlify"]["path"])
+                core_version = Path(row["core"]["path"]).stem.split(f"-{LOADERS[row['loader']]}-", 1)[1]
+                tool.jar(ROOT / row["controlify"]["path"], core_version)
                 tool.peer_jar(ROOT / row["core"]["path"])
                 tool.classpath(ROOT / f"controlify/versions/{row['minecraft']}/{row['loader']}/build/controlify-compile-classpath.txt")
         return {"status": "Passed", "details": output.getvalue().splitlines()}

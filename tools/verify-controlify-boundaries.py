@@ -130,7 +130,11 @@ def classpath(manifest):
     return entries
 
 
-def jar(path):
+def jar(path, core_version=None):
+    if core_version is None:
+        # Standalone reporters use the declared Core release, never the companion label.
+        declaration = (ROOT / "build.gradle.kts").read_text(encoding="utf-8")
+        core_version = re.search(r'^version = "([^"]+)"$', declaration, re.MULTILINE)[1]
     path = Path(path)
     (game, loader), version = artifact_target(path)
     assert not any(marker in path.name for marker in ("-dev", "-sources", "-api")), path
@@ -161,7 +165,7 @@ def jar(path):
             assert "salts_inventory_compat" not in metadata["depends"], path
             assert metadata["version"] == version and metadata["depends"]["minecraft"] == game, \
                 f"{path}: metadata targets a different game/mod version"
-            assert metadata["depends"]["salts_inventory_update"] == "=" + version, \
+            assert metadata["depends"]["salts_inventory_update"] == "=" + core_version, \
                 f"{path}: requires an unmatched core version"
             for entrypoints in metadata["entrypoints"].values():
                 for entry in entrypoints:
@@ -177,7 +181,7 @@ def jar(path):
             assert {"minecraft", "salts_inventory_update", "controlify"}.issubset(dependencies), path
             assert "salts_inventory_compat" not in dependencies, path
             assert dependencies["minecraft"]["versionRange"] == f"[{game}]", f"{path}: incorrect Minecraft target"
-            assert dependencies["salts_inventory_update"]["versionRange"] == f"[{version}]", f"{path}: unmatched core version"
+            assert dependencies["salts_inventory_update"]["versionRange"] == f"[{core_version}]", f"{path}: unmatched core version"
             for required in ("salts_inventory_update", "controlify"):
                 dep = dependencies[required]
                 assert dep.get("mandatory") is True if loader == "forge" else dep.get("type") == "required", \
@@ -280,6 +284,7 @@ def peer_jar(path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--core-version", help="Required Core release (defaults to the root build version)")
     parser.add_argument("--sources", action="store_true")
     parser.add_argument("--jar", action="append", default=[])
     parser.add_argument("--classpath", action="append", default=[])
@@ -298,7 +303,7 @@ if __name__ == "__main__":
             matrix_sources(targets)
     for item in args.classpath:
         classpath(item)
-    found = [jar(item) for item in args.jar]
+    found = [jar(item, args.core_version) for item in args.jar]
     if targets and found:
         assert len(found) == len(set(found)) == 12 and set(found) == set(targets), \
             f"Require exactly one actual companion per target; found {found}"

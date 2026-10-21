@@ -1,5 +1,25 @@
 # Controlify integration validation
 
+## Independent companion release label (2026-10-20)
+
+All twelve production companions now use **0.1.0** in both the filename suffix and
+embedded mod version. Core and Extended retain **0.1.4**. Each companion still
+requires Core 0.1.4, generated independently from the root build version.
+`controlifyVersion` in the root `gradle.properties` controls future companion labels.
+
+`bundleLatestMods -x test --no-daemon --no-parallel --max-workers=2` passed for the
+complete target matrix, including production isolation and native symbol checks.
+Focused package checks verified all twelve companion versions/dependencies, all
+36 distribution JARs and their bundle bytes/checksums, and rejection of 24
+incorrect Core/companion version combinations. The updated artifact inventory
+reporter and feature/asset inventory also passed across all twelve targets.
+
+Evidence: `build/controlify-version-label-validation.json` and
+`build/controlify-version-label-feature-inventory.json`.
+No JUnit or gameplay suite was rerun for this version-label change. The gameplay
+records below describe the earlier artifacts and retain their original filenames
+and hashes; they are not new gameplay evidence for the relabeled JARs.
+
 ## Playtest follow-up (2026-10-19)
 
 The playtest changes are on `controlify-playtest-fixes`. All twelve matching Core,

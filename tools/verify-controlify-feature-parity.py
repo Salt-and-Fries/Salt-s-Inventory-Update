@@ -66,7 +66,9 @@ def validate(artifacts=None):
                    'workspace_features':len(WORKSPACE_METHODS), 'shared_models':len(models)}
             if artifacts:
                 label={'fabric':'Fabric','forge':'Forge','neoforge':'NeoForge'}[loader]
-                jar=artifacts/'controlify'/f'salts_inventory_controlify-{game}-{label}-0.1.4.jar'
+                matches=sorted((artifacts/'controlify').glob(f'salts_inventory_controlify-{game}-{label}-*.jar'))
+                assert len(matches)==1, (game,loader,'require one current companion artifact',matches)
+                jar=matches[0]
                 with ZipFile(jar) as archive:
                     assert archive.testzip() is None, jar
                     names=set(archive.namelist())

@@ -16,7 +16,7 @@
     "minecraft": "${minecraft_version}",
     "java": ">=${java_version}",
     "fabric-api": "*",
-    "salts_inventory_update": "=${version}",
+    "salts_inventory_update": "=${core_version}",
     "controlify": ">=3.0.1"
   }
 }

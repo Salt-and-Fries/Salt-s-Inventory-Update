@@ -4,6 +4,10 @@
 
 The complete update record is [changelogs/changelog-0.1.4.md](changelogs/changelog-0.1.4.md).
 
+The subsequent [Compatibility 0.1.0 coverage audit](docs/markdown/compatibility-coverage.md) records the additional EMI and Sophisticated Fabric targets, legacy Tom's repairs and fresh validation. The [companion changelog](compatibility/CHANGELOG.md) tracks its independent version.
+
+- Added the supported compact recipe-layout and native-component tooltip hooks to the Core 1.20.1 public API, matching the 1.21.1 provider contract. Use the rebuilt matching Core with the updated 1.20.1 companion.
+
 - Split the project into independent Core (`salts_inventory_update`) and optional Compatibility (`salts_inventory_compat`) mods across all twelve existing Minecraft/loader targets. Core retains the inventory framework and works without the extension; the extension requires matching Core and keeps third-party targets optional.
 - Moved Tom's Simple Storage, JEI, REI, EMI, Fabric Mod Menu and the supported Sophisticated Core/Backpacks/Storage integrations into the extension, including their plugins, conditional mixins, assets and lifecycle hooks.
 - Enforced public-API-only extension compilation and source/production-bytecode checks. Compatibility cannot access Core implementation classes, and neither Core nor upstream integrations are embedded in the extension.

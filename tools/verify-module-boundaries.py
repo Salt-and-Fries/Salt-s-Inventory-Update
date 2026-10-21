@@ -9,6 +9,10 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 PREFIX = 'com/salts_inventory_update/'
 ALLOWED = (PREFIX + 'api/', PREFIX + 'compat/')
+NATIVE_INTEGRATION_PREFIXES = (
+    'appeng/', 'com/tom/storagemod/', 'net/p3pp3rf1y/sophisticated',
+    'mezz/jei/', 'me/shedaniel/rei/', 'dev/emi/emi/', 'com/terraformersmc/modmenu/',
+)
 VERSIONS = ['1.20.1', '1.21.1', '1.21.11', '26.1.2', '26.2', '26.3']
 
 def utf8_constants(data):
@@ -111,6 +115,8 @@ def jars():
                 names = set(z.namelist())
                 classes = [name for name in names if name.endswith('.class')]
                 assert classes, f'{p}: empty artifact'
+                assert not any(name.startswith(NATIVE_INTEGRATION_PREFIXES) for name in classes), \
+                    f'{p}: bundled third-party integration implementation'
                 assert not any(name.startswith('example/') or '/functionaltest/' in name for name in names), p
                 assert not any('/compat/ae2/qa/' in name or 'NativeAtlasHooks' in name or 'ae2-atlas.mixins' in name for name in names), f'{p}: packaged AE2 atlas instrumentation'
                 if kind == 'core':
@@ -122,7 +128,6 @@ def jars():
                         for value in utf8_constants(z.read(name)):
                             assert not re.search(r'com[./]salts_inventory_update[./]compat[./]|appeng[./]|com[./]tom[./]storagemod[./]|net[./]p3pp3rf1y[./]sophisticated|mezz[./]jei[./]|me[./]shedaniel[./]rei[./]|dev[./]emi[./]|com[./]terraformersmc[./]modmenu[./]', value), f'{p.name}!{name}: core depends on a moved integration'
                 else:
-                    assert not any(name.startswith('appeng/') for name in classes), f'{p}: bundled native AE2 code'
                     if '1.20.1-Forge-' in p.name:
                         assert json.loads(z.read('pack.mcmeta'))['pack']['pack_format'] == 15, \
                             f'{p}: Forge cannot discover the extension resource pack'

@@ -1,0 +1,42 @@
+import groovy.json.JsonSlurper
+import org.gradle.api.Named
+import org.gradle.api.attributes.Attribute
+import org.gradle.api.attributes.Usage
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition
+import org.gradle.api.tasks.JavaExec
+
+// QA-only: production dependencies and distribution contents are not changed.
+def manifestPath = gradle.startParameter.projectProperties['compatibilityQaManifest']
+if (!manifestPath) throw new GradleException('compatibilityQaManifest is required')
+def manifest = new JsonSlurper().parse(new File(manifestPath))
+def targetPath = gradle.startParameter.projectProperties['compatibilityQaProject'] ?: ":compatibility:${manifest.minecraft}:${manifest.loader}"
+gradle.beforeProject { target ->
+    if (target.path != targetPath) return
+    if (manifest.loader == 'fabric') {
+        if (gradle.startParameter.projectProperties['compatibilityQaOriginalJars'] == 'true') return
+        def runtimeName = manifest.minecraft.startsWith('26.') ? 'runtimeOnly' : 'modRuntimeOnly'
+        target.configurations.matching { it.name == runtimeName }.all { runtime ->
+            manifest.artifacts.each { artifact ->
+                runtime.dependencies.add(target.dependencies.create(target.files(artifact.path)))
+            }
+        }
+    } else target.afterEvaluate {
+        if (manifest.loader == 'forge') {
+            def mappingsType = Class.forName('net.neoforged.moddevgradle.legacyforge.internal.MinecraftMappings', true, target.buildscript.classLoader)
+            def mappingsAttribute = Attribute.of('net.neoforged.moddevgradle.legacy.minecraft_mappings.v2', mappingsType)
+            def runtime = target.configurations.create('compatibilityCoverageRuntimeNamed') {
+                canBeConsumed = false
+                canBeResolved = true
+                attributes {
+                    attribute(mappingsAttribute, target.objects.named(mappingsType, 'named'))
+                    attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
+                    attribute(Usage.USAGE_ATTRIBUTE, target.objects.named(Usage, Usage.JAVA_RUNTIME))
+                }
+            }
+            manifest.artifacts.findAll { it.coordinate }.each { target.dependencies.add(runtime.name, it.coordinate) }
+            target.tasks.named('runClient', JavaExec).configure { classpath += target.files(runtime) }
+        } else {
+            manifest.artifacts.findAll { it.coordinate }.each { target.dependencies.add('runtimeOnly', it.coordinate) }
+        }
+    }
+}

@@ -278,6 +278,8 @@ gradle.projectsEvaluated {
             }
             target.tasks.withType(JavaExec).configureEach {
                 if (name == 'runClient') {
+                    // Automated startup failures must exit instead of waiting on Fabric's error window.
+                    systemProperty('java.awt.headless', 'true')
                     workingDir = target.layout.buildDirectory.dir("runtime-smoke/$profile").get().asFile
                     doFirst { workingDir.mkdirs() }
                 }
@@ -285,9 +287,19 @@ gradle.projectsEvaluated {
         }
     }
 
+    def verifyCoverage = root.tasks.register('verifyCompatibilityCoverage', Exec) {
+        group = 'verification'
+        description = 'Requires adapters for every available upstream integration and loader target.'
+        commandLine('python', root.file('tools/audit-compatibility-coverage.py'))
+    }
+    def verifyCoverageTests = root.tasks.register('verifyCompatibilityCoverageTests', Exec) {
+        group = 'verification'
+        commandLine('python', root.file('tools/test-compatibility-coverage.py'))
+    }
     def verifySources = root.tasks.register('verifyModuleSources', Exec) {
         group = 'verification'
         description = 'Rejects compatibility imports/reflection into core internals and core references to integrations.'
+        dependsOn(verifyCoverage, verifyCoverageTests)
         commandLine('python', root.file('tools/verify-module-boundaries.py'), '--sources')
     }
     def verifyAe2Merge = root.tasks.register('verifyAe2InstructionMerge', Exec) {
@@ -324,7 +336,10 @@ gradle.projectsEvaluated {
         if (task.name != 'prepareDistribution') task.mustRunAfter(prepareDist)
     } }
     def productionJar = { target ->
-        target.tasks.named(target.tasks.findByName('remapJar') != null ? 'remapJar' : 'jar', AbstractArchiveTask)
+        // Legacy Forge's jar task writes named development bytecode to devlibs.
+        def archiveTask = target.tasks.findByName('remapJar') != null ? 'remapJar' :
+                target.tasks.findByName('reobfJar') != null ? 'reobfJar' : 'jar'
+        target.tasks.named(archiveTask, AbstractArchiveTask)
     }
     def distribute = root.tasks.register('distributeMods', Sync) {
         group = 'build'
@@ -343,9 +358,14 @@ gradle.projectsEvaluated {
         dependsOn(distribute)
         commandLine('python', root.file('tools/verify-module-boundaries.py'), '--jars')
     }
+    def verifyCoverageJars = root.tasks.register('verifyCompatibilityCoverageJars', Exec) {
+        group = 'verification'
+        dependsOn(verifyJars)
+        commandLine('python', root.file('tools/audit-compatibility-coverage.py'), '--jars')
+    }
     def checksums = root.tasks.register('writeModuleChecksums') {
         group = 'build'
-        dependsOn(verifyJars)
+        dependsOn(verifyCoverageJars)
         doLast {
             ['core', 'compatibility', 'controlify'].each { kind ->
                 def folder = root.file("dist/$kind")

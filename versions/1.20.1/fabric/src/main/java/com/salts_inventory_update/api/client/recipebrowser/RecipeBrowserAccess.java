@@ -40,6 +40,9 @@ public interface RecipeBrowserAccess {
 
     List<RecipeBrowserRecipe> recipes(RecipeBrowserEntry entry, RecipeBrowserMode mode, RecipeBrowserCategory category);
 
+    /** Allows compact native layouts without changing other providers. */
+    default boolean usesCompactRecipeSpacing(RecipeBrowserCategory category) { return false; }
+
     List<RecipeBrowserEntry> craftingStations(RecipeBrowserCategory category);
 
     void renderRecipeCategoryIcon(GuiGraphicsExtractor graphics, RecipeBrowserCategory category, int x, int y);
@@ -47,6 +50,9 @@ public interface RecipeBrowserAccess {
     void renderRecipe(GuiGraphicsExtractor graphics, RecipeBrowserRecipe recipe, int x, int y, int mouseX, int mouseY);
 
     void renderRecipeOverlays(GuiGraphicsExtractor graphics, RecipeBrowserRecipe recipe, int x, int y, int mouseX, int mouseY);
+
+    /** Draw a provider widget tooltip after recipe contents; true consumes the tooltip. */
+    default boolean renderRecipeTooltip(GuiGraphicsExtractor graphics, RecipeBrowserRecipe recipe, int x, int y, int mouseX, int mouseY) { return false; }
 
     void renderRecipeSlotHighlights(GuiGraphicsExtractor graphics, RecipeBrowserRecipe recipe, int x, int y, List<Integer> inputIndexes, int color);
 

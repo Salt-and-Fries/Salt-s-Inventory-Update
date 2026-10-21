@@ -2,6 +2,8 @@
 
 ## Architecture audit
 
+This section records the starting architecture at the split. The [current compatibility audit](compatibility-coverage.md) covers subsequent additions and every supported loader/version target.
+
 The starting project uses Prism 0.5.17 with six Minecraft targets (1.20.1,
 1.21.1, 1.21.11, 26.1.2, 26.2 and 26.3). Each target has Fabric and
 Forge/NeoForge builds. The existing loader modules remain the core modules;
@@ -47,13 +49,15 @@ The root `./gradlew build` or `.\gradlew.bat build` creates all production JARs:
 
 ```text
 dist/core/salts_inventory_update-<Minecraft>-<Loader>-0.1.4.jar
-dist/compatibility/salts_inventory_compat-<Minecraft>-<Loader>-0.1.4.jar
+dist/compatibility/salts_inventory_compat-<Minecraft>-<Loader>-0.1.0.jar
 ```
 
-Each directory contains twelve JARs and SHA-256 checksums. The extension requires
-the exact matching core version in Fabric and Forge/NeoForge metadata. Optional
-target mods are not embedded or required to be installed. The extension's
-production task performs the same remapping as core. API development JARs live
+Each directory contains twelve JARs and SHA-256 checksums. Compatibility has its
+own release version, configured by `compatibilityVersion` in `gradle.properties`.
+Compatibility 0.1.0 requires Core 0.1.4 for the same Minecraft version and loader;
+metadata expands this dependency from the root Core version independently of
+the extension version. Optional target mods are not embedded or required to be
+installed. The extension's production task performs the same remapping as core. API development JARs live
 under a core target's `build/api` and never enter distribution folders.
 
 `gradle/compatibility.gradle` compiles each extension target against an API-only
@@ -86,6 +90,10 @@ Use each target's API types when compiling: 1.20.1/1.21.1 use
 `ResourceLocation`; newer targets use `Identifier`. 1.20.1 opening data uses
 `FriendlyByteBuf`, later targets use `RegistryFriendlyByteBuf`. Native action
 types likewise follow the game's existing version-specific API.
+
+## Version-specific recipe rendering hooks
+
+The 1.20.1 API now provides the same default `RecipeBrowserAccess.usesCompactRecipeSpacing` and `renderRecipeTooltip` hooks already available on 1.21.1. Providers can request compact native recipe layouts and draw their widget tooltips in the browser tooltip phase. Defaults preserve existing providers. `GuiGraphicsExtractor.setClientTooltipForNextFrame` draws native text and image tooltip components through the supported rendering API.
 
 ## Adding an integration
 

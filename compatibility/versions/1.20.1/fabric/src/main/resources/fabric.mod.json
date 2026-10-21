@@ -15,7 +15,7 @@
     "issues": "https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/issues",
     "discord": "https://discord.gg/kfdE9gGGxP"
   },
-  "mixins": ["salts_inventory_compat.ae2.mixins.json", "salts_inventory_compat.ae2-native.mixins.json"],
+  "mixins": ["salts_inventory_compat.sophisticated-fabric.mixins.json", "salts_inventory_compat.ae2.mixins.json", "salts_inventory_compat.ae2-native.mixins.json"],
   "entrypoints": {
     "modmenu": [
       "com.salts_inventory_update.compat.modmenu.SaltsInventoryModMenu"
@@ -25,6 +25,9 @@
     ],
     "rei_client": [
       "com.salts_inventory_update.compat.rei.SaltsReiClientPlugin"
+    ],
+    "emi": [
+      "com.salts_inventory_update.compat.emi.SaltsEmiClientPlugin"
     ],
     "main": [
       "com.salts_inventory_update.compat.SaltsInventoryCompatibilityFabric"
@@ -47,10 +50,13 @@
     "fabricloader": ">=${fabric_loader_version}",
     "minecraft": "${minecraft_version}",
     "java": ">=${java_version}",
-    "salts_inventory_update": "=${version}",
+    "salts_inventory_update": "=${core_version}",
     "fabric-api": "*"
   },
   "suggests": {
+    "sophisticatedcore": "*",
+    "sophisticatedbackpacks": "*",
+    "sophisticatedstorage": "*",
     "ae2": "*",
     "jei": "*",
     "roughlyenoughitems": "*",

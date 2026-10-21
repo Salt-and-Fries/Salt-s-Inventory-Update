@@ -102,16 +102,17 @@ public final class SophisticatedStorageCompat {
     }
 
     private static String storageSource(net.minecraft.server.level.ServerPlayer player, AbstractContainerMenu menu, byte[] openingData) {
-        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(openingData));
-        try {
-            BlockPos pos = buffer.readBlockPos();
-            if (buffer.isReadable()) {
-                throw new IllegalArgumentException("Trailing storage opening data: " + buffer.readableBytes());
-            }
-            return DesktopSessions.blockSourceKey(player, pos);
-        } finally {
-            buffer.release();
+        // Source identity comes from the authenticated native server menu. Keep the native
+        // opening bytes intact: newer releases append linked-storage state after the position.
+        BlockPos pos;
+        if (menu instanceof StorageContainerMenu storage) {
+            pos = storage.getBlockPosition().orElseThrow(() -> new IllegalArgumentException("Storage has no block position"));
+        } else if (menu instanceof StorageSettingsContainerMenu settings) {
+            pos = settings.getBlockPosition();
+        } else {
+            throw new IllegalArgumentException("Unsupported native storage menu " + menu.getClass().getName());
         }
+        return DesktopSessions.blockSourceKey(player, pos);
     }
 
     private static AbstractContainerMenu fromOpeningData(
@@ -121,11 +122,9 @@ public final class SophisticatedStorageCompat {
     ) {
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(data));
         try {
-            AbstractContainerMenu menu = factory.apply(buffer);
-            if (buffer.isReadable()) {
-                throw new IllegalArgumentException("Trailing storage opening data: " + buffer.readableBytes());
-            }
-            return menu;
+            // Match the native factory contract. Limited barrels intentionally leave
+            // optional storage fields unread; the authenticated payload remains intact.
+            return factory.apply(buffer);
         } finally {
             buffer.release();
         }

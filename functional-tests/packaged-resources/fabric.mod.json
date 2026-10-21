@@ -7,5 +7,5 @@
   "entrypoints": {
     "client": ["com.salts_inventory_update.functionaltest.GameplayQaInitializer"]
   },
-  "depends": {"fabricloader": ">=0.16.10", "minecraft": "1.21.1", "salts_inventory_update": "0.1.4"}
+  "depends": {"fabricloader": ">=0.16.10", "minecraft": "${minecraft}", "salts_inventory_update": "0.1.4"}
 }

@@ -22,6 +22,17 @@ rendering and routing input to existing windows. It contains no controller layou
 inputs or animations. Older core 0.1.4 archives without these hooks are insufficient;
 use the core JAR produced by this branch's build together with the controller JAR.
 
+## Release version
+
+The companion has its own release version, set by `controlifyVersion` in the root
+`gradle.properties`. The initial version is **0.1.0**. Production filenames end in
+`-0.1.0.jar`, for example `salts_inventory_controlify-26.3-Fabric-0.1.0.jar`.
+The embedded mod version uses the same label on every supported game and loader.
+
+Core and Extended retain version **0.1.4**. The companion's required Core version
+is generated from the root build version independently of its own release label.
+Use matching Minecraft/loader targets and the rebuilt Core described above.
+
 ## Playtest controls and cleanup
 
 **Controls > Inventory controls** offers independent Hold/Toggle modes for the window

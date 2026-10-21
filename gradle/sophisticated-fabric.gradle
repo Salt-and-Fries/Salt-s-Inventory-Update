@@ -1,0 +1,90 @@
+import java.security.MessageDigest
+import java.util.zip.ZipFile
+import org.gradle.api.artifacts.transform.CacheableTransform
+import org.gradle.api.artifacts.transform.InputArtifact
+import org.gradle.api.artifacts.transform.TransformAction
+import org.gradle.api.artifacts.transform.TransformOutputs
+import org.gradle.api.artifacts.transform.TransformParameters
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition
+import org.gradle.api.file.FileSystemLocation
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+
+/** Loom development dependencies do not automatically install an upstream mod's nested libraries. */
+@CacheableTransform
+abstract class SophisticatedFabricNestedLibraries implements TransformAction<TransformParameters.None> {
+    @InputArtifact @PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract Provider<FileSystemLocation> getInputArtifact()
+
+    @Override void transform(TransformOutputs outputs) {
+        expand(inputArtifact.get().asFile, outputs, new HashSet<String>(), 0)
+    }
+
+    private static void expand(File input, TransformOutputs outputs, Set<String> seen, int depth) {
+        new ZipFile(input).withCloseable { archive ->
+            archive.entries().each { entry ->
+                if (!entry.directory && entry.name.endsWith('.jar')) {
+                    byte[] data = archive.getInputStream(entry).withCloseable { it.bytes }
+                    def hash = MessageDigest.getInstance('SHA-256').digest(data).encodeHex().toString()
+                    if (seen.add(hash)) {
+                        File nested = outputs.file(depth + '-' + hash.substring(0, 12) + '-' + entry.name.tokenize('/').last())
+                        nested.bytes = data
+                        expand(nested, outputs, seen, depth + 1)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// The maintained Fabric ports are independent upstream builds, with their own native ABI.
+// Their implementations stay out of Forge/NeoForge source sets and all production dependencies.
+def pins = [
+    '1.20.1': ['maven.modrinth:9jxwkYQL:BP3CQI2v', 'maven.modrinth:ouNrBQtq:Jk6o7s4h', 'maven.modrinth:iHtpVwJL:xezSXA8y'],
+    '1.21.1': ['maven.modrinth:9jxwkYQL:ZLVrtF0Q', 'maven.modrinth:ouNrBQtq:nHhuPdda', 'maven.modrinth:iHtpVwJL:kjNlOByJ']
+]
+subprojects { target ->
+    if (target.path.startsWith(':compatibility:') && target.name == 'fabric' && pins.containsKey(target.parent.name)) {
+        target.afterEvaluate {
+            def directory = rootProject.file("compatibility/sophisticated-fabric/versions/${target.parent.name}/src/main")
+            if (!directory.isDirectory()) return
+            target.sourceSets.main.java.srcDir(new File(directory, 'java'))
+            target.sourceSets.main.java.srcDir(rootProject.file('compatibility/sophisticated-fabric/src/main/java'))
+            target.sourceSets.main.resources.srcDir(new File(directory, 'resources'))
+            pins[target.parent.name].each { coordinate ->
+                target.dependencies.add('modCompileOnly', coordinate)
+                if (rootProject.providers.gradleProperty('includeSophisticatedRuntime').map { it.toBoolean() }.getOrElse(false))
+                    target.dependencies.add('modRuntimeOnly', coordinate)
+            }
+            if (rootProject.providers.gradleProperty('includeSophisticatedRuntime').map { it.toBoolean() }.getOrElse(false)) {
+                def artifactType = ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE
+                target.dependencies.registerTransform(SophisticatedFabricNestedLibraries) {
+                    from.attribute(artifactType, 'jar')
+                    to.attribute(artifactType, 'salts-sophisticated-nested-libraries')
+                }
+                def nativeLibraries = target.configurations.create('sophisticatedFabricNativeLibraries') {
+                    canBeConsumed = false
+                    canBeResolved = true
+                    transitive = false
+                }
+                pins[target.parent.name].each { target.dependencies.add(nativeLibraries.name, it) }
+                def libraries = target.files(target.provider {
+                    nativeLibraries.incoming.artifactView {
+                        attributes.attribute(artifactType, 'salts-sophisticated-nested-libraries')
+                    }.files.files.sort { a, b -> a.name.tokenize('-').first().toInteger() <=> b.name.tokenize('-').first().toInteger() }
+                        .groupBy { artifact ->
+                            new ZipFile(artifact).withCloseable { archive ->
+                                def metadata = archive.getEntry('fabric.mod.json')
+                                metadata ? new groovy.json.JsonSlurper().parseText(archive.getInputStream(metadata).withCloseable { it.getText('UTF-8') }).id : artifact.name
+                            }
+                        }.collect { id, copies -> copies.first() }
+                })
+                target.dependencies.add('modRuntimeOnly', libraries)
+                def configVersion = target.parent.name == '1.20.1' ? '8.0.0' : '21.1.3'
+                target.dependencies.add('modRuntimeOnly', "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:$configVersion")
+            }
+        }
+        target.repositories.maven { url = uri('https://raw.githubusercontent.com/Fuzss/modresources/main/maven/') }
+    }
+}

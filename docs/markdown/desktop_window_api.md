@@ -237,6 +237,8 @@ For client-only views, `inventoryAvailable()` is false, the session id is `Integ
 
 `DesktopRenderContext` supplies text, fills, textures, sprites, item/virtual-item rendering, real slots, tooltips and entity previews. Sizes describe the complete surface, including its declared insets; `contentX/Y/Width/Height` derive from those insets. Salt's default presentation uses its frame. A mod-owned surface can use zero insets and draw the whole interface. Default callbacks use absolute scaled GUI coordinates. Region coordinates are window-relative.
 
+Use explicit ARGB colors (`0xAARRGGBB`) for text and fills: `0xFFFFFFFF` is opaque white and `0xFF404040` is opaque dark gray. A six-digit RGB text color has zero alpha and can become invisible on newer Minecraft renderers.
+
 The surface overhaul is in progress. The implemented surface contracts are described here; resource-reload/accessibility hooks, complete gesture presentation, consumer examples and native acceptance are still tracked in [the implementation record](../../API-SURFACE-0.1.4-PLAN.md).
 
 Override `surface(context)` to return a `DesktopWindowSurface`. `DesktopWindowSurface.SALT` supplies the normal appearance. `modOwned(regions)` supplies zero insets, explicit hit regions and preserved dimensions. Salt then adds no frame, backing fill, title, controls or resize decoration, and disables its native title/grip hit targets. Window title metadata remains available. Normal callback contexts expose the committed snapshot through `surface()`.

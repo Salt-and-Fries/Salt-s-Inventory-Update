@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.nbt.CompoundTag;
 import com.salts_inventory_update.api.integration.DesktopEnvironment;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
@@ -63,12 +64,11 @@ public final class TomsStorageServerCompat {
         count += register(TomsStorageCompat.INVENTORY_LINK) ? 1 : 0;
         count += register(TomsStorageCompat.ITEM_FILTER) ? 1 : 0;
         count += register(TomsStorageCompat.TAG_ITEM_FILTER) ? 1 : 0;
-        count += register(TomsStorageCompat.FILING_CABINET) ? 1 : 0;
         CompatibilityLog.log("Tom's Storage server compat registered phase={} menuCount={}", phase, count);
         TomsStorageCompat.info("server compat registered phase={} menuCount={}", phase, count);
-        if (count < 8) {
-            CompatibilityLog.warn("Tom's Storage server compat registered fewer menus than expected phase={} menuCount={} expected=8", phase, count);
-            TomsStorageCompat.warn("server compat registered fewer menus than expected phase={} menuCount={} expected=8", phase, count);
+        if (count < TomsStorageCompat.NATIVE_MENU_COUNT) {
+            CompatibilityLog.warn("Tom's Storage server compat registered fewer menus than expected phase={} menuCount={} expected=7", phase, count);
+            TomsStorageCompat.warn("server compat registered fewer menus than expected phase={} menuCount={} expected=7", phase, count);
         }
     }
 
@@ -153,12 +153,33 @@ public final class TomsStorageServerCompat {
             return previousHash;
         }
 
+        if (TomsStorageCompat.isMenu(menuType, TomsStorageCompat.LEVEL_EMITTER)) {
+            Object tile=TomsStorageReflect.field(menu,"te");
+            try {
+                CompoundTag tag=new CompoundTag();
+                tag.putInt("count",((Number)tile.getClass().getMethod("getCount").invoke(tile)).intValue());
+                tag.putBoolean("lessThan",(Boolean)tile.getClass().getMethod("isLessThan").invoke(tile));
+                byte[] data=TomsStoragePayloads.writeNbt(tag);
+                long hash=hashBytes(data);
+                if(hash!=previousHash)sender.accept(TomsStorageCompat.EMITTER_SNAPSHOT_CHANNEL,data);
+                return hash;
+            } catch(ReflectiveOperationException failure) { throw new IllegalStateException("Native emitter snapshot failed",failure); }
+        }
+
         if (TomsStorageCompat.isMenu(menuType, TomsStorageCompat.INVENTORY_LINK)) {
             List<TomsStoragePayloads.LinkChannel> channels = TomsStorageReflect.inventoryLinkChannels(player);
             byte[] data = TomsStoragePayloads.writeLinkSnapshot(RegistryAccess.EMPTY, channels, TomsStorageReflect.inventoryLinkSelected(menu));
-            long hash = hashBytes(data);
+            Object tile=TomsStorageReflect.field(menu,"te");
+            CompoundTag metadata=new CompoundTag();
+            try {
+                metadata.putInt("level",((Number)tile.getClass().getMethod("getBeaconLevel").invoke(tile)).intValue());
+                metadata.putBoolean("remote",(Boolean)tile.getClass().getMethod("isRemote").invoke(tile));
+            } catch(ReflectiveOperationException failure) { throw new IllegalStateException("Native link metadata failed",failure); }
+            byte[] nativeState=TomsStoragePayloads.writeNbt(metadata);
+            long hash = hashBytes(data) ^ Long.rotateLeft(hashBytes(nativeState),17);
             if (hash != previousHash) {
                 sender.accept(TomsStorageCompat.LINK_SNAPSHOT_CHANNEL, data);
+                sender.accept(TomsStorageCompat.LINK_METADATA_CHANNEL,nativeState);
                 CompatibilityLog.log(
                     "Tom's Storage inventory link snapshot sync player={} session={} channels={} bytes={} oldHash={} newHash={}",
                     player.getName().getString(),

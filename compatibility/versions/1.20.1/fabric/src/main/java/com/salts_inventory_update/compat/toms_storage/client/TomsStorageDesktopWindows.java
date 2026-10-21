@@ -227,9 +227,10 @@ public final class TomsStorageDesktopWindows {
         @Override
         public void tick(DesktopWindowContext<AbstractContainerMenu, TerminalState> context) {
             TerminalState state = context.state();
-            state.sorting = TomsStorageReflect.intField(context.model(), "sorting", state.sorting);
-            state.modes = TomsStorageReflect.intField(context.model(), "modes", state.modes);
-            state.searchType = TomsStorageReflect.intField(context.model(), "searchType", state.searchType);
+            int nativeData=TomsStorageReflect.intField(context.model(), "terminalData", 0);
+            state.sorting=((nativeData >> 3) & 3) | ((nativeData & 4)!=0 ? 0x100 : 0) | (nativeData & 0x200);
+            state.modes=nativeData & 3;
+            state.searchType=(nativeData >> 5) & 7;
             if (!state.keepSearchRestored) {
                 state.keepSearchRestored = true;
                 if ((normalizedSearchType(state.searchType) & 2) != 0 && state.pendingKeptSearch != null) {
@@ -548,7 +549,7 @@ public final class TomsStorageDesktopWindows {
         }
 
         private void renderCraftingArea(DesktopRenderContext<AbstractContainerMenu, TerminalState> context, int x, int y) {
-            context.text(Component.literal("Craft"), x, y - 10, 0x404040, false);
+            context.text(Component.literal("Craft"), x, y - 10, 0xFF404040, false);
             renderRecipeBookButton(context, this.craftingRecipeBookButtonX(context), this.craftingRecipeBookButtonY(context));
             for (int i = 0; i < 9; i++) {
                 context.slot(i + 1, x + CRAFTING_TERMINAL_CRAFT_INPUT_X + i % 3 * SLOT, y + CRAFTING_TERMINAL_CRAFT_INPUT_Y + i / 3 * SLOT);
@@ -673,7 +674,7 @@ public final class TomsStorageDesktopWindows {
                 int warningY = this.crafting
                     ? this.craftingAreaY(context) + CRAFTING_TERMINAL_CRAFT_HEIGHT + 4
                     : gridY + gridHeight + 4;
-                context.text(Component.literal("Large network truncated"), x, warningY, 0xFFAA00, false);
+                context.text(Component.literal("Large network truncated"), x, warningY, 0xFFFFAA00, false);
             }
             renderTerminalSearchPopup(context, state, this.terminalControlsX(context), y);
         }
@@ -832,53 +833,27 @@ public final class TomsStorageDesktopWindows {
     }
 
     public static final class InventoryConfigurator implements Definition<AbstractContainerMenu, Void> {
-        @Override
-        public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return DesktopWindowSize.of(154, 82);
+        @Override public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
+            return DesktopWindowSize.of(112,104);
         }
-
-        @Override
-        public void render(DesktopRenderContext<AbstractContainerMenu, Void> context) {
-            int x = context.contentX() + 34;
-            int y = context.contentY() + 24;
-            context.text(Component.literal("Connector Filter"), context.contentX() + PAD, context.contentY() + PAD, 0x404040, false);
-            context.slotBackground(x, y);
-            context.slot(0, x, y);
-            int bx = context.contentX() + PAD;
-            int by = y;
-            renderCycleButton(context, bx, by, priorityIcon(context.model()), false);
-            renderCycleButton(context, bx + 18, by, TomsStorageCompat.id("icons/add"), false);
-            renderCycleButton(context, bx + 36, by, TomsStorageCompat.id("icons/deny"), false);
-            renderCycleButton(context, bx + 54, by, sideIcon(context.model()), false);
-            renderCycleButton(context, bx + 72, by, TomsStorageCompat.id(skip(context.model()) ? "icons/skip_inv" : "icons/include_inv"), skip(context.model()));
-            renderCycleButton(context, bx + 90, by, TomsStorageCompat.id(keepLast(context.model()) ? "icons/keep_last_1" : "icons/keep_last_off"), keepLast(context.model()));
-            renderCycleButton(context, bx + 108, by, TomsStorageCompat.id("icons/deny"), false);
+        @Override public void render(DesktopRenderContext<AbstractContainerMenu,Void> context) {
+            int x=context.contentX()+32,y=context.contentY()+PAD;
+            for(int i=0;i<9;i++){context.slotBackground(x+i%3*SLOT,y+i/3*SLOT);context.slot(i,x+i%3*SLOT,y+i/3*SLOT);}
+            renderCycleButton(context,context.contentX()+PAD,y,TomsStorageCompat.id(TomsStorageReflect.booleanField(context.model(),"allowList",false)?"icons/allow":"icons/deny"),false);
+            renderCycleButton(context,context.contentX()+PAD,y+18,priorityIcon(context.model()),false);
+            renderCycleButton(context,context.contentX()+PAD,y+36,TomsStorageCompat.id(TomsStorageReflect.booleanField(context.model(),"keepLastInSlot",false)?"icons/keep_last_1":"icons/keep_last_off"),false);
         }
-
-        @Override
-        public DesktopSlotHit slotAt(DesktopSlotContext<AbstractContainerMenu, Void> context, double mouseX, double mouseY) {
-            return context.containerSlotHit(0, context.contentX() + 34, context.contentY() + 24, mouseX, mouseY);
+        @Override public DesktopSlotHit slotAt(DesktopSlotContext<AbstractContainerMenu,Void> context,double x,double y) {
+            for(int i=0;i<9;i++) {var hit=context.menuSlotHit(i,context.contentX()+32+i%3*SLOT,context.contentY()+PAD+i/3*SLOT,x,y);if(hit!=null)return hit;}
+            return null;
         }
-
-        @Override
-        public boolean mouseClicked(DesktopInputContext<AbstractContainerMenu, Void> context, MouseButtonEvent event, boolean doubleClick) {
-            int bx = context.contentX() + PAD;
-            int y = context.contentY() + 24;
-            int index = buttonIndex(event, bx, y, 7);
-            if (index < 0) {
-                return false;
-            }
-            switch (index) {
-                case 0 -> context.sendMenuButton((((TomsStorageReflect.enumOrdinalField(context.model(), "priority", 2) + 1) % 5) << 3));
-                case 1 -> context.sendMenuButton(1);
-                case 2 -> context.sendMenuButton(2);
-                case 3 -> context.sendMenuButton((((TomsStorageReflect.enumOrdinalField(context.model(), "side", 0) + 1) % 6) << 3) | 3);
-                case 4 -> context.sendMenuButton((skip(context.model()) ? 0 : 1) << 3 | 4);
-                case 5 -> context.sendMenuButton((keepLast(context.model()) ? 0 : 1) << 3 | 5);
-                case 6 -> context.sendMenuButton(7);
-                default -> {
-                    return false;
-                }
+        @Override public boolean mouseClicked(DesktopInputContext<AbstractContainerMenu,Void> context,MouseButtonEvent event,boolean doubleClick) {
+            int index=buttonIndex(event,context.contentX()+PAD,context.contentY()+PAD,3);
+            switch(index) {
+                case 0 -> context.sendMenuButton(TomsStorageReflect.booleanField(context.model(),"allowList",false)?0:1);
+                case 1 -> context.sendMenuButton(0x10 | ((TomsStorageReflect.enumOrdinalField(context.model(),"priority",2)+1)%5));
+                case 2 -> context.sendMenuButton(0x20 | (TomsStorageReflect.booleanField(context.model(),"keepLastInSlot",false)?0:1));
+                default -> {return false;}
             }
             return true;
         }
@@ -891,20 +866,32 @@ public final class TomsStorageDesktopWindows {
         }
 
         @Override
+        public DesktopWindowSize minSize(DesktopWindowContext<AbstractContainerMenu, LevelEmitterState> context) {
+            return DesktopWindowSize.of(160, 104);
+        }
+
+        @Override
         public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return DesktopWindowSize.of(150, 86);
+            return DesktopWindowSize.of(160, 104);
+        }
+
+        @Override public void customPayload(DesktopWindowContext<AbstractContainerMenu,LevelEmitterState> context,ResourceLocation channel,byte[] data) {
+            if(TomsStorageCompat.EMITTER_SNAPSHOT_CHANNEL.equals(channel)) {
+                CompoundTag tag=TomsStoragePayloads.readNbt(data);
+                context.state().count=tag.getInt("count");context.state().lessThan=tag.getBoolean("lessThan");
+            }
         }
 
         @Override
         public void render(DesktopRenderContext<AbstractContainerMenu, LevelEmitterState> context) {
             int x = context.contentX() + PAD;
             int y = context.contentY() + PAD;
-            int count = TomsStorageReflect.intField(context.model(), "count", 0);
-            boolean lessThan = TomsStorageReflect.booleanField(context.model(), "lessThan", false);
+            int count = context.state().count;
+            boolean lessThan = context.state().lessThan;
             context.slot(0, x, y + 24);
-            context.text(Component.literal(lessThan ? "Emit below" : "Emit above"), x + 28, y + 10, 0x404040, false);
+            context.text(Component.literal(lessThan ? "Emit below" : "Emit above"), x + 28, y + 10, 0xFF404040, false);
             context.fill(x + 28, y + 25, x + 112, y + 38, 0xFF8F8F8F);
-            context.text(Integer.toString(count), x + 32, y + 28, 0xFFFFFF, false);
+            context.text(Integer.toString(count), x + 32, y + 28, 0xFFFFFFFF, false);
             renderCycleButton(context, x + 116, y + 24, TomsStorageCompat.id(lessThan ? "icons/less_than" : "icons/greater_than"), lessThan);
             for (int i = 0; i < 4; i++) {
                 int value = switch (i) {
@@ -915,7 +902,7 @@ public final class TomsStorageDesktopWindows {
                 };
                 int bx = x + 28 + i * 24;
                 context.fill(bx, y + 46, bx + 22, y + 60, 0xFF777777);
-                context.text((value > 0 ? "+" : "") + value, bx + 3, y + 49, 0xFFFFFF, false);
+                context.text((value > 0 ? "+" : "") + value, bx + 3, y + 49, 0xFFFFFFFF, false);
             }
         }
 
@@ -929,7 +916,7 @@ public final class TomsStorageDesktopWindows {
             int x = context.contentX() + PAD;
             int y = context.contentY() + PAD;
             if (buttonHit(event, x + 116, y + 24, BUTTON, BUTTON)) {
-                sendLevelEmitter(context, TomsStorageReflect.intField(context.model(), "count", 0), !TomsStorageReflect.booleanField(context.model(), "lessThan", false));
+                sendLevelEmitter(context, context.state().count, !context.state().lessThan);
                 return true;
             }
             for (int i = 0; i < 4; i++) {
@@ -941,8 +928,8 @@ public final class TomsStorageDesktopWindows {
                 };
                 int bx = x + 28 + i * 24;
                 if (buttonHit(event, bx, y + 46, 22, 14)) {
-                    int count = Math.max(0, TomsStorageReflect.intField(context.model(), "count", 0) + value);
-                    sendLevelEmitter(context, count, TomsStorageReflect.booleanField(context.model(), "lessThan", false));
+                    int count = Math.max(0, context.state().count + value);
+                    sendLevelEmitter(context, count, context.state().lessThan);
                     return true;
                 }
             }
@@ -960,8 +947,13 @@ public final class TomsStorageDesktopWindows {
         }
 
         @Override
+        public DesktopWindowSize minSize(DesktopWindowContext<AbstractContainerMenu, InventoryLinkState> context) {
+            return DesktopWindowSize.of(192, 174);
+        }
+
+        @Override
         public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return DesktopWindowSize.of(192, 146);
+            return DesktopWindowSize.of(192, 174);
         }
 
         @Override
@@ -969,7 +961,10 @@ public final class TomsStorageDesktopWindows {
             InventoryLinkState state = context.state();
             int x = context.contentX() + PAD;
             int y = context.contentY() + PAD;
-            context.text(Component.literal("Beacon " + TomsStorageReflect.intField(context.model(), "beaconLvl", 0)), x, y, 0x404040, false);
+            context.text(Component.literal("Beacon " + state.beaconLevel), x, y, 0xFF404040, false);
+            var linkTexture=TomsStorageCompat.id("textures/gui/inventory_link.png");
+            nativeButton(context,linkTexture,x+146,y-4,176,16);
+            nativeButton(context,linkTexture,x+146,y-4,176+(state.remote?16:0),32);
             state.nameBox.text(state.name);
             state.nameBox.focused(state.nameFocused);
             DesktopWidgets.renderTextBox(context, state.nameBox, x, y + 14, 106);
@@ -984,8 +979,8 @@ public final class TomsStorageDesktopWindows {
                 context.fill(x, rowY, x + 164, rowY + 15, selected ? 0xFF7A7A7A : 0xFF9A9A9A);
                 if (index < state.channels.size()) {
                     LinkChannel channel = state.channels.get(index);
-                    context.text(channel.name(), x + 4, rowY + 3, 0xFFFFFF, false);
-                    context.sprite(TomsStorageCompat.id(channel.publicChannel() ? "icons/allow" : "icons/deny"), x + 146, rowY, 14, 14);
+                    context.text(channel.name(), x + 4, rowY + 3, 0xFFFFFFFF, false);
+                    renderCycleButton(context,x+146,rowY,TomsStorageCompat.id(channel.publicChannel()?"icons/allow":"icons/deny"),false);
                 }
             }
         }
@@ -995,6 +990,10 @@ public final class TomsStorageDesktopWindows {
             InventoryLinkState state = context.state();
             int x = context.contentX() + PAD;
             int y = context.contentY() + PAD;
+            if (buttonHit(event,x+146,y-4,16,16)) {
+                CompoundTag tag=new CompoundTag();tag.putBoolean("remote",!state.remote);
+                context.sendPayload(TomsStorageCompat.NBT_CHANNEL,TomsStoragePayloads.writeNbt(tag));return true;
+            }
             if (contains(event.x(), event.y(), x, y + 14, 106, 13)) {
                 state.nameFocused = true;
                 state.nameBox.text(state.name);
@@ -1006,8 +1005,8 @@ public final class TomsStorageDesktopWindows {
             state.nameBox.focused(false);
             if (buttonHit(event, x + 110, y + 13, BUTTON, BUTTON)) {
                 CompoundTag tag = new CompoundTag();
-                tag.putString("d", state.name.isBlank() ? "Channel" : state.name);
-                tag.putBoolean("p", state.publicChannel);
+                tag.putString("name", state.name.isBlank() ? "Channel" : state.name);
+                tag.putBoolean("public", state.publicChannel);
                 context.sendPayload(TomsStorageCompat.NBT_CHANNEL, TomsStoragePayloads.writeNbt(tag));
                 return true;
             }
@@ -1022,7 +1021,7 @@ public final class TomsStorageDesktopWindows {
                 if (state.selected != null) {
                     CompoundTag tag = new CompoundTag();
                     tag.putUUID("id", state.selected);
-                    tag.putBoolean("p", state.publicChannel);
+                    tag.putBoolean("public", state.publicChannel);
                     context.sendPayload(TomsStorageCompat.NBT_CHANNEL, TomsStoragePayloads.writeNbt(tag));
                 }
                 return true;
@@ -1101,6 +1100,10 @@ public final class TomsStorageDesktopWindows {
 
         @Override
         public void customPayload(DesktopWindowContext<AbstractContainerMenu, InventoryLinkState> context, ResourceLocation channel, byte[] data) {
+            if(TomsStorageCompat.LINK_METADATA_CHANNEL.equals(channel)) {
+                CompoundTag tag=TomsStoragePayloads.readNbt(data);context.state().beaconLevel=tag.getInt("level");
+                context.state().remote=tag.getBoolean("remote");return;
+            }
             if (!TomsStorageCompat.LINK_SNAPSHOT_CHANNEL.equals(channel)) {
                 return;
             }
@@ -1166,8 +1169,13 @@ public final class TomsStorageDesktopWindows {
         }
 
         @Override
+        public DesktopWindowSize minSize(DesktopWindowContext<AbstractContainerMenu, TagFilterState> context) {
+            return DesktopWindowSize.of(212, 104);
+        }
+
+        @Override
         public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return DesktopWindowSize.of(198, 104);
+            return DesktopWindowSize.of(212, 104);
         }
 
         @Override
@@ -1313,9 +1321,13 @@ public final class TomsStorageDesktopWindows {
     }
 
     public static final class LevelEmitterState {
+        private int count=1;
+        private boolean lessThan;
     }
 
     public static final class InventoryLinkState {
+        private int beaconLevel;
+        private boolean remote;
         private final List<LinkChannel> channels = new ArrayList<>();
         private UUID selected;
         private String name = "";
@@ -1405,16 +1417,15 @@ public final class TomsStorageDesktopWindows {
     }
 
     private static void sendTerminalSettings(DesktopInputContext<AbstractContainerMenu, TerminalState> context, TerminalState state) {
-        TomsStorageReflect.setIntField(context.model(), "sorting", state.sorting);
-        TomsStorageReflect.setIntField(context.model(), "searchType", state.searchType);
-        TomsStorageReflect.setIntField(context.model(), "modes", state.modes);
+        int nativeData=TomsStorageReflect.intField(context.model(),"terminalData",0);
+        nativeData=(nativeData & 0x500) | (state.modes & 3) | ((state.sorting & 3) << 3)
+            | ((state.sorting & 0x100)!=0 ? 4 : 0) | ((state.searchType & 7) << 5) | (state.sorting & 0x200);
+        TomsStorageReflect.setIntField(context.model(), "terminalData", nativeData);
         TomsStorageReflect.setField(context.model(), "search", state.search);
         syncKeptSearchMemory(context, state);
         CompoundTag tag = new CompoundTag();
         CompoundTag child = new CompoundTag();
-        child.putInt("s", state.sorting);
-        child.putInt("st", state.searchType);
-        child.putInt("m", state.modes);
+        child.putInt("d", nativeData);
         tag.put("c", child);
         tag.putString("s", state.search);
         if (recipeBookSearchSyncEnabled(state)) {
@@ -1609,6 +1620,7 @@ public final class TomsStorageDesktopWindows {
         CompoundTag tag = new CompoundTag();
         tag.putInt("count", count);
         tag.putBoolean("lessThan", lessThan);
+        context.state().count=count;context.state().lessThan=lessThan;
         context.sendPayload(TomsStorageCompat.NBT_CHANNEL, TomsStoragePayloads.writeNbt(tag));
     }
 
@@ -1751,29 +1763,61 @@ public final class TomsStorageDesktopWindows {
         }
     }
 
-    private static void renderCycleButton(DesktopRenderContext<?, ?> context, int x, int y, ResourceLocation icon, boolean selected) {
-        boolean hovered = contains(context.mouseX(), context.mouseY(), x, y, BUTTON, BUTTON);
-        context.sprite(selected ? SMALL_BUTTON_SELECTED : hovered ? SMALL_BUTTON_HOVERED : SMALL_BUTTON_SPRITE, x, y, BUTTON, BUTTON);
-        context.sprite(icon, x + 1, y + 1, 14, 14);
+    private static ResourceLocation terminalAtlas(DesktopRenderContext<?,?> context) {
+        return TomsStorageCompat.id("textures/gui/"+(context.model().getClass().getSimpleName().equals("CraftingTerminalMenu")?"crafting_terminal":"storage_terminal")+".png");
     }
-
-    private static void renderSearchModeButton(DesktopRenderContext<?, ?> context, int x, int y, int searchType) {
-        searchType = normalizedSearchType(searchType);
-        renderCycleButton(context, x, y, TomsStorageCompat.id("icons/search_mode"), false);
-        if ((searchType & 1) != 0) {
-            context.sprite(TomsStorageCompat.id("icons/search_mode_auto"), x + 1, y + 1, 14, 14);
-        }
-        if ((searchType & 2) != 0) {
-            context.sprite(TomsStorageCompat.id("icons/search_mode_keep"), x + 1, y + 1, 14, 14);
-        }
-        if ((searchType & 4) != 0) {
-            context.sprite(TomsStorageCompat.id("icons/search_mode_sync"), x + 1, y + 1, 14, 14);
-        }
+    private static void nativeButton(DesktopRenderContext<?,?> context,ResourceLocation texture,int x,int y,int u,int v) {
+        context.texture(texture,x,y,u,v,16,16,16,16,256,256);
     }
-
-    private static void renderIconButton(DesktopRenderContext<?, ?> context, int x, int y, ResourceLocation normal, ResourceLocation hoveredSprite, boolean selected) {
-        boolean hovered = contains(context.mouseX(), context.mouseY(), x, y, BUTTON, BUTTON);
-        context.sprite(hovered ? hoveredSprite : normal, x, y, BUTTON, BUTTON);
+    /** Sample the installed 1.7.x atlases; this release has no modern GUI sprites. */
+    private static void renderCycleButton(DesktopRenderContext<?,?> context,int x,int y,ResourceLocation icon,boolean selected) {
+        String name=icon.getPath().substring(icon.getPath().lastIndexOf('/')+1);
+        int row=0,state=0;
+        ResourceLocation texture=TomsStorageCompat.id("textures/gui/filter_buttons.png");
+        if(TomsStorageCompat.isTerminal(((AbstractContainerMenu)context.model()).getType())) {
+            texture=terminalAtlas(context);
+            switch(name) {
+                case "sort_name" -> state=1;
+                case "sort_by_mod" -> state=2;
+                case "sort_asc" -> {row=1;state=1;}
+                case "sort_desc" -> row=1;
+                case "control_def" -> row=3;
+                case "control_ae" -> {row=3;state=1;}
+                case "control_rs" -> {row=3;state=2;}
+                case "keep_last_0" -> {row=5;state=1;}
+                case "keep_last_off" -> row=5;
+                default -> { }
+            }
+            nativeButton(context,texture,x,y,194+state*16,30+row*16);return;
+        }
+        if(context.model().getClass().getSimpleName().equals("InventoryLinkMenu")) {
+            var linkTexture=TomsStorageCompat.id("textures/gui/inventory_link.png");
+            nativeButton(context,linkTexture,x,y,176+(contains(context.mouseX(),context.mouseY(),x,y,16,16)?16:0),16);
+            int tile=name.equals("add")?0:name.equals("allow")||selected?2:1;
+            nativeButton(context,linkTexture,x,y,176+tile*16+(selected?16:0),0);return;
+        }
+        if(name.equals("less_than")||name.equals("greater_than")) {
+            nativeButton(context,TomsStorageCompat.id("textures/gui/level_emitter.png"),x,y,176+(name.equals("less_than")?16:0),0);return;
+        }
+        if(name.equals("add") || (context.model().getClass().getSimpleName().equals("TagItemFilterMenu") && name.equals("deny"))) {
+            var tagTexture=TomsStorageCompat.id("textures/gui/tag_filter.png");
+            nativeButton(context,tagTexture,x,y,176+(contains(context.mouseX(),context.mouseY(),x,y,16,16)?16:0),16);
+            nativeButton(context,tagTexture,x,y,176+(name.equals("add")?0:16),0);return;
+        }
+        if(name.startsWith("priority_")){row=2;state=TomsStorageReflect.enumOrdinalField(context.model(),"priority",2);}
+        else if(name.startsWith("keep_last_")){row=3;state=name.equals("keep_last_1")?1:0;}
+        else if(name.startsWith("match_tag_")){row=1;state=name.equals("match_tag_on")?1:0;}
+        else state=name.equals("allow")?1:0;
+        nativeButton(context,texture,x,y,state*16,row*16);
+    }
+    private static void renderSearchModeButton(DesktopRenderContext<?,?> context,int x,int y,int searchType) {
+        var texture=terminalAtlas(context);nativeButton(context,texture,x,y,194,62);
+        for(int bit=0;bit<3;bit++)if((searchType & (1<<bit))!=0)
+            context.texture(texture,x+1,y+1,210+bit*14,62,14,14,14,14,256,256);
+    }
+    private static void renderIconButton(DesktopRenderContext<?,?> context,int x,int y,ResourceLocation normal,ResourceLocation hoveredSprite,boolean selected) {
+        boolean hovered=contains(context.mouseX(),context.mouseY(),x,y,16,16);
+        context.texture(terminalAtlas(context),x+2,y+2,194+(hovered?22:11),10,11,11,11,11,256,256);
     }
 
     private static void renderTagList(DesktopRenderContext<?, ?> context, List<String> tags, String selected, int x, int y, int width, int height) {
@@ -1785,7 +1829,7 @@ public final class TomsStorageDesktopWindows {
             if (tag.equals(selected)) {
                 context.fill(x, rowY, x + width, rowY + 12, 0xFF8F8265);
             }
-            context.text(shorten(tag, 12), x + 2, rowY + 2, 0xFFFFFF, false);
+            context.text(shorten(tag, 12), x + 2, rowY + 2, 0xFFFFFFFF, false);
         }
     }
 

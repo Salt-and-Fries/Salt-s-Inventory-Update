@@ -1,0 +1,3174 @@
+{
+  "checked_at": "2026-10-20",
+  "core_version": "0.1.4",
+  "compatibility_version": "0.1.0",
+  "upstream_source": "https://api.modrinth.com/v2",
+  "targets": [
+    {
+      "minecraft": "1.20.1",
+      "loader": "fabric",
+      "integrations": {
+        "ae2": {
+          "project": "ae2",
+          "project_id": "XxWD5pD3",
+          "versions_api": "https://api.modrinth.com/v2/project/ae2/version",
+          "available": true,
+          "version": "15.4.11",
+          "version_id": "xIOhOI9C",
+          "filename": "appliedenergistics2-fabric-15.4.11.jar",
+          "download_url": "https://cdn.modrinth.com/data/XxWD5pD3/versions/xIOhOI9C/appliedenergistics2-fabric-15.4.11.jar",
+          "sha512": "c3206fd416bb14db17af7198a711e51504a853cd6c55a7c4eca8e0700c755880fc9268c033a1b97e158be4bb2d2eed6d13b12f113456904fe4dfe03f00ac3dde",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "nvQzSEkH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "6AQIaxuO",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "toms-storage": {
+          "project": "toms-storage",
+          "project_id": "XZNI4Cpy",
+          "versions_api": "https://api.modrinth.com/v2/project/toms-storage/version",
+          "available": true,
+          "version": "1.20-1.7.1-fabric",
+          "version_id": "nvqkBIsD",
+          "filename": "toms_storage_fabric-1.20-1.7.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/nvqkBIsD/toms_storage_fabric-1.20-1.7.1.jar",
+          "sha512": "0e94f6b240fe7afc93b1c314806edb6b8ffb5b7c2827051cb336bcb48c64e3e5e5199ca09fac1d3b9da58b1b85544a9e90af015fa73aa795a0bce04fb6d6048d",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "embedded"
+            },
+            {
+              "version_id": null,
+              "project_id": "Orvt0mRa",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "jei": {
+          "project": "jei",
+          "project_id": "u6dRKJwZ",
+          "versions_api": "https://api.modrinth.com/v2/project/jei/version",
+          "available": true,
+          "version": "15.74.0.227",
+          "version_id": "F2JRIgT7",
+          "filename": "jei-1.20.1-fabric-15.74.0.227.jar",
+          "download_url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/F2JRIgT7/jei-1.20.1-fabric-15.74.0.227.jar",
+          "sha512": "504a2ff92c687cb2d12dc6f97c592a1077201438bec0610ab2671a1b3b1b58c87e19d62329e1f43befc6b3b4dd1cc41a9a3039fa9e3d6e3d321e3b60dd790825",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "BOHUKqOz",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "7tEfOcA7",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "rei": {
+          "project": "rei",
+          "project_id": "nfn13YXA",
+          "versions_api": "https://api.modrinth.com/v2/project/rei/version",
+          "available": true,
+          "version": "12.1.785+fabric",
+          "version_id": "nYcMSS03",
+          "filename": "RoughlyEnoughItems-12.1.785-fabric.jar",
+          "download_url": "https://cdn.modrinth.com/data/nfn13YXA/versions/nYcMSS03/RoughlyEnoughItems-12.1.785-fabric.jar",
+          "sha512": "1eaf6de6ba640407599767d150aa0c7dd71ad071915bf34d9a06fa8a0a3825882cd0fa966d3f225912f5fb456be38fe58021db9df988f65d667bea102a861a15",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "emi": {
+          "project": "emi",
+          "project_id": "fRiHVvU7",
+          "versions_api": "https://api.modrinth.com/v2/project/emi/version",
+          "available": true,
+          "version": "1.1.24+1.20.1+fabric",
+          "version_id": "YbXDHf8W",
+          "filename": "emi-1.1.24+1.20.1+fabric.jar",
+          "download_url": "https://cdn.modrinth.com/data/fRiHVvU7/versions/YbXDHf8W/emi-1.1.24%2B1.20.1%2Bfabric.jar",
+          "sha512": "2e1fbbbb961a90f525f6938361288505d5928b9a54e7e932afa7de63aeb1962f6a04b77540729922ee48a425d01bbe8c00d1a18ce6cd766dfa513b6ed0cf1f1b",
+          "dependencies": []
+        },
+        "modmenu": {
+          "project": "modmenu",
+          "project_id": "mOgUt4GM",
+          "versions_api": "https://api.modrinth.com/v2/project/modmenu/version",
+          "available": true,
+          "version": "7.2.2",
+          "version_id": "lEkperf6",
+          "filename": "modmenu-7.2.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/lEkperf6/modmenu-7.2.2.jar",
+          "sha512": "9a7837e04bb34376611b207a3b20e5fe1c82a4822b42929d5b410809ec4b88ff3cac8821c4568f880775bafa3c079dfc7800f8471356a4046248b12607e855eb",
+          "dependencies": []
+        },
+        "sophisticated-core": {
+          "project": "sophisticated-core-unofficial-fabric-port",
+          "project_id": "9jxwkYQL",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-core-unofficial-fabric-port/version",
+          "available": true,
+          "version": "1.20.1-1.2.7.15.166",
+          "version_id": "BP3CQI2v",
+          "filename": "sophisticatedcore-1.20.1-1.2.7.15.166.jar",
+          "download_url": "https://cdn.modrinth.com/data/9jxwkYQL/versions/BP3CQI2v/sophisticatedcore-1.20.1-1.2.7.15.166.jar",
+          "sha512": "892dda2bfa2a49ed66e869877fc6309cfc3af11fe61859c3b1be341baf689a693fda30902dec5c9ec6f737fd8fe451615ceb3d1c31c51e40c38e68b59dfcf134",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "tEJPA4Ty",
+              "file_name": null,
+              "dependency_type": "embedded"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "ohNO6lps",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "sophisticated-backpacks": {
+          "project": "sophisticated-backpacks-unoffical-fabric-port",
+          "project_id": "ouNrBQtq",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-backpacks-unoffical-fabric-port/version",
+          "available": true,
+          "version": "1.20.1-3.23.4.5.110",
+          "version_id": "Jk6o7s4h",
+          "filename": "sophisticatedbackpacks-1.20.1-3.23.4.5.110.jar",
+          "download_url": "https://cdn.modrinth.com/data/ouNrBQtq/versions/Jk6o7s4h/sophisticatedbackpacks-1.20.1-3.23.4.5.110.jar",
+          "sha512": "651a6121533e5693c26bde85141339cb89b5cfee5a750d67cbdad12a97a51ec8a0a3b3b59845afe9013b477fce9570f80ae0047e1c7054f458bc9c1b93ef748c",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "rQszQPD2",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "9jxwkYQL",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "5aaWibi9",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tEJPA4Ty",
+              "file_name": null,
+              "dependency_type": "embedded"
+            },
+            {
+              "version_id": null,
+              "project_id": "ohNO6lps",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "sophisticated-storage": {
+          "project": "sophisticated-storage-unofficial-fabric-port",
+          "project_id": "iHtpVwJL",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-storage-unofficial-fabric-port/version",
+          "available": true,
+          "version": "1.20.1-1.3.5.11.142",
+          "version_id": "xezSXA8y",
+          "filename": "sophisticatedstorage-1.20.1-1.3.5.11.142.jar",
+          "download_url": "https://cdn.modrinth.com/data/iHtpVwJL/versions/xezSXA8y/sophisticatedstorage-1.20.1-1.3.5.11.142.jar",
+          "sha512": "b19e4dfe8f757621ddeec6c88ce7e770230a06f5a6c9636e74ee703adec55442e17f8d63d47a3edb548f3d90c1611fbd0b19ab012f3f51fd4ba05e7b2a26f640",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "ohNO6lps",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "9jxwkYQL",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "rQszQPD2",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tEJPA4Ty",
+              "file_name": null,
+              "dependency_type": "embedded"
+            }
+          ]
+        }
+      },
+      "qa_runtime": {
+        "fabric_loader": "0.19.5",
+        "fabric_api": "0.92.11+1.20.1"
+      }
+    },
+    {
+      "minecraft": "1.20.1",
+      "loader": "forge",
+      "integrations": {
+        "ae2": {
+          "project": "ae2",
+          "project_id": "XxWD5pD3",
+          "versions_api": "https://api.modrinth.com/v2/project/ae2/version",
+          "available": true,
+          "version": "15.4.11",
+          "version_id": "jYgSnxye",
+          "filename": "appliedenergistics2-forge-15.4.11.jar",
+          "download_url": "https://cdn.modrinth.com/data/XxWD5pD3/versions/jYgSnxye/appliedenergistics2-forge-15.4.11.jar",
+          "sha512": "3a121b09c69c585bf1240f3526fc882f36d5e8c8242a9629e216de0c80e9ed212369db57026ec53856ba058635586edb103407855031bf4dcf1b2dfd4d60f78d",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "6AQIaxuO",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tq47Uqpn",
+              "file_name": null,
+              "dependency_type": "incompatible"
+            },
+            {
+              "version_id": null,
+              "project_id": "Eyw0UxEx",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nvQzSEkH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "Ck4E7v7R",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "toms-storage": {
+          "project": "toms-storage",
+          "project_id": "XZNI4Cpy",
+          "versions_api": "https://api.modrinth.com/v2/project/toms-storage/version",
+          "available": true,
+          "version": "1.20-1.7.1",
+          "version_id": "XELeoPjZ",
+          "filename": "toms_storage-1.20-1.7.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/XELeoPjZ/toms_storage-1.20-1.7.1.jar",
+          "sha512": "ac5a057a9fdafa851fca05be77ba68548082119e0b7ac19f2197e418da703bf60f341e65ec76ddc73003682b89159850f6b9dff65147df3c0c9b8e6f58460ce0",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "jei": {
+          "project": "jei",
+          "project_id": "u6dRKJwZ",
+          "versions_api": "https://api.modrinth.com/v2/project/jei/version",
+          "available": true,
+          "version": "15.74.0.227",
+          "version_id": "TrKZlZ0b",
+          "filename": "jei-1.20.1-forge-15.74.0.227.jar",
+          "download_url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/TrKZlZ0b/jei-1.20.1-forge-15.74.0.227.jar",
+          "sha512": "f8bed30579c5093292809ae60806586de24e34594384a07e3fbe2ed8d37fd733d5c80da4f25f7a45fed4a58eaefb857b6e61a6a02fafda4dacec9593d305281f",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "7tEfOcA7",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "BOHUKqOz",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "rei": {
+          "project": "rei",
+          "project_id": "nfn13YXA",
+          "versions_api": "https://api.modrinth.com/v2/project/rei/version",
+          "available": true,
+          "version": "12.1.785+forge",
+          "version_id": "IoS2AjPk",
+          "filename": "RoughlyEnoughItems-12.1.785-forge.jar",
+          "download_url": "https://cdn.modrinth.com/data/nfn13YXA/versions/IoS2AjPk/RoughlyEnoughItems-12.1.785-forge.jar",
+          "sha512": "c229232ce96368e16631ac0557caa2b14f3ee2c5d587241da7889b142aecb61eb68dd400f60f368951ffc741f2d375732daf2bf5a46ced239a6e4bb692066110",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "emi": {
+          "project": "emi",
+          "project_id": "fRiHVvU7",
+          "versions_api": "https://api.modrinth.com/v2/project/emi/version",
+          "available": true,
+          "version": "1.1.24+1.20.1+forge",
+          "version_id": "Axuu9I9R",
+          "filename": "emi-1.1.24+1.20.1+forge.jar",
+          "download_url": "https://cdn.modrinth.com/data/fRiHVvU7/versions/Axuu9I9R/emi-1.1.24%2B1.20.1%2Bforge.jar",
+          "sha512": "02743be3476b7dc5668cedbcc5a6d384e9806981833926a83fed76a2800c44da33576e86308c058250718c128d58076f1b62bc53d200464326ace70a43229c8b",
+          "dependencies": []
+        },
+        "modmenu": {
+          "project": "modmenu",
+          "project_id": "mOgUt4GM",
+          "versions_api": "https://api.modrinth.com/v2/project/modmenu/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-core": {
+          "project": "sophisticated-core",
+          "project_id": "nmoqTijg",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-core/version",
+          "available": true,
+          "version": "1.20.1-1.5.14.2419",
+          "version_id": "FtB6vAQc",
+          "filename": "sophisticatedcore-1.20.1-1.5.14.2419.jar",
+          "download_url": "https://cdn.modrinth.com/data/nmoqTijg/versions/FtB6vAQc/sophisticatedcore-1.20.1-1.5.14.2419.jar",
+          "sha512": "657022af91d5a15ea60472a4ebab7204bbc12a4f93bc50a6e5cb33bb352648c1ebaf864325b2bca2cab7498d1fcfc088215d762ea60196d628e6fb05377a3dc9",
+          "dependencies": []
+        },
+        "sophisticated-backpacks": {
+          "project": "sophisticated-backpacks",
+          "project_id": "TyCTlI4b",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-backpacks/version",
+          "available": true,
+          "version": "1.20.1-3.26.13.2215",
+          "version_id": "c7sbewSf",
+          "filename": "sophisticatedbackpacks-1.20.1-3.26.13.2215.jar",
+          "download_url": "https://cdn.modrinth.com/data/TyCTlI4b/versions/c7sbewSf/sophisticatedbackpacks-1.20.1-3.26.13.2215.jar",
+          "sha512": "e7ce3d3638084111a81fa81c3a4a5328ac0d94c0a824e4157a993e548ef68747e70d9a1a5cab0b09792a7291f2bb880328a6bea036ebd1e1f02773970f12c80e",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "BAscRYKm",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "b1fMg6sH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vRYk0bv7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vvuO3ImH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nmoqTijg",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "sophisticated-storage": {
+          "project": "sophisticated-storage",
+          "project_id": "hMlaZH8f",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-storage/version",
+          "available": true,
+          "version": "1.20.1-1.5.6.2183",
+          "version_id": "vFpp1Lw7",
+          "filename": "sophisticatedstorage-1.20.1-1.5.6.2183.jar",
+          "download_url": "https://cdn.modrinth.com/data/hMlaZH8f/versions/vFpp1Lw7/sophisticatedstorage-1.20.1-1.5.6.2183.jar",
+          "sha512": "57e6788ac2406f7c30ba4fee1f73d8bc3bd1b4bd3e1d952339407ee572e3166f856ad961ce22eb2bbd7f3ec41704fb9cfa46e7ec87c87ecb1ddc00baa223adc8",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "BAscRYKm",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "qnQsVE2z",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vRYk0bv7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "b1fMg6sH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nmoqTijg",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "integrations": {
+        "ae2": {
+          "project": "ae2",
+          "project_id": "XxWD5pD3",
+          "versions_api": "https://api.modrinth.com/v2/project/ae2/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "toms-storage": {
+          "project": "toms-storage",
+          "project_id": "XZNI4Cpy",
+          "versions_api": "https://api.modrinth.com/v2/project/toms-storage/version",
+          "available": true,
+          "version": "1.21-2.4.2-fabric",
+          "version_id": "nhRuPk5W",
+          "filename": "toms_storage_fabric-1.21-2.4.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/nhRuPk5W/toms_storage_fabric-1.21-2.4.2.jar",
+          "sha512": "e38b9b2a2568404da98ce468f93ccca8bc1a5a3c4e57d11c7ebfcf42b1ee9883318a9c7cfc728688ff49383d61149852b4220613a7e8c408309de68a45adccde",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tagwiZkJ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "embedded"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "5aaWibi9",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "Orvt0mRa",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "jei": {
+          "project": "jei",
+          "project_id": "u6dRKJwZ",
+          "versions_api": "https://api.modrinth.com/v2/project/jei/version",
+          "available": true,
+          "version": "19.69.0.457",
+          "version_id": "RkwKMTOv",
+          "filename": "jei-1.21.1-fabric-19.69.0.457.jar",
+          "download_url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/RkwKMTOv/jei-1.21.1-fabric-19.69.0.457.jar",
+          "sha512": "4f917609916505293e03b09e0e9e14e69b6d13d6262f0cbcacf26a016c91473ed40b64f5de6b5ba8481c9adc49b24f66167ffee83386154c3e0551fc09021772",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "BOHUKqOz",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "7tEfOcA7",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "rei": {
+          "project": "rei",
+          "project_id": "nfn13YXA",
+          "versions_api": "https://api.modrinth.com/v2/project/rei/version",
+          "available": true,
+          "version": "16.0.799+fabric",
+          "version_id": "aWzTESNC",
+          "filename": "RoughlyEnoughItems-16.0.799-fabric.jar",
+          "download_url": "https://cdn.modrinth.com/data/nfn13YXA/versions/aWzTESNC/RoughlyEnoughItems-16.0.799-fabric.jar",
+          "sha512": "e4b16c69dc3cc4f7a13c1e285ff0914fd065ca1973450244ac0551f59bcd1247febedbef73c3f89ee4e684f037e3225a7b0d49138292df9303742c12f30010b6",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "emi": {
+          "project": "emi",
+          "project_id": "fRiHVvU7",
+          "versions_api": "https://api.modrinth.com/v2/project/emi/version",
+          "available": true,
+          "version": "1.1.24+1.21.1+fabric",
+          "version_id": "on5GT1qh",
+          "filename": "emi-1.1.24+1.21.1+fabric.jar",
+          "download_url": "https://cdn.modrinth.com/data/fRiHVvU7/versions/on5GT1qh/emi-1.1.24%2B1.21.1%2Bfabric.jar",
+          "sha512": "2680e7b0a93152d4220afdc30a0452c911dc4b5c9ce1db1b7246c21b777bc2a1945fe97c98c09941d31b7478ae357135a1ef51cd3ba92d08dce35202a830b70d",
+          "dependencies": []
+        },
+        "modmenu": {
+          "project": "modmenu",
+          "project_id": "mOgUt4GM",
+          "versions_api": "https://api.modrinth.com/v2/project/modmenu/version",
+          "available": true,
+          "version": "11.0.5",
+          "version_id": "6lgOkclV",
+          "filename": "modmenu-11.0.5.jar",
+          "download_url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/6lgOkclV/modmenu-11.0.5.jar",
+          "sha512": "92e8e96267ff18d320903090f2ad9b32408a218919f5a0d578e232ad774c89d49a34a8271806652be7d6283f24e98432bc4af7f95855e78b843f9100d68696c7",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "eXts2L7r",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "sophisticated-core": {
+          "project": "sophisticated-core-unofficial-fabric-port",
+          "project_id": "9jxwkYQL",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-core-unofficial-fabric-port/version",
+          "available": true,
+          "version": "1.21.1-1.2.9.21.168",
+          "version_id": "ZLVrtF0Q",
+          "filename": "sophisticatedcore-1.21.1-1.2.9.21.168.jar",
+          "download_url": "https://cdn.modrinth.com/data/9jxwkYQL/versions/ZLVrtF0Q/sophisticatedcore-1.21.1-1.2.9.21.168.jar",
+          "sha512": "330489fa3434702a01aa1a98d46eca5d155cb4c2dd25b30c70f6afb29a8d027381cf395d5965b3c46df899bb96675536604302d9db6273f624ba959f4009ce25",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "ohNO6lps",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "tEJPA4Ty",
+              "file_name": null,
+              "dependency_type": "embedded"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "sophisticated-backpacks": {
+          "project": "sophisticated-backpacks-unoffical-fabric-port",
+          "project_id": "ouNrBQtq",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-backpacks-unoffical-fabric-port/version",
+          "available": true,
+          "version": "1.21.1-3.23.4.3.106",
+          "version_id": "nHhuPdda",
+          "filename": "sophisticatedbackpacks-1.21.1-3.23.4.3.106.jar",
+          "download_url": "https://cdn.modrinth.com/data/ouNrBQtq/versions/nHhuPdda/sophisticatedbackpacks-1.21.1-3.23.4.3.106.jar",
+          "sha512": "04c0c22489a16d782b644ec7ad6aa5bf4353614148a9fb1e152e9ec6c72be14d36b1c0793c25b720f2baf85aa299fc6585b4ee1991de25ac426166dc72fb0def",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "5aaWibi9",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "rQszQPD2",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "9jxwkYQL",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tEJPA4Ty",
+              "file_name": null,
+              "dependency_type": "embedded"
+            },
+            {
+              "version_id": null,
+              "project_id": "ohNO6lps",
+              "file_name": null,
+              "dependency_type": "embedded"
+            }
+          ]
+        },
+        "sophisticated-storage": {
+          "project": "sophisticated-storage-unofficial-fabric-port",
+          "project_id": "iHtpVwJL",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-storage-unofficial-fabric-port/version",
+          "available": true,
+          "version": "1.21.1-1.3.7.9.139",
+          "version_id": "kjNlOByJ",
+          "filename": "sophisticatedstorage-1.21.1-1.3.7.9.139.jar",
+          "download_url": "https://cdn.modrinth.com/data/iHtpVwJL/versions/kjNlOByJ/sophisticatedstorage-1.21.1-1.3.7.9.139.jar",
+          "sha512": "52a72f10e54cf21d1dc3a94812a815bf6292815410f6d3ff2dfc928d9091352314f1b1b9c6760b303c3e58132c76dea584e31b16e5479cd0ea2c4ea256854937",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "ohNO6lps",
+              "file_name": null,
+              "dependency_type": "embedded"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "rQszQPD2",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "9jxwkYQL",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "tEJPA4Ty",
+              "file_name": null,
+              "dependency_type": "embedded"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        }
+      },
+      "qa_runtime": {
+        "fabric_loader": "0.19.5",
+        "fabric_api": "0.116.5+1.21.1"
+      }
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "integrations": {
+        "ae2": {
+          "project": "ae2",
+          "project_id": "XxWD5pD3",
+          "versions_api": "https://api.modrinth.com/v2/project/ae2/version",
+          "available": true,
+          "version": "19.2.18",
+          "version_id": "KDnFUmMm",
+          "filename": "appliedenergistics2-19.2.18.jar",
+          "download_url": "https://cdn.modrinth.com/data/XxWD5pD3/versions/KDnFUmMm/appliedenergistics2-19.2.18.jar",
+          "sha512": "39bc4cf733a4321631e2637a1a6dfd3527135fdac1b572534e6fd1f9eab7a6dd92d56c5fa066263c95149c9b20cabdd1fd3dff80bea515381b1d2d754cad26c3",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nvQzSEkH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tq47Uqpn",
+              "file_name": null,
+              "dependency_type": "incompatible"
+            },
+            {
+              "version_id": null,
+              "project_id": "Ck4E7v7R",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "6AQIaxuO",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "Eyw0UxEx",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "toms-storage": {
+          "project": "toms-storage",
+          "project_id": "XZNI4Cpy",
+          "versions_api": "https://api.modrinth.com/v2/project/toms-storage/version",
+          "available": true,
+          "version": "1.21-2.4.2",
+          "version_id": "WQAMoIMC",
+          "filename": "toms_storage-1.21-2.4.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/WQAMoIMC/toms_storage-1.21-2.4.2.jar",
+          "sha512": "53db61b4486616b3a78dfff83b58f9424dd9bf525ea3db4e444ff0403fb70aa9ab7fc097dff2f49665e480bce936b32be76b3051a5aff217898b2b94d846d30b",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tagwiZkJ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "hMlaZH8f",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "jei": {
+          "project": "jei",
+          "project_id": "u6dRKJwZ",
+          "versions_api": "https://api.modrinth.com/v2/project/jei/version",
+          "available": true,
+          "version": "19.69.0.457",
+          "version_id": "rsnYBmN3",
+          "filename": "jei-1.21.1-neoforge-19.69.0.457.jar",
+          "download_url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/rsnYBmN3/jei-1.21.1-neoforge-19.69.0.457.jar",
+          "sha512": "1d8d51f845e68066f48efd4f88dd51d7c1616d314524dc15ffa286ab9930c9cca01cfd25914ab1e0e4e8a2e9d135f5c42ee2c6e77d6ed372c836c4d342c6631f",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "7tEfOcA7",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "BOHUKqOz",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "rei": {
+          "project": "rei",
+          "project_id": "nfn13YXA",
+          "versions_api": "https://api.modrinth.com/v2/project/rei/version",
+          "available": true,
+          "version": "16.0.799+neoforge",
+          "version_id": "b8gfS9Je",
+          "filename": "RoughlyEnoughItems-16.0.799-neoforge.jar",
+          "download_url": "https://cdn.modrinth.com/data/nfn13YXA/versions/b8gfS9Je/RoughlyEnoughItems-16.0.799-neoforge.jar",
+          "sha512": "9b7fb8071813c348d07283b8651aa589ec334dc060d076422b988eae9e0f6e9598c721cbe39462daf68b93e0f88c2f70e5a655ff24bc644abfe5eb2b1099812c",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "emi": {
+          "project": "emi",
+          "project_id": "fRiHVvU7",
+          "versions_api": "https://api.modrinth.com/v2/project/emi/version",
+          "available": true,
+          "version": "1.1.24+1.21.1+neoforge",
+          "version_id": "5sIPA1To",
+          "filename": "emi-1.1.24+1.21.1+neoforge.jar",
+          "download_url": "https://cdn.modrinth.com/data/fRiHVvU7/versions/5sIPA1To/emi-1.1.24%2B1.21.1%2Bneoforge.jar",
+          "sha512": "f4c45ed686fe617311d6debadcb6ace5963e66f8cfe0cfed398231f081f87407070efc7a73c8b695d158f1d87a97180737b9107a46771e77df2bc9a7dc715ebd",
+          "dependencies": []
+        },
+        "modmenu": {
+          "project": "modmenu",
+          "project_id": "mOgUt4GM",
+          "versions_api": "https://api.modrinth.com/v2/project/modmenu/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-core": {
+          "project": "sophisticated-core",
+          "project_id": "nmoqTijg",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-core/version",
+          "available": true,
+          "version": "1.21.1-1.5.16.2422",
+          "version_id": "n2ZY9dML",
+          "filename": "sophisticatedcore-1.21.1-1.5.16.2422.jar",
+          "download_url": "https://cdn.modrinth.com/data/nmoqTijg/versions/n2ZY9dML/sophisticatedcore-1.21.1-1.5.16.2422.jar",
+          "sha512": "ee9cd14e8e52bcb6aa0f4b48c80562943799576ab4bed1603b414bcbf9ef9922da9d5916061a2f6da8549a167f8f919d05cabac69a906c360b5b6faddcd01ab0",
+          "dependencies": []
+        },
+        "sophisticated-backpacks": {
+          "project": "sophisticated-backpacks",
+          "project_id": "TyCTlI4b",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-backpacks/version",
+          "available": true,
+          "version": "1.21.1-3.26.13.2214",
+          "version_id": "AW1Jh0G5",
+          "filename": "sophisticatedbackpacks-1.21.1-3.26.13.2214.jar",
+          "download_url": "https://cdn.modrinth.com/data/TyCTlI4b/versions/AW1Jh0G5/sophisticatedbackpacks-1.21.1-3.26.13.2214.jar",
+          "sha512": "4f868b9daa70db36485f6cc2ea7668e7dcab3a15e3c1c5083870376d961def81a22812ae7968dcb1f0d2964392d534f8a338a8e38f8afb3f485c72c11ddfae7e",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "WRaRZdTd",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vRYk0bv7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "b1fMg6sH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vvuO3ImH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nmoqTijg",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "BAscRYKm",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "sophisticated-storage": {
+          "project": "sophisticated-storage",
+          "project_id": "hMlaZH8f",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-storage/version",
+          "available": true,
+          "version": "1.21.1-1.6.7.2184",
+          "version_id": "6B0lbqeG",
+          "filename": "sophisticatedstorage-1.21.1-1.6.7.2184.jar",
+          "download_url": "https://cdn.modrinth.com/data/hMlaZH8f/versions/6B0lbqeG/sophisticatedstorage-1.21.1-1.6.7.2184.jar",
+          "sha512": "3bacf60d993fb63dd437af047d392e452f126a1f3c2ec227e03469b457bd7a15d638f9f076fefaeec5705d0e62b923e1bf202aa9fd5288b55c381ecc3f5e0a6c",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "b1fMg6sH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vRYk0bv7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "WRaRZdTd",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "qnQsVE2z",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "BAscRYKm",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nmoqTijg",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        }
+      },
+      "qa_runtime": {
+        "neoforge": "21.1.238"
+      }
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "fabric",
+      "integrations": {
+        "ae2": {
+          "project": "ae2",
+          "project_id": "XxWD5pD3",
+          "versions_api": "https://api.modrinth.com/v2/project/ae2/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "toms-storage": {
+          "project": "toms-storage",
+          "project_id": "XZNI4Cpy",
+          "versions_api": "https://api.modrinth.com/v2/project/toms-storage/version",
+          "available": true,
+          "version": "1.21.11-2.8.0-fabric",
+          "version_id": "FydlCSUl",
+          "filename": "toms_storage_fabric-1.21.11-2.8.0.jar",
+          "download_url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/FydlCSUl/toms_storage_fabric-1.21.11-2.8.0.jar",
+          "sha512": "7c9cae7eec64e70edfbe12cd1ff5619b8ccb1e49a664ec6b28008cb866a658045cfc18960ab6574743cb5ce2af837509d851fc3702ab1cd9a2aae8228789ad69",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tagwiZkJ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "Orvt0mRa",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "5aaWibi9",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "embedded"
+            }
+          ]
+        },
+        "jei": {
+          "project": "jei",
+          "project_id": "u6dRKJwZ",
+          "versions_api": "https://api.modrinth.com/v2/project/jei/version",
+          "available": true,
+          "version": "27.53.0.109",
+          "version_id": "y1QHZ60Q",
+          "filename": "jei-1.21.11-fabric-27.53.0.109.jar",
+          "download_url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/y1QHZ60Q/jei-1.21.11-fabric-27.53.0.109.jar",
+          "sha512": "f9be1b293dfd58e0de2a81109a4e849c79c34cbce36a2a0a9778986b70fb2039fcf8f145964f8430506b87d8774428f473e3d003998f99be1ee736dce6c4bc31",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "BOHUKqOz",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "7tEfOcA7",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "rei": {
+          "project": "rei",
+          "project_id": "nfn13YXA",
+          "versions_api": "https://api.modrinth.com/v2/project/rei/version",
+          "available": true,
+          "version": "21.11.816+fabric",
+          "version_id": "QEiKPzyl",
+          "filename": "RoughlyEnoughItems-21.11.816-fabric.jar",
+          "download_url": "https://cdn.modrinth.com/data/nfn13YXA/versions/QEiKPzyl/RoughlyEnoughItems-21.11.816-fabric.jar",
+          "sha512": "148faa891db9868594dde20581530d76da88e15044ddf715c25f16a18399e9bff1ac368e947aff6be01efb05b28bc3872d1a44786e1ffeedd9f50733cb513a55",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "emi": {
+          "project": "emi",
+          "project_id": "fRiHVvU7",
+          "versions_api": "https://api.modrinth.com/v2/project/emi/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "modmenu": {
+          "project": "modmenu",
+          "project_id": "mOgUt4GM",
+          "versions_api": "https://api.modrinth.com/v2/project/modmenu/version",
+          "available": true,
+          "version": "17.0.1",
+          "version_id": "cLkYaVuL",
+          "filename": "modmenu-17.0.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/cLkYaVuL/modmenu-17.0.1.jar",
+          "sha512": "cb68cc39c8da66d05a1d2054a0e7b62144881e0cdb5fd681bc4f337b1313fafac394246f4e0aa0c4b6343db9e9750250a00c1bb72689b762da685ce1ccfee51f",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "eXts2L7r",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "sophisticated-core": {
+          "project": "sophisticated-core-unofficial-fabric-port",
+          "project_id": "9jxwkYQL",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-core-unofficial-fabric-port/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-backpacks": {
+          "project": "sophisticated-backpacks-unoffical-fabric-port",
+          "project_id": "ouNrBQtq",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-backpacks-unoffical-fabric-port/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-storage": {
+          "project": "sophisticated-storage-unofficial-fabric-port",
+          "project_id": "iHtpVwJL",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-storage-unofficial-fabric-port/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        }
+      },
+      "qa_runtime": {
+        "fabric_loader": "0.19.5",
+        "fabric_api": "0.141.4+1.21.11"
+      }
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "neoforge",
+      "integrations": {
+        "ae2": {
+          "project": "ae2",
+          "project_id": "XxWD5pD3",
+          "versions_api": "https://api.modrinth.com/v2/project/ae2/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "toms-storage": {
+          "project": "toms-storage",
+          "project_id": "XZNI4Cpy",
+          "versions_api": "https://api.modrinth.com/v2/project/toms-storage/version",
+          "available": true,
+          "version": "1.21.11-2.8.1",
+          "version_id": "Cl6WdkOf",
+          "filename": "toms_storage-1.21.11-2.8.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/Cl6WdkOf/toms_storage-1.21.11-2.8.1.jar",
+          "sha512": "ba026f0fff34ae3c44e2e669cdafe10f135cf9260892d8b59286d635f4661928efa9846c82e3613ff6c1b3a116735c1b81b58f0f5b80713491542de46d58cbe3",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "hMlaZH8f",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tagwiZkJ",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "jei": {
+          "project": "jei",
+          "project_id": "u6dRKJwZ",
+          "versions_api": "https://api.modrinth.com/v2/project/jei/version",
+          "available": true,
+          "version": "27.53.0.109",
+          "version_id": "CcAHXOgG",
+          "filename": "jei-1.21.11-neoforge-27.53.0.109.jar",
+          "download_url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/CcAHXOgG/jei-1.21.11-neoforge-27.53.0.109.jar",
+          "sha512": "523488a12b6862f6c74b4f3d525017194b7bcb63380ca626ec362ec0b04cc529b6d9496702833222c53b546b59d68c965e71dce52f14a48658e791b417c3e581",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "7tEfOcA7",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "BOHUKqOz",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "rei": {
+          "project": "rei",
+          "project_id": "nfn13YXA",
+          "versions_api": "https://api.modrinth.com/v2/project/rei/version",
+          "available": true,
+          "version": "21.11.816+neoforge",
+          "version_id": "p0bsGl2I",
+          "filename": "RoughlyEnoughItems-21.11.816-neoforge.jar",
+          "download_url": "https://cdn.modrinth.com/data/nfn13YXA/versions/p0bsGl2I/RoughlyEnoughItems-21.11.816-neoforge.jar",
+          "sha512": "2b027bdd23f77bb88e88863538949d78c8bd68f6819df24bc847329cb3ddbd54c830ad7cd86af1c886f60a30bdb1c62dac648003a1e81a4c2fa51eaeb76ca876",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "emi": {
+          "project": "emi",
+          "project_id": "fRiHVvU7",
+          "versions_api": "https://api.modrinth.com/v2/project/emi/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "modmenu": {
+          "project": "modmenu",
+          "project_id": "mOgUt4GM",
+          "versions_api": "https://api.modrinth.com/v2/project/modmenu/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-core": {
+          "project": "sophisticated-core",
+          "project_id": "nmoqTijg",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-core/version",
+          "available": true,
+          "version": "1.21.11-1.5.2.2348",
+          "version_id": "IkmqeDh0",
+          "filename": "sophisticatedcore-1.21.11-1.5.2.2348.jar",
+          "download_url": "https://cdn.modrinth.com/data/nmoqTijg/versions/IkmqeDh0/sophisticatedcore-1.21.11-1.5.2.2348.jar",
+          "sha512": "60656cc6ebfbe83b0ee6fd18e5fd7c7e714c5e050c07c792709c09eb3089367b07ce4a25557894c47e542ecb147c051d0ec9dc2a950bb8c0c17afe9b77680b87",
+          "dependencies": []
+        },
+        "sophisticated-backpacks": {
+          "project": "sophisticated-backpacks",
+          "project_id": "TyCTlI4b",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-backpacks/version",
+          "available": true,
+          "version": "1.21.11-3.26.3.2168",
+          "version_id": "36YO13Ox",
+          "filename": "sophisticatedbackpacks-1.21.11-3.26.3.2168.jar",
+          "download_url": "https://cdn.modrinth.com/data/TyCTlI4b/versions/36YO13Ox/sophisticatedbackpacks-1.21.11-3.26.3.2168.jar",
+          "sha512": "e4102514cb68c61998b2c3c3c683d30ca03bf7e91c07125dbe08e0087207dc80edb8035a49ab2ce053415409f8db06fcbeb9fe0ee54e0a252d83424632042cbb",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "nmoqTijg",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "b1fMg6sH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "WRaRZdTd",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vvuO3ImH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "BAscRYKm",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vRYk0bv7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "sophisticated-storage": {
+          "project": "sophisticated-storage",
+          "project_id": "hMlaZH8f",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-storage/version",
+          "available": true,
+          "version": "1.21.11-1.5.102.2142",
+          "version_id": "Y6cTQFva",
+          "filename": "sophisticatedstorage-1.21.11-1.5.102.2142.jar",
+          "download_url": "https://cdn.modrinth.com/data/hMlaZH8f/versions/Y6cTQFva/sophisticatedstorage-1.21.11-1.5.102.2142.jar",
+          "sha512": "10a5c8fb4ca8f6b1d2355697dd9dd37b10779f8d9b4d90bcdd6f1473794a5788dc7bae0c7c544a86e407fbc4bf9b82b342e41c36e6c5c88b1ad221b8c207e000",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "nmoqTijg",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "qnQsVE2z",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "b1fMg6sH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vRYk0bv7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "BAscRYKm",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "WRaRZdTd",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        }
+      },
+      "qa_runtime": {
+        "neoforge": "21.11.44"
+      }
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "fabric",
+      "integrations": {
+        "ae2": {
+          "project": "ae2",
+          "project_id": "XxWD5pD3",
+          "versions_api": "https://api.modrinth.com/v2/project/ae2/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "toms-storage": {
+          "project": "toms-storage",
+          "project_id": "XZNI4Cpy",
+          "versions_api": "https://api.modrinth.com/v2/project/toms-storage/version",
+          "available": true,
+          "version": "26.1-2.10.3-fabric",
+          "version_id": "9VRUBvKA",
+          "filename": "toms_storage_fabric-26.1-2.10.3.jar",
+          "download_url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/9VRUBvKA/toms_storage_fabric-26.1-2.10.3.jar",
+          "sha512": "d637a231c57cbcb1d12ebcf842117a9fb15539b744d5bedb0e1f3f211c937c49eb04e6ab04eeae6736b3e6bb841d60407e3124af31f22182506d126c72e7b001",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tagwiZkJ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "5aaWibi9",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "embedded"
+            },
+            {
+              "version_id": null,
+              "project_id": "Orvt0mRa",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "jei": {
+          "project": "jei",
+          "project_id": "u6dRKJwZ",
+          "versions_api": "https://api.modrinth.com/v2/project/jei/version",
+          "available": true,
+          "version": "29.47.0.111",
+          "version_id": "b5BXTIh2",
+          "filename": "jei-26.1.2-fabric-29.47.0.111.jar",
+          "download_url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/b5BXTIh2/jei-26.1.2-fabric-29.47.0.111.jar",
+          "sha512": "8b0b92044bb013418865fdad2d79b1e6d1472fd042aaa56135cc6470cd9b782958e86ce810830beb603dc4c1c07d29a8d450038dd1c1410c39dd89225621b614",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "7tEfOcA7",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "BOHUKqOz",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "rei": {
+          "project": "rei",
+          "project_id": "nfn13YXA",
+          "versions_api": "https://api.modrinth.com/v2/project/rei/version",
+          "available": true,
+          "version": "26.1.819+fabric",
+          "version_id": "EAlqUmgQ",
+          "filename": "RoughlyEnoughItems-26.1.819.jar",
+          "download_url": "https://cdn.modrinth.com/data/nfn13YXA/versions/EAlqUmgQ/RoughlyEnoughItems-26.1.819.jar",
+          "sha512": "91478d2c27359f3637cd30408f38b10579a8c9cdc0f1e61ab69b07550ee0a60dafccdb593bf1253a21f2dc32af5099610107094a5c6096c82a5ee0c23879a56b",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "emi": {
+          "project": "emi",
+          "project_id": "fRiHVvU7",
+          "versions_api": "https://api.modrinth.com/v2/project/emi/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "modmenu": {
+          "project": "modmenu",
+          "project_id": "mOgUt4GM",
+          "versions_api": "https://api.modrinth.com/v2/project/modmenu/version",
+          "available": true,
+          "version": "18.0.2",
+          "version_id": "ZJ6YTrMY",
+          "filename": "modmenu-18.0.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/ZJ6YTrMY/modmenu-18.0.2.jar",
+          "sha512": "37393e1d4a23a548463e92eb0687af69034ee7c308bd1d2d27d78df0292f124c4463f19d4b53128b59cda4e02d01d7ae09f06456d10abde19b6e450163e50e97",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "eXts2L7r",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "sophisticated-core": {
+          "project": "sophisticated-core-unofficial-fabric-port",
+          "project_id": "9jxwkYQL",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-core-unofficial-fabric-port/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-backpacks": {
+          "project": "sophisticated-backpacks-unoffical-fabric-port",
+          "project_id": "ouNrBQtq",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-backpacks-unoffical-fabric-port/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-storage": {
+          "project": "sophisticated-storage-unofficial-fabric-port",
+          "project_id": "iHtpVwJL",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-storage-unofficial-fabric-port/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        }
+      },
+      "qa_runtime": {
+        "fabric_loader": "0.19.5",
+        "fabric_api": "0.155.0+26.1.2"
+      }
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "neoforge",
+      "integrations": {
+        "ae2": {
+          "project": "ae2",
+          "project_id": "XxWD5pD3",
+          "versions_api": "https://api.modrinth.com/v2/project/ae2/version",
+          "available": true,
+          "version": "26.1.13-beta",
+          "version_id": "nVSxZcom",
+          "filename": "appliedenergistics2-26.1.13-beta.jar",
+          "download_url": "https://cdn.modrinth.com/data/XxWD5pD3/versions/nVSxZcom/appliedenergistics2-26.1.13-beta.jar",
+          "sha512": "4c1fda04fc6bb0b5833530624dabc85968191fb9793deb51aaa59759fde86a4cdf877e723d86e38675c4ae506a4ef25cf3951eaada12e4399004805ea6b48daa",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "Eyw0UxEx",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "6AQIaxuO",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tq47Uqpn",
+              "file_name": null,
+              "dependency_type": "incompatible"
+            },
+            {
+              "version_id": null,
+              "project_id": "nvQzSEkH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "Ck4E7v7R",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "toms-storage": {
+          "project": "toms-storage",
+          "project_id": "XZNI4Cpy",
+          "versions_api": "https://api.modrinth.com/v2/project/toms-storage/version",
+          "available": true,
+          "version": "26.1-2.10.3",
+          "version_id": "6dinsQOX",
+          "filename": "toms_storage-26.1-2.10.3.jar",
+          "download_url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/6dinsQOX/toms_storage-26.1-2.10.3.jar",
+          "sha512": "84da7d86570a298bfe75e93f349d555b0ef3b9f74286ba886b2cb4ecb2753731378a2bffb7b110b685d9ccaa5399bf77dafa81a515e6cc96550dbf14cbe34ff1",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "hMlaZH8f",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tagwiZkJ",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "jei": {
+          "project": "jei",
+          "project_id": "u6dRKJwZ",
+          "versions_api": "https://api.modrinth.com/v2/project/jei/version",
+          "available": true,
+          "version": "29.47.0.111",
+          "version_id": "NiYfNYIM",
+          "filename": "jei-26.1.2-neoforge-29.47.0.111.jar",
+          "download_url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/NiYfNYIM/jei-26.1.2-neoforge-29.47.0.111.jar",
+          "sha512": "a50150076eb4bb5d56e9016fb4fc93ce297fb53b3f510174657263cffb7d460cdccb228688842376af61a63542ade3dccd72e7bc7da78bd2c9d712efd93d4d69",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "BOHUKqOz",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "7tEfOcA7",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "rei": {
+          "project": "rei",
+          "project_id": "nfn13YXA",
+          "versions_api": "https://api.modrinth.com/v2/project/rei/version",
+          "available": true,
+          "version": "26.1.819+neoforge",
+          "version_id": "isd1MxO2",
+          "filename": "RoughlyEnoughItems-26.1.819.jar",
+          "download_url": "https://cdn.modrinth.com/data/nfn13YXA/versions/isd1MxO2/RoughlyEnoughItems-26.1.819.jar",
+          "sha512": "86c792fb1e34f8f78b48a613d394a868a94dfa1c59fab67b1d499d44f588339c211c38a3ca33a99347fcb332b7e17fc08f8bc34721a399c02c0e4356ce0e6e37",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "emi": {
+          "project": "emi",
+          "project_id": "fRiHVvU7",
+          "versions_api": "https://api.modrinth.com/v2/project/emi/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "modmenu": {
+          "project": "modmenu",
+          "project_id": "mOgUt4GM",
+          "versions_api": "https://api.modrinth.com/v2/project/modmenu/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-core": {
+          "project": "sophisticated-core",
+          "project_id": "nmoqTijg",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-core/version",
+          "available": true,
+          "version": "26.1.2-1.5.17.2423",
+          "version_id": "ylVEXyJD",
+          "filename": "sophisticatedcore-26.1.2-1.5.17.2423.jar",
+          "download_url": "https://cdn.modrinth.com/data/nmoqTijg/versions/ylVEXyJD/sophisticatedcore-26.1.2-1.5.17.2423.jar",
+          "sha512": "6d8d9a23d6f02d3e8a07077195f383c86a98b6ae0c733ab74d4b051fb650c6da2b473cdd806820a743d893847c1a41ea1b4b5006a65ff9dd1cd42dfee8c57a20",
+          "dependencies": []
+        },
+        "sophisticated-backpacks": {
+          "project": "sophisticated-backpacks",
+          "project_id": "TyCTlI4b",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-backpacks/version",
+          "available": true,
+          "version": "26.1.2-3.26.14.2211",
+          "version_id": "owOPmMwr",
+          "filename": "sophisticatedbackpacks-26.1.2-3.26.14.2211.jar",
+          "download_url": "https://cdn.modrinth.com/data/TyCTlI4b/versions/owOPmMwr/sophisticatedbackpacks-26.1.2-3.26.14.2211.jar",
+          "sha512": "b2b09464bf93809d9da5452671d4cacb8745dffee903fec27cf9dca070098be284a39454696f26325bbf1e126efd37e33c8a1928ed0cf4806009acc243bbba91",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "b1fMg6sH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nmoqTijg",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "BAscRYKm",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vvuO3ImH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vRYk0bv7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "WRaRZdTd",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "sophisticated-storage": {
+          "project": "sophisticated-storage",
+          "project_id": "hMlaZH8f",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-storage/version",
+          "available": true,
+          "version": "26.1.2-1.5.123.2190",
+          "version_id": "PepDmBFR",
+          "filename": "sophisticatedstorage-26.1.2-1.5.123.2190.jar",
+          "download_url": "https://cdn.modrinth.com/data/hMlaZH8f/versions/PepDmBFR/sophisticatedstorage-26.1.2-1.5.123.2190.jar",
+          "sha512": "cd8d562272dd22a9449d0c5c08443d5e568107afbca419ae7a239eb1fbba98df9171e0478b8a2dc11edfb8318079313a706619cacff3c7afeb6cb3cfb5e91c68",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "BAscRYKm",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "qnQsVE2z",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "b1fMg6sH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vRYk0bv7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "WRaRZdTd",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nmoqTijg",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        }
+      },
+      "qa_runtime": {
+        "neoforge": "26.1.2.99"
+      }
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "fabric",
+      "integrations": {
+        "ae2": {
+          "project": "ae2",
+          "project_id": "XxWD5pD3",
+          "versions_api": "https://api.modrinth.com/v2/project/ae2/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "toms-storage": {
+          "project": "toms-storage",
+          "project_id": "XZNI4Cpy",
+          "versions_api": "https://api.modrinth.com/v2/project/toms-storage/version",
+          "available": true,
+          "version": "26.2-2.11.4-fabric",
+          "version_id": "cwif4LaZ",
+          "filename": "toms_storage_fabric-26.2-2.11.4.jar",
+          "download_url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/cwif4LaZ/toms_storage_fabric-26.2-2.11.4.jar",
+          "sha512": "cc817c86d77f98812dfd4db2c6f982f49ac4de7ad94c1a5846d5fdd3e6eab767d024ee267cbebc1d83930881d3f82ac14a3f8d2a9217d80cae6621f5b15056df",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "Orvt0mRa",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "embedded"
+            },
+            {
+              "version_id": null,
+              "project_id": "5aaWibi9",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tagwiZkJ",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "jei": {
+          "project": "jei",
+          "project_id": "u6dRKJwZ",
+          "versions_api": "https://api.modrinth.com/v2/project/jei/version",
+          "available": true,
+          "version": "30.47.0.239",
+          "version_id": "lQMX3CrO",
+          "filename": "jei-26.2-fabric-30.47.0.239.jar",
+          "download_url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/lQMX3CrO/jei-26.2-fabric-30.47.0.239.jar",
+          "sha512": "0a486e94fb5ca20fbc8512f28d889bcd7be6d0ebb1314f5ff63d6559541810941e7a8b3fafb5fa82850869693ebecea8df576ff80d6a60472cb04e2b1573edab",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "7tEfOcA7",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "BOHUKqOz",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "rei": {
+          "project": "rei",
+          "project_id": "nfn13YXA",
+          "versions_api": "https://api.modrinth.com/v2/project/rei/version",
+          "available": true,
+          "version": "26.2.820+fabric",
+          "version_id": "4o0NSIMj",
+          "filename": "RoughlyEnoughItems-26.2.820.jar",
+          "download_url": "https://cdn.modrinth.com/data/nfn13YXA/versions/4o0NSIMj/RoughlyEnoughItems-26.2.820.jar",
+          "sha512": "4691c4a95fc949919bd80bd568e7b8e5fa67e1bd434584d4789e255157bda20e16862e905a26ab6d68f07bafcaa85aef26c7be09b3b9c25aca96affafdf3277d",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "emi": {
+          "project": "emi",
+          "project_id": "fRiHVvU7",
+          "versions_api": "https://api.modrinth.com/v2/project/emi/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "modmenu": {
+          "project": "modmenu",
+          "project_id": "mOgUt4GM",
+          "versions_api": "https://api.modrinth.com/v2/project/modmenu/version",
+          "available": true,
+          "version": "20.0.3",
+          "version_id": "iRo7AZXf",
+          "filename": "modmenu-20.0.3.jar",
+          "download_url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/iRo7AZXf/modmenu-20.0.3.jar",
+          "sha512": "c8224aa7a460d0c56ccb9978a112e4ad0d3eb17e2796e0c468a2392d220749f4f602838a11b3666145462c26078a879ab8a2fc177aa440f58e189c92a0088d6e",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "eXts2L7r",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "sophisticated-core": {
+          "project": "sophisticated-core-unofficial-fabric-port",
+          "project_id": "9jxwkYQL",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-core-unofficial-fabric-port/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-backpacks": {
+          "project": "sophisticated-backpacks-unoffical-fabric-port",
+          "project_id": "ouNrBQtq",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-backpacks-unoffical-fabric-port/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-storage": {
+          "project": "sophisticated-storage-unofficial-fabric-port",
+          "project_id": "iHtpVwJL",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-storage-unofficial-fabric-port/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        }
+      },
+      "qa_runtime": {
+        "fabric_loader": "0.19.5",
+        "fabric_api": "0.161.0+26.2"
+      }
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "neoforge",
+      "integrations": {
+        "ae2": {
+          "project": "ae2",
+          "project_id": "XxWD5pD3",
+          "versions_api": "https://api.modrinth.com/v2/project/ae2/version",
+          "available": true,
+          "version": "26.2.1-alpha",
+          "version_id": "XC5aMAdH",
+          "filename": "appliedenergistics2-26.2.1-alpha.jar",
+          "download_url": "https://cdn.modrinth.com/data/XxWD5pD3/versions/XC5aMAdH/appliedenergistics2-26.2.1-alpha.jar",
+          "sha512": "2ffb8fca6f606b60e4c8c2ab3f90e023de157ee24fe936b5fb349b4283164bea0b3124baf68dc150fc1bc89b8d453eed9426b8e5b02ab586776476def8c36925",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "Ck4E7v7R",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "nvQzSEkH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "6AQIaxuO",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "Eyw0UxEx",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tq47Uqpn",
+              "file_name": null,
+              "dependency_type": "incompatible"
+            }
+          ]
+        },
+        "toms-storage": {
+          "project": "toms-storage",
+          "project_id": "XZNI4Cpy",
+          "versions_api": "https://api.modrinth.com/v2/project/toms-storage/version",
+          "available": true,
+          "version": "26.2-2.11.3",
+          "version_id": "3n9VMENQ",
+          "filename": "toms_storage-26.2-2.11.3.jar",
+          "download_url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/3n9VMENQ/toms_storage-26.2-2.11.3.jar",
+          "sha512": "4748713eacd282bcd79dcc9eb2333c481185d9b1daa6098f59f93756d93c6fd07fada5dfd84e574f1f829c22e230d0e2f117a70ad4e3052eda622b7ca22f9c65",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tagwiZkJ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "hMlaZH8f",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "jei": {
+          "project": "jei",
+          "project_id": "u6dRKJwZ",
+          "versions_api": "https://api.modrinth.com/v2/project/jei/version",
+          "available": true,
+          "version": "30.47.0.239",
+          "version_id": "LzppbiWf",
+          "filename": "jei-26.2-neoforge-30.47.0.239.jar",
+          "download_url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/LzppbiWf/jei-26.2-neoforge-30.47.0.239.jar",
+          "sha512": "8f374d15e6daa755f3a30a0aaeb7b00ca1918e3c3e31b0aad384ffc2e39db88259f90a23125c287f06ca1e28271ddbfe2e330e5af4ff6bff8f6538d143607e2c",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "BOHUKqOz",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "7tEfOcA7",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "rei": {
+          "project": "rei",
+          "project_id": "nfn13YXA",
+          "versions_api": "https://api.modrinth.com/v2/project/rei/version",
+          "available": true,
+          "version": "26.2.820+neoforge",
+          "version_id": "BoY0Dky0",
+          "filename": "RoughlyEnoughItems-26.2.820.jar",
+          "download_url": "https://cdn.modrinth.com/data/nfn13YXA/versions/BoY0Dky0/RoughlyEnoughItems-26.2.820.jar",
+          "sha512": "f674095e009274852b1a392221d900b3b1f553f520c8b930fa34b064761fb2d3fed33a0216c32cb5951b70208cf2f505122229fe6109039306d5108f38927939",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "emi": {
+          "project": "emi",
+          "project_id": "fRiHVvU7",
+          "versions_api": "https://api.modrinth.com/v2/project/emi/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "modmenu": {
+          "project": "modmenu",
+          "project_id": "mOgUt4GM",
+          "versions_api": "https://api.modrinth.com/v2/project/modmenu/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-core": {
+          "project": "sophisticated-core",
+          "project_id": "nmoqTijg",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-core/version",
+          "available": true,
+          "version": "26.2-1.5.15.2420",
+          "version_id": "laZhcL90",
+          "filename": "sophisticatedcore-26.2-1.5.15.2420.jar",
+          "download_url": "https://cdn.modrinth.com/data/nmoqTijg/versions/laZhcL90/sophisticatedcore-26.2-1.5.15.2420.jar",
+          "sha512": "6bb33d57030c6be3dec92367b0d2b7f8a4bb8fca574b133be3ea20103fe0ae393faff22c7181993860f5705e02c91d8b8a57c89773d6e0f583aa35e8cd1d6247",
+          "dependencies": []
+        },
+        "sophisticated-backpacks": {
+          "project": "sophisticated-backpacks",
+          "project_id": "TyCTlI4b",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-backpacks/version",
+          "available": true,
+          "version": "26.2-3.26.13.2213",
+          "version_id": "lj5bJ7jT",
+          "filename": "sophisticatedbackpacks-26.2-3.26.13.2213.jar",
+          "download_url": "https://cdn.modrinth.com/data/TyCTlI4b/versions/lj5bJ7jT/sophisticatedbackpacks-26.2-3.26.13.2213.jar",
+          "sha512": "af0d466192f58645e0a68a8f1d033bb8f992ea49e733a31afa6f1f2e24a5747477fa447a63093dc7e76574b6b70e2103f28975bc78a1b1ea4f7dab4d7077a745",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "vvuO3ImH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vRYk0bv7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nmoqTijg",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "BAscRYKm",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "b1fMg6sH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "WRaRZdTd",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "sophisticated-storage": {
+          "project": "sophisticated-storage",
+          "project_id": "hMlaZH8f",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-storage/version",
+          "available": true,
+          "version": "26.2-1.5.123.2188",
+          "version_id": "Km4c0H4T",
+          "filename": "sophisticatedstorage-26.2-1.5.123.2188.jar",
+          "download_url": "https://cdn.modrinth.com/data/hMlaZH8f/versions/Km4c0H4T/sophisticatedstorage-26.2-1.5.123.2188.jar",
+          "sha512": "657ecd189c227f4abca041c27e8763f140c94bf1736a453131430e31e631f27a9bed7b8139c16d2efe7496d4135302a3455b4ab034f45a0b5b10cb387042743e",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "WRaRZdTd",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "BAscRYKm",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vRYk0bv7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "qnQsVE2z",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nmoqTijg",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "b1fMg6sH",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        }
+      },
+      "qa_runtime": {
+        "neoforge": "26.2.0.90"
+      }
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "fabric",
+      "integrations": {
+        "ae2": {
+          "project": "ae2",
+          "project_id": "XxWD5pD3",
+          "versions_api": "https://api.modrinth.com/v2/project/ae2/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "toms-storage": {
+          "project": "toms-storage",
+          "project_id": "XZNI4Cpy",
+          "versions_api": "https://api.modrinth.com/v2/project/toms-storage/version",
+          "available": true,
+          "version": "26.3-2.12.2-fabric",
+          "version_id": "e7S7Hc7o",
+          "filename": "toms_storage_fabric-26.3-2.12.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/e7S7Hc7o/toms_storage_fabric-26.3-2.12.2.jar",
+          "sha512": "b16374830a11fe3b0c9c48b202bb2ef0b56268cf20169eabdb44e6e5ada80c3bf6a61064e40ceb9686c97dc70898d230be17dfc8190cf867083ceaa6be09228e",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "embedded"
+            },
+            {
+              "version_id": null,
+              "project_id": "Orvt0mRa",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tagwiZkJ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "5aaWibi9",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "jei": {
+          "project": "jei",
+          "project_id": "u6dRKJwZ",
+          "versions_api": "https://api.modrinth.com/v2/project/jei/version",
+          "available": true,
+          "version": "31.16.0.87",
+          "version_id": "YO1qWjF9",
+          "filename": "jei-26.3-fabric-31.16.0.87.jar",
+          "download_url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/YO1qWjF9/jei-26.3-fabric-31.16.0.87.jar",
+          "sha512": "5ff2491ed2dbd8ccad452fbf0492426b5d97c36bd7ad7dfe2d365739ba2ad43e7f67f9fe4978a18ba3c3a22683f0b717d9ef42a17dfb6142b1197654a9a8a1ea",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "BOHUKqOz",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "7tEfOcA7",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "rei": {
+          "project": "rei",
+          "project_id": "nfn13YXA",
+          "versions_api": "https://api.modrinth.com/v2/project/rei/version",
+          "available": true,
+          "version": "26.3.824+fabric",
+          "version_id": "rKsAE6bX",
+          "filename": "RoughlyEnoughItems-26.3.824.jar",
+          "download_url": "https://cdn.modrinth.com/data/nfn13YXA/versions/rKsAE6bX/RoughlyEnoughItems-26.3.824.jar",
+          "sha512": "7724d8e8dc50248641686c878b6b60736572c49e0cd8c71640c1c57fe85aed9941cad8ff7806b923903253da3540ff3df9bf619d701f50b904990fa7cdd59ee9",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "emi": {
+          "project": "emi",
+          "project_id": "fRiHVvU7",
+          "versions_api": "https://api.modrinth.com/v2/project/emi/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "modmenu": {
+          "project": "modmenu",
+          "project_id": "mOgUt4GM",
+          "versions_api": "https://api.modrinth.com/v2/project/modmenu/version",
+          "available": true,
+          "version": "21.0.0",
+          "version_id": "kyy7dbrZ",
+          "filename": "modmenu-21.0.0.jar",
+          "download_url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/kyy7dbrZ/modmenu-21.0.0.jar",
+          "sha512": "588c0c557963f4778572ee81bfafc190b332c26d5926c5fe7e3e1614dcf8e14f58e3bc80a97694521dd05907e9753a7c8575048ea769e4dbf40a3db74a4e2606",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "eXts2L7r",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "sophisticated-core": {
+          "project": "sophisticated-core-unofficial-fabric-port",
+          "project_id": "9jxwkYQL",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-core-unofficial-fabric-port/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-backpacks": {
+          "project": "sophisticated-backpacks-unoffical-fabric-port",
+          "project_id": "ouNrBQtq",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-backpacks-unoffical-fabric-port/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-storage": {
+          "project": "sophisticated-storage-unofficial-fabric-port",
+          "project_id": "iHtpVwJL",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-storage-unofficial-fabric-port/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        }
+      },
+      "qa_runtime": {
+        "fabric_loader": "0.19.5",
+        "fabric_api": "0.161.0+26.3"
+      }
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "neoforge",
+      "integrations": {
+        "ae2": {
+          "project": "ae2",
+          "project_id": "XxWD5pD3",
+          "versions_api": "https://api.modrinth.com/v2/project/ae2/version",
+          "available": true,
+          "version": "26.3.1-alpha",
+          "version_id": "PDPQ4WfW",
+          "filename": "appliedenergistics2-26.3.1-alpha.jar",
+          "download_url": "https://cdn.modrinth.com/data/XxWD5pD3/versions/PDPQ4WfW/appliedenergistics2-26.3.1-alpha.jar",
+          "sha512": "0b2cd09cb2fc63c39e600d2989edb6c8ac2ceac396cbb15224aadd87c555ffa8465503af165a02df73646f1e0cc2f3a6d711f669fa7ba9a5dd9fe88d0b9533cc",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "Eyw0UxEx",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nvQzSEkH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tq47Uqpn",
+              "file_name": null,
+              "dependency_type": "incompatible"
+            },
+            {
+              "version_id": null,
+              "project_id": "6AQIaxuO",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "Ck4E7v7R",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "toms-storage": {
+          "project": "toms-storage",
+          "project_id": "XZNI4Cpy",
+          "versions_api": "https://api.modrinth.com/v2/project/toms-storage/version",
+          "available": true,
+          "version": "26.3-2.12.3",
+          "version_id": "WoT7ihuc",
+          "filename": "toms_storage-26.3-2.12.3.jar",
+          "download_url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/WoT7ihuc/toms_storage-26.3-2.12.3.jar",
+          "sha512": "48ddc1fe10df14f00df51327353d351836309359d5b98d6e6cbbf7908fa1888781ec0209a3ea850e2d110930c127fc39aff441a97e8a4d7fbb6ea0dd6a942444",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "fRiHVvU7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "tagwiZkJ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "hMlaZH8f",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nfn13YXA",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "jei": {
+          "project": "jei",
+          "project_id": "u6dRKJwZ",
+          "versions_api": "https://api.modrinth.com/v2/project/jei/version",
+          "available": true,
+          "version": "31.16.0.87",
+          "version_id": "UpgUiEy4",
+          "filename": "jei-26.3-neoforge-31.16.0.87.jar",
+          "download_url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/UpgUiEy4/jei-26.3-neoforge-31.16.0.87.jar",
+          "sha512": "0500173c4b39bcb807f0bbf808e75980ba5cf2bed6e76801fde6d4c740fd336d809d214cb71967ddc1b135c90fdc2b3ffcd05eb81d9b608fa2ec313aa1d08aa7",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "BOHUKqOz",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "7tEfOcA7",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "rei": {
+          "project": "rei",
+          "project_id": "nfn13YXA",
+          "versions_api": "https://api.modrinth.com/v2/project/rei/version",
+          "available": true,
+          "version": "26.3.824+neoforge",
+          "version_id": "uwE0PJmc",
+          "filename": "RoughlyEnoughItems-26.3.824.jar",
+          "download_url": "https://cdn.modrinth.com/data/nfn13YXA/versions/uwE0PJmc/RoughlyEnoughItems-26.3.824.jar",
+          "sha512": "5693ec23590ce87910b0f05e0215a2597131fe8e5bb8632fb3992708ae61f1d6709db6f6c3f533d791c50fabc2a60207792b8cc8b6da52e3df1a546ddf574683",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "emi": {
+          "project": "emi",
+          "project_id": "fRiHVvU7",
+          "versions_api": "https://api.modrinth.com/v2/project/emi/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "modmenu": {
+          "project": "modmenu",
+          "project_id": "mOgUt4GM",
+          "versions_api": "https://api.modrinth.com/v2/project/modmenu/version",
+          "available": false,
+          "reason": "No published upstream release lists this Minecraft version and loader."
+        },
+        "sophisticated-core": {
+          "project": "sophisticated-core",
+          "project_id": "nmoqTijg",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-core/version",
+          "available": true,
+          "version": "26.3-1.5.17.2421",
+          "version_id": "aWhVtrRK",
+          "filename": "sophisticatedcore-26.3-1.5.17.2421.jar",
+          "download_url": "https://cdn.modrinth.com/data/nmoqTijg/versions/aWhVtrRK/sophisticatedcore-26.3-1.5.17.2421.jar",
+          "sha512": "7901b6d7d6a9570adbeebfaaf4a53255122f32cd134bc106706047015beceff0b37799356e31ebfc23167754f0f72456a9573103d95dd9226162708404c1f2e3",
+          "dependencies": []
+        },
+        "sophisticated-backpacks": {
+          "project": "sophisticated-backpacks",
+          "project_id": "TyCTlI4b",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-backpacks/version",
+          "available": true,
+          "version": "26.3-3.26.14.2212",
+          "version_id": "9t7h3uBT",
+          "filename": "sophisticatedbackpacks-26.3-3.26.14.2212.jar",
+          "download_url": "https://cdn.modrinth.com/data/TyCTlI4b/versions/9t7h3uBT/sophisticatedbackpacks-26.3-3.26.14.2212.jar",
+          "sha512": "5be964fa211e26744adfed2acbb699ad8e18da0339fc64a56aa6bad26a09c05e79e6ac4f081a322a9a6cc71c237fa535e8e5c39d8c7a837e9a31d1cd40035ca4",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "WRaRZdTd",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "BAscRYKm",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vRYk0bv7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nmoqTijg",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "vvuO3ImH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "b1fMg6sH",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "sophisticated-storage": {
+          "project": "sophisticated-storage",
+          "project_id": "hMlaZH8f",
+          "versions_api": "https://api.modrinth.com/v2/project/sophisticated-storage/version",
+          "available": true,
+          "version": "26.3-1.5.124.2189",
+          "version_id": "GeltrI5C",
+          "filename": "sophisticatedstorage-26.3-1.5.124.2189.jar",
+          "download_url": "https://cdn.modrinth.com/data/hMlaZH8f/versions/GeltrI5C/sophisticatedstorage-26.3-1.5.124.2189.jar",
+          "sha512": "885eb7b722d52d08deca184a9b912f966d7c48871df396bbbfcefcc8217b46e4f033f7b61951acaf0e9229efcd8608e6e6357091123fb564c20e0ea175fa62c6",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "qnQsVE2z",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "WRaRZdTd",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "BAscRYKm",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "b1fMg6sH",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "vRYk0bv7",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "nmoqTijg",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "DMu0oBKf",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "u6dRKJwZ",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        }
+      },
+      "qa_runtime": {
+        "neoforge": "26.3.0.76"
+      }
+    }
+  ]
+}

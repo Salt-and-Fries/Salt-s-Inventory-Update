@@ -49,7 +49,7 @@
     "fabricloader": ">=${fabric_loader_version}",
     "minecraft": "${minecraft_version}",
     "java": ">=${java_version}",
-    "salts_inventory_update": "=${version}",
+    "salts_inventory_update": "=${core_version}",
     "fabric-api": "*"
   },
   "suggests": {
