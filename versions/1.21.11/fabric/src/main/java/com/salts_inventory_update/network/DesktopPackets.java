@@ -38,9 +38,9 @@ public final class DesktopPackets {
     /** Exact built-in player surfaces, distinct from the native/default quick-move behavior. */
     public static final int QUICK_TARGET_PLAYER_EQUIPMENT = 3;
     public static final int QUICK_TARGET_PLAYER_STORAGE = 4;
-    public static final int PIN_MODE_UNPINNED = 0;
-    public static final int PIN_MODE_PINNED = 1;
-    public static final int PIN_MODE_GHOST_PINNED = 2;
+
+
+
     /** 26.2-local capability for authenticated, atomic multi-menu item gestures. */
     public static final long CAP_MULTI_MENU_GESTURES = 1L << 4;
     public static final long CAP_SORT_WINDOWS = 1L << 5;
@@ -73,7 +73,7 @@ public final class DesktopPackets {
         PayloadTypeRegistry.serverboundPlay().register(DesktopRenamePayload.TYPE, DesktopRenamePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopCloseSessionPayload.TYPE, DesktopCloseSessionPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopFinishWorkspacePayload.TYPE, DesktopFinishWorkspacePayload.CODEC);
-        PayloadTypeRegistry.serverboundPlay().register(DesktopSessionPinPayload.TYPE, DesktopSessionPinPayload.CODEC);
+
         PayloadTypeRegistry.serverboundPlay().register(DesktopSessionVisibilityPayload.TYPE, DesktopSessionVisibilityPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopOpenLinkedSourcesPayload.TYPE, DesktopOpenLinkedSourcesPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopLinkPayload.TYPE, DesktopLinkPayload.CODEC);
@@ -1097,29 +1097,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopSessionPinPayload(long connectionNonce, int sessionId, long sessionToken, int pinMode) implements CustomPacketPayload {
-        public static final Type<DesktopSessionPinPayload> TYPE = new Type<>(id("desktop_session_pin"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopSessionPinPayload> CODEC = CustomPacketPayload.codec(
-            DesktopSessionPinPayload::write,
-            DesktopSessionPinPayload::new
-        );
 
-        private DesktopSessionPinPayload(RegistryFriendlyByteBuf buf) {
-            this(buf.readLong(), buf.readVarInt(), buf.readLong(), buf.readVarInt());
-        }
-
-        private void write(RegistryFriendlyByteBuf buf) {
-            buf.writeLong(this.connectionNonce);
-            buf.writeVarInt(this.sessionId);
-            buf.writeLong(this.sessionToken);
-            buf.writeVarInt(this.pinMode);
-        }
-
-        @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
-        }
-    }
 
     public record DesktopSessionVisibilityPayload(long connectionNonce, int sessionId, long sessionToken, boolean visible) implements CustomPacketPayload {
         public static final Type<DesktopSessionVisibilityPayload> TYPE = new Type<>(id("desktop_session_visibility"));

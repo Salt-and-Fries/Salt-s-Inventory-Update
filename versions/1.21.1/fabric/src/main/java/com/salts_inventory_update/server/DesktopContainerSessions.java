@@ -1,5 +1,7 @@
 package com.salts_inventory_update.server;
 
+import com.salts_inventory_update.internal.desktop.DesktopContainerOpener;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -129,7 +131,6 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopPlayerSessionPay
 import com.salts_inventory_update.network.DesktopPackets.DesktopLinkPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopRenamePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionClosedPayload;
-import com.salts_inventory_update.network.DesktopPackets.DesktopSessionPinPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionVisibilityPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotPayload;
 import com.salts_inventory_update.network.DesktopPackets.InventorySlotPurchasePayload;
@@ -154,8 +155,8 @@ public final class DesktopContainerSessions {
     private static final int MAX_SESSIONS = DesktopProtocol.MAX_DESKTOP_SESSIONS;
     private static final long SUPPORTED_CAPABILITIES = DesktopProtocol.KNOWN_CAPABILITIES
         | DesktopPackets.CAP_MULTI_MENU_GESTURES | DesktopPackets.CAP_SORT_WINDOWS;
-    private static final int MAX_DORMANT_GHOST_SOURCES = DesktopProtocol.MAX_DORMANT_SOURCES;
-    private static final int DORMANT_GHOST_REOPEN_INTERVAL_TICKS = 10;
+    private static final int MAX_RETAINED_SOURCES = DesktopProtocol.MAX_DORMANT_SOURCES;
+
     private static final int CRAFTER_INPUT_SLOT_COUNT = 9;
     private static final int CRAFTER_SLOT_STATE_ENABLED_FLAG = 16;
     private static final int MERCHANT_RESULT_SLOT = 2;
@@ -284,9 +285,7 @@ public final class DesktopContainerSessions {
         ServerPlayNetworking.registerGlobalReceiver(DesktopFinishWorkspacePayload.TYPE, (payload, context) ->
             context.server().execute(() -> finishWorkspace(context.player(), payload))
         );
-        ServerPlayNetworking.registerGlobalReceiver(DesktopSessionPinPayload.TYPE, (payload, context) ->
-            context.server().execute(() -> setSessionPin(context.player(), payload))
-        );
+
         ServerPlayNetworking.registerGlobalReceiver(DesktopSessionVisibilityPayload.TYPE, (payload, context) ->
             context.server().execute(() -> setSessionVisibility(context.player(), payload))
         );
@@ -406,6 +405,7 @@ public final class DesktopContainerSessions {
         }
 
         for (Session session : sessions.sessions.values()) {
+            if (!session.visibleToClient) continue;
             Container sessionContainer = containerForMenu(session.menu);
             if (sessionContainer != null && containsContainer(sessionContainer, container)) {
                 DesktopDebug.trace(
@@ -437,7 +437,7 @@ public final class DesktopContainerSessions {
         }
 
         for (Session session : sessions.sessions.values()) {
-            if (menuPredicate.test(session.menu)) {
+            if (session.visibleToClient && menuPredicate.test(session.menu)) {
                 return true;
             }
         }
@@ -446,7 +446,7 @@ public final class DesktopContainerSessions {
     }
 
     public static @Nullable OptionalInt openMenuSession(ServerPlayer player, MenuProvider provider) {
-        return openMenuSession(player, provider, null, true, false, true, null);
+        return openMenuSession(player, provider, null, true, true, null);
     }
 
     public static @Nullable OptionalInt openMenuSession(
@@ -454,18 +454,10 @@ public final class DesktopContainerSessions {
         MenuProvider provider,
         Consumer<RegistryFriendlyByteBuf> openingDataWriter
     ) {
-        return openMenuSession(player, provider, null, true, false, true, openingDataWriter);
+        return openMenuSession(player, provider, null, true, true, openingDataWriter);
     }
 
-    private static @Nullable OptionalInt openMenuSession(
-        ServerPlayer player,
-        MenuProvider provider,
-        @Nullable String forcedSourceKey,
-        boolean toggleExisting,
-        boolean ghostPinned,
-        boolean visibleToClient,
-        @Nullable Consumer<RegistryFriendlyByteBuf> openingDataWriter
-    ) {
+    private static @Nullable OptionalInt openMenuSession(ServerPlayer player, MenuProvider provider, @Nullable String forcedSourceKey, boolean toggleExisting, boolean visibleToClient, @Nullable Consumer<RegistryFriendlyByteBuf> openingDataWriter) {
         if (provider == null) {
             DesktopDebug.warn("server capture skipped player={} reason=null-provider", player.getName().getString());
             return OptionalInt.empty();
@@ -482,7 +474,7 @@ public final class DesktopContainerSessions {
         if (transition != null) {
             forcedSourceKey = transition.oldSession.sourceKey;
             toggleExisting = false;
-            ghostPinned = transition.oldSession.ghostPinned;
+
             visibleToClient = transition.oldSession.visibleToClient;
         }
 
@@ -565,8 +557,11 @@ public final class DesktopContainerSessions {
             openingData,
             transition == null ? -1 : transition.oldSession.sessionId
         );
-        session.ghostPinned = ghostPinned;
+
         session.visibleToClient = visibleToClient;
+        if (!visibleToClient && menu instanceof DesktopContainerOpener opener) {
+            opener.salts_inventory_update$setOpenerVisible(player, false);
+        }
         if (transition == null) {
             sessions.add(player, session);
         } else if (!sessions.replace(player, transition.oldSession, session)) {
@@ -575,14 +570,14 @@ public final class DesktopContainerSessions {
             return OptionalInt.empty();
         }
         DesktopDebug.log(
-            "server capture menu player={} session={} container={} type={} title={} source={} ghostPinned={} visible={}",
+            "server capture menu player={} session={} container={} type={} title={} source={} visible={}",
             player.getName().getString(),
             session.sessionId,
             menu.containerId,
             session.menuTypeId,
             provider.getDisplayName().getString(),
             session.sourceKey,
-            session.ghostPinned,
+            false,
             session.visibleToClient
         );
         return OptionalInt.of(session.sessionId);
@@ -5035,32 +5030,7 @@ public final class DesktopContainerSessions {
         broadcastGesture(player, sessions);
     }
 
-    private static void setSessionPin(ServerPlayer player, DesktopSessionPinPayload payload) {
-        PlayerSessions sessions = PLAYERS.get(player);
-        if (sessions == null) {
-            DesktopDebug.trace("server pin dropped player={} session={} reason=not-ready", player.getName().getString(), payload.sessionId());
-            return;
-        }
 
-        if (payload.pinMode() < DesktopPackets.PIN_MODE_UNPINNED
-            || payload.pinMode() > DesktopPackets.PIN_MODE_GHOST_PINNED
-            || !preauthorizesSession(sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(), 0L, false)
-            || !sessions.allowControl(player, "pin", 1.0D)) {
-            return;
-        }
-        SessionAuthorization authorization = authorizeSession(
-            player, sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(), 0L, false, "pin"
-        );
-        Session session = authorization == null ? null : authorization.session();
-        if (session == null) {
-            return;
-        }
-
-        if (session.companion != null) return;
-        session.ghostPinned = payload.pinMode() == DesktopPackets.PIN_MODE_GHOST_PINNED;
-        DesktopDebug.trace("server pin player={} session={} ghostPinned={}", player.getName().getString(), payload.sessionId(), session.ghostPinned);
-        session.dispatchPinChanged(player, sessions);
-    }
 
     private static void setSessionVisibility(ServerPlayer player, DesktopSessionVisibilityPayload payload) {
         PlayerSessions sessions = PLAYERS.get(player);
@@ -5103,7 +5073,7 @@ public final class DesktopContainerSessions {
             return;
         }
 
-        for (String sourceKey : sessions.links.connectedComponent(origin.linkNode(), MAX_DORMANT_GHOST_SOURCES)) {
+        for (String sourceKey : sessions.links.connectedComponent(origin.linkNode(), MAX_RETAINED_SOURCES)) {
             if (sourceKey == null || sourceKey.isBlank() || !isBlockBackedSourceKey(sourceKey)) {
                 DesktopDebug.trace("server linked open skipped player={} source={} reason=unsupported-source", player.getName().getString(), sourceKey);
                 continue;
@@ -5122,14 +5092,14 @@ public final class DesktopContainerSessions {
                 DesktopDebug.trace("server linked open skipped player={} source={} reason=missing-source-identity", player.getName().getString(), sourceKey);
                 continue;
             }
-            MenuProvider provider = providerForDormantGhost(player, sourceKey, sourceIdentity);
+            MenuProvider provider = providerForRetainedSource(player, sourceKey, sourceIdentity);
             if (provider == null) {
                 DesktopDebug.trace("server linked open skipped player={} source={} reason=unavailable", player.getName().getString(), sourceKey);
                 continue;
             }
 
             DesktopDebug.log("server linked open player={} source={} title={}", player.getName().getString(), sourceKey, provider.getDisplayName().getString());
-            openMenuSession(player, provider, sourceKey, false, false, true, null);
+            openMenuSession(player, provider, sourceKey, false, true, null);
         }
     }
 
@@ -5243,7 +5213,7 @@ public final class DesktopContainerSessions {
         private final LinkedHashMap<Integer, Session> sessions = new LinkedHashMap<>();
         private net.minecraft.world.level.@Nullable Level sessionWorld;
         private final Map<com.salts_inventory_update.api.desktop.DesktopInventoryIdentity, Companion> companions = new LinkedHashMap<>();
-        private final LinkedHashMap<String, DormantGhostSource> dormantGhostSources = new LinkedHashMap<>();
+
         private final LinkedHashMap<String, SourceIdentity> sourceIdentities = new LinkedHashMap<>();
         private final TokenBucket operationRateLimit = new TokenBucket(40.0D, 80.0D, System.nanoTime());
         private final TokenBucket controlRateLimit = new TokenBucket(10.0D, 20.0D, System.nanoTime());
@@ -5262,7 +5232,7 @@ public final class DesktopContainerSessions {
         private Set<String> forcedMenuIds = Set.of();
         private Set<String> supportedMenuIds = Set.of();
         private int nextSessionId = 1;
-        private int dormantGhostProbeTicks;
+
         private long lifecycleTicks;
         private int handlerCallbackDepth;
         private boolean handlerBroadcastPending;
@@ -5421,8 +5391,6 @@ public final class DesktopContainerSessions {
                 if (sourceKey.equals(session.sourceKey)) {
                     if (!session.visibleToClient) {
                         this.setVisible(player, session, true, notifyClient);
-                    } else if (session.ghostPinned) {
-                        this.setVisible(player, session, !session.visibleToClient, notifyClient);
                     } else {
                         this.close(player, session.sessionId, notifyClient);
                     }
@@ -5458,6 +5426,9 @@ public final class DesktopContainerSessions {
             }
 
             session.visibleToClient = visible;
+            if (session.menu instanceof DesktopContainerOpener opener) {
+                opener.salts_inventory_update$setOpenerVisible(player, visible);
+            }
             DesktopDebug.log("server session visibility player={} session={} title={} visible={} notify={}", player.getName().getString(), session.sessionId, session.title.getString(), visible, notifyClient);
             if (notifyClient) {
                 send(player, new DesktopSessionVisibilityPayload(this.connectionNonce, session.sessionId, session.sessionToken, visible));
@@ -5509,7 +5480,7 @@ public final class DesktopContainerSessions {
             for (Integer sessionId : List.copyOf(this.sessions.keySet())) {
                 this.close(player, sessionId, notifyClient);
             }
-            this.dormantGhostSources.clear();
+
             this.sourceIdentities.clear();
         }
 
@@ -5539,14 +5510,14 @@ public final class DesktopContainerSessions {
                             session.sourceKey
                         );
                     }
-                    this.rememberDormantGhost(session, "invalid");
+
                     this.close(player, session.sessionId, true);
                 } else {
                     withNetworkSession(player, session, session.menu::broadcastChanges);
                     session.dispatchTick(player, this);
                 }
             }
-            this.reopenDormantGhosts(player);
+
         }
 
         private void beginHandlerCallback() {
@@ -5582,62 +5553,11 @@ public final class DesktopContainerSessions {
             player.inventoryMenu.broadcastChanges();
         }
 
-        private void rememberDormantGhost(Session session, String reason) {
-            if (!session.ghostPinned || !isBlockBackedSourceKey(session.sourceKey) || session.sourceIdentity == null) {
-                return;
-            }
 
-            this.purgeExpiredDormantGhosts();
-            this.dormantGhostSources.remove(session.sourceKey);
-            while (this.dormantGhostSources.size() >= MAX_DORMANT_GHOST_SOURCES) {
-                Iterator<String> iterator = this.dormantGhostSources.keySet().iterator();
-                if (!iterator.hasNext()) {
-                    break;
-                }
-                iterator.next();
-                iterator.remove();
-            }
-            this.dormantGhostSources.put(session.sourceKey, new DormantGhostSource(
-                session.sourceKey,
-                session.sourceIdentity,
-                this.lifecycleTicks + DesktopProtocol.DORMANT_SOURCE_TTL_TICKS
-            ));
-            DesktopDebug.log("server dormant ghost remember source={} session={} title={} reason={}", session.sourceKey, session.sessionId, session.title.getString(), reason);
-        }
 
-        private void reopenDormantGhosts(ServerPlayer player) {
-            if (this.dormantGhostSources.isEmpty()) {
-                return;
-            }
 
-            this.purgeExpiredDormantGhosts();
-            this.dormantGhostProbeTicks++;
-            if (this.dormantGhostProbeTicks % DORMANT_GHOST_REOPEN_INTERVAL_TICKS != 0) {
-                return;
-            }
 
-            for (DormantGhostSource dormant : List.copyOf(this.dormantGhostSources.values())) {
-                if (this.hasSessionForSourceKey(dormant.sourceKey())) {
-                    this.dormantGhostSources.remove(dormant.sourceKey());
-                    continue;
-                }
 
-                MenuProvider provider = providerForDormantGhost(player, dormant.sourceKey(), dormant.sourceIdentity());
-                if (provider == null) {
-                    continue;
-                }
-
-                DesktopDebug.log("server dormant ghost reopen player={} source={} title={}", player.getName().getString(), dormant.sourceKey(), provider.getDisplayName().getString());
-                OptionalInt opened = openMenuSession(player, provider, dormant.sourceKey(), false, true, false, null);
-                if (opened != null && opened.isPresent()) {
-                    this.dormantGhostSources.remove(dormant.sourceKey());
-                }
-            }
-        }
-
-        private void purgeExpiredDormantGhosts() {
-            this.dormantGhostSources.values().removeIf(dormant -> dormant.expiresAtTick() <= this.lifecycleTicks);
-        }
 
         private boolean hasSessionForSourceKey(String sourceKey) {
             return this.sessionForSourceKey(sourceKey) != null;
@@ -5666,7 +5586,7 @@ public final class DesktopContainerSessions {
         private final byte[] openingData;
         private final int replacesSessionId;
         private @Nullable SourceIdentity sourceIdentity;
-        private boolean ghostPinned;
+
         private boolean visibleToClient = true;
         private @Nullable DesktopServerWindowHandler<AbstractContainerMenu, Object> serverHandler;
         private @Nullable Object serverState;
@@ -5809,19 +5729,7 @@ public final class DesktopContainerSessions {
             }
         }
 
-        private void dispatchPinChanged(ServerPlayer player, PlayerSessions sessions) {
-            if (this.serverHandler == null) {
-                return;
-            }
-            sessions.beginHandlerCallback();
-            try {
-                this.serverHandler.pinChanged(new ServerSessionContext(player, sessions, this), this.ghostPinned);
-            } catch (RuntimeException exception) {
-                this.quarantineServerHandler(player, "pin", exception);
-            } finally {
-                sessions.endHandlerCallback(player);
-            }
-        }
+
 
         private void quarantineServerHandler(ServerPlayer player, String callback, RuntimeException exception) {
             DesktopDebug.warn(
@@ -6111,8 +6019,7 @@ public final class DesktopContainerSessions {
     ) {
     }
 
-    private record DormantGhostSource(String sourceKey, SourceIdentity sourceIdentity, long expiresAtTick) {
-    }
+
 
     private record SessionTransition(ServerPlayer player, Session oldSession) {
     }
@@ -6149,10 +6056,7 @@ public final class DesktopContainerSessions {
             return this.session.visibleToClient;
         }
 
-        @Override
-        public boolean ghostPinned() {
-            return this.session.ghostPinned;
-        }
+
 
         @Override
         public Object state() {
@@ -6216,10 +6120,7 @@ public final class DesktopContainerSessions {
             return this.session.visibleToClient;
         }
 
-        @Override
-        public boolean ghostPinned() {
-            return this.session.ghostPinned;
-        }
+
 
         @Override
         public Object state() {
@@ -6376,7 +6277,7 @@ public final class DesktopContainerSessions {
         return sourceKey.startsWith("block:") || sourceKey.startsWith("chest:");
     }
 
-    private static @Nullable MenuProvider providerForDormantGhost(ServerPlayer player, String sourceKey, @Nullable SourceIdentity expectedIdentity) {
+    private static @Nullable MenuProvider providerForRetainedSource(ServerPlayer player, String sourceKey, @Nullable SourceIdentity expectedIdentity) {
         SourceKey source = SourceKey.parse(sourceKey);
         if (source == null
             || expectedIdentity == null
@@ -6412,7 +6313,7 @@ public final class DesktopContainerSessions {
             return false;
         }
         if (isBlockBackedSourceKey(session.sourceKey)) {
-            return providerForDormantGhost(player, session.sourceKey, session.sourceIdentity) != null;
+            return providerForRetainedSource(player, session.sourceKey, session.sourceIdentity) != null;
         }
         return true;
     }

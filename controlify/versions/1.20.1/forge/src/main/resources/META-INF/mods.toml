@@ -27,7 +27,7 @@ side = "CLIENT"
 [[dependencies.${mod_id}]]
 modId = "salts_inventory_update"
 mandatory = true
-versionRange = "[${core_version}]"
+versionRange = "[${legacy_core_version}]"
 ordering = "AFTER"
 side = "CLIENT"
 

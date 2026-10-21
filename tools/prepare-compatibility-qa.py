@@ -13,21 +13,26 @@ def get_json(endpoint):
     path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(data,indent=2)+'\n')
     return data
 
-def prepare(mc,loader,scenario,output):
+def prepare(mc,loader,scenario,output,extra_projects=()):
     lock=json.loads((ROOT/'compatibility/coverage-targets.json').read_text())
     target=next(t for t in lock['targets'] if t['minecraft']==mc and t['loader']==loader)
     names={'browser-jei':['jei'],'browser-rei':['rei'],'browser-emi':['emi'],'toms':['toms-storage'],
            'sophisticated':['sophisticated-core','sophisticated-backpacks','sophisticated-storage'],
            'ae2':['ae2'],'ae2-atlas':['ae2'],'extension-empty':[],'core':[]}[scenario]
     if scenario=='browser-rei' and loader=='fabric': names+=['modmenu']
+    names+=list(extra_projects)
     selected={}
     queue=[]
     for name in names:
-        record=target['integrations'][name]
-        if not record['available']: raise ValueError(f'No upstream release for {mc}/{loader}/{name}')
-        version=get_json('version/'+record['version_id'])
+        record=target['integrations'].get(name)
+        if record is None:
+            version=next((v for v in get_json('project/'+name+'/version') if mc in v['game_versions'] and loader in v['loaders']),None)
+            if version is None: raise ValueError(f'No upstream release for {mc}/{loader}/{name}')
+        else:
+            if not record['available']: raise ValueError(f'No upstream release for {mc}/{loader}/{name}')
+            version=get_json('version/'+record['version_id'])
         primary=next((f for f in version['files'] if f['primary']),version['files'][0])
-        assert primary['hashes']['sha512']==record['sha512'],f'Upstream primary file changed: {name}'
+        if record is not None: assert primary['hashes']['sha512']==record['sha512'],f'Upstream primary file changed: {name}'
         selected[version['project_id']]=version;queue.append(version)
     while queue:
         version=queue.pop(0)
@@ -86,4 +91,5 @@ if __name__=='__main__':
     parser.add_argument('--loader',required=True,choices=['fabric','forge','neoforge'])
     parser.add_argument('--scenario',required=True)
     parser.add_argument('--output',required=True,type=Path)
-    args=parser.parse_args();prepare(args.minecraft,args.loader,args.scenario,args.output.resolve())
+    parser.add_argument('--extra-project',action='append',default=[],help='Additional official Modrinth project for this isolated QA fixture')
+    args=parser.parse_args();prepare(args.minecraft,args.loader,args.scenario,args.output.resolve(),args.extra_project)

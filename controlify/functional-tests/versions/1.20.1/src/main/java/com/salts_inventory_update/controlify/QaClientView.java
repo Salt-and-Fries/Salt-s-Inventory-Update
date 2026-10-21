@@ -26,7 +26,7 @@ final class QaClientView implements DesktopWindowDefinition<QaClientView.Model, 
         return DesktopWindowSize.of(180, context.model().height);
     }
     @Override public DesktopWindowOptions options(DesktopWindowContext<Model, Model> context) {
-        return new DesktopWindowOptions(false, false, false, false, true, false, false);
+        return new DesktopWindowOptions(false, false, true, false, false);
     }
     @Override public DesktopWindowSurface surface(DesktopWindowContext<Model, Model> context) {
         var regions = new java.util.ArrayList<DesktopWindowRegion>();

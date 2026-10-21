@@ -50,10 +50,11 @@
     "fabricloader": ">=${fabric_loader_version}",
     "minecraft": "${minecraft_version}",
     "java": ">=${java_version}",
-    "salts_inventory_update": "=${core_version}",
+    "salts_inventory_update": "=${legacy_core_version}",
     "fabric-api": "*"
   },
   "suggests": {
+    "raised": ">=6.0.2",
     "sophisticatedcore": "*",
     "sophisticatedbackpacks": "*",
     "sophisticatedstorage": "*",

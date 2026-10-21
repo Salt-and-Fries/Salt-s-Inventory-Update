@@ -1,6 +1,69 @@
+# Current window cleanup validation
+
+Core 0.1.5 now includes production lifecycle fixes and API 6 removal of minimize and ghost pins. The [window cleanup validation](../functional-tests/WINDOW-CLEANUP-VALIDATION.md) records the current build, focused gameplay coverage and companion API audit. The earlier metadata-only comparison below is historical and does not establish coverage of these new source changes.
+
 # Controlify integration validation
 
-## Independent companion release label (2026-10-20)
+## Historical API5 Core 0.1.5 release alignment
+
+The earlier API5 builds used **Core 0.1.5**, **Compatibility 0.1.2** and **Controlify 0.1.1**
+for all twelve targets. Both companions require matching Core 0.1.5. This changes
+release metadata and dependency pins; it adds no further gameplay changes.
+
+The 42-profile evidence below belongs to the preserved Core 0.1.4.2 artifacts,
+including the original companion dependency metadata. It is not a fresh gameplay
+run of the Core 0.1.5 release set.
+
+The normal root build passed: **408 tasks**, including release checks and the
+applicable automated tests. All **36 production JARs** have the expected independent
+versions and Core pins; module checksums, bundle bytes and stale-output checks pass.
+A full archive-member comparison with the preserved tested set confirms **8,722
+compiled classes and all non-metadata resources are byte-identical**. Every changed
+archive entry differs only by replacing the Core version/dependency label
+`0.1.4.2` with `0.1.5`. No new gameplay run was performed for this metadata change.
+
+Evidence: `build/core-0.1.5/root-build.log` and
+`build/core-0.1.5/artifact-version-validation.json`.
+
+## Prior Core 0.1.4.2 / Controlify 0.1.1 release validation
+
+The preceding tested release set was **Core 0.1.4.2**, **Compatibility 0.1.2** and **Controlify
+companion 0.1.1** across all twelve Minecraft/loader targets. Both companions require
+the matching Core 0.1.4.2 artifact. The normal root build passed and produced all
+36 independent production JARs, with verified metadata, dependency pins, checksums
+and matching bundle bytes.
+
+All **42 packaged gameplay profiles passed strict final-artifact verification**:
+twelve baselines, twenty-six focused profiles and four native JEI/REI profiles.
+They recorded **16,616 distinct profile/check pairs**, **18,464 PASS records** and
+**778 native screenshots**. Repeated checks across profiles count once per profile.
+The retained JUnit XML contains **1,447 tests**, with zero failures, errors or skips;
+Gradle reused unchanged tasks where applicable. The release-version Python
+regression also passed.
+
+Core now skips automatic regular-window onboarding when an alternative workspace
+host is registered. All twelve baselines start with help unseen and verify
+suppression before connecting the synthetic controller, an unchanged preference,
+automatic help while the host is temporarily unregistered, and explicit manual
+help after restoring it. This uses the existing public workspace-host contract.
+
+Selected native captures were visually reviewed for window frames, slot spacing,
+recipe wheels, native keyboard, the selected status tray, AE2 and Sophisticated
+presentation. Physical controller hardware, installed-launcher profiles,
+dedicated/remote multiplayer and arbitrary modpacks remain unverified. The native
+mod profiles cover their listed 26.3 combinations, not every upstream version.
+Temporarily unregistering a host is not a separate Core-only installation test.
+
+See the [complete current release report](docs/release-0.1.1-validation.md) for the
+42-profile table, evidence paths, exact artifact checks and coverage limits.
+Machine-readable totals and artifact hashes are in
+`build/controlify-release-0.1.1/final-validation.json`; the matrix is
+`build/controlify-release-0.1.1/controlify011-all/results.json`.
+
+The following dated sections describe earlier releases and their exact validation
+scope; they do not certify the current release set.
+
+## Historical independent companion release label (2026-10-20)
 
 All twelve production companions now use **0.1.0** in both the filename suffix and
 embedded mod version. Core and Extended retain **0.1.4**. Each companion still

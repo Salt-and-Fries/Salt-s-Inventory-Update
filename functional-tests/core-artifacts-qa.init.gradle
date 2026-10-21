@@ -1,0 +1,40 @@
+import java.security.MessageDigest
+
+// Opt-in Core production fixtures for focused QA; no functional/gameplay suite is scheduled.
+// Run the normal root build for a complete release including companion recompilation.
+gradle.afterProject { configured, state ->
+    if (configured != gradle.rootProject) return
+    gradle.projectsEvaluated {
+        def root = gradle.rootProject
+        def projects = root.subprojects.findAll {
+            !it.path.startsWith(':compatibility:') && !it.path.startsWith(':controlify:') &&
+                it.name in ['fabric', 'forge', 'neoforge']
+        }
+        def artifacts = projects.collect { project -> project.tasks.named(
+            project.tasks.findByName('remapJar') != null ? 'remapJar' :
+                project.tasks.findByName('reobfJar') != null ? 'reobfJar' : 'jar') }
+        def stage = root.tasks.register('stageCoreQaArtifacts') {
+            dependsOn(artifacts)
+            doLast {
+                if (artifacts.size() != 12) throw new GradleException('Expected twelve Core targets')
+                def names = artifacts.collect { it.get().archiveFile.get().asFile.name }.toSet()
+                [root.file('dist/core'), root.file("build/release/${root.version}")].each { folder ->
+                    folder.mkdirs()
+                    folder.listFiles().findAll { it.name.endsWith('.jar') && !names.contains(it.name) }.each { it.delete() }
+                    artifacts.each { provider ->
+                        def file = provider.get().archiveFile.get().asFile
+                        if (!file.isFile() || file.name.contains('-dev') || file.name.contains('sources'))
+                            throw new GradleException('Invalid production artifact: ' + file)
+                        root.copy { from(file); into(folder) }
+                    }
+                    def jars = folder.listFiles().findAll { it.name.endsWith('.jar') }.sort { it.name }
+                    if (jars.size() != 12) throw new GradleException('Unexpected Core artifact count')
+                    new File(folder, 'SHA256SUMS.txt').text = jars.collect { file ->
+                        MessageDigest.getInstance('SHA-256').digest(file.bytes).encodeHex().toString() + '  ' + file.name
+                    }.join('\n') + '\n'
+                }
+            }
+        }
+        root.tasks.named('bundleLatestMods').configure { setDependsOn([stage]) }
+    }
+}

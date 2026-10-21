@@ -25,13 +25,20 @@ use the core JAR produced by this branch's build together with the controller JA
 ## Release version
 
 The companion has its own release version, set by `controlifyVersion` in the root
-`gradle.properties`. The initial version is **0.1.0**. Production filenames end in
-`-0.1.0.jar`, for example `salts_inventory_controlify-26.3-Fabric-0.1.0.jar`.
+`gradle.properties`. The current version is **0.1.1**. Production filenames end in
+`-0.1.1.jar`, for example `salts_inventory_controlify-26.3-Fabric-0.1.1.jar`.
 The embedded mod version uses the same label on every supported game and loader.
 
-Core and Extended retain version **0.1.4**. The companion's required Core version
-is generated from the root build version independently of its own release label.
-Use matching Minecraft/loader targets and the rebuilt Core described above.
+The companion requires **Core 0.1.5** on every target. The optional Compatibility
+extension is **0.1.2** and requires the same Core release. The companion's Core
+dependency is generated independently of its own release label. Use matching
+Minecraft/loader targets. Older published companions with an exact Core 0.1.4
+dependency do not accept the newer Core releases.
+
+Core's regular-window tutorial does not automatically open while this alternative
+workspace presentation is installed, including before a controller is connected.
+Manual help remains available, and removing the companion restores Core's normal
+first-run tutorial behavior if help has never been opened.
 
 ## Playtest controls and cleanup
 
@@ -420,6 +427,13 @@ reports separately. The 1.20.1, 1.21.1 and 1.21.11 profiles also support
 editor keyboard, recipe/cooking wheels, filters and creative actions after their
 native world/controller/server fixtures, without rerunning the earlier baseline
 scenarios. This is a focused scope, not complete gameplay coverage.
+For an explicitly requested release-wide pass, `tools/Run-ControlifyReleaseQa.ps1`
+plans twelve baselines, twenty-six focused profiles and four optional-mod profiles.
+Run `-Phase all -RunId controlify011 -Resume` after the root build. The run ID
+preserves historical reports; resume strictly rechecks the current production
+JARs before accepting an existing result. Failed attempts and their evidence are
+retained separately. Use `-PlanOnly` to inspect the scope without launching games.
+
 Run a complete functional scope only on explicit request:
 
 ```powershell

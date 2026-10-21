@@ -133,14 +133,19 @@ gradle.projectsEvaluated {
         description = 'Checks controller sources use only the public Salt API and remain outside the other mods.'
         commandLine('python', root.file('tools/verify-controlify-boundaries.py'), '--sources', '--matrix')
     }
+    def verifyReleaseVersions = root.tasks.register('verifyControlifyReleaseVersions', Exec) {
+        group = 'verification'
+        description = 'Checks independent companion labels and rejects incorrect Core dependency pins.'
+        commandLine('python', root.file('tools/test-controlify-release-versions.py'))
+    }
     def verifyJars = root.tasks.register('verifyControlifyJars', Exec) {
         group = 'verification'
         description = 'Checks each third production JAR and its compiler boundary.'
         dependsOn(targets.collect { productionJar(it) }, targets.collect { it.tasks.named('writeControlifyClasspath') })
         dependsOn(targets.collect { productionJar(root.project(":${it.parent.name}:${it.name}")) })
+        dependsOn(verifyReleaseVersions)
         doFirst {
-            commandLine(['python', root.file('tools/verify-controlify-boundaries.py'), '--matrix',
-                         '--core-version', root.version.toString()] +
+            commandLine(['python', root.file('tools/verify-controlify-boundaries.py'), '--matrix'] +
                     targets.collectMany { ['--jar', productionJar(it).get().archiveFile.get().asFile,
                                           '--classpath', it.layout.buildDirectory.file('controlify-compile-classpath.txt').get().asFile,
                                           '--native-classpath', it.tasks.named('jar', AbstractArchiveTask).get().archiveFile.get().asFile,

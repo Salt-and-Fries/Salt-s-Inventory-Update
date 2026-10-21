@@ -11,7 +11,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.salts_inventory_update.client.WindowedInventoryClient;
 
-@Mixin(Gui.class)
+// Run visibility checks before HUD decorators start their scoped transforms.
+@Mixin(value = Gui.class, priority = 1100)
 public abstract class GuiMixin {
     @Inject(method = "renderItemHotbar", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$hideHotbarForDesktop(GuiGraphics graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
@@ -27,8 +28,4 @@ public abstract class GuiMixin {
         }
     }
 
-    @Inject(method = "renderCrosshair", at = @At("TAIL"))
-    private void salts_inventory_update$extractPassiveGhostWindows(GuiGraphics graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
-        WindowedInventoryClient.extractPassiveGhostWindows(GuiGraphicsExtractor.wrap(graphics));
-    }
 }

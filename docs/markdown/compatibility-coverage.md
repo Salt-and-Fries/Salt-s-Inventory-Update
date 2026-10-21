@@ -1,6 +1,6 @@
 # Compatibility coverage audit
 
-Upstream availability reviewed 2026-10-20. Core remains 0.1.4 and the independent Compatibility extension remains 0.1.0. The focused gameplay matrix, normal root build, production audits and six packaged-JAR checks pass.
+Original upstream availability reviewed 2026-10-20; Raised additions reviewed 2026-10-21. Current release labels are Core 0.1.5, Compatibility 0.1.2 and the optional Controlify companion 0.1.1 on every target. The integration gameplay and packaged-JAR evidence below records the preceding Core 0.1.4 / Compatibility 0.1.0 builds; it is not a claim of rerunning the complete integration matrix for the newer artifacts. The controller release has its own [validation record](../../controlify/VALIDATION.md).
 
 Use the rebuilt Core and Compatibility pair from this checkout. The new 1.20.1 EMI adapter relies on the additive Core rendering hooks described below.
 
@@ -8,22 +8,22 @@ Use the rebuilt Core and Compatibility pair from this checkout. The new 1.20.1 E
 
 All targets include adapters for Tom's Simple Storage, JEI and REI. Mod Menu is Fabric-only. The table describes published native inputs for the exact Minecraft version and loader; a project page listing several loaders and game versions does not mean every combination exists.
 
-| Minecraft | Loader | AE2 | EMI | Sophisticated Core / Backpacks / Storage | Mod Menu |
-| --- | --- | --- | --- | --- | --- |
-| 1.20.1 | fabric | 15.4.11 | 1.1.24+1.20.1+fabric | Maintained Fabric ports | 7.2.2 |
-| 1.20.1 | forge | 15.4.11 | 1.1.24+1.20.1+forge | Official releases | No upstream release |
-| 1.21.1 | fabric | No upstream release | 1.1.24+1.21.1+fabric | Maintained Fabric ports | 11.0.5 |
-| 1.21.1 | neoforge | 19.2.18 | 1.1.24+1.21.1+neoforge | Official releases | No upstream release |
-| 1.21.11 | fabric | No upstream release | No upstream release | No upstream release | 17.0.1 |
-| 1.21.11 | neoforge | No upstream release | No upstream release | Official releases | No upstream release |
-| 26.1.2 | fabric | No upstream release | No upstream release | No upstream release | 18.0.2 |
-| 26.1.2 | neoforge | 26.1.13-beta | No upstream release | Official releases | No upstream release |
-| 26.2 | fabric | No upstream release | No upstream release | No upstream release | 20.0.3 |
-| 26.2 | neoforge | 26.2.1-alpha | No upstream release | Official releases | No upstream release |
-| 26.3 | fabric | No upstream release | No upstream release | No upstream release | 21.0.0 |
-| 26.3 | neoforge | 26.3.1-alpha | No upstream release | Official releases | No upstream release |
+| Minecraft | Loader | AE2 | EMI | Sophisticated Core / Backpacks / Storage | Mod Menu | Raised |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1.20.1 | fabric | 15.4.11 | 1.1.24+1.20.1+fabric | Maintained Fabric ports | 7.2.2 | 6.0.2 |
+| 1.20.1 | forge | 15.4.11 | 1.1.24+1.20.1+forge | Official releases | No upstream release | 6.0.2 |
+| 1.21.1 | fabric | No upstream release | 1.1.24+1.21.1+fabric | Maintained Fabric ports | 11.0.5 | 6.0.2 |
+| 1.21.1 | neoforge | 19.2.18 | 1.1.24+1.21.1+neoforge | Official releases | No upstream release | 6.0.2 |
+| 1.21.11 | fabric | No upstream release | No upstream release | No upstream release | 17.0.1 | 6.0.2 |
+| 1.21.11 | neoforge | No upstream release | No upstream release | Official releases | No upstream release | 6.0.2 |
+| 26.1.2 | fabric | No upstream release | No upstream release | No upstream release | 18.0.2 | 6.0.2 |
+| 26.1.2 | neoforge | 26.1.13-beta | No upstream release | Official releases | No upstream release | 6.0.2 |
+| 26.2 | fabric | No upstream release | No upstream release | No upstream release | 20.0.3 | 6.0.2 |
+| 26.2 | neoforge | 26.2.1-alpha | No upstream release | Official releases | No upstream release | 6.0.2 |
+| 26.3 | fabric | No upstream release | No upstream release | No upstream release | 21.0.0 | 6.0.2 |
+| 26.3 | neoforge | 26.3.1-alpha | No upstream release | Official releases | No upstream release | 6.0.2 |
 
-The [reviewed snapshot](../../compatibility/coverage-targets.json) records all 108 cells across twelve targets and nine upstream projects: 76 available inputs and 32 unavailable combinations. Each available input has a version ID, download URL and SHA-512 hash. Fabric Sophisticated entries use Salandora's maintained ports, which have a different native ABI from the official Forge/NeoForge releases.
+The [reviewed snapshot](../../compatibility/coverage-targets.json) now records all 120 cells across twelve targets and ten upstream projects: 88 available inputs and 32 unavailable combinations. This includes twelve newly added Raised cells; their focused runtime coverage is reported separately below. Each available input has a version ID, download URL and SHA-512 hash. Fabric Sophisticated entries use Salandora's maintained ports, which have a different native ABI from the official Forge/NeoForge releases.
 
 AE2's [official downloads](https://appliedenergistics.org/download) and [published versions](https://modrinth.com/mod/ae2/versions) provide Fabric 1.20.1 but no modern Fabric release or 1.21.11 release for either loader. A separate search for published modern Fabric ports found add-ons and resource packs, rather than a maintained native AE2 port. Unavailable combinations cannot be enabled by relabeling a JAR.
 
@@ -75,7 +75,7 @@ The packaged launcher currently supports Fabric 1.20.1 and 1.21.1. Development r
 
 ### Gameplay
 
-The [consolidated report](../../build/compatibility-coverage/runs/coverage-20261020-verified/results.json) records **66 completed passing profiles**: 54 integration profiles and twelve runs without optional target mods. These cover all 76 available upstream cells. Each Sophisticated profile exercises Core, Backpacks and Storage together; Fabric REI profiles also exercise Mod Menu. The report points to each original successful launch log and result file, with the exact upstream inputs retained alongside them. Earlier failed attempts remain separate.
+The [consolidated report](../../build/compatibility-coverage/runs/coverage-20261020-verified/results.json) records **66 completed passing profiles**: 54 integration profiles and twelve runs without optional target mods. These historical runs cover the original 76 available upstream cells, before Raised was added; they do not establish Raised gameplay coverage. Each Sophisticated profile exercises Core, Backpacks and Storage together; Fabric REI profiles also exercise Mod Menu. The report points to each original successful launch log and result file, with the exact upstream inputs retained alongside them. Earlier failed attempts remain separate.
 
 | Minecraft | Fabric passing profiles | Forge / NeoForge passing profiles |
 | --- | ---: | ---: |
@@ -118,13 +118,21 @@ These launches remove project implementation directories from the game classpath
 
 Release outputs:
 
-- [Core JARs](../../dist/core): twelve `salts_inventory_update-<Minecraft>-<Loader>-0.1.4.jar` files.
-- [Compatibility JARs](../../dist/compatibility): twelve `salts_inventory_compat-<Minecraft>-<Loader>-0.1.0.jar` files.
-- [Controller companion JARs](../../dist/controlify): twelve independent 0.1.0 files retained by the normal root build.
+- [Core JARs](../../dist/core): twelve `salts_inventory_update-<Minecraft>-<Loader>-0.1.5.jar` files.
+- [Compatibility JARs](../../dist/compatibility): twelve `salts_inventory_compat-<Minecraft>-<Loader>-0.1.2.jar` files.
+- [Controller companion JARs](../../dist/controlify): twelve independent 0.1.1 files retained by the normal root build.
 - [Combined latest archive](../../dist/salts-inventory-all-latest.zip): all 36 JARs grouped by Minecraft version and loader.
 
-Every directory's `SHA256SUMS.txt` matches its twelve production JARs. The combined archive's 36 JAR entries match the distribution files byte for byte and pass ZIP integrity checks. The [artifact inventory](../../build/compatibility-coverage/2026-10-20/artifact-summary.json) records paths, sizes and hashes. None of the produced artifacts are development, sources or intermediate JARs.
+Every directory's `SHA256SUMS.txt` matches its twelve production JARs. The combined archive's 36 JAR entries match the distribution files byte for byte and pass ZIP integrity checks. The [original artifact inventory](../../build/compatibility-coverage/2026-10-20/artifact-summary.json) records the pre-update paths, sizes and hashes. None of the produced artifacts are development, sources or intermediate JARs.
+
+The earlier release-number update passed the normal root build in [its rebuild log](../../build/release-version-bump-build.log), with its [artifact verification](../../build/release-version-bump-verification.json) preserving that historical state: Compatibility 0.1.1, two Core 0.1.4.1 hotfixes, ten Core 0.1.4 files and Controlify 0.1.0. No gameplay was rerun for that metadata-only update.
+
+The subsequent Core 0.1.4.2 patch suppresses automatic regular-window onboarding while any alternative workspace host is registered. The current builds consolidate that change into Core 0.1.5; Compatibility 0.1.2 and Controlify 0.1.1 both require Core 0.1.5 on every target. The controller release's fresh gameplay and final-artifact checks are recorded separately in [Controlify validation](../../controlify/VALIDATION.md); they do not replace the older 76-cell upstream availability audit.
 
 ### Validation scope
 
 Gameplay uses disposable integrated-server worlds and the exact reviewed upstream releases. It covers the focused workflows above, rather than every feature of every upstream mod or every combination of simultaneously installed mods. Dedicated servers, remote multiplayer, custom resource packs and arbitrary modpacks have not been exercised in this audit. Core-only gameplay was explicitly repeated on the two 1.20.1 targets where its API changed; the other Core targets retain their existing behavior and receive the normal automated/build checks.
+
+## Raised
+
+Raised 6.0.2 is now an optional client integration in all twelve Compatibility builds. Pinned upstream coordinates and SHA-512 values are in `gradle/raised-targets.json` and the reviewed coverage matrix. The adapter consumes only the public HUD layout API; gameplay coverage is recorded separately in the [focused Raised validation report](../../functional-tests/RAISED-HUD-VALIDATION.md).

@@ -19,6 +19,8 @@ public final class TomsStorageClientCompat {
         }
 
         TomsStorageCompat.info("client compat initialize");
+        // Loader client setup may already have fired the startup callback.
+        registerAll("initializer");
         if (!lifecycleHookRegistered) {
             lifecycleHookRegistered = true;
             DesktopClientApi.registerHelpPage(TomsStorageCompat.id("instructions"),

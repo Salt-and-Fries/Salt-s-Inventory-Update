@@ -93,3 +93,10 @@ side = "BOTH"
 
 [[mixins]]
 config = "salts_inventory_compat.ae2-navigation.mixins.json"
+
+[[dependencies.${mod_id}]]
+modId = "raised"
+type = "optional"
+versionRange = "[6.0.2,)"
+ordering = "AFTER"
+side = "CLIENT"

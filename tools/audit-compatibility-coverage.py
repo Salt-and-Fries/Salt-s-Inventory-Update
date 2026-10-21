@@ -15,6 +15,7 @@ _boundaries = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_boundaries)
 PREFIX = 'com/salts_inventory_update/compat/'
 CLASSES = {
+    'raised': ['raised/RaisedHudIntegration'],
     'ae2': ['ae2/AE2Bootstrap'],
     'toms-storage': ['toms_storage/client/TomsStorageClientCompat', 'toms_storage/server/TomsStorageServerCompat'],
     'jei': ['jei/RuntimeRecipeBrowserAccess', 'jei/SaltsJeiPlugin'],
@@ -42,7 +43,7 @@ def verify_fabric_slot_selector(data, location):
 def source_paths(mc, loader):
     paths=[ROOT/f'compatibility/versions/{mc}/{loader}/src/main/java',
            ROOT/f'compatibility/versions/{mc}/fabric/src/main/java',
-           ROOT/'compatibility/ae2/src/main/java',
+           ROOT/'compatibility/ae2/src/main/java', ROOT/'compatibility/raised/src/main/java',
            ROOT/f'compatibility/ae2/versions/{mc}/common/src/main/java',
            ROOT/f'compatibility/ae2/versions/{mc}/{loader}/src/main/java']
     if loader=='fabric':

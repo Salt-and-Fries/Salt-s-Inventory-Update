@@ -25,6 +25,7 @@ import com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserTransfer
 import com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserView;
 import com.salts_inventory_update.api.integration.DesktopEnvironment;
 import me.shedaniel.math.Rectangle;
+import me.shedaniel.rei.api.client.entry.renderer.EntryRenderer;
 import me.shedaniel.rei.api.client.config.ConfigManager;
 import me.shedaniel.rei.api.client.config.ConfigObject;
 import me.shedaniel.rei.api.client.favorites.FavoriteEntry;
@@ -752,8 +753,32 @@ final class RuntimeReiRecipeBrowserAccess implements RecipeBrowserAccess {
     }
 
     private RecipeBrowserEntry wrap(EntryStack<?> stack) {
-        EntryStack<?> copy = stack.copy();
+        EntryStack<?> copy = withSearchContext(stack.copy());
         return new RecipeBrowserEntry(typeUid(copy), copy.getType(), copy, stack);
+    }
+
+    /** Keep REI's search syntax and custom renderers, with the live registry context for item tooltips. */
+    private static <T> EntryStack<T> withSearchContext(EntryStack<T> stack) {
+        EntryRenderer<T> renderer = stack.getRenderer();
+        stack.withRenderer(new EntryRenderer<T>() {
+            @Override
+            public void render(EntryStack<T> entry, me.shedaniel.rei.api.client.gui.compat.GuiGraphics graphics, Rectangle bounds, int mouseX, int mouseY, float delta) {
+                renderer.render(entry, graphics, bounds, mouseX, mouseY, delta);
+            }
+
+            @Override
+            public Tooltip getTooltip(EntryStack<T> entry, TooltipContext context) {
+                Minecraft minecraft = Minecraft.getInstance();
+                // REI uses EMPTY while indexing tooltips. Registry-backed components need the world,
+                // just as they do in the normal hover tooltip. Only adapt our local entry copies.
+                if (context.isSearch() && context.vanillaContext().registries() == null && minecraft.level != null) {
+                    context = TooltipContext.of(context.getPoint(),
+                        net.minecraft.world.item.Item.TooltipContext.of(minecraft.level), context.getFlag(), true);
+                }
+                return renderer.getTooltip(entry, context);
+            }
+        });
+        return stack;
     }
 
     private boolean sameEntry(RecipeBrowserEntry left, RecipeBrowserEntry right) {

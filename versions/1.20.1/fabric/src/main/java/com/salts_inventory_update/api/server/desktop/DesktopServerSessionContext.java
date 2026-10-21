@@ -15,7 +15,7 @@ public interface DesktopServerSessionContext<T extends AbstractContainerMenu, S>
 
     boolean visible();
 
-    boolean ghostPinned();
+
 
     S state();
 

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "${mod_id}",
-  "version": "${version}",
+  "version": "${legacy_core_version}",
   "name": "${mod_name}",
   "description": "${description}",
   "license": "${license}",
@@ -24,7 +24,8 @@
     ]
   },
   "mixins": [
-    "${mod_id}.mixins.json"
+    "${mod_id}.mixins.json",
+    "${mod_id}.fabric-hud.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${fabric_loader_version}",

@@ -8,9 +8,11 @@ The core mod works independently. Install the matching optional **Salt's Invento
 
 ![mutiple chests open at one time](https://cdn.modrinth.com/data/cached_images/933d2a9239a50fee4eb8e202b122e51c3ce839f0.png)
 
+Mouse Tweaks support is included in **Core 0.1.5**. Install the matching Mouse Tweaks mod to use its drag and wheel gestures with inventory windows, including real inventory slots added through the public API. The Compatibility extension is not required for this input support.
+
 ## Desktop-Style Inventory Windows
 
-Containers, your player inventory, creative inventory, and character controls open as individual windows. Windows can be moved, minimized, focused, pinned, locked, and, where supported, resized.
+Containers, your player inventory, creative inventory, and character controls open as individual windows. Windows can be moved, focused, pinned, locked, and, where supported, resized.
 
 This makes it easier to compare inventories, move items between containers, keep useful windows nearby, and organize your screen around the way you actually play.
 
@@ -50,13 +52,12 @@ The inventory desktop is designed to feel less like a full pause screen. You can
 
 This is especially useful when sorting loot, working around storage rooms, or managing items while staying aware of the world.
 
-## Pinning, Ghost Pins, And Saved Layouts
+## Pinning And Saved Layouts
 
-Windows can be pinned so they reopen where you left them. Optional ghost pins let windows collapse into translucent previews instead of disappearing completely, making frequently used containers easier to return to.
+Windows can be pinned so they reopen where you left them. Persistent Windows can hide your workspace and restore its windows together when you reopen inventory. Hidden chest windows let the physical lid close until restored.
 
 Window positions, sizes, lock states, and pin modes are saved per world or server.
 
-![ghost pin preview over the world](https://cdn.modrinth.com/data/cached_images/f7e79607a37db0969c02358c25c42dcdc1ccf9e8.png)
 
 ## Configurable Experience
 
@@ -66,7 +67,7 @@ The mod includes an in-game config screen available through:
 - `/salts_inventory config`
 - Mod Menu on Fabric
 
-You can toggle the mod, enable expandable inventory, change window placement behavior, allow resizing, enable snapping, configure ghost pins, adjust ghost opacity, and tune the hold-to-close-all timing.
+You can toggle the mod, enable expandable inventory, change window placement behavior, allow resizing, enable snapping, configure Persistent Windows, and tune the hold-to-close-all timing.
 
 ## Compatibility And API
 

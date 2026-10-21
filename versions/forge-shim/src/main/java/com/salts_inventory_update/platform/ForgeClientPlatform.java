@@ -7,6 +7,9 @@ import com.salts_inventory_update.client.WindowedInventoryClient;
 import com.salts_inventory_update.debug.DesktopDebug;
 
 import net.minecraft.client.KeyMapping;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.player.Input;
@@ -25,6 +28,11 @@ import org.lwjgl.glfw.GLFW;
 
 public final class ForgeClientPlatform {
     private static final int MOVEMENT_LOG_INTERVAL = 20;
+    private static final java.util.Set<net.minecraft.resources.ResourceLocation> WINDOW_HOSTED_HUD = java.util.Set.of(
+        VanillaGuiOverlay.HOTBAR.id(), VanillaGuiOverlay.PLAYER_HEALTH.id(), VanillaGuiOverlay.ARMOR_LEVEL.id(),
+        VanillaGuiOverlay.FOOD_LEVEL.id(), VanillaGuiOverlay.AIR_LEVEL.id(), VanillaGuiOverlay.MOUNT_HEALTH.id(),
+        VanillaGuiOverlay.JUMP_BAR.id(), VanillaGuiOverlay.EXPERIENCE_BAR.id(), VanillaGuiOverlay.ITEM_NAME.id()
+    );
 
     private static boolean initialized;
     private static int movementInputEvents;
@@ -44,14 +52,25 @@ public final class ForgeClientPlatform {
         initialized = true;
 
         DesktopDebug.log("Forge client platform initializing");
-        modBus.addListener(KeyBindingHelper::onRegisterKeyMappings);
+        modBus.addListener(ForgeClientPlatform::onRegisterKeyMappings);
         modBus.addListener(ForgeClientPlatform::onClientSetup);
         modBus.addListener(ClientLifecycleEvents::onClientSetup);
         MinecraftForge.EVENT_BUS.addListener(ClientTickEvents::onClientTick);
         MinecraftForge.EVENT_BUS.addListener(ClientCommandRegistrationCallback.EVENT::onRegisterClientCommands);
         MinecraftForge.EVENT_BUS.addListener(ForgeClientPlatform::onMovementInputUpdate);
+        MinecraftForge.EVENT_BUS.addListener(ForgeClientPlatform::onHudOverlay);
         registerConfigScreen();
         DesktopDebug.log("Forge client platform listeners registered");
+    }
+
+    private static void onHudOverlay(RenderGuiOverlayEvent.Pre event) {
+        if (!WindowedInventoryClient.shouldHideHotbar()) {
+            return;
+        }
+        // Forge renders these independently of the vanilla hotbar/decorations methods.
+        if (WINDOW_HOSTED_HUD.contains(event.getOverlay().id())) {
+            event.setCanceled(true);
+        }
     }
 
     private static void registerConfigScreen() {
@@ -61,6 +80,11 @@ public final class ForgeClientPlatform {
                 (minecraft, modsScreen) -> WindowedInventoryClient.createConfigScreen(modsScreen)
             )
         );
+    }
+
+    private static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
+        WindowedInventoryClient.registerKeyMappings();
+        KeyBindingHelper.onRegisterKeyMappings(event);
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {

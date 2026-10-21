@@ -245,7 +245,6 @@ $payloads = @(
     'DesktopRenamePayload',
     'DesktopCustomPayload',
     'DesktopCloseSessionPayload',
-    'DesktopSessionPinPayload',
     'DesktopSessionVisibilityPayload',
     'DesktopOpenLinkedSourcesPayload',
     'DesktopOpenSessionPayload',
@@ -303,7 +302,7 @@ $tomsPayloads = Join-Path $RepoRoot "compatibility\versions\$version\fabric\src\
     Assert-NotContains -Path $packets -Text 'List<Integer> recipeSlotIds' -Label "$version recipe transfer does not trust client slot IDs"
     Assert-NotContains -Path $packets -Text 'DesktopJeiTransferRequirement' -Label "$version recipe transfer does not trust client ingredients"
 
-    Assert-Contains -Path $packets -Text 'PIN_MODE_GHOST_PINNED' -Label "$version packet pin modes"
+    Assert-NotContains -Path $packets -Text 'PIN_MODE_GHOST_PINNED' -Label "$version removes ghost pin packets"
     Assert-Contains -Path $packets -Text 'QUICK_TARGET_HOTBAR' -Label "$version quick move target"
     $characterKey = if ($version -eq '26.3') { 'InputConstants.KEY_C' } else { 'GLFW_KEY_C' }
     $mouseFocusDefault = if ($version -eq '26.3') { 'InputConstants.KEY_LALT' } else { 'GLFW_KEY_LEFT_ALT' }
@@ -323,7 +322,9 @@ $tomsPayloads = Join-Path $RepoRoot "compatibility\versions\$version\fabric\src\
     Assert-Contains -Path $windowedClient -Text 'FunctionalTestHarness' -Label "$version functional hook"
     Assert-Contains -Path $config -Text 'enableMod' -Label "$version config enableMod"
     Assert-Contains -Path $config -Text 'expandableInventory' -Label "$version config expandableInventory"
-    Assert-Contains -Path $config -Text 'enableGhostPins' -Label "$version config ghost pins"
+    Assert-NotMatches -Path $config -Pattern 'enableGhostPins|minimizableWindows|ghostWindowOpacity' -Label "$version removes retired window settings"
+    Assert-NotMatches -Path $client -Pattern 'WindowControl\.MINIMIZE|window\.minimized|window\.ghosted' -Label "$version removes collapsed and ghost window behavior"
+    Assert-Contains -Path $server -Text 'opener.salts_inventory_update$setOpenerVisible(player, visible)' -Label "$version persistent visibility owns native container viewers"
     Assert-Contains -Path $config -Text 'globalPins' -Label "$version config global pins"
     Assert-Contains -Path $configScreen -Text '"global_pins"' -Label "$version global pins config screen"
     Assert-Contains -Path $language -Text '"config.salts_inventory_update.global_pins"' -Label "$version global pins translation"
@@ -476,7 +477,7 @@ Assert-Matches -Path $hotbarClient -Pattern '(?s)(?:usesInventoryWindowHotbar\(\
 
 $rootBuildScript = Join-Path $RepoRoot 'build.gradle.kts'
 $settingsScript = Join-Path $RepoRoot 'settings.gradle.kts'
-Assert-Contains -Path $rootBuildScript -Text 'version = "0.1.4"' -Label 'release version is 0.1.4'
+Assert-Contains -Path $rootBuildScript -Text 'version = "0.1.5"' -Label 'Core release version is 0.1.5'
 Assert-Contains -Path $rootBuildScript -Text 'org.jspecify:jspecify:1.0.0' -Label 'JSpecify is an explicit compile-only dependency'
 Assert-Contains -Path $rootBuildScript -Text '"**/compat/rei/SaltsReiClientPlugin.java"' -Label 'non-Fabric loaders exclude the Fabric REI entrypoint'
 Assert-NotContains -Path $rootBuildScript -Text '"**/compat/rei/**"' -Label 'non-Fabric loaders retain shared REI runtime support'
@@ -671,7 +672,7 @@ Assert-Matches -Path $desktopContainerClient -Pattern '(?s)private static boolea
 Assert-Matches -Path $desktopContainerClient -Pattern '(?s)queueMutation\("click".{0,500}SessionAuth auth = sessionAuth\(sessionId\);.{0,250}ItemStack carried = currentClientCarried\(\);.{0,500}auth\.stateId\(\)' -Label '26.2 queued clicks resolve current authentication, state, and carried stack at dispatch'
 Assert-Count -Path $desktopContainerClient -Text 'queueMutation("' -Expected 16 -Label '26.2 routes item, menu, crafting, and cooking mutations through one global client lane'
 Assert-JavaMethodMatches -Path $desktopContainerClient -SignaturePattern 'private static boolean queueRecipeHover\(int session, long epoch, int action, int recipeIndex\)' -Pattern '(?s)return queueMutation\(label, Set\.of\(session\), mutationId ->\s*\{.*new DesktopPackets\.DesktopRecipeHoverPayload\(CONNECTION\.connectionNonce\(\), mutationId, playerSessionToken,' -Label '26.2 recipe hover mutations share the authenticated global client lane'
-Assert-JavaMethodMatches -Path $desktopInventoryScreen -SignaturePattern 'private QuickMoveTarget quickMoveTarget\(SlotHit hit\)' -Pattern 'if\s*\(focusedWindow\s*!=\s*null\s*&&\s*focusedWindow\.kind\s*==\s*WindowKind\.CONTAINER\s*&&\s*focusedWindow\.session\s*!=\s*null\s*&&\s*this\.sessions\.contains\(focusedWindow\.session\)\s*&&\s*!focusedWindow\.minimized\s*&&\s*!focusedWindow\.ghosted\s*&&\s*!focusedWindow\.persistentHidden\s*&&\s*focusedWindow\.session\.sessionId\(\)\s*!=\s*hit\.sessionId\(\)\)\s*\{\s*targetKind\s*=\s*DesktopPackets\.QUICK_TARGET_SESSION;\s*targetSessionId\s*=\s*focusedWindow\.session\.sessionId\(\);' -Label '26.2 cross-window quick moves target only registered visible focused sessions'
+Assert-JavaMethodMatches -Path $desktopInventoryScreen -SignaturePattern 'private QuickMoveTarget quickMoveTarget\(SlotHit hit\)' -Pattern 'if\s*\(focusedWindow\s*!=\s*null\s*&&\s*focusedWindow\.kind\s*==\s*WindowKind\.CONTAINER\s*&&\s*focusedWindow\.session\s*!=\s*null\s*&&\s*this\.sessions\.contains\(focusedWindow\.session\)\s*&&\s*!focusedWindow\.persistentHidden\s*&&\s*focusedWindow\.session\.sessionId\(\)\s*!=\s*hit\.sessionId\(\)\)\s*\{\s*targetKind\s*=\s*DesktopPackets\.QUICK_TARGET_SESSION;\s*targetSessionId\s*=\s*focusedWindow\.session\.sessionId\(\);' -Label '26.2 cross-window quick moves target only registered visible focused sessions'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)private void applyDragDistribution\((?:(?!\r?\n    private).)*List<DesktopContainerClient\.SlotTarget> targets = slots\.stream\(\)(?:(?!\r?\n    private).)*DesktopContainerClient\.dragSlots\(drag\.quickCraftType\(\), targets\)' -Label '26.2 non-legacy mixed-window drags use one authenticated cross-session batch'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)private @Nullable DragDistribution activeDragPreview\((?:(?!\r?\n    private).)*this\.dragDistribution\.size\(\) == 0' -Label '26.2 an activated drag preview remains visible while revisiting its targets'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)public void texturelessSlot\((?:(?!\r?\n        @Override).)*DragSlotPreview dragPreview = InventoryDesktopScreen\.this\.dragSlotPreview\(slot\)(?:(?!\r?\n        @Override).)*if \(dragPreview != null\)(?:(?!\r?\n        @Override).)*renderItemStack\(' -Label 'Sophisticated textureless slots render live drag previews before acknowledgement'
@@ -1010,7 +1011,7 @@ foreach ($version in $versions) {
     Assert-Contains -Path $sortScreen -Text 'FORCE_SORT_CONTROL_TEXTURE_COLUMN = 11;' -Label "$version Shift sort atlas column"
     Assert-Contains -Path $sortScreen -Text 'CONTROL_TEXTURE_WIDTH = CONTROL_SIZE * 12;' -Label "$version expanded control atlas width"
     Assert-Contains -Path $sortScreen -Text 'this.isShiftHeld() ? FORCE_SORT_CONTROL_TEXTURE_COLUMN : SORT_CONTROL_TEXTURE_COLUMN' -Label "$version live Shift sort icon"
-    Assert-Contains -Path $sortScreen -Text 'window.minimized || window.ghosted || window.persistentHidden' -Label "$version sort excludes unavailable windows"
+    Assert-Contains -Path $sortScreen -Text 'window.persistentHidden' -Label "$version sort excludes unavailable windows"
     Assert-Contains -Path $sortClient -Text 'canSortWindows()' -Label "$version sort capability gate"
     Assert-Contains -Path $sortPackets -Text 'CAP_SORT_WINDOWS = 1L << 5;' -Label "$version sort capability bit"
     Assert-Contains -Path $sortPackets -Text 'record DesktopSortWindowsPayload(' -Label "$version sort request payload"

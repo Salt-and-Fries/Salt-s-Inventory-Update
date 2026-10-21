@@ -7,7 +7,9 @@ gradle.projectsEvaluated {
     def root = gradle.rootProject
     def matrix = new groovy.json.JsonSlurper().parse(root.file('controlify/targets.json')).targets
     def productionJar = { project ->
-        project.tasks.named(project.tasks.findByName('remapJar') != null ? 'remapJar' : 'jar', AbstractArchiveTask)
+        def task = project.tasks.findByName('remapJar') != null ? 'remapJar' :
+                project.tasks.findByName('reobfJar') != null ? 'reobfJar' : 'jar'
+        project.tasks.named(task, AbstractArchiveTask)
     }
     def upstreamFile = { file ->
         ['controlify-', 'G2K5sLls-', '1eAoo2KR-', 'yacl-', 'yet_another_config_lib_v3-', 'mixin-args-', 'mixin_args-'].any { file.name.startsWith(it) }
@@ -141,10 +143,12 @@ displayName="Salt Controller QA"
                 throw new GradleException('Unsupported controller QA scope: ' + scope)
             def withExtension = root.providers.gradleProperty('controlifyQaExtension').map { it.toBoolean() }.getOrElse(false)
             def fixtures = root.providers.gradleProperty('controlifyQaFixtures').getOrElse('')
+            def runId = root.providers.gradleProperty('controlifyQaRunId').getOrElse('')
+            if (runId && !(runId ==~ /[a-z0-9-]+/)) throw new GradleException('Invalid controller QA run ID: ' + runId)
             if (!(fixtures in ['', 'jei', 'rei'])) throw new GradleException('Unsupported optional mod fixture profile: ' + fixtures)
             if (fixtures && (!withExtension || pin.minecraft != '26.3')) throw new GradleException('Optional mod profiles require 26.3 Extended QA.')
             def extension = root.project(":compatibility:${pin.minecraft}:${pin.loader}")
-            def reportKey = (scope == 'all' ? key : "${key}-${scope}") + (withExtension ? '-extended' : '') + (fixtures ? '-' + fixtures : '')
+            def reportKey = (scope == 'all' ? key : "${key}-${scope}") + (withExtension ? '-extended' : '') + (fixtures ? '-' + fixtures : '') + (runId ? '-' + runId : '')
             group = 'verification'
             description = "Runs ${key} disposable controller scenarios using separate production JARs."
             // The expanded 26.3 wheel scenarios include native cooking and lease expiry.
@@ -211,8 +215,9 @@ displayName="Salt Controller QA"
                 def runClasspath = run.hasProperty('classpathProvider') ? run.classpathProvider : run.classpath
                 classpath = runClasspath.filter(retainedRuntimeFile)
                 if (pin.loader == 'fabric') classpath += qa.output
-                args = run.args
-                jvmArgs = run.jvmArgs.findAll { !it.startsWith('-Dfabric.classPathGroups=') && !it.startsWith('-Dfml.modFolders=') }
+                args = run.args + run.argumentProviders.collectMany { it.asArguments().toList() }
+                jvmArgs = (run.jvmArgs + run.jvmArgumentProviders.collectMany { it.asArguments().toList() })
+                        .findAll { !it.startsWith('-Dfabric.classPathGroups=') && !it.startsWith('-Dfml.modFolders=') }
                 systemProperties(run.systemProperties.findAll { name, value -> !(name in ['fabric.classPathGroups', 'fml.modFolders']) })
                 if (featurePass26) systemProperty('max.bg.threads', '2')
                 if (pin.loader == 'fabric') systemProperty('fabric.classPathGroups', qa.output.files.collect { it.absolutePath }.join(File.pathSeparator))
@@ -300,7 +305,7 @@ displayName="Salt Controller QA"
                 }
                 new File(output, 'staged-artifacts.json').text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson([
                     minecraft: pin.minecraft, loader: pin.loader, artifacts: staged,
-                    runtimeProfile: runtimeProfile, scope: scope, withExtension: withExtension, fixtures: fixtures,
+                    runtimeProfile: runtimeProfile, scope: scope, withExtension: withExtension, fixtures: fixtures, runId: runId,
                     projectClasspath: classpath.files.findAll { it.canonicalPath.startsWith(root.projectDir.canonicalPath + File.separator) &&
                         !it.canonicalPath.contains(File.separator + '.gradle' + File.separator) &&
                         !it.canonicalPath.contains(File.separator + 'moddev' + File.separator) }.collect { it.absolutePath }

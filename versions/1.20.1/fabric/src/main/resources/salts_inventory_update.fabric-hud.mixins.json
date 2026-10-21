@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "salts_inventory_update.refmap.json",
+  "client": [
+    "client.FabricHotbarDecorationsMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

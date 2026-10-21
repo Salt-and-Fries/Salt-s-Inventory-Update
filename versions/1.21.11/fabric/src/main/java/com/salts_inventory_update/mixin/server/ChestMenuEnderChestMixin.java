@@ -24,10 +24,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ChestMenuEnderChestMixin implements DesktopEnderChestMenu {
     @Unique private EnderChestBlockEntity salts_inventory_update$enderChest;
     @Unique private boolean salts_inventory_update$enderClosed;
+    @Unique private Container salts_inventory_update$container;
+    @Unique private boolean salts_inventory_update$openerActive = true;
 
     @Inject(method = "<init>(Lnet/minecraft/world/inventory/MenuType;ILnet/minecraft/world/entity/player/Inventory;Lnet/minecraft/world/Container;I)V", at = @At("TAIL"))
     private void salts_inventory_update$bindEnderChest(MenuType<?> type, int id, Inventory inventory,
                                                        Container container, int rows, CallbackInfo ci) {
+        this.salts_inventory_update$container = container;
         if (container instanceof PlayerEnderChestContainer ender
             && inventory.player instanceof ServerPlayer player
             && DesktopContainerSessions.shouldCapture(player)) {
@@ -51,16 +54,31 @@ public abstract class ChestMenuEnderChestMixin implements DesktopEnderChestMenu 
     @Redirect(method = "removed", at = @At(value = "INVOKE",
         target = "Lnet/minecraft/world/Container;stopOpen(Lnet/minecraft/world/entity/ContainerUser;)V"))
     private void salts_inventory_update$closeBoundChest(Container container, ContainerUser player) {
+        this.salts_inventory_update$enderClosed = true;
+        if (!this.salts_inventory_update$openerActive) return;
+        this.salts_inventory_update$openerActive = false;
         if (this.salts_inventory_update$enderChest == null) {
             container.stopOpen(player);
-        } else if (!this.salts_inventory_update$enderClosed) {
-            this.salts_inventory_update$enderClosed = true;
+        } else {
             this.salts_inventory_update$enderChest.stopOpen(player);
         }
     }
 
     @Override
+    public void salts_inventory_update$setOpenerVisible(Player player, boolean visible) {
+        if (this.salts_inventory_update$enderClosed || this.salts_inventory_update$openerActive == visible) return;
+        this.salts_inventory_update$openerActive = visible;
+        if (this.salts_inventory_update$enderChest != null) {
+            if (visible) this.salts_inventory_update$enderChest.startOpen(player);
+            else this.salts_inventory_update$enderChest.stopOpen(player);
+        } else {
+            if (visible) this.salts_inventory_update$container.startOpen(player);
+            else this.salts_inventory_update$container.stopOpen(player);
+        }
+    }
+
+    @Override
     public boolean salts_inventory_update$ownsEnderChest(EnderChestBlockEntity chest) {
-        return !this.salts_inventory_update$enderClosed && this.salts_inventory_update$enderChest == chest;
+        return this.salts_inventory_update$openerActive && !this.salts_inventory_update$enderClosed && this.salts_inventory_update$enderChest == chest;
     }
 }

@@ -27,7 +27,7 @@ public class ClientOnlyWindow implements DesktopWindowDefinition<PreferencesMode
     }
     @Override public DesktopWindowSize defaultSize(DesktopWindowSetupContext<PreferencesModel> context) { return DesktopWindowSize.of(212, 112); }
     @Override public DesktopWindowOptions options(DesktopWindowContext<PreferencesModel, State> context) {
-        return new DesktopWindowOptions(true, true, true, false, true);
+        return new DesktopWindowOptions(true, true, true);
     }
     @Override public void prepareLayout(DesktopWindowContext<PreferencesModel, State> context) {
         context.state().edit().setX(context.contentX() + 4);

@@ -86,7 +86,7 @@ final class DesktopWindowTasksTest {
         public boolean isOpen() { return open; }
         public boolean focus() { return open; }
         public boolean close() { boolean previous = open; open = false; return previous; }
-        public DesktopWindowState state() { return new DesktopWindowState(id, open, 0, 0, 100, 100, false, false, false, false, false, false, open); }
+        public DesktopWindowState state() { return new DesktopWindowState(id, open, 0, 0, 100, 100, false, false, false, false, open); }
         public boolean available(DesktopWindowAction action) { return open; }
         public boolean request(DesktopWindowAction action) { return open; }
         public boolean moveTo(int x, int y) { return open; }

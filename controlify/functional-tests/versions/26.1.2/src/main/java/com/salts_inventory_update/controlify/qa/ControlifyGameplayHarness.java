@@ -231,6 +231,34 @@ public final class ControlifyGameplayHarness {
     private static void scenarios() {
         add("disposable-flat-world", ControlifyGameplayHarness::createWorld,
                 () -> mc.player != null && mc.level != null && mc.getSingleplayerServer() != null, () -> {}, 35);
+        var firstRunHost = new com.salts_inventory_update.api.client.desktop.DesktopWorkspaceHost[1];
+        add("first-world-controller-onboarding", () -> {}, () -> true, () -> {
+            check("first-world-alternative-host-installed", DesktopClientApi.workspaceHost() != null);
+            check("first-world-default-tutorial-not-opened", DesktopClientApi.currentWorkspace()
+                    .filter(com.salts_inventory_update.api.client.desktop.DesktopWorkspace::isNativeScreenActive).isEmpty());
+            check("first-world-tutorial-preference-preserved", !SaltsInventoryConfig.get().hasSeenInstructionsWindow);
+            capture("first-world-without-desktop-tutorial");
+        }, 20);
+        add("first-world-default-help-without-host", () -> {
+            firstRunHost[0] = DesktopClientApi.workspaceHost();
+            DesktopClientApi.setWorkspaceHost(null);
+        }, () -> SaltsInventoryConfig.get().hasSeenInstructionsWindow && DesktopClientApi.currentWorkspace()
+                .filter(com.salts_inventory_update.api.client.desktop.DesktopWorkspace::isNativeScreenActive).isPresent(), () -> {
+            check("default-tutorial-still-opens-without-alternative-host", true);
+            DesktopClientApi.currentWorkspace().ifPresent(com.salts_inventory_update.api.client.desktop.DesktopWorkspace::closeClosableWindows);
+            mc.setScreen(null);
+            DesktopClientApi.setWorkspaceHost(firstRunHost[0]);
+            SaltsInventoryConfig.update(config -> config.hasSeenInstructionsWindow = false);
+        }, 4);
+        add("first-world-manual-help-with-host",
+                com.salts_inventory_update.client.WindowedInventoryClient::scheduleInstructionsWindowOpen,
+                () -> SaltsInventoryConfig.get().hasSeenInstructionsWindow && DesktopClientApi.currentWorkspace()
+                        .filter(com.salts_inventory_update.api.client.desktop.DesktopWorkspace::isNativeScreenActive).isPresent(), () -> {
+            check("manual-help-still-opens-with-alternative-host", true);
+            capture("manual-desktop-help-remains-available");
+            DesktopClientApi.currentWorkspace().ifPresent(com.salts_inventory_update.api.client.desktop.DesktopWorkspace::closeClosableWindows);
+            mc.setScreen(null);
+        }, 4);
         add("actual-controlify-driver", ControlifyGameplayHarness::installController,
                 () -> Controlify.instance().getCurrentController().orElse(null) == controller,
                 () -> check("controller-mode", Controlify.instance().currentInputMode().isController()), 5);
@@ -766,8 +794,17 @@ public final class ControlifyGameplayHarness {
             check("polish-coal-alone-does-not-match-smelting-recipes",contextualEntries().isEmpty()),4);
         add("polish-furnace-add-ingredient",() -> server(() -> {
             player().getInventory().setItem(1,new ItemStack(Items.RAW_IRON,1));player().inventoryMenu.broadcastChanges();return null;
-        }),() -> serverDone() && contextualEntries().stream().anyMatch(recipe -> recipe.output().is(Items.IRON_INGOT)),() ->
-            check("polish-parts-refreshes-open-container-resources",contextualEntries().stream().anyMatch(recipe -> recipe.output().is(Items.IRON_INGOT))),4);
+        }),() -> serverDone() && contextualSnapshot().recipes().stream().anyMatch(recipe ->
+            recipe.output().is(Items.IRON_INGOT) && recipe.grid().stream().anyMatch(ingredient -> ingredient.available()>0)),() -> {
+            check("polish-parts-refreshes-open-container-resources",contextualSnapshot().recipes().stream().anyMatch(recipe ->
+                recipe.output().is(Items.IRON_INGOT) && recipe.grid().stream().anyMatch(ingredient -> ingredient.available()>0)));
+            // Live state refresh must not reshuffle the membership pinned for this opening.
+            check("polish-parts-retains-open-wheel-membership",contextualEntries().isEmpty());
+        },4);
+        fixture.closeWheel("polish-furnace-refresh-close");
+        fixture.openWheel("polish-furnace-refresh-reopen");
+        add("polish-furnace-new-membership",() -> {},() -> contextualEntries().stream().anyMatch(recipe -> recipe.output().is(Items.IRON_INGOT)),() ->
+            check("polish-parts-new-ingredient-visible-after-reopen",contextualEntries().stream().anyMatch(recipe -> recipe.output().is(Items.IRON_INGOT))),4);
         fixture.filter("polish-furnace-craftable",RecipeFilter.CRAFTABLE);
         fixture.closeWheel("polish-finish-furnace-wheel");
         focusPair("polish-character-pair",() -> owner.model().character(),() -> chestWindow);
@@ -3856,7 +3893,7 @@ public final class ControlifyGameplayHarness {
         mc.options.pauseOnLostFocus = false; mc.options.guiScale().set(2);
         mc.getWindow().setWindowed(1280, 900);
         SaltsInventoryConfig.update(config -> {
-            config.enableMod = true; config.hasSeenInstructionsWindow = true; config.eHoldCloseAllSeconds = 1;
+            config.enableMod = true; config.hasSeenInstructionsWindow = false; config.eHoldCloseAllSeconds = 1;
             config.returnHotbarToInventory = false; config.persistentWindows = false;
         });
         LevelSettings settings = new LevelSettings("Controller disposable QA", GameType.SURVIVAL,

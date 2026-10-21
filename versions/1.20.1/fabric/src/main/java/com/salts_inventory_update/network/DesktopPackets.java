@@ -38,12 +38,13 @@ public final class DesktopPackets {
     /** Exact built-in player surfaces, distinct from the native/default quick-move behavior. */
     public static final int QUICK_TARGET_PLAYER_EQUIPMENT = 3;
     public static final int QUICK_TARGET_PLAYER_STORAGE = 4;
-    public static final int PIN_MODE_UNPINNED = 0;
-    public static final int PIN_MODE_PINNED = 1;
-    public static final int PIN_MODE_GHOST_PINNED = 2;
+
+
+
     public static final int MAX_GESTURE_SLOTS = 256;
     public static final long CAP_MULTI_MENU_GESTURES = 1L << 4;
     public static final long CAP_SORT_WINDOWS = 1L << 5;
+    public static final long CAP_CLICK_SEQUENCES = 1L << 6;
 
     private DesktopPackets() {
     }
@@ -267,6 +268,39 @@ public final class DesktopPackets {
         public DesktopSessionReference {
             if (sessionId < PLAYER_MENU_SESSION || sessionToken == 0L || stateId < 0) throw new IllegalArgumentException("Invalid desktop session reference");
         }
+    }
+
+    public record DesktopClickAction(DesktopSlotReference slot, int button, boolean quickMove, int targetKind, DesktopSessionReference target) {
+        public DesktopClickAction(DesktopSlotReference slot,int button,boolean quickMove) {this(slot,button,quickMove,-1,null);}
+        public DesktopClickAction { if (button < 0 || button > 1 || targetKind < -1 || targetKind > QUICK_TARGET_PLAYER_STORAGE || (targetKind >= 0) != (target != null) || targetKind >= 0 && !quickMove) throw new IllegalArgumentException("Invalid click button"); }
+    }
+
+    /** A bounded native click sequence, authorized against one starting inventory snapshot. */
+    public record DesktopClickSequencePayload(long sequence, List<DesktopClickAction> actions) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_click_sequence");
+        public DesktopClickSequencePayload { actions = List.copyOf(actions); if (sequence <= 0 || actions.isEmpty() || actions.size() > MAX_GESTURE_SLOTS) throw new IllegalArgumentException("Invalid click sequence"); }
+        public DesktopClickSequencePayload(FriendlyByteBuf buf) { this(buf.readLong(), readActions(buf)); }
+        private static List<DesktopClickAction> readActions(FriendlyByteBuf buf) {
+            int size = buf.readVarInt(); DesktopProtocol.requireCount("desktop click sequence", size, MAX_GESTURE_SLOTS);
+            List<DesktopClickAction> actions = new ArrayList<>(size);
+            for (int i=0;i<size;i++) {
+                DesktopSlotReference slot=readSlotReference(buf);int button=buf.readVarInt();boolean quick=buf.readBoolean();int kind=buf.readVarInt();
+                actions.add(new DesktopClickAction(slot,button,quick,kind,kind>=0?readSessionReference(buf):null));
+            }
+            return actions;
+        }
+        @Override public ResourceLocation id() { return TYPE; }
+        @Override public void write(FriendlyByteBuf buf) {
+            buf.writeLong(sequence);buf.writeVarInt(actions.size());
+            for (DesktopClickAction action:actions) {writeSlotReference(buf,action.slot());buf.writeVarInt(action.button());buf.writeBoolean(action.quickMove());buf.writeVarInt(action.targetKind());if(action.target()!=null)writeSessionReference(buf,action.target());}
+        }
+    }
+
+    public record DesktopClickSequenceAckPayload(long connectionNonce, long sequence, boolean accepted) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_click_sequence_ack");
+        public DesktopClickSequenceAckPayload(FriendlyByteBuf buf) { this(buf.readLong(),buf.readLong(),buf.readBoolean()); }
+        @Override public ResourceLocation id() { return TYPE; }
+        @Override public void write(FriendlyByteBuf buf) {buf.writeLong(connectionNonce);buf.writeLong(sequence);buf.writeBoolean(accepted);}
     }
 
     public record DesktopDragSlotsPayload(int quickCraftType, List<DesktopSlotReference> slots) implements DesktopPacket {
@@ -682,24 +716,7 @@ public final class DesktopPackets {
         }
     }
 
-    public record DesktopSessionPinPayload(int sessionId, int pinMode) implements DesktopPacket {
-        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_session_pin");
 
-        public DesktopSessionPinPayload(FriendlyByteBuf buf) {
-            this(buf.readVarInt(), buf.readVarInt());
-        }
-
-        @Override
-        public ResourceLocation id() {
-            return TYPE;
-        }
-
-        @Override
-        public void write(FriendlyByteBuf buf) {
-            buf.writeVarInt(this.sessionId);
-            buf.writeVarInt(this.pinMode);
-        }
-    }
 
     public record DesktopSessionVisibilityPayload(int sessionId, boolean visible) implements DesktopPacket {
         public static final ResourceLocation TYPE = DesktopPackets.id("desktop_session_visibility");

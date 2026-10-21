@@ -9,7 +9,7 @@ $env:CI = 'true'
 ./gradlew :26.3:neoforge:companionDemoJar
 ```
 
-The artifact is `build/api-examples/companion-example-26.3-NeoForge-api5.jar`. Install that same jar on a matching client/server. Test Salt present by adding the matching API5 Salt jar to both sides; test absence by removing Salt. The consumer's metadata does not make Salt required.
+The artifact is `build/api-examples/companion-example-26.3-NeoForge-api6.jar`. Install that same jar on a matching client/server. Test Salt present by adding the matching API6 Salt jar to both sides; test absence by removing Salt. The consumer's metadata does not make Salt required.
 
 Use a disposable demonstration world: the first command puts test tool items in hotbar slots 0 and 1. These own two distinct, real nine-slot inventories. Main windows contain no copies or proxies of those tool slots.
 
@@ -27,11 +27,11 @@ Use a disposable demonstration world: the first command puts test tool items in 
 
 The companion accepts redstone/paper, limits slot 7 to one item and makes slot 8 read-only. Pickup, placement, Shift-click, dragging and shared cursor actions use its own genuine server menu. Replacing the item in hotbar slot 0 invalidates the old source; `invalidate` explicitly revokes that source. Source replacement is deliberately tied to the actual tool object, not just its item type/title.
 
-The original main artwork is 176×64 GUI pixels and the companion artwork is 176×52, with retained original borders and padding. The main surface's title includes custom Close, Pin/Unpin, Minimize/Restore and More controls. More opens Salt's manager menu. The companion has no independent management actions. Every control and original texture is painted by the consumer; Salt adds no extra frame.
+The original main artwork is 176×64 GUI pixels and the companion artwork is 176×52, with retained original borders and padding. The main surface's title includes custom Close, Pin/Unpin and More controls. More opens Salt's manager menu. The companion has no independent management actions. Every control and original texture is painted by the consumer; Salt adds no extra frame.
 
 Without Salt, normal main/tool screens use the same textures, ordinary menu synchronization and vanilla input. Use `tool1`/`tool2` to open the tool inventory directly in this mode. Dedicated servers register common menus/commands and never resolve the ordinary client screen initializer. Salt's common provider contains no client imports.
 
-For automated native acceptance, start a matching NeoForge client with the JVM argument `-Dcompanion.demo.qa=true`. This creates a disposable `CompanionAPI5QA` world and shuts the client down when the assertions finish. Use a fresh game directory for each run and set `guiScale:2`, `guiScale:3` or `guiScale:4` in `options.txt`; the native evidence includes all three. Enable unlocked/minimizable windows in Salt's configuration and dismiss its first-run instructions before the run. Successful Salt-present runs print `COMPANION NATIVE ACCEPTANCE COMPLETE`; absent runs print `COMPANION ABSENT CLIENT COMPLETE`. A `COMPANION NATIVE FAILED` line or a nonzero process exit is a failure.
+For automated native acceptance, start a matching NeoForge client with the JVM argument `-Dcompanion.demo.qa=true`. This creates a disposable `CompanionAPI6QA` world and shuts the client down when the assertions finish. Use a fresh game directory for each run and set `guiScale:2`, `guiScale:3` or `guiScale:4` in `options.txt`; the native evidence includes all three. Enable unlocked windows in Salt's configuration and dismiss its first-run instructions before the run. Successful Salt-present runs print `COMPANION NATIVE ACCEPTANCE COMPLETE`; absent runs print `COMPANION ABSENT CLIENT COMPLETE`. A `COMPANION NATIVE FAILED` line or a nonzero process exit is a failure.
 
 The native suite checks real server inventory counts and cursor conservation, restrictions, Shift-click, dragging/cancellation, both parent closing orders, separate sources, position retention, management controls, keyboard access, foreground and modal blocking, resource reload, smaller viewports, source invalidation/replacement, dimension travel and disconnect. It invokes ordinary Minecraft input and public Salt handles; it does not call Salt implementation classes.
 
@@ -41,4 +41,4 @@ The demonstration's inventories are intentionally ephemeral and removed at logou
 
 `generate-artwork.py` regenerates the deterministic original fixture textures. The [public guide](../../docs/markdown/desktop_window_api.md#shared-inventory-companions-and-original-surface-controls) documents source identity, every constructor/method, thread/focus/lifetime contracts and inventory authorization.
 
-Native acceptance and final artifact hashes are recorded in [the implementation audit](../../API-COMPANIONS-0.1.4-PLAN.md). A successful build alone does not prove native lifecycle, inventory/network or visual behavior.
+Historical API5 native acceptance and artifact hashes are recorded in [the implementation audit](../../API-COMPANIONS-0.1.4-PLAN.md). A successful build alone does not prove native lifecycle, inventory/network or visual behavior.

@@ -25,6 +25,7 @@ public abstract class KeyboardHandlerMixin {
 
     @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$handleInventoryKeyHold(long window, int key, int scancode, int action, int modifiers, CallbackInfo ci) {
+        com.salts_inventory_update.client.WindowedInventoryClient.handleMovementKeyAction(this.minecraft, action, key, scancode);
         boolean inventoryKey = this.minecraft.options.keyInventory.matches(key, scancode);
         boolean handled = InventoryKeyHoldController.handleInventoryKeyAction(this.minecraft, action, new KeyEvent(key, scancode, modifiers));
         if (inventoryKey && salts_inventory_update$keyProbeLogs < 24) {

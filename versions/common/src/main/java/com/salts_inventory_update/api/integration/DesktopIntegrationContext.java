@@ -5,7 +5,7 @@ import java.util.function.Predicate;
 
 /** Registration runs after mod registries exist, on the client or server main thread. */
 public record DesktopIntegrationContext(String modId, Phase phase, Predicate<String> loadedMods) {
-    public static final int API_VERSION = 5;
+    public static final int API_VERSION = 6;
     public static final String DESCRIPTOR_PATH = "META-INF/salts_inventory_update.integration.properties";
 
     public DesktopIntegrationContext {

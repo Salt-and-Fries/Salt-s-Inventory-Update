@@ -151,7 +151,7 @@ table([
     ['Feature family','Executed checks'],
     ['Inventory expansion','GUI purchase, exact XP cost, authoritative slot count, reopen, extra-slot pickup and return'],
     ['Item gestures','Pickup/place, right split, one-item placement, merge, left drag 10+10+10, right drag 1+1+1 with 27 remaining'],
-    ['Window controls','Move, snapped resize, lock/unlock, pin/ghost pin/unpin, minimize/restore'],
+    ['Window controls','Move, snapped resize, lock/unlock, pin/unpin, persistent hide/restore'],
     ['Recipe processing','Furnace completes iron smelting; crafting consumes four planks and yields one crafting table'],
     ['Storage / machines','Chest, trapped chest, barrel, ender chest, shulker, hopper, dispenser, dropper, furnace, blast furnace, smoker and brewing stand'],
     ['Other native menus','Crafting, enchanting, anvil, grindstone, loom, smithing, stonecutter, cartography, beacon and crafter where available'],

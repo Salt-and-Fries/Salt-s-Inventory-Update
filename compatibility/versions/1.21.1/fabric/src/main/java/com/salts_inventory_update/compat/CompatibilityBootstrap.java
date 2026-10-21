@@ -13,6 +13,7 @@ public final class CompatibilityBootstrap {
         initialize("toms_storage", "com.salts_inventory_update.compat.toms_storage.server.TomsStorageServerCompat", "initialize");
     }
     public static void initializeClient() {
+        initialize("raised", "com.salts_inventory_update.compat.raised.RaisedHudIntegration", "initialize");
         if (DesktopEnvironment.isModLoaded("fabricloader")) initialize("sophisticatedcore", "com.salts_inventory_update.compat.sophisticated.SophisticatedFabricBootstrap", "initializeClient");
         if (DesktopEnvironment.isModLoaded("neoforge"))
             initialize("ae2", "com.salts_inventory_update.compat.ae2.AE2Bootstrap", "initializeClient");

@@ -8,7 +8,7 @@ root = Path(__file__).resolve().parents[1]
 md_path = root / 'docs/markdown/desktop_window_api.md'
 html_path = root / 'docs/index.html'
 markdown = md_path.read_text(encoding='utf-8')
-old = html_path.read_text(encoding='utf-8')
+old = html_path.read_text(encoding='utf-8').replace('0.1.4', '0.1.5').replace('API 4', 'API 6')
 lines = markdown.splitlines()
 source_links = []
 

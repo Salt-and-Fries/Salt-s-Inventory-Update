@@ -44,6 +44,7 @@ FOCUSED_CHECKS = {
         'polish-all-includes-unavailable-recipe','polish-parts-includes-incomplete-oak-wood',
         'polish-craftable-excludes-incomplete-oak-wood','polish-reopen-retains-craftable','polish-center-inside-ring',
         'polish-coal-alone-does-not-match-smelting-recipes','polish-parts-refreshes-open-container-resources',
+        'polish-parts-retains-open-wheel-membership','polish-parts-new-ingredient-visible-after-reopen',
         'polish-2x2-retains-craftable-filter'},
 }
 
@@ -53,7 +54,7 @@ def sha(path, algorithm='sha256'):
 def require(passed, expected, name):
     assert expected <= passed, f'{name}: missing required coverage: {sorted(expected-passed)}'
 
-def validate(folder, artifacts):
+def validate(folder, artifacts, allow_core_description_correction=False):
     name = folder.name
     report = json.loads((folder/'results.json').read_text(encoding='utf-8-sig'))
     staging = json.loads((folder/'staged-artifacts.json').read_text(encoding='utf-8-sig'))
@@ -98,7 +99,8 @@ def validate(folder, artifacts):
         filename = f'{mod_id}-{game}-{runtime.LOADER_NAMES[loader]}-{mods[mod_id]}.jar'
         release = artifacts/family/filename
         assert release.is_file(), f'{name}: final {family} missing'
-        artifact_lineage[family]=runtime.artifact_match(family,release,profile/'mods'/filename)
+        artifact_lineage[family]=runtime.artifact_match(family,release,profile/'mods'/filename,
+            allow_core_description_correction=allow_core_description_correction)
         releases[family] = sha(release)
         with ZipFile(release) as jar:
             assert jar.testzip() is None and not any('/qa/' in p or p.endswith('.pdn') for p in jar.namelist()), (name,family)
@@ -145,9 +147,10 @@ if __name__=='__main__':
     parser.add_argument('--report',action='append',required=True,type=Path)
     parser.add_argument('--artifacts',type=Path,default=ROOT/'dist')
     parser.add_argument('--summary',type=Path,required=True)
+    parser.add_argument('--allow-core-description-correction',action='store_true')
     parser.add_argument('--require-matrix',action='store_true')
     args=parser.parse_args()
-    rows=[validate(path.resolve(),args.artifacts.resolve()) for path in args.report]
+    rows=[validate(path.resolve(),args.artifacts.resolve(),args.allow_core_description_correction) for path in args.report]
     if args.require_matrix:
         assert {(r['loader'],r['browser']) for r in rows if r['scope']=='mod-compat'}=={
             (loader,browser) for loader in ['fabric','neoforge'] for browser in ['jei','rei']},'Incomplete optional mod matrix'

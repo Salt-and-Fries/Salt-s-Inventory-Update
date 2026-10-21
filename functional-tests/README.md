@@ -1,9 +1,22 @@
 # Functional Tests
 
+The [Ancient Remnants search regression](ANCIENT-REMNANTS-SEARCH-ISSUE-16-VALIDATION.md) uses `qaBrowserSearchOnly=true` for focused recipe-browser checks against official upstream mods and production JARs. It does not run unrelated container/gameplay scenarios.
+
 This directory contains the shared functional-test setup for Salt's Inventory Update across every supported Minecraft version and loader.
+
+For the Core 0.1.5 recipe-book reopening and Hold/Toggle controls checks, see [WINDOW-CONTROLS-VALIDATION.md](WINDOW-CONTROLS-VALIDATION.md). The opt-in `qaWindowControlsOnly` profile runs only these affected features using packaged Core JARs and disposable worlds.
+
+The subsequent [Key Binds follow-up](KEYBINDS-VALIDATION.md) checks the dedicated native category, Controls selector placement and remapped vanilla Inventory holds. Select `qaKeybindsOnly=true` to run only those focused checks.
 
 For disposable in-world interaction checks, native framebuffer evidence and production-JAR
 launches, see [GAMEPLAY-QA.md](GAMEPLAY-QA.md). Those results are separate from startup smoke checks.
+
+For the focused Core chest closing reproduction, see
+[CHEST-CLOSE-ISSUE-15-VALIDATION.md](CHEST-CLOSE-ISSUE-15-VALIDATION.md).
+The subsequent fix, API6 feature removals, all-target chest checks and bundled
+extension validation are recorded in [WINDOW-CLEANUP-VALIDATION.md](WINDOW-CLEANUP-VALIDATION.md).
+The focused current-JAR check for Tom's Storage pickup loss is recorded in
+[TOMS-PICKUP-ISSUE-17-VALIDATION.md](TOMS-PICKUP-ISSUE-17-VALIDATION.md).
 
 Normal builds do not include this harness. It is only compiled when Gradle is run with:
 
@@ -121,7 +134,6 @@ Payload tests:
 | `<version> packet DesktopRenamePayload` | `DesktopRenamePayload` |
 | `<version> packet DesktopCustomPayload` | `DesktopCustomPayload` |
 | `<version> packet DesktopCloseSessionPayload` | `DesktopCloseSessionPayload` |
-| `<version> packet DesktopSessionPinPayload` | `DesktopSessionPinPayload` |
 | `<version> packet DesktopSessionVisibilityPayload` | `DesktopSessionVisibilityPayload` |
 | `<version> packet DesktopOpenLinkedSourcesPayload` | `DesktopOpenLinkedSourcesPayload` |
 | `<version> packet DesktopOpenSessionPayload` | `DesktopOpenSessionPayload` |
@@ -179,7 +191,6 @@ Tests:
 | --- | --- |
 | `<version> config enableMod` | `enableMod` |
 | `<version> config expandableInventory` | `expandableInventory` |
-| `<version> config ghost pins` | `enableGhostPins` |
 | `<version> config global pins` | `globalPins` |
 | `<version> global pins config screen` | `"global_pins"` |
 | `<version> global pins translation` | `"config.salts_inventory_update.global_pins"` |
@@ -329,7 +340,6 @@ The harness saves the current config, writes deliberately extreme/invalid values
 | --- | --- |
 | `config.enable_mod_updates_runtime` | Setting `enableMod = false` updates `SaltsInventoryRuntime` to disabled. |
 | `config.window_opening_style_normalizes` | Invalid `windowOpeningStyle` normalizes to the parser fallback. |
-| `config.ghost_opacity_clamps_high` | `ghostWindowOpacity = 42.0` clamps to `0.90`. |
 | `config.e_hold_seconds_clamps_low` | `eHoldCloseAllSeconds = 0.10` clamps to `0.50`. |
 
 ### Runtime Suite: `desktop-menu-screens`
@@ -386,7 +396,7 @@ These verify that built-in desktop API definitions were registered for furnace-s
 | --- | --- |
 | `packets.menu_type_round_trip.furnace` | `DesktopPackets.menuTypeId(MenuType.FURNACE)` resolves back to `MenuType.FURNACE`. |
 | `packets.menu_type_round_trip.crafter` | Same round-trip for `MenuType.CRAFTER_3x3`, when present. |
-| `packets.pin_mode_order` | Pin constants are `UNPINNED = 0`, `PINNED = 1`, `GHOST_PINNED = 2`. |
+| `packets.pin_mode_order` | Removed window management actions are absent from the current API. |
 | `packets.quick_target_order` | Quick-move target constants are `DEFAULT = 0`, `SESSION = 1`, `HOTBAR = 2`. |
 | `packets.special_kinds` | Special-kind constants keep `GENERIC = 0`, `HORSE = 1`, with camel and llama ordered after horse-family support constants. |
 
@@ -481,7 +491,7 @@ differences. The gate verifies every expected label, screenshot and geometry,
 rejects duplicates, and checks the actual upstream feature classes. Cross-version
 pixel comparisons are diagnostics, not a requirement to copy newer AE2 artwork.
 
-This is not a pixel-perfect UI automation suite. It does not replace a small visual pass for rendered layout, mouse dragging, resizing, ghost pins, and manual item movement. It is meant to catch common cross-version and cross-loader breakages quickly before doing any heavier manual pass.
+This is not a pixel-perfect UI automation suite. It does not replace a small visual pass for rendered layout, mouse dragging, resizing, persistent hide/restore, and manual item movement. It is meant to catch common cross-version and cross-loader breakages quickly before doing any heavier manual pass.
 
 ## Adding Coverage
 
@@ -506,3 +516,9 @@ Prefer tests that use public mod APIs, stable Minecraft classes, or reflection o
 Shared common tests compile an external-style optional mod against the integration API, run it with Salt absent, discover it with Salt present, and trap forbidden dedicated-server client class resolution. `DesktopScrollStateTest` checks fractional hit/render consistency, shrinking models and overflow-safe virtual ranges.
 
 `./gradlew verifyApiExamples` additionally compiles the external machine/terminal/native-preferences sources against all twelve production loader classpaths. These checks establish contract and routing behavior; native framework rendering and real storage permissions need an in-game integration pass.
+
+## Focused HUD checks
+
+`./gradlew :common:test --tests "*DesktopHudApiTest"` exercises public HUD geometry, live state, transform inversion, registration ordering, rollback and provider failure isolation. `SIU_QA_RAISED_ONLY=true` restricts the in-world harness to detached HUD geometry, pickup/place, offhand, live Raised config changes, custom scaled layouts, hidden targets and Return Hotbar to Inventory. Set `SIU_QA_RAISED_ABSENT=true` only for an explicitly prepared fixture without Raised. These are focused checks, not a complete gameplay suite.
+
+`Run-RaisedHudQa.ps1 -HudMovementOnly` selects the focused window-hosted hotbar visibility and input profile. It checks movement-control activation, rebinding, hidden selection locks, native wheel/keyboard dispatch, inventory-slot occlusion and server selection. `-Mode core` prepares a standalone Core fixture; `-Mode raised -MouseTweaks` adds those two optional HUD/input mods and the Compatibility extension. See [HOTBAR-MOVEMENT.md](HOTBAR-MOVEMENT.md) for the executed profiles, evidence and coverage limits.

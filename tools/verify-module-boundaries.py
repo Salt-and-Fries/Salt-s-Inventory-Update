@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PREFIX = 'com/salts_inventory_update/'
 ALLOWED = (PREFIX + 'api/', PREFIX + 'compat/')
 NATIVE_INTEGRATION_PREFIXES = (
+    'dev/yurisuika/raised/',
     'appeng/', 'com/tom/storagemod/', 'net/p3pp3rf1y/sophisticated',
     'mezz/jei/', 'me/shedaniel/rei/', 'dev/emi/emi/', 'com/terraformersmc/modmenu/',
 )
@@ -74,7 +75,7 @@ def sources():
     for p in (ROOT / 'versions').rglob('*.java'):
         if 'build' in p.parts or 'tests' in p.parts: continue
         text = p.read_text(encoding='utf-8')
-        if re.search(r'com\.salts_inventory_update\.compat\.|\bappeng\.|["\'](?:ae2|toms_storage|sophisticatedcore|sophisticatedstorage|sophisticatedbackpacks|roughlyenoughitems|jei|emi)["\']', text):
+        if re.search(r'com\.salts_inventory_update\.compat\.|\bappeng\.|\bdev\.yurisuika\.raised\.|["\'](?:raised|ae2|toms_storage|sophisticatedcore|sophisticatedstorage|sophisticatedbackpacks|roughlyenoughitems|jei|emi)["\']', text):
             failures.append(f'{p.relative_to(ROOT)}: core references a moved integration')
     patch_count = 0
     patch_files = [p for folder in ['ae2-native-patches', 'ae2-native-patches-runtime']
@@ -126,7 +127,7 @@ def jars():
                     assert PREFIX + 'api/client/recipebrowser/RecipeBrowserBridge.class' in names, p
                     for name in classes:
                         for value in utf8_constants(z.read(name)):
-                            assert not re.search(r'com[./]salts_inventory_update[./]compat[./]|appeng[./]|com[./]tom[./]storagemod[./]|net[./]p3pp3rf1y[./]sophisticated|mezz[./]jei[./]|me[./]shedaniel[./]rei[./]|dev[./]emi[./]|com[./]terraformersmc[./]modmenu[./]', value), f'{p.name}!{name}: core depends on a moved integration'
+                            assert not re.search(r'com[./]salts_inventory_update[./]compat[./]|appeng[./]|dev[./]yurisuika[./]raised[./]|com[./]tom[./]storagemod[./]|net[./]p3pp3rf1y[./]sophisticated|mezz[./]jei[./]|me[./]shedaniel[./]rei[./]|dev[./]emi[./]|com[./]terraformersmc[./]modmenu[./]', value), f'{p.name}!{name}: core depends on a moved integration'
                 else:
                     if '1.20.1-Forge-' in p.name:
                         assert json.loads(z.read('pack.mcmeta'))['pack']['pack_format'] == 15, \

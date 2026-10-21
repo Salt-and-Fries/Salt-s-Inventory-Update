@@ -119,11 +119,9 @@ public interface DesktopWindowDefinition<T, S> {
     default void focusChanged(DesktopWindowContext<T, S> context, boolean focused) {
     }
 
-    default void ghosted(DesktopWindowContext<T, S> context) {
-    }
 
-    default void unghosted(DesktopWindowContext<T, S> context) {
-    }
+
+
 
     default void tick(DesktopWindowContext<T, S> context) {
     }

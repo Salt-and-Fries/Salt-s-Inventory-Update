@@ -15,11 +15,11 @@ public final class CompanionMainWindow implements DesktopWindowDefinition<Compan
     @Override public DesktopWindowSize minSize(DesktopWindowContext<CompanionMainMenu, Void> context) { return DesktopWindowSize.of(176, 64); }
     @Override public DesktopWindowSurface surface(DesktopWindowContext<CompanionMainMenu, Void> context) {
         return DesktopWindowSurface.modOwned(List.of(
-            DesktopWindowRegion.visualAndInteractive(0, 0, 176, context.minimized() ? 20 : 64),
+            DesktopWindowRegion.visualAndInteractive(0, 0, 176, 64),
             DesktopWindowRegion.interactive(4, 4, 168, 12).withRole(DesktopHitRole.MOVE)));
     }
     @Override public List<DesktopSurfaceControl> managementControls(DesktopWindowContext<CompanionMainMenu, Void> context) {
-        return List.of(control(DesktopWindowControl.PIN, 118), control(DesktopWindowControl.MINIMIZE, 132),
+        return List.of(control(DesktopWindowControl.PIN, 132),
             control(DesktopWindowControl.ELLIPSIS, 146), control(DesktopWindowControl.CLOSE, 160));
     }
     private DesktopSurfaceControl control(DesktopWindowControl action, int x) {
@@ -31,7 +31,7 @@ public final class CompanionMainWindow implements DesktopWindowDefinition<Compan
         context.text("Shared tool inventory", context.windowX() + 31, context.windowY() + 36, 0xFF333333, false);
     }
     private void paintTitle(DesktopRenderContext<CompanionMainMenu, Void> context) {
-        int height = context.minimized() ? 20 : 64;
+        int height = 64;
         context.texture(ARTWORK, context.windowX(), context.windowY(), 0, 0, 176, height, 176, height, 176, 64);
         // Reserve the measured controls and a four-pixel gap; font truncation never resizes the original tabs/artwork.
         int reservedStart = managementControls(context).stream().mapToInt(c -> c.bounds().x()).min().orElse(172);
@@ -40,13 +40,13 @@ public final class CompanionMainWindow implements DesktopWindowDefinition<Compan
     }
     @Override public void renderManagementControls(DesktopRenderContext<CompanionMainMenu, Void> context, List<DesktopControlState> controls) {
         CompanionUiHooks.observer.controls(context, controls);
-        if (context.minimized()) paintTitle(context);
+        {}
         for (var state : controls) {
             var bounds = state.bounds();
             int color = !state.enabled() ? 0xFF747474 : state.pressed() ? 0xFF508788
                 : state.hovered() || state.keyboardFocused() ? 0xFFCBF3DC : state.selected() ? 0xFF8BDAB0 : 0xFFB3C8BA;
             context.fill(bounds.x(), bounds.y(), bounds.x() + bounds.width(), bounds.y() + bounds.height(), color);
-            String glyph = switch (state.control()) { case CLOSE -> "x"; case PIN -> "P"; case MINIMIZE -> state.selected() ? "+" : "-"; default -> "..."; };
+            String glyph = switch (state.control()) { case CLOSE -> "x"; case PIN -> "P";  default -> "..."; };
             context.text(glyph, bounds.x() + 2, bounds.y() + 1, 0xFF202020, false);
         }
     }

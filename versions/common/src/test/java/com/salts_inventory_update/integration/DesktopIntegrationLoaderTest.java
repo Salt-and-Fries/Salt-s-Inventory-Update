@@ -118,7 +118,7 @@ class DesktopIntegrationLoaderTest {
     @Test
     void incompatibleApiFailsWithoutResolvingProvider() throws Exception {
         Path future = directory.resolve("future.properties");
-        Files.writeString(future, Files.readString(descriptor).replace("apiVersion=5", "apiVersion=999"));
+        Files.writeString(future, Files.readString(descriptor).replace("apiVersion=6", "apiVersion=999"));
         new DesktopIntegrationLoader().load(List.of(new Source("example_optional", future)), Phase.COMMON,
             ClassLoader.getPlatformClassLoader(), id -> true);
         assertNull(System.getProperty("salts.example.common"));

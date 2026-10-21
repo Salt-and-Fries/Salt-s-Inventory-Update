@@ -171,6 +171,34 @@ public final class ControlifyGameplayHarness {
     private static void scenarios() {
         add("disposable-flat-world", ControlifyGameplayHarness::createWorld,
                 () -> mc.player != null && mc.level != null && mc.getSingleplayerServer() != null, () -> {}, 35);
+        var firstRunHost = new com.salts_inventory_update.api.client.desktop.DesktopWorkspaceHost[1];
+        add("first-world-controller-onboarding", () -> {}, () -> true, () -> {
+            check("first-world-alternative-host-installed", DesktopClientApi.workspaceHost() != null);
+            check("first-world-default-tutorial-not-opened", DesktopClientApi.currentWorkspace()
+                    .filter(com.salts_inventory_update.api.client.desktop.DesktopWorkspace::isNativeScreenActive).isEmpty());
+            check("first-world-tutorial-preference-preserved", !SaltsInventoryConfig.get().hasSeenInstructionsWindow);
+            capture("first-world-without-desktop-tutorial");
+        }, 20);
+        add("first-world-default-help-without-host", () -> {
+            firstRunHost[0] = DesktopClientApi.workspaceHost();
+            DesktopClientApi.setWorkspaceHost(null);
+        }, () -> SaltsInventoryConfig.get().hasSeenInstructionsWindow && DesktopClientApi.currentWorkspace()
+                .filter(com.salts_inventory_update.api.client.desktop.DesktopWorkspace::isNativeScreenActive).isPresent(), () -> {
+            check("default-tutorial-still-opens-without-alternative-host", true);
+            DesktopClientApi.currentWorkspace().ifPresent(com.salts_inventory_update.api.client.desktop.DesktopWorkspace::closeClosableWindows);
+            mc.setScreen(null);
+            DesktopClientApi.setWorkspaceHost(firstRunHost[0]);
+            SaltsInventoryConfig.update(config -> config.hasSeenInstructionsWindow = false);
+        }, 4);
+        add("first-world-manual-help-with-host",
+                com.salts_inventory_update.client.WindowedInventoryClient::scheduleInstructionsWindowOpen,
+                () -> SaltsInventoryConfig.get().hasSeenInstructionsWindow && DesktopClientApi.currentWorkspace()
+                        .filter(com.salts_inventory_update.api.client.desktop.DesktopWorkspace::isNativeScreenActive).isPresent(), () -> {
+            check("manual-help-still-opens-with-alternative-host", true);
+            capture("manual-desktop-help-remains-available");
+            DesktopClientApi.currentWorkspace().ifPresent(com.salts_inventory_update.api.client.desktop.DesktopWorkspace::closeClosableWindows);
+            mc.setScreen(null);
+        }, 4);
         add("native-controlify-manager-readiness", () -> {
             Controlify controlify = Controlify.instance();
             var globals = controlify.config().globalSettings();
@@ -684,7 +712,7 @@ public final class ControlifyGameplayHarness {
         mc.options.pauseOnLostFocus = false; mc.options.guiScale().set(2);
         mc.getWindow().setWindowed(1280, 900);
         SaltsInventoryConfig.update(config -> {
-            config.enableMod = true; config.hasSeenInstructionsWindow = true; config.eHoldCloseAllSeconds = 1;
+            config.enableMod = true; config.hasSeenInstructionsWindow = false; config.eHoldCloseAllSeconds = 1;
             config.returnHotbarToInventory = false; config.persistentWindows = false;
         });
         LevelSettings settings = new LevelSettings("Controller disposable QA", GameType.SURVIVAL, false,

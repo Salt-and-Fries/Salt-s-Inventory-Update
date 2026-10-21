@@ -227,9 +227,7 @@ final class DesktopWorkspaceApiTest {
     @Test void ensuringExistingCharacterRevivesSameObjectWithoutFocusOrDisposalChanges() throws Exception {
         InventoryDesktopScreen screen = screen();
         Object character = window(screen, "CHARACTER", "Character");
-        set(character, "minimized", true);
         set(character, "persistentHidden", true);
-        set(character, "ghosted", true);
         Object model = new Object();
         set(character, "apiModel", model);
         var handle = screen.workspaceAccess().ensureWindow(DesktopWorkspaceWindow.Kind.CHARACTER);
@@ -237,15 +235,12 @@ final class DesktopWorkspaceApiTest {
         assertTrue(handle.isOpen());
         assertSame(character, windows(screen).get(0));
         assertSame(model, field(character, "apiModel"));
-        assertEquals(false, field(character, "minimized"));
         assertEquals(false, field(character, "persistentHidden"));
-        assertEquals(false, field(character, "ghosted"));
         assertEquals(false, field(character, "focused"));
     }
 
     @Test void restoringRememberedViewRetainsIdentityModelAndPreferencesWithoutFocusOrOpeningCallbacks() throws Exception {
-        for (String[] flags : List.of(new String[]{"minimized"}, new String[]{"ghosted"},
-                new String[]{"persistentHidden"}, new String[]{"minimized", "ghosted", "persistentHidden"})) {
+        for (String[] flags : new String[][]{{"persistentHidden"}}) {
             InventoryDesktopScreen screen = screen();
             Object restored = window(screen, "CLIENT_API", "Remembered view");
             Object other = window(screen, "CLIENT_API", "Keyboard owner");
@@ -255,7 +250,7 @@ final class DesktopWorkspaceApiTest {
             set(restored, "apiState", state);
             set(restored, "apiViewKey", "remembered-view");
             AtomicInteger callbacks = new AtomicInteger();
-            AtomicInteger unghosted = new AtomicInteger();
+
             AtomicReference<DesktopWindowState> published = new AtomicReference<>();
             set(restored, "apiDefinition", Proxy.newProxyInstance(DesktopWindowDefinition.class.getClassLoader(),
                     new Class<?>[]{DesktopWindowDefinition.class}, (proxy, method, args) -> {
@@ -267,10 +262,7 @@ final class DesktopWorkspaceApiTest {
                         if (method.getName().equals("options")) return DesktopWindowOptions.DEFAULT;
                         if (method.getName().equals("managementControls") || method.getName().equals("popups")) return List.of();
                         if (method.getName().equals("windowStateChanged")) published.set((DesktopWindowState) args[1]);
-                        if (method.getName().equals("unghosted")) {
-                            assertSame(model, ((DesktopWindowContext<?, ?>) args[0]).model());
-                            unghosted.incrementAndGet();
-                        }
+
                         return method.getReturnType() == boolean.class ? false : null;
                     }));
             for (String flag : flags) set(restored, flag, true);
@@ -278,8 +270,6 @@ final class DesktopWorkspaceApiTest {
             set(screen, "apiKeyboardFocusWindow", other);
             UUID originalId = id(restored);
             screen.workspaceAccess().restoreWindow(originalId);
-            assertEquals(false, field(restored, "minimized"));
-            assertEquals(false, field(restored, "ghosted"));
             assertEquals(false, field(restored, "persistentHidden"));
             assertEquals(false, field(restored, "apiDisposed"));
             assertEquals(false, field(restored, "focused"));
@@ -293,10 +283,10 @@ final class DesktopWorkspaceApiTest {
             assertEquals(0, callbacks.get(), "Presentation restoration must not reopen, refocus or save user preferences");
             assertNotNull(published.get(), "The same view must receive its restored visibility state");
             assertTrue(published.get().visible());
-            int expectedResumes = List.of(flags).contains("ghosted") ? 1 : 0;
-            assertEquals(expectedResumes, unghosted.get(), "Previously ghosted native views must receive their resume hook");
+
+
             screen.workspaceAccess().restoreWindow(originalId);
-            assertEquals(expectedResumes, unghosted.get(), "An already visible view must not receive a second resume callback");
+
             assertEquals(0, callbacks.get());
         }
     }
@@ -305,12 +295,8 @@ final class DesktopWorkspaceApiTest {
         InventoryDesktopScreen screen = screen();
         Object companion = window(screen, "CLIENT_API", "Owner-hidden companion");
         set(companion, "companionHidden", true);
-        set(companion, "minimized", true);
-        set(companion, "ghosted", true);
         set(companion, "persistentHidden", true);
         screen.workspaceAccess().restoreWindow(id(companion));
-        assertEquals(true, field(companion, "minimized"));
-        assertEquals(true, field(companion, "ghosted"));
         assertEquals(true, field(companion, "persistentHidden"));
         screen.workspaceAccess().restoreWindow(UUID.randomUUID());
         assertEquals(List.of(companion), windows(screen));
@@ -420,7 +406,7 @@ final class DesktopWorkspaceApiTest {
         DesktopWorkspace workspace = screen.workspaceAccess();
         workspace.transferPair(id(view), id(other));
         assertTrue(workspace.containsPointer(id(view), 20, 30));
-        for (String flag : List.of("minimized", "ghosted", "persistentHidden", "companionHidden", "apiDisposed")) {
+        for (String flag : List.of("persistentHidden", "companionHidden", "apiDisposed")) {
             set(view, flag, true);
             assertFalse(workspace.containsPointer(id(view), 20, 30), flag + " windows must not own pointer input");
             set(view, flag, false);
@@ -468,7 +454,7 @@ final class DesktopWorkspaceApiTest {
         set(screen, "apiKeyboardFocusWindow", second);
         assertTrue(workspace.pointer(id(second), DesktopWorkspace.PointerAction.PRESS, -200, -200, 0, 0, 0));
         assertEquals(1, outsidePresses.get(), "A modal outside press must reach the unchanged native dismissal callback");
-        set(second, "ghosted", true);
+        set(second, "persistentHidden", true);
         assertTrue(workspace.containsPointer(id(first), 20, 30), "A hidden modal cannot capture a visible window");
         DesktopClientApi.setWorkspaceHost(null);
         assertTrue(workspace.containsPointer(id(undisplayed), 20, 30), "Ordinary desktop modality still uses the native owner");
@@ -503,9 +489,9 @@ final class DesktopWorkspaceApiTest {
         assertEquals(List.of(new DesktopSlotHit(0, -10, 20)), workspace.visibleSlots(id(view)),
                 "Snapping must reach the actual external slot without adding visual-only or duplicate regions");
         assertSame(menu.slots.get(0), workspace.hoveredSlot(id(view), -5, 25));
-        set(view, "minimized", true);
+        set(view, "persistentHidden", true);
         assertTrue(workspace.visibleSlots(id(view)).isEmpty());
-        set(view, "minimized", false);
+        set(view, "persistentHidden", false);
         workspace.transferPair(id(other), UUID.randomUUID());
         assertTrue(workspace.visibleSlots(id(view)).isEmpty(), "Undisplayed native slots must not appear as snap targets");
     }
@@ -548,9 +534,9 @@ final class DesktopWorkspaceApiTest {
         assertFalse(workspace.dismissOutsidePointer(id(first), 195, 25), "An actual popup hit is not an outside press");
         assertFalse(workspace.dismissOutsidePointer(id(first), Double.NaN, 25));
         assertFalse(workspace.dismissOutsidePointer(id(undisplayed), -200, -200));
-        set(first, "ghosted", true);
+        set(first, "persistentHidden", true);
         assertFalse(workspace.dismissOutsidePointer(id(first), -200, -200));
-        set(first, "ghosted", false);
+        set(first, "persistentHidden", false);
         assertTrue(workspace.dismissOutsidePointer(id(first), -200, -200));
         assertArrayEquals(new int[]{1, 0, 0}, dismissals, "The supplied owner's coordinates must never be applied to another popup");
         assertFalse(workspace.dismissOutsidePointer(id(first), -200, -200), "The native dismissal removes the popup exactly once");

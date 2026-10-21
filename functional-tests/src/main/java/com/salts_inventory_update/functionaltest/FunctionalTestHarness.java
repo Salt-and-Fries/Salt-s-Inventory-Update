@@ -141,9 +141,9 @@ public final class FunctionalTestHarness {
                 config.allowResizing = true;
                 config.enableWindowSnapping = false;
                 config.resetLockedWindows = false;
-                config.enableGhostPins = true;
+
                 config.globalPins = true;
-                config.ghostWindowOpacity = 42.0D;
+
                 config.eHoldCloseAllSeconds = 0.10D;
             });
 
@@ -153,7 +153,6 @@ public final class FunctionalTestHarness {
                 "config.window_opening_style_normalizes",
                 WindowOpeningStyle.parse("not_a_real_style").name().equals(normalized.windowOpeningStyle)
             );
-            recorder.check("config.ghost_opacity_clamps_high", normalized.ghostWindowOpacity == 0.90D);
             recorder.check("config.e_hold_seconds_clamps_low", normalized.eHoldCloseAllSeconds == 0.50D);
             recorder.check("config.global_pins_round_trips", normalized.globalPins);
         } finally {
@@ -218,7 +217,7 @@ public final class FunctionalTestHarness {
         if (crafter != null) {
             recorder.check("packets.menu_type_round_trip.crafter", roundTrips(crafter));
         }
-        recorder.check("packets.pin_mode_order", DesktopPackets.PIN_MODE_UNPINNED == 0 && DesktopPackets.PIN_MODE_PINNED == 1 && DesktopPackets.PIN_MODE_GHOST_PINNED == 2);
+        recorder.check("packets.pin_mode_order", java.util.Arrays.stream(com.salts_inventory_update.api.client.desktop.DesktopWindowAction.values()).noneMatch(action -> action.name().equals("MINIMIZE") || action.name().equals("GHOST")));
         recorder.check("packets.quick_target_order", DesktopPackets.QUICK_TARGET_DEFAULT == 0 && DesktopPackets.QUICK_TARGET_SESSION == 1 && DesktopPackets.QUICK_TARGET_HOTBAR == 2);
         recorder.check("packets.special_kinds",
             DesktopPackets.SPECIAL_GENERIC == 0
@@ -453,9 +452,7 @@ public final class FunctionalTestHarness {
         boolean allowResizing,
         boolean enableWindowSnapping,
         boolean resetLockedWindows,
-        boolean enableGhostPins,
         boolean globalPins,
-        double ghostWindowOpacity,
         double eHoldCloseAllSeconds
     ) {
         private static ConfigSnapshot capture(SaltsInventoryConfig.ConfigFile config) {
@@ -467,9 +464,7 @@ public final class FunctionalTestHarness {
                 config.allowResizing,
                 config.enableWindowSnapping,
                 config.resetLockedWindows,
-                config.enableGhostPins,
                 config.globalPins,
-                config.ghostWindowOpacity,
                 config.eHoldCloseAllSeconds
             );
         }
@@ -482,9 +477,9 @@ public final class FunctionalTestHarness {
             config.allowResizing = this.allowResizing;
             config.enableWindowSnapping = this.enableWindowSnapping;
             config.resetLockedWindows = this.resetLockedWindows;
-            config.enableGhostPins = this.enableGhostPins;
+
             config.globalPins = this.globalPins;
-            config.ghostWindowOpacity = this.ghostWindowOpacity;
+
             config.eHoldCloseAllSeconds = this.eHoldCloseAllSeconds;
         }
     }

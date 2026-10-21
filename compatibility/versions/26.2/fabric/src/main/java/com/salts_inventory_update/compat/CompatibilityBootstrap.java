@@ -11,6 +11,7 @@ public final class CompatibilityBootstrap {
         initialize("toms_storage", "com.salts_inventory_update.compat.toms_storage.server.TomsStorageServerCompat", "initialize");
     }
     public static void initializeClient() {
+        initialize("raised", "com.salts_inventory_update.compat.raised.RaisedHudIntegration", "initialize");
         initialize("ae2", "com.salts_inventory_update.compat.ae2.AE2Bootstrap", "initializeClient");
         initialize("toms_storage", "com.salts_inventory_update.compat.toms_storage.client.TomsStorageClientCompat", "initialize");
     }

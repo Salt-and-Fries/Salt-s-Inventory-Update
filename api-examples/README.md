@@ -6,7 +6,7 @@
 
 ```properties
 modId=developer_examples
-apiVersion=5
+apiVersion=6
 common=example.desktop.ExampleCommonIntegration
 client=example.desktop.ExampleClientIntegration
 ```
@@ -24,3 +24,7 @@ The machine uses `OriginalSlotArtwork` for computed gesture previews and exposes
 `ui/src/main/java/example/companion` demonstrates two independent main sessions acquiring one real nine-slot Network Tool companion, separate sources, source replacement authorization, drag-only lifetime policy and opt-in controls in original title artwork. The ordinary backend and menu types contain no Salt references. Bind `CompanionMenus` alongside your normal registry registration, then use the optional companion providers named in `companion-demo` metadata. See the [public companion contract](../docs/markdown/companion_windows.md).
 
 Build the standalone NeoForge 26.3 consumer with `./gradlew :26.3:neoforge:companionDemoJar`. It packages the example backend, optional providers, original textures and normal fallback screens, without Salt classes or a required Salt dependency. See [the runnable demonstration README](companion-demo/README.md). The all-target `verifyApiExamples` task also compiles its shared companion integration sources on all twelve supported targets.
+
+## HUD positioning
+
+[RearrangedHud](hud/src/main/java/example/hud/RearrangedHud.java) demonstrates a public-API-only provider with independently placed offhand and a scaled vertical hotbar. Match it to your own HUD renderer. See the [HUD API guide](../docs/markdown/hud_interoperability.md).

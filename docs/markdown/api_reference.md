@@ -1,4 +1,4 @@
-# Public API signature reference — 0.1.4 / API 5
+# Public API signature reference — 0.1.5 / API 6
 
 This inventory lists public consumer declarations from the shared API and the 26.3 native API. Signatures are reference notation, not standalone implementations. Record components supply their corresponding accessors and canonical constructor; enum values are listed. Bodies and private implementation members are omitted. The [API guide](desktop_window_api.md) specifies defaults, lifecycle, geometry, threading and ownership; the [transfer reference](recipe_transfer_api.md) specifies transfer validation and bounds.
 
@@ -66,6 +66,84 @@ public enum DesktopHitRole {
     public boolean resizing();
     public int resizeX();
     public int resizeY();
+}
+```
+
+## DesktopHudApi
+
+`com.salts_inventory_update.api.client.desktop`. Shared; no native Minecraft types. [Source](../../versions/common/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopHudApi.java).
+
+```java
+import com.salts_inventory_update.api.integration.DesktopDiagnostics;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+public final class DesktopHudApi {
+    public static synchronized RegistrationHandle register(String owner, int priority, DesktopHudLayoutProvider provider);
+    public static DesktopHudLayout resolve(DesktopHudContext context, DesktopHudLayout base);
+    @FunctionalInterface public interface RegistrationHandle extends AutoCloseable {
+        @Override void close();
+    }
+}
+```
+
+## DesktopHudContext
+
+`com.salts_inventory_update.api.client.desktop`. Shared; no native Minecraft types. [Source](../../versions/common/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopHudContext.java).
+
+```java
+public record DesktopHudContext(int viewportWidth, int viewportHeight, double guiScale) {
+    public DesktopHudContext(int viewportWidth, int viewportHeight, double guiScale);
+}
+```
+
+## DesktopHudLayout
+
+`com.salts_inventory_update.api.client.desktop`. Shared; no native Minecraft types. [Source](../../versions/common/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopHudLayout.java).
+
+```java
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.UnaryOperator;
+public record DesktopHudLayout(List<DesktopHudSlot> slots) {
+    public DesktopHudLayout(List<DesktopHudSlot> slots);
+    public static DesktopHudLayout standard(int width, int height, int offhandGap);
+    public DesktopHudLayout mapSlots(UnaryOperator<DesktopHudSlot> mapper);
+    public DesktopHudLayout transformed(DesktopTransform transform);
+    public DesktopHudLayout translated(double x, double y);
+}
+```
+
+## DesktopHudLayoutProvider
+
+`com.salts_inventory_update.api.client.desktop`. Shared; no native Minecraft types. [Source](../../versions/common/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopHudLayoutProvider.java).
+
+```java
+public interface DesktopHudLayoutProvider {
+    DesktopHudLayout adapt(DesktopHudContext context, DesktopHudLayout layout);
+}
+```
+
+## DesktopHudSlot
+
+`com.salts_inventory_update.api.client.desktop`. Shared; no native Minecraft types. [Source](../../versions/common/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopHudSlot.java).
+
+```java
+import java.util.Objects;
+public record DesktopHudSlot(Kind kind, int index, DesktopTransform transform, boolean visible, boolean interactive) {
+    public enum Kind {
+        HOTBAR, OFFHAND
+    }
+    public DesktopHudSlot(Kind kind, int index, DesktopTransform transform, boolean visible, boolean interactive);
+    public boolean contains(double screenX, double screenY);
+    public DesktopHudSlot withTransform(DesktopTransform next);
+    public DesktopHudSlot withVisibility(boolean next);
+    public DesktopHudSlot withInteraction(boolean next);
+    public DesktopHudSlot transformed(DesktopTransform outer);
 }
 ```
 
@@ -157,7 +235,7 @@ public enum DesktopViewportPolicy {
 
 ```java
 public enum DesktopWindowAction {
-    FOCUS, USER_CLOSE, MINIMIZE, RESTORE, PIN, UNPIN, GHOST, UNGHOST, MOVE, RESIZE, LOCK, UNLOCK, MANAGEMENT_MENU
+    FOCUS, USER_CLOSE, PIN, UNPIN, MOVE, RESIZE, LOCK, UNLOCK, MANAGEMENT_MENU
 }
 ```
 
@@ -178,7 +256,7 @@ public record DesktopWindowBounds(int x, int y, int width, int height) {
 
 ```java
 public enum DesktopWindowControl {
-    FOCUS, MINIMIZE, CLOSE, ELLIPSIS, LINK, LOCK, PIN, SORT_WINDOWS, RESIZE_GRIP
+    FOCUS, CLOSE, ELLIPSIS, LINK, LOCK, PIN, SORT_WINDOWS, RESIZE_GRIP
 }
 ```
 
@@ -218,10 +296,10 @@ public interface DesktopWindowHandle {
 `com.salts_inventory_update.api.client.desktop`. Shared; no native Minecraft types. [Source](../../versions/common/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopWindowOptions.java).
 
 ```java
-public record DesktopWindowOptions(boolean movable, boolean minimizable, boolean pinnable, boolean ghostable, boolean closable, boolean lockable, boolean managementMenu) {
-    public static final DesktopWindowOptions DEFAULT = new DesktopWindowOptions(true, true, true, true, true, true, true);
-    public static final DesktopWindowOptions DRAG_ONLY = new DesktopWindowOptions(true, false, false, false, false, false, false);
-    public DesktopWindowOptions(boolean movable, boolean minimizable, boolean pinnable, boolean ghostable, boolean closable);
+public record DesktopWindowOptions(boolean movable, boolean pinnable, boolean closable, boolean lockable, boolean managementMenu) {
+    public static final DesktopWindowOptions DEFAULT = new DesktopWindowOptions(true, true, true, true, true);
+    public static final DesktopWindowOptions DRAG_ONLY = new DesktopWindowOptions(true, false, false, false, false);
+    public DesktopWindowOptions(boolean movable, boolean pinnable, boolean closable);
 }
 ```
 
@@ -260,7 +338,7 @@ public record DesktopWindowSize(int width, int height) {
 
 ```java
 import java.util.UUID;
-public record DesktopWindowState(UUID instanceId, boolean open, int x, int y, int width, int height, boolean minimized, boolean pinned, boolean ghosted, boolean locked, boolean keyboardFocused, boolean inventoryFocused, boolean visible) {
+public record DesktopWindowState(UUID instanceId, boolean open, int x, int y, int width, int height, boolean pinned, boolean locked, boolean keyboardFocused, boolean inventoryFocused, boolean visible) {
 }
 ```
 
@@ -402,7 +480,7 @@ public interface DesktopIntegration {
 import java.util.Objects;
 import java.util.function.Predicate;
 public record DesktopIntegrationContext(String modId, Phase phase, Predicate<String> loadedMods) {
-    public static final int API_VERSION = 5;
+    public static final int API_VERSION = 6;
     public static final String DESCRIPTOR_PATH = "META-INF/salts_inventory_update.integration.properties";
     public DesktopIntegrationContext(String modId, Phase phase, Predicate<String> loadedMods);
     public boolean isModLoaded(String id);
@@ -801,8 +879,6 @@ public interface DesktopWindowContext<T, S> {
     int contentHeight();
     boolean focused();
     boolean keyboardFocused();
-    boolean minimized();
-    boolean ghosted();
     ItemStack carriedStack();
     boolean recipeBookVisible();
     boolean refreshRecipeBook();
@@ -876,8 +952,6 @@ public interface DesktopWindowDefinition<T, S> {
     default boolean modal(DesktopWindowContext<T, S> context);
     default void renderOverlay(DesktopRenderContext<T, S> context);
     default void focusChanged(DesktopWindowContext<T, S> context, boolean focused);
-    default void ghosted(DesktopWindowContext<T, S> context);
-    default void unghosted(DesktopWindowContext<T, S> context);
     default void tick(DesktopWindowContext<T, S> context);
     default void render(DesktopRenderContext<T, S> context);
     default @Nullable RecipeBookComponent<?> createRecipeBook(DesktopWindowContext<T, S> context);
@@ -1634,7 +1708,6 @@ public interface DesktopServerSessionContext<T extends AbstractContainerMenu, S>
     int sessionId();
     String sourceKey();
     boolean visible();
-    boolean ghostPinned();
     S state();
     void sendToClient(Identifier channel, byte[] data);
     default <P> void sendToClient(Identifier channel, P payload, StreamCodec<? super RegistryFriendlyByteBuf, P> codec);
@@ -1660,7 +1733,6 @@ public interface DesktopServerWindowHandler<T extends AbstractContainerMenu, S> 
     default void tick(DesktopServerSessionContext<T, S> context);
     default void closed(DesktopServerSessionContext<T, S> context);
     default void visibilityChanged(DesktopServerSessionContext<T, S> context, boolean visible);
-    default void pinChanged(DesktopServerSessionContext<T, S> context, boolean ghostPinned);
     default DesktopTransferDecision validateTransfer(DesktopTransferRequest<T, S> request);
 }
 ```

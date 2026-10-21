@@ -131,12 +131,17 @@ def classpath(manifest):
 
 
 def jar(path, core_version=None):
-    if core_version is None:
-        # Standalone reporters use the declared Core release, never the companion label.
-        declaration = (ROOT / "build.gradle.kts").read_text(encoding="utf-8")
-        core_version = re.search(r'^version = "([^"]+)"$', declaration, re.MULTILINE)[1]
     path = Path(path)
     (game, loader), version = artifact_target(path)
+    if core_version is None:
+        # Resolve the target's Core hotfix independently of the companion release label.
+        declaration = (ROOT / "build.gradle.kts").read_text(encoding="utf-8")
+        core_version = re.search(r'^version = "([^"]+)"$', declaration, re.MULTILINE)[1]
+        properties = (ROOT / 'gradle.properties').read_text(encoding='utf-8')
+        override = re.search(r'^' + re.escape('coreVersion' + game.replace('.', '_')) + r'=(\S+)\s*$',
+                             properties, re.MULTILINE)
+        if override:
+            core_version = override[1]
     assert not any(marker in path.name for marker in ("-dev", "-sources", "-api")), path
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())

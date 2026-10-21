@@ -91,7 +91,7 @@ final class AEManagementControls {
             case PIN -> state.pinned() ? "Unpin" : "Pin";
             case LOCK -> state.locked() ? "Unlock" : "Lock";
             case LINK -> "Link windows";
-            case MINIMIZE -> state.minimized() ? "Restore" : "Minimize";
+
             case CLOSE -> "Close";
             case SORT_WINDOWS -> "Sort windows";
             default -> "More";
@@ -103,25 +103,7 @@ final class AEManagementControls {
         if (controls.isEmpty()) {
             return;
         }
-        if (context.windowHandle().state().minimized()) {
-            BackgroundGenerator.draw(context.windowWidth(), 19, context.nativeGraphics(),
-                    context.windowX(), context.windowY());
-            var state = (AEWindow.State) context.state();
-            var position = state.content.desktopManagementTitlePosition();
-            var title = state.content.desktopManagementTitle();
-            int firstControl = controls.stream()
-                    .filter(control -> control
-                            .control() != com.salts_inventory_update.api.client.desktop.DesktopWindowControl.RESIZE_GRIP)
-                    .mapToInt(control -> control.bounds().x()).min().orElse(context.windowX() + context.windowWidth());
-            int available = Math.max(0, firstControl - context.windowX() - position.getX() - 6);
-            String text = title.getString();
-            if (context.fontWidth(title) > available) {
-                String suffix = context.trimToWidth("...", available);
-                text = context.trimToWidth(text, Math.max(0, available - context.fontWidth(suffix))) + suffix;
-            }
-            context.text(text, context.windowX() + position.getX(), context.windowY() + position.getY(),
-                    0xFF413F54, false);
-        }
+        {}
         for (var control : controls) {
             var b = control.bounds();
             int x = b.x(), y = b.y(), w = b.width(), h = b.height();
@@ -150,9 +132,7 @@ final class AEManagementControls {
                         : new String[] { "..##.", "..#..", "#####", "#.#.#", "#####" };
                 case LINK -> new String[] { ".##..", "#..#.", ".#.#.", ".#..#", "..##." };
                 case SORT_WINDOWS -> new String[] { "#.#.#", "#.#.#", ".....", "##.##", "....." };
-                case MINIMIZE -> control.selected()
-                        ? new String[] { "#####", "#...#", "#...#", "#...#", "#####" }
-                        : new String[] { ".....", ".....", ".....", ".....", "#####" };
+
                 default -> new String[] { ".....", ".....", "#.#.#", ".....", "....." };
             };
             int offset = control.pressed() ? 1 : 0;

@@ -1,4 +1,4 @@
-# Shared inventory companions — API 5
+# Shared inventory companions — API 6
 
 The complete public contract, constructors, methods, source identity, ownership transitions, focus, inventory routing, teardown, controls and threading are maintained in [the main API guide](desktop_window_api.md#shared-inventory-companions-and-original-surface-controls).
 

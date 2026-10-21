@@ -58,7 +58,6 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopPlayerSessionPay
 import com.salts_inventory_update.network.DesktopPackets.DesktopLinkPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopRenamePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionClosedPayload;
-import com.salts_inventory_update.network.DesktopPackets.DesktopSessionPinPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionVisibilityPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotReference;
@@ -518,7 +517,7 @@ public final class DesktopContainerClient {
                 && ClientPlayNetworking.canSend(DesktopRenamePayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopCloseSessionPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopFinishWorkspacePayload.TYPE)
-                && ClientPlayNetworking.canSend(DesktopSessionPinPayload.TYPE)
+
                 && ClientPlayNetworking.canSend(DesktopSessionVisibilityPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopOpenLinkedSourcesPayload.TYPE)
                 && ClientPlayNetworking.canSend(DesktopLinkPayload.TYPE)
@@ -987,6 +986,14 @@ public final class DesktopContainerClient {
             && MUTATION_QUEUE.size() < MAX_QUEUED_MUTATIONS;
     }
 
+    public static boolean hasPendingSlotMutations() {
+        return inFlightMutation != null || !MUTATION_QUEUE.isEmpty();
+    }
+
+    private static long slotMutationDiscardEpoch;
+
+    public static long slotMutationDiscardEpoch() { return slotMutationDiscardEpoch; }
+
     /**
      * Native/optimistic controls must not change opaque local state while another mutation owns the
      * lane. Unlike slot gestures, that state cannot be reconstructed safely if a queued intent is
@@ -1025,14 +1032,7 @@ public final class DesktopContainerClient {
         send(new DesktopFinishWorkspacePayload(CONNECTION.connectionNonce(), DesktopPackets.PLAYER_MENU_SESSION, auth.token()), "finish-workspace");
     }
 
-    public static void setSessionPinMode(int sessionId, PinMode pinMode) {
-        SessionAuth auth = sessionAuth(sessionId);
-        if (auth == null) {
-            return;
-        }
-        DesktopDebug.trace("client send pin session={} pin={}", sessionId, pinMode);
-        send(new DesktopSessionPinPayload(CONNECTION.connectionNonce(), sessionId, auth.token(), pinModeToPacket(pinMode)), "pin");
-    }
+
 
     public static void setSessionVisible(int sessionId, boolean visible) {
         SessionAuth auth = sessionAuth(sessionId);
@@ -1078,13 +1078,7 @@ public final class DesktopContainerClient {
         send(new DesktopLinkPayload(CONNECTION.connectionNonce(), firstSessionId, first.token(), secondSessionId, second.token(), DesktopLinkPayload.ACTION_DETACH), "unlink");
     }
 
-    private static int pinModeToPacket(PinMode pinMode) {
-        return switch (pinMode) {
-            case UNPINNED -> DesktopPackets.PIN_MODE_UNPINNED;
-            case PINNED -> DesktopPackets.PIN_MODE_PINNED;
-            case GHOST_PINNED -> DesktopPackets.PIN_MODE_GHOST_PINNED;
-        };
-    }
+
 
     private static boolean queueMutation(String label, Set<Integer> sessionIds, MutationPacketFactory factory) {
         if (!isGameplayActive()) {
@@ -1217,6 +1211,7 @@ public final class DesktopContainerClient {
         MUTATION_QUEUE.removeIf(queued -> queued.sessionIds().contains(sessionId));
         int removed = before - MUTATION_QUEUE.size();
         if (removed > 0) {
+            slotMutationDiscardEpoch++;
             DesktopDebug.trace(
                 "client mutation intents discarded session={} count={} reason={}",
                 sessionId,
@@ -1227,6 +1222,7 @@ public final class DesktopContainerClient {
     }
 
     private static void discardPendingMutations(String reason) {
+        slotMutationDiscardEpoch++;
         if (!MUTATION_QUEUE.isEmpty()) {
             DesktopDebug.trace("client mutation intents discarded count={} reason={}", MUTATION_QUEUE.size(), reason);
             MUTATION_QUEUE.clear();

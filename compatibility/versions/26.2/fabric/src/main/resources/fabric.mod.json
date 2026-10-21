@@ -51,6 +51,7 @@
     "fabric-api": "*"
   },
   "suggests": {
+    "raised": ">=6.0.2",
     "ae2": "*",
     "jei": "*",
     "roughlyenoughitems": "*",

@@ -1,0 +1,100 @@
+{
+  "targets": [
+    {
+      "minecraft": "1.20.1",
+      "loader": "fabric",
+      "version": "1.20-2.26-fabric",
+      "coordinate": "maven.modrinth:mouse-tweaks:mjuG4AYd",
+      "sha512": "d0faf200dda358efddad2d2809f646023f4dd06254572369e07f3bf33cb6941f0fcdb02db4675b30b4f3bd542cbf6196e135680ba91a2b74c2b071f34978e2d5",
+      "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/mjuG4AYd/MouseTweaks-fabric-mc1.20-2.26.jar"
+    },
+    {
+      "minecraft": "1.20.1",
+      "loader": "forge",
+      "version": "1.20.1-2.25.1-forge",
+      "coordinate": "maven.modrinth:mouse-tweaks:7JVXOe3K",
+      "sha512": "a3bb0272c0a1a3be9250dfee030bb8f86217fa6a32bd534be8c940fdd8c466c800c2df85874877983ced36ecfc28c8ced6c0d42107c1ab621385b4be9a7c65eb",
+      "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/7JVXOe3K/MouseTweaks-forge-mc1.20.1-2.25.1.jar"
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "version": "1.21-2.26-fabric",
+      "coordinate": "maven.modrinth:mouse-tweaks:ylmBQ38A",
+      "sha512": "1744a48a47aedcbf19a0a93f78473cf0221fc4782852dca7fc02685719174664b4f9d95d353fcfc16902ac3815594511ba6d9ab14391f9b7e25ec9b2e777927a",
+      "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/ylmBQ38A/MouseTweaks-fabric-mc1.21-2.26.jar"
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "version": "1.21-2.26.1-neoforge",
+      "coordinate": "maven.modrinth:mouse-tweaks:9I21YYxf",
+      "sha512": "f95c0cc881211ee0442434976775e07aae40b4a2ba4e3a85455bc57ca9d3c991e239cd98374a8abd442dc9c378dcd9001e2caa1bf69991d424b5652dd7f3483b",
+      "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/9I21YYxf/MouseTweaks-neoforge-mc1.21-2.26.1.jar"
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "fabric",
+      "version": "1.21.11-2.30-fabric",
+      "coordinate": "maven.modrinth:mouse-tweaks:i1duwnJl",
+      "sha512": "bc2202d067f997a191d6e435d326e12cc5756b72c076e0e342e9f3119dbeb29de7b77fac62d8b48a60e657c79e35bc7e248df969d43f9b5e53492f7890fc2b9c",
+      "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/i1duwnJl/MouseTweaks-fabric-mc1.21.11-2.30.jar"
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "neoforge",
+      "version": "1.21.11-2.30-neoforge",
+      "coordinate": "maven.modrinth:mouse-tweaks:bSiQNj2W",
+      "sha512": "2e0d026ecaac091f1f14e582ab604432e35f4fc246bb62b71605a69650d05a88f95450656123db5d6124639060b1bba68c8db7ec434e25ffde29ce931d6b8328",
+      "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/bSiQNj2W/MouseTweaks-neoforge-mc1.21.11-2.30.jar"
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "fabric",
+      "version": "26.1-2.31-fabric",
+      "coordinate": "maven.modrinth:mouse-tweaks:EBIKCzuP",
+      "sha512": "4dd59950e1c249a9c5cae50beff86c5c59b19b0f2cdf72dea0315eeba93bced72a300eebfef435f3bf17532dc541d74e1e69cd577ab5b08067e34e7bcccddc97",
+      "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/EBIKCzuP/MouseTweaks-fabric-mc26.1-2.31.jar"
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "neoforge",
+      "version": "26.1-2.31-neoforge",
+      "coordinate": "maven.modrinth:mouse-tweaks:Vd1fgVcT",
+      "sha512": "020927251342a5f73363fbf8312c4e7219c24fd3021190b2387eeb1472ac16b3291b14d19ce3d4e4063c6d5f24a1b92a21b9ce290359af22e40dd4ff14597e9e",
+      "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/Vd1fgVcT/MouseTweaks-neoforge-mc26.1-2.31.jar"
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "fabric",
+      "version": "26.2-2.31-fabric",
+      "coordinate": "maven.modrinth:mouse-tweaks:jOiTBIaB",
+      "sha512": "bc77723465dc4aef7a3a8fa2fea3641df1e6ba7cc8a2d86cd2659ef65ca661f6a763d3997fdaed1f8ff6c78a4c6061f8074160ca3162a29021735779a6c55e46",
+      "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/jOiTBIaB/MouseTweaks-fabric-mc26.2-2.31.jar"
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "neoforge",
+      "version": "26.2-2.31-neoforge",
+      "coordinate": "maven.modrinth:mouse-tweaks:rokwij6O",
+      "sha512": "2cc9fbf44a704bfcec9a6744ff1c8025c22c6675196e25fbeae213d4e30872478763ffc82e902f0b19cfb7fdd8c4295407dab57f22911e34f299df1b1ed20379",
+      "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/rokwij6O/MouseTweaks-neoforge-mc26.2-2.31.jar"
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "fabric",
+      "version": "26.3-2.31-fabric",
+      "coordinate": "maven.modrinth:mouse-tweaks:LeMuMhLv",
+      "sha512": "61c011308b5d1d0b2163473cbbc1ad0f1b3ac873b77e3e9ff67ccb437a946fbe5f34077281ebd2b91647324969d319f6499ac4b319cfcb9ea027bac47a52c081",
+      "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/LeMuMhLv/MouseTweaks-fabric-mc26.3-2.31.jar"
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "neoforge",
+      "version": "26.3-2.31-neoforge",
+      "coordinate": "maven.modrinth:mouse-tweaks:f4tPRGDq",
+      "sha512": "93e7ac34bbc15de635073722054b11fed3981e0f39954286e8a57214ce5ce007e5562882cb81cd230c8ea49970970c84548cfc598332c539777986090b090798",
+      "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/f4tPRGDq/MouseTweaks-neoforge-mc26.3-2.31.jar"
+    }
+  ]
+}

@@ -32,7 +32,7 @@ side = "BOTH"
 [[dependencies.${mod_id}]]
 modId = "salts_inventory_update"
 mandatory = true
-versionRange = "[${core_version}]"
+versionRange = "[${legacy_core_version}]"
 ordering = "AFTER"
 side = "BOTH"
 
@@ -90,3 +90,10 @@ mandatory = false
 versionRange = "[0,)"
 ordering = "AFTER"
 side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "raised"
+mandatory = false
+versionRange = "[6.0.2,)"
+ordering = "AFTER"
+side = "CLIENT"

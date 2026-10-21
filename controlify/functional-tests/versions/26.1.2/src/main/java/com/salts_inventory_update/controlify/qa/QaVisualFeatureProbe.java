@@ -27,6 +27,7 @@ public final class QaVisualFeatureProbe {
     public record Preview(UUID id, String item, WindowPlacement placement, String mode, boolean active,
                           int nativeItemDraws, double left, double top, double right, double bottom) { }
     public record Tuck(WindowPlacement placement, List<String> textures, int frame, double size) { }
+    public record Surface(boolean targetLive, double live) { }
     public record AlphabetBounds(String letter, int firstIndex, double left, double top, double right, double bottom) { }
     private static QaWorkspaceOwner owner;
     private static UUID iconId;
@@ -38,6 +39,7 @@ public final class QaVisualFeatureProbe {
     private static int tuckFrame;
     private static final Map<UUID, Preview> previews = new LinkedHashMap<>();
     private static final Set<UUID> nativePanes = new LinkedHashSet<>();
+    private static final Map<UUID, Surface> surfaceFrames = new LinkedHashMap<>();
     private static final Map<String, Map<String,Object>> decodedTextures = new LinkedHashMap<>();
     private static final List<String> violations = new ArrayList<>();
     private static final List<String> tuckTextures = new ArrayList<>();
@@ -70,7 +72,17 @@ public final class QaVisualFeatureProbe {
 
     private QaVisualFeatureProbe() { }
     public static void install(QaWorkspaceOwner value) { owner = value; }
-    public static void workspaceBegin() { previews.clear(); nativePanes.clear(); workspaceFrames++; }
+    public static void workspaceBegin() { previews.clear(); nativePanes.clear(); surfaceFrames.clear(); workspaceFrames++; }
+    public static void surface(UUID id, boolean targetLive, double live) {
+        surfaceFrames.put(id, new Surface(targetLive, live));
+        if (!Double.isFinite(live) || live < 0 || live > 1) violation("invalid native surface blend="+id+":"+live);
+    }
+    public static void workspaceEnd() {
+        for (var entry : surfaceFrames.entrySet()) {
+            if (entry.getValue().live() >= .005 && !nativePanes.contains(entry.getKey()))
+                violation("crossfading live surface omitted its native pane="+entry);
+        }
+    }
     public static Map<UUID, Preview> previews() { return Map.copyOf(previews); }
     public static Set<UUID> nativePanes() { return Set.copyOf(nativePanes); }
     public static List<String> violations() { return List.copyOf(violations); }
@@ -94,7 +106,11 @@ public final class QaVisualFeatureProbe {
         var preview = new Preview(iconId, BuiltInRegistries.ITEM.getKey(iconItem.getItem()).toString(), iconPlacement, mode, active,
             iconItemDraws, iconLeft, iconTop, iconRight, iconBottom);
         previews.put(iconId, preview); previewFrames++;
-        if (active || iconItemDraws != 1) violation("invalid inactive native item preview="+preview);
+        var surface = surfaceFrames.get(iconId);
+        // Active targets retain a fading icon while their measured native surface blends in.
+        // A settled active pane must never keep an icon; every icon still draws its exact native item once.
+        if (iconItemDraws != 1 || active && (surface == null || !surface.targetLive() || surface.live() >= .995))
+            violation("invalid inactive or crossfading native item preview="+preview+",surface="+surface);
         var expected = WorkspacePreviewGeometry.icon(iconPlacement,new WindowSize(iconBounds.width(),iconBounds.height()));
         if (Math.abs(iconLeft-expected.x()) > .05 || Math.abs(iconTop-expected.y()) > .05
                 || Math.abs(iconRight-iconLeft-expected.size()) > .05 || Math.abs(iconBottom-iconTop-expected.size()) > .05)

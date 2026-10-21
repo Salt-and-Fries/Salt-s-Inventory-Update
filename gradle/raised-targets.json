@@ -1,0 +1,102 @@
+{
+  "checked_at": "2026-10-21",
+  "upstream_version": "6.0.2",
+  "targets": [
+    {
+      "minecraft": "1.20.1",
+      "loader": "fabric",
+      "id": "2UqPDycR",
+      "version": "Fabric-1.20.1-6.0.2",
+      "sha512": "4bd46bff57d4501efcbf2a2f97201eccbc90b9e3ea4d952a1bc37ccac8d0e610882d62abc30087319c73fc236f7daf39ab142e6f567bbf9b63a57760635b9636",
+      "coordinate": "maven.modrinth:raised:2UqPDycR"
+    },
+    {
+      "minecraft": "1.20.1",
+      "loader": "forge",
+      "id": "55Dn9sqP",
+      "version": "Forge-1.20.1-6.0.2",
+      "sha512": "fec37b14a4001979ffcfb558628aa716bafee5677e54490c0ad830fba91303db1157c645bb2769fde829db71e9990eb41cb6da9a5adc9e6e1fcc72a25f51795f",
+      "coordinate": "maven.modrinth:raised:55Dn9sqP"
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "id": "bje4Szz5",
+      "version": "Fabric-1.21.1-6.0.2",
+      "sha512": "f9bd7f4b76fbaf2386fa37c1040cd8ccd7ca8ad187baff3c6c93926f94714d58e31c9527a6ca47dcfe1361f9bb97a75ac22d679602686da01760577faf9fb715",
+      "coordinate": "maven.modrinth:raised:bje4Szz5"
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "id": "utAvUolB",
+      "version": "NeoForge-1.21.1-6.0.2",
+      "sha512": "9fd63b902a2da3647c0c7b7a795bc633786dbac830cb1de7f9aeb892b64e23eb3b1b7608dd190585992221a88d69a7ff49c0df6f0b50b2896894f4b01ad09882",
+      "coordinate": "maven.modrinth:raised:utAvUolB"
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "fabric",
+      "id": "qI5fwV9q",
+      "version": "Fabric-1.21.11-6.0.2",
+      "sha512": "6cdbfc20cf16b6f39bf01cd3cd8d2d86487f34bd94f75d3cef39526add910eb7fd43f625f051a0ddcbdf469f0168942113527f74f69c49d011965352906c61b8",
+      "coordinate": "maven.modrinth:raised:qI5fwV9q"
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "neoforge",
+      "id": "vFJKKfpW",
+      "version": "NeoForge-1.21.11-6.0.2",
+      "sha512": "19ecedb067ffee3e4d2b0b457b6cdf982fd295c536ad93a6e93a5d3f783596ef020732382c05ff1f49423ec34847f4e9427ce33005b3125f89aaf664b2ebab49",
+      "coordinate": "maven.modrinth:raised:vFJKKfpW"
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "fabric",
+      "id": "13Rq7rQr",
+      "version": "Fabric-26.1.2-6.0.2",
+      "sha512": "c5512f40380e5731d870bd9dce9c7ffeff4edcabd783ce1b2360103868b06e81f4ddda01309734e7cdd3d5bb2a3cb95007059fde937663fabbc6223731ac311a",
+      "coordinate": "maven.modrinth:raised:13Rq7rQr"
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "neoforge",
+      "id": "GOK34QDf",
+      "version": "NeoForge-26.1.2-6.0.2",
+      "sha512": "dcc24d6a9b7bfdd2c5484faf0d62d1f99c0f5ecafb32776639d2492c6643b1b36b6e7292813520172d8f267d30477120e69aeada301ec628366e915492e70f20",
+      "coordinate": "maven.modrinth:raised:GOK34QDf"
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "fabric",
+      "id": "CYse4EJ2",
+      "version": "Fabric-26.2-6.0.2",
+      "sha512": "af1654d8df03aa34b716820c970ffc60c80c5f6fd11aae6cd72e7792adee36dcfbc4abcb15a95a2ea5b03bed696c77eea335494a8b0368af50f0404ebb35d36b",
+      "coordinate": "maven.modrinth:raised:CYse4EJ2"
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "neoforge",
+      "id": "iuvOeUs5",
+      "version": "NeoForge-26.2-6.0.2",
+      "sha512": "2b336130f7e97196e91776a21f48ab926409f611878b06fd72ae1d2ee7f99648c0d1e06da68b94a71ded0af160c72f7bc9b96977b4fc2177b1e1846842dd9b86",
+      "coordinate": "maven.modrinth:raised:iuvOeUs5"
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "fabric",
+      "id": "XeTvS6Rx",
+      "version": "Fabric-26.3-6.0.2",
+      "sha512": "57e6e651cde34fbd889bbff100577d5756f8d6dc1f66073a3c7512754b05b8ef3960951fbf6af641df5ec60cc4753869750cb9c4ecf97a7c09a828d848fe122e",
+      "coordinate": "maven.modrinth:raised:XeTvS6Rx"
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "neoforge",
+      "id": "LNZOvAzd",
+      "version": "NeoForge-26.3-6.0.2",
+      "sha512": "94284a67409b0d3b98ee2ced6699027540026714474db684f48e1267851b4e7dd8a6e69144ddb7c171e06bc57bde7ded9e6fe89edd8d970dea8ed6d42ddf4e5b",
+      "coordinate": "maven.modrinth:raised:LNZOvAzd"
+    }
+  ]
+}

@@ -49,7 +49,7 @@ public final class CompanionDemoClient {
         }
         if (!worldStarted && client.gui.screen() instanceof TitleScreen && client.gui.overlay() == null) {
             worldStarted = true;
-            client.createWorldOpenFlows().createFreshLevel("CompanionAPI5QA", new LevelSettings("Companion API5 QA",
+            client.createWorldOpenFlows().createFreshLevel("CompanionAPI6QA", new LevelSettings("Companion API6 QA",
                 GameType.SURVIVAL, new LevelSettings.DifficultySettings(net.minecraft.world.Difficulty.PEACEFUL, false, false), true, WorldDataConfiguration.DEFAULT),
                 new WorldOptions(42, false, false), WorldPresets::createTestWorldDimensions, client.gui.screen());
         }

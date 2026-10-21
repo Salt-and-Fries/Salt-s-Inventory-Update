@@ -17,7 +17,7 @@ public final class DesktopManagementControls {
             case PIN -> state.pinned() ? "Unpin" : "Pin";
             case LOCK -> state.locked() ? "Unlock" : "Lock";
             case LINK -> "Link windows";
-            case MINIMIZE -> state.minimized() ? "Restore" : "Minimize";
+
             case CLOSE -> "Close";
             case SORT_WINDOWS -> "Sort windows";
             default -> "More";
@@ -55,9 +55,7 @@ public final class DesktopManagementControls {
                         : new String[] { "..##.", "..#..", "#####", "#.#.#", "#####" };
                 case LINK -> new String[] { ".##..", "#..#.", ".#.#.", ".#..#", "..##." };
                 case SORT_WINDOWS -> new String[] { "#.#.#", "#.#.#", ".....", "##.##", "....." };
-                case MINIMIZE -> control.selected()
-                        ? new String[] { "#####", "#...#", "#...#", "#...#", "#####" }
-                        : new String[] { ".....", ".....", ".....", ".....", "#####" };
+
                 default -> new String[] { ".....", ".....", "#.#.#", ".....", "....." };
             };
             int offset = control.pressed() ? 1 : 0;

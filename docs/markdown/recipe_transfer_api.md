@@ -28,7 +28,6 @@ T menu();
 int sessionId();
 String sourceKey();
 boolean visible();
-boolean ghostPinned();
 S state();
 void broadcastChanges();
 ```

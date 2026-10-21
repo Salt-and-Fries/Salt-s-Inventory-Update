@@ -7,6 +7,7 @@ import com.salts_inventory_update.client.InventoryDesktopScreen;
 import com.salts_inventory_update.client.DesktopContainerClient;
 import com.salts_inventory_update.client.DesktopContainerSession;
 import com.salts_inventory_update.client.SaltsInventoryConfig;
+import com.salts_inventory_update.api.client.desktop.*;
 import com.salts_inventory_update.network.DesktopPackets;
 import com.salts_inventory_update.platform.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
@@ -50,6 +51,16 @@ public final class InWorldGameplayHarness {
     private static final java.util.concurrent.atomic.AtomicInteger PENDING_CAPTURES=new java.util.concurrent.atomic.AtomicInteger();
     private static final Map<String,Consumer<Path>> CAPTURE_CHECKS=new java.util.concurrent.ConcurrentHashMap<>();
     private static final String SCENARIO = Optional.ofNullable(System.getenv("SIU_QA_SCENARIO")).orElse("core");
+    private static final boolean TOMS_PICKUP_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_TOMS_PICKUP_ONLY"));
+    private static final boolean MOUSE_TWEAKS_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_MOUSE_TWEAKS_ONLY"));
+    private static final boolean MT_ABSENT = "true".equalsIgnoreCase(System.getenv("SIU_QA_MOUSE_TWEAKS_ABSENT"));
+    private static final boolean MANUAL_MOUSE_TWEAKS = "true".equalsIgnoreCase(System.getenv("SIU_QA_MANUAL_MOUSE_TWEAKS"));
+    private static final boolean HUD_MOVEMENT_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_HUD_MOVEMENT_ONLY"));
+    private static final boolean HUD_VISIBILITY_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_HUD_VISIBILITY_ONLY"));
+    private static final boolean RAISED_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_RAISED_ONLY"));
+    private static final boolean WINDOW_CONTROLS_ONLY = HUD_MOVEMENT_ONLY || HUD_VISIBILITY_ONLY || RAISED_ONLY || MOUSE_TWEAKS_ONLY || "true".equalsIgnoreCase(System.getenv("SIU_QA_WINDOW_CONTROLS_ONLY"));
+    private static final boolean KEYBINDS_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_KEYBINDS_ONLY"));
+    private static final boolean BROWSER_SEARCH_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_BROWSER_SEARCH_ONLY"));
 
     private InWorldGameplayHarness() { }
     public static synchronized void initialize() {
@@ -88,7 +99,7 @@ public final class InWorldGameplayHarness {
             command("gamerule doDaylightCycle false"); command("time set noon"); command("weather clear");
             return null;
         }), InWorldGameplayHarness::taskDone, () -> check("disposable-fixture-ready", origin != null), 10);
-        if (!Boolean.parseBoolean(System.getenv("SIU_QA_INTEGRATION_ONLY"))) {
+        if (!WINDOW_CONTROLS_ONLY && !Boolean.parseBoolean(System.getenv("SIU_QA_INTEGRATION_ONLY"))) {
         addLocalWindows();
         addExpansion();
         addContainer("chest", "minecraft:chest", 0);
@@ -101,7 +112,8 @@ public final class InWorldGameplayHarness {
         }
         for(String mount:List.of("horse","donkey","llama","camel"))addMount(mount);
         }
-        addIntegrations();
+        if (!WINDOW_CONTROLS_ONLY) addIntegrations();
+        if (!TOMS_PICKUP_ONLY && !WINDOW_CONTROLS_ONLY) {
         add("resource-pack-reload", () -> {
             closeWindows(); task=(CompletableFuture<?>)call(mc,"reloadResourcePacks");
         }, () -> taskDone() && overlay()==null,
@@ -110,6 +122,29 @@ public final class InWorldGameplayHarness {
             () -> windowKind("INVENTORY")!=null, () -> capture("inventory-after-resource-reload"), 10);
         add("final-state-and-save", () -> { closeWindows(); server(() -> { player().inventoryMenu.setCarried(ItemStack.EMPTY); return null; }); },
             InWorldGameplayHarness::taskDone, () -> capture("final-world"), 10);
+        }
+        }
+        if ("true".equalsIgnoreCase(System.getenv("SIU_QA_CHEST_CLOSE_ONLY"))) {
+            // Keep only world creation, handshake and the disposable block fixture.
+            while (STEPS.size() > 3) STEPS.removeLast();
+            addChestCloseRegression();
+        }
+        if (WINDOW_CONTROLS_ONLY) {
+            while (STEPS.size() > 3) STEPS.removeLast();
+            if (HUD_MOVEMENT_ONLY || HUD_VISIBILITY_ONLY) addHudVisibilityRegression();
+            else if (RAISED_ONLY) addRaisedHudRegression();
+            else if (MANUAL_MOUSE_TWEAKS) addManualMouseTweaksFixture();
+            else if (MOUSE_TWEAKS_ONLY) addMouseTweaksRegression();
+            else if (KEYBINDS_ONLY) addKeybindsRegression();
+            else addWindowControlsRegression();
+        }
+        if ("true".equalsIgnoreCase(System.getenv("SIU_QA_MT_WHEEL_ONLY"))) {
+            var allowed=java.util.Set.of("world-create-and-connect","desktop-handshake","world-fixture","mt-configure","fixture-mt-chest","open-mt-chest","mt-api-detection","mt-seed-native","mt-lmb-collect","mt-seed-shift-lmb","mt-shift-lmb","mt-seed-wheel","mt-wheel-push","mt-wheel-pull","mt-wheel-fractional","mt-wheel-disabled","mt-final-cleanup");
+            STEPS.removeIf(step -> !allowed.contains(step.name()));
+        }
+        if (BROWSER_SEARCH_ONLY) {
+            while (STEPS.size() > 3) STEPS.removeLast();
+            addAncientRemnantsSearchRegression();
         }
         com.salts_inventory_update.api.client.desktop.DesktopClientApi.onClientStarted(client->clientReady=true);
         ClientTickEvents.END_CLIENT_TICK.register(InWorldGameplayHarness::tick);
@@ -122,6 +157,1188 @@ public final class InWorldGameplayHarness {
             }
         },"SIU gameplay QA disconnect watchdog");watchdog.setDaemon(true);watchdog.start();
         SaltsInventoryUpdate.LOGGER.info("SIU_GAMEPLAY_START scenario={} mc={} output={}",SCENARIO,VersionInfo.MINECRAFT_VERSION,output);
+    }
+
+    private static boolean mtShift;
+    private static com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserTab searchItemTab;
+    private static int searchCodexVariants;
+    private static ItemStack searchItem(com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserEntry entry) {
+        Object value=entry.ingredient();
+        if(value instanceof ItemStack stack)return stack;
+        try {Object nested=call(value,"getValue");return nested instanceof ItemStack stack?stack:ItemStack.EMPTY;}
+        catch(RuntimeException ignored){return ItemStack.EMPTY;}
+    }
+    private static void addAncientRemnantsSearchRegression() {
+        add("ancient-search-configure", () -> SaltsInventoryConfig.update(c -> c.hasSeenInstructionsWindow=true),
+            () -> true, () -> {
+                check("ancient-remnants-loaded",com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("ancient_remnants"));
+                check("compatibility-loaded",com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("salts_inventory_compat"));
+            }, 2);
+        add("ancient-search-open", () -> { closeWindows(); InventoryDesktopScreen.openOrToggleJei(mc); },
+            () -> windowKind("JEI") != null, () -> {
+                var access=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access();
+                String expected=SCENARIO.equals("browser-rei")?"roughlyenoughitems":SCENARIO.substring("browser-".length());
+                check("search-provider-available",access.isAvailable());
+                check("search-provider-selected",expected.equals(access.source().id()));
+                var tabs=access.tabs();
+                searchItemTab=tabs.stream().filter(t->t.uid().toLowerCase(Locale.ROOT).contains("item") && t.kind()==com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserTabKind.INGREDIENTS).findFirst().orElseThrow();
+                Object w=windowKind("JEI");
+                try { var selected=w.getClass().getDeclaredField("jeiSelectedTabUid"); selected.setAccessible(true); selected.set(w,searchItemTab.uid()); } catch(ReflectiveOperationException e) { throw new IllegalStateException(e); }
+                call(screen(),"setJeiSearchText",w,"");
+                var entries=access.filteredEntries(searchItemTab);
+                check("search-baseline-populated",!entries.isEmpty());
+                var codices=entries.stream().filter(e->{var stack=searchItem(e);return stack!=null&&!stack.isEmpty()&&stack.getItem()==registryValue("ITEM","ancient_remnants:monolith_codex");}).toList();
+                check("search-baseline-codex-present",!codices.isEmpty());
+                searchCodexVariants=codices.size();
+                for(var codex:codices)check("codex-world-tooltip",!access.tooltip(codex).isEmpty());
+                record("codex-variants","PASS",Integer.toString(codices.size()));
+                capture("ancient-search-before");
+            }, 15);
+        // The pinned JEI builds use $ for tooltips and # for tags; REI uses # for tooltips.
+        String tooltipQuery=SCENARIO.equals("browser-jei")?"$r":"#r";
+        String codexTooltipQuery=SCENARIO.equals("browser-jei")?"$pages":"#codex";
+        for(String query:List.of("r",tooltipQuery,"monolith",codexTooltipQuery,"@ancient_remnants","crafting table","salts_no_matching_item_921")) {
+            String name="ancient-query-"+query.replaceAll("[^a-zA-Z0-9]","-");
+            add(name, () -> call(screen(),"setJeiSearchText",windowKind("JEI"),query),
+                () -> true, () -> {
+                    var access=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access();
+                    var entries=access.filteredEntries(searchItemTab);
+                    if(query.startsWith("salts_no_"))check("search-no-results",entries.isEmpty());
+                    else check("search-results-"+query,!entries.isEmpty());
+                    if(query.equals("monolith")||query.equals(codexTooltipQuery)||query.equals("@ancient_remnants"))
+                        check("search-keeps-codex-"+query,entries.stream().filter(e->{var s=searchItem(e);return s!=null&&!s.isEmpty()&&s.getItem()==registryValue("ITEM","ancient_remnants:monolith_codex");}).count()==searchCodexVariants);
+                    capture(name);
+                }, 12);
+        }
+        add("ancient-search-clear",()->call(screen(),"setJeiSearchText",windowKind("JEI"),""),()->true,()->{
+            var access=com.salts_inventory_update.api.client.recipebrowser.RecipeBrowserBridge.access();
+            check("search-clear-restores-entries",!access.filteredEntries(searchItemTab).isEmpty());capture("ancient-search-cleared");
+            closeWindows();
+        }, 10);
+    }
+    public static boolean mouseTweaksShiftHeld() {return mtShift;}
+    /** Setup and read-only server observation only. All subsequent gestures come from Computer Use. */
+    private static void addManualMouseTweaksFixture() {
+        add("manual-configure", () -> SaltsInventoryConfig.update(c -> {
+            c.hasSeenInstructionsWindow=true;c.expandableInventory=false;c.openUnlocked=true;
+            c.allowResizing=true;c.enableWindowSnapping=false;
+        }), () -> true, () -> {}, 2);
+        add("manual-blocks-and-items", () -> server(() -> {
+            var level=serverLevel();
+            for(int i=0;i<4;i++) {
+                String block=i==1?"minecraft:barrel":i==3?"minecraft:crafting_table":"minecraft:chest";
+                BlockPos pos=origin.offset((i%2)*2,0,(i/2)*2);
+                Object value=registryValue("BLOCK",block);
+                level.setBlock(pos,(net.minecraft.world.level.block.state.BlockState)call(value,"defaultBlockState"),3);
+                if(level.getBlockEntity(pos) instanceof Container c) {
+                    c.clearContent();c.setItem(0,new ItemStack(Items.STONE,i==0?32:20));
+                    c.setItem(1,new ItemStack(Items.STONE,16));c.setItem(2,new ItemStack(Items.DIRT,10));
+                    c.setItem(3,new ItemStack(Items.STONE,4));
+                }
+            }
+            var inventory=player().getInventory();inventory.clearContent();
+            inventory.setItem(9,new ItemStack(Items.STONE,24));inventory.setItem(10,new ItemStack(Items.STONE,8));
+            inventory.setItem(11,new ItemStack(Items.DIRT,12));inventory.setItem(12,new ItemStack(Items.OAK_PLANKS,16));
+            inventory.setItem(13,new ItemStack(Items.IRON_INGOT,3));
+            player().inventoryMenu.setCarried(ItemStack.EMPTY);mtSync();return null;
+        }), InWorldGameplayHarness::taskDone, () -> {}, 8);
+        for(int index=0;index<4;index++) {
+            final int i=index;
+            if(i==2)add("manual-register-api",InWorldGameplayHarness::mtRegisterWindow,()->true,()->{},2);
+            add("manual-open-"+i, () -> server(() -> {
+                var level=serverLevel();BlockPos pos=origin.offset((i%2)*2,0,(i/2)*2);
+                player().openMenu((net.minecraft.world.MenuProvider)call(level.getBlockState(pos),"getMenuProvider",level,pos));
+                if(i==3 && "true".equalsIgnoreCase(System.getenv("SIU_QA_MANUAL_CRAFTING_READY"))) {
+                    player().getInventory().clearContent();
+                    player().getInventory().setItem(9,new ItemStack(Items.STONE,20));
+                    player().getInventory().setItem(10,new ItemStack(Items.DIRT,12));
+                    player().getInventory().setItem(11,new ItemStack(Items.OAK_PLANKS,12));
+                    player().getInventory().setItem(12,new ItemStack(Items.IRON_INGOT,3));
+                    Object owner=call(ClassFor("com.salts_inventory_update.server.DesktopContainerSessions"),"sessions",player());
+                    AbstractContainerMenu crafting=((Map<?,?>)field(owner,"sessions")).values().stream()
+                        .map(session->(AbstractContainerMenu)field(session,"menu"))
+                        .filter(menu->menu instanceof net.minecraft.world.inventory.CraftingMenu).findFirst().orElseThrow();
+                    for(int slot:List.of(1,2,4,5))crafting.getSlot(slot).set(new ItemStack(Items.OAK_PLANKS,1));
+                    crafting.broadcastFullState();mtSync();
+                }
+                return null;
+            }), () -> taskDone() && sessions().size()>=i+1, () -> {},8);
+        }
+        add("manual-layout",()->{
+            InventoryDesktopScreen.openOrToggleInventory(mc);
+            int[][] locations={{8,8},{328,8},{328,205},{8,205}};
+            for(int i=0;i<4;i++) {
+                Object w=windowSession(sessions().get(i).sessionId());
+                try {for(String axis:List.of("x","y")) {var f=w.getClass().getDeclaredField(axis);f.setAccessible(true);f.setInt(w,locations[i][axis.equals("x")?0:1]);}}
+                catch(ReflectiveOperationException e){throw new IllegalStateException(e);}
+            }
+        },()->windowKind("INVENTORY")!=null,()->{
+            try{Files.writeString(output.resolve("manual-ready.json"),new GsonBuilder().setPrettyPrinting().create().toJson(Map.of("minecraft",VersionInfo.MINECRAFT_VERSION,"mods",loadedMods(),"core",SaltsInventoryUpdate.class.getProtectionDomain().getCodeSource().getLocation().toString())));}
+            catch(Exception e){throw new IllegalStateException(e);}
+        },5);
+    }
+    private static List<String> manualContents(Container container) {
+        List<String> items=new ArrayList<>();
+        for(int i=0;i<container.getContainerSize();i++) {
+            ItemStack stack=container.getItem(i);
+            if(!stack.isEmpty())items.add(i+":"+stack.getItem()+"="+stack.getCount());
+        }
+        return items;
+    }
+    private static void manualMouseTweaksObserve() {
+        if(elapsedTicks%20!=0)return;
+        mc.getSingleplayerServer().execute(()->{
+            try {
+                Map<String,Object> snapshot=new LinkedHashMap<>();
+                snapshot.put("time",System.currentTimeMillis());snapshot.put("player",manualContents(player().getInventory()));
+                snapshot.put("cursor",player().inventoryMenu.getCarried().toString());
+                for(int i=0;i<3;i++)if(serverLevel().getBlockEntity(origin.offset((i%2)*2,0,(i/2)*2)) instanceof Container c)snapshot.put("container"+i,manualContents(c));
+                Files.writeString(output.resolve("manual-state.json"),new GsonBuilder().setPrettyPrinting().create().toJson(snapshot));
+            }catch(Exception e){SaltsInventoryUpdate.LOGGER.error("Manual inventory observation failed",e);}
+        });
+    }
+    private static DesktopHudApi.RegistrationHandle raisedQaRegistration;
+    private static String raisedOriginalConfig;
+    private static final boolean RAISED_ABSENT = "true".equalsIgnoreCase(System.getenv("SIU_QA_RAISED_ABSENT"));
+
+    private static void resizeHudGui() {
+        try { call(mc, "resizeGui"); } catch (IllegalArgumentException legacy) { call(mc, "resizeDisplay"); }
+    }
+    private static DesktopHudLayout hudLayout() { return (DesktopHudLayout) call(screen(), "detachedHudLayout"); }
+    private static DesktopHudSlot hudSlot(int index) {
+        return hudLayout().slots().stream().filter(slot -> index == 9
+            ? slot.kind() == DesktopHudSlot.Kind.OFFHAND
+            : slot.kind() == DesktopHudSlot.Kind.HOTBAR && slot.index() == index).findFirst().orElseThrow();
+    }
+    private static double[] hudPoint(int index) {
+        var slot = hudSlot(index); return new double[] {slot.transform().screenX(8), slot.transform().screenY(8)};
+    }
+    private static void clickHud(int index) { var point = hudPoint(index); clickAt(point[0], point[1]); }
+    private static void raisedConfig(int x, int y, boolean groups) {
+        if (RAISED_ABSENT) return;
+        try {
+            Path path = ((java.io.File) field(ClassFor("dev.yurisuika.raised.config.Config"), "file")).toPath();
+            if (raisedOriginalConfig == null) raisedOriginalConfig = Files.readString(path);
+            String configured = groups ? "{\"Default\":{\"offset\":{\"x\":0,\"y\":2},\"layers\":{\"minecraft:hotbar\":{\"position\":\"BOTTOM\"}}},\"Additional\":{\"offset\":{\"x\":" + x + ",\"y\":" + y + "},\"layers\":{\"minecraft:hotbar\":{\"position\":\"BOTTOM_LEFT\"}}}}" : "{}";
+            Files.writeString(path, "{\"groups\":" + configured + ",\"settings\":{\"selectionIndicator\":\"AUTO\"}}");
+            call(ClassFor("dev.yurisuika.raised.config.Config"), "load");
+        } catch (Exception failure) { throw new IllegalStateException(failure); }
+    }
+    private static void verifyHud(String label, int dx, int dy) {
+        var window = mc.getWindow();
+        for (int index = 0; index < 10; index++) {
+            var geometry = hudSlot(index);
+            int baseX = window.getGuiScaledWidth() / 2 - 88 + (index == 9 ? -29 : index * 20);
+            int baseY = window.getGuiScaledHeight() - 19;
+            check(label + "-geometry-" + index, geometry.transform().x() == baseX + dx && geometry.transform().y() == baseY + dy);
+            var point = hudPoint(index);
+            Object hit = call(screen(), "detachedHudSlotAt", point[0], point[1]);
+            check(label + "-hit-" + index, hit != null && ((Slot) call(hit, "slot")).getContainerSlot() == (index == 9 ? 40 : index));
+            check(label + "-world-ownership-" + index, (Boolean) call(screen(), "isPointOverInteractiveUi", point[0], point[1]));
+            Object proxy = call(screen(), "mouseTweaksSlotAt", point[0], point[1]);
+            check(label + "-mouse-tweaks-target-" + index, proxy instanceof Slot target
+                && target.x == geometry.transform().pixelX(0) && target.y == geometry.transform().pixelY(0));
+        }
+    }
+    private static void addHudVisibilityRegression() {
+        add("hud-visibility-configure", () -> {
+            closeWindows();
+            SaltsInventoryConfig.update(config -> {
+                config.persistentWindows = false; config.hasSeenInstructionsWindow = true;
+                config.returnHotbarToInventory = false;
+            });
+            mc.options.guiScale().set(2); resizeHudGui();
+            server(() -> {
+                command("gamemode survival"); command("gamerule naturalRegeneration false");
+                command("item replace entity @p armor.chest with minecraft:iron_chestplate");
+                command("experience set @p 7 levels"); command("experience add @p 3 points");
+                player().setHealth(14.0F); player().getFoodData().setFoodLevel(14);
+                return null;
+            });
+        }, InWorldGameplayHarness::taskDone, () -> {}, 10);
+        add("hud-open-option-off", () -> InventoryDesktopScreen.openOrToggleInventory(mc),
+            () -> windowKind("INVENTORY") != null, () -> {
+                for (var window : screen().workspaceAccess().windows()) window.handle().moveTo(8, 8);
+            }, 3);
+        add("hud-visible-option-off", () -> {}, () -> true, () -> {
+            check("hud-option-off-visible", !com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+            capture("hud-option-off");
+        }, 8);
+        add("hud-hidden-option-on", () -> {
+            SaltsInventoryConfig.update(config -> config.returnHotbarToInventory = true);
+            screen().refreshInventoryWindowLayout(false);
+        },
+            () -> true, () -> {
+                check("hud-option-on-hidden", com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+                capture("hud-option-on");
+            }, 8);
+        add("hud-visible-toggle-back", () -> {
+            SaltsInventoryConfig.update(config -> config.returnHotbarToInventory = false);
+            screen().refreshInventoryWindowLayout(true);
+        },
+            () -> true, () -> {
+                check("hud-toggle-back-visible", !com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+                capture("hud-toggle-back");
+            }, 8);
+        add("hud-closed-option-on", () -> {
+            SaltsInventoryConfig.update(config -> config.returnHotbarToInventory = true); closeWindows();
+        }, () -> sessions().isEmpty() && !(nativeScreen() instanceof InventoryDesktopScreen), () -> {
+            check("hud-closed-visible", !com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+            capture("hud-closed");
+        }, 8);
+        add("hud-reopen-option-on", () -> InventoryDesktopScreen.openOrToggleInventory(mc),
+            () -> windowKind("INVENTORY") != null, () -> {
+                check("hud-reopen-hidden", com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+                capture("hud-reopen");
+            }, 8);
+        if (HUD_MOVEMENT_ONLY) addHudMovementRegression();
+        add("hud-visibility-cleanup", InWorldGameplayHarness::closeWindows, () -> sessions().isEmpty(), () -> {}, 3);
+    }
+
+    private static void addHudMovementRegression() {
+        add("hud-movement-seed", () -> {
+            SaltsInventoryConfig.update(config -> config.toggleMovementControl = true);
+            setMovementBinding("KEY_LALT");
+            com.salts_inventory_update.client.WindowedInventoryClient.resetMovementControl();
+            server(() -> {
+                for (int i = 0; i < 9; i++) player().getInventory().setItem(i, new ItemStack(Items.DIRT, i + 1));
+                player().getInventory().setItem(9, new ItemStack(Items.SAND, 3));
+                return null;
+            });
+        }, () -> taskDone() && mc.player.getInventory().getItem(9).is(Items.SAND), () -> {
+            check("hud-initial-selected-slot", hudSelected(mc.player.getInventory()) == 0);
+        }, 5);
+        add("hud-hidden-selection-blocked", () -> {
+            hudPointerOutside();
+            call(mc.mouseHandler, "onScroll", nativeWindowHandle(), 0D, -1D);
+            check("hud-hidden-wheel-forward-blocked", hudSelected(mc.player.getInventory()) == 0);
+            call(mc.mouseHandler, "onScroll", nativeWindowHandle(), 0D, 1D);
+            check("hud-hidden-wheel-backward-blocked", hudSelected(mc.player.getInventory()) == 0);
+            for (int i = 1; i <= 9; i++) {
+                dispatchMovementKey("KEY_" + i, "PRESS"); dispatchMovementKey("KEY_" + i, "RELEASE");
+                check("hud-hidden-number-" + i + "-blocked", hudSelected(mc.player.getInventory()) == 0);
+            }
+        }, () -> true, () -> {
+            check("hud-hidden-wheel-blocked", hudSelected(mc.player.getInventory()) == 0);
+            hudServerSelected("hidden-selection", 0);
+            dispatchMovementKey("KEY_LALT", "PRESS"); dispatchMovementKey("KEY_LALT", "RELEASE");
+        }, 5);
+        add("hud-movement-toggle-visible", () -> {}, () -> screen().isCameraControlActive(), () -> {
+            check("hud-toggle-shows-native-hud", !com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+            capture("hud-movement-active");
+            call(mc.mouseHandler, "onScroll", nativeWindowHandle(), 0D, -1D);
+            check("hud-movement-wheel-selects", hudSelected(mc.player.getInventory()) == 1);
+            // Put the grabbed cursor over a real inventory slot: this must select, rather than swap.
+            var point = slotPoint(0, 9, windowKind("INVENTORY")); hudPointerAt(point[0], point[1]);
+            check("hud-grabbed-cursor-over-slot", call(screen(), "hoveredSlotForKeyboardInput") != null);
+            dispatchMovementKey("KEY_3", "PRESS"); dispatchMovementKey("KEY_3", "RELEASE");
+            check("hud-movement-number-selects", hudSelected(mc.player.getInventory()) == 2);
+        }, 5);
+        add("hud-movement-authoritative", () -> {}, () -> true, () -> {
+            hudServerSelected("movement-selection", 2);
+            check("hud-movement-keeps-window-slot", mc.player.getInventory().getItem(9).is(Items.SAND));
+            check("hud-movement-keeps-hotbar-stack", mc.player.getInventory().getItem(2).is(Items.DIRT));
+            dispatchMovementKey("KEY_LALT", "PRESS"); dispatchMovementKey("KEY_LALT", "RELEASE");
+        }, 5);
+        add("hud-movement-release-locks", () -> {}, () -> !screen().isCameraControlActive(), () -> {
+            check("hud-toggle-off-hides-native-hud", com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+            hudPointerOutside();
+            call(mc.mouseHandler, "onScroll", nativeWindowHandle(), 0D, -1D);
+            dispatchMovementKey("KEY_9", "PRESS"); dispatchMovementKey("KEY_9", "RELEASE");
+            check("hud-return-keeps-new-selection", hudSelected(mc.player.getInventory()) == 2);
+            capture("hud-movement-inactive");
+            setMovementBinding("KEY_P");
+            dispatchMovementKey("KEY_LALT", "PRESS"); dispatchMovementKey("KEY_LALT", "RELEASE");
+        }, 5);
+        add("hud-movement-old-binding-ignored", () -> {}, () -> true, () -> {
+            check("hud-old-alt-keeps-hidden", !screen().isCameraControlActive()
+                && com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+            dispatchMovementKey("KEY_P", "PRESS"); dispatchMovementKey("KEY_P", "RELEASE");
+        }, 4);
+        add("hud-movement-rebound-visible", () -> {}, () -> screen().isCameraControlActive(), () -> {
+            check("hud-rebound-p-shows-hud", !com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+            hudPointerOutside();
+            dispatchMovementKey("KEY_7", "PRESS"); dispatchMovementKey("KEY_7", "RELEASE");
+            check("hud-rebound-number-selects", hudSelected(mc.player.getInventory()) == 6);
+            capture("hud-movement-rebound");
+        }, 4);
+        add("hud-movement-mode-change", () -> SaltsInventoryConfig.update(config -> config.toggleMovementControl = false),
+            () -> !screen().isCameraControlActive(), () -> {
+                check("hud-hold-mode-without-held-key-hides", com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+                hudPointerOutside();
+                dispatchMovementKey("KEY_1", "PRESS"); dispatchMovementKey("KEY_1", "RELEASE");
+                check("hud-mode-change-locks-selection", hudSelected(mc.player.getInventory()) == 6);
+                hudServerSelected("mode-change-selection", 6);
+            }, 4);
+        add("hud-movement-option-off", () -> {
+            SaltsInventoryConfig.update(config -> config.returnHotbarToInventory = false);
+            screen().refreshInventoryWindowLayout(true);
+        }, () -> true, () -> {
+            hudPointerOutside();
+            call(mc.mouseHandler, "onScroll", nativeWindowHandle(), 0D, -1D);
+            check("hud-option-off-wheel-selects", hudSelected(mc.player.getInventory()) == 7);
+            dispatchMovementKey("KEY_9", "PRESS"); dispatchMovementKey("KEY_9", "RELEASE");
+            check("hud-option-off-number-selects", hudSelected(mc.player.getInventory()) == 8);
+            hudServerSelected("option-off-selection", 8);
+        }, 4);
+        add("hud-movement-close-reset", () -> {
+            SaltsInventoryConfig.update(config -> { config.returnHotbarToInventory = true; config.toggleMovementControl = true; });
+            dispatchMovementKey("KEY_P", "PRESS"); dispatchMovementKey("KEY_P", "RELEASE");
+        }, () -> screen().isCameraControlActive(), InWorldGameplayHarness::closeWindows, 3);
+        add("hud-movement-reopen-reset", () -> InventoryDesktopScreen.openOrToggleInventory(mc),
+            () -> windowKind("INVENTORY") != null && !screen().isCameraControlActive(), () -> {
+                check("hud-reopen-toggle-cleared", com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+                hudPointerOutside();
+                dispatchMovementKey("KEY_1", "PRESS"); dispatchMovementKey("KEY_1", "RELEASE");
+                check("hud-reopen-selection-stays-locked", hudSelected(mc.player.getInventory()) == 8);
+                capture("hud-movement-reopen");
+                setMovementBinding("KEY_LALT");
+                SaltsInventoryConfig.update(config -> config.toggleMovementControl = false);
+            }, 4);
+    }
+
+    private static int hudSelected(Object inventory) {
+        try { return ((Number) call(inventory, "getSelectedSlot")).intValue(); }
+        catch (IllegalArgumentException legacy) { return ((Number) field(inventory, "selected")).intValue(); }
+    }
+
+    private static void hudServerSelected(String label, int expected) {
+        addFirst("hud-server-" + label, () -> task = server(() -> hudSelected(player().getInventory())),
+            InWorldGameplayHarness::taskDone,
+            () -> check("hud-server-" + label, ((Number) task.join()).intValue() == expected), 3);
+    }
+
+    private static void hudPointerOutside() {
+        hudPointerAt(mc.getWindow().getGuiScaledWidth() - 4, 4);
+    }
+
+    private static void hudPointerAt(double x, double y) {
+        Object window = mc.getWindow();
+        try {
+            Field px = mc.mouseHandler.getClass().getDeclaredField("xpos"), py = mc.mouseHandler.getClass().getDeclaredField("ypos");
+            px.setAccessible(true); py.setAccessible(true);
+            px.setDouble(mc.mouseHandler, x * ((Number) call(window, "getScreenWidth")).doubleValue() / mc.getWindow().getGuiScaledWidth());
+            py.setDouble(mc.mouseHandler, y * ((Number) call(window, "getScreenHeight")).doubleValue() / mc.getWindow().getGuiScaledHeight());
+        } catch (ReflectiveOperationException failure) { throw new IllegalStateException(failure); }
+    }
+
+    private static void addRaisedHudRegression() {
+        add("raised-configure", () -> {
+            closeWindows();
+            SaltsInventoryConfig.update(config -> {
+                config.persistentWindows = false; config.hasSeenInstructionsWindow = true;
+                config.returnHotbarToInventory = false; config.expandableInventory = false;
+            });
+            server(() -> { command("gamemode survival"); return null; });
+        }, InWorldGameplayHarness::taskDone, () -> {
+            check("raised-presence", com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("raised") != RAISED_ABSENT);
+        }, 5);
+        addContainer("raised-chest", "minecraft:chest", 0); STEPS.removeLast();
+        add("raised-player-window", () -> InventoryDesktopScreen.openOrToggleInventory(mc),
+            () -> windowKind("INVENTORY") != null, () -> {
+                for (var window : screen().workspaceAccess().windows()) {
+                    window.handle().moveTo(window.kind() == DesktopWorkspaceWindow.Kind.PLAYER_INVENTORY ? 230 : 8, 8);
+                }
+                raisedConfig(0, 0, true);
+            }, 3);
+        add("raised-default", () -> {}, () -> true, () -> {
+            verifyHud("default", 0, RAISED_ABSENT ? 0 : -2); capture("raised-default");
+        }, 3);
+        add("raised-live-groups", () -> raisedConfig(100, 40, true), () -> true, () -> {
+            verifyHud("live", RAISED_ABSENT ? 0 : 100, RAISED_ABSENT ? 0 : -42);
+            if (!RAISED_ABSENT) {
+                double oldX = mc.getWindow().getGuiScaledWidth() / 2 - 80, oldY = mc.getWindow().getGuiScaledHeight() - 11;
+                check("old-hud-location-inactive", call(screen(), "detachedHudSlotAt", oldX, oldY) == null);
+            }
+            capture("raised-live-groups");
+        }, 3);
+        add("raised-gui-scale", () -> {
+            mc.options.guiScale().set(3); resizeHudGui();
+        }, () -> mc.getWindow().getGuiScale() == 3, () -> {
+            verifyHud("gui-scale", RAISED_ABSENT ? 0 : 100, RAISED_ABSENT ? 0 : -42);
+            capture("raised-gui-scale-3");
+        }, 3);
+        add("raised-gui-scale-restore", () -> {
+            mc.options.guiScale().set(2); resizeHudGui();
+        }, () -> mc.getWindow().getGuiScale() == 2, () -> {}, 3);
+        add("raised-seed", () -> server(() -> {
+            player().getInventory().clearContent();
+            player().getInventory().setItem(0, new ItemStack(Items.DIRT, 12));
+            player().getInventory().setItem(40, new ItemStack(Items.IRON_INGOT, 3));
+            ((Container) serverLevel().getBlockEntity(origin)).clearContent();
+            return null;
+        }), () -> taskDone() && mc.player.getInventory().getItem(0).getCount() == 12, () -> {}, 4);
+        add("raised-hotbar-pickup", () -> clickHud(0), () -> carried() == 12,
+            () -> check("hotbar-pickup-real-cursor", mc.player.getInventory().getItem(0).isEmpty()), 3);
+        add("raised-window-place", () -> clickSlot(0, left()), () -> carried() == 0 && currentSession().menu().getSlot(0).getItem().getCount() == 12,
+            () -> { assertContainer("hud-to-window-server", 0, 12, 0); capture("raised-hotbar-to-window"); }, 3);
+        add("raised-offhand-pickup", () -> clickHud(9), () -> carried() == 3, () -> {}, 3);
+        add("raised-offhand-return", () -> clickHud(9), () -> carried() == 0,
+            () -> check("offhand-return", mc.player.getInventory().getItem(40).getCount() == 3), 3);
+        add("raised-drag-pickup", () -> clickSlot(0, left()), () -> carried() == 12, () -> {}, 3);
+        add("raised-drag-between-hotbar-slots", () -> {
+            var a = hudPoint(6); var b = hudPoint(7);
+            mouse("mouseClicked", a[0], a[1], left(), 0, 0);
+            mouse("mouseDragged", b[0], b[1], left(), b[0] - a[0], b[1] - a[1]);
+            mouse("mouseReleased", b[0], b[1], left(), 0, 0);
+        }, () -> carried() == 0 && mc.player.getInventory().getItem(6).getCount() == 6
+            && mc.player.getInventory().getItem(7).getCount() == 6, () -> {
+                var counts = server(() -> List.of(player().getInventory().getItem(6).getCount(), player().getInventory().getItem(7).getCount()));
+                addFirst("raised-drag-server", () -> {}, counts::isDone,
+                    () -> check("raised-drag-conservation", counts.join().equals(List.of(6, 6))), 3);
+                capture("raised-drag-distribution");
+            }, 3);
+        add("raised-wheel-seed", () -> server(() -> {
+            player().getInventory().setItem(0, new ItemStack(Items.DIRT, 4));
+            ((Container)serverLevel().getBlockEntity(origin)).setItem(0, new ItemStack(Items.DIRT, 12));
+            return null;
+        }), () -> taskDone() && mc.player.getInventory().getItem(0).getCount() == 4, () -> {}, 3);
+        add("raised-wheel", () -> {
+            if (com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("mousetweaks")) {
+                var point = hudPoint(0); scroll(point[0], point[1], 2);
+            }
+        }, () -> !com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("mousetweaks")
+            || mc.player.getInventory().getItem(0).getCount() == 6, () -> {
+                if (com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("mousetweaks")) {
+                    var counts = server(() -> List.of(player().getInventory().getItem(0).getCount(), ((Container)serverLevel().getBlockEntity(origin)).getItem(0).getCount(), player().inventoryMenu.getCarried().getCount()));
+                    addFirst("raised-wheel-server", () -> {}, counts::isDone,
+                        () -> check("raised-wheel-conservation", counts.join().equals(List.of(6, 10, 0))), 3);
+                } else record("raised-wheel", "SKIP", "Mouse Tweaks absent from this focused fixture");
+            }, 3);
+        add("raised-custom-layout", () -> raisedQaRegistration = DesktopHudApi.register("qa:layout", 100,
+            (context, layout) -> layout.mapSlots(slot -> slot.kind() == DesktopHudSlot.Kind.HOTBAR && slot.index() == 0
+                ? slot.withTransform(new DesktopTransform(context.viewportWidth() - 50, 60, 1.5))
+                : slot)), () -> true, () -> {
+            var point = hudPoint(0);
+            Object hit = call(screen(), "slotAt", point[0], point[1]);
+            check("custom-scale-input", hit != null && ((Slot)call(hit, "slot")).getContainerSlot() == 0);
+            capture("raised-custom-layout");
+        }, 3);
+        add("raised-hidden-slot", () -> {
+            raisedQaRegistration.close();
+            raisedQaRegistration = DesktopHudApi.register("qa:layout", 100,
+                (context, layout) -> layout.mapSlots(slot -> slot.kind() == DesktopHudSlot.Kind.OFFHAND ? slot.withVisibility(false) : slot));
+        }, () -> true, () -> {
+            var point = hudPoint(9);
+            check("hidden-slot-no-input", call(screen(), "detachedHudSlotAt", point[0], point[1]) == null);
+        }, 3);
+        add("raised-window-hosted", () -> {
+            raisedQaRegistration.close(); raisedQaRegistration = null;
+            SaltsInventoryConfig.update(config -> config.returnHotbarToInventory = true);
+        }, () -> (Boolean)call(screen(), "usesInventoryWindowHotbar"), () -> {
+            var point = hudPoint(0);
+            check("window-hosted-no-detached-target", call(screen(), "detachedHudSlotAt", point[0], point[1]) == null);
+            capture("raised-window-hosted");
+        }, 3);
+        add("raised-live-zero", () -> {
+            SaltsInventoryConfig.update(config -> config.returnHotbarToInventory = false);
+            raisedConfig(0, 0, false);
+        }, () -> true, () -> verifyHud("zero", 0, 0), 3);
+        add("raised-cleanup", () -> {
+            if (raisedOriginalConfig != null) {
+                try { Files.writeString(((java.io.File)field(ClassFor("dev.yurisuika.raised.config.Config"), "file")).toPath(), raisedOriginalConfig); }
+                catch(Exception failure) { throw new IllegalStateException(failure); }
+                call(ClassFor("dev.yurisuika.raised.config.Config"), "load");
+            }
+            closeWindows();
+        }, () -> sessions().isEmpty(), () -> check("hud-cleanup-no-session", sessions().isEmpty()), 3);
+    }
+
+    private static void addMouseTweaksRegression() {
+        add("mt-configure", () -> SaltsInventoryConfig.update(c -> {
+            c.hasSeenInstructionsWindow=true;c.expandableInventory=false;c.openUnlocked=true;
+        }), () -> true, () -> {
+            check("mouse-tweaks-installed-as-requested", com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("mousetweaks") != MT_ABSENT);
+            check("compatibility-absent", !com.salts_inventory_update.api.integration.DesktopEnvironment.isModLoaded("salts_inventory_compat"));
+        }, 2);
+        addContainer("mt-chest", "minecraft:chest", 0); STEPS.removeLast();
+        add("mt-api-detection", () -> {}, () -> true, () -> {
+            boolean adapted;
+            try { adapted=ClassFor("yalter.mousetweaks.api.IMTModGuiContainer3Ex").isInstance(screen()); }
+            catch (Throwable absent) { adapted=false; }
+            check("optional-screen-adapter", adapted != MT_ABSENT);
+        }, 2);
+        if (!MT_ABSENT) add("mt-first-event-paused", () -> {
+            mtSetScreenField("cameraControl",true);
+            try {mtEvent("mouseClicked",0,left());mtEvent("mouseReleased",0,left());}
+            finally {mtSetScreenField("cameraControl",false);}
+        }, () -> true, () -> check("camera-mode-input-resumes", !(Boolean)call(screen(),"mouseTweaksDisabled")),3);
+        mtSeed("native", 32,16,0,0);
+        if (MT_ABSENT) {
+            add("standalone-normal-pickup", () -> clickSlot(0,left()), () -> carried()==32,
+                () -> mtAuthoritative("standalone-normal-pickup",0,16,0,32), 5);
+            add("standalone-normal-return", () -> clickSlot(0,left()), () -> carried()==0,
+                () -> mtAuthoritative("standalone-normal-return",32,16,0,0), 5);
+            add("standalone-shift-transfer", () -> {
+                mtShift=true;
+                try {clickSlot(0,left());} finally {mtShift=false;}
+            }, () -> currentSession().menu().getSlot(0).getItem().isEmpty() && DesktopContainerClient.canDispatchOptimisticMutationNow(),
+                () -> {
+                    mtAuthoritative("standalone-shift-transfer",0,16,32,0);
+                    var hotbar=server(() -> java.util.stream.IntStream.range(0,9).map(i -> player().getInventory().getItem(i).getCount()).sum());
+                    addFirst("standalone-core-hotbar-target",()->{},hotbar::isDone,()->check("standalone-shift-keeps-core-hotbar-destination",hotbar.join()==32),3);
+                },5);
+            add("standalone-cleanup", InWorldGameplayHarness::closeWindows, () -> sessions().isEmpty(), () -> {}, 3);
+            return;
+        }
+        add("mt-lmb-collect", () -> {
+            mtEvent("mouseClicked",0,left()); mtEvent("mouseDragged",1,left()); mtEvent("mouseReleased",1,left());
+        }, () -> carried()==48 && currentSession().menu().getSlot(1).getItem().isEmpty(),
+            () -> { mtAuthoritative("native-lmb-collect",0,0,0,48);capture("native-lmb-collect"); }, 5);
+        mtSeed("shift-lmb",32,16,0,0);
+        add("mt-shift-lmb", () -> {
+            record("shift-client-states","INFO","player="+mc.player.inventoryMenu.getStateId()+" chest="+currentSession().menu().getStateId());
+            server(() -> {record("shift-server-states","INFO","player="+player().inventoryMenu.getStateId()+" chest="+serverMenu().getStateId());return null;});
+            mtShift=true;
+            try {mtEvent("mouseClicked",0,left());mtEvent("mouseDragged",1,left());mtEvent("mouseReleased",1,left());}
+            finally {mtShift=false;}
+        }, () -> currentSession().menu().getSlot(0).getItem().isEmpty() && currentSession().menu().getSlot(1).getItem().isEmpty(),
+            () -> mtAuthoritative("native-shift-lmb",0,0,48,0),5);
+        mtSeed("rmb",0,0,0,12);
+        add("mt-rmb-revisit", () -> {
+            mtEvent("mouseClicked",0,right());mtEvent("mouseDragged",1,right());mtEvent("mouseDragged",0,right());mtEvent("mouseReleased",0,right());
+        }, () -> carried()==9 && currentSession().menu().getSlot(0).getItem().getCount()==2,
+            () -> mtAuthoritative("native-rmb-revisit",2,1,0,9), 5);
+        mtSeed("rmb-last-item",0,5,0,1);
+        add("mt-rmb-last-item", () -> {
+            mtEvent("mouseClicked",0,right());mtEvent("mouseDragged",1,right());mtEvent("mouseReleased",1,right());
+        }, () -> true, () -> mtAuthoritative("rmb-stops-on-empty-cursor",1,5,0,0),6);
+        mtSeed("rmb-disabled",0,0,0,12);
+        add("mt-rmb-disabled", () -> {
+            mtConfig("rmbTweak",false);
+            mtEvent("mouseClicked",0,right());mtEvent("mouseDragged",1,right());mtEvent("mouseReleased",1,right());
+        }, () -> carried()==10, () -> {mtAuthoritative("native-rmb-disabled",1,1,0,10);mtConfig("rmbTweak",true);},5);
+        mtSeed("lmb-disabled",32,16,0,0);
+        add("mt-lmb-disabled", () -> {
+            mtConfig("lmbTweakWithItem",false);
+            mtEvent("mouseClicked",0,left());mtEvent("mouseDragged",1,left());mtEvent("mouseReleased",1,left());
+        }, () -> carried()==32, () -> {mtAuthoritative("native-lmb-disabled",0,16,0,32);mtConfig("lmbTweakWithItem",true);},5);
+        mtSeed("wheel",32,0,0,0);
+        add("mt-popup-blocks-transfer", () -> {
+            mtSetScreenField("popupWindow",activeWindow);
+            var p=slotPoint(0);scroll(p[0],p[1],-3);
+        }, () -> true, () -> {
+            mtSetScreenField("popupWindow",null);mtAuthoritative("popup-keeps-inventory",32,0,0,0);
+        },5);
+        add("mt-wheel-push", () -> { var p=slotPoint(0);
+            call(screen(),"mouseTweaksSlotAt",p[0],p[1]);
+            var slots=(List<Slot>)call(screen(),"mouseTweaksSlots");
+            Slot emptyPlayer=slots.stream().filter(slot -> slot.container==mc.player.getInventory() && slot.getItem().isEmpty()).findFirst().orElseThrow();
+            Slot raw=((Slot)call(field(emptyPlayer,"hit"),"slot"));
+            record("wheel-settings","INFO","scaling="+field(field(ClassFor("yalter.mousetweaks.Main"),"config"),"scrollItemScaling")+" slots="+slots.size()+" emptyRawCapacity="+raw.getMaxStackSize(ItemStack.EMPTY)+" adapterCapacity="+emptyPlayer.getMaxStackSize(ItemStack.EMPTY));
+            scroll(p[0],p[1],-3);
+            record("wheel-local-state","INFO","cursor="+carried()+" pending="+call(DesktopContainerClient.class,"hasPendingSlotMutations"));
+        },
+            () -> currentSession().menu().getSlot(0).getItem().getCount()==29 && carried()==0,
+            () -> mtAuthoritative("native-wheel-push-closed-player",29,0,3,0), 5);
+        add("mt-wheel-pull", () -> { var p=slotPoint(0);scroll(p[0],p[1],2); },
+            () -> currentSession().menu().getSlot(0).getItem().getCount()==31 && carried()==0,
+            () -> mtAuthoritative("native-wheel-pull",31,0,1,0), 5);
+        add("mt-wheel-fractional", () -> { var p=slotPoint(0);scroll(p[0],p[1],-.4);scroll(p[0],p[1],-.6); },
+            () -> currentSession().menu().getSlot(0).getItem().getCount()==30 && carried()==0,
+            () -> mtAuthoritative("native-wheel-fractional",30,0,2,0), 5);
+        add("mt-wheel-disabled", () -> {
+            try { field(ClassFor("yalter.mousetweaks.Main"),"config").getClass().getField("wheelTweak").setBoolean(field(ClassFor("yalter.mousetweaks.Main"),"config"),false); }
+            catch(ReflectiveOperationException e){throw new IllegalStateException(e);}
+            var p=slotPoint(0);scroll(p[0],p[1],-2);
+        }, () -> true, () -> {
+            mtAuthoritative("upstream-wheel-config-respected",30,0,2,0);
+            try { field(ClassFor("yalter.mousetweaks.Main"),"config").getClass().getField("wheelTweak").setBoolean(field(ClassFor("yalter.mousetweaks.Main"),"config"),true); }
+            catch(ReflectiveOperationException e){throw new IllegalStateException(e);}
+        }, 5);
+        add("mt-close-native", InWorldGameplayHarness::closeWindows, () -> sessions().isEmpty(), () -> {},3);
+        add("mt-register-api-window", InWorldGameplayHarness::mtRegisterWindow, () -> true, () -> {},3);
+        addContainer("mt-api-chest", "minecraft:chest",0);STEPS.removeLast();
+        mtSeed("api",32,16,0,0);
+        add("mt-api-geometry", () -> {}, () -> true, () -> {
+            var p=slotPoint(0); Object proxy=call(screen(),"mouseTweaksSlotAt",p[0],p[1]);
+            check("api-window-custom-layout", field(activeWindow,"apiDefinition")!=null && proxy instanceof Slot && ((Slot)proxy).x==(int)p[0]-8);
+            check("api-window-slots-enumerated", ((List<?>)call(screen(),"mouseTweaksSlots")).size()>=27);
+            capture("api-custom-layout");
+        },4);
+        add("mt-api-lmb", () -> {
+            mtEvent("mouseClicked",0,left());mtEvent("mouseDragged",1,left());mtEvent("mouseReleased",1,left());
+        }, () -> carried()==48, () -> mtAuthoritative("api-lmb-collect",0,0,0,48),5);
+        mtSeed("api-wheel",32,0,0,0);
+        add("mt-api-wheel", () -> {var p=slotPoint(0);scroll(p[0],p[1],-2);},
+            () -> currentSession().menu().getSlot(0).getItem().getCount()==30 && carried()==0,
+            () -> {mtAuthoritative("api-wheel",30,0,2,0);capture("api-wheel-transfer");},5);
+        mtSeed("api-virtual",0,0,0,12);
+        add("mt-api-virtual-ignore", () -> {
+            var p=slotPoint(2);Object slot=call(screen(),"mouseTweaksSlotAt",p[0],p[1]);
+            check("api-virtual-slot-ignored",(Boolean)call(screen(),"mouseTweaksIgnored",slot));
+            mtEvent("mouseClicked",0,right());mtEvent("mouseDragged",1,right());mtEvent("mouseDragged",2,right());mtEvent("mouseReleased",2,right());
+        }, () -> carried()==10, () -> mtAuthoritative("api-virtual-excluded",1,1,0,10),5);
+        add("mt-close-api", InWorldGameplayHarness::closeWindows, () -> sessions().isEmpty(), () -> {},3);
+        addContainer("mt-crafting", "minecraft:crafting_table",0);STEPS.removeLast();
+        add("mt-craft-seed", () -> server(() -> {
+            player().getInventory().clearContent();player().inventoryMenu.setCarried(ItemStack.EMPTY);
+            player().getInventory().setItem(9,new ItemStack(Items.STONE,20));
+            var menu=serverMenu();for(int i:List.of(1,2,4,5))menu.getSlot(i).set(new ItemStack(Items.OAK_PLANKS,1));
+            menu.broadcastFullState();mtSync();return null;
+        }), () -> taskDone() && currentSession().menu().getSlot(0).getItem().is(Items.CRAFTING_TABLE), () -> {},5);
+        add("mt-craft-wheel", () -> {
+            var p=slotPoint(0); Object proxy=call(screen(),"mouseTweaksSlotAt",p[0],p[1]);
+            record("mt-craft-diagnostics","INFO","proxy="+proxy+" ignored="+(proxy==null?"null":call(screen(),"mouseTweaksIgnored",proxy))+" output="+(proxy==null?"null":call(screen(),"mouseTweaksCraftingOutput",proxy))+" slots="+((List<?>)call(screen(),"mouseTweaksSlots")).size()+" disabled="+call(screen(),"mouseTweaksDisabled"));
+            scroll(p[0],p[1],-3);
+            record("mt-craft-after-scroll","INFO","result="+currentSession().menu().getSlot(0).getItem()+" pending="+call(DesktopContainerClient.class,"hasPendingSlotMutations"));
+        },
+            () -> true,
+            () -> {
+                var actual=server(() -> {
+                    var menu=serverMenu();return List.of(1,2,4,5).stream().allMatch(i -> menu.getSlot(i).getItem().isEmpty())
+                        && mtCount(player().getInventory(),Items.CRAFTING_TABLE)==1
+                        && mtCount(player().getInventory(),Items.STONE)==20 && player().inventoryMenu.getCarried().isEmpty();
+                });
+                addFirst("mt-craft-authoritative",()->{},actual::isDone,()->check("craft-output-consumed-once",actual.join()),3);
+                capture("native-crafting-wheel");
+            },6);
+        if(VersionInfo.MINECRAFT_VERSION.equals("1.20.1")) add("mt-batch-authorization", () -> server(() -> {
+            Object sessions=call(ClassFor("com.salts_inventory_update.server.DesktopContainerSessions"),"sessions",player());
+            long token=((Number)field(sessions,"playerMenuToken")).longValue();
+            int state=player().inventoryMenu.getStateId();
+            Class<?> ref=ClassFor("com.salts_inventory_update.network.DesktopPackets$DesktopSlotReference");
+            Class<?> action=ClassFor("com.salts_inventory_update.network.DesktopPackets$DesktopClickAction");
+            Object valid=construct(action,construct(ref,0,token,state,9),0,false);
+            Object invalid=construct(action,construct(ref,0,token^12345L,state,10),0,false);
+            Object sequence=construct(ClassFor("com.salts_inventory_update.network.DesktopPackets$DesktopClickSequencePayload"),((Number)field(sessions,"lastClickSequence")).longValue()+1,List.of(valid,invalid));
+            call(ClassFor("com.salts_inventory_update.server.DesktopContainerSessions"),"clickSequence",player(),sequence);
+            return player().inventoryMenu.getCarried().isEmpty() && mtCount(player().getInventory(),Items.CRAFTING_TABLE)==1;
+        }), InWorldGameplayHarness::taskDone, () -> check("batch-invalid-source-rejected-before-first-click",(Boolean)task.join()),5);
+        add("mt-final-cleanup", InWorldGameplayHarness::closeWindows, () -> sessions().isEmpty(), () -> {},3);
+    }
+    private static void mtSetScreenField(String name,Object value) {
+        try {var field=screen().getClass().getDeclaredField(name);field.setAccessible(true);field.set(screen(),value);}
+        catch(ReflectiveOperationException failure){throw new IllegalStateException(failure);}
+    }
+    private static void mtSync() {
+        // Fixture writes happen outside Core's packet handlers; flush the final player revision too.
+        Object sessions=call(ClassFor("com.salts_inventory_update.server.DesktopContainerSessions"),"sessions",player());
+        call(sessions,"broadcastAll",player());
+        call(ClassFor("com.salts_inventory_update.server.DesktopContainerSessions"),"syncPlayerMenu",player());
+        call(ClassFor("com.salts_inventory_update.server.DesktopContainerSessions"),"syncCarried",player(),sessions);
+    }
+    private static void mtConfig(String name,boolean enabled) {
+        try {Object config=field(ClassFor("yalter.mousetweaks.Main"),"config");config.getClass().getField(name).setBoolean(config,enabled);}
+        catch(ReflectiveOperationException error){throw new IllegalStateException(error);}
+    }
+    private static int mtCount(Container c,net.minecraft.world.item.Item item) {
+        int n=0;for(int i=0;i<c.getContainerSize();i++)if(c.getItem(i).is(item))n+=c.getItem(i).getCount();return n;
+    }
+    private static void mtSeed(String name,int a,int b,int storage,int cursor) {
+        add("mt-seed-"+name, () -> server(() -> {
+            var menu=serverMenu();for(int i=0;i<27;i++)menu.getSlot(i).set(ItemStack.EMPTY);
+            player().getInventory().clearContent();
+            menu.getSlot(0).set(new ItemStack(Items.STONE,a));menu.getSlot(1).set(new ItemStack(Items.STONE,b));
+            if(storage>0)player().getInventory().setItem(9,new ItemStack(Items.STONE,storage));
+            player().inventoryMenu.setCarried(cursor==0?ItemStack.EMPTY:new ItemStack(Items.STONE,cursor));
+            menu.setCarried(player().inventoryMenu.getCarried());menu.broadcastFullState();mtSync();return null;
+        }), () -> taskDone() && carried()==cursor && currentSession().menu().getSlot(0).getItem().getCount()==a
+            && currentSession().menu().getSlot(1).getItem().getCount()==b && DesktopContainerClient.canDispatchOptimisticMutationNow(), () -> {},6);
+    }
+    private static void mtAuthoritative(String name,int a,int b,int storage,int cursor) {
+        var actual=server(() -> List.of(serverMenu().getSlot(0).getItem().getCount(),serverMenu().getSlot(1).getItem().getCount(),
+            mtCount(player().getInventory(),Items.STONE),player().inventoryMenu.getCarried().getCount()));
+        addFirst(name+"-server",()->{},actual::isDone,()->record(name+"-server-conservation",actual.join().equals(List.of(a,b,storage,cursor))?"PASS":"FAIL","actual="+actual.join()+" expected="+List.of(a,b,storage,cursor)),3);
+    }
+    private static void mtEvent(String event,int slot,int nativeButton) {
+        var p=slotPoint(slot);call(screen(),"mouseMoved",p[0],p[1]);
+        Object mtButton=enumValue("yalter.mousetweaks.MouseButton",nativeButton==right()?"RIGHT":"LEFT");
+        String method=switch(event){case "mouseClicked"->"onMouseClicked";case "mouseReleased"->"onMouseReleased";default->"onMouseDrag";};
+        if(!(Boolean)call(ClassFor("yalter.mousetweaks.Main"),method,screen(),p[0],p[1],mtButton))mouse(event,p[0],p[1],nativeButton,1,0);
+    }
+    private static void mtRegisterWindow() {
+        Class<?> definition=ClassFor("com.salts_inventory_update.api.client.desktop.DesktopWindowDefinition");
+        Object instance=Proxy.newProxyInstance(definition.getClassLoader(),new Class<?>[]{definition},(proxy,method,args)->{
+            if(method.getName().equals("slotAt")) {
+                Object context=args[0];double x=(Double)args[1],y=(Double)args[2];
+                for(int i=0;i<27;i++) {
+                    Object hit=call(context,"menuSlotHit",i,((Number)call(context,"contentX")).intValue()+12+i%9*18,
+                        ((Number)call(context,"contentY")).intValue()+14+i/9*18,x,y);
+                    if(hit!=null)return hit;
+                }return null;
+            }
+            if(method.getName().equals("render")) {
+                Object c=args[0];for(int i=0;i<27;i++)call(c,"slot",i,((Number)call(c,"contentX")).intValue()+12+i%9*18,((Number)call(c,"contentY")).intValue()+14+i/9*18);
+                return null;
+            }
+            if(method.getName().equals("defaultSize") || method.getName().equals("minSize"))return call(ClassFor("com.salts_inventory_update.api.client.desktop.DesktopWindowSize"),"of",200,115);
+            if(method.getName().equals("title"))return net.minecraft.network.chat.Component.literal("API Mouse Tweaks QA");
+            if(method.isDefault())return InvocationHandler.invokeDefault(proxy,method,args);
+            if(method.getName().equals("toString"))return "MouseTweaksPublicApiFixture";
+            throw new IllegalStateException(method.toString());
+        });
+        Object menuType=field(ClassFor("net.minecraft.world.inventory.MenuType"),"GENERIC_9x3");
+        call(ClassFor("com.salts_inventory_update.api.client.desktop.DesktopClientApi"),"replaceWindow",menuType,instance);
+        Class<?> access=ClassFor("com.salts_inventory_update.api.desktop.DesktopMenuBindings$SlotAccess");
+        Object bindings=Proxy.newProxyInstance(access.getClassLoader(),new Class<?>[]{access},(proxy,method,args)->{
+            if(method.getName().equals("size"))return ((AbstractContainerMenu)args[0]).slots.size();
+            if(method.getName().equals("isVirtualSlot"))return ((AbstractContainerMenu)args[0]).getSlot(2)==args[1];
+            if(method.isDefault())return InvocationHandler.invokeDefault(proxy,method,args);
+            if(method.getName().equals("toString"))return "MouseTweaksVirtualFixture";
+            throw new IllegalStateException(method.toString());
+        });
+        call(ClassFor("com.salts_inventory_update.api.desktop.DesktopMenuBindings"),"register",menuType,bindings,false);
+    }
+
+    private static void addWindowControlsRegression() {
+        add("window-controls-configure", () -> {
+            closeWindows();
+            SaltsInventoryConfig.update(config -> {
+                config.persistentWindows = false;
+                config.hasSeenInstructionsWindow = true;
+                config.toggleMovementControl = false;
+            });
+        }, () -> true, () -> {}, 2);
+        for (String kind : List.of("character", "crafting_table", "furnace")) {
+            for (int attempt = 0; attempt < 2; attempt++) {
+                String label = kind + (attempt == 0 ? "-first" : "-reopened");
+                if (kind.equals("character")) {
+                    add(label + "-open", () -> { closeWindows(); InventoryDesktopScreen.openOrToggleCharacter(mc); },
+                        () -> windowKind("CHARACTER") != null, () -> activeWindow = windowKind("CHARACTER"), 4);
+                } else {
+                    String fixture = "recipe-" + kind;
+                    addContainer(fixture, "minecraft:" + kind, 0);
+                    // Retain only native opening, without crafting/smelting probes or auto-close.
+                    if (!STEPS.removeLast().name().equals("close-" + fixture))
+                        throw new IllegalStateException("Expected container fixture close step");
+                }
+                add(label + "-recipe-click", () -> {
+                    if (!kind.equals("character")) activeWindow = windowSession(currentSession().sessionId());
+                    check(label + "-book-initially-not-displayed", call(screen(), "visibleRecipeBook", activeWindow) == null);
+                    Object rect = call(screen(), "recipeBookButtonRect", activeWindow);
+                    clickAt(((Number) call(rect, "x")).doubleValue() + 6, ((Number) call(rect, "y")).doubleValue() + 6);
+                }, () -> true, () -> {
+                    check(label + "-first-click-opens-book", call(screen(), "visibleRecipeBook", activeWindow) != null);
+                    Object rect = call(screen(), "recipeBookButtonRect", activeWindow);
+                    double x = ((Number) call(rect, "x")).doubleValue() + 6;
+                    double y = ((Number) call(rect, "y")).doubleValue() + 6;
+                    clickAt(x, y);
+                    check(label + "-second-click-closes-book", call(screen(), "visibleRecipeBook", activeWindow) == null);
+                    clickAt(x, y);
+                    check(label + "-third-click-opens-book", call(screen(), "visibleRecipeBook", activeWindow) != null);
+                    if (label.endsWith("reopened")) capture(label + "-recipe-book");
+                }, 3);
+                // Close while the native player's recipe-book preference is still open.
+                add(label + "-close-open-book", InWorldGameplayHarness::closeWindows, () -> nativeScreen() == null, () -> {}, 3);
+            }
+        }
+        add("movement-controls-native-menu", () -> {
+            String pkg = VersionInfo.MINECRAFT_VERSION.equals("1.20.1") ? "controls" : "options.controls";
+            setNativeScreen(construct(ClassFor("net.minecraft.client.gui.screens." + pkg + ".ControlsScreen"), null, mc.options));
+        }, () -> nativeScreen() != null, () -> {
+            Object mode = findWidget(nativeScreen(), "Window Movement: Hold");
+            check("controls-hold-default", mode != null);
+            capture("minecraft-controls-hold");
+            pressUiButton(mode);
+            check("controls-saves-toggle", SaltsInventoryConfig.get().toggleMovementControl);
+            SaltsInventoryConfig.reload();
+            check("controls-toggle-survives-reload", SaltsInventoryConfig.get().toggleMovementControl);
+        }, 4);
+        add("movement-controls-mod-settings", () -> setNativeScreen(
+            com.salts_inventory_update.client.WindowedInventoryClient.createConfigScreen(null)), () -> true, () -> {
+            Object mode = configControl("movement_control_mode");
+            check("config-reflects-controls-toggle", call(call(mode, "getMessage"), "getString").equals("Toggle"));
+            capture("mod-settings-toggle");
+            pressUiButton(mode);
+            check("config-saves-hold", !SaltsInventoryConfig.get().toggleMovementControl);
+            pressUiButton(configControl("movement_control_key"));
+            check("config-opens-native-keybinds", nativeScreen().getClass().getSimpleName().equals("KeyBindsScreen"));
+        }, 4);
+        add("movement-controls-menu-sync", () -> {
+            String pkg = VersionInfo.MINECRAFT_VERSION.equals("1.20.1") ? "controls" : "options.controls";
+            setNativeScreen(construct(ClassFor("net.minecraft.client.gui.screens." + pkg + ".ControlsScreen"), null, mc.options));
+        }, () -> true, () -> {
+            check("controls-reflects-config-hold", findWidget(nativeScreen(), "Window Movement: Hold") != null);
+            check("controls-removes-extra-key-button", findWidget(nativeScreen(), "Window Movement Key") == null);
+            pressUiButton(findWidget(nativeScreen(), net.minecraft.network.chat.Component.translatable("controls.keybinds").getString()));
+            check("controls-opens-native-keybinds", nativeScreen().getClass().getSimpleName().equals("KeyBindsScreen"));
+        }, 3);
+        add("movement-toggle-workspace", () -> {
+            setNativeScreen(null);
+            SaltsInventoryConfig.update(config -> config.toggleMovementControl = true);
+            // A registered but inactive companion must leave regular window controls available.
+            com.salts_inventory_update.api.client.desktop.DesktopClientApi.setWorkspaceHost(
+                new com.salts_inventory_update.api.client.desktop.DesktopWorkspaceHost() {
+                    public boolean enabled() { return false; }
+                    public void opened(com.salts_inventory_update.api.client.desktop.DesktopWorkspace workspace) { }
+                });
+            InventoryDesktopScreen.openOrToggleCharacter(mc);
+        }, () -> nativeScreen() instanceof InventoryDesktopScreen, () -> {
+            check("movement-binding-default-alt", call(com.salts_inventory_update.client.WindowedInventoryClient.mouseFocusKey(), "isDefault").equals(true));
+            dispatchMovementKey("KEY_LALT", "PRESS");
+            dispatchMovementKey("KEY_LALT", "RELEASE");
+        }, 3);
+        add("movement-toggle-latches", () -> {}, () -> true, () -> {
+            check("short-alt-tap-latches", screen().isCameraControlActive());
+            dispatchMovementKey("KEY_LALT", "REPEAT");
+        }, 3);
+        add("movement-repeat-ignored", () -> {}, () -> true, () -> {
+            check("repeat-does-not-toggle-off", screen().isCameraControlActive());
+            dispatchMovementKey("KEY_LALT", "PRESS");
+            dispatchMovementKey("KEY_LALT", "RELEASE");
+        }, 3);
+        add("movement-second-press", () -> {}, () -> true, () -> {
+            check("second-tap-restores-cursor", !screen().isCameraControlActive());
+            setMovementBinding("KEY_P");
+            dispatchMovementKey("KEY_LALT", "PRESS");
+            dispatchMovementKey("KEY_LALT", "RELEASE");
+        }, 3);
+        add("movement-old-key-ignored", () -> {}, () -> true, () -> {
+            check("alt-ignored-after-rebind", !screen().isCameraControlActive());
+            dispatchMovementKey("KEY_P", "PRESS");
+            dispatchMovementKey("KEY_P", "RELEASE");
+        }, 3);
+        add("movement-rebound-key", () -> {}, () -> true, () -> {
+            check("rebound-key-latches", screen().isCameraControlActive());
+            capture("rebound-movement-control-active");
+            closeWindows();
+        }, 3);
+        add("movement-close-resets", () -> InventoryDesktopScreen.openOrToggleCharacter(mc), () -> nativeScreen() instanceof InventoryDesktopScreen,
+            () -> check("closed-workspace-does-not-retain-toggle", !screen().isCameraControlActive()), 4);
+        add("movement-mouse-binding", () -> {
+            Object binding = com.salts_inventory_update.client.WindowedInventoryClient.mouseFocusKey();
+            call(binding, "setKey", call(enumValue("com.mojang.blaze3d.platform.InputConstants$Type", "MOUSE"), "getOrCreate", right()));
+            call(ClassFor("net.minecraft.client.KeyMapping"), "resetMapping");
+            dispatchMovementMouse("PRESS"); dispatchMovementMouse("RELEASE");
+        }, () -> true, () -> check("mouse-binding-latches", screen().isCameraControlActive()), 4);
+        add("movement-menu-clears-toggle", () -> setNativeScreen(
+                com.salts_inventory_update.client.WindowedInventoryClient.createConfigScreen(null)),
+            () -> true, () -> {}, 3);
+        add("movement-menu-return", () -> {
+            setNativeScreen(screen());
+        }, () -> nativeScreen() instanceof InventoryDesktopScreen,
+            () -> check("menu-return-resets-toggle", !screen().isCameraControlActive()), 4);
+        add("movement-controls-cleanup", () -> {
+            closeWindows();
+            com.salts_inventory_update.api.client.desktop.DesktopClientApi.setWorkspaceHost(null);
+            Object binding = com.salts_inventory_update.client.WindowedInventoryClient.mouseFocusKey();
+            call(binding, "setKey", call(binding, "getDefaultKey"));
+            call(ClassFor("net.minecraft.client.KeyMapping"), "resetMapping");
+            SaltsInventoryConfig.update(config -> config.toggleMovementControl = false);
+        }, () -> true, () -> {}, 2);
+    }
+
+    private static void addKeybindsRegression() {
+        add("keybinds-configure", () -> {
+            closeWindows();
+            SaltsInventoryConfig.update(config -> {
+                config.persistentWindows = false;
+                config.toggleMovementControl = false;
+                config.eHoldCloseAllSeconds = 0.5D;
+                config.hasSeenInstructionsWindow = true;
+            });
+            String pkg = VersionInfo.MINECRAFT_VERSION.equals("1.20.1") ? "controls" : "options.controls";
+            setNativeScreen(construct(ClassFor("net.minecraft.client.gui.screens." + pkg + ".ControlsScreen"), null, mc.options));
+        }, () -> nativeScreen() != null, () -> {
+            check("controls-keeps-mode-selector", findWidget(nativeScreen(), "Window Movement: Hold") != null);
+            check("controls-no-extra-key-button", findWidget(nativeScreen(), "Window Movement Key") == null);
+            capture("controls-mode-selector-only");
+            pressUiButton(findWidget(nativeScreen(), "Window Movement: Hold"));
+            check("controls-selector-still-saves-mode", SaltsInventoryConfig.get().toggleMovementControl);
+            pressUiButton(findWidget(nativeScreen(), net.minecraft.network.chat.Component.translatable("controls.keybinds").getString()));
+        }, 4);
+        add("native-keybinds-section", () -> {}, () -> nativeScreen().getClass().getSimpleName().equals("KeyBindsScreen"), () -> {
+            Object category = call(com.salts_inventory_update.client.WindowedInventoryClient.mouseFocusKey(), "getCategory");
+            for (Object binding : List.of(
+                com.salts_inventory_update.client.WindowedInventoryClient.characterWindowKey(),
+                com.salts_inventory_update.client.WindowedInventoryClient.jeiWindowKey(),
+                com.salts_inventory_update.client.WindowedInventoryClient.mouseFocusKey())) {
+                check("mod-binding-category-" + call(binding, "getName"), category.equals(call(binding, "getCategory")));
+                check("native-binding-registered-" + call(binding, "getName"),
+                    Arrays.asList((Object[]) field(mc.options, "keyMappings")).contains(binding));
+            }
+            check("vanilla-inventory-keeps-its-own-category", !category.equals(call(mc.options.keyInventory, "getCategory")));
+            Object list = field(nativeScreen(), "keyBindsList");
+            Object section = null;
+            for (Object entry : (List<?>) call(list, "children")) {
+                if (!entry.getClass().getSimpleName().equals("CategoryEntry")) continue;
+                Object label;
+                try { label = field(entry, "name"); }
+                catch (IllegalArgumentException modern) { label = call(field(entry, "categoryName"), "getMessage"); }
+                if (call(label, "getString").equals("Salt's Inventory Update")) { section = entry; break; }
+            }
+            check("native-keybinds-salt-section-present", section != null);
+            call(list, "setScrollAmount", 100000D);
+        }, 4);
+        add("native-keybinds-section-capture", () -> {}, () -> true,
+            () -> capture("salts-inventory-keybinds-section"), 4);
+        add("rebind-vanilla-inventory-keyboard", () -> {
+            setNativeScreen(null);
+            int key = ((Number) field(ClassFor("com.mojang.blaze3d.platform.InputConstants"), "KEY_I")).intValue();
+            String type = VersionInfo.MINECRAFT_VERSION.equals("26.3") ? "KEYBOARD" : "KEYSYM";
+            call(mc.options.keyInventory, "setKey", call(enumValue("com.mojang.blaze3d.platform.InputConstants$Type", type), "getOrCreate", key));
+            call(ClassFor("net.minecraft.client.KeyMapping"), "resetMapping");
+            InventoryDesktopScreen.openOrToggleCharacter(mc);
+        }, () -> nativeScreen() instanceof InventoryDesktopScreen, () -> {
+            check("inventory-binding-reads-rebound-key", com.salts_inventory_update.client.WindowedInventoryClient.inventoryKeyName().equals("I"));
+            checkInventoryHoldHelpBinding();
+            dispatchMovementKey("KEY_E", "PRESS");
+        }, 3);
+        add("old-inventory-key-no-longer-closes", () -> {}, () -> true, () -> {
+            check("old-e-does-not-close", nativeScreen() instanceof InventoryDesktopScreen && screen().hasWindows());
+            dispatchMovementKey("KEY_E", "RELEASE");
+            dispatchMovementKey("KEY_I", "PRESS");
+        }, 5);
+        add("rebound-inventory-key-hold", () -> {}, () -> nativeScreen() == null, () -> {
+            check("rebound-i-hold-closes-all", !screen().hasWindows());
+            dispatchMovementKey("KEY_I", "RELEASE");
+        }, 2);
+        add("rebound-key-release-stays-closed", () -> {}, () -> true,
+            () -> check("rebound-i-release-does-not-reopen", nativeScreen() == null), 2);
+        add("rebind-vanilla-inventory-mouse", () -> {
+            call(mc.options.keyInventory, "setKey", call(enumValue("com.mojang.blaze3d.platform.InputConstants$Type", "MOUSE"), "getOrCreate", right()));
+            call(ClassFor("net.minecraft.client.KeyMapping"), "resetMapping");
+            InventoryDesktopScreen.openOrToggleCharacter(mc);
+        }, () -> nativeScreen() instanceof InventoryDesktopScreen, () -> {
+            checkInventoryHoldHelpBinding();
+            dispatchMovementMouse("PRESS");
+        }, 3);
+        add("rebound-inventory-mouse-hold", () -> {}, () -> nativeScreen() == null, () -> {
+            check("rebound-mouse-hold-closes-all", !screen().hasWindows());
+            dispatchMovementMouse("RELEASE");
+        }, 2);
+        add("rebound-mouse-release-stays-closed", () -> {}, () -> true,
+            () -> check("rebound-mouse-release-does-not-reopen", nativeScreen() == null), 2);
+        add("rebound-inventory-mouse-tap", () -> {
+            dispatchMovementMouse("PRESS"); dispatchMovementMouse("RELEASE");
+        }, () -> nativeScreen() instanceof InventoryDesktopScreen,
+            () -> check("rebound-mouse-tap-opens-inventory", windowKind("INVENTORY") != null), 3);
+        add("keybinds-cleanup", () -> {
+            closeWindows();
+            call(mc.options.keyInventory, "setKey", call(mc.options.keyInventory, "getDefaultKey"));
+            call(ClassFor("net.minecraft.client.KeyMapping"), "resetMapping");
+            SaltsInventoryConfig.update(config -> config.toggleMovementControl = false);
+        }, () -> true, () -> {}, 2);
+    }
+
+    private static void checkInventoryHoldHelpBinding() {
+        Object line = call(ClassFor("com.salts_inventory_update.client.InventoryDesktopScreen$InstructionsLine"), "inventoryHold", "QA");
+        check("help-reflects-inventory-binding", call(line, "resolvedBinds").equals(
+            List.of("Hold " + com.salts_inventory_update.client.WindowedInventoryClient.inventoryKeyName())));
+    }
+
+    private static Object configControl(String id) {
+        for (Object row : (List<?>) field(nativeScreen(), "rows"))
+            if (field(row, "id").equals(id)) return field(row, "control");
+        throw new IllegalArgumentException("Missing config control: " + id);
+    }
+
+    private static void pressUiButton(Object button) {
+        try { call(button, "onPress"); }
+        catch (IllegalArgumentException modern) {
+            int space = ((Number) field(ClassFor("com.mojang.blaze3d.platform.InputConstants"), "KEY_SPACE")).intValue();
+            call(button, "onPress", construct(ClassFor("net.minecraft.client.input.KeyEvent"), space, 0, 0));
+        }
+    }
+
+    private static Object findWidget(Object root, String text) {
+        try { if (call(call(root, "getMessage"), "getString").equals(text)) return root; }
+        catch (IllegalArgumentException noMessage) { }
+        try {
+            for (Object child : (List<?>) call(root, "children")) {
+                Object found = findWidget(child, text);
+                if (found != null) return found;
+            }
+        } catch (IllegalArgumentException noChildren) { }
+        return null;
+    }
+
+    private static void setMovementBinding(String name) {
+        int code = ((Number) field(ClassFor("com.mojang.blaze3d.platform.InputConstants"), name)).intValue();
+        String type = VersionInfo.MINECRAFT_VERSION.equals("26.3") ? "KEYBOARD" : "KEYSYM";
+        call(com.salts_inventory_update.client.WindowedInventoryClient.mouseFocusKey(), "setKey",
+            call(enumValue("com.mojang.blaze3d.platform.InputConstants$Type", type), "getOrCreate", code));
+        call(ClassFor("net.minecraft.client.KeyMapping"), "resetMapping");
+    }
+
+    private static long nativeWindowHandle() {
+        Object window = call(mc, "getWindow");
+        try { return ((Number) call(window, "handle")).longValue(); }
+        catch (IllegalArgumentException legacy) { return ((Number) call(window, "getWindow")).longValue(); }
+    }
+
+    private static int nativeInputAction(String name) {
+        try { return ((Number) field(ClassFor("com.mojang.blaze3d.platform.InputConstants"), name)).intValue(); }
+        catch (IllegalArgumentException legacy) { return name.equals("PRESS") ? 1 : name.equals("REPEAT") ? 2 : 0; }
+    }
+
+    private static void dispatchMovementKey(String name, String action) {
+        int key = ((Number) field(ClassFor("com.mojang.blaze3d.platform.InputConstants"), name)).intValue();
+        Object keyboard = field(mc, "keyboardHandler");
+        try { call(keyboard, "keyPress", nativeWindowHandle(), key, 0, nativeInputAction(action), 0); }
+        catch (IllegalArgumentException modern) {
+            call(keyboard, "keyPress", nativeWindowHandle(), nativeInputAction(action),
+                construct(ClassFor("net.minecraft.client.input.KeyEvent"), key, 0, 0));
+        }
+    }
+
+    private static void dispatchMovementMouse(String action) {
+        try { call(mc.mouseHandler, "onPress", nativeWindowHandle(), right(), nativeInputAction(action), 0); }
+        catch (IllegalArgumentException modern) {
+            call(mc.mouseHandler, "onButton", nativeWindowHandle(),
+                construct(ClassFor("net.minecraft.client.input.MouseButtonInfo"), right(), 0), nativeInputAction(action));
+        }
+    }
+
+    private static void addChestCloseRegression() {
+        add("removed-window-api", () -> {}, () -> true, () -> {
+            for (String type : List.of("DesktopWindowContext", "DesktopWindowDefinition", "DesktopWindowState", "DesktopWindowOptions")) {
+                Class<?> api = ClassFor("com.salts_inventory_update.api.client.desktop." + type);
+                check("removed-api-" + type, Arrays.stream(api.getMethods()).noneMatch(method ->
+                    List.of("minimized", "minimizable", "ghosted", "unghosted", "ghostable").contains(method.getName())));
+            }
+            for (String removed : List.of("enableGhostPins", "minimizableWindows", "ghostWindowOpacity")) {
+                check("removed-setting-" + removed, Arrays.stream(SaltsInventoryConfig.ConfigFile.class.getFields())
+                    .noneMatch(option -> option.getName().equals(removed)));
+            }
+        }, 1);
+        add("removed-window-settings-screen", () -> setNativeScreen(
+                com.salts_inventory_update.client.WindowedInventoryClient.createConfigScreen(null)),
+            () -> nativeScreen() instanceof com.salts_inventory_update.client.SaltsInventoryConfigScreen, () -> {
+                List<String> ids = ((List<?>) field(nativeScreen(), "rows")).stream()
+                    .map(row -> field(row, "id").toString()).toList();
+                check("config-keeps-persistent-windows", ids.contains("persistent_windows"));
+                check("config-removes-obsolete-controls", Collections.disjoint(ids,
+                    List.of("enable_ghost_pins", "minimizable_windows", "ghost_window_opacity")));
+                capture("window-settings-without-retired-features");
+            }, 5);
+        add("removed-window-settings-close", () -> setNativeScreen(null), () -> nativeScreen() == null, () -> {}, 2);
+        add("native-opener-balanced-lifecycle", () -> server(InWorldGameplayHarness::nativeOpenerLifecycle),
+            InWorldGameplayHarness::taskDone, () -> {
+                List<Integer> counts = (List<Integer>) task.join();
+                record("native-opener-hide-restore-final-close-balanced", counts.equals(List.of(1, 1, 2, 2, 2, 3, 3, 32))
+                    ? "PASS" : "FAIL", counts.toString());
+            }, 2);
+        for (boolean persistent : List.of(false, true)) {
+            for (String gesture : List.of("hold-e", "hold-escape", "tap-escape")) {
+                String label = "chest-" + (persistent ? "persistent" : "ordinary") + "-" + gesture;
+                add(label + "-configure", () -> {
+                    closeWindows();
+                    call(ClassFor("com.salts_inventory_update.client.InventoryKeyHoldController"), "reset");
+                    SaltsInventoryConfig.update(config -> {
+                        config.persistentWindows = persistent;
+                        config.eHoldCloseAllSeconds = 0.5D;
+                        config.hasSeenInstructionsWindow = true;
+                    });
+                    server(() -> {
+                        command("tp @a " + (origin.getX() + 0.5D) + " " + origin.getY()
+                            + " " + (origin.getZ() + 3.5D) + " 180 20");
+                        return null;
+                    });
+                }, InWorldGameplayHarness::taskDone, () -> {}, 5);
+                addContainer("chest", "minecraft:chest", 0);
+                add(label + "-open-state", () -> server(InWorldGameplayHarness::chestCloseSnapshot),
+                    InWorldGameplayHarness::taskDone, () -> {
+                        List<Integer> snapshot = (List<Integer>) task.join();
+                        record(label + "-native-openers-before", snapshot.get(0) > 0 ? "PASS" : "FAIL", snapshot.toString());
+                        record(label + "-native-lid-before", chestLidOpenness() > 0.9F ? "PASS" : "FAIL", "openness=" + chestLidOpenness());
+                        capture(label + "-open");
+                    }, 20);
+                long[] pressedAt = new long[1];
+                String key = gesture.equals("hold-e") ? "KEY_E" : "KEY_ESCAPE";
+                add(label + "-gesture", () -> {
+                    pressedAt[0] = System.currentTimeMillis();
+                    dispatchChestCloseKey(key, "PRESS");
+                }, () -> System.currentTimeMillis() - pressedAt[0] >= (gesture.startsWith("hold") ? 900L : 80L),
+                    () -> {
+                        if (gesture.startsWith("hold")) {
+                            check(label + "-closed-before-key-release", nativeScreen() == null);
+                        }
+                        dispatchChestCloseKey(key, "RELEASE");
+                    }, 0);
+                // Let the native opener recheck, block event and lid animation settle.
+                add(label + "-animation-settle", () -> {}, () -> true, () -> {}, 45);
+                add(label + "-closed-state", () -> server(InWorldGameplayHarness::chestCloseSnapshot),
+                    InWorldGameplayHarness::taskDone, () -> {
+                        List<Integer> snapshot = (List<Integer>) task.join();
+                        float openness = chestLidOpenness();
+                        check(label + "-desktop-dismissed", nativeScreen() == null);
+                        record(label + "-native-openers-zero", snapshot.get(0) == 0 ? "PASS" : "FAIL", snapshot.toString());
+                        record(label + "-native-lid-closed", openness <= 0.01F ? "PASS" : "FAIL", "openness=" + openness);
+                        check(label + "-contents-preserved", snapshot.get(1) == 32);
+                        capture(label + "-after-close");
+                    }, 2);
+                if (persistent && !gesture.equals("hold-escape")) {
+                    add(label + "-restore", () -> InventoryDesktopScreen.openOrToggleInventory(mc),
+                        () -> nativeScreen() instanceof InventoryDesktopScreen && !sessions().isEmpty(), () -> {
+                            check(label + "-window-restored", windowKind("CONTAINER") != null
+                                || sessions().stream().anyMatch(session -> windowSession(session.sessionId()) != null));
+                            capture(label + "-restored");
+                        }, 20);
+                    add(label + "-restored-native-state", () -> server(InWorldGameplayHarness::chestCloseSnapshot),
+                        InWorldGameplayHarness::taskDone, () -> {
+                            List<Integer> snapshot = (List<Integer>) task.join();
+                            record(label + "-restored-native-viewer", snapshot.get(0) == 1 ? "PASS" : "FAIL", snapshot.toString());
+                            record(label + "-restored-native-lid", chestLidOpenness() > 0.9F ? "PASS" : "FAIL", "openness=" + chestLidOpenness());
+                            check(label + "-restored-contents-preserved", snapshot.get(1) == 32);
+                        }, 5);
+                }
+                add(label + "-cleanup", InWorldGameplayHarness::closeWindows, () -> sessions().isEmpty(), () -> {}, 15);
+            }
+        }
+    }
+
+    private static List<Integer> nativeOpenerLifecycle() {
+        var backing = new net.minecraft.world.SimpleContainer(27);
+        backing.setItem(0, new ItemStack(Items.DIRT, 32));
+        var opened = new java.util.concurrent.atomic.AtomicInteger();
+        var closed = new java.util.concurrent.atomic.AtomicInteger();
+        Container container = (Container) Proxy.newProxyInstance(Container.class.getClassLoader(), new Class<?>[]{Container.class},
+            (proxy, method, args) -> {
+                if (method.getName().equals("startOpen")) { opened.incrementAndGet(); return null; }
+                if (method.getName().equals("stopOpen")) { closed.incrementAndGet(); return null; }
+                return method.invoke(backing, args);
+            });
+        Object type = field(ClassFor("net.minecraft.world.inventory.MenuType"), "GENERIC_9x3");
+        Object menu = construct(ClassFor("net.minecraft.world.inventory.ChestMenu"), type, 50001, player().getInventory(), container, 3);
+        int initiallyOpened = opened.get();
+        call(menu, "salts_inventory_update$setOpenerVisible", player(), false);
+        call(menu, "salts_inventory_update$setOpenerVisible", player(), false);
+        int hiddenClosed = closed.get();
+        call(menu, "salts_inventory_update$setOpenerVisible", player(), true);
+        call(menu, "salts_inventory_update$setOpenerVisible", player(), true);
+        int restoredOpened = opened.get();
+        call(menu, "salts_inventory_update$setOpenerVisible", player(), false);
+        call(menu, "removed", player());
+        int hiddenFinalClosed = closed.get();
+        call(menu, "salts_inventory_update$setOpenerVisible", player(), true);
+        int disposedOpened = opened.get();
+        Object visible = construct(ClassFor("net.minecraft.world.inventory.ChestMenu"), type, 50002, player().getInventory(), container, 3);
+        call(visible, "removed", player());
+        call(visible, "removed", player());
+        return List.of(initiallyOpened, hiddenClosed, restoredOpened, hiddenFinalClosed, disposedOpened,
+            opened.get(), closed.get(), backing.getItem(0).getCount());
+    }
+
+    private static List<Integer> chestCloseSnapshot() {
+        Object chest = serverLevel().getBlockEntity(origin);
+        int openers = ((Number) call(field(chest, "openersCounter"), "getOpenerCount")).intValue();
+        return List.of(openers, ((Container) chest).getItem(0).getCount());
+    }
+
+    private static float chestLidOpenness() {
+        Object chest = mc.level.getBlockEntity(origin);
+        return ((Number) call(chest, "getOpenNess", 0.0F)).floatValue();
+    }
+
+    private static void dispatchChestCloseKey(String name, String actionName) {
+        Class<?> input = ClassFor("com.mojang.blaze3d.platform.InputConstants");
+        int key = ((Number) field(input, name)).intValue();
+        int action;
+        try { action = ((Number) field(input, actionName)).intValue(); }
+        catch (IllegalArgumentException legacy) { action = actionName.equals("PRESS") ? 1 : 0; }
+        Class<?> controller = ClassFor("com.salts_inventory_update.client.InventoryKeyHoldController");
+        Method handler = Arrays.stream(controller.getMethods())
+            .filter(method -> method.getName().equals("handleInventoryKeyAction")).findFirst().orElseThrow();
+        Object event = construct(handler.getParameterTypes()[2], key, 0, 0);
+        boolean handled = (Boolean) call(controller, "handleInventoryKeyAction", mc, action, event);
+        // Same fallback as KeyboardHandler when the hold controller declines a key.
+        if (!handled && nativeScreen() instanceof InventoryDesktopScreen) {
+            String method = actionName.equals("PRESS") ? "keyPressed" : "keyReleased";
+            try { call(screen(), method, key, 0, 0); }
+            catch (IllegalArgumentException modern) { call(screen(), method, event); }
+        }
     }
 
     private static void addLocalWindows() {
@@ -204,7 +1421,8 @@ public final class InWorldGameplayHarness {
         }, label.equals("toms-inventory_cable_connector")?100:12);
         if(label.equals("crafting_table")) addCrafting();
         if(label.equals("furnace")) addSmelting();
-        if(label.equals("toms-storage_terminal"))addTerminalInteractions();
+        if(label.equals("toms-storage_terminal") || TOMS_PICKUP_ONLY && label.equals("toms-crafting_terminal"))
+            addTerminalInteractions(TOMS_PICKUP_ONLY ? label : "terminal");
         if(VersionInfo.MINECRAFT_VERSION.equals("1.20.1")) {
             if(label.equals("toms-inventory_cable_connector_filtered"))addTomLegacyConnectorControls();
             if(label.equals("toms-level_emitter"))addTomLegacyEmitterControls();
@@ -326,6 +1544,11 @@ public final class InWorldGameplayHarness {
                 Container c=(Container)serverLevel().getBlockEntity(networkStoragePos);
                 c.setItem(0,new ItemStack(Items.DIRT,32));c.setItem(1,new ItemStack(Items.OAK_PLANKS,32));c.setChanged();return null;
             }),InWorldGameplayHarness::taskDone,()->{},40);
+            if (TOMS_PICKUP_ONLY) {
+                for (String id : List.of("storage_terminal", "crafting_terminal"))
+                    addContainer("toms-" + id, "toms_storage:" + id, 0);
+                return;
+            }
             boolean legacy=VersionInfo.MINECRAFT_VERSION.equals("1.20.1");
             for(String id:legacy?List.of("storage_terminal","crafting_terminal","level_emitter","inventory_cable_connector_filtered"):List.of("storage_terminal","crafting_terminal","level_emitter","filing_cabinet"))
                 addContainer("toms-"+id,"toms_storage:"+id,0);
@@ -451,27 +1674,32 @@ public final class InWorldGameplayHarness {
         },12);
     }
 
-    private static void addTerminalInteractions(){
-        add("terminal-network-snapshot",()->{},()->!((List<?>)field(field(windowSession(activeSession.sessionId()),"apiState"),"entries")).isEmpty(),
-            ()->{check("terminal-two-item-types",((List<?>)field(field(windowSession(activeSession.sessionId()),"apiState"),"entries")).size()==2);capture("toms-connected-terminal");},5);
-        add("terminal-withdraw-click",()->{
+    private static void addTerminalInteractions(String prefix){
+        add(prefix+"-network-snapshot",()->{},()->!((List<?>)field(field(windowSession(activeSession.sessionId()),"apiState"),"entries")).isEmpty(),
+            ()->{check(prefix+"-two-item-types",((List<?>)field(field(windowSession(activeSession.sessionId()),"apiState"),"entries")).size()==2);capture(TOMS_PICKUP_ONLY?prefix+"-connected":"toms-connected-terminal");},5);
+        add(prefix+"-withdraw-click",()->{
             Object w=windowSession(activeSession.sessionId());Object c=call(screen(),"apiContext",w,null,0,0);
             clickAt(((Number)call(c,"contentX")).doubleValue()+8,((Number)call(c,"contentY")).doubleValue()+27);
-        },()->carried()==32,()->{
+        },()->carried()==32 || TOMS_PICKUP_ONLY,()->{
             var value=server(()->{
                 Container c=(Container)serverLevel().getBlockEntity(networkStoragePos);int n=0;
                 for(int i=0;i<c.getContainerSize();i++)n+=c.getItem(i).getCount();return List.of(n,player().inventoryMenu.getCarried().getCount());
-            });addFirst("terminal-authoritative-withdraw",()->{},value::isDone,()->check("terminal-withdraw-conservation",value.join().equals(List.of(32,32))),3);
-        },8);
-        add("terminal-deposit-click",()->{
+            });addFirst(prefix+"-authoritative-withdraw",()->{},value::isDone,()->{
+                record(prefix+"-withdraw-conservation",value.join().equals(List.of(32,32))?"PASS":"FAIL","storage/canonical cursor="+value.join());
+                check(prefix+"-client-cursor-has-stack",carried()==32);
+                capture(prefix+"-picked-up");
+                if (TOMS_PICKUP_ONLY && (!value.join().equals(List.of(32,32)) || carried()!=32)) STEPS.clear();
+            },3);
+        },TOMS_PICKUP_ONLY?20:8);
+        add(prefix+"-deposit-click",()->{
             Object w=windowSession(activeSession.sessionId());Object c=call(screen(),"apiContext",w,null,0,0);
             clickAt(((Number)call(c,"contentX")).doubleValue()+8,((Number)call(c,"contentY")).doubleValue()+27);
         },()->carried()==0,()->{
             var value=server(()->{
                 Container c=(Container)serverLevel().getBlockEntity(networkStoragePos);int n=0;
                 for(int i=0;i<c.getContainerSize();i++)n+=c.getItem(i).getCount();return n;
-            });addFirst("terminal-authoritative-deposit",()->{},value::isDone,()->check("terminal-deposit-conservation",value.join()==64),3);
-            capture("toms-terminal-deposit");
+            });addFirst(prefix+"-authoritative-deposit",()->{},value::isDone,()->check(prefix+"-deposit-conservation",value.join()==64),3);
+            capture(TOMS_PICKUP_ONLY?prefix+"-deposit":"toms-terminal-deposit");
         },8);
     }
     private static void addSophisticatedSettings(){
@@ -687,10 +1915,7 @@ public final class InWorldGameplayHarness {
         add("window-lock",()->clickControl("LOCK"),()->Boolean.TRUE.equals(field(windowSession(activeSession.sessionId()),"locked")),()->capture("window-locked"),3);
         add("window-unlock",()->clickControl("LOCK"),()->!Boolean.TRUE.equals(field(windowSession(activeSession.sessionId()),"locked")),()->{},3);
         add("window-pin",()->clickControl("PIN"),()->!field(windowSession(activeSession.sessionId()),"pinMode").toString().equals("UNPINNED"),()->capture("window-pinned"),5);
-        add("window-ghost-pin",()->clickControl("PIN"),()->field(windowSession(activeSession.sessionId()),"pinMode").toString().equals("GHOST_PINNED"),()->capture("window-ghost-pinned"),5);
         add("window-unpin",()->clickControl("PIN"),()->field(windowSession(activeSession.sessionId()),"pinMode").toString().equals("UNPINNED"),()->{},5);
-        add("window-minimize",()->clickControl("MINIMIZE"),()->Boolean.TRUE.equals(field(windowSession(activeSession.sessionId()),"minimized")),()->capture("window-minimized"),3);
-        add("window-restore",()->clickControl("MINIMIZE"),()->!Boolean.TRUE.equals(field(windowSession(activeSession.sessionId()),"minimized")),()->capture("window-restored"),3);
     }
     private static void addDrag(String label,int button,int count,List<Integer> expected) {
         add(label+"-seed",()->server(()->{
@@ -731,10 +1956,15 @@ public final class InWorldGameplayHarness {
         // Creating a world while the initial splash overlay is still present leaves
         // Minecraft's synchronous world-load loop waiting for an unrendered overlay.
         if(active==null && mc.player==null && overlay()!=null) return;
-        if(System.currentTimeMillis()-startedAt>20*60*1000L){record("suite-timeout","FAIL","20-minute deadline exceeded");finish();return;}
+        if(!MANUAL_MOUSE_TWEAKS && System.currentTimeMillis()-startedAt>20*60*1000L){record("suite-timeout","FAIL","20-minute deadline exceeded");finish();return;}
         try {
             if(active==null) {
                 if(STEPS.isEmpty()){
+                    if(MANUAL_MOUSE_TWEAKS){
+                        manualMouseTweaksObserve();
+                        if(Files.exists(output.resolve("manual-finish.request")))finish();
+                        return;
+                    }
                     if (SCENARIO.equals("ae2-atlas")) {
                         Path atlas = output.resolve("atlas");
                         if (Files.exists(atlas.resolve("failed.txt"))) {
@@ -755,7 +1985,13 @@ public final class InWorldGameplayHarness {
                 }
                 active=STEPS.removeFirst(); stepStarted=System.currentTimeMillis();settle=-1;
                 SaltsInventoryUpdate.LOGGER.info("SIU_GAMEPLAY_STEP name={} status=START",active.name());active.start().run();
+                if (WINDOW_CONTROLS_ONLY) {
+                    // Yield after changing screens so framebuffer evidence captures a rendered UI.
+                    stepStarted = System.currentTimeMillis();
+                    return;
+                }
             }
+            if (WINDOW_CONTROLS_ONLY && System.currentTimeMillis() - stepStarted < 500L) return;
             boolean ready=active.ready().getAsBoolean();
             if(ready) {
                 if(settle<0) settle=active.settleTicks();
@@ -764,7 +2000,7 @@ public final class InWorldGameplayHarness {
                 }
             } else {
                 settle=-1;
-                if(System.currentTimeMillis()-stepStarted>45000L) throw new IllegalStateException("Stage timed out; screen="+(nativeScreen()==null?"none":nativeScreen().getClass().getName())+", sessions="+sessions().size()+", carried="+carried());
+                if(System.currentTimeMillis()-stepStarted>(MOUSE_TWEAKS_ONLY && active.name().startsWith("mt-") ? 8000L : 45000L)) throw new IllegalStateException("Stage timed out; screen="+(nativeScreen()==null?"none":nativeScreen().getClass().getName())+", sessions="+sessions().size()+", carried="+carried());
             }
         } catch(Throwable e) {
             boolean requiredHandshakeFailed = active != null && active.name().equals("desktop-handshake");
@@ -790,9 +2026,9 @@ public final class InWorldGameplayHarness {
                 break;
             } catch(ReflectiveOperationException|IllegalArgumentException ignored) { }
         }
-        SaltsInventoryConfig.update(config->{config.enableMod=true;config.openUnlocked=true;config.allowResizing=true;config.enableGhostPins=true;config.minimizableWindows=true;config.expandableInventory=true;});
+        SaltsInventoryConfig.update(config->{config.enableMod=true;config.openUnlocked=true;config.allowResizing=true;config.expandableInventory=true;if(MANUAL_MOUSE_TWEAKS)config.hasSeenInstructionsWindow=true;});
         if (SCENARIO.equals("ae2-atlas")) SaltsInventoryConfig.update(config -> {
-            config.openUnlocked=false; config.minimizableWindows=false; config.expandableInventory=false;
+            config.openUnlocked=false;  config.expandableInventory=false;
             config.hasSeenInstructionsWindow=true;
         });
         String name="siu-qa-"+System.currentTimeMillis();
@@ -895,7 +2131,7 @@ public final class InWorldGameplayHarness {
         try{
             if(name.equals("mouseDragged"))call(s,name,x,y,button,dx,dy);else call(s,name,x,y,button);
         }catch(IllegalArgumentException modern){
-            Object info=construct(ClassFor("net.minecraft.client.input.MouseButtonInfo"),button,0);
+            Object info=construct(ClassFor("net.minecraft.client.input.MouseButtonInfo"),button,mtShift?1:0);
             Object event=construct(ClassFor("net.minecraft.client.input.MouseButtonEvent"),x,y,info);
             if(name.equals("mouseDragged"))call(s,name,event,dx,dy);else if(name.equals("mouseClicked"))call(s,name,event,false);else call(s,name,event);
         }
@@ -962,6 +2198,16 @@ public final class InWorldGameplayHarness {
         Map<String,Object> report=new LinkedHashMap<>();report.put("scenario",SCENARIO);report.put("minecraft",VersionInfo.MINECRAFT_VERSION);report.put("loader",System.getenv("SIU_FUNCTIONAL_TEST_LOADER"));report.put("results",RESULTS);report.put("failures",failures);report.put("elapsedMs",System.currentTimeMillis()-startedAt);
         report.put("coreCodeSource",SaltsInventoryUpdate.class.getProtectionDomain().getCodeSource().getLocation().toString());
         report.put("runDirectory",Path.of("").toAbsolutePath().toString());
+        if ("true".equalsIgnoreCase(System.getenv("SIU_QA_CHEST_CLOSE_ONLY"))) report.put("scope", "chest-close-issue-15");
+        if (TOMS_PICKUP_ONLY) report.put("scope", "toms-pickup-issue-17");
+        if (WINDOW_CONTROLS_ONLY) report.put("scope", "recipe-book-and-movement-controls");
+        if (MOUSE_TWEAKS_ONLY) report.put("scope","mouse-tweaks-core-only");
+        if (MANUAL_MOUSE_TWEAKS) report.put("scope","mouse-tweaks-computer-use-fixture");
+        if (KEYBINDS_ONLY) report.put("scope", "key-bindings-and-inventory-hold");
+        if (BROWSER_SEARCH_ONLY) report.put("scope", "ancient-remnants-browser-search");
+        if (RAISED_ONLY) report.put("scope", "raised-hud-interoperability");
+        if (HUD_VISIBILITY_ONLY) report.put("scope", "window-hosted-hud-visibility");
+        if (HUD_MOVEMENT_ONLY) report.put("scope", "window-hosted-hud-movement");
         Map<String,String> mods=loadedMods();report.put("loadedMods",mods);
         if(mods.containsKey("salts_inventory_compat"))report.put("compatibilityCodeSource",ClassFor("com.salts_inventory_update.compat.CompatibilityBootstrap").getProtectionDomain().getCodeSource().getLocation().toString());
         try{Files.writeString(output.resolve("results.json"),new GsonBuilder().setPrettyPrinting().create().toJson(report));}catch(Exception e){SaltsInventoryUpdate.LOGGER.error("Cannot save QA result",e);}

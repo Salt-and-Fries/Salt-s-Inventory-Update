@@ -64,6 +64,16 @@ public abstract class FeatureWorkspaceSurfaceProbeMixin {
     }
     @Inject(method = "renderWorkspaceContents", at = @At("HEAD"), remap = false)
     private void begin(GuiGraphicsExtractor graphics, float tick, CallbackInfo callback) { QaVisualFeatureProbe.workspaceBegin(); }
+    @Inject(method = "renderWorkspaceContents", at = @At("RETURN"), remap = false)
+    private void end(GuiGraphicsExtractor graphics, float tick, CallbackInfo callback) { QaVisualFeatureProbe.workspaceEnd(); }
+    @WrapOperation(method = "renderWorkspaceContents", at = @At(value = "INVOKE",
+        target = "Lcom/salts_inventory_update/controlify/model/WorkspaceSurfaceTransition;value(Ljava/lang/Object;ZJZ)D"), remap = false)
+    private double surface(com.salts_inventory_update.controlify.model.WorkspaceSurfaceTransition<UUID> transition,
+                           Object id, boolean live, long now, boolean animate, Operation<Double> original) {
+        double value = original.call(transition, id, live, now, animate);
+        QaVisualFeatureProbe.surface((UUID) id, live, value);
+        return value;
+    }
     @WrapOperation(method = "renderNativeWindow", at = @At(value = "INVOKE",
         target = "Lcom/salts_inventory_update/api/client/desktop/DesktopWorkspace;renderWindow(Ljava/util/UUID;Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V"), remap = false)
     private void nativePane(DesktopWorkspace desktop, UUID id, GuiGraphicsExtractor graphics, int x, int y, float tick, Operation<Void> original) {

@@ -122,7 +122,7 @@ final class DesktopApiViewsTest {
         Object modal = view(screen, new Object(), definition(true, new AtomicInteger(), new AtomicInteger()));
         assertSame(modal, invoke(screen, "windowAt", 1000.0D, 1000.0D));
         assertNull(invoke(screen, "slotAt", 1000.0D, 1000.0D), "A modal view cannot fall through to hotbar/player slots");
-        set(modal, "ghosted", true);
+        set(modal, "persistentHidden", true);
         assertNull(invoke(screen, "apiModalWindow"), "Ghost previews cannot hold desktop modality");
     }
 
@@ -132,7 +132,7 @@ final class DesktopApiViewsTest {
         Object window = view(screen, new Object(), definition(false, new AtomicInteger(), new AtomicInteger(), true));
         assertSame(window, invoke(screen, "windowAt", -10.0D, 20.0D));
         assertNull(invoke(screen, "windowAt", -40.0D, 20.0D));
-        set(window, "minimized", true);
+        set(window, "persistentHidden", true);
         assertNull(invoke(screen, "windowAt", -10.0D, 20.0D), "Minimized panels must not intercept external controls");
     }
 
@@ -643,8 +643,8 @@ final class DesktopApiViewsTest {
         set(window, "x", 70);
         assertNull(invoke(screen, "titleBarControlAt", window, 103.0, 8.0));
         assertEquals("CLOSE", invoke(screen, "titleBarControlAt", window, 173.0, 8.0).toString());
-        set(window, "minimized", true);
-        assertSame(window, invoke(screen, "windowAt", 173.0, 8.0), "Restore/management controls remain reachable when contents are minimized");
+        set(window, "persistentHidden", true);
+        assertNull(invoke(screen, "windowAt", 173.0, 8.0), "A persistently hidden owner cannot expose management controls");
         assertNull(invoke(screen, "windowAt", 100.0, 60.0));
     }
 
@@ -653,9 +653,7 @@ final class DesktopApiViewsTest {
         InventoryDesktopScreen screen = screen();
         Object window = view(screen, new Object(), controlsDefinition(DesktopWindowOptions.DRAG_ONLY));
         invoke(screen, "enforceApiOptions", window);
-        for (DesktopWindowAction action : List.of(DesktopWindowAction.USER_CLOSE, DesktopWindowAction.PIN,
-            DesktopWindowAction.UNPIN, DesktopWindowAction.MINIMIZE, DesktopWindowAction.GHOST,
-            DesktopWindowAction.LOCK, DesktopWindowAction.UNLOCK, DesktopWindowAction.MANAGEMENT_MENU)) {
+        for (DesktopWindowAction action : List.of(DesktopWindowAction.USER_CLOSE, DesktopWindowAction.PIN, DesktopWindowAction.UNPIN, DesktopWindowAction.LOCK, DesktopWindowAction.UNLOCK, DesktopWindowAction.MANAGEMENT_MENU)) {
             assertEquals(false, invoke(screen, "apiActionAvailable", window, action), action.toString());
             assertEquals(false, invoke(screen, "requestApiWindowAction", window, action), action.toString());
         }

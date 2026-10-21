@@ -70,7 +70,7 @@ public final class TerminalWindow implements DesktopWindowDefinition<TerminalMen
         return true;
     }
     @Override public DesktopWindowOptions options(DesktopWindowContext<TerminalMenu, State> context) {
-        return new DesktopWindowOptions(true, !context.state().confirmation, true, false, true);
+        return new DesktopWindowOptions(true, true, true);
     }
 
     private void layout(DesktopWindowContext<TerminalMenu, State> context) {

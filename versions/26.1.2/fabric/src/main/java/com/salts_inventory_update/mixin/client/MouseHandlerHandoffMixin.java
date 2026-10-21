@@ -17,6 +17,19 @@ public abstract class MouseHandlerHandoffMixin implements DesktopMouseHandoff {
     private static final int SALTS_INVENTORY_UPDATE$HANDOFF_GRACE_FRAMES = 4;
 
     @Shadow
+    @Final
+    private net.minecraft.client.Minecraft minecraft;
+
+    @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
+    private void salts_inventory_update$movementControl(long window, net.minecraft.client.input.MouseButtonInfo info, int action, CallbackInfo ci) {
+        if (com.salts_inventory_update.client.InventoryKeyHoldController.handleInventoryMouseAction(this.minecraft, action, info.button())
+            || com.salts_inventory_update.client.WindowedInventoryClient.handleMovementMouseAction(this.minecraft, info.button(), action)) {
+            ci.cancel();
+        }
+    }
+
+
+    @Shadow
     private boolean ignoreFirstMove;
 
     @Shadow

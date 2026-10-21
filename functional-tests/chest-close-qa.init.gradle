@@ -1,0 +1,236 @@
+// Focused container regressions, using shipping JARs and disposable worlds.
+// Default: standalone chest lifecycle. qaTomsPickupOnly: two native Tom terminals.
+// qaWindowControlsOnly: recipe-book reopening, mode settings and movement bindings.
+// qaKeybindsOnly: the Controls selector, dedicated Key Binds category and inventory remaps.
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
+import org.gradle.api.tasks.bundling.Jar
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.security.MessageDigest
+
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    def tomsPickup = root.providers.gradleProperty('qaTomsPickupOnly').map { it.toBoolean() }.getOrElse(false)
+    def browserSearch = root.providers.gradleProperty('qaBrowserSearchOnly').map { it.toBoolean() }.getOrElse(false)
+    def browserScenario = root.providers.gradleProperty('qaScenario').getOrElse('browser-rei')
+    if (browserSearch && !(browserScenario in ['browser-rei','browser-jei','browser-emi']))
+        throw new GradleException('Browser search QA requires a recipe-browser scenario')
+    def integrationFixture = tomsPickup || browserSearch
+    def keybinds = root.providers.gradleProperty('qaKeybindsOnly').map { it.toBoolean() }.getOrElse(false)
+    def mouseTweaks = root.providers.gradleProperty('qaMouseTweaksOnly').map { it.toBoolean() }.getOrElse(false)
+    def mouseTweaksAbsent = root.providers.gradleProperty('qaMouseTweaksAbsent').map { it.toBoolean() }.getOrElse(false)
+    def manualMouseTweaks = root.providers.gradleProperty('qaManualMouseTweaks').map { it.toBoolean() }.getOrElse(false)
+    def windowControls = mouseTweaks || keybinds || root.providers.gradleProperty('qaWindowControlsOnly').map { it.toBoolean() }.getOrElse(false)
+    if ((integrationFixture && windowControls) || (tomsPickup && browserSearch)) throw new GradleException('Choose one focused QA scenario')
+    def matrix = root.providers.gradleProperty('qaMatrix').map { it.toBoolean() }.getOrElse(false)
+        ? new JsonSlurper().parse(root.file('controlify/targets.json')).targets
+        : [[minecraft: root.providers.gradleProperty('qaMinecraft').getOrElse('26.3'),
+            loader: root.providers.gradleProperty('qaLoader').getOrElse('fabric')]]
+    matrix.each { selected ->
+    def mc = selected.minecraft
+    def loader = selected.loader
+    def runId = root.providers.gradleProperty('qaRunId').getOrElse('window-cleanup')
+    if (!(runId ==~ /[a-z0-9-]+/)) throw new GradleException('Invalid chest QA run ID')
+    def target = root.project(":${mc}:${loader}")
+    def production = target.tasks.named(target.tasks.findByName('remapJar') != null ? 'remapJar' :
+            target.tasks.findByName('reobfJar') != null ? 'reobfJar' : 'jar', AbstractArchiveTask)
+    def extension = integrationFixture ? root.project(":compatibility:${mc}:${loader}") : null
+    def extensionProduction = integrationFixture ? extension.tasks.named(extension.tasks.findByName('remapJar') != null ? 'remapJar' :
+            extension.tasks.findByName('reobfJar') != null ? 'reobfJar' : 'jar', AbstractArchiveTask) : null
+    def fixture = null
+    if (integrationFixture) {
+        def manifestPath = root.providers.gradleProperty('compatibilityQaManifest').orNull
+        if (!manifestPath) throw new GradleException('Integration QA requires compatibilityQaManifest')
+        fixture = new JsonSlurper().parse(root.file(manifestPath))
+        if (fixture.minecraft != mc || fixture.loader != loader || fixture.scenario != (tomsPickup ? 'toms' : browserScenario))
+            throw new GradleException('Integration fixture does not match the target')
+    }
+    def key = "${mc}-${loader}-${runId}"
+    def output = root.file(browserSearch ? "build/ancient-remnants-issue16/gameplay/${key}" : mouseTweaks ? "build/mouse-tweaks/gameplay/${key}" : keybinds ? "build/keybinds-followup/gameplay/${key}" : windowControls ? "build/window-controls/gameplay/${key}" : tomsPickup ? "build/toms-pickup-issue17/gameplay/${key}" : "build/core-window-cleanup/gameplay/${key}").canonicalFile
+    def generated = target.layout.buildDirectory.dir('chest-close-qa-generated').get().asFile
+    def qa = target.sourceSets.create('chestCloseQa')
+    qa.java.srcDir(root.file('functional-tests/src/main/java'))
+    qa.java.srcDir(new File(generated, 'java'))
+    qa.resources.srcDir(new File(generated, 'resources'))
+    qa.compileClasspath += target.sourceSets.main.compileClasspath + target.sourceSets.main.output
+    def metadata = target.tasks.register('chestCloseQaMetadata') {
+        inputs.property('minecraft', mc)
+        inputs.property('mouseTweaks', mouseTweaks)
+        inputs.property('mouseTweaksQaSchema', '5')
+        inputs.property('loader', loader)
+        inputs.property('version', target.version.toString())
+        outputs.dir(generated)
+        doLast {
+            def resources = new File(generated, 'resources'); resources.mkdirs()
+            if (mouseTweaks) new File(resources, 'mouse-tweaks-qa.mixins.json').text = JsonOutput.toJson([
+                required: true, package: 'com.salts_inventory_update.functionaltest.mixin',
+                client: [mc == '26.3' ? 'MouseTweaksModernQaInputMixin' : mc in ['1.20.1','1.21.1'] ? 'MouseTweaksLegacyQaInputMixin' : 'MouseTweaksWindowQaInputMixin'], injectors: [defaultRequire: 1]])
+            if (loader == 'fabric') {
+                new File(resources, 'fabric.mod.json').text = JsonOutput.toJson([
+                    schemaVersion: 1, id: 'salts_gameplay_qa', version: '1.0.0', environment: 'client',
+                    depends: [salts_inventory_update: target.version.toString(), minecraft: mc], mixins: mouseTweaks ? ['mouse-tweaks-qa.mixins.json'] : []])
+            } else {
+                def definition = new File(resources, loader == 'forge' ? 'META-INF/mods.toml' : 'META-INF/neoforge.mods.toml')
+                definition.parentFile.mkdirs()
+                definition.text = '''modLoader="javafml"
+loaderVersion="[1,)"
+license="Test fixture"
+[[mods]]
+modId="salts_gameplay_qa"
+version="1.0.0"
+displayName="Salt Chest Closing QA"
+'''
+                if (mouseTweaks && loader == 'neoforge') definition.append('\n[[mixins]]\nconfig="mouse-tweaks-qa.mixins.json"\n')
+                def source = new File(generated, 'java/com/salts_inventory_update/functionaltest/ChestCloseQaMod.java')
+                source.parentFile.mkdirs()
+                source.text = """package com.salts_inventory_update.functionaltest;
+@${loader == 'forge' ? 'net.minecraftforge.fml.common.Mod' : 'net.neoforged.fml.common.Mod'}("salts_gameplay_qa")
+public final class ChestCloseQaMod { public ChestCloseQaMod() {} }
+"""
+            }
+        }
+    }
+    target.tasks.named(qa.compileJavaTaskName).configure { dependsOn(metadata, target.tasks.named('classes')) }
+    target.tasks.named(qa.processResourcesTaskName).configure { dependsOn(metadata) }
+    def qaJar = target.tasks.register('chestCloseQaJar', Jar) {
+        from(qa.output)
+        if (mouseTweaks) manifest.attributes('MixinConfigs': 'mouse-tweaks-qa.mixins.json')
+        archiveFileName.set("chest-close-qa-${mc}-${loader}.jar")
+        destinationDirectory.set(target.layout.buildDirectory.dir('chest-close-qa-artifact'))
+    }
+    def run = target.tasks.named('runClient').get()
+    def retainedRuntimeFile = { file ->
+        def path = file.canonicalPath
+        !path.startsWith(root.projectDir.canonicalPath + File.separator) ||
+            path.contains(File.separator + '.gradle' + File.separator) ||
+            path.contains(File.separator + 'moddev' + File.separator)
+    }
+    target.tasks.register(browserSearch ? 'runBrowserSearchQa' : mouseTweaks ? 'runMouseTweaksQa' : windowControls ? 'runWindowControlsQa' : tomsPickup ? 'runTomsPickupQa' : 'runChestCloseQa', JavaExec) {
+        group = 'verification'
+        description = browserSearch ? 'Tests Ancient Remnants search and tooltips in a real recipe-browser window.' : tomsPickup ? 'Tests pickup and return through two native Tom terminals.' :
+            'Tests physical container viewers, persistent hide/restore and removed window features.'
+        timeout.set(java.time.Duration.ofMinutes(manualMouseTweaks ? 120 : 5))
+        dependsOn(production, target.tasks.named(qa.classesTaskName))
+        if (integrationFixture) dependsOn(extensionProduction)
+        if (loader != 'fabric') dependsOn(qaJar)
+        dependsOn(run.taskDependencies.getDependencies(run).findAll { it.name != 'runClient' })
+        javaLauncher.set(run.javaLauncher)
+        mainClass.set(run.mainClass)
+        minHeapSize = '512m'; maxHeapSize = '3g'
+        workingDir = target.layout.buildDirectory.dir(browserSearch ? "runtime-smoke/browser-search-${runId}" : windowControls ? "runtime-smoke/window-controls-${runId}" : tomsPickup ? "runtime-smoke/toms-pickup-${runId}" : "runtime-smoke/chest-close-${runId}").get().asFile
+        environment('SIU_FUNCTIONAL_TESTS', 'true')
+        environment('SIU_GAMEPLAY_TESTS', 'true')
+        environment('SIU_QA_CHEST_CLOSE_ONLY', (!integrationFixture && !windowControls).toString())
+        environment('SIU_QA_BROWSER_SEARCH_ONLY', browserSearch.toString())
+        environment('SIU_QA_WINDOW_CONTROLS_ONLY', windowControls.toString())
+        environment('SIU_QA_KEYBINDS_ONLY', keybinds.toString())
+        environment('SIU_QA_MOUSE_TWEAKS_ONLY', mouseTweaks.toString())
+        environment('SIU_QA_MANUAL_MOUSE_TWEAKS', manualMouseTweaks.toString())
+        environment('SIU_QA_MANUAL_CRAFTING_READY', root.providers.gradleProperty('qaManualCraftingReady').getOrElse('false'))
+        environment('SIU_QA_MT_WHEEL_ONLY', root.providers.gradleProperty('qaMouseTweaksWheelOnly').getOrElse('false'))
+        environment('SIU_QA_MOUSE_TWEAKS_ABSENT', mouseTweaksAbsent.toString())
+        environment('SIU_QA_SCENARIO', browserSearch ? browserScenario : tomsPickup ? 'toms' : 'core')
+        environment('SIU_QA_TOMS_PICKUP_ONLY', tomsPickup.toString())
+        environment('SIU_QA_INTEGRATION_ONLY', integrationFixture.toString())
+        environment('SIU_FUNCTIONAL_TEST_LOADER', loader)
+        environment('SIU_QA_OUTPUT', output.absolutePath)
+        environment('MOD_CLASSES', '')
+        doFirst {
+            if (root.providers.gradleProperty('includeFunctionalTests').getOrElse('false') == 'true')
+                throw new GradleException('Production chest QA requires includeFunctionalTests=false')
+            output.mkdirs(); workingDir.mkdirs()
+            if (new File(output, 'results.json').exists()) throw new GradleException('Preserve old evidence and choose a fresh qaRunId')
+            def runtime = run.hasProperty('classpathProvider') ? run.classpathProvider : run.classpath
+            classpath = runtime.filter(retainedRuntimeFile)
+            if (loader == 'fabric') classpath += qa.output
+            args = run.args + run.argumentProviders.collectMany { it.asArguments().toList() }
+            jvmArgs = (run.jvmArgs + run.jvmArgumentProviders.collectMany { it.asArguments().toList() })
+                .findAll { !it.startsWith('-Dfabric.classPathGroups=') && !it.startsWith('-Dfml.modFolders=') }
+            systemProperties(run.systemProperties.findAll { name, value -> !(name in ['fabric.classPathGroups', 'fml.modFolders']) })
+            systemProperty('max.bg.threads', '2')
+            if (root.providers.gradleProperty('qaTrace').getOrElse('false') == 'true') systemProperty('salts_inventory_update.desktopTrace','true')
+            if (loader == 'fabric') systemProperty('fabric.classPathGroups', qa.output.files.collect { it.absolutePath }.join(File.pathSeparator))
+            if (loader != 'fabric') {
+                def launch = new File(workingDir, 'qa-launch'); launch.mkdirs()
+                jvmArgs = jvmArgs.collect { arg ->
+                    if (!arg.startsWith('@')) return arg
+                    def original = new File(arg.substring(1).replace('\\\\', '\\'))
+                    if (!original.isFile()) throw new GradleException('Missing loader arguments: ' + original)
+                    def copy = new File(launch, original.name)
+                    copy.text = original.readLines().collect { line ->
+                        if (!line.contains('-DlegacyClassPath.file=')) return line
+                        def value = line.substring(line.indexOf('-DlegacyClassPath.file=') + '-DlegacyClassPath.file='.length()).replace('"', '').replace('\\\\', '\\')
+                        def originalClasspath = new File(value)
+                        def filtered = new File(launch, 'packagedLegacyClasspath.txt')
+                        filtered.text = originalClasspath.readLines().findAll { retainedRuntimeFile(new File(it)) }.join('\n') + '\n'
+                        return '"-DlegacyClassPath.file=' + filtered.absolutePath.replace('\\', '\\\\') + '"'
+                    }.join('\n') + '\n'
+                    return '@' + copy.absolutePath
+                }
+            }
+            def mods = new File(workingDir, 'mods').canonicalFile
+            if (mods.parentFile != workingDir.canonicalFile) throw new GradleException('Unexpected QA mods path')
+            mods.mkdirs()
+            mods.listFiles().findAll { it.isFile() && it.name.endsWith('.jar') }.each { it.delete() }
+            def artifact = root.file('dist/core/' + production.get().archiveFile.get().asFile.name)
+            if (!artifact.isFile()) throw new GradleException('Build the distribution first: ' + artifact)
+            def hash = MessageDigest.getInstance('SHA-256').digest(artifact.bytes).encodeHex().toString()
+            new File(output, 'staged-artifacts.json').text = JsonOutput.prettyPrint(JsonOutput.toJson([
+                minecraft: mc, loader: loader, coreVersion: target.version.toString(),
+                artifact: artifact.absolutePath, sha256: hash, scope: keybinds ? 'key-bindings-and-inventory-hold' : windowControls ? 'recipe-book-and-movement-controls' : 'chest-close-issue-15']))
+            def inputs = [[file: artifact, filename: artifact.name, family: 'core']]
+            if (mouseTweaks && !mouseTweaksAbsent) {
+                def upstream = new JsonSlurper().parse(root.file('build/mouse-tweaks/fixtures.json')).find { it.minecraft == mc && it.loader == loader }
+                def upstreamFile = root.file(upstream.file)
+                if (MessageDigest.getInstance('SHA-512').digest(upstreamFile.bytes).encodeHex().toString() != upstream.sha512)
+                    throw new GradleException('Mouse Tweaks fixture hash mismatch')
+                inputs += [file: upstreamFile, filename: upstreamFile.name, family: 'mouse-tweaks']
+            }
+            if (integrationFixture) {
+                def extensionArtifact = root.file('dist/compatibility/' + extensionProduction.get().archiveFile.get().asFile.name)
+                if (!extensionArtifact.isFile()) throw new GradleException('Build the matching extension first: ' + extensionArtifact)
+                inputs += [file: extensionArtifact, filename: extensionArtifact.name, family: 'compatibility']
+                fixture.artifacts.findAll { it.coordinate }.each { upstream ->
+                    def file = root.file(upstream.path)
+                    def upstreamHash = MessageDigest.getInstance('SHA-512').digest(file.bytes).encodeHex().toString()
+                    if (upstreamHash != upstream.sha512) throw new GradleException('Upstream fixture hash mismatch: ' + file)
+                    inputs += [file: file, filename: upstream.filename, family: 'upstream']
+                }
+                new File(output, 'staged-artifacts.json').text = JsonOutput.prettyPrint(JsonOutput.toJson([
+                    minecraft: mc, loader: loader, scope: browserSearch ? 'ancient-remnants-browser-search' : 'toms-pickup-issue-17',
+                    artifacts: inputs.collect { entry -> [family: entry.family, file: entry.file.absolutePath, filename: entry.filename,
+                        sha256: MessageDigest.getInstance('SHA-256').digest(entry.file.bytes).encodeHex().toString()] }]))
+            }
+            if (mouseTweaks) new File(output, 'staged-artifacts.json').text = JsonOutput.prettyPrint(JsonOutput.toJson([
+                minecraft: mc, loader: loader, scope: 'mouse-tweaks-core-only', absent: mouseTweaksAbsent,
+                artifacts: inputs.collect { entry -> [family: entry.family, file: entry.file.absolutePath,
+                    sha256: MessageDigest.getInstance('SHA-256').digest(entry.file.bytes).encodeHex().toString()] }]))
+            if (loader == 'forge') {
+                def originals = new File(workingDir, 'original-mods'); originals.mkdirs()
+                inputs.each { entry -> root.copy { from(entry.file); into(originals); rename { entry.filename } } }
+                def arguments = ['python', root.file('tools/remap-controlify-forge-qa.py'),
+                    '--java', javaLauncher.get().executablePath.asFile,
+                    '--installer-tools', target.configurations.getByName('installerToolsRuntime').singleFile,
+                    '--mappings', target.extensions.getByName('obfuscation').srgToNamedMappings.get().asFile,
+                    '--output-directory', mods, '--evidence', new File(output, 'forge-remap-lineage.json')]
+                inputs.each { entry -> arguments += ['--jar', new File(originals, entry.filename)] }
+                def conversion = root.providers.exec { commandLine(arguments) }
+                println(conversion.standardOutput.asText.get()); conversion.result.get().assertNormalExitValue()
+            } else inputs.each { entry -> root.copy { from(entry.file); into(mods); rename { entry.filename } } }
+            if (loader != 'fabric') root.copy { from(qaJar.get().archiveFile); into(mods) }
+        }
+        doLast {
+            def report = new File(output, 'results.json')
+            if (!report.isFile()) throw new GradleException('No container gameplay report: ' + output)
+            def result = new JsonSlurper().parse(report)
+            if (result.failures != 0) throw new GradleException("Container regression failed ${result.failures} checks: ${report}")
+            if (integrationFixture) {
+                if (!result.loadedMods.salts_inventory_compat || !(tomsPickup ? result.loadedMods.toms_storage : result.loadedMods.ancient_remnants) || result.loadedMods.salts_inventory_controlify)
+                    throw new GradleException('Integration QA loaded an unexpected mod set')
+            } else if (result.loadedMods.salts_inventory_compat || result.loadedMods.salts_inventory_controlify)
+                throw new GradleException('Standalone Core QA unexpectedly loaded an extension')
+            println((browserSearch ? 'BROWSER_SEARCH_QA PASS ' : windowControls ? 'WINDOW_CONTROLS_QA PASS ' : tomsPickup ? 'TOMS_PICKUP_QA PASS ' : 'CHEST_CLOSE_QA PASS ') + key)
+        }
+    }
+    }
+}

@@ -332,7 +332,8 @@ final class DesktopWindowStateStore {
 
         PinMode pinMode() {
             try {
-                return PinMode.valueOf(this.pinMode);
+                // Retain the position of an old ghost pin as an ordinary pin.
+                return "GHOST_PINNED".equals(this.pinMode) ? PinMode.PINNED : PinMode.valueOf(this.pinMode);
             } catch (IllegalArgumentException | NullPointerException ignored) {
                 return PinMode.UNPINNED;
             }

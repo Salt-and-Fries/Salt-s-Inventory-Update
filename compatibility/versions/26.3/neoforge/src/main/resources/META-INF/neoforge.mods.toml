@@ -86,3 +86,10 @@ type = "optional"
 versionRange = "[26.3.824,)"
 ordering = "AFTER"
 side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "raised"
+type = "optional"
+versionRange = "[6.0.2,)"
+ordering = "AFTER"
+side = "CLIENT"

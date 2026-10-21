@@ -20,6 +20,7 @@ public abstract class KeyboardHandlerMixin {
 
     @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$handleInventoryKeyHold(long window, int key, int scancode, int action, int modifiers, CallbackInfo ci) {
+        com.salts_inventory_update.client.WindowedInventoryClient.handleMovementKeyAction(this.minecraft, action, key, scancode);
         if (InventoryKeyHoldController.handleInventoryKeyAction(this.minecraft, action, new KeyEvent(key, scancode, modifiers))) {
             ci.cancel();
         }

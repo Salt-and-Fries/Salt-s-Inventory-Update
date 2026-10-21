@@ -4,7 +4,7 @@ license = "${license}"
 
 [[mods]]
 modId = "${mod_id}"
-version = "${version}"
+version = "${legacy_core_version}"
 displayName = "${mod_name}"
 displayURL = "https://salt-and-fries.github.io/Salt-s-Inventory-Update/"
 issueTrackerURL = "https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/issues"

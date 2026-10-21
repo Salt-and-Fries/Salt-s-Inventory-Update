@@ -5,7 +5,7 @@ license="MIT"
 modId="companion_example"
 version="1.0.0"
 displayName="Salt API Inventory Companion Example"
-description="Standalone optional API5 consumer with real nine-slot tool inventories and original UI artwork. Use only in a disposable demonstration world."
+description="Standalone optional API6 consumer with real nine-slot tool inventories and original UI artwork. Use only in a disposable demonstration world."
 [[dependencies.companion_example]]
 modId="minecraft"
 type="required"

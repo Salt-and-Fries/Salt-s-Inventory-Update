@@ -10,6 +10,7 @@ public final class CompatibilityBootstrap {
         initialize("toms_storage", "com.salts_inventory_update.compat.toms_storage.server.TomsStorageServerCompat", "initialize");
     }
     public static void initializeClient() {
+        initialize("raised", "com.salts_inventory_update.compat.raised.RaisedHudIntegration", "initialize");
         initialize("toms_storage", "com.salts_inventory_update.compat.toms_storage.client.TomsStorageClientCompat", "initialize");
     }
     public static void initialize(String modId, String implementation, String method) {

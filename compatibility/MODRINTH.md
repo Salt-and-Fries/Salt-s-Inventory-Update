@@ -14,7 +14,7 @@ paths with the resulting hosted URLs, and remove this comment before publishing.
 
 Salt's Inventory Compatibility brings supported modded inventories and recipe browsers into the movable window system provided by [Salt's Inventory Update](https://modrinth.com/mod/salts-inventory-update). Use storage terminals, backpacks and other supported interfaces alongside your player inventory and other open containers.
 
-**Requires Salt's Inventory Update.** Install the Compatibility JAR alongside the Core JAR for the same Minecraft version and loader. Compatibility **0.1.0** requires Core **0.1.4**; the two mods have independent version numbers. Core provides the inventory framework and works on its own. This extra JAR provides the integrations listed below.
+**Requires Salt's Inventory Update.** Install the Compatibility JAR alongside the Core JAR for the same Minecraft version and loader. Compatibility **0.1.2** requires Core **0.1.5** on every supported target; the two mods have independent version numbers. Core provides the inventory framework and works on its own. This extra JAR provides the integrations listed below. The optional Controlify companion **0.1.1** uses the same Core release.
 
 Install third-party mods separately, together with their own dependencies. You only need the integrations for the mods you use; the extension does not require every supported mod to be installed.
 
@@ -79,7 +79,7 @@ On Fabric, the extension also adds **Mod Menu** access to Salt's configuration s
 3. Install **Salt's Inventory Compatibility** for the same Minecraft version and loader, using the Core version required by the extension release.
 4. Install the supported third-party mods you want to use, together with their own required dependencies.
 
-For example, Minecraft 1.21.1 Fabric with Compatibility 0.1.0 needs Core 0.1.4: `salts_inventory_update-1.21.1-Fabric-0.1.4.jar` and `salts_inventory_compat-1.21.1-Fabric-0.1.0.jar`.
+For example, Minecraft 1.21.1 Fabric with Compatibility 0.1.2 needs Core 0.1.5: `salts_inventory_update-1.21.1-Fabric-0.1.5.jar` and `salts_inventory_compat-1.21.1-Fabric-0.1.2.jar`.
 
 For supported container integrations in multiplayer, install matching Core and Compatibility versions on both the client and server. Recipe-browser mods and Mod Menu belong on the client; follow each third-party mod's own installation requirements for its other dependencies.
 
@@ -104,3 +104,7 @@ If an integration behaves incorrectly, report the Minecraft version, loader, Cor
 - [Core mod](https://modrinth.com/mod/salts-inventory-update)
 - [Source code](https://github.com/Salt-and-Fries/Salt-s-Inventory-Update)
 - [Public API documentation](https://salt-and-fries.github.io/Salt-s-Inventory-Update/)
+
+### Raised
+
+With Raised installed, detached hotbar and offhand interactions follow your HUD position, including custom horizontal/vertical offsets and live changes. Requires Raised 6.0.2 or later with the supported API. Available for every supported Minecraft/loader pair; Raised remains optional.

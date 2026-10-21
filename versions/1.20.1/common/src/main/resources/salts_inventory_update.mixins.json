@@ -1,5 +1,6 @@
 {
   "required": true,
+  "plugin": "com.salts_inventory_update.mixin.client.mousetweaks.MouseTweaksMixinPlugin",
   "minVersion": "0.8",
   "package": "com.salts_inventory_update.mixin",
   "compatibilityLevel": "JAVA_17",
@@ -24,6 +25,9 @@
     "client.GuiMixin",
     "client.GuiGraphicsAccessor",
     "client.KeyboardHandlerMixin",
+    "client.mousetweaks.MouseTweaksScreenMixin",
+    "client.mousetweaks.MouseTweaksInputMixin",
+    "client.ControlsScreenMixin",
     "client.MinecraftMixin",
     "client.MinecraftInvoker",
     "client.MenuScreensAccessor",

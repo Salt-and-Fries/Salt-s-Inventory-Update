@@ -33,6 +33,10 @@ readiness, legacy input and rendering wrappers. Compile-time API isolation and
 production bytecode checks will enforce the new boundary, including fully
 qualified references and accidental packaged core classes.
 
+## Core input interoperability
+
+Core 0.1.5 also owns optional Mouse Tweaks input interoperability. This bridges the desktop screen and its existing public-API slot geometry to Mouse Tweaks' published custom-screen interface; it does not provide a third-party inventory UI. Core + Mouse Tweaks works without Compatibility. Optional mixins are selected by API bytecode presence, and upstream classes are compile-only dependencies. Neither Mouse Tweaks nor Compatibility is bundled or required by Core. The compatibility providers and their API-only dependency direction remain unchanged.
+
 ## Module and packaging contract
 
 Core keeps the existing `versions/<Minecraft>/<loader>` modules and identifiers.
@@ -48,15 +52,17 @@ coverage limits.
 The root `./gradlew build` or `.\gradlew.bat build` creates all production JARs:
 
 ```text
-dist/core/salts_inventory_update-<Minecraft>-<Loader>-0.1.4.jar
-dist/compatibility/salts_inventory_compat-<Minecraft>-<Loader>-0.1.0.jar
+dist/core/salts_inventory_update-<Minecraft>-<Loader>-0.1.5.jar
+dist/compatibility/salts_inventory_compat-<Minecraft>-<Loader>-0.1.2.jar
 ```
 
 Each directory contains twelve JARs and SHA-256 checksums. Compatibility has its
 own release version, configured by `compatibilityVersion` in `gradle.properties`.
-Compatibility 0.1.0 requires Core 0.1.4 for the same Minecraft version and loader;
-metadata expands this dependency from the root Core version independently of
-the extension version. Optional target mods are not embedded or required to be
+Compatibility 0.1.2 and the separate Controlify companion 0.1.1 require Core
+0.1.5 on every supported target, always for the same Minecraft version and
+loader. The `coreVersion1_20_1` property allows a separate legacy hotfix when
+needed; it currently matches the common release. Metadata and release checks use the corresponding target's
+version independently of the extension version. Optional target mods are not embedded or required to be
 installed. The extension's production task performs the same remapping as core. API development JARs live
 under a core target's `build/api` and never enter distribution folders.
 
@@ -152,3 +158,7 @@ Each adapter uses its upstream version's native design. All twelve extension
 JARs include the shared additions; native support requires an available, reviewed
 upstream AE2 release for that Minecraft/loader target. No AE2 classes or resources
 enter Core, and neither artifact embeds upstream AE2.
+
+## Raised HUD interoperability
+
+Core owns the reusable public HUD layout API and its synchronized render/input geometry. Compatibility owns the optional Raised 6.0.2 adapter on all twelve targets, using only public Core and Raised APIs. Raised is compile-only and never embedded. See [HUD interoperability](hud_interoperability.md).

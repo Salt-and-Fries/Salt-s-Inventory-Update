@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.1.5
+
+- Fixes NeoForge startup by loading vanilla grouped HUD hooks only on Fabric. Forge and NeoForge use their native overlay/layer visibility hooks.
+
+- While **Return Hotbar to Inventory** is enabled, Window Movement Control temporarily restores the native hotbar and its indicators and allows held-slot selection. When movement control is inactive, wheel and hotbar-key selection stay locked to the current slot. Uses the configured binding and Hold/Toggle mode across all twelve Core targets.
+
+- Hides health, armor, hunger, air, experience, mount indicators and the selected-item label with the hotbar while windows are open and **Return Hotbar to Inventory** is enabled, across all versions and loaders. The HUD returns during Window Movement Control, when windows close, or when the option is disabled.
+
+- Adds the public HUD layout API for advanced HUD positioning mods, keeping detached hotbar/offhand overlays and interaction geometry synchronized across all versions/loaders.
+
+The standalone release notes are [changelogs/changelog-0.1.5.md](changelogs/changelog-0.1.5.md).
+
+- Adds optional Mouse Tweaks interoperability directly to Core across all twelve targets, including public-API inventory windows. Preserves upstream drag/wheel settings, authenticated desktop actions and standalone startup without Mouse Tweaks; no Compatibility extension is required.
+- Stops a Mouse Tweaks wheel burst when a crafting or other result slot runs out, preventing later destination clicks from picking up unrelated player items.
+- Fixes the first recipe-book click after closing and reopening its window. Adds a shared Hold/Toggle mode in the mod settings and Minecraft Controls, plus rebindable Window Movement Control (default Left Alt), across all twelve Core builds.
+- Groups Core key bindings under Salt's Inventory Update in Minecraft Key Binds and keeps only Hold/Toggle in the main Controls menu. Hold-to-close and its help follow the vanilla Inventory binding, including keyboard and mouse remappings.
+- Fixes Forge/NeoForge registration timing so all three Core bindings appear in Minecraft's normal Key Binds list.
+
+- Fixes persistent hidden chest viewers and removes Minimize/Ghost Pins throughout Core, settings and the public API. API 6 requires integrations to recompile; normal pins and Persistent Windows remain supported.
+
+- Unifies all twelve Core Minecraft/loader targets under version 0.1.5.
+- Suppresses the automatic regular-window tutorial when an alternative workspace presentation is registered, including the Controlify companion. This applies even before a controller is connected. Manual help remains available, and the tutorial preference stays unseen until the user actually opens help.
+- Preserves the normal automatic tutorial when no alternative workspace presentation is registered.
+- Releases this fix across all twelve Minecraft/loader targets. Compatibility 0.1.2 and the Controlify companion 0.1.1 require this Core release.
+
+## 0.1.4.1 — Minecraft 1.20.1 only
+
+- Publishes the updated Fabric and Forge 1.20.1 Core builds under a distinct hotfix version, including the public compact recipe-layout and native-tooltip hooks required by the updated Compatibility integration.
+- Compatibility 0.1.1 requires Core 0.1.4.1 on Minecraft 1.20.1. All other Core builds remain at 0.1.4. This release-number change adds no further gameplay changes.
+
 ## 0.1.4
 
 The complete update record is [changelogs/changelog-0.1.4.md](changelogs/changelog-0.1.4.md).

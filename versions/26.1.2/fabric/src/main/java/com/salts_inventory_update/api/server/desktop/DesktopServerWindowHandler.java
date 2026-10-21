@@ -27,8 +27,7 @@ public interface DesktopServerWindowHandler<T extends AbstractContainerMenu, S> 
     default void visibilityChanged(DesktopServerSessionContext<T, S> context, boolean visible) {
     }
 
-    default void pinChanged(DesktopServerSessionContext<T, S> context, boolean ghostPinned) {
-    }
+
 
     /**
      * Validates a recipe-browser transfer for a custom menu using a recipe

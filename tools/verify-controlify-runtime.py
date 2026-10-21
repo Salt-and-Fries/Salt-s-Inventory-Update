@@ -16,11 +16,12 @@ ROOT = Path(__file__).resolve().parents[1]
 LOADER_NAMES = {"fabric": "Fabric", "forge": "Forge", "neoforge": "NeoForge"}
 
 
-def companion_versions(path, loader, core_version, companion_version):
+def companion_versions(path, loader, core_version, companion_version, mod_id='salts_inventory_controlify'):
     """Check independent release labels against the actual packaged Core dependency."""
     with ZipFile(path) as archive:
         if loader == "fabric":
             metadata = json.loads(archive.read("fabric.mod.json"))
+            assert metadata['id'] == mod_id, f'{path}: incorrect companion identity'
             version = metadata["version"]
             required_core = metadata["depends"]["salts_inventory_update"]
             expected_core = "=" + core_version
@@ -28,8 +29,8 @@ def companion_versions(path, loader, core_version, companion_version):
             resource = "META-INF/mods.toml" if loader == "forge" else "META-INF/neoforge.mods.toml"
             metadata = tomllib.loads(archive.read(resource).decode("utf-8"))
             version = next(mod["version"] for mod in metadata["mods"]
-                           if mod["modId"] == "salts_inventory_controlify")
-            dependencies = metadata["dependencies"]["salts_inventory_controlify"]
+                           if mod["modId"] == mod_id)
+            dependencies = metadata["dependencies"][mod_id]
             required_core = next(dep["versionRange"] for dep in dependencies
                                  if dep["modId"] == "salts_inventory_update")
             expected_core = f"[{core_version}]"
@@ -501,8 +502,11 @@ def corrected_ui_class(data):
     return bytes(result), corrected
 
 
-def artifact_match(module,release,staged,allow_ui_text_correction=False):
+def artifact_match(module,release,staged,allow_ui_text_correction=False,allow_core_description_correction=False):
     final_hash, staged_hash = digest(release), digest(staged)
+    if final_hash != staged_hash and module == 'core' and allow_core_description_correction:
+        from artifact_lineage import core_description_match
+        return core_description_match(release,staged)
     if final_hash != staged_hash and allow_ui_text_correction:
         assert module == 'controlify' and any(f'-{game}-' in release.name for game in ('26.1.2','26.2'))
         member = 'com/salts_inventory_update/controlify/ContextualRadialOverlay.class'
@@ -853,7 +857,7 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
     version = mods["salts_inventory_update"]
     modules = [("core", "salts_inventory_update"), ("controlify", "salts_inventory_controlify")]
     if with_extension:
-        assert mods.get('salts_inventory_compat') == version, f'{name}: matching Extended jar did not load'
+        assert mods.get('salts_inventory_compat'), f'{name}: Extended jar did not load'
         modules.append(('compatibility','salts_inventory_compat'))
     for module, prefix in modules:
         filename = f"{prefix}-{game}-{LOADER_NAMES[loader]}-{mods[prefix]}.jar"
@@ -888,8 +892,8 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
                 assert not any(f"assets/salts_inventory_controlify/textures/gui/contextual/wheel/{retired}.png" in jar.namelist()
                     for retired in ("panel","wheel_panel","arc_boundary","outer_marker")), \
                     f"{name}: retired panel/boundary textures remain in the final26.3 companion"
-        if module == "controlify":
-            companion_versions(release, loader, version, mods[prefix])
+        if module in ('controlify', 'compatibility'):
+            companion_versions(release, loader, version, mods[prefix], prefix)
         matching[module] = digest(release)
     expected_sources = {
         "coreCodeSource": mods_folder / f"salts_inventory_update-{game}-{LOADER_NAMES[loader]}-{version}.jar",
@@ -897,7 +901,7 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
         "controlifyCodeSource": mods_folder / hashes[target["controller"]["sha512"]].name,
     }
     if with_extension and "extensionCodeSource" in report:
-        expected_sources["extensionCodeSource"] = mods_folder / f"salts_inventory_compat-{game}-{LOADER_NAMES[loader]}-{version}.jar"
+        expected_sources["extensionCodeSource"] = mods_folder / f"salts_inventory_compat-{game}-{LOADER_NAMES[loader]}-{mods['salts_inventory_compat']}.jar"
     for field, expected in expected_sources.items():
         assert code_source_path(report[field]) == expected.resolve(), \
             f"{name}: {field} did not load its actual preserved profile JAR"

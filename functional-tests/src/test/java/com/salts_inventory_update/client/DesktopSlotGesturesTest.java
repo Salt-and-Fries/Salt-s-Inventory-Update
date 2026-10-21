@@ -243,7 +243,7 @@ final class DesktopSlotGesturesTest {
         press(screen, hits.get(0));
         hover(screen, hits.get(1), 2.0);
         long id = events.get(0).id();
-        invoke(screen, "clearSlotInteractionState", "window-minimize");
+        invoke(screen, "clearSlotInteractionState", "persistent-hide");
         invoke(screen, "clearSlotInteractionState", "duplicate-cleanup");
         assertEquals(List.of(
             com.salts_inventory_update.api.client.desktop.DesktopGestureEvent.Outcome.STARTED,

@@ -110,8 +110,7 @@ public final class CompanionNativeAcceptance implements CompanionUiHooks.Observe
         } else if (stage == 1 && mains == 2) {
             require(companions.size() == 1 && companion.owners().size() == 2, "two parents share one companion");
             require(companionId.equals(handle.instanceId()), "ownership acquisition preserves the window lifetime");
-            for (var action : List.of(DesktopWindowAction.USER_CLOSE, DesktopWindowAction.MINIMIZE, DesktopWindowAction.PIN,
-                DesktopWindowAction.GHOST, DesktopWindowAction.LOCK, DesktopWindowAction.MANAGEMENT_MENU, DesktopWindowAction.RESIZE)) {
+            for (var action : List.of(DesktopWindowAction.USER_CLOSE, DesktopWindowAction.PIN, DesktopWindowAction.LOCK, DesktopWindowAction.MANAGEMENT_MENU, DesktopWindowAction.RESIZE)) {
                 require(!handle.available(action) && !handle.request(action), "companion denies " + action);
             }
             require(!handle.close(), "independent handle disposal denied");
@@ -188,16 +187,6 @@ public final class CompanionNativeAcceptance implements CompanionUiHooks.Observe
             control(main(1), DesktopWindowControl.PIN); stage = 20;
         } else if (stage == 20) {
             require(!main(1).handle().state().pinned(), "original-artwork Unpin control works");
-            control(main(1), DesktopWindowControl.MINIMIZE); stage = 21;
-        } else if (stage == 21) {
-            require(main(1).handle().state().minimized() && handle.state().visible(), "one minimized owner leaves shared companion visible");
-            require(main(2).handle().request(DesktopWindowAction.MINIMIZE), "second owner minimizes"); stage = 22;
-        } else if (stage == 22) {
-            require(!handle.state().visible() && handle.isOpen(), "all unavailable owners hide the companion but retain its lifetime");
-            control(main(1), DesktopWindowControl.MINIMIZE); stage = 23;
-        } else if (stage == 23) {
-            require(!main(1).handle().state().minimized() && handle.state().visible(), "original-artwork Restore control restores the shared companion");
-            require(handle.state().x() == 24 && handle.state().y() == 200, "hide/restore retains independent companion position");
             require(main(1).handle().focus(), "management-menu owner focused");
             control(main(1), DesktopWindowControl.ELLIPSIS); stage = 24;
         } else if (stage == 24) {
@@ -244,7 +233,7 @@ public final class CompanionNativeAcceptance implements CompanionUiHooks.Observe
             require(main(3).handle().state().pinned() && controlState(main(3), DesktopWindowControl.PIN).selected(), "Enter activates Pin and public selected state");
             key(InputConstants.KEY_RETURN, 0); key(InputConstants.KEY_TAB, 0); stage = 35;
         } else if (stage == 35) {
-            require(!main(3).handle().state().pinned() && controlState(main(3), DesktopWindowControl.MINIMIZE).keyboardFocused(), "Tab traverses controls and Enter unpins");
+            require(!main(3).handle().state().pinned() && controlState(main(3), DesktopWindowControl.ELLIPSIS).keyboardFocused(), "Tab traverses controls and Enter unpins");
             key(InputConstants.KEY_ESCAPE, 0);
             require(handle.moveTo(40, 200), "companion positioned for foreground overlap");
             require(main(3).handle().moveTo(44, 200) && main(3).handle().focus(), "foreground main window covers companion in normal stacking"); stage = 36;
@@ -334,7 +323,7 @@ public final class CompanionNativeAcceptance implements CompanionUiHooks.Observe
     }
     private void control(Window window, DesktopWindowControl control) {
         var state = window.handle().state();
-        int x = switch (control) { case PIN -> 118; case MINIMIZE -> 132; case ELLIPSIS -> 146; case CLOSE -> 160; default -> throw new IllegalArgumentException(); };
+        int x = switch (control) { case PIN -> 132; case ELLIPSIS -> 146; case CLOSE -> 160; default -> throw new IllegalArgumentException(); };
         click(state.x() + x + 5, state.y() + 10, InputConstants.MOUSE_BUTTON_LEFT, 0);
     }
     private void clickSlot(Window window, int slot, int button, int modifiers) {

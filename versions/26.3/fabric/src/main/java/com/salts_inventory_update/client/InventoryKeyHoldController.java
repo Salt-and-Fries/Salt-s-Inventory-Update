@@ -1,6 +1,7 @@
 package com.salts_inventory_update.client;
 
 import net.minecraft.client.Minecraft;
+import com.salts_inventory_update.platform.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -30,7 +31,17 @@ public final class InventoryKeyHoldController {
             return true;
         }
 
-        HoldAction requestedAction = holdAction(minecraft, event);
+        return handleAction(minecraft, action, holdAction(minecraft, event));
+    }
+
+    public static boolean handleInventoryMouseAction(Minecraft minecraft, int action, int button) {
+        InputConstants.Key binding = KeyMappingHelper.getBoundKeyOf(minecraft.options.keyInventory);
+        if (binding.getType() != InputConstants.Type.MOUSE || binding.getValue() != button
+            || !KeyMappingHelper.isKeyModifierActive(minecraft.options.keyInventory)) return false;
+        return handleAction(minecraft, action, HoldAction.INVENTORY);
+    }
+
+    private static boolean handleAction(Minecraft minecraft, int action, @Nullable HoldAction requestedAction) {
         if (requestedAction == null || !canHandleHoldAction(minecraft, requestedAction)) {
             return false;
         }
@@ -261,7 +272,7 @@ public final class InventoryKeyHoldController {
     }
 
     private enum HoldAction {
-        INVENTORY("E"),
+        INVENTORY("Inventory"),
         ESCAPE("Esc");
 
         private final String debugName;

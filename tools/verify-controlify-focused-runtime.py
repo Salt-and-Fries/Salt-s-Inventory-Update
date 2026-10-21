@@ -255,7 +255,10 @@ def validate(folder, artifacts, pins=None):
     expected_scenario = "controlify-controller-world" if game in LEGACY else "controlify-" + scope
     assert report.get("scenario") == expected_scenario, f"{name}: unexpected gameplay harness"
     assert report.get("scope", scope) == scope, f"{name}: report/launcher scope mismatch"
-    assert name == f"{game}-{loader}-{scope}-extended", f"{name}: target/scope/Extended path mismatch"
+    run_id = staging.get('runId', '')
+    assert not run_id or re.fullmatch(r'[a-z0-9-]+', run_id), f'{name}: invalid run ID'
+    expected_name = f"{game}-{loader}-{scope}-extended" + ('-' + run_id if run_id else '')
+    assert name == expected_name, f"{name}: target/scope/Extended path mismatch"
     assert staging.get("withExtension") is True and not staging.get("fixtures") \
         and not (folder / "optional-mods.json").exists(), f"{name}: expected the isolated matching Extended profile"
     records = report["results"]
@@ -372,7 +375,6 @@ def validate(folder, artifacts, pins=None):
     assert mods.get("minecraft") == game and {"controlify", "yet_another_config_lib_v3", *SALT_MODULES.values()} <= mods.keys(), \
         f"{name}: matching native Minecraft, Core, Extended, companion or dependency did not load"
     version = mods["salts_inventory_update"]
-    assert mods["salts_inventory_compat"] == version, f"{name}: Core and Extended artifact versions differ"
     expected_controller = pin["controller"]["version"].split("-mc", 1)[0] if pin.get("native_forge_port") else pin["controller"]["version"]
     assert mods["controlify"] == expected_controller or mods["controlify"].startswith(expected_controller + "+"), \
         f"{name}: wrong native controller version"
@@ -386,8 +388,8 @@ def validate(folder, artifacts, pins=None):
         assert release.is_file() and filename in staged, f"{name}: missing final or staged {family}"
         artifact_lineage[family] = runtime.artifact_match(family, release, preserved[filename])
         assert artifact_lineage[family]["mode"] == "exact", f"{name}: focused runs require exact final artifact bytes"
-        if family == "controlify":
-            runtime.companion_versions(release, loader, version, mods[mod_id])
+        if family in ('controlify', 'compatibility'):
+            runtime.companion_versions(release, loader, version, mods[mod_id], mod_id)
         artifact_hashes[family] = runtime.digest(release)
         required_files.add(filename)
         salt_files.add(filename)

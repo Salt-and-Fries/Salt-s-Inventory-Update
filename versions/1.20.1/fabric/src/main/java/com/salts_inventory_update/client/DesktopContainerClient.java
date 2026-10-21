@@ -55,7 +55,6 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopModePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionAuthorizationPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopRenamePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionClosedPayload;
-import com.salts_inventory_update.network.DesktopPackets.DesktopSessionPinPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionVisibilityPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSourceLinkPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotPayload;
@@ -67,7 +66,7 @@ import com.salts_inventory_update.protocol.DesktopProtocol;
 public final class DesktopContainerClient {
     private static Object lastDesktopLevel;
     private static final int MODE_REFRESH_INTERVAL_TICKS = 100;
-    private static final long SUPPORTED_CAPABILITIES = DesktopProtocol.KNOWN_CAPABILITIES | DesktopPackets.CAP_MULTI_MENU_GESTURES | DesktopPackets.CAP_SORT_WINDOWS;
+    private static final long SUPPORTED_CAPABILITIES = DesktopProtocol.KNOWN_CAPABILITIES | DesktopPackets.CAP_MULTI_MENU_GESTURES | DesktopPackets.CAP_SORT_WINDOWS | DesktopPackets.CAP_CLICK_SEQUENCES;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final DesktopConnectionState CONNECTION_STATE = new DesktopConnectionState();
     private static final Map<Integer, Long> SESSION_TOKENS = new LinkedHashMap<>();
@@ -100,6 +99,7 @@ public final class DesktopContainerClient {
     }
 
     public static void initializeNetworking() {
+        register(DesktopPackets.DesktopClickSequenceAckPayload.TYPE, DesktopPackets.DesktopClickSequenceAckPayload::new, DesktopContainerClient::acknowledgeClickSequence);
         register(DesktopPackets.DesktopRecipeHoverStatePayload.TYPE,DesktopPackets.DesktopRecipeHoverStatePayload::new,payload->{
             if(payload.connectionNonce()!=CONNECTION_STATE.connectionNonce()||payload.epoch()!=recipeHoverEpoch||payload.sessionId()!=recipeHoverSession)return;
             RECIPE_HOVER_STATES.put(payload.sessionId(),payload);
@@ -369,6 +369,7 @@ public final class DesktopContainerClient {
     }
 
     private static void resetConnection() {
+        resetClickSequences();
         if (topologyPlayer != null) {
             InventoryExpansion.setGameplayEnabled(topologyPlayer, false);
             InventoryExpansion.setTopologyEnabled(topologyPlayer, false);
@@ -405,6 +406,7 @@ public final class DesktopContainerClient {
     }
 
     public static void tick(Minecraft minecraft) {
+        tickClickSequences();
         tickRecipeHover();
         if (lastDesktopLevel != null && lastDesktopLevel != minecraft.level) {
             InventoryDesktopScreen.reset(minecraft);
@@ -577,8 +579,64 @@ public final class DesktopContainerClient {
         );
     }
 
+    private record SequenceClick(int sessionId,int slotIndex,int button,boolean quickMove,int targetKind,int targetSessionId) { }
+    private static final java.util.ArrayDeque<List<SequenceClick>> CLICK_SEQUENCES = new java.util.ArrayDeque<>();
+    private static @Nullable List<SequenceClick> collectedClicks;
+    private static long nextClickSequence = 1, inFlightClickSequence, clickSequenceSentAt, slotMutationDiscardEpoch;
+    private static boolean clickSequencesBlocked;
+
+    public static boolean supportsClickSequences() {
+        return hasCapability(DesktopPackets.CAP_CLICK_SEQUENCES, true) && !clickSequencesBlocked;
+    }
+    public static boolean hasPendingSlotMutations() {
+        return !clickSequencesBlocked && (inFlightClickSequence != 0 || !CLICK_SEQUENCES.isEmpty());
+    }
+    public static long slotMutationDiscardEpoch() { return slotMutationDiscardEpoch; }
+    public static void beginClickSequence() { collectedClicks = new ArrayList<>(); }
+    public static void endClickSequence() {
+        List<SequenceClick> collected = collectedClicks; collectedClicks = null;
+        if (collected == null || collected.isEmpty()) return;
+        if (!supportsClickSequences() || collected.size() > DesktopPackets.MAX_GESTURE_SLOTS || CLICK_SEQUENCES.size() >= 128) {
+            slotMutationDiscardEpoch++; return;
+        }
+        CLICK_SEQUENCES.addLast(List.copyOf(collected));
+        dispatchClickSequence();
+    }
+    private static void resetClickSequences() {
+        CLICK_SEQUENCES.clear(); collectedClicks = null; inFlightClickSequence = 0;
+        nextClickSequence = 1; clickSequencesBlocked = false; slotMutationDiscardEpoch++;
+    }
+    private static void tickClickSequences() {
+        if (inFlightClickSequence != 0 && System.nanoTime() - clickSequenceSentAt > 10_000_000_000L && !clickSequencesBlocked) {
+            CLICK_SEQUENCES.clear(); clickSequencesBlocked = true; slotMutationDiscardEpoch++;
+            DesktopDebug.warn("client click sequence paused reason=ack-timeout");
+        }
+    }
+    private static void dispatchClickSequence() {
+        if (inFlightClickSequence != 0 || CLICK_SEQUENCES.isEmpty() || !supportsClickSequences()) return;
+        List<SequenceClick> clicks = CLICK_SEQUENCES.removeFirst();
+        List<DesktopPackets.DesktopClickAction> actions = new ArrayList<>();
+        try {
+            for (SequenceClick click : clicks) actions.add(new DesktopPackets.DesktopClickAction(
+                new DesktopSlotReference(click.sessionId(), tokenFor(click.sessionId()), stateIdFor(click.sessionId()), click.slotIndex()),
+                click.button(),click.quickMove(),click.targetKind(),click.targetKind()>=0?new DesktopSessionReference(click.targetSessionId(),tokenFor(click.targetSessionId()),stateIdFor(click.targetSessionId())):null));
+        } catch (IllegalArgumentException unavailable) {
+            CLICK_SEQUENCES.clear(); slotMutationDiscardEpoch++; return;
+        }
+        inFlightClickSequence = nextClickSequence++; clickSequenceSentAt = System.nanoTime();
+        if (!send(new DesktopPackets.DesktopClickSequencePayload(inFlightClickSequence, actions), "click-sequence")) {
+            CLICK_SEQUENCES.clear(); inFlightClickSequence = 0; clickSequencesBlocked = true; slotMutationDiscardEpoch++;
+        }
+    }
+    private static void acknowledgeClickSequence(DesktopPackets.DesktopClickSequenceAckPayload ack) {
+        if (ack.connectionNonce() != CONNECTION_STATE.connectionNonce() || ack.sequence() != inFlightClickSequence) return;
+        inFlightClickSequence = 0;
+        if (!ack.accepted()) { CLICK_SEQUENCES.clear(); slotMutationDiscardEpoch++; }
+        dispatchClickSequence();
+    }
+
     public static boolean canDispatchOptimisticMutationNow() {
-        return canSendDesktopPackets();
+        return canSendDesktopPackets() && !hasPendingSlotMutations();
     }
 
     private static boolean resynchronizeSession(Minecraft minecraft, DesktopOpenSessionPayload payload,
@@ -688,6 +746,7 @@ public final class DesktopContainerClient {
     }
 
     public static boolean clickSlot(int debugId, int sessionId, int slotIndex, int button, ClickType input, ItemStack clientCarried) {
+        if (collectedClicks != null) {collectedClicks.add(new SequenceClick(sessionId,slotIndex,button,input==ClickType.QUICK_MOVE,-1,0));return true;}
         DesktopDebug.trace("client send click id={} session={} slot={} button={} input={} clientCarried={}", debugId, sessionId, slotIndex, button, input, clientCarried);
         return send(new DesktopClickPayload(debugId, sessionId, slotIndex, button, input.name(), clientCarried.copy()), "click");
     }
@@ -718,6 +777,12 @@ public final class DesktopContainerClient {
             targetKind,
             targetSessionId
         );
+        if (supportsClickSequences()) {
+            if (CLICK_SEQUENCES.size() >= 128) return false;
+            CLICK_SEQUENCES.addLast(List.of(new SequenceClick(sourceSessionId,sourceSlotIndex,0,true,targetKind,
+                targetKind == DesktopPackets.QUICK_TARGET_SESSION ? targetSessionId : DesktopPackets.PLAYER_MENU_SESSION)));
+            dispatchClickSequence(); return true;
+        }
         return send(new DesktopQuickMovePayload(sourceSessionId, sourceSlotIndex, targetKind, targetSessionId), "quick-move");
     }
 
@@ -863,10 +928,7 @@ public final class DesktopContainerClient {
         send(new DesktopFinishWorkspacePayload(DesktopPackets.PLAYER_MENU_SESSION), "finish-workspace");
     }
 
-    public static void setSessionPinMode(int sessionId, PinMode pinMode) {
-        DesktopDebug.trace("client send pin session={} pin={}", sessionId, pinMode);
-        send(new DesktopSessionPinPayload(sessionId, pinModeToPacket(pinMode)), "pin");
-    }
+
 
     public static void setSessionVisible(int sessionId, boolean visible) {
         DesktopDebug.trace("client send visibility session={} visible={}", sessionId, visible);
@@ -902,13 +964,7 @@ public final class DesktopContainerClient {
         );
     }
 
-    private static int pinModeToPacket(PinMode pinMode) {
-        return switch (pinMode) {
-            case UNPINNED -> DesktopPackets.PIN_MODE_UNPINNED;
-            case PINNED -> DesktopPackets.PIN_MODE_PINNED;
-            case GHOST_PINNED -> DesktopPackets.PIN_MODE_GHOST_PINNED;
-        };
-    }
+
 
     private static boolean send(DesktopPacket payload, String label) {
         if (!SaltsInventoryRuntime.isEnabled()) {
@@ -974,12 +1030,12 @@ public final class DesktopContainerClient {
     }
 
     private static long requiredCapability(DesktopPacket payload, AuthTokens tokens) {
+        if (payload instanceof DesktopPackets.DesktopClickSequencePayload) return DesktopPackets.CAP_CLICK_SEQUENCES;
         long required = payload instanceof DesktopSortWindowsPayload ? DesktopPackets.CAP_SORT_WINDOWS : 0L;
         if (payload instanceof DesktopPackets.DesktopCraftToWindowPayload || payload instanceof DesktopPackets.DesktopCookingRecipePayload || payload instanceof DesktopPackets.DesktopRecipeHoverPayload || payload instanceof DesktopPlaceRecipePayload || payload instanceof DesktopJeiTransferPayload) {
             required |= DesktopProtocol.CAP_RECIPE_TRANSFER;
         }
-        if (payload instanceof DesktopSessionPinPayload
-            || payload instanceof DesktopSessionVisibilityPayload
+        if (payload instanceof DesktopSessionVisibilityPayload
             || payload instanceof DesktopSourceLinkPayload
             || payload instanceof DesktopOpenLinkedSourcesPayload) {
             required |= DesktopProtocol.CAP_LINK_GRAPH;
@@ -1036,8 +1092,6 @@ public final class DesktopContainerClient {
             primary = value.sessionId();
         } else if (payload instanceof DesktopFinishWorkspacePayload value) {
             primary = value.sessionId();
-        } else if (payload instanceof DesktopSessionPinPayload value) {
-            primary = value.sessionId();
         } else if (payload instanceof DesktopSessionVisibilityPayload value) {
             primary = value.sessionId();
         } else if (payload instanceof DesktopSourceLinkPayload value) {
@@ -1045,7 +1099,7 @@ public final class DesktopContainerClient {
             secondary = value.secondSessionId();
         } else if (payload instanceof DesktopCarriedPayload || payload instanceof InventorySlotPurchasePayload) {
             primary = DesktopPackets.PLAYER_MENU_SESSION;
-        } else if (payload instanceof DesktopDragSlotsPayload || payload instanceof DesktopPickupAllPayload || payload instanceof DesktopQuickMoveAllPayload || payload instanceof DesktopSortWindowsPayload) {
+        } else if (payload instanceof DesktopPackets.DesktopClickSequencePayload || payload instanceof DesktopDragSlotsPayload || payload instanceof DesktopPickupAllPayload || payload instanceof DesktopQuickMoveAllPayload || payload instanceof DesktopSortWindowsPayload) {
             // Every referenced menu carries its own token/state pair and is validated atomically by the server.
         } else if (!(payload instanceof DesktopOpenLinkedSourcesPayload)
         ) {

@@ -8,8 +8,8 @@ public record DesktopSurfaceControl(DesktopWindowControl control, DesktopWindowB
         Objects.requireNonNull(control, "control");
         Objects.requireNonNull(bounds, "bounds");
         if (control != DesktopWindowControl.CLOSE && control != DesktopWindowControl.PIN
-            && control != DesktopWindowControl.MINIMIZE && control != DesktopWindowControl.ELLIPSIS) {
-            throw new IllegalArgumentException("Surface management controls support CLOSE, PIN, MINIMIZE and ELLIPSIS");
+            && control != DesktopWindowControl.ELLIPSIS) {
+            throw new IllegalArgumentException("Surface management controls support CLOSE, PIN and ELLIPSIS");
         }
         if (bounds.width() <= 0 || bounds.height() <= 0) throw new IllegalArgumentException("Control size must be positive");
     }

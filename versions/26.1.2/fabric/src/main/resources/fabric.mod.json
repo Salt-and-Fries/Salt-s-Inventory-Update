@@ -24,7 +24,8 @@
     ]
   },
   "mixins": [
-    "${mod_id}.mixins.json"
+    "${mod_id}.mixins.json",
+    "${mod_id}.fabric-hud.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${fabric_loader_version}",

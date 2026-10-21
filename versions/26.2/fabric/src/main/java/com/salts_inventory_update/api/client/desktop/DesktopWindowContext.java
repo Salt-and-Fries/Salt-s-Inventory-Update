@@ -18,7 +18,7 @@ public interface DesktopWindowContext<T, S> {
 
     boolean inventoryAvailable();
 
-    /** Eligible, visible contents. Minimized, ghosted, hidden and disposed windows return false. */
+    /** Eligible, visible contents. Hidden and disposed windows return false. */
     boolean visible();
 
     /** True for a shared, server-owned inventory companion. */
@@ -78,9 +78,9 @@ public interface DesktopWindowContext<T, S> {
 
     boolean keyboardFocused();
 
-    boolean minimized();
 
-    boolean ghosted();
+
+
 
     ItemStack carriedStack();
 

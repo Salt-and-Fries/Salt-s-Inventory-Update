@@ -1,14 +1,15 @@
 // Opt-in test launcher. Removes every project implementation output from the
-// game classpath and loads the remapped production mods from an isolated mods directory.
+// game classpath and loads production mods from an isolated mods directory.
 gradle.projectsEvaluated {
     def root = gradle.rootProject
     def mc = root.providers.gradleProperty('qaMinecraft').getOrElse('1.21.1')
-    if (!(mc in ['1.20.1','1.21.1'])) throw new GradleException('Packaged Fabric QA currently supports 1.20.1 and 1.21.1')
+    if (!(mc in ['1.20.1','1.21.1','1.21.11','26.1.2','26.2','26.3'])) throw new GradleException('Unsupported packaged Fabric QA Minecraft version: ' + mc)
     def runId = root.providers.gradleProperty('qaRunId').getOrElse('')
     if (!(runId ==~ /[a-zA-Z0-9_-]*/)) throw new GradleException('Invalid qaRunId')
     def suffix = runId ? '-' + runId : ''
     def core = root.project(":${mc}:fabric")
     def extension = root.project(":compatibility:${mc}:fabric")
+    def productionJar = { module -> module.tasks.named(module.tasks.findByName('remapJar') == null ? 'jar' : 'remapJar') }
     def qa = core.sourceSets.create('gameplayQa')
     qa.java.srcDir(root.file('functional-tests/src/main/java'))
     qa.java.srcDir(root.file('functional-tests/packaged-java'))
@@ -16,7 +17,8 @@ gradle.projectsEvaluated {
     qa.resources.srcDir(root.file('functional-tests/packaged-resources'))
     core.tasks.named(qa.processResourcesTaskName).configure {
         inputs.property('minecraft', mc)
-        filesMatching('fabric.mod.json') { expand(minecraft: mc) }
+        inputs.property('coreVersion', core.version.toString())
+        filesMatching('fabric.mod.json') { expand(minecraft: mc, coreVersion: core.version.toString()) }
     }
     qa.compileClasspath += core.sourceSets.main.compileClasspath + core.sourceSets.main.output
     core.tasks.named(qa.compileJavaTaskName).configure { dependsOn(core.tasks.named('classes')) }
@@ -25,12 +27,17 @@ gradle.projectsEvaluated {
     if (!(scenario in ['core','extension-empty','browser-emi','browser-jei','browser-rei','sophisticated','toms','ae2']))
         throw new GradleException('Unsupported packaged QA scenario')
     if (!includeExtension && scenario != 'core') throw new GradleException('Integration scenarios require qaExtension=true')
+    def tomsPickupOnly = root.providers.gradleProperty('qaTomsPickupOnly').map { it.toBoolean() }.getOrElse(false)
+    if (tomsPickupOnly && scenario != 'toms') throw new GradleException('Tom pickup focus requires the toms scenario')
+    def chestCloseOnly = root.providers.gradleProperty('qaChestCloseOnly').map { it.toBoolean() }.getOrElse(false)
+    if (chestCloseOnly && (scenario != 'core' || includeExtension))
+        throw new GradleException('Chest-close reproduction requires standalone Core QA.')
     def run = core.tasks.named('runClient').get()
     core.tasks.register('runPackagedGameplay', JavaExec) {
         group = 'verification'
         description = 'Runs disposable in-world QA against production JARs; project implementation directories are excluded.'
-        dependsOn(core.tasks.named(qa.classesTaskName), core.tasks.named('remapJar'))
-        if (includeExtension) dependsOn(extension.tasks.named('remapJar'))
+        dependsOn(core.tasks.named(qa.classesTaskName), productionJar(core))
+        if (includeExtension) dependsOn(productionJar(extension))
         dependsOn(run.taskDependencies.getDependencies(run).findAll { it.name != 'runClient' })
         javaLauncher.set(run.javaLauncher)
         mainClass.set(run.mainClass)
@@ -38,8 +45,10 @@ gradle.projectsEvaluated {
         workingDir = folder
         environment('SIU_GAMEPLAY_TESTS', 'true')
         environment('SIU_FUNCTIONAL_TESTS', 'false')
+        environment('SIU_QA_CHEST_CLOSE_ONLY', chestCloseOnly.toString())
         environment('SIU_QA_SCENARIO', scenario)
-        if (root.providers.gradleProperty('qaIntegrationOnly').map { it.toBoolean() }.getOrElse(false)) environment('SIU_QA_INTEGRATION_ONLY', 'true')
+        environment('SIU_QA_TOMS_PICKUP_ONLY', tomsPickupOnly.toString())
+        if (tomsPickupOnly || root.providers.gradleProperty('qaIntegrationOnly').map { it.toBoolean() }.getOrElse(false)) environment('SIU_QA_INTEGRATION_ONLY', 'true')
         environment('SIU_FUNCTIONAL_TEST_LOADER', 'fabric')
         environment('SIU_QA_OUTPUT', root.file("build/gameplay-qa/packaged-$scenario/${mc}-fabric${suffix}").absolutePath)
         doFirst {
@@ -62,7 +71,7 @@ gradle.projectsEvaluated {
             // This folder is dedicated to this exact test combination.
             mods.listFiles().findAll { it.name.endsWith('.jar') }.each { it.delete() }
             [core, includeExtension ? extension : null].findAll { it != null }.each { module ->
-                def artifact = module.tasks.named('remapJar').get().archiveFile.get().asFile
+                def artifact = productionJar(module).get().archiveFile.get().asFile
                 if (root.providers.gradleProperty('qaUseDistribution').getOrElse('false') == 'true') {
                     artifact = root.file("dist/${module == core ? 'core' : 'compatibility'}/${artifact.name}")
                     if (!artifact.isFile()) throw new GradleException("Build production distributions before packaged QA: $artifact")

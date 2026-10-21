@@ -363,7 +363,7 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
             @Override
             public void render(DesktopRenderContext<AEBaseMenu, State> frame, List<DesktopControlState> controls) {
                 // Keep the manager's committed snapshot. Original AE content paints after decoration,
-                // so normal controls are drawn at the end of that content; collapsed windows paint here.
+                // so controls are drawn at the end of that content.
                 var window = frame.windowHandle().state();
                 if (frame.state().hostScreen == null)
                     frame.state().hostScreen = frame.minecraft().screen;
@@ -379,14 +379,12 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
                                 control.hovered(), control.pressed(), control.enabled(), switch (control.control()) {
                                     case PIN -> window.pinned();
                                     case LOCK -> window.locked();
-                                    case MINIMIZE -> window.minimized();
+
                                     default -> control.selected();
                                 }, control.keyboardFocused() || control.control() == frame.state().keyboardControl))
                         .toList();
                 frame.state().managerControls = painted;
-                if (frame.minimized()) {
-                    AEManagementControls.render(frame, painted);
-                }
+                {}
 
             }
         };
@@ -495,9 +493,7 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
     @Override
     @SuppressWarnings("unchecked")
     public DesktopWindowSize desiredWindowSize(DesktopWindowContext<?, ?> context) {
-        if (context.windowHandle().state().minimized()) {
-            return null;
-        }
+        {}
         // Initial placement can move the host after prepareLayout. Measure
         // native protrusions only after updating them to this committed frame.
         layout((DesktopWindowContext<AEBaseMenu, State>) context);

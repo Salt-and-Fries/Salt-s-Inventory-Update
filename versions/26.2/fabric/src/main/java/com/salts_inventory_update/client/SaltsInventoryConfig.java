@@ -111,6 +111,7 @@ public final class SaltsInventoryConfig {
 
     public static final class ConfigFile {
         public boolean enableMod = true;
+        public boolean toggleMovementControl = false;
         public boolean expandableInventory = false;
         public boolean returnHotbarToInventory = false;
         public boolean enableDetailedConsoleLogs = false;
@@ -119,19 +120,19 @@ public final class SaltsInventoryConfig {
         public boolean allowResizing = false;
         public boolean enableWindowSnapping = true;
         public boolean resetLockedWindows = true;
-        public boolean enableGhostPins = false;
+
         public boolean globalPins = false;
         public boolean openInventoryWhenContainersAreOpened = false;
         public boolean persistentWindows = false;
-        public boolean minimizableWindows = false;
+
         public boolean hasSeenInstructionsWindow = false;
-        public double ghostWindowOpacity = 0.5D;
+
         public double eHoldCloseAllSeconds = 0.5D;
         public List<String> forcedContainerWindows = new ArrayList<>();
 
         private ConfigFile normalized() {
             this.windowOpeningStyle = WindowOpeningStyle.parse(this.windowOpeningStyle).name();
-            this.ghostWindowOpacity = clamp(this.ghostWindowOpacity, 0.15D, 0.90D);
+
             this.eHoldCloseAllSeconds = clamp(roundToQuarter(this.eHoldCloseAllSeconds), 0.5D, 10.0D);
             this.forcedContainerWindows = normalizeIds(this.forcedContainerWindows);
             return this;
@@ -145,9 +146,7 @@ public final class SaltsInventoryConfig {
             this.windowOpeningStyle = (style == null ? WindowOpeningStyle.AROUND_INVENTORY : style).name();
         }
 
-        public float ghostWindowOpacity() {
-            return (float) clamp(this.ghostWindowOpacity, 0.15D, 0.90D);
-        }
+
 
         public long eHoldCloseAllMs() {
             return Math.round(clamp(this.eHoldCloseAllSeconds, 0.5D, 10.0D) * 1000.0D);
@@ -160,6 +159,7 @@ public final class SaltsInventoryConfig {
         public void resetToDefaults() {
             ConfigFile defaults = new ConfigFile();
             this.enableMod = defaults.enableMod;
+            this.toggleMovementControl = defaults.toggleMovementControl;
             this.expandableInventory = defaults.expandableInventory;
             this.returnHotbarToInventory = defaults.returnHotbarToInventory;
             this.enableDetailedConsoleLogs = defaults.enableDetailedConsoleLogs;
@@ -168,13 +168,13 @@ public final class SaltsInventoryConfig {
             this.allowResizing = defaults.allowResizing;
             this.enableWindowSnapping = defaults.enableWindowSnapping;
             this.resetLockedWindows = defaults.resetLockedWindows;
-            this.enableGhostPins = defaults.enableGhostPins;
+
             this.globalPins = defaults.globalPins;
             this.openInventoryWhenContainersAreOpened = defaults.openInventoryWhenContainersAreOpened;
             this.persistentWindows = defaults.persistentWindows;
-            this.minimizableWindows = defaults.minimizableWindows;
+
             this.hasSeenInstructionsWindow = defaults.hasSeenInstructionsWindow;
-            this.ghostWindowOpacity = defaults.ghostWindowOpacity;
+
             this.eHoldCloseAllSeconds = defaults.eHoldCloseAllSeconds;
             this.forcedContainerWindows = new ArrayList<>(defaults.forcedContainerWindows);
         }
