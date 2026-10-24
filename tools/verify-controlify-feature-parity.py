@@ -46,6 +46,9 @@ def validate(artifacts=None):
     reference = ROOT/'controlify/versions/26.3/common/src/main/resources/assets/salts_inventory_controlify'
     expected = {'assets/salts_inventory_controlify/'+p.relative_to(reference).as_posix(): sha(p.read_bytes())
                 for p in reference.rglob('*') if p.is_file() and p.suffix.lower() != '.pdn'}
+    shared = ROOT/'artwork/shared-resources/controlify'
+    expected.update({p.relative_to(shared).as_posix(): sha(p.read_bytes())
+                     for p in shared.rglob('*') if p.is_file() and p.suffix.lower() != '.pdn'})
     rows = []
     for game in VERSIONS:
         native = ROOT/f'controlify/versions/{game}/common/src/main/java/com/salts_inventory_update/controlify'

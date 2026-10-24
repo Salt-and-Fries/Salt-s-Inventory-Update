@@ -121,7 +121,10 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopPickupAllPayload
 import com.salts_inventory_update.network.DesktopPackets.DesktopQuickMovePayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopQuickMoveAllPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSortWindowsPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopSortInventoryPayload;
 import com.salts_inventory_update.internal.desktop.DesktopSortSlots;
+import com.salts_inventory_update.internal.desktop.InventorySortPlan;
+import com.salts_inventory_update.internal.desktop.SmartInventoryOrder;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionReference;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotReference;
 import com.salts_inventory_update.network.DesktopPackets.DesktopHelloPayload;
@@ -204,6 +207,12 @@ public final class DesktopContainerSessions {
                 context.player(), payload.connectionNonce(), payload.playerSessionToken(), payload.mutationId(), "sort-windows",
                 proportionalBatchCost(payload.destinations().size(), 8),
                 () -> interruptRecipeHover(context.player(), payload, () -> sortWindows(context.player(), payload))
+            ))
+        );
+        ServerPlayNetworking.registerGlobalReceiver(DesktopSortInventoryPayload.TYPE, (payload, context) ->
+            context.server().execute(() -> handleMutation(
+                context.player(), payload.connectionNonce(), payload.playerSessionToken(), payload.mutationId(), "sort-inventory", 2.0D,
+                () -> interruptRecipeHover(context.player(), payload, () -> sortInventory(context.player(), payload))
             ))
         );
         ServerPlayNetworking.registerGlobalReceiver(DesktopQuickMoveAllPayload.TYPE, (payload, context) ->
@@ -1248,6 +1257,7 @@ public final class DesktopContainerSessions {
             case DesktopClickPayload p -> hoverRequest(p.connectionNonce(), p.sessionId(), p.sessionToken(), p.stateId());
             case DesktopDragSlotsPayload p -> new HoverMutationRequest(p.connectionNonce(), hoverSlotReferences(p.slots()));
             case DesktopPickupAllPayload p -> new HoverMutationRequest(p.connectionNonce(), p.sources());
+            case DesktopSortInventoryPayload p -> new HoverMutationRequest(p.connectionNonce(), List.of(p.target()));
             case DesktopSortWindowsPayload p -> {
                 List<DesktopSessionReference> refs = new ArrayList<>(p.destinations()); refs.add(p.source());
                 yield new HoverMutationRequest(p.connectionNonce(), refs);
@@ -1762,6 +1772,98 @@ public final class DesktopContainerSessions {
     }
 
     private record SortDestination(SessionAuthorization authorization, List<Slot> slots, List<ItemStack> contents) {}
+
+    private static void sortInventory(ServerPlayer player, DesktopSortInventoryPayload payload) {
+        PlayerSessions sessions = PLAYERS.get(player);
+        if (sessions == null || !mayMutateInventory(player) || !player.inventoryMenu.getCarried().isEmpty()) return;
+        var reference = payload.target();
+        SessionAuthorization target = authorizeMenu(player, sessions, payload.connectionNonce(), reference.sessionId(),
+            reference.sessionToken(), reference.stateId(), DesktopPackets.CAP_SORT_WINDOWS, "sort-inventory");
+        if (target == null) return;
+        AbstractContainerMenu menu = target.menu();
+        boolean inventory = target.sessionId() == DesktopPackets.PLAYER_MENU_SESSION;
+        if (!inventory && !DesktopSortSlots.isStorage(menu)) return;
+        List<Slot> candidates = inventory ? mainInventorySlots(player) : containerSlots(menu, player).stream()
+            .filter(slot -> DesktopSortSlots.storageSlot(menu, slot)).toList();
+        IdentityHashMap<Object, Set<Integer>> seen = new IdentityHashMap<>();
+        List<Slot> slots = candidates.stream().filter(slot -> slot.isActive() && !slot.isFake()
+            && !DesktopMenuBindings.isVirtualSlot(menu, slot) && slot.mayPickup(player)
+            && !DesktopItemSourceLocks.isSlotLocked(player, slot) && rememberPhysicalSlot(seen, menu, slot)).toList();
+        runGestureMutation(player, sessions, "sort-inventory", () -> {
+            // Creative tab data is common-side and supplies family ordering, never the contents being moved.
+            net.minecraft.world.item.CreativeModeTabs.tryRebuildTabContents(player.level().enabledFeatures(), false, player.registryAccess());
+            executeInventorySort(player, sessions, menu, slots, new SmartInventoryOrder().comparator());
+            broadcastGesture(player, sessions);
+        });
+    }
+
+    private record InventorySortSnapshot(Slot slot, int logicalIndex, Object owner, int physicalIndex, ItemStack before) {}
+
+    private static boolean executeInventorySort(ServerPlayer player, PlayerSessions sessions, AbstractContainerMenu menu,
+                                                List<Slot> slots, Comparator<ItemStack> order) {
+        if (slots.isEmpty() || !player.inventoryMenu.getCarried().isEmpty()) return false;
+        if (DesktopMenuBindings.size(menu) > DesktopProtocol.MAX_OPEN_SESSION_ITEMS) return false;
+        List<InventorySortSnapshot> snapshots = new ArrayList<>();
+        IdentityHashMap<Object, Set<Integer>> seen = new IdentityHashMap<>();
+        for (int i = 0; i < DesktopMenuBindings.size(menu); i++) {
+            Slot slot = DesktopMenuBindings.slot(menu, i);
+            if (slot != null && !DesktopMenuBindings.isVirtualSlot(menu, slot) && rememberPhysicalSlot(seen, menu, slot))
+                snapshots.add(new InventorySortSnapshot(slot, i, DesktopMenuBindings.physicalOwner(menu, slot),
+                    DesktopMenuBindings.physicalIndex(menu, slot), slot.getItem().copy()));
+        }
+        // Validate after every slot callback, including protected slots. Bound the worst-case read work.
+        if ((long) snapshots.size() * (slots.size() + 2) > MAX_QUICK_MOVE_TRANSACTION_WORK) return false;
+        Map<Slot, ItemStack> expected = new IdentityHashMap<>();
+        for (var snapshot : snapshots) expected.put(snapshot.slot(), snapshot.before());
+        try {
+            var proposed = InventorySortPlan.create(slots, order);
+            verifyInventorySort(player, menu, snapshots, expected);
+            if (proposed.isEmpty()) return false;
+            List<ItemStack> contents = proposed.get();
+            for (int i = 0; i < slots.size(); i++) {
+                Slot slot = slots.get(i);
+                ItemStack next = contents.get(i);
+                ItemStack before = expected.get(slot);
+                if (before == null) throw new IllegalStateException("Sort slot is not in the authenticated menu");
+                if (ItemStack.matches(before, next)) continue;
+                if (!slot.isActive() || slot.isFake() || DesktopItemSourceLocks.isSlotLocked(player, slot)
+                    || !slot.mayPickup(player) || !next.isEmpty() && (!slot.mayPlace(next)
+                        || next.getCount() > Math.min(next.getMaxStackSize(), slot.getMaxStackSize(next))))
+                    throw new IllegalStateException("Sort slot permissions changed");
+                expected.put(slot, next);
+                withMenuNetworkSession(player, sessions, menu, () -> slot.setByPlayer(next.copy(), before.copy()));
+                verifyInventorySort(player, menu, snapshots, expected);
+            }
+            return true;
+        } catch (RuntimeException failure) {
+            // Restore the entire menu: a custom slot callback may have changed a protected neighbour.
+            for (var snapshot : snapshots) {
+                try {
+                    if (!matchesPhysicalSlot(menu, snapshot.slot(), snapshot.owner(), snapshot.physicalIndex()))
+                        throw new IllegalStateException("Sort rollback physical slot changed");
+                    if (!ItemStack.matches(snapshot.before(), snapshot.slot().getItem()))
+                        restoreSlot(player, sessions, menu, snapshot.slot(), snapshot.before(), "inventory sort");
+                    expected.put(snapshot.slot(), snapshot.before());
+                } catch (RuntimeException rollback) { failure.addSuppressed(rollback); }
+            }
+            player.inventoryMenu.setCarried(ItemStack.EMPTY);
+            try { verifyInventorySort(player, menu, snapshots, expected); }
+            catch (RuntimeException rollback) { failure.addSuppressed(rollback); }
+            throw failure;
+        }
+    }
+
+    private static void verifyInventorySort(ServerPlayer player, AbstractContainerMenu menu,
+                                            List<InventorySortSnapshot> snapshots, Map<Slot, ItemStack> expected) {
+        if (!menu.stillValid(player) || !player.inventoryMenu.getCarried().isEmpty())
+            throw new IllegalStateException("Sort menu or cursor changed");
+        for (var snapshot : snapshots) {
+            if (DesktopMenuBindings.slot(menu, snapshot.logicalIndex()) != snapshot.slot()
+                || !matchesPhysicalSlot(menu, snapshot.slot(), snapshot.owner(), snapshot.physicalIndex())
+                || !ItemStack.matches(expected.get(snapshot.slot()), snapshot.slot().getItem()))
+                throw new IllegalStateException("Sort snapshot changed during a slot callback");
+        }
+    }
 
     private static void sortWindows(ServerPlayer player, DesktopSortWindowsPayload payload) {
         PlayerSessions sessions = PLAYERS.get(player);

@@ -2,7 +2,8 @@ param(
     [switch] $Runtime,
     [int] $TimeoutSeconds = 180,
     [string] $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
-    [string] $ResultsDir = ''
+    [string] $ResultsDir = '',
+    [ValidatePattern('^[a-z0-9-]+$')][string] $RunId = ('functional-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 )
 
 $ErrorActionPreference = 'Stop'
@@ -25,6 +26,7 @@ function Invoke-FunctionalClientRun {
     )
 
     $slug = "$($Entry.Version)-$($Entry.Loader)" -replace '[^A-Za-z0-9.-]', '-'
+    $smokeProfile = "$RunId-$slug".ToLowerInvariant() -replace '[^a-z0-9-]', '-'
     $stdout = Join-Path $ResultsDir "$slug.out.log"
     $stderr = Join-Path $ResultsDir "$slug.err.log"
     Remove-Item -LiteralPath $stdout, $stderr -ErrorAction SilentlyContinue
@@ -39,7 +41,7 @@ function Invoke-FunctionalClientRun {
     try {
         Write-Host "Launching $($Entry.Version) $($Entry.Loader) functional runtime..." -ForegroundColor Cyan
         $process = Start-Process -FilePath '.\gradlew.bat' `
-            -ArgumentList @('--no-daemon', '-PincludeFunctionalTests=true', $Entry.Task, '--console=plain') `
+            -ArgumentList @('--no-daemon', '-PincludeFunctionalTests=true', '-PsaltsSmokeRun=true', "-PsaltsSmokeProfile=$smokeProfile", $Entry.Task, '--console=plain') `
             -RedirectStandardOutput $stdout `
             -RedirectStandardError $stderr `
             -PassThru `

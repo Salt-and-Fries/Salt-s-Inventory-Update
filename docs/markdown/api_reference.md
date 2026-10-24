@@ -256,7 +256,7 @@ public record DesktopWindowBounds(int x, int y, int width, int height) {
 
 ```java
 public enum DesktopWindowControl {
-    FOCUS, CLOSE, ELLIPSIS, LINK, LOCK, PIN, SORT_WINDOWS, RESIZE_GRIP
+    FOCUS, CLOSE, ELLIPSIS, LINK, LOCK, PIN, SORT_WINDOWS, RESIZE_GRIP, SORT_INVENTORY
 }
 ```
 
@@ -502,6 +502,26 @@ public interface DesktopCompanionLease extends AutoCloseable {
 }
 ```
 
+## DesktopBuiltinAttachment
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopBuiltinAttachment.java).
+
+```java
+import java.util.List;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.client.input.MouseButtonEvent;
+public interface DesktopBuiltinAttachment {
+    default void opened(DesktopWindowContext<AbstractContainerMenu, Void> context);
+    default void suspended(DesktopWindowContext<AbstractContainerMenu, Void> context);
+    default void closed(DesktopWindowContext<AbstractContainerMenu, Void> context);
+    default void tick(DesktopWindowContext<AbstractContainerMenu, Void> context);
+    default void render(DesktopRenderContext<AbstractContainerMenu, Void> context);
+    default boolean mouseClicked(DesktopInputContext<AbstractContainerMenu, Void> context, MouseButtonEvent event, boolean doubleClick);
+    default boolean appendTooltip(DesktopRenderContext<AbstractContainerMenu, Void> context, int mouseX, int mouseY);
+    default List<DesktopWindowRegion> regions(DesktopWindowContext<AbstractContainerMenu, Void> context);
+}
+```
+
 ## DesktopClientApi
 
 `com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopClientApi.java).
@@ -525,11 +545,14 @@ public final class DesktopClientApi {
     public static void openPlayerWorkspace();
     public static void onClientTick(java.util.function.Consumer<net.minecraft.client.Minecraft> action);
     public static java.util.Optional<DesktopWorkspace> currentWorkspace();
+    public static synchronized void registerBuiltinAttachment(Identifier id, DesktopWorkspaceWindow.Kind kind, java.util.function.Supplier<? extends DesktopBuiltinAttachment> factory);
+    public static synchronized List<DesktopBuiltinAttachment> createBuiltinAttachments(DesktopWorkspaceWindow.Kind kind);
     public static boolean canDispatchOptimisticMutationNow();
     public static net.minecraft.client.gui.screens.Screen createConfigScreen(net.minecraft.client.gui.screens.Screen parent);
     public static void onClientStarted(java.util.function.Consumer<net.minecraft.client.Minecraft> action);
     public static synchronized void registerHelpPage(Identifier id, DesktopHelpPage page);
     public static synchronized List<DesktopHelpPage> helpPages();
+    public static boolean isDesktopAvailable();
     public static synchronized <T extends AbstractContainerMenu, S> void registerWindow(MenuType<T> menuType, DesktopWindowDefinition<T, S> definition);
     public static synchronized <T extends AbstractContainerMenu, S> void replaceWindow(MenuType<T> menuType, DesktopWindowDefinition<T, S> definition);
     public static synchronized void registerMatcher( Identifier id, int priority, Set<MenuType<?>> menuTypes, DesktopWindowMatcher matcher, DesktopWindowDefinitionFactory factory );
@@ -836,6 +859,18 @@ public final class DesktopThemeAssets {
 }
 ```
 
+## DesktopWindowAttachment
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopWindowAttachment.java).
+
+```java
+import java.util.Objects;
+import java.util.UUID;
+public record DesktopWindowAttachment(UUID owner, int preferredHeight, int topProtrusion, int gap) {
+    public DesktopWindowAttachment(UUID owner, int preferredHeight, int topProtrusion, int gap);
+}
+```
+
 ## DesktopWindowContext
 
 `com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopWindowContext.java).
@@ -918,6 +953,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 public interface DesktopWindowDefinition<T, S> {
+    default @Nullable DesktopWindowAttachment attachment(DesktopWindowContext<T, S> context);
     default java.util.List<DesktopScrollRegion> controllerScrollRegions(DesktopWindowContext<T, S> context);
     default java.util.List<DesktopWindowBounds> textInputBounds(DesktopWindowContext<T,S> context);
     default java.util.List<DesktopSurfaceControl> managementControls(DesktopWindowContext<T, S> context);
@@ -1525,6 +1561,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 public final class DesktopMenuBindings {
+    public static int maxMenuSlots();
     public static void registerStorage(MenuType<?> type, java.util.function.BiPredicate<AbstractContainerMenu, Slot> slots);
     public static synchronized void register(MenuType<?> menuType, SlotAccess slotAccess, boolean requiresOpeningData);
     public static synchronized void register( MenuType<?> menuType, SlotAccess slotAccess, boolean requiresOpeningData, @Nullable SourceKeyResolver sourceKeyResolver );

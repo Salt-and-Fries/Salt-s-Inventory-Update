@@ -27,10 +27,11 @@ Minecraft/Controlify integration stays under `controlify/versions/<version>/`.
 Native version differences are translated at these boundaries rather than
 replacing unavailable behavior with successful no-op methods.
 
-The editable Salt textures, language files and audio have one canonical source:
-`controlify/versions/26.3/common/src/main/resources/assets/salts_inventory_controlify/`.
-Each companion's resource processing consumes those assets. User PNG/PDN paths
-remain there; editing a wheel texture does not require maintaining twelve copies.
+The editable Salt textures have one canonical source:
+`artwork/shared-resources/controlify/assets/salts_inventory_controlify/textures/`.
+Language and audio remain shared from `controlify/versions/26.3/common/src/main/resources/assets/salts_inventory_controlify/`.
+Each companion consumes those assets. User PNG/PDN paths are centralized;
+editing a wheel texture does not require maintaining twelve copies.
 Controlify's own binding defaults and service metadata remain version-specific.
 
 The companion uses Core's public `com.salts_inventory_update.api` surface for

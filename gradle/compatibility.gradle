@@ -42,7 +42,56 @@ gradle.projectsEvaluated {
         }
     }
 
+    // Reviewed upstream Curios releases. No matching Fabric releases exist for our targets.
+    def curiosTargets = [
+        '1.20.1:forge': [artifact:'curios-forge', version:'5.14.1+1.20.1'],
+        '1.21.1:neoforge': [artifact:'curios-neoforge', version:'9.5.1+1.21.1'],
+        '1.21.11:neoforge': [artifact:'curios-neoforge', version:'14.0.0+1.21.11'],
+        '26.1.2:neoforge': [artifact:'curios-neoforge', version:'15.0.0+26.1.2'],
+        '26.2:neoforge': [artifact:'curios-neoforge', version:'16.0.0+26.2'],
+        '26.3:neoforge': [artifact:'curios-neoforge', version:'17.0.0-beta.3+26.3']
+    ]
+
     extensionTargets.each { extension ->
+        def curiosTarget = curiosTargets["${extension.parent.name}:${extension.name}".toString()]
+        if (curiosTarget != null) {
+            extension.repositories.maven { url = 'https://maven.theillusivec4.top' }
+            extension.dependencies.add('compileOnly', "top.theillusivec4.curios:${curiosTarget.artifact}:${curiosTarget.version}")
+            def layoutClasses = extension.layout.buildDirectory.dir('curios-layout-checks')
+            def compileLayout = extension.tasks.register('compileCuriosLayoutChecks', JavaCompile) {
+                source(root.file("versions/${extension.parent.name}/fabric/src/main/java/com/salts_inventory_update/client/AttachedWindowLayout.java"))
+                source(root.file("compatibility/versions/${extension.parent.name}/${extension.name}/src/main/java/com/salts_inventory_update/compat/curios/CuriosPanelLayout.java"))
+                source(root.file('functional-tests/curios-26.3-neoforge/JoinedWindowLayoutChecks.java'))
+                classpath = extension.files()
+                destinationDirectory.set(layoutClasses)
+                javaCompiler.set(extension.tasks.named('compileJava', JavaCompile).flatMap { it.javaCompiler })
+            }
+            def layoutChecks = extension.tasks.register('testCuriosLayout', JavaExec) {
+                group = 'verification'
+                dependsOn(compileLayout)
+                classpath = extension.files(layoutClasses)
+                mainClass.set('JoinedWindowLayoutChecks')
+                javaLauncher.set(extension.extensions.getByType(JavaToolchainService).launcherFor(extension.java.toolchain))
+            }
+            extension.tasks.named('check').configure { dependsOn(layoutChecks) }
+            if (root.providers.gradleProperty('includeCuriosRuntime').map { it.toBoolean() }.getOrElse(false)) {
+                def coordinate = "top.theillusivec4.curios:${curiosTarget.artifact}:${curiosTarget.version}"
+                if (extension.name == 'forge') {
+                    // Legacy Forge's development runtime uses named Minecraft members.
+                    def mappingsType = Class.forName('net.neoforged.moddevgradle.legacyforge.internal.MinecraftMappings', true, extension.buildscript.classLoader)
+                    def runtime = extension.configurations.create('curiosRuntimeNamed') {
+                        canBeConsumed = false; canBeResolved = true
+                        attributes {
+                            attribute(org.gradle.api.attributes.Attribute.of('net.neoforged.moddevgradle.legacy.minecraft_mappings.v2', mappingsType), extension.objects.named(mappingsType, 'named'))
+                            attribute(org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, org.gradle.api.artifacts.type.ArtifactTypeDefinition.JAR_TYPE)
+                            attribute(org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE, extension.objects.named(org.gradle.api.attributes.Usage, org.gradle.api.attributes.Usage.JAVA_RUNTIME))
+                        }
+                    }
+                    extension.dependencies.add(runtime.name, coordinate)
+                    extension.tasks.named('runClient', JavaExec).configure { classpath += extension.files(runtime) }
+                } else extension.dependencies.add('runtimeOnly', coordinate)
+            }
+        }
         // These resources have committed SHA256 references. Windows Git text
         // checkout conversion must not change their packaged bytes.
         extension.tasks.named('processResources').configure {
@@ -234,10 +283,13 @@ gradle.projectsEvaluated {
         // Separate mod on the development runtime; never added to include, shadow or jar inputs.
         extension.sourceSets.main.runtimeClasspath += core.sourceSets.main.output
         extension.tasks.withType(JavaCompile).configureEach { dependsOn(apiJar) }
-        if (ae2NativeTests.isDirectory()) {
+        def localNativeTests = extension.name in ['forge', 'neoforge'] &&
+            root.file("compatibility/versions/${extension.parent.name}/${extension.name}/src/test/java").isDirectory()
+        if (ae2NativeTests.isDirectory() || localNativeTests) {
             extension.sourceSets.test.java.srcDir(ae2NativeTests)
             extension.sourceSets.test.compileClasspath += extension.sourceSets.main.compileClasspath
             extension.sourceSets.test.runtimeClasspath += extension.sourceSets.main.runtimeClasspath
+            if (localNativeTests) extension.sourceSets.test.runtimeClasspath += extension.sourceSets.main.compileClasspath
             if (extension.parent.name == '1.20.1') {
                 extension.sourceSets.test.runtimeClasspath += extension.files(extension.provider {
                     extension.sourceSets.main.compileClasspath.files.findAll { it.name.startsWith('ae2-') && it.name.endsWith('.jar') }

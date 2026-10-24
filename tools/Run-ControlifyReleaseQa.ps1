@@ -1,6 +1,6 @@
 param(
     [ValidatePattern('^[a-z0-9-]+$')][string]$RunId = 'controlify011',
-    [ValidateSet('baseline','focused','mods','all')][string]$Phase = 'all',
+    [ValidateSet('baseline','standalone','focused','mods','all')][string]$Phase = 'all',
     [string[]]$SelectedTargets = @(),
     [switch]$Resume,
     [switch]$PlanOnly
@@ -11,22 +11,23 @@ $PSNativeCommandUseErrorActionPreference = $false
 $repository = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $pins = Get-Content -LiteralPath (Join-Path $repository 'controlify/targets.json') -Raw | ConvertFrom-Json
 $cases = [System.Collections.Generic.List[object]]::new()
-function Add-Case($target, [string]$scope, [string]$casePhase, [string]$browser = '') {
+function Add-Case($target, [string]$scope, [string]$casePhase, [string]$browser = '', [bool]$withExtension = $true) {
     if ($Phase -ne 'all' -and $casePhase -ne $Phase) { return }
     if ($SelectedTargets.Count -and ($target.minecraft + ':' + $target.loader) -notin $SelectedTargets) { return }
     $key = $target.minecraft + '-' + $target.loader
     if ($scope -ne 'all') { $key += '-' + $scope }
-    $key += '-extended'
+    if ($withExtension) { $key += '-extended' }
     if ($browser) { $key += '-' + $browser }
     $key += '-' + $RunId
     $cases.Add([pscustomobject]@{
         minecraft = $target.minecraft; loader = $target.loader; scope = $scope; browser = $browser
-        phase = $casePhase; key = $key; status = 'PENDING'; startedAt = $null; finishedAt = $null
+        phase = $casePhase; withExtension = $withExtension; key = $key; status = 'PENDING'; startedAt = $null; finishedAt = $null
         launchLog = $null; verificationLog = $null; summary = $null; error = $null
     })
 }
 foreach ($target in $pins.targets) {
     $legacy = $target.minecraft -in @('1.20.1','1.21.1','1.21.11')
+    Add-Case $target $(if ($legacy) { 'feature-parity' } else { 'all' }) 'standalone' '' $false
     Add-Case $target $(if ($legacy) { 'feature-parity' } else { 'all' }) 'baseline'
 }
 foreach ($target in $pins.targets) {
@@ -44,7 +45,7 @@ foreach ($target in $pins.targets) {
     }
 }
 if (!$cases.Count) { throw 'No controller gameplay profiles match the selection.' }
-if ($PlanOnly) { $cases | Select-Object minecraft,loader,scope,browser,phase,key; exit 0 }
+if ($PlanOnly) { $cases | Select-Object minecraft,loader,scope,browser,phase,withExtension,key; exit 0 }
 $output = Join-Path $repository ('build/controlify-release-0.1.1/' + $RunId + '-' + $Phase)
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $manifest = Join-Path $output 'results.json'
@@ -57,12 +58,14 @@ function Verify-Case($case, [string]$summary, [string]$log) {
     if ($case.scope -eq 'all') {
         $suffix = $case.key.Substring(($case.minecraft + '-' + $case.loader).Length)
         $arguments = @('tools/verify-controlify-runtime.py','--target',($case.minecraft + ':' + $case.loader),
-            '--artifacts','dist','--run-profile','auto',('--report-suffix=' + $suffix),'--with-extension',
+            '--artifacts','dist','--run-profile','auto',('--report-suffix=' + $suffix),
             '--feature-parity','--summary',$summary)
+        if ($case.withExtension) { $arguments += '--with-extension' }
     } elseif ($case.scope -in @('mod-compat','crafting-qol','wheel-stability')) {
         $arguments = @('tools/verify-controlify-compat-runtime.py','--report',$folder,'--artifacts','dist','--summary',$summary)
     } else {
         $arguments = @('tools/verify-controlify-focused-runtime.py','--report',$folder,'--artifacts','dist','--summary',$summary)
+        if (!$case.withExtension) { $arguments += '--without-extension' }
     }
     $savedErrorPreference = $ErrorActionPreference
     try {
@@ -78,6 +81,9 @@ Push-Location -LiteralPath $repository
 try {
     Save-Progress
     foreach ($case in $cases) {
+        if (Test-Path -LiteralPath (Join-Path $output 'stop.request')) {
+            throw 'Controller release QA stopped at a profile boundary'
+        }
         $activeCase = $case
         $case.summary = Join-Path $output ($case.key + '-verified.json')
         $case.verificationLog = Join-Path $output ($case.key + '-verification.log')
@@ -102,7 +108,7 @@ try {
         Write-Output ('START ' + $case.key)
         $arguments = @('-I','controlify/functional-tests/controlify-qa.init.gradle',
             (':controlify:' + $case.minecraft + ':' + $case.loader + ':runPackagedControlifyQa'),
-            ('-PcontrolifyQaScope=' + $case.scope),'-PcontrolifyQaExtension=true',
+            ('-PcontrolifyQaScope=' + $case.scope),('-PcontrolifyQaExtension=' + $case.withExtension.ToString().ToLowerInvariant()),
             ('-PcontrolifyQaRunId=' + $RunId),'-PcontrolifyQaJvmVendor=Microsoft',
             '--no-parallel','--max-workers=2','--console=plain')
         if ($case.browser) { $arguments += '-PcontrolifyQaFixtures=' + $case.browser }

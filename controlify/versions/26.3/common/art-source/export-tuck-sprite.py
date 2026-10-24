@@ -16,7 +16,9 @@ output.putdata([
     (*min(palette, key=lambda color: sum((color[i] - pixel[i]) ** 2 for i in range(3))), 255)
     if pixel[3] >= 128 else (0, 0, 0, 0) for pixel in pixel_values
 ])
-target = ROOT / 'src/main/resources/assets/salts_inventory_controlify/textures/gui/workspace/tuck_away.png'
+REPO = next((parent for parent in Path(__file__).resolve().parents if (parent / 'settings.gradle.kts').is_file()), None)
+target = (REPO / 'artwork/shared-resources/controlify/assets/salts_inventory_controlify/textures/gui/workspace/tuck_away.png'
+          if REPO is not None else ROOT / 'src/main/resources/assets/salts_inventory_controlify/textures/gui/workspace/tuck_away.png')
 target.parent.mkdir(parents=True, exist_ok=True)
 output.save(target)
 assert output.size == (64, 32) and {output.getpixel((x, y))[3] for y in range(32) for x in range(64)} == {0, 255}

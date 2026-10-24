@@ -13,15 +13,32 @@ gradle.projectsEvaluated {
     def qa = core.sourceSets.create('gameplayQa')
     qa.java.srcDir(root.file('functional-tests/src/main/java'))
     qa.java.srcDir(root.file('functional-tests/packaged-java'))
-    qa.java.include('**/InWorldGameplayHarness*.java', '**/GameplayQaInitializer.java')
+    qa.java.include('**/InWorldGameplayHarness*.java', '**/GameplayQaInitializer.java', '**/ConfigMenuQa.java')
+    if (mc == '26.3') {
+        qa.java.include('**/SpatialServerClientQa*.java')
+    }
+    def spatialGenerated=core.layout.buildDirectory.dir('generated/spatial-qa')
+    def prepareSpatialQa=core.tasks.register('prepareSpatialQa',Exec) {
+        inputs.files(root.fileTree('functional-tests/spatial-java'),root.file('tools/generate-spatial-qa.py'),root.file('functional-tests/spatial-resources/salts_spatial_qa.mixins.json'))
+        inputs.property('minecraft',mc)
+        outputs.dir(spatialGenerated)
+        commandLine('python',root.file('tools/generate-spatial-qa.py'),'--minecraft',mc,'--loader','fabric','--output',spatialGenerated.get().asFile)
+    }
+    qa.java.srcDir(spatialGenerated.map{it.dir('java')})
+    qa.java.include('**/SpatialHeldInputMixin.java','**/SpatialTransitionProbe.java','**/SpatialTransitionProbeMixin.java')
+    qa.resources.srcDir(spatialGenerated.map{it.dir('resources')})
     qa.resources.srcDir(root.file('functional-tests/packaged-resources'))
     core.tasks.named(qa.processResourcesTaskName).configure {
         inputs.property('minecraft', mc)
         inputs.property('coreVersion', core.version.toString())
-        filesMatching('fabric.mod.json') { expand(minecraft: mc, coreVersion: core.version.toString()) }
+        filesMatching('fabric.mod.json') {
+            expand(minecraft: mc, coreVersion: core.version.toString())
+            filter { line -> line.replace('"environment": "client",', '"environment": "client", "mixins": ["salts_spatial_qa.mixins.json"],') }
+        }
+        dependsOn(prepareSpatialQa)
     }
     qa.compileClasspath += core.sourceSets.main.compileClasspath + core.sourceSets.main.output
-    core.tasks.named(qa.compileJavaTaskName).configure { dependsOn(core.tasks.named('classes')) }
+    core.tasks.named(qa.compileJavaTaskName).configure { dependsOn(core.tasks.named('classes'),prepareSpatialQa) }
     def includeExtension = root.providers.gradleProperty('qaExtension').map { it.toBoolean() }.getOrElse(false)
     def scenario = root.providers.gradleProperty('qaScenario').getOrElse(includeExtension ? 'extension-empty' : 'core')
     if (!(scenario in ['core','extension-empty','browser-emi','browser-jei','browser-rei','sophisticated','toms','ae2']))
@@ -56,12 +73,26 @@ gradle.projectsEvaluated {
                 throw new GradleException('Packaged QA requires production JARs without functional test sources; omit includeFunctionalTests.')
             }
             def projectPrefix = root.projectDir.canonicalPath + File.separator
+            def isolatedCache = gradle.startParameter.projectCacheDir?.canonicalPath
+            def mappedCache = { String path ->
+                path.contains(File.separator + '.gradle' + File.separator) ||
+                    (isolatedCache != null && path.startsWith(isolatedCache + File.separator))
+            }
             classpath = run.classpath.filter { f ->
                 def path = f.canonicalPath
                 // Retain mapped Minecraft/loader caches; omit all project source outputs and API dev jars.
-                !path.startsWith(projectPrefix) || path.contains(File.separator + '.gradle' + File.separator)
+                !path.startsWith(projectPrefix) || mappedCache(path)
             } + qa.output
             args = run.args + run.argumentProviders.collectMany { it.asArguments().toList() }
+            ['width','height'].each { dimension ->
+                def requested=root.providers.gradleProperty('qaCapture'+dimension.capitalize()).orNull
+                if(requested) {
+                    if(!(requested ==~ /[0-9]{3,4}/)) throw new GradleException('Invalid capture dimension')
+                    def index=args.indexOf('--'+dimension)
+                    if(index>=0) args[index+1]=requested
+                    else args+=['--'+dimension,requested]
+                }
+            }
             jvmArgs = (run.jvmArgs + run.jvmArgumentProviders.collectMany { it.asArguments().toList() })
                 .findAll { !it.startsWith('-Dfabric.classPathGroups=') }
             systemProperties(run.systemProperties.findAll { k,v -> k != 'fabric.classPathGroups' })
@@ -90,7 +121,7 @@ gradle.projectsEvaluated {
                 }
             }
             println('PACKAGED_QA_MODS=' + mods.listFiles().collect { it.name }.sort())
-            println('PACKAGED_QA_PROJECT_CLASSPATH=' + classpath.files.findAll { it.canonicalPath.startsWith(projectPrefix) && !it.canonicalPath.contains(File.separator + '.gradle' + File.separator) })
+            println('PACKAGED_QA_PROJECT_CLASSPATH=' + classpath.files.findAll { it.canonicalPath.startsWith(projectPrefix) && !mappedCache(it.canonicalPath) })
         }
     }
 }

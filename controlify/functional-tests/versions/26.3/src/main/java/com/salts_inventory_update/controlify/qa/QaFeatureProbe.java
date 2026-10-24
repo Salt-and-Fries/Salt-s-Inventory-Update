@@ -118,7 +118,8 @@ public final class QaFeatureProbe {
     }
     public static void navigation(String phase, dev.isxander.controlify.controller.ControllerEntity controller,
                                   dev.isxander.controlify.virtualmouse.VirtualMouseHandler mouse, String direction) {
-        boolean guide = scenario.startsWith("native-DPAD-selects-crafting-guide-toggle") || scenario.startsWith("actual-cursor-hover-");
+        boolean guide = scenario.startsWith("native-DPAD-selects-crafting-guide-toggle")
+            || scenario.startsWith("native-DPAD-selects-lower-crafting-slot") || scenario.startsWith("actual-cursor-hover-");
         boolean radialRelease = scenario.equals("release-LT-commits-highlight") || scenario.equals("enter-radial-highlight")
             || scenario.startsWith("swap-focus-with-A");
         if (!scenario.contains("brewing") && !guide && !scenario.endsWith("-native-cursor-ready") && !radialRelease) return;

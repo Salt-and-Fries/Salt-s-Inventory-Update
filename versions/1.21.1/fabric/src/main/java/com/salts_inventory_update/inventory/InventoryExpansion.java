@@ -72,6 +72,17 @@ public final class InventoryExpansion {
         return slot.getContainerSlot();
     }
 
+    /** Remove only Core-owned slots and their matching synchronization entries before a native rebuild. */
+    public static void detachMenuSlots(InventoryMenu menu) {
+        var accessor = (AbstractContainerMenuAccessor) menu;
+        for (int i = menu.slots.size() - 1; i >= 0; i--) if (isExtraSlot(menu.slots.get(i))) {
+            menu.slots.remove(i);
+            accessor.salts_inventory_update$getLastSlots().remove(i);
+            accessor.salts_inventory_update$getRemoteSlots().remove(i);
+        }
+        for (int i = 0; i < menu.slots.size(); i++) menu.slots.get(i).index = i;
+    }
+
     public static void appendMissingMenuSlots(InventoryMenu menu, net.minecraft.world.entity.player.Player player) {
         if (!isTopologyNegotiated(player)) {
             return;
@@ -164,6 +175,10 @@ public final class InventoryExpansion {
         if (packetSlotCount <= player.inventoryMenu.slots.size()) {
             return;
         }
+
+        // Native equipment owns its own materialization and sync. Never infer expanded storage
+        // from an unknown accessory index while another mod's slot data is still arriving.
+        if (com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.hasDynamicEquipment()) return;
 
         int expectedExtraSlots = clampSlotCount(packetSlotCount - VANILLA_PLAYER_MENU_SLOTS);
         InventoryExpansionAccess access = access(player);

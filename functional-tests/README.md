@@ -1,5 +1,15 @@
 # Functional Tests
 
+The [character-window layout port](CHARACTER-LAYOUT-ALL-VERSIONS-VALIDATION.md) records all twelve Core builds, shared geometry/resource checks and a focused Forge 1.20.1 character-window/recipe-book check. It builds on the [26.3 Fabric preview](CHARACTER-LAYOUT-26.3-FABRIC-VALIDATION.md) and does not run the complete gameplay suite.
+
+The [26.3 Fabric in-place sorting preview](INVENTORY-SORT-VALIDATION.md) uses `scripts/Run-InventorySortQa.ps1`. It selects only inventory sorting, its title/menu controls, protected slots and the existing transfer-sort interaction, using a packaged Core JAR and a disposable world. It does not select the complete gameplay suite.
+
+The [config-menu regression](CONFIG-MENU-VALIDATION.md) uses `scripts/Run-ConfigMenuQa.ps1 -Minecraft <version> -Loader <loader>` to open, close and reopen Core settings from Mod Menu or the native mod-list factory. It creates no world and selects no unrelated gameplay tests. Fabric runs the production Core JAR with a separate QA mod; native loaders use the source-classpath launcher. `-WithoutModMenu` checks optional-dependency absence on Fabric.
+
+The [Spatial GUI ports](SPATIAL-PORTS-VALIDATION.md) use `scripts/Run-SpatialGuiQa.ps1 -Minecraft <version> -Loader <loader>` for focused present/absent upstream checks across all twelve Core targets. Fabric launches production Core artifacts; Forge/NeoForge launch the source classpath with isolated QA instrumentation. The separate localhost Core-only dedicated-server probe remains specific to 26.3 Fabric. These profiles do not run the complete functional suite. The [original experiment](SPATIAL-GUI-VALIDATION.md) records the earlier 26.3 Fabric work.
+
+The [four-wall and movement-control follow-up](WINDOW-BOUNDS-AND-SPATIAL-MOVEMENT-VALIDATION.md) covers shared Core boundaries and the revised 26.3 Fabric spatial transitions. `Run-SpatialGuiQa.ps1 -Walls` selects the boundary profile; `-WithRegression` adds only the affected Spatial GUI interaction regression. It does not select the full gameplay suite.
+
 The [Ancient Remnants search regression](ANCIENT-REMNANTS-SEARCH-ISSUE-16-VALIDATION.md) uses `qaBrowserSearchOnly=true` for focused recipe-browser checks against official upstream mods and production JARs. It does not run unrelated container/gameplay scenarios.
 
 This directory contains the shared functional-test setup for Salt's Inventory Update across every supported Minecraft version and loader.
@@ -495,6 +505,8 @@ This is not a pixel-perfect UI automation suite. It does not replace a small vis
 
 ## Adding Coverage
 
+For Spatial GUI integration, `Run-SpatialGuiQa.ps1 -Minecraft <version> -Loader <fabric|forge|neoforge> -Transitions -WithRegression` selects only presentation transitions and the associated render/hit agreement checks. Fabric loads the production Core JAR and original Spatial GUI 1.8 JAR with a separate QA mod. Forge/NeoForge use the existing source-classpath gameplay launcher and a QA-only mixin configuration; release builds omit this instrumentation. The probe measures actual submitted panel meshes, rather than stale transforms after the closing texture disappears. `Test-SpatialSurfaceTransition.ps1` runs the deterministic projection, reversal and closing contracts without launching Minecraft. See [SPATIAL-TRANSITIONS-VALIDATION.md](SPATIAL-TRANSITIONS-VALIDATION.md) for results and limits.
+
 Add version-neutral runtime checks in:
 
 ```text
@@ -518,6 +530,11 @@ Shared common tests compile an external-style optional mod against the integrati
 `./gradlew verifyApiExamples` additionally compiles the external machine/terminal/native-preferences sources against all twelve production loader classpaths. These checks establish contract and routing behavior; native framework rendering and real storage permissions need an in-game integration pass.
 
 ## Focused HUD checks
+
+Focused native Trinkets fixtures and executed coverage are documented separately for
+[1.20.1 Fabric](TRINKETS-1.20.1-FABRIC-VALIDATION.md) and
+[1.21.1 Fabric](TRINKETS-1.21.1-FABRIC-VALIDATION.md). Neither fixture is packaged in
+production JARs, and neither is a complete functional suite.
 
 `./gradlew :common:test --tests "*DesktopHudApiTest"` exercises public HUD geometry, live state, transform inversion, registration ordering, rollback and provider failure isolation. `SIU_QA_RAISED_ONLY=true` restricts the in-world harness to detached HUD geometry, pickup/place, offhand, live Raised config changes, custom scaled layouts, hidden targets and Return Hotbar to Inventory. Set `SIU_QA_RAISED_ABSENT=true` only for an explicitly prepared fixture without Raised. These are focused checks, not a complete gameplay suite.
 

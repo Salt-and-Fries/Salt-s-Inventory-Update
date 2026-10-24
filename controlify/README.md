@@ -330,7 +330,7 @@ rules. Minecraft's native recipe IDs, recipe matching, slot restrictions,
 remainders and furnace behavior remain version-specific.
 
 Editable wheel PNG/PDN originals stay in
-`controlify/versions/26.3/common/src/main/resources/assets/salts_inventory_controlify/`.
+`artwork/shared-resources/controlify/assets/salts_inventory_controlify/textures/`.
 The build shares that asset namespace with every companion target, so editing
 those files and rebuilding updates the corresponding sprites across the matrix.
 Do not edit copies inside build output or `dist`. Build checks resolve their

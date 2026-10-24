@@ -2,11 +2,15 @@ package com.salts_inventory_update.controlify.qa;
 
 import com.salts_inventory_update.controlify.RadialInventoryScreen;
 import com.salts_inventory_update.controlify.SaltsControlifyClient;
+import com.salts_inventory_update.controlify.model.WorkspaceLayout;
+import com.salts_inventory_update.controlify.model.WorkspacePresentationLayout;
+import com.salts_inventory_update.controlify.model.WindowSize;
 import dev.isxander.controlify.gui.guide.GuideInstanceImpl;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -80,6 +84,33 @@ public final class QaNativeGuideProbe {
     public static double tabsBottom;
     public static int layoutWidth, layoutHeight;
     public static long layoutFrames;
+    public record DisabledAnimationSample(
+        WorkspaceLayout<UUID> actual,
+        WorkspaceLayout<UUID> target,
+        int width, int height, long sequence) { }
+    public static DisabledAnimationSample disabledAnimationSample;
+    private static boolean awaitDisabledAnimation;
+    public static void expectDisabledAnimation() {
+        disabledAnimationSample = null;
+        awaitDisabledAnimation = true;
+    }
+    /** Observe the first actual disabled radial render, without advancing or changing the animator. */
+    public static void animationFrame(SaltsControlifyClient client,
+            int width, int height, WorkspaceLayout<UUID> actual) {
+        if (!awaitDisabledAnimation) return;
+        var owner = new QaWorkspaceOwner(client);
+        if (!owner.radialActive() || owner.config().animationsEnabled()) return;
+        var sizes = new LinkedHashMap<UUID, WindowSize>();
+        owner.windows().forEach((id, window) -> {
+            if (!window.handle().isOpen()) return;
+            var bounds = owner.desktop().presentationBounds(id);
+            sizes.put(id, new WindowSize(bounds.width(), bounds.height()));
+        });
+        var target = new WorkspacePresentationLayout()
+            .compute(owner.model(), sizes, width, height, 1);
+        disabledAnimationSample = new DisabledAnimationSample(actual, target, width, height, layoutFrames);
+        awaitDisabledAnimation = false;
+    }
     private static boolean extracting, right, gameplayScope, compactScope;
     private static String domain, mode;
     private static boolean bottom;
@@ -225,7 +256,7 @@ public final class QaNativeGuideProbe {
                 var desktop = (com.salts_inventory_update.api.client.desktop.DesktopWorkspace) read(owner, "desktop");
                 for (var entry : windows.entrySet()) if (entry.getValue().handle().isOpen()) {
                     var bounds = desktop.presentationBounds(entry.getKey());
-                    sizes.put(entry.getKey(), new com.salts_inventory_update.controlify.model.WindowSize(Math.max(1,bounds.width()), Math.max(1,bounds.height())));
+                    sizes.put(entry.getKey(), new WindowSize(Math.max(1,bounds.width()), Math.max(1,bounds.height())));
                 }
             }
             return com.salts_inventory_update.controlify.model.TuckedGuideReservation.inset(width, height, tabBottom, preview, sizes);

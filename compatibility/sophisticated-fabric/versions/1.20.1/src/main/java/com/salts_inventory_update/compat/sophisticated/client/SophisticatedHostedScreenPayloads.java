@@ -14,7 +14,7 @@ public final class SophisticatedHostedScreenPayloads {
 
     public static void apply(Minecraft minecraft, AbstractContainerMenu menu, ResourceLocation channel, byte[] data) {
         if (SophisticatedLegacyMessageBridge.CHANNEL.equals(channel)) {
-            SophisticatedLegacyMessageBridge.handleClient(minecraft, menu, channel, data);
+            SophisticatedLegacyMessageBridge.ClientHandlers.handleClient(minecraft, menu, channel, data);
             return;
         }
         String namespace = channel.getNamespace();

@@ -1,0 +1,19 @@
+// Opt-in fixture source set: never used by assemble, jar, remapping or release collection.
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    def extension = root.project(':compatibility:26.3:neoforge')
+    def core = root.project(':26.3:neoforge')
+    def qa = extension.sourceSets.create('curiosQa') {
+        java.srcDir(root.file('functional-tests/curios-26.3-neoforge/src/main/java'))
+        resources.srcDir(root.file('functional-tests/curios-26.3-neoforge/src/main/resources'))
+        compileClasspath += extension.sourceSets.main.compileClasspath + extension.sourceSets.main.output + core.sourceSets.main.output
+        runtimeClasspath += extension.sourceSets.main.runtimeClasspath
+    }
+    extension.tasks.named(qa.compileJavaTaskName).configure { dependsOn(extension.tasks.named('classes')) }
+    extension.extensions.getByName('neoForge').mods.maybeCreate('salts_curios_qa').sourceSet(qa)
+    extension.tasks.named('runClient', JavaExec).configure {
+        systemProperty('salts.curios.qa.directory', root.file('build/curios-implementation').absolutePath)
+        systemProperty('salts_inventory_update.desktopDebug', 'false')
+        systemProperty('salts_inventory_update.desktopTrace', 'false')
+    }
+}

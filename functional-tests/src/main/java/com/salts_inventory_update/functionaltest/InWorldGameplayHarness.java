@@ -58,7 +58,13 @@ public final class InWorldGameplayHarness {
     private static final boolean HUD_MOVEMENT_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_HUD_MOVEMENT_ONLY"));
     private static final boolean HUD_VISIBILITY_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_HUD_VISIBILITY_ONLY"));
     private static final boolean RAISED_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_RAISED_ONLY"));
-    private static final boolean WINDOW_CONTROLS_ONLY = HUD_MOVEMENT_ONLY || HUD_VISIBILITY_ONLY || RAISED_ONLY || MOUSE_TWEAKS_ONLY || "true".equalsIgnoreCase(System.getenv("SIU_QA_WINDOW_CONTROLS_ONLY"));
+    private static final boolean SPATIAL_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_ONLY"));
+    private static final boolean SPATIAL_REPORT = "true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_REPORT"));
+    private static final boolean WINDOW_WALLS_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_WINDOW_WALLS_ONLY"));
+    private static final boolean INVENTORY_SORT_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_INVENTORY_SORT_ONLY"));
+    private static final boolean FULL_CORE = "true".equalsIgnoreCase(System.getenv("SIU_QA_FULL_CORE"));
+    private static final String ACCESSORY = Optional.ofNullable(System.getenv("SIU_QA_ACCESSORY")).orElse("");
+    private static final boolean WINDOW_CONTROLS_ONLY = INVENTORY_SORT_ONLY || WINDOW_WALLS_ONLY || SPATIAL_ONLY || HUD_MOVEMENT_ONLY || HUD_VISIBILITY_ONLY || RAISED_ONLY || MOUSE_TWEAKS_ONLY || "true".equalsIgnoreCase(System.getenv("SIU_QA_WINDOW_CONTROLS_ONLY"));
     private static final boolean KEYBINDS_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_KEYBINDS_ONLY"));
     private static final boolean BROWSER_SEARCH_ONLY = "true".equalsIgnoreCase(System.getenv("SIU_QA_BROWSER_SEARCH_ONLY"));
 
@@ -131,7 +137,26 @@ public final class InWorldGameplayHarness {
         }
         if (WINDOW_CONTROLS_ONLY) {
             while (STEPS.size() > 3) STEPS.removeLast();
-            if (HUD_MOVEMENT_ONLY || HUD_VISIBILITY_ONLY) addHudVisibilityRegression();
+            if (INVENTORY_SORT_ONLY) addInventorySortRegression();
+            else if (WINDOW_WALLS_ONLY) {
+                addWindowWallsRegression();
+                if("true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_WITH_REGRESSION"))&&wallsSpatial()) addSpatialRegression();
+            }
+            else if (SPATIAL_ONLY) {
+                if("true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_COMPLETE"))) {
+                    addSpatialTransitions();
+                    addWindowWallsRegression();
+                    addSpatialRegression();
+                }
+                else if("true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_TRANSITIONS"))) {
+                    addSpatialTransitions();
+                    if("true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_WITH_REGRESSION")))addSpatialRegression();
+                }
+                else if("true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_HOTBAR_PROBE"))) addSpatialHotbarProbe();
+                else if("true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_FINDINGS"))) addSpatialFindingsRegression();
+                else addSpatialRegression();
+            }
+            else if (HUD_MOVEMENT_ONLY || HUD_VISIBILITY_ONLY) addHudVisibilityRegression();
             else if (RAISED_ONLY) addRaisedHudRegression();
             else if (MANUAL_MOUSE_TWEAKS) addManualMouseTweaksFixture();
             else if (MOUSE_TWEAKS_ONLY) addMouseTweaksRegression();
@@ -146,6 +171,32 @@ public final class InWorldGameplayHarness {
             while (STEPS.size() > 3) STEPS.removeLast();
             addAncientRemnantsSearchRegression();
         }
+        if(SPATIAL_ONLY && "true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_CONTROLS_ONLY"))) {
+            var setup=Set.of("world-create-and-connect","desktop-handshake","world-fixture","spatial-configure","fixture-spatial-chest","open-spatial-chest","spatial-inventory-window","spatial-third-person-panel","spatial-hidden-selection","spatial-close");
+            STEPS.removeIf(s->!setup.contains(s.name())&&!s.name().startsWith("spatial-movement-")&&!s.name().startsWith("spatial-gameplay-")&&!s.name().startsWith("spatial-rebound-")&&!s.name().startsWith("spatial-hold-"));
+        }
+        if(SPATIAL_REPORT && "true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_SCALE_ONLY"))) {
+            var allowed=Set.of("world-create-and-connect","desktop-handshake","world-fixture","spatial-configure","fixture-spatial-chest","open-spatial-chest","spatial-inventory-window","spatial-third-person-panel","spatial-report-gui-scale-three","spatial-report-gui-scale-two","spatial-close");
+            STEPS.removeIf(s->!allowed.contains(s.name()));
+        }
+        if (!ACCESSORY.isEmpty()) {
+            while (STEPS.size() > 3) STEPS.removeLast();
+            if (ACCESSORY.equals("curios")) addCuriosRegression();
+            else if (ACCESSORY.equals("trinkets")) addTrinketsRegression();
+            else throw new IllegalArgumentException("Unknown native accessory fixture");
+        }
+        if (FULL_CORE) {
+            if (!SCENARIO.equals("core") || WINDOW_CONTROLS_ONLY)
+                throw new IllegalStateException("Complete Core QA requires the unrestricted standalone Core scenario");
+            // Execute the existing feature regressions after the complete native-menu suite.
+            // Each group restores its own fixture; no tests are selected out of the full run.
+            addChestCloseRegression();
+            addWindowControlsRegression();
+            addKeybindsRegression();
+            addInventorySortRegression();
+            addHudVisibilityRegression();
+            addWindowWallsRegression();
+        }
         com.salts_inventory_update.api.client.desktop.DesktopClientApi.onClientStarted(client->clientReady=true);
         ClientTickEvents.END_CLIENT_TICK.register(InWorldGameplayHarness::tick);
         Thread watchdog=new Thread(()->{
@@ -157,6 +208,1056 @@ public final class InWorldGameplayHarness {
             }
         },"SIU gameplay QA disconnect watchdog");watchdog.setDaemon(true);watchdog.start();
         SaltsInventoryUpdate.LOGGER.info("SIU_GAMEPLAY_START scenario={} mc={} output={}",SCENARIO,VersionInfo.MINECRAFT_VERSION,output);
+    }
+
+    private static DesktopWindowHandle accessoryCharacter() {
+        return DesktopClientApi.currentWorkspace().orElseThrow().windows().stream()
+            .filter(w -> w.kind()==DesktopWorkspaceWindow.Kind.CHARACTER).findFirst().orElseThrow().handle();
+    }
+    private static void accessoryOpen() {
+        InventoryDesktopScreen.openOrToggleInventory(mc);
+        InventoryDesktopScreen.openOrToggleCharacter(mc);
+        accessoryCharacter().moveTo(20,200);
+        DesktopClientApi.currentWorkspace().orElseThrow().windows().stream()
+            .filter(w -> w.kind()==DesktopWorkspaceWindow.Kind.PLAYER_INVENTORY)
+            .forEach(w -> w.handle().moveTo(330,250));
+    }
+    private static void accessoryPlayerClick(int slot,int button) {
+        var p=slotPoint(0,slot,windowKind("INVENTORY"));
+        spatialMove(p[0]*mc.getWindow().getGuiScale(),p[1]*mc.getWindow().getGuiScale(),0,0);
+        mouse("mouseClicked",p[0],p[1],button,0,0);mouse("mouseReleased",p[0],p[1],button,0,0);
+    }
+    private static void accessorySeed() {
+        player().getInventory().clearContent();player().inventoryMenu.setCarried(ItemStack.EMPTY);
+        player().getInventory().setItem(9,new ItemStack(Items.DIAMOND,4));
+        player().getInventory().setItem(10,new ItemStack(Items.IRON_INGOT,3));
+        player().inventoryMenu.broadcastFullState();mtSync();
+    }
+    private static Object curiosInventory(Object p) {
+        Object maybe=call(ClassFor("top.theillusivec4.curios.api.CuriosApi"),"getCuriosInventory",p);
+        if(!(maybe instanceof Optional<?>))maybe=call(maybe,"resolve");
+        return ((Optional<?>)maybe).orElseThrow();
+    }
+    private static Object curiosGroup(Object p) {
+        return ((Optional<?>)call(curiosInventory(p),"getStacksHandler","ring")).orElseThrow();
+    }
+    private static DesktopContainerSession curiosSession() {
+        return sessions().stream().filter(s -> s.menu().getClass().getSimpleName().equals("CuriosDesktopMenu")).findFirst().orElse(null);
+    }
+    private static void curiosActivate() {
+        activeSession=curiosSession();activeWindow=windowSession(activeSession.sessionId());
+    }
+    private static int curiosFirstSlot() {
+        Object slot=((List<?>)call(currentSession().menu(),"displayedSlots")).get(0);
+        return (slot instanceof Slot nativeSlot ? nativeSlot : (Slot)field(slot,"nativeSlot")).index;
+    }
+    private static void curiosCapacity(int count) {
+        Object group=curiosGroup(player());
+        String modifierClass="net.minecraft.world.entity.ai.attributes.AttributeModifier";
+        Object id,modifier;
+        if(VersionInfo.MINECRAFT_VERSION.equals("1.20.1")) {
+            id=UUID.fromString("f773e7bb-a3e6-4e6d-b1b1-ac19cfc3bd52");
+            modifier=construct(ClassFor(modifierClass),id,"Salts disposable capacity QA",(double)count-8,
+                enumValue(modifierClass+"$Operation","ADDITION"));
+        } else {
+            Class<?> identifier;
+            try{identifier=ClassFor("net.minecraft.resources.Identifier");}
+            catch(IllegalStateException legacy){identifier=ClassFor("net.minecraft.resources.ResourceLocation");}
+            id=call(identifier,"fromNamespaceAndPath","salts_gameplay_qa","capacity");
+            modifier=construct(ClassFor(modifierClass),id,(double)count-8,enumValue(modifierClass+"$Operation","ADD_VALUE"));
+        }
+        call(group,"removeModifier",id);
+        if(count!=8)call(group,"addPermanentModifier",modifier);
+        call(group,"update");
+    }
+    private static Object curiosContext() {
+        return call(screen(),"apiContext",windowSession(currentSession().sessionId()),null,Integer.MIN_VALUE,Integer.MIN_VALUE);
+    }
+    private static Object curiosRightmostCell() {
+        Object w=windowSession(currentSession().sessionId()),definition=field(w,"apiDefinition"),context=curiosContext();
+        return ((List<?>)call(definition,"cells",context)).stream()
+            .filter(cell -> (Boolean)call(call(cell,"slot"),"canToggleRender"))
+            .max(Comparator.comparingInt(cell -> ((Number)call(cell,"x")).intValue())).orElseThrow();
+    }
+    private static void curiosToggleRightmost() {
+        Object cell=curiosRightmostCell();
+        Object nativeSlot=call(cell,"slot");
+        double x=((Number)call(cell,"x")).intValue()+19,y=((Number)call(cell,"y")).intValue()+2;
+        Object w=windowSession(currentSession().sessionId());
+        record("curios-toggle-dispatch","INFO","group="+field(nativeSlot,"group")+", index="+field(nativeSlot,"accessoryIndex")
+            +", visibleBefore="+call(nativeSlot,"getRenderStatus")+", transportReady="+DesktopClientApi.canDispatchOptimisticMutationNow()
+            +", windowHit="+(call(screen(),"windowAt",x,y)==w)+", hostScrollbar="+call(screen(),"storageScrollbarContains",w,x,y)
+            +", titleControl="+call(screen(),"titleBarControlAt",w,x,y));
+        clickAt(x,y);
+    }
+    private static boolean curiosRightmostVisible() {
+        return (Boolean)call(call(curiosRightmostCell(),"slot"),"getRenderStatus");
+    }
+    private static void curiosVisibilityChecks(String label) {
+        add(label+"-geometry",()->{},()->true,()->{
+            Object w=windowSession(currentSession().sessionId()),cell=curiosRightmostCell();
+            int right=((Number)call(cell,"x")).intValue()+20;
+            Object layout=call(field(w,"apiDefinition"),"layout",curiosContext());
+            int columns=((Number)call(layout,"columns")).intValue();
+            check(label+"-native-toggle-present",(Boolean)call(call(cell,"slot"),"canToggleRender"));
+            check(label+"-rightmost-column",((Number)call(cell,"x")).intValue()==number(w,"x")+8+(columns-1)*18);
+            int clip=number(w,"x")+6+((Number)call(layout,"viewportWidth",number(w,"width"))).intValue();
+            check(label+"-all-eight-pixels-inside-clip",right<=clip);
+            capture(label+"-before");
+        },4);
+        add(label+"-last-pixel-click",InWorldGameplayHarness::curiosToggleRightmost,
+            ()->!curiosRightmostVisible(),()->{check(label+"-no-item-pickup",carried()==0);capture(label+"-off");},8);
+        add(label+"-restore",InWorldGameplayHarness::curiosToggleRightmost,
+            InWorldGameplayHarness::curiosRightmostVisible,()->{},8);
+    }
+    private static void addCuriosRegression() {
+        add("curios-native-fixture",()->{
+            closeWindows();SaltsInventoryConfig.update(c -> {c.allowResizing=true;c.returnHotbarToInventory=false;c.persistentWindows=false;});
+            server(()->{accessorySeed();check("curios-native-types",((Map<?,?>)call(curiosInventory(player()),"getCurios")).size()==11);return null;});
+        },InWorldGameplayHarness::taskDone,()->{},8);
+        add("curios-open-character",InWorldGameplayHarness::accessoryOpen,()->windowKind("CHARACTER")!=null,()->{},8);
+        add("curios-open-native-panel",()->dispatchMovementKey("KEY_G","PRESS"),
+            ()->curiosSession()!=null,()->{curiosActivate();capture("curios-equipment-all-types");},12);
+        add("curios-shortcut-repeat",()->dispatchMovementKey("KEY_G","REPEAT"),()->true,()->{
+            check("curios-shortcut-repeat-does-not-close",curiosSession()!=null);dispatchMovementKey("KEY_G","RELEASE");
+        },8);
+        add("curios-joined-layout",()->{},()->true,()->{
+            var owner=accessoryCharacter().state();Object panel=windowSession(currentSession().sessionId());
+            check("curios-equal-width",number(panel,"width")==owner.width());
+            check("curios-four-pixel-gap",number(panel,"y")+number(panel,"height")+4==owner.y());
+            check("curios-cosmetics-present",(Boolean)call(currentSession().menu(),"hasCosmetics"));
+            check("curios-all-native-types-displayed",((List<?>)call(currentSession().menu(),"displayedSlots")).size()==35);
+        },4);
+        curiosVisibilityChecks("curios-rightmost-toggle");
+        add("curios-player-pickup",()->accessoryPlayerClick(9,left()),()->carried()==4,()->{},5);
+        add("curios-native-equipment-place",()->clickSlot(curiosFirstSlot(),left()),()->carried()==0,()->{
+            check("curios-native-slot-received",currentSession().menu().getSlot(curiosFirstSlot()).getItem().is(Items.DIAMOND));capture("curios-equipment-item");
+        },6);
+        add("curios-native-equipment-pickup",()->clickSlot(curiosFirstSlot(),left()),()->carried()==4,()->{},5);
+        add("curios-player-return",()->accessoryPlayerClick(9,left()),()->carried()==0,()->{},5);
+        add("curios-cosmetic-tab",()->{
+            Object w=windowSession(currentSession().sessionId());clickAt(number(w,"x")+number(w,"width")-22,number(w,"y")-12);
+        },()->(Boolean)field(currentSession().menu(),"cosmetics"),()->capture("curios-cosmetics"),8);
+        add("curios-cosmetic-pickup",()->accessoryPlayerClick(9,left()),()->carried()==4,()->{},4);
+        add("curios-cosmetic-place",()->clickSlot(curiosFirstSlot(),left()),()->carried()==0,()->capture("curios-cosmetic-item"),6);
+        add("curios-cosmetic-take",()->clickSlot(curiosFirstSlot(),left()),()->carried()==4,()->{},5);
+        add("curios-cosmetic-return",()->accessoryPlayerClick(9,left()),()->carried()==0,()->{},5);
+        add("curios-return-equipment-tab",()->{
+            Object w=windowSession(currentSession().sessionId());clickAt(number(w,"x")+number(w,"width")-22,number(w,"y")-12);
+        },()->!(Boolean)field(currentSession().menu(),"cosmetics"),()->{},8);
+        add("curios-native-grow",()->server(()->{curiosCapacity(100);return null;}),
+            ()->taskDone() && curiosSession()!=null && curiosSession().menu().slots.size()==254,()->{curiosActivate();capture("curios-overflow");},12);
+        add("curios-small-viewport",()->{
+            mc.options.guiScale().set(3);resizeHudGui();
+        },()->true,()->capture("curios-overflow-small-viewport"),12);
+        curiosVisibilityChecks("curios-scrolling-rightmost-toggle");
+        add("curios-scroll-bottom",()->{
+            Object w=windowSession(currentSession().sessionId());
+            scroll((double)number(w,"x")+20,(double)number(w,"y")+20,-200D);
+        },()->true,()->{
+            Object state=call(curiosContext(),"state");
+            check("curios-scroll-offset-positive",number(state,"scrollRow")>0);capture("curios-overflow-scrolled");
+        },6);
+        add("curios-joined-four-walls",()->{
+            if(accessoryCharacter().state().locked()) accessoryCharacter().request(DesktopWindowAction.UNLOCK);
+            check("curios-left-move-accepted",accessoryCharacter().moveTo(-999,-999));
+        },()->true,()->{
+            Object w=windowSession(currentSession().sessionId());
+            check("curios-top-tab-on-screen",number(w,"y")>=23);
+            check("curios-left-on-screen",number(w,"x")>=0);
+        },6);
+        add("curios-joined-bottom-right",()->{
+            check("curios-right-move-accepted",accessoryCharacter().moveTo(99999,99999));
+        },()->{
+            var owner=accessoryCharacter().state();
+            return owner.x()+owner.width()==screen().width&&owner.y()+owner.height()==screen().height;
+        },()->{
+            var owner=accessoryCharacter().state();
+            check("curios-reaches-right-wall",owner.x()+owner.width()==screen().width);
+            check("curios-reaches-bottom-wall",owner.y()+owner.height()==screen().height);
+            check("curios-right-on-screen",owner.x()+owner.width()<=screen().width);
+            check("curios-bottom-on-screen",owner.y()+owner.height()<=screen().height);capture("curios-joined-bottom-right");
+        },6);
+        add("curios-native-shrink",()->server(()->{
+            var obsolete=serverMenu();
+            Object removed=((List<?>)call(obsolete,"displayedSlots")).stream()
+                .max(Comparator.comparingInt(slot->number(slot,"accessoryIndex"))).orElseThrow();
+            Slot removedSlot=removed instanceof Slot nativeSlot?nativeSlot:(Slot)field(removed,"nativeSlot");
+            check("curios-stale-click-fixture-index",number(removed,"accessoryIndex")==99);
+            var reserved=player().getInventory().removeItemNoUpdate(9);
+            check("curios-stale-click-fixture-stack",reserved.is(Items.DIAMOND)&&reserved.getCount()==4);
+            player().inventoryMenu.setCarried(reserved.copy());obsolete.setCarried(reserved.copy());
+            curiosCapacity(8);
+            try {
+                // The action was queued before capacity changed; process it before
+                // the public lifecycle tick replaces this obsolete menu instance.
+                Class<?> packet=ClassFor("com.salts_inventory_update.network.DesktopPackets$DesktopClickPayload");
+                Class<?> dispatcher=ClassFor("com.salts_inventory_update.server.DesktopContainerSessions");
+                Object payload;
+                if(packet.getRecordComponents().length==6) {
+                    payload=construct(packet,0,activeSession.sessionId(),removedSlot.index,0,"PICKUP",reserved.copy());
+                } else {
+                    Object sessions=call(dispatcher,"sessions",player());
+                    Object session=((Map<?,?>)field(sessions,"sessions")).get(activeSession.sessionId());
+                    long nonce=((Number)field(sessions,"connectionNonce")).longValue();
+                    long playerToken=((Number)field(sessions,"playerSessionToken")).longValue();
+                    long token=((Number)field(session,"sessionToken")).longValue();
+                    long mutation=((Number)call(sessions,"nextMutationId")).longValue();
+                    // A rejected authorization would never exercise the native menu guard.
+                    if(call(dispatcher,"authorizeMenu",player(),sessions,nonce,activeSession.sessionId(),token,
+                        obsolete.getStateId(),0L,"queued-click-qa")==null) {
+                        throw new IllegalStateException("Queued-click fixture was not authorized");
+                    }
+                    payload=construct(packet,nonce,mutation,playerToken,activeSession.sessionId(),token,
+                        obsolete.getStateId(),0,removedSlot.index,0,"PICKUP",reserved.copy());
+                }
+                call(dispatcher,"click",player(),payload);
+                check("curios-late-click-rejected-safely",true);
+            } catch(RuntimeException failure) {
+                Throwable cause=failure;
+                while(cause.getCause()!=null)cause=cause.getCause();
+                record("curios-late-click-rejected-safely","FAIL",cause.toString());
+                SaltsInventoryUpdate.LOGGER.error("Curios queued-click regression failed",failure);
+            }
+            check("curios-late-click-cursor-preserved",ItemStack.matches(reserved,player().inventoryMenu.getCarried()));
+            // Restore only the disposable fixture after recording the actual outcome.
+            player().getInventory().setItem(9,reserved);
+            player().inventoryMenu.setCarried(ItemStack.EMPTY);obsolete.setCarried(ItemStack.EMPTY);
+            return null;
+        }),
+            ()->taskDone() && curiosSession()!=null && curiosSession().menu().slots.size()==70,()->{curiosActivate();capture("curios-shrunk");},10);
+        add("curios-close-owner",()->accessoryCharacter().close(),()->curiosSession()==null,()->check("curios-owner-closes-panel",curiosSession()==null),8);
+        add("curios-final-conservation",()->server(()->{
+            check("curios-diamond-conservation",player().getInventory().getItem(9).getCount()==4);
+            check("curios-other-stack-preserved",player().getInventory().getItem(10).getCount()==3);
+            check("curios-cursor-empty",player().inventoryMenu.getCarried().isEmpty());return null;
+        }),InWorldGameplayHarness::taskDone,InWorldGameplayHarness::closeWindows,5);
+    }
+    private static void addTrinketsRegression() {
+        add("trinkets-native-seed",()->{
+            closeWindows();SaltsInventoryConfig.update(c->{c.returnHotbarToInventory=false;c.persistentWindows=false;});
+            server(()->{call(ClassFor("com.salts_inventory_update.qa.trinkets.TrinketsQa"),"seed",player());mtSync();return null;});
+        },InWorldGameplayHarness::taskDone,()->{},10);
+        add("trinkets-open-character",InWorldGameplayHarness::accessoryOpen,()->windowKind("CHARACTER")!=null,()->capture("trinkets-character"),12);
+        add("trinkets-offhand-always-present",()->{},()->true,()->{
+            var p=slotPoint(0,45,windowKind("CHARACTER"));check("trinkets-real-offhand-hit",p.length==2);
+            check("trinkets-native-slots-appended",mc.player.inventoryMenu.slots.size()>48);
+        },4);
+        add("trinkets-offhand-item-seed",()->server(()->{player().inventoryMenu.getSlot(45).set(new ItemStack(Items.IRON_INGOT,4));player().inventoryMenu.broadcastFullState();mtSync();return null;}),
+            ()->taskDone() && mc.player.inventoryMenu.getSlot(45).getItem().getCount()==4,()->{},6);
+        add("trinkets-offhand-pickup",()->{var p=slotPoint(0,45,windowKind("CHARACTER"));clickAt(p[0],p[1]);},()->carried()==4,()->{},5);
+        add("trinkets-offhand-return",()->{var p=slotPoint(0,45,windowKind("CHARACTER"));clickAt(p[0],p[1]);},()->carried()==0,()->capture("trinkets-real-offhand"),5);
+        add("trinkets-open-offhand-group",InWorldGameplayHarness::trinketsHoverOffhand,
+            ()->field(ClassFor("dev.emi.trinkets.TrinketsClient"),"activeGroup")!=null,()->capture("trinkets-offhand-group"),12);
+        add("trinkets-equip-pickup",()->accessoryPlayerClick(9,left()),()->carried()==2,()->{},4);
+        add("trinkets-hover-with-cursor",InWorldGameplayHarness::trinketsHoverOffhand,()->true,()->{},10);
+        add("trinkets-native-equip",()->trinketsClickRing(0,right()),()->carried()==1,
+            ()->capture("trinkets-native-ring-equipped"),8);
+        add("trinkets-return-remainder",()->accessoryPlayerClick(9,left()),()->carried()==0,()->{},5);
+        add("trinkets-invalid-pickup",()->accessoryPlayerClick(11,left()),()->carried()==4,()->{},4);
+        add("trinkets-invalid-hover",InWorldGameplayHarness::trinketsHoverOffhand,()->true,()->{},8);
+        add("trinkets-invalid-expand-ring",()->{
+            var p=slotPoint(0,trinketsRing(0),windowKind("CHARACTER"));
+            spatialMove(p[0]*mc.getWindow().getGuiScale(),p[1]*mc.getWindow().getGuiScale(),0,0);
+        },()->field(ClassFor("dev.emi.trinkets.TrinketsClient"),"activeType")!=null,()->capture("trinkets-ring-popup"),10);
+        add("trinkets-invalid-rejected",()->trinketsClickRing(1,left()),()->true,()->{
+            check("trinkets-native-validation",carried()==4 && mc.player.inventoryMenu.getSlot(trinketsRing(1)).getItem().isEmpty());
+        },10);
+        add("trinkets-invalid-return",()->accessoryPlayerClick(11,left()),()->carried()==0,()->{},5);
+        add("trinkets-unequip-hover",InWorldGameplayHarness::trinketsHoverOffhand,()->true,()->{},8);
+        add("trinkets-native-unequip",()->trinketsClickRing(0,left()),()->carried()==1,()->{},6);
+        add("trinkets-unequip-return",()->accessoryPlayerClick(9,left()),()->carried()==0,()->{},5);
+        add("trinkets-lock-pickup",()->accessoryPlayerClick(12,left()),()->carried()==1,()->{},4);
+        add("trinkets-lock-hover",InWorldGameplayHarness::trinketsHoverOffhand,()->true,()->{},8);
+        add("trinkets-lock-equip",()->trinketsClickRing(0,left()),()->carried()==0,()->{},105);
+        add("trinkets-lock-try-pickup",()->trinketsClickRing(0,left()),()->true,()->{
+            check("trinkets-unequip-restriction",carried()==0 && mc.player.inventoryMenu.getSlot(trinketsRing(0)).getItem().is(Items.GOLD_INGOT));
+            capture("trinkets-native-locked-ring");
+        },10);
+        add("trinkets-native-rebuild",()->server(()->{
+            for(int i=0;i<3;i++)call(player().inventoryMenu,"trinkets$updateTrinketSlots",true);
+            com.salts_inventory_update.inventory.InventoryExpansion.syncToClient(player());player().inventoryMenu.broadcastFullState();mtSync();
+            call(ClassFor("com.salts_inventory_update.qa.trinkets.TrinketsQa"),"report",player());return null;
+        }),InWorldGameplayHarness::taskDone,()->check("trinkets-client-expanded-tail-retained",mc.player.inventoryMenu.slots.size()>=50),10);
+        add("trinkets-native-grow",()->server(()->{
+            mc.getSingleplayerServer().getCommands().performPrefixedCommand(player().createCommandSourceStack(),"trinketsqa grow");
+            return null;
+        }),()->taskDone() && mc.player.inventoryMenu.slots.stream().anyMatch(s ->
+            trinketsSlotKey(s).equals("trinkets:equipment/hand/ring/3")),
+            ()->capture("trinkets-native-capacity-grown"),12);
+        add("trinkets-native-final-state",()->server(()->{
+            call(ClassFor("com.salts_inventory_update.qa.trinkets.TrinketsQa"),"report",player());
+            check("trinkets-diamond-conservation",player().getInventory().getItem(9).getCount()==2);
+            check("trinkets-invalid-stack-preserved",player().getInventory().getItem(11).getCount()==4);
+            check("trinkets-real-offhand-preserved",player().inventoryMenu.getSlot(45).getItem().getCount()==4);
+            check("trinkets-cursor-empty",player().inventoryMenu.getCarried().isEmpty());
+            try{
+                String events=Files.readString(Path.of(System.getProperty("salts.trinkets.qa"),"events.log"));
+                check("trinkets-native-equip-callback",events.contains("EQUIP "));
+                check("trinkets-native-unequip-callback",events.contains("UNEQUIP "));
+                check("trinkets-native-tick-callback",events.contains("NATIVE_TICK "));
+            }catch(java.io.IOException failure){throw new IllegalStateException(failure);}
+            return null;
+        }),InWorldGameplayHarness::taskDone,()->{},8);
+        add("trinkets-close-reopen",InWorldGameplayHarness::closeWindows,
+            ()->nativeScreen()==null && (screen()==null || !screen().hasWindows()),()->{},5);
+        add("trinkets-reopen",InWorldGameplayHarness::accessoryOpen,()->windowKind("CHARACTER")!=null,()->capture("trinkets-reopened"),10);
+        add("trinkets-cleanup",InWorldGameplayHarness::closeWindows,()->sessions().isEmpty(),()->{},5);
+    }
+    private static int trinketsRing(int index) {
+        String key="trinkets:equipment/offhand/ring/"+index;
+        for(Slot slot:mc.player.inventoryMenu.slots)
+            if(key.equals(trinketsSlotKey(slot)))return slot.index;
+        throw new IllegalStateException("Missing native slot "+key);
+    }
+    private static String trinketsSlotKey(Slot slot) {
+        return call(ClassFor("com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi"),"slotKey",slot).toString();
+    }
+    private static void trinketsHoverOffhand() {
+        var p=slotPoint(0,45,windowKind("CHARACTER"));
+        spatialMove(p[0]*mc.getWindow().getGuiScale(),p[1]*mc.getWindow().getGuiScale(),0,0);
+        call(screen(),"mouseMoved",p[0],p[1]);
+    }
+    private static void trinketsClickRing(int index,int button) {
+        var p=slotPoint(0,trinketsRing(index),windowKind("CHARACTER"));
+        spatialMove(p[0]*mc.getWindow().getGuiScale(),p[1]*mc.getWindow().getGuiScale(),0,0);
+        mouse("mouseClicked",p[0],p[1],button,0,0);mouse("mouseReleased",p[0],p[1],button,0,0);
+    }
+
+    private static void addInventorySortRegression() {
+        addContainer("chest", "minecraft:chest", 0);
+        add("inner-sort-seed-chest", () -> server(() -> {
+            var menu = serverMenu();
+            for (int i = 0; i < 27; i++) menu.getSlot(i).set(ItemStack.EMPTY);
+            var items = List.of(Items.DIRT, Items.IRON_INGOT, Items.DIAMOND, Items.IRON_INGOT, Items.GRAVEL,
+                Items.OAK_PLANKS, Items.BONE, Items.APPLE, Items.IRON_INGOT, Items.DIAMOND_SWORD);
+            int[] counts = {32,40,6,40,16,12,4,3,5,1};
+            for (int i = 0; i < items.size(); i++) menu.getSlot(i).set(new ItemStack(items.get(i), counts[i]));
+            var name = net.minecraft.network.chat.Component.literal("Keepsake");
+            if (VersionInfo.MINECRAFT_VERSION.equals("1.20.1")) call(menu.getSlot(8).getItem(), "setHoverName", name);
+            else call(menu.getSlot(8).getItem(),"set",field(ClassFor("net.minecraft.core.component.DataComponents"),"CUSTOM_NAME"), name);
+            menu.getSlot(9).getItem().setDamageValue(31);
+            Object sharpness=field(ClassFor("net.minecraft.world.item.enchantment.Enchantments"),"SHARPNESS");
+            if (!VersionInfo.MINECRAFT_VERSION.equals("1.20.1")) {
+                boolean legacyRegistry=VersionInfo.MINECRAFT_VERSION.equals("1.21.1");
+                Object enchantments=call(call(player(),"registryAccess"),legacyRegistry?"registryOrThrow":"lookupOrThrow",
+                    field(ClassFor("net.minecraft.core.registries.Registries"),"ENCHANTMENT"));
+                sharpness=call(enchantments,legacyRegistry?"getHolderOrThrow":"getOrThrow",sharpness);
+            }
+            call(menu.getSlot(9).getItem(),"enchant",sharpness,3);
+            menu.broadcastChanges(); return null;
+        }), () -> taskDone() && activeSession.menu().getSlot(0).getItem().is(Items.DIRT),
+            () -> capture("inner-sort-chest-before"), 8);
+        add("inner-sort-chest-click", () -> {
+            Object w = windowSession(activeSession.sessionId());
+            checkSortButtonNeighbours(w);
+            clickControl("SORT_INVENTORY");
+        }, () -> activeSession.menu().getSlot(0).getItem().is(Items.DIAMOND), () -> {
+            capture("inner-sort-chest-after");
+            var actual = server(() -> {
+                var m = serverMenu();
+                check("inner-sort-chest-total", m.slots.subList(0,27).stream().map(Slot::getItem).mapToInt(ItemStack::getCount).sum() == 159);
+                check("inner-sort-gems-first", m.getSlot(0).getItem().is(Items.DIAMOND));
+                check("inner-sort-merged-ingots", m.getSlot(1).getItem().getCount() == 64 && m.getSlot(2).getItem().getCount() == 16);
+                check("inner-sort-name-preserved", "Keepsake".equals(m.getSlot(3).getItem().getHoverName().getString()));
+                check("inner-sort-damage-preserved", m.getSlot(4).getItem().is(Items.DIAMOND_SWORD) && m.getSlot(4).getItem().getDamageValue() == 31);
+                if (VersionInfo.MINECRAFT_VERSION.equals("1.20.1")) {
+                    Map<?,?> enchantments=(Map<?,?>)call(ClassFor("net.minecraft.world.item.enchantment.EnchantmentHelper"),"getEnchantments",m.getSlot(4).getItem());
+                    check("inner-sort-enchantment-preserved",enchantments.values().stream().anyMatch(level -> ((Number)level).intValue()==3));
+                } else {
+                    Object enchantmentData=call(m.getSlot(4).getItem(),"getEnchantments");
+                    check("inner-sort-enchantment-preserved", ((Collection<?>)call(enchantmentData,"keySet")).stream()
+                        .anyMatch(e -> ((Number)call(enchantmentData,"getLevel",e)).intValue()==3));
+                }
+                check("inner-sort-supplies-before-building", m.getSlot(5).getItem().is(Items.APPLE) && m.getSlot(7).getItem().is(Items.OAK_PLANKS));
+                check("inner-sort-terrain-last", m.getSlot(8).getItem().is(Items.DIRT) && m.getSlot(9).getItem().is(Items.GRAVEL));
+                return m.slots.subList(0,27).stream().map(s -> s.getItem().copy()).toList();
+            });
+            addFirst("inner-sort-server-confirm", () -> {}, actual::isDone, () -> {
+                List<ItemStack> before = actual.join();
+                clickControl("SORT_INVENTORY");
+                addFirst("inner-sort-idempotent", () -> server(() -> {
+                    for (int i = 0; i < before.size(); i++) check("inner-sort-repeat-slot-"+i, ItemStack.matches(before.get(i), serverMenu().getSlot(i).getItem()));
+                    return null;
+                }), InWorldGameplayHarness::taskDone, () -> {}, 6);
+            }, 8);
+        }, 10);
+        add("inner-sort-compact-controls", () -> {
+            Object w = windowSession(activeSession.sessionId()); beforeWidth=number(w,"width");
+            double x=number(w,"x")+beforeWidth-2,y=number(w,"y")+number(w,"height")-2;
+            mouse("mouseClicked",x,y,left(),0,0);mouse("mouseDragged",x-90,y,left(),-90,0);mouse("mouseReleased",x-90,y,left(),0,0);
+        }, () -> true, () -> {
+            Object w = windowSession(activeSession.sessionId());
+            var rects=(List<?>)call(call(screen(),"titleBarLayout",w),"controls");
+            check("inner-sort-compact-more",rects.stream().anyMatch(r -> call(r,"control").toString().equals("ELLIPSIS")));
+            checkSortButtonNeighbours(w); capture("inner-sort-compact-popup");
+        }, 5);
+        add("inner-sort-compact-seed", () -> server(() -> {
+            var menu=serverMenu();var first=menu.getSlot(0).getItem().copy();
+            menu.getSlot(0).set(menu.getSlot(9).getItem().copy());menu.getSlot(9).set(first);
+            menu.broadcastFullState();mtSync();return null;
+        }), () -> taskDone() && activeSession.menu().getSlot(0).getItem().is(Items.GRAVEL), () -> {}, 5);
+        add("inner-sort-compact-click", () -> clickControl("SORT_INVENTORY"),
+            () -> activeSession.menu().getSlot(0).getItem().is(Items.DIAMOND), () -> {
+                check("inner-sort-compact-reorders",activeSession.menu().getSlot(0).getItem().getCount()==6);
+                // Overflow actions retain the management menu, just like its pin/focus controls.
+                check("inner-sort-compact-menu-remains-usable",field(screen(),"popupWindow")==windowSession(activeSession.sessionId()));
+                clickControl("ELLIPSIS");
+                check("inner-sort-compact-menu-dismisses",field(screen(),"popupWindow")==null);
+            }, 5);
+        add("inner-sort-restore-width", () -> {
+            Object w=windowSession(activeSession.sessionId()); int delta=beforeWidth-number(w,"width");
+            double x=number(w,"x")+number(w,"width")-2,y=number(w,"y")+number(w,"height")-2;
+            mouse("mouseClicked",x,y,left(),0,0);mouse("mouseDragged",x+delta,y,left(),delta,0);mouse("mouseReleased",x+delta,y,left(),0,0);
+        }, () -> true, () -> {}, 5);
+        add("inner-sort-player-seed", () -> server(() -> {
+            var p = player(); p.getInventory().clearContent();
+            p.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD)); p.getInventory().setItem(8,new ItemStack(Items.APPLE,3));
+            p.getInventory().setItem(9,new ItemStack(Items.DIRT,13)); p.getInventory().setItem(10,new ItemStack(Items.IRON_INGOT,40));
+            p.getInventory().setItem(11,new ItemStack(Items.DIAMOND,4)); p.getInventory().setItem(12,new ItemStack(Items.IRON_INGOT,40));
+            p.inventoryMenu.getSlot(5).set(new ItemStack(Items.DIAMOND_HELMET));
+            p.inventoryMenu.getSlot(45).set(new ItemStack(Items.TORCH,9));
+            p.inventoryMenu.broadcastFullState(); mtSync(); return null;
+        }), InWorldGameplayHarness::taskDone, () -> {}, 8);
+        add("inner-sort-player-open", () -> {if(windowKind("INVENTORY")==null)InventoryDesktopScreen.openOrToggleInventory(mc);},
+            () -> windowKind("INVENTORY") != null && mc.player.getInventory().getItem(9).is(Items.DIRT), () -> capture("inner-sort-player-before"), 8);
+        add("inner-sort-player-click", () -> {
+            Object w = windowKind("INVENTORY"); checkSortButtonNeighbours(w); clickWindowControl(w,"SORT_INVENTORY");
+        }, () -> mc.player.getInventory().getItem(9).is(Items.DIAMOND), () -> {
+            capture("inner-sort-player-after");
+            server(() -> {
+                var p = player(); check("inner-sort-player-gems-first",p.getInventory().getItem(9).is(Items.DIAMOND));
+                check("inner-sort-player-merge",p.getInventory().getItem(10).getCount()==64 && p.getInventory().getItem(11).getCount()==16);
+                check("inner-sort-hotbar-untouched",p.getInventory().getItem(0).is(Items.DIAMOND_SWORD) && p.getInventory().getItem(8).getCount()==3);
+                check("inner-sort-equipment-untouched",p.inventoryMenu.getSlot(5).getItem().is(Items.DIAMOND_HELMET) && p.inventoryMenu.getSlot(45).getItem().getCount()==9);
+                check("inner-sort-other-window-untouched",serverMenu().getSlot(0).getItem().getCount()==6);
+                return null;
+            });
+        }, 10);
+        add("inner-sort-player-server-confirm", () -> {}, InWorldGameplayHarness::taskDone, () -> {}, 3);
+        add("outer-sort-still-transfers", () -> clickWindowControl(windowKind("INVENTORY"),"SORT_WINDOWS"),
+            () -> mc.player.getInventory().getItem(9).isEmpty(), () -> server(() -> {
+                check("outer-sort-still-works",serverMenu().slots.subList(0,27).stream().map(Slot::getItem)
+                    .filter(s -> s.is(Items.DIAMOND)).mapToInt(ItemStack::getCount).sum()==10);
+                check("outer-sort-hotbar-preserved",player().getInventory().getItem(0).is(Items.DIAMOND_SWORD)); return null;
+            }), 10);
+        add("outer-sort-server-confirm", () -> {}, InWorldGameplayHarness::taskDone, () -> {}, 3);
+        addContainer("inner-sort-furnace","minecraft:furnace",0);
+        STEPS.removeLast(); // Inspect this processor before the helper closes it.
+        add("inner-sort-processors-excluded", () -> {}, () -> true, () -> {
+            Object w = windowSession(activeSession.sessionId());
+            check("inner-sort-no-furnace-button", !Boolean.TRUE.equals(call(screen(),"canSortInventoryWindow",w)));
+            capture("inner-sort-furnace-outer-only");
+        }, 5);
+        add("inner-sort-close", InWorldGameplayHarness::closeWindows, () -> sessions().isEmpty(), () -> {}, 5);
+    }
+
+    private static void checkSortButtonNeighbours(Object window) {
+        List<?> controls = (List<?>)call(call(screen(),"titleBarLayout",window),"controls");
+        List<String> names = controls.stream().map(c -> call(c,"control").toString()).toList();
+        if (!names.contains("SORT_INVENTORY")) {
+            if (field(screen(),"popupWindow") != window) clickWindowControl(window,"ELLIPSIS");
+            check("inner-sort-popup-is-open",field(screen(),"popupWindow") == window);
+            controls = (List<?>)call(screen(),"popupControlRects",window,call(screen(),"popupRect",window));
+            names = controls.stream().map(c -> call(c,"control").toString()).toList();
+        }
+        check("inner-sort-button-next-to-outer",names.indexOf("SORT_INVENTORY") == names.indexOf("SORT_WINDOWS")+1 && names.contains("SORT_WINDOWS"));
+        Object kind = enumValue("com.salts_inventory_update.client.InventoryDesktopScreen$WindowControl","SORT_INVENTORY");
+        check("inner-sort-old-minimize-texture",((Number)call(screen(),"controlTextureColumn",window,kind)).intValue()==1);
+    }
+
+    private static Object spatialConfig() { return field(ClassFor("org.tastytrash.spatialGUI.SpatialGUI"), "config"); }
+    private record SpatialAction(long at, Runnable action) { }
+    private static final List<SpatialAction> spatialActions=new ArrayList<>();
+    private static void spatialLater(long delay,Runnable action) {spatialActions.add(new SpatialAction(System.currentTimeMillis()+delay,action));}
+    private static void spatialAlt() {dispatchMovementKey("KEY_LALT","PRESS");dispatchMovementKey("KEY_LALT","RELEASE");}
+    private static void spatialTransitionCase(String label,Runnable start) {
+        add(label,()->{
+            call(ClassFor("com.salts_inventory_update.functionaltest.SpatialTransitionProbe"),"begin");
+            start.run();
+            spatialLater(180,()->capture(label+"-during"));
+        },()->true,()->{
+            @SuppressWarnings("unchecked") var samples=(List<double[]>)call(ClassFor("com.salts_inventory_update.functionaltest.SpatialTransitionProbe"),"finish");
+            double maxJump=0,maxRate=0;int discontinuities=0,closingFrames=0;
+            for(int i=0;i<samples.size();i++){
+                var s=samples.get(i);if(s[1]==2)closingFrames++;
+                for(int k=4;k<s.length;k++)if(!Double.isFinite(s[k]))throw new IllegalStateException("Non-finite projected panel");
+                if(i==0)continue;var previous=samples.get(i-1);double delta=0;
+                for(int k=4;k<s.length;k++)delta=Math.max(delta,Math.abs(s[k]-previous[k]));
+                double seconds=Math.max(.001,s[0]-previous[0]);maxJump=Math.max(maxJump,delta);maxRate=Math.max(maxRate,delta/seconds);
+                if(delta>Math.max(.06,seconds*8))discontinuities++;
+            }
+            try{Files.writeString(output.resolve(label+"-frames.json"),new GsonBuilder().setPrettyPrinting().create().toJson(samples));}catch(Exception failure){throw new IllegalStateException(failure);}
+            record(label+"-measurement","INFO","frames="+samples.size()+", closing="+closingFrames+", largest corner step="+maxJump+", max NDC/sec="+maxRate+", discontinuities="+discontinuities);
+            check(label+"-rendered",samples.size()>5);
+            check(label+"-continuous",discontinuities==0);
+            if(label.endsWith("alt-enter")||label.equals("transitions-hold-down")){
+                var point=spatialMapped(mc.getWindow().getScreenWidth()*.05,mc.getWindow().getScreenHeight()*.5);
+                check(label+"-normal-screen-alignment",Math.abs(point[0]-mc.getWindow().getGuiScaledWidth()*.05)<2&&Math.abs(point[1]-mc.getWindow().getGuiScaledHeight()*.5)<2);
+            }
+            if(label.endsWith("close-held"))check(label+"-camera-stays-at-eye",samples.stream().filter(s->s[0]>samples.get(0)[0]+.6).allMatch(s->s[2]<.05));
+            capture(label+"-settled");
+        },24);
+    }
+    private static void addSpatialTransitions() {
+        add("transitions-configure",()->{
+            closeWindows();SaltsInventoryConfig.update(c->{c.hasSeenInstructionsWindow=true;c.persistentWindows=false;c.returnHotbarToInventory=true;c.toggleMovementControl=true;});
+            setMovementBinding("KEY_LALT");spatialSet("enabled",true);spatialSet("transitionDurationMs",350);
+            spatialSet("enableCloseAnimation",true);spatialSet("enableScaleAnimation",true);spatialSet("enableFadeAnimation",true);
+            spatialSet("disableThirdPersonParallax",true);spatialSet("disableFirstPersonParallax",true);
+            spatialSet("overrideFov",true);spatialSet("targetFov",85);spatialSet("useCrosshairForFirstPerson",false);
+        },()->true,()->{},3);
+        for(String presentation:List.of("third","first","curved")) {
+            add("transitions-"+presentation+"-configure",()->{
+                spatialSet("firstPersonModeInventory",!presentation.equals("third"));spatialSet("firstPersonModeContainers",!presentation.equals("third"));
+                spatialSet("curvedScreenEnabled",presentation.equals("curved"));
+            },()->true,()->{},3);
+            spatialTransitionCase("transitions-"+presentation+"-open",()->InventoryDesktopScreen.openOrToggleInventory(mc));
+            spatialTransitionCase("transitions-"+presentation+"-alt-enter",InWorldGameplayHarness::spatialAlt);
+            spatialTransitionCase("transitions-"+presentation+"-alt-release",()->{
+                mc.player.setYRot(mc.player.getYRot()+38);spatialAlt();
+            });
+            spatialTransitionCase("transitions-"+presentation+"-reverse-alt",()->{
+                spatialAlt();spatialLater(100,()->{spatialAlt();spatialLater(100,()->{spatialAlt();spatialLater(100,InWorldGameplayHarness::spatialAlt);});});
+            });
+            spatialTransitionCase("transitions-"+presentation+"-close",InWorldGameplayHarness::closeWindows);
+            spatialTransitionCase("transitions-"+presentation+"-interrupt-open",()->{
+                InventoryDesktopScreen.openOrToggleInventory(mc);spatialLater(120,InWorldGameplayHarness::closeWindows);
+            });
+            spatialTransitionCase("transitions-"+presentation+"-reopen-during-close",()->{
+                InventoryDesktopScreen.openOrToggleInventory(mc);spatialLater(180,()->{
+                    closeWindows();spatialLater(100,()->InventoryDesktopScreen.openOrToggleInventory(mc));
+                });
+            });
+            spatialTransitionCase("transitions-"+presentation+"-close-held",()->{spatialAlt();spatialLater(500,InWorldGameplayHarness::closeWindows);});
+        }
+        add("transitions-hold-configure",()->{
+            SaltsInventoryConfig.update(c->{c.toggleMovementControl=false;c.returnHotbarToInventory=false;});
+            spatialSet("firstPersonModeInventory",false);spatialSet("curvedScreenEnabled",false);
+        },()->true,()->{},3);
+        spatialTransitionCase("transitions-detached-open",()->InventoryDesktopScreen.openOrToggleInventory(mc));
+        spatialTransitionCase("transitions-hold-down",()->spatialHeldInputKey=nativeInputAction("KEY_LALT"));
+        spatialTransitionCase("transitions-hold-release",()->spatialHeldInputKey=-1);
+        spatialTransitionCase("transitions-close-last-window",()->screen().workspaceAccess().windows().get(0).handle().close());
+        add("transitions-persistent-configure",()->SaltsInventoryConfig.update(c->{c.persistentWindows=true;c.returnHotbarToInventory=true;}),()->true,()->{},3);
+        spatialTransitionCase("transitions-persistent-open",()->InventoryDesktopScreen.openOrToggleInventory(mc));
+        spatialTransitionCase("transitions-persistent-hide",()->InventoryDesktopScreen.openOrToggleInventory(mc));
+        spatialTransitionCase("transitions-persistent-restore",()->InventoryDesktopScreen.openOrToggleInventory(mc));
+        spatialTransitionCase("transitions-persistent-cleanup",InWorldGameplayHarness::closeWindows);
+        add("transitions-container-configure",()->{spatialSet("firstPersonModeContainers",false);spatialSet("curvedScreenEnabled",false);},()->true,()->{},3);
+        addContainer("transitions-chest","minecraft:chest",0);STEPS.removeLast();
+        spatialTransitionCase("transitions-container-add-inventory",()->InventoryDesktopScreen.openOrToggleInventory(mc));
+        add("transitions-render-hit-agreement",()->{var p=slotPoint(0);spatialClick(p[0],p[1]);},()->carried()==32,()->assertContainer("transitions-server-pickup",0,0,32),3);
+        add("transitions-render-hit-place",()->{var p=slotPoint(1);spatialClick(p[0],p[1]);},()->carried()==0&&currentSession().menu().getSlot(1).getItem().getCount()==32,()->assertContainer("transitions-server-place",1,32,0),3);
+        spatialTransitionCase("transitions-container-close-all",InWorldGameplayHarness::closeWindows);
+    }
+    private static Object spatialRenderer() { return call(ClassFor("org.tastytrash.spatialGUI.client.SpatialGUIClient"), "renderer"); }
+    private static boolean spatialActive() { return (Boolean)call(ClassFor("com.salts_inventory_update.spatial.SpatialGuiIntegration"), "active"); }
+    private static void spatialSet(String name, Object value) {
+        try { spatialConfig().getClass().getField(name).set(spatialConfig(),value); }
+        catch(ReflectiveOperationException e){throw new IllegalStateException(e);}
+    }
+    private static Object spatialCamera() {
+        try{return call(mc.gameRenderer,"mainCamera");}catch(IllegalArgumentException legacy){return call(mc.gameRenderer,"getMainCamera");}
+    }
+    private static net.minecraft.world.phys.Vec3 spatialCameraPosition() {
+        try{return (net.minecraft.world.phys.Vec3)call(spatialCamera(),"position");}
+        catch(IllegalArgumentException legacy){return (net.minecraft.world.phys.Vec3)call(spatialCamera(),"getPosition");}
+    }
+    private static void spatialMove(double x,double y,double dx,double dy) {
+        try{call(mc.mouseHandler,"onMove",nativeWindowHandle(),x,y,dx,dy);}
+        catch(IllegalArgumentException legacy){
+            boolean relative=screen()!=null&&screen().isCameraControlActive();
+            double previousX=((Number)field(mc.mouseHandler,"xpos")).doubleValue();
+            call(mc.mouseHandler,"onMove",nativeWindowHandle(),relative?((Number)field(mc.mouseHandler,"xpos")).doubleValue()+dx:x,
+                relative?((Number)field(mc.mouseHandler,"ypos")).doubleValue()+dy:y);
+            if(relative&&dx!=0)record("spatial-legacy-relative-input","INFO","xBefore="+previousX+", xAfter="+field(mc.mouseHandler,"xpos")+", requestedDx="+dx+", yaw="+mc.player.getYRot()+", handoff="+field(mc.mouseHandler,"salts_inventory_update$desktopHandoffFrames"));
+        }
+    }
+    private static double[] spatialMapped(double x,double y) {
+        Object r=spatialRenderer(), inventory=call(r,"getInventoryRenderer"), quad=call(inventory,"getQuadBasis"), curve=call(inventory,"getCylinderBasis");
+        Object point=curve==null
+            ? call(ClassFor("org.tastytrash.spatialGUI.util.RenderUtil"),"getInventoryMousePositionRay",x,y,quad,call(call(r,"getTargetManager"),"getInventoryTarget"))
+            : call(ClassFor("org.tastytrash.spatialGUI.util.RenderUtil"),"getInventoryMousePositionRayCurved",x,y,curve);
+        if(point==null)return new double[]{-10000,-10000};
+        double scale=((Number)call(spatialConfig(),"getEffectiveGuiScale")).doubleValue();
+        double canvas=1;
+        try {canvas=((Number)call(call(ClassFor("com.salts_inventory_update.spatial.SpatialDesktopCanvas"),"get"),"scale")).doubleValue();}catch(RuntimeException oldArtifact){}
+        return new double[]{((Number)field(point,"x")).doubleValue()/scale/canvas,((Number)field(point,"y")).doubleValue()/scale/canvas};
+    }
+    private static double spatialProjectionError(double[] point,double x,double y) {
+        // Published upstream mapping clamps misses to a texture edge. Those plateaus are not
+        // inverse-projection seeds: a solver can otherwise optimize y while stuck at x=0.
+        double width=mc.getWindow().getGuiScaledWidth(),height=mc.getWindow().getGuiScaledHeight();
+        if(point[0]<=0||point[1]<=0||point[0]>=width||point[1]>=height)return Double.POSITIVE_INFINITY;
+        return Math.hypot(point[0]-x,point[1]-y);
+    }
+    /** Invert the published plane/curve projection, then dispatch ordinary native mouse callbacks. */
+    private static void spatialPoint(double targetX,double targetY) {
+        double width=mc.getWindow().getScreenWidth(),height=mc.getWindow().getScreenHeight();
+        double bx=width/2,by=height/2,best=Double.MAX_VALUE;
+        for(int iy=0;iy<=20;iy++)for(int ix=0;ix<=24;ix++) {
+            double x=width*ix/24,y=height*iy/20;var p=spatialMapped(x,y);double error=spatialProjectionError(p,targetX,targetY);
+            if(error<best){best=error;bx=x;by=y;}
+        }
+        for(double delta=width/24;delta>.05;delta/=2) {
+            boolean improved;
+            do {improved=false;
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    double x=bx+dx*delta,y=by+dy*delta;if(x<0||y<0||x>width||y>height)continue;var p=spatialMapped(x,y);double error=spatialProjectionError(p,targetX,targetY);
+                    if(error<best-.0001){best=error;bx=x;by=y;improved=true;}
+                }
+            }while(improved);
+        }
+        if(best>2)throw new IllegalStateException("Projected target outside panel: "+targetX+","+targetY+" error="+best);
+        spatialMove(bx,by,0,0);
+    }
+    private static void spatialClick(double x,double y) {
+        spatialPoint(x,y);
+        spatialMouseButton(left(),"PRESS");spatialMouseButton(left(),"RELEASE");
+    }
+    private static void spatialMouseButton(int button,String action) {
+        try{call(mc.mouseHandler,"onPress",nativeWindowHandle(),button,nativeInputAction(action),0);}
+        catch(IllegalArgumentException modern){call(mc.mouseHandler,"onButton",nativeWindowHandle(),construct(ClassFor("net.minecraft.client.input.MouseButtonInfo"),button,0),nativeInputAction(action));}
+    }
+    private static net.minecraft.world.phys.Vec3 spatialWorldTarget;
+    private static BlockPos spatialWorldBlock, spatialWall;
+    private static double spatialYawBefore;
+    private static boolean spatialNativeLookApplied;
+    public static int spatialHeldInputKey=-1;
+    private static boolean spatialManualHoldConfigured,spatialManualHoldSeen,spatialManualHoldReleased;
+    private static void spatialObserveManualHold() {
+        if(!SPATIAL_ONLY||!Files.exists(output.resolve("hold-mode.request"))||screen()==null)return;
+        if(!spatialManualHoldConfigured){
+            setMovementBinding("KEY_LALT");SaltsInventoryConfig.update(c->c.toggleMovementControl=false);spatialManualHoldConfigured=true;
+        }
+        if(screen().isCameraControlActive()&&!spatialManualHoldSeen){
+            spatialManualHoldSeen=true;check("spatial-physical-hold-activates",true);capture("spatial-physical-hold-active");
+        }
+        if(spatialManualHoldSeen&&!screen().isCameraControlActive()&&!spatialManualHoldReleased){
+            spatialManualHoldReleased=true;check("spatial-physical-hold-release-restores-desktop",true);capture("spatial-physical-hold-released");
+            try{Files.writeString(output.resolve("hold-mode-passed.json"),"{\"activated\":true,\"released\":true}");}catch(Exception e){throw new IllegalStateException(e);}
+        }
+    }
+    private static void spatialAimAt(net.minecraft.world.phys.Vec3 target) {
+        Object camera=spatialCamera();
+        var direction=target.subtract((net.minecraft.world.phys.Vec3)spatialCameraPosition()).normalize();
+        double width=mc.getWindow().getScreenWidth(),height=mc.getWindow().getScreenHeight();
+        double bx=width/2,by=height/2,best=Double.MAX_VALUE;
+        for(double delta=width/2;delta>.03;delta/=2) {
+            boolean improved;
+            do {improved=false;
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    double x=bx+dx*delta,y=by+dy*delta;
+                    if(x<0||x>width||y<0||y>height)continue;
+                    float[] ray=(float[])call(ClassFor("org.tastytrash.spatialGUI.util.RenderUtil"),"buildCameraRayDirection",x,y);
+                    if(ray==null)continue;
+                    double error=Math.pow(ray[0]-direction.x,2)+Math.pow(ray[1]-direction.y,2)+Math.pow(ray[2]-direction.z,2);
+                    if(error<best-1e-12){best=error;bx=x;by=y;improved=true;}
+                }
+            }while(improved);
+        }
+        check("spatial-world-ray-on-monitor",best<.00001);spatialMove(bx,by,0,0);
+    }
+    private static Object spatialPick() {return call(ClassFor("com.salts_inventory_update.spatial.SpatialGuiIntegration"),"pickWorld");}
+    private static void spatialWorldClick() {dispatchMovementMouse("PRESS");dispatchMovementMouse("RELEASE");}
+    private static void addSpatialWorldRegression() {
+        add("spatial-world-fixture",()->{
+            mc.player.setYRot(0);mc.player.setXRot(0);
+            spatialSet("useCrosshairForFirstPerson",false);spatialSet("firstPersonModeInventory",false);spatialSet("firstPersonModeContainers",false);spatialSet("disableThirdPersonParallax",true);
+            for(var w:screen().workspaceAccess().windows())w.handle().moveTo(8,8);
+            server(()->{
+                var p=player();spatialWorldBlock=p.blockPosition().offset(1,0,2);
+                serverLevel().setBlock(spatialWorldBlock,(net.minecraft.world.level.block.state.BlockState)call(registryValue("BLOCK","minecraft:barrel"),"defaultBlockState"),3);
+                spatialWorldTarget=new net.minecraft.world.phys.Vec3(spatialWorldBlock.getX()+.5,spatialWorldBlock.getY()+.5,spatialWorldBlock.getZ()+.5);return null;
+            });
+        },InWorldGameplayHarness::taskDone,()->{},20);
+        add("spatial-world-physical-target",()->spatialAimAt(spatialWorldTarget),()->true,()->{
+            spatialAimAt(spatialWorldTarget);
+            Object hit=spatialPick();
+            record("spatial-world-target-diagnostic","INFO","hit="+call(hit,"getType")+" at="+call(hit,"getLocation")+" target="+spatialWorldBlock);
+            check("spatial-world-target-correct-block",hit instanceof net.minecraft.world.phys.BlockHitResult b&&b.getType()==net.minecraft.world.phys.HitResult.Type.BLOCK&&b.getBlockPos().equals(spatialWorldBlock));
+            var camera=(net.minecraft.world.phys.Vec3)spatialCameraPosition();
+            var eye=mc.player.getEyePosition();
+            for(int x=mc.player.blockPosition().getX()-1;x<=spatialWorldBlock.getX()+1&&spatialWall==null;x++)
+                for(int y=mc.player.blockPosition().getY();y<=mc.player.blockPosition().getY()+2&&spatialWall==null;y++)
+                    for(int z=mc.player.blockPosition().getZ();z<=spatialWorldBlock.getZ()&&spatialWall==null;z++) {
+                        BlockPos pos=new BlockPos(x,y,z);if(pos.equals(spatialWorldBlock)||pos.equals(mc.player.blockPosition())||pos.equals(mc.player.blockPosition().above()))continue;
+                        var box=new net.minecraft.world.phys.AABB(x,y,z,x+1,y+1,z+1);
+                        var location=((net.minecraft.world.phys.HitResult)hit).getLocation();
+                        if(box.clip(eye,location).isPresent()&&box.clip(camera,location).isEmpty())spatialWall=pos;
+                    }
+            check("spatial-camera-can-see-around-player-obstruction",spatialWall!=null);
+        },3);
+        add("spatial-world-block-player-sight",()->server(()->{
+            serverLevel().setBlock(spatialWall,(net.minecraft.world.level.block.state.BlockState)call(registryValue("BLOCK","minecraft:stone"),"defaultBlockState"),3);return null;
+        }),InWorldGameplayHarness::taskDone,()->{
+            spatialAimAt(spatialWorldTarget);Object hit=spatialPick();
+            check("spatial-world-obstruction-respected",!(hit instanceof net.minecraft.world.phys.BlockHitResult b&&b.getType()==net.minecraft.world.phys.HitResult.Type.BLOCK&&b.getBlockPos().equals(spatialWorldBlock)));
+            spatialWorldClick();
+        },8);
+        add("spatial-world-blocked-no-menu",()->{},()->true,()->check("spatial-world-obstructed-menu-stays-closed",sessions().size()==1),8);
+        add("spatial-world-clear-sight",()->server(()->{
+            serverLevel().setBlock(spatialWall,(net.minecraft.world.level.block.state.BlockState)call(registryValue("BLOCK","minecraft:air"),"defaultBlockState"),3);return null;
+        }),InWorldGameplayHarness::taskDone,()->{spatialAimAt(spatialWorldTarget);spatialWorldClick();},8);
+        add("spatial-world-native-open",()->{},()->sessions().size()==2,()->{
+            check("spatial-world-container-opens-in-existing-panel",call(spatialRenderer(),"getHookedScreen")==screen());capture("spatial-world-opened-barrel");
+            spatialAimAt(spatialWorldTarget.add(0,0,12));
+            Object hit=spatialPick();
+            check("spatial-world-distant-point-not-interactable",hit instanceof net.minecraft.world.phys.BlockHitResult b&&b.getType()==net.minecraft.world.phys.HitResult.Type.MISS);
+        },8);
+    }
+    private static void addSpatialRegression() {
+        boolean absent="true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_ABSENT"));
+        add("spatial-configure",()->{
+            closeWindows();SaltsInventoryConfig.update(c->{c.hasSeenInstructionsWindow=true;c.expandableInventory=false;c.persistentWindows=false;c.returnHotbarToInventory=true;c.toggleMovementControl=true;c.enableWindowSnapping=false;});
+            setMovementBinding("KEY_LALT");
+            if(!absent){spatialSet("enabled",true);spatialSet("firstPersonModeInventory",false);spatialSet("firstPersonModeContainers",false);spatialSet("useCrosshairForFirstPerson",false);}
+        },()->true,()->check("spatial-mod-presence",(loadedMods().containsKey("spatial-gui")||loadedMods().containsKey("spatial_gui"))!=absent),3);
+        addContainer("spatial-chest","minecraft:chest",0);STEPS.removeLast();
+        add("spatial-inventory-window",()->InventoryDesktopScreen.openOrToggleInventory(mc),()->windowKind("INVENTORY")!=null,()->{
+            for(var w:screen().workspaceAccess().windows())w.handle().moveTo(w.kind()==DesktopWorkspaceWindow.Kind.PLAYER_INVENTORY?240:8,30);
+            check("spatial-two-windows-one-desktop",screen().workspaceAccess().windows().size()==2);
+        },12);
+        if(absent){
+            add("spatial-absent-normal-input",()->clickSlot(0,left()),()->carried()==32,()->{assertContainer("absent-server-pickup",0,0,32);capture("spatial-absent-normal-desktop");},5);
+            add("spatial-absent-return",InWorldGameplayHarness::storeInPlayer,()->carried()==0,()->{},4);
+            add("spatial-absent-cleanup",InWorldGameplayHarness::closeWindows,()->sessions().isEmpty(),()->{},5);return;
+        }
+        add("spatial-third-person-panel",()->{},InWorldGameplayHarness::spatialActive,()->{
+            check("spatial-captures-existing-desktop",call(spatialRenderer(),"getHookedScreen")==screen());
+            check("spatial-third-person-mode",!(Boolean)call(ClassFor("org.tastytrash.spatialGUI.client.SpatialGUIClient"),"getEffectiveFirstPersonMode"));
+            capture("spatial-third-person-desktop");
+        },20);
+        add("spatial-native-projected-pickup",()->{var p=slotPoint(0);spatialClick(p[0],p[1]);},()->carried()==32,()->{
+            assertContainer("spatial-server-pickup",0,0,32);capture("spatial-carried-item");
+        },5);
+        add("spatial-native-projected-place",()->{var p=slotPoint(1);spatialClick(p[0],p[1]);},()->carried()==0&&currentSession().menu().getSlot(1).getItem().getCount()==32,()->{
+            assertContainer("spatial-server-place",1,32,0);
+        },5);
+        add("spatial-hidden-selection",()->{
+            spatialMove(0,0,0,0);beforeExtra=hudSelected(mc.player.getInventory());
+            dispatchMovementKey("KEY_2","PRESS");dispatchMovementKey("KEY_2","RELEASE");
+            call(mc.mouseHandler,"onScroll",nativeWindowHandle(),0D,-1D);
+        },()->true,()->check("spatial-hidden-hotbar-selection-locked",hudSelected(mc.player.getInventory())==beforeExtra),4);
+        add("spatial-movement-enter",()->{dispatchMovementKey("KEY_LALT","PRESS");dispatchMovementKey("KEY_LALT","RELEASE");},()->screen().isCameraControlActive(),()->{
+            check("spatial-movement-restores-hud",!com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+            check("spatial-movement-normal-perspective",call(mc.options,"getCameraType")==call(mc.options,"salts$perspective"));
+            check("spatial-movement-keeps-windows",screen().workspaceAccess().windows().size()==2);
+            check("spatial-movement-cursor-grabbed",(Boolean)field(mc.mouseHandler,"mouseGrabbed"));
+            capture("spatial-movement-gameplay-camera");
+            check("spatial-gameplay-camera-at-player-eye",((net.minecraft.world.phys.Vec3)spatialCameraPosition()).distanceTo(mc.player.getEyePosition())<.01);
+            spatialYawBefore=mc.player.getYRot();spatialMove(640,450,0,0);spatialMove(640,450,240,0);
+            try{call(mc.mouseHandler,"turnPlayer");}catch(IllegalArgumentException newer){call(mc.mouseHandler,"turnPlayer",.016D);}
+            spatialNativeLookApplied=Math.abs(mc.player.getYRot()-spatialYawBefore)>1;
+            record("spatial-native-mouse-diagnostic","INFO","active="+call(mc,"isWindowActive")+", grabbed="+field(mc.mouseHandler,"mouseGrabbed")+", dx="+field(mc.mouseHandler,"accumulatedDX")+", ignoreFirst="+field(mc.mouseHandler,"ignoreFirstMove")+", yawBefore="+spatialYawBefore+", yawAfter="+mc.player.getYRot());
+            dispatchMovementKey("KEY_2","PRESS");dispatchMovementKey("KEY_2","RELEASE");
+            check("spatial-gameplay-number-selects-held-slot",hudSelected(mc.player.getInventory())==1);
+            call(mc.mouseHandler,"onScroll",nativeWindowHandle(),0D,-1D);
+            check("spatial-gameplay-wheel-selects-held-slot",hudSelected(mc.player.getInventory())==2);
+        },20);
+        add("spatial-gameplay-mouse-turn",()->{},()->true,()->{
+            record("spatial-native-mouse-settled","INFO","yaw="+mc.player.getYRot()+", before="+spatialYawBefore);
+            check("spatial-gameplay-mouse-turns-player",spatialNativeLookApplied&&Math.abs(mc.player.getYRot()-spatialYawBefore)>1);
+        },5);
+        add("spatial-movement-exit",()->{dispatchMovementKey("KEY_LALT","PRESS");dispatchMovementKey("KEY_LALT","RELEASE");},()->!screen().isCameraControlActive(),()->{
+            check("spatial-movement-hides-hud-again",com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+            check("spatial-movement-keeps-session",sessions().size()==1);capture("spatial-movement-desktop-restored");
+        },20);
+        add("spatial-rebound-ignores-alt",()->{setMovementBinding("KEY_P");dispatchMovementKey("KEY_LALT","PRESS");dispatchMovementKey("KEY_LALT","RELEASE");},()->true,
+            ()->check("spatial-old-binding-inactive",!screen().isCameraControlActive()),4);
+        add("spatial-rebound-p-enters",()->{dispatchMovementKey("KEY_P","PRESS");dispatchMovementKey("KEY_P","RELEASE");},()->screen().isCameraControlActive(),
+            ()->check("spatial-rebound-gameplay-camera",call(mc.options,"getCameraType")==call(mc.options,"salts$perspective")),8);
+        add("spatial-rebound-p-exits",()->{dispatchMovementKey("KEY_P","PRESS");dispatchMovementKey("KEY_P","RELEASE");},()->!screen().isCameraControlActive(),
+            ()->{setMovementBinding("KEY_LALT");SaltsInventoryConfig.update(c->c.toggleMovementControl=false);},8);
+        add("spatial-hold-unheld",()->{},()->true,()->check("spatial-hold-mode-unheld-no-latch",!screen().isCameraControlActive()),4);
+        add("spatial-hold-poll-down",()->spatialHeldInputKey=nativeInputAction("KEY_LALT"),()->screen().isCameraControlActive(),()->{
+            check("spatial-held-alt-normal-gameplay-camera",call(mc.options,"getCameraType")==call(mc.options,"salts$perspective"));
+            check("spatial-held-alt-restores-hud",!com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
+        },8);
+        add("spatial-hold-poll-up",()->spatialHeldInputKey=-1,()->!screen().isCameraControlActive(),()->check("spatial-held-alt-release-returns-desktop",spatialActive()),8);
+        add("spatial-hold-poll-remapped",()->{setMovementBinding("KEY_P");spatialHeldInputKey=nativeInputAction("KEY_P");},()->screen().isCameraControlActive(),()->check("spatial-held-remapped-key-works",true),8);
+        add("spatial-hold-poll-remapped-up",()->spatialHeldInputKey=-1,()->!screen().isCameraControlActive(),()->setMovementBinding("KEY_LALT"),8);
+        add("spatial-disabled",()->spatialSet("enabled",false),()->!spatialActive(),()->{
+            check("spatial-disabled-desktop-retained",screen().hasWindows());capture("spatial-disabled-normal-desktop");
+        },15);
+        add("spatial-reenabled",()->spatialSet("enabled",true),InWorldGameplayHarness::spatialActive,()->capture("spatial-reenabled"),15);
+        add("spatial-first-person-mouse",()->{spatialSet("firstPersonModeInventory",true);spatialSet("firstPersonModeContainers",true);},
+            ()->(Boolean)call(ClassFor("org.tastytrash.spatialGUI.client.SpatialGUIClient"),"getEffectiveFirstPersonMode"),()->capture("spatial-first-person-mouse"),20);
+        add("spatial-first-person-curved",()->spatialSet("curvedScreenEnabled",true),()->call(call(spatialRenderer(),"getInventoryRenderer"),"getCylinderBasis")!=null,()->{
+            var p=slotPoint(1);spatialClick(p[0],p[1]);capture("spatial-first-person-curved");
+        },15);
+        add("spatial-curved-return",()->{},()->carried()==32,()->{var p=slotPoint(1);spatialClick(p[0],p[1]);},5);
+        add("spatial-first-person-crosshair",()->spatialSet("useCrosshairForFirstPerson",true),()->(Boolean)call(ClassFor("org.tastytrash.spatialGUI.render.SpatialGUIRenderer"),"isCrosshairModeActive"),()->{
+            check("spatial-crosshair-visible",!com.salts_inventory_update.client.WindowedInventoryClient.shouldHideCrosshair());capture("spatial-first-person-crosshair");
+        },15);
+        addSpatialWorldRegression();
+        add("spatial-detached-hotbar",()->{SaltsInventoryConfig.update(c->c.returnHotbarToInventory=false);screen().refreshInventoryWindowLayout(true);},()->true,()->{
+            check("spatial-detached-hotbar-option-preserved",!screen().usesInventoryWindowHotbar());capture("spatial-detached-hotbar-on-panel");
+        },15);
+        add("spatial-outside-drop-seed",()->server(()->{
+            player().inventoryMenu.setCarried(new ItemStack(Items.DIRT,2));mtSync();return null;
+        }),()->taskDone()&&carried()==2,()->{},5);
+        add("spatial-outside-drop-one",()->{
+            spatialMove(0,0,0,0);
+            check("spatial-outside-panel-detected",(Boolean)call(ClassFor("com.salts_inventory_update.spatial.SpatialGuiIntegration"),"outsidePanel"));
+            check("spatial-no-clamped-edge-slot",call(screen(),"slotAt",0D,0D)==null);
+            spatialWorldClick();
+        },()->carried()==1,()->{
+            var state=server(()->player().inventoryMenu.getCarried().getCount());
+            addFirst("spatial-outside-drop-authoritative",()->{},state::isDone,()->check("spatial-outside-drop-only-one",state.join()==1),3);
+            check("spatial-outside-drop-does-not-open-world-menu",sessions().size()==2);
+        },5);
+        add("spatial-outside-drop-rest",()->{
+            spatialMove(0,0,0,0);
+            spatialMouseButton(left(),"PRESS");spatialMouseButton(left(),"RELEASE");
+        },()->carried()==0,()->{},5);
+        if(SPATIAL_REPORT) addSpatialVisualEdges();
+        if("true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_MANUAL")))
+            add("spatial-manual-review",()->{spatialSet("useCrosshairForFirstPerson",false);spatialSet("firstPersonModeInventory",false);spatialSet("firstPersonModeContainers",false);setMovementBinding("KEY_LALT");SaltsInventoryConfig.update(c->c.toggleMovementControl=true);},()->Files.exists(output.resolve("continue")),()->{},10);
+        add("spatial-close",InWorldGameplayHarness::closeWindows,()->sessions().isEmpty()&&nativeScreen()==null,()->{
+            check("spatial-closed-no-mouse-grab-owner",!screen().isCameraControlActive());capture("spatial-closed-gameplay");
+        },20);
+    }
+
+    private static boolean findingsHudOnScreen;
+    private static Map<UUID,DesktopWindowBounds> wallsBefore;
+    private static final List<Double> wallsTransitionSamples=new ArrayList<>();
+    private static final List<Double> wallsCameraSamples=new ArrayList<>();
+    private static boolean wallsObserveTransition;
+    private static DesktopWindowHandle wallsApiHandle;
+    private static int wallsApiResizes;
+    private static int wallsApiResizeViewport;
+    private static void wallsApiFixture() {
+        Class<?> api=ClassFor("com.salts_inventory_update.api.client.desktop.DesktopClientApi");
+        Class<?> idType=Arrays.stream(api.getMethods()).filter(m->m.getName().equals("registerView")).findFirst().orElseThrow().getParameterTypes()[0];
+        Object id;
+        try{id=call(idType,"parse","salts_inventory_update:qa_walls");}
+        catch(IllegalArgumentException legacy){id=construct(idType,"salts_inventory_update","qa_walls");}
+        Class<?> definition=ClassFor("com.salts_inventory_update.api.client.desktop.DesktopWindowDefinition");
+        Object instance=Proxy.newProxyInstance(definition.getClassLoader(),new Class<?>[]{definition},(proxy,method,args)->{
+            if(method.getName().equals("minSize"))return DesktopWindowSize.of(100,80);
+            if(method.getName().equals("defaultSize"))return DesktopWindowSize.of(200,120);
+            if(method.getName().equals("resizePolicy"))return DesktopResizePolicy.FREE;
+            if(method.getName().equals("resized")){wallsApiResizes++;wallsApiResizeViewport=((Number)call(call(args[0],"environment"),"viewportWidth")).intValue();return null;}
+            if(method.getName().equals("toString"))return "WindowWallsPublicApiFixture";
+            if(method.isDefault())return InvocationHandler.invokeDefault(proxy,method,args);
+            throw new IllegalStateException(method.toString());
+        });
+        call(api,"registerView",id,Object.class,instance);
+        wallsApiHandle=(DesktopWindowHandle)((Optional<?>)call(api,"openView",id,"qa",new Object(),net.minecraft.network.chat.Component.literal("API viewport QA"))).orElseThrow();
+        check("walls-api-resize-accepted",wallsApiHandle.resizeTo(mc.getWindow().getGuiScaledWidth()-20,mc.getWindow().getGuiScaledHeight()-20));
+        wallsApiResizes=0;
+    }
+
+    private static boolean wallsSpatial() {return SPATIAL_ONLY&&!"true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_ABSENT"));}
+    private static void wallsCheck(String label) {
+        int width=mc.getWindow().getGuiScaledWidth(),height=mc.getWindow().getGuiScaledHeight();
+        for(var window:screen().workspaceAccess().windows()) {
+            var b=screen().workspaceAccess().presentationBounds(window.handle().instanceId());
+            record(label+"-geometry","INFO",window.kind()+" "+b+" viewport="+width+"x"+height);
+            check(label+"-"+window.kind(),b.x()>=0&&b.y()>=0&&b.x()+b.width()<=width&&b.y()+b.height()<=height);
+        }
+        if(wallsSpatial()) {
+            var canvas=call(ClassFor("com.salts_inventory_update.spatial.SpatialDesktopCanvas"),"get");
+            check(label+"-fixed-canvas",((Number)call(canvas,"width")).doubleValue()==width&&((Number)call(canvas,"height")).doubleValue()==height&&((Number)call(canvas,"scale")).doubleValue()==1);
+        }
+    }
+    private static Map<UUID,DesktopWindowBounds> wallsGeometry() {
+        Map<UUID,DesktopWindowBounds> result=new LinkedHashMap<>();
+        for(var w:screen().workspaceAccess().windows()) {
+            var s=w.handle().state();result.put(w.handle().instanceId(),new DesktopWindowBounds(s.x(),s.y(),s.width(),s.height()));
+        }
+        return result;
+    }
+    private static void wallsDrag(int dx,int dy) {
+        var s=screen().workspaceAccess().windows().stream().filter(w->w.kind()==DesktopWorkspaceWindow.Kind.PLAYER_INVENTORY).findFirst().orElseThrow().handle().state();
+        double x=s.x()+12,y=s.y()+6;
+        mouse("mouseClicked",x,y,left(),0,0);
+        mouse("mouseDragged",x+dx,y+dy,left(),dx,dy);
+        mouse("mouseReleased",x+dx,y+dy,left(),0,0);
+    }
+    private static void addWindowWallsRegression() {
+        add("walls-configure",()->{
+            closeWindows();SaltsInventoryConfig.update(c->{c.hasSeenInstructionsWindow=true;c.returnHotbarToInventory=true;c.persistentWindows=false;c.enableWindowSnapping=false;c.toggleMovementControl=false;});
+            if(wallsSpatial()){spatialSet("enabled",true);spatialSet("firstPersonModeInventory",false);spatialSet("firstPersonModeContainers",false);spatialSet("transitionDurationMs",350);}
+            InventoryDesktopScreen.openOrToggleInventory(mc);
+        },()->windowKind("INVENTORY")!=null&&(!wallsSpatial()||spatialActive()),()->wallsCheck("walls-open"),25);
+        int[][] edges={{-10000,0},{0,-10000},{10000,0},{0,10000}};
+        for(int i=0;i<edges.length;i++) {
+            final int side=i;
+            add("walls-drag-"+side,()->wallsDrag(edges[side][0],edges[side][1]),()->true,()->{
+                wallsCheck("walls-drag-"+side);
+                var b=wallsGeometry().values().iterator().next();
+                check("walls-touch-"+side,switch(side){case 0->b.x()==0;case 1->b.y()==0;case 2->b.x()+b.width()==mc.getWindow().getGuiScaledWidth();default->b.y()+b.height()==mc.getWindow().getGuiScaledHeight();});
+            },3);
+        }
+        add("walls-repeated-drag",()->{for(int i=0;i<12;i++)wallsDrag(10000,10000);},()->true,()->{wallsCheck("walls-repeated");capture("walls-bottom-right");},5);
+        add("walls-resize",()->{
+            var w=screen().workspaceAccess().windows().get(0);w.handle().moveTo(30,30);w.handle().resizeTo(10000,10000);
+        },()->true,()->{wallsCheck("walls-resize");capture("walls-resize");},5);
+        add("walls-api-fixture",InWorldGameplayHarness::wallsApiFixture,()->wallsApiHandle!=null&&wallsApiHandle.isOpen(),()->wallsCheck("walls-api-open"),4);
+        add("walls-scale-three",()->{mc.options.guiScale().set(3);resizeHudGui();},()->true,()->{wallsCheck("walls-scale-three");check("walls-api-viewport-resize-notified",wallsApiResizes>0);check("walls-api-resize-current-environment",wallsApiResizeViewport==mc.getWindow().getGuiScaledWidth());capture("walls-scale-three");},8);
+        add("walls-scale-two",()->{mc.options.guiScale().set(2);resizeHudGui();},()->true,()->{wallsCheck("walls-scale-two");wallsApiHandle.close();},8);
+        if(wallsSpatial()) {
+            add("walls-prepare-hold",()->{
+                var w=screen().workspaceAccess().windows().get(0);w.handle().resizeTo(178,110);wallsDrag(-10000,0);
+                wallsBefore=wallsGeometry();setMovementBinding("KEY_LALT");
+                wallsTransitionSamples.clear();wallsCameraSamples.clear();wallsObserveTransition=true;spatialHeldInputKey=nativeInputAction("KEY_LALT");
+            },()->screen().isCameraControlActive(),()->{},1);
+            add("walls-hold-settled",()->{},()->((Number)call(ClassFor("com.salts_inventory_update.spatial.SpatialMovementTransition"),"blend")).doubleValue()>.999,()->{
+                check("walls-hold-animated",wallsTransitionSamples.stream().anyMatch(v->v>.05&&v<.95));
+                check("walls-camera-travels-to-eye",wallsCameraSamples.stream().filter(v->v>.1).distinct().count()>3&&wallsCameraSamples.get(wallsCameraSamples.size()-1)<.03);
+                check("walls-hold-geometry",wallsBefore.equals(wallsGeometry()));wallsCheck("walls-hold");
+                var aligned=spatialMapped(mc.getWindow().getScreenWidth()*.05,mc.getWindow().getScreenHeight()*.5);
+                check("walls-normal-panel-pixel-alignment",Math.abs(aligned[0]-mc.getWindow().getGuiScaledWidth()*.05)<2&&Math.abs(aligned[1]-mc.getWindow().getGuiScaledHeight()*.5)<2);
+                spatialYawBefore=mc.player.getYRot();spatialMove(640,450,0,0);spatialMove(640,450,170,35);
+                capture("walls-hold-normal");
+            },12);
+            add("walls-hold-native-look",()->spatialMove(640,450,90,-20),()->true,()->{
+                check("walls-held-mouse-turns-player",Math.abs(mc.player.getYRot()-spatialYawBefore)>1);
+                check("walls-held-camera-at-eye",((net.minecraft.world.phys.Vec3)spatialCameraPosition()).distanceTo(mc.player.getEyePosition())<.03);
+                check("walls-held-geometry-stable",wallsBefore.equals(wallsGeometry()));
+                record("walls-hold-animation-samples","INFO",wallsTransitionSamples.toString());
+                record("walls-hold-camera-samples","INFO",wallsCameraSamples.toString());
+                wallsTransitionSamples.clear();wallsCameraSamples.clear();spatialHeldInputKey=-1;
+            },8);
+            add("walls-hold-return",()->{},()->!screen().isCameraControlActive()&&((Number)call(ClassFor("com.salts_inventory_update.spatial.SpatialMovementTransition"),"blend")).doubleValue()<.001,()->{
+                check("walls-return-animated",wallsTransitionSamples.stream().anyMatch(v->v>.05&&v<.95));
+                check("walls-camera-travels-from-eye",wallsCameraSamples.stream().filter(v->v>.1).distinct().count()>3&&wallsCameraSamples.get(wallsCameraSamples.size()-1)>.5);
+                check("walls-return-geometry",wallsBefore.equals(wallsGeometry()));wallsCheck("walls-return");capture("walls-return-spatial");
+                wallsObserveTransition=false;
+            },12);
+            if("true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_MANUAL"))&&!"true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_WITH_REGRESSION")))
+                add("walls-manual",()->SaltsInventoryConfig.update(c->c.toggleMovementControl=true),()->Files.exists(output.resolve("continue")),()->{},10);
+        }
+        add("walls-cleanup",InWorldGameplayHarness::closeWindows,()->sessions().isEmpty(),()->{},5);
+    }
+    private static void addSpatialHotbarProbe() {
+        add("findings-hud-config",()->{closeWindows();SaltsInventoryConfig.update(c->{c.hasSeenInstructionsWindow=true;c.expandableInventory=false;c.returnHotbarToInventory=false;c.toggleMovementControl=true;});spatialSet("firstPersonModeInventory",false);spatialSet("firstPersonModeContainers",false);},()->true,()->{},3);
+        addContainer("findings-hud-chest","minecraft:chest",0);STEPS.removeLast();
+        spatialFinding("hud-probe-baseline",()->{InventoryDesktopScreen.openOrToggleInventory(mc);for(var w:screen().workspaceAccess().windows())w.handle().moveTo(w.kind()==DesktopWorkspaceWindow.Kind.PLAYER_INVENTORY?260:30,110);spatialMove(640,450,0,0);});
+        add("findings-hud-pickup",()->{var p=slotPoint(0);spatialClick(p[0],p[1]);},()->carried()==32,()->{},8);
+        spatialFinding("hud-probe-hover",()->{var p=hudPoint(2);spatialPoint(p[0],p[1]);});
+        add("findings-hud-place",()->{
+            var p=hudPoint(2);spatialPoint(p[0],p[1]);var util=ClassFor("org.tastytrash.spatialGUI.util.MouseHandlerUtil");
+            double x=((Number)call(util,"getSourceX")).doubleValue(),y=((Number)call(util,"getSourceY")).doubleValue();
+            findingsHudOnScreen=x>=0&&y>=0&&x<mc.getWindow().getScreenWidth()&&y<mc.getWindow().getScreenHeight();
+            record("finding-hud-target-reachable",findingsHudOnScreen?"PASS":"INFO","physical target="+x+","+y+"; monitor="+mc.getWindow().getScreenWidth()+","+mc.getWindow().getScreenHeight());
+            if(findingsHudOnScreen)spatialClick(p[0],p[1]);
+        },()->!findingsHudOnScreen||carried()==0,()->{
+            capture("finding-hud-probe-result");
+            if(findingsHudOnScreen){var state=server(()->player().getInventory().getItem(2).getCount());addFirst("findings-hud-server",()->{},state::isDone,()->check("finding-hud-server-stack32",state.join()==32),3);}
+        },15);
+        add("findings-hud-close",InWorldGameplayHarness::closeWindows,()->sessions().isEmpty(),()->{},10);
+    }
+    private static void spatialFinding(String name,Runnable action) {
+        add("finding-"+name,action,InWorldGameplayHarness::spatialActive,()->{
+            capture("finding-"+name);
+            var info=new LinkedHashMap<String,Object>();
+            info.put("frame",List.of(mc.getWindow().getScreenWidth(),mc.getWindow().getScreenHeight()));
+            info.put("gui",List.of(mc.getWindow().getGuiScaledWidth(),mc.getWindow().getGuiScaledHeight()));
+            info.put("windows",screen().workspaceAccess().windows().stream().map(w->w.handle().state()).toList());
+            Object camera=spatialCamera();
+            info.put("camera",List.of(call(camera,"yRot"),call(camera,"xRot")));
+            info.put("carried",carried());info.put("movement",screen().isCameraControlActive());
+            try {
+                var fit=field(ClassFor("com.salts_inventory_update.spatial.SpatialPanelPresentation"),"lastFit");
+                var bounds=call(fit,"bounds");var available=call(fit,"available");
+                info.put("fitBounds",bounds);info.put("fitAvailable",available);
+                double epsilon=.003;
+                check("fit-contained-"+name,((Number)call(bounds,"left")).doubleValue()>=((Number)call(available,"left")).doubleValue()-epsilon
+                    &&((Number)call(bounds,"right")).doubleValue()<=((Number)call(available,"right")).doubleValue()+epsilon
+                    &&((Number)call(bounds,"bottom")).doubleValue()>=((Number)call(available,"bottom")).doubleValue()-epsilon
+                    &&((Number)call(bounds,"top")).doubleValue()<=((Number)call(available,"top")).doubleValue()+epsilon);
+                var canvas=call(ClassFor("com.salts_inventory_update.spatial.SpatialDesktopCanvas"),"get");info.put("canvas",canvas);
+            } catch(RuntimeException oldArtifact) {if("true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_FIXES")))throw oldArtifact;}
+            var config=new LinkedHashMap<String,Object>();
+            for(String key:List.of("firstPersonModeInventory","firstPersonModeContainers","curvedScreenEnabled","useCrosshairForFirstPerson","disableFirstPersonParallax","disableThirdPersonParallax","firstPersonScreenScale","screenScale","hideHud","hideHotbar")) {
+                try{config.put(key,field(spatialConfig(),key));}catch(IllegalArgumentException missing){}
+            }
+            info.put("spatial",config);
+            try{Files.writeString(output.resolve("finding-"+name+".json"),new GsonBuilder().setPrettyPrinting().create().toJson(info));}catch(Exception e){throw new IllegalStateException(e);}
+        },30);
+    }
+    private static void spatialArrange(int x,int y) {
+        var w=screen().workspaceAccess().windows().stream().filter(v->v.kind()==DesktopWorkspaceWindow.Kind.PLAYER_INVENTORY).findFirst().orElseThrow();w.handle().moveTo(x,y);
+    }
+    private static void addSpatialFindingsRegression() {
+        add("findings-configure",()->{
+            closeWindows();SaltsInventoryConfig.update(c->{c.hasSeenInstructionsWindow=true;c.expandableInventory=false;c.persistentWindows=false;c.returnHotbarToInventory=false;c.toggleMovementControl=true;c.enableWindowSnapping=false;});
+            setMovementBinding("KEY_LALT");spatialSet("enabled",true);spatialSet("firstPersonModeInventory",false);spatialSet("firstPersonModeContainers",false);spatialSet("useCrosshairForFirstPerson",false);
+        },()->true,()->{},3);
+        addContainer("findings-chest","minecraft:chest",0);STEPS.removeLast();
+        spatialFinding("baseline",()->{InventoryDesktopScreen.openOrToggleInventory(mc);for(var w:screen().workspaceAccess().windows())w.handle().moveTo(w.kind()==DesktopWorkspaceWindow.Kind.PLAYER_INVENTORY?260:30,110);spatialMove(640,450,0,0);});
+        spatialFinding("left-mid",()->{screen().workspaceAccess().windows().stream().filter(w->w.kind()==DesktopWorkspaceWindow.Kind.OTHER).findFirst().orElseThrow().handle().moveTo(0,210);});
+        spatialFinding("left-bottom",()->{screen().workspaceAccess().windows().stream().filter(w->w.kind()==DesktopWorkspaceWindow.Kind.OTHER).findFirst().orElseThrow().handle().moveTo(0,290);});
+        spatialFinding("right-mid",()->{var w=screen().workspaceAccess().windows().stream().filter(v->v.kind()==DesktopWorkspaceWindow.Kind.PLAYER_INVENTORY).findFirst().orElseThrow();spatialArrange(mc.getWindow().getGuiScaledWidth()-w.handle().state().width(),110);});
+        spatialFinding("bottom-right",()->{var s=screen().workspaceAccess().windows().stream().filter(v->v.kind()==DesktopWorkspaceWindow.Kind.PLAYER_INVENTORY).findFirst().orElseThrow().handle().state();spatialArrange(mc.getWindow().getGuiScaledWidth()-s.width(),mc.getWindow().getGuiScaledHeight()-s.height());});
+        spatialFinding("large-window",()->{var w=screen().workspaceAccess().windows().stream().filter(v->v.kind()==DesktopWorkspaceWindow.Kind.PLAYER_INVENTORY).findFirst().orElseThrow();w.handle().resizeTo(370,280);w.handle().moveTo(200,100);});
+        spatialFinding("carry-layout",()->{var w=screen().workspaceAccess().windows().stream().filter(v->v.kind()==DesktopWorkspaceWindow.Kind.PLAYER_INVENTORY).findFirst().orElseThrow();w.handle().resizeTo(230,170);w.handle().moveTo(280,110);screen().workspaceAccess().windows().stream().filter(v->v.kind()==DesktopWorkspaceWindow.Kind.OTHER).findFirst().orElseThrow().handle().moveTo(30,130);});
+        add("findings-pickup",()->{var p=slotPoint(0);spatialClick(p[0],p[1]);},()->carried()==32,()->check("finding-real-server-menu-pickup",true),8);
+        spatialFinding("carry-interior",()->spatialPoint(200,210));
+        spatialFinding("carry-title",()->spatialPoint(75,115));
+        spatialFinding("carry-panel-left",()->spatialPoint(1,210));
+        spatialFinding("carry-outside",()->spatialMove(0,0,0,0));
+        add("findings-return-stack",()->{var p=slotPoint(0);spatialClick(p[0],p[1]);},()->carried()==0,()->assertContainer("finding-stack-returned",0,32,0),8);
+        spatialFinding("hotbar-scale-three",()->{mc.options.guiScale().set(3);resizeHudGui();});
+        spatialFinding("hotbar-scale-two",()->{mc.options.guiScale().set(2);resizeHudGui();});
+        spatialFinding("first-mouse-center",()->{spatialSet("firstPersonModeInventory",true);spatialSet("firstPersonModeContainers",true);spatialMove(640,450,0,0);});
+        spatialFinding("first-mouse-corner",()->spatialMove(0,0,0,0));
+        spatialFinding("first-no-parallax",()->spatialSet("disableFirstPersonParallax",true));
+        spatialFinding("first-curved",()->{spatialSet("curvedScreenEnabled",true);spatialMove(640,450,0,0);});
+        spatialFinding("first-crosshair",()->spatialSet("useCrosshairForFirstPerson",true));
+        spatialFinding("third-no-parallax",()->{spatialSet("curvedScreenEnabled",false);spatialSet("useCrosshairForFirstPerson",false);spatialSet("firstPersonModeInventory",false);spatialSet("firstPersonModeContainers",false);spatialSet("disableThirdPersonParallax",true);});
+        spatialFinding("wide-frame",()->{call(mc.getWindow(),"setWindowed",1280,720);resizeHudGui();});
+        spatialFinding("tall-frame",()->{call(mc.getWindow(),"setWindowed",1000,900);resizeHudGui();});
+        spatialFinding("restored-frame",()->{call(mc.getWindow(),"setWindowed",1280,900);resizeHudGui();});
+        spatialFinding("gameplay-camera",()->{dispatchMovementKey("KEY_LALT","PRESS");dispatchMovementKey("KEY_LALT","RELEASE");});
+        spatialFinding("desktop-return",()->{dispatchMovementKey("KEY_LALT","PRESS");dispatchMovementKey("KEY_LALT","RELEASE");});
+        if("true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_MANUAL"))) add("spatial-manual-review",()->{},()->Files.exists(output.resolve("continue")),()->{},10);
+        add("findings-close",InWorldGameplayHarness::closeWindows,()->sessions().isEmpty(),()->capture("finding-closed"),15);
+    }
+
+    /** Extra visual evidence only; production JARs and normal focused profiles are unchanged. */
+    private static void addSpatialVisualEdges() {
+        add("spatial-report-overlap",()->{
+            spatialSet("useCrosshairForFirstPerson",false);spatialSet("curvedScreenEnabled",false);
+            spatialSet("firstPersonModeInventory",false);spatialSet("firstPersonModeContainers",false);
+            SaltsInventoryConfig.update(c->c.returnHotbarToInventory=true);screen().refreshInventoryWindowLayout(true);
+            int i=0;for(var w:screen().workspaceAccess().windows())w.handle().moveTo(18+90*i,35+24*i++);
+        },InWorldGameplayHarness::spatialActive,()->check("report-three-windows-one-panel",screen().workspaceAccess().windows().size()==3),25);
+        add("spatial-report-front-window",()->{
+            var first=screen().workspaceAccess().windows().get(0);check("report-window-focus-request",first.handle().focus());
+        },()->true,()->{},12);
+        add("spatial-report-resized-window",()->{
+            var w=screen().workspaceAccess().windows().stream().filter(v->v.kind()==DesktopWorkspaceWindow.Kind.PLAYER_INVENTORY).findFirst().orElseThrow();
+            var s=w.handle().state();check("report-resize-request",w.handle().resizeTo(s.width()+50,s.height()+25));w.handle().moveTo(260,75);
+        },()->true,()->{},20);
+        add("spatial-report-panel-edge",()->{
+            var w=screen().workspaceAccess().windows().get(0);var s=w.handle().state();
+            w.handle().moveTo(mc.getWindow().getGuiScaledWidth()-s.width(),mc.getWindow().getGuiScaledHeight()-s.height());spatialMove(0,0,0,0);
+        },()->true,()->check("report-outside-edge-no-slot",call(screen(),"slotAt",0D,0D)==null),15);
+        add("spatial-report-explicit-exclusion",()->spatialSet("disabledScreens",new ArrayList<>(List.of(screen().getClass().getName()))),()->!spatialActive(),()->check("report-exclusion-keeps-windows",screen().workspaceAccess().windows().size()==3),25);
+        add("spatial-report-exclusion-restored",()->spatialSet("disabledScreens",new ArrayList<String>()),InWorldGameplayHarness::spatialActive,()->{},25);
+        add("spatial-report-containers-disabled",()->spatialSet("containers",false),()->!spatialActive(),()->{},25);
+        add("spatial-report-containers-restored",()->spatialSet("containers",true),InWorldGameplayHarness::spatialActive,()->{},25);
+        add("spatial-report-perspective-exclusion",()->spatialSet("disableFirstPerson",true),()->!spatialActive(),()->{},25);
+        add("spatial-report-perspective-restored",()->spatialSet("disableFirstPerson",false),InWorldGameplayHarness::spatialActive,()->{},25);
+        add("spatial-report-single-player-window",()->{closeWindows();InventoryDesktopScreen.openOrToggleInventory(mc);},()->sessions().isEmpty()&&screen().workspaceAccess().windows().size()==1&&spatialActive(),()->{},25);
+        add("spatial-report-inventory-disabled",()->spatialSet("inventory",false),()->!spatialActive(),()->{},25);
+        add("spatial-report-inventory-restored",()->spatialSet("inventory",true),InWorldGameplayHarness::spatialActive,()->{},25);
+        add("spatial-report-autodetect-first",()->spatialSet("autoDetectCameraMode",true),()->(Boolean)call(ClassFor("org.tastytrash.spatialGUI.client.SpatialGUIClient"),"getEffectiveFirstPersonMode"),()->{},25);
+        add("spatial-report-autodetect-third",()->call(mc.options,"setCameraType",enumValue("net.minecraft.client.CameraType","THIRD_PERSON_BACK")),()->!(Boolean)call(ClassFor("org.tastytrash.spatialGUI.client.SpatialGUIClient"),"getEffectiveFirstPersonMode"),()->{},25);
+        add("spatial-report-third-exclusion",()->spatialSet("disableThirdPerson",true),()->!spatialActive(),()->{},25);
+        add("spatial-report-third-restored",()->{spatialSet("disableThirdPerson",false);spatialSet("autoDetectCameraMode",false);call(mc.options,"setCameraType",enumValue("net.minecraft.client.CameraType","FIRST_PERSON"));},InWorldGameplayHarness::spatialActive,()->{},25);
+        add("spatial-report-gui-scale-three",()->{mc.options.guiScale().set(3);resizeHudGui();},InWorldGameplayHarness::spatialActive,()->check("report-rescale-retains-inventory",windowKind("INVENTORY")!=null),25);
+        add("spatial-report-gui-scale-two",()->{mc.options.guiScale().set(2);resizeHudGui();},InWorldGameplayHarness::spatialActive,()->{},25);
+        add("spatial-report-hide-hud",()->{SaltsInventoryConfig.update(c->c.returnHotbarToInventory=false);screen().refreshInventoryWindowLayout(true);spatialSet("hideHud",true);},()->true,()->check("report-spatial-hide-hud-respected",(Boolean)call(ClassFor("org.tastytrash.spatialGUI.client.SpatialGUIClient"),"shouldHideHud")),25);
+        add("spatial-report-hide-hotbar",()->{spatialSet("hideHud",false);spatialSet("hideHotbar",true);},()->true,()->check("report-spatial-hide-hotbar-respected",(Boolean)call(ClassFor("org.tastytrash.spatialGUI.client.SpatialGUIClient"),"shouldHideHotbar")),25);
+        add("spatial-report-hud-restored",()->{spatialSet("hideHotbar",false);SaltsInventoryConfig.update(c->c.returnHotbarToInventory=true);screen().refreshInventoryWindowLayout(true);},()->true,()->{},25);
+        addContainer("report-manual-chest","minecraft:chest",0);STEPS.removeLast();
+        add("spatial-report-manual-layout",()->{InventoryDesktopScreen.openOrToggleInventory(mc);for(var w:screen().workspaceAccess().windows())w.handle().moveTo(w.kind()==DesktopWorkspaceWindow.Kind.PLAYER_INVENTORY?240:8,35);},InWorldGameplayHarness::spatialActive,()->{},25);
     }
 
     private static boolean mtShift;
@@ -391,7 +1492,7 @@ public final class InWorldGameplayHarness {
                 check("hud-reopen-hidden", com.salts_inventory_update.client.WindowedInventoryClient.shouldHideHotbar());
                 capture("hud-reopen");
             }, 8);
-        if (HUD_MOVEMENT_ONLY) addHudMovementRegression();
+        if (HUD_MOVEMENT_ONLY || FULL_CORE) addHudMovementRegression();
         add("hud-visibility-cleanup", InWorldGameplayHarness::closeWindows, () -> sessions().isEmpty(), () -> {}, 3);
     }
 
@@ -400,9 +1501,14 @@ public final class InWorldGameplayHarness {
             SaltsInventoryConfig.update(config -> config.toggleMovementControl = true);
             setMovementBinding("KEY_LALT");
             com.salts_inventory_update.client.WindowedInventoryClient.resetMovementControl();
+            SaltsInventoryConfig.update(config -> config.returnHotbarToInventory = false);
+            call(screen(),"selectHotbarSlot",0);
+            SaltsInventoryConfig.update(config -> config.returnHotbarToInventory = true);
             server(() -> {
                 for (int i = 0; i < 9; i++) player().getInventory().setItem(i, new ItemStack(Items.DIRT, i + 1));
                 player().getInventory().setItem(9, new ItemStack(Items.SAND, 3));
+                player().inventoryMenu.broadcastFullState();
+                mtSync();
                 return null;
             });
         }, () -> taskDone() && mc.player.getInventory().getItem(9).is(Items.SAND), () -> {
@@ -1646,7 +2752,63 @@ public final class InWorldGameplayHarness {
         },()->{
             Object state=field(windowSession(activeSession.sessionId()),"apiState");Object tabs=call(call(field(state,"access"),"components"),"sideTabs");
             return ((Optional<?>)call(tabs,"getOpenTab")).isPresent();
-        },()->capture("backpack-crafting-upgrade-panel"),12);
+        },()->{
+            check("crafting-tab-hosted-position-hook",ClassFor("com.salts_inventory_update.compat.sophisticated.client.SophisticatedHostedPositionAccess").isInstance(sophisticatedCraftingTab()));
+            capture("backpack-crafting-upgrade-panel");
+        },12);
+        if(VersionInfo.MINECRAFT_VERSION.equals("26.1.2")) addSophisticatedPopupGeometry();
+    }
+    private static Object sophisticatedCraftingTab(){
+        Object state=field(windowSession(activeSession.sessionId()),"apiState");
+        Object tabs=call(call(field(state,"access"),"components"),"sideTabs");
+        return ((List<?>)call(tabs,"children")).stream().filter(t->t.getClass().getSimpleName().contains("CraftingUpgradeTab")).findFirst().orElseThrow();
+    }
+    @SuppressWarnings("unchecked")
+    private static void addSophisticatedPopupGeometry(){
+        var previous=new java.util.concurrent.atomic.AtomicReference<List<ItemStack>>();
+        add("crafting-result-popup-preview-fixture",()->{
+            // UI-only native preview data: no recipes, inventory stacks or server outputs are fabricated.
+            List<ItemStack> results=(List<ItemStack>)call(call(sophisticatedCraftingTab(),"getContainer"),"getMatchedCraftingResults");
+            previous.set(List.copyOf(results));results.clear();
+            results.add(new ItemStack(Items.DIAMOND));results.add(new ItemStack(Items.IRON_INGOT));
+        },()->((List<?>)call(call(sophisticatedCraftingTab(),"getContainer"),"getMatchedCraftingResults")).size()==2,()->{},4);
+        add("crafting-result-popup-open",()->{
+            Object button=field(sophisticatedCraftingTab(),"selectResultButton");
+            clickAt(((Number)call(button,"getX")).doubleValue()+4,((Number)call(button,"getY")).doubleValue()+4);
+        },()->Boolean.TRUE.equals(field(sophisticatedCraftingTab(),"resultSelectionShown"))
+            && field(sophisticatedCraftingTab(),"resultListPositionDimensions")!=null
+            && ((List<?>)field(sophisticatedCraftingTab(),"resultChoicePositions")).size()==2,()->{
+            Object tab=sophisticatedCraftingTab();Object bounds=field(tab,"resultListPositionDimensions");
+            Object point=call(bounds,bounds.getClass().getName().equals("net.minecraft.util.Tuple")?"getA":"getFirst");
+            int x=((Number)call(point,"x")).intValue(),y=((Number)call(point,"y")).intValue();
+            List<?> positions=(List<?>)field(tab,"resultChoicePositions");
+            List<int[]> original=positions.stream().map(p->new int[]{((Number)call(p,"x")).intValue(),((Number)call(p,"y")).intValue()}).toList();
+            int dx=83,dy=47;
+            call(tab,"salts_inventory_update$translateHostedPosition",dx,dy);
+            Object moved=field(tab,"resultListPositionDimensions");
+            Object movedPoint=call(moved,moved.getClass().getName().equals("net.minecraft.util.Tuple")?"getA":"getFirst");
+            check("crafting-popup-native-bounds-translated",((Number)call(movedPoint,"x")).intValue()==x+dx&&((Number)call(movedPoint,"y")).intValue()==y+dy);
+            for(int i=0;i<positions.size();i++){
+                Object choice=positions.get(i);
+                check("crafting-popup-native-choice-translated-"+i,((Number)call(choice,"x")).intValue()==original.get(i)[0]+dx&&((Number)call(choice,"y")).intValue()==original.get(i)[1]+dy);
+            }
+            check("crafting-popup-native-hit-follows-translation",((Optional<?>)call(tab,"getResultChoiceHovered",original.get(0)[0]+dx+8,original.get(0)[1]+dy+8)).map(value->value.equals(0)).orElse(false));
+            call(tab,"salts_inventory_update$translateHostedPosition",-dx,-dy);
+            check("crafting-popup-native-hit-restored",((Optional<?>)call(tab,"getResultChoiceHovered",original.get(0)[0]+8,original.get(0)[1]+8)).map(value->value.equals(0)).orElse(false));
+            capture("crafting-result-popup-before-window-move");
+        },10);
+        add("crafting-result-popup-window-drag",()->{
+            Object window=windowSession(activeSession.sessionId());beforeX=number(window,"x");beforeY=number(window,"y");
+            double x=beforeX+24,y=beforeY+5;
+            mouse("mouseClicked",x,y,left(),0,0);mouse("mouseDragged",x+24,y+12,left(),24,12);mouse("mouseReleased",x+24,y+12,left(),0,0);
+        },()->number(windowSession(activeSession.sessionId()),"x")==beforeX+24&&number(windowSession(activeSession.sessionId()),"y")==beforeY+12,()->{
+            check("crafting-popup-remains-open-after-window-drag",Boolean.TRUE.equals(field(sophisticatedCraftingTab(),"resultSelectionShown")));
+            capture("crafting-result-popup-after-window-move");
+        },10);
+        add("crafting-result-popup-preview-cleanup",()->{
+            List<ItemStack> results=(List<ItemStack>)call(call(sophisticatedCraftingTab(),"getContainer"),"getMatchedCraftingResults");
+            results.clear();results.addAll(previous.get());
+        },()->!Boolean.TRUE.equals(field(sophisticatedCraftingTab(),"resultSelectionShown")),()->{},4);
     }
     private static void addTomLegacyConnectorControls() {
         var expected=new java.util.concurrent.atomic.AtomicBoolean();
@@ -1950,6 +3112,14 @@ public final class InWorldGameplayHarness {
     private static void tick(Minecraft client) {
         if(finished||!clientReady) return;
         mc=client; elapsedTicks++;
+        for(var action:new ArrayList<>(spatialActions))if(System.currentTimeMillis()>=action.at()){
+            spatialActions.remove(action);action.action().run();
+        }
+        spatialObserveManualHold();
+        if(wallsObserveTransition) {
+            wallsTransitionSamples.add(((Number)call(ClassFor("com.salts_inventory_update.spatial.SpatialMovementTransition"),"blend")).doubleValue());
+            wallsCameraSamples.add(((net.minecraft.world.phys.Vec3)spatialCameraPosition()).distanceTo(mc.player.getEyePosition()));
+        }
         clearQaToasts.run();
         if(Files.exists(output.resolve("abort.request"))){record("suite-aborted","FAIL","Explicit QA abort requested");finish();return;}
         if(elapsedTicks<15) return;
@@ -1996,11 +3166,12 @@ public final class InWorldGameplayHarness {
             if(ready) {
                 if(settle<0) settle=active.settleTicks();
                 if(settle--<=0) {
+                    if(SPATIAL_REPORT && active.name().startsWith("spatial-"))capture("report-"+active.name());
                     active.verify().run();record(active.name(),"PASS","completed in-world stage");active=null;
                 }
             } else {
                 settle=-1;
-                if(System.currentTimeMillis()-stepStarted>(MOUSE_TWEAKS_ONLY && active.name().startsWith("mt-") ? 8000L : 45000L)) throw new IllegalStateException("Stage timed out; screen="+(nativeScreen()==null?"none":nativeScreen().getClass().getName())+", sessions="+sessions().size()+", carried="+carried());
+                if(System.currentTimeMillis()-stepStarted>((active.name().equals("spatial-manual-review")||active.name().equals("walls-manual")) ? 1800000L : MOUSE_TWEAKS_ONLY && active.name().startsWith("mt-") ? 8000L : 45000L)) throw new IllegalStateException("Stage timed out; screen="+(nativeScreen()==null?"none":nativeScreen().getClass().getName())+", sessions="+sessions().size()+", carried="+carried());
             }
         } catch(Throwable e) {
             boolean requiredHandshakeFailed = active != null && active.name().equals("desktop-handshake");
@@ -2091,14 +3262,18 @@ public final class InWorldGameplayHarness {
     private static void clickAt(double x,double y){mouse("mouseClicked",x,y,left(),0,0);mouse("mouseReleased",x,y,left(),0,0);}
     private static int number(Object object,String name){return ((Number)field(object,name)).intValue();}
     private static void clickControl(String name){
-        Object w=windowSession(activeSession.sessionId());Object layout=call(screen(),"titleBarLayout",w);
+        clickWindowControl(windowSession(activeSession.sessionId()),name);
+    }
+    private static void clickWindowControl(Object w,String name){
+        Object layout=call(screen(),"titleBarLayout",w);
         List<?> rects=(List<?>)call(layout,"controls");Object selected=null;
         for(Object rect:rects) if(call(rect,"control").toString().equals(name))selected=rect;
         if(selected==null){
-            for(Object rect:rects)if(call(rect,"control").toString().equals("ELLIPSIS")){
+            for(Object rect:rects)if(field(screen(),"popupWindow") != w && call(rect,"control").toString().equals("ELLIPSIS")){
                 double x=((Number)call(rect,"x")).doubleValue()+4,y=((Number)call(rect,"y")).doubleValue()+4;
                 mouse("mouseClicked",x,y,left(),0,0);mouse("mouseReleased",x,y,left(),0,0);
             }
+            check("overflow-popup-open-before-"+name,field(screen(),"popupWindow") == w);
             for(Object rect:(List<?>)call(screen(),"popupControlRects",w,call(screen(),"popupRect",w)))if(call(rect,"control").toString().equals(name))selected=rect;
         }
         if(selected==null)throw new IllegalStateException("Control not exposed: "+name);
@@ -2198,9 +3373,12 @@ public final class InWorldGameplayHarness {
         Map<String,Object> report=new LinkedHashMap<>();report.put("scenario",SCENARIO);report.put("minecraft",VersionInfo.MINECRAFT_VERSION);report.put("loader",System.getenv("SIU_FUNCTIONAL_TEST_LOADER"));report.put("results",RESULTS);report.put("failures",failures);report.put("elapsedMs",System.currentTimeMillis()-startedAt);
         report.put("coreCodeSource",SaltsInventoryUpdate.class.getProtectionDomain().getCodeSource().getLocation().toString());
         report.put("runDirectory",Path.of("").toAbsolutePath().toString());
+        report.put("completeCoreFeatureSuite", FULL_CORE);
+        if(!ACCESSORY.isEmpty())report.put("nativeAccessoryFixture",ACCESSORY);
         if ("true".equalsIgnoreCase(System.getenv("SIU_QA_CHEST_CLOSE_ONLY"))) report.put("scope", "chest-close-issue-15");
         if (TOMS_PICKUP_ONLY) report.put("scope", "toms-pickup-issue-17");
         if (WINDOW_CONTROLS_ONLY) report.put("scope", "recipe-book-and-movement-controls");
+        if (INVENTORY_SORT_ONLY) report.put("scope", "in-place-inventory-sorting");
         if (MOUSE_TWEAKS_ONLY) report.put("scope","mouse-tweaks-core-only");
         if (MANUAL_MOUSE_TWEAKS) report.put("scope","mouse-tweaks-computer-use-fixture");
         if (KEYBINDS_ONLY) report.put("scope", "key-bindings-and-inventory-hold");
@@ -2208,6 +3386,7 @@ public final class InWorldGameplayHarness {
         if (RAISED_ONLY) report.put("scope", "raised-hud-interoperability");
         if (HUD_VISIBILITY_ONLY) report.put("scope", "window-hosted-hud-visibility");
         if (HUD_MOVEMENT_ONLY) report.put("scope", "window-hosted-hud-movement");
+        if (SPATIAL_ONLY) report.put("scope", "spatial-gui-"+VersionInfo.MINECRAFT_VERSION+"-"+System.getenv("SIU_FUNCTIONAL_TEST_LOADER"));
         Map<String,String> mods=loadedMods();report.put("loadedMods",mods);
         if(mods.containsKey("salts_inventory_compat"))report.put("compatibilityCodeSource",ClassFor("com.salts_inventory_update.compat.CompatibilityBootstrap").getProtectionDomain().getCodeSource().getLocation().toString());
         try{Files.writeString(output.resolve("results.json"),new GsonBuilder().setPrettyPrinting().create().toJson(report));}catch(Exception e){SaltsInventoryUpdate.LOGGER.error("Cannot save QA result",e);}

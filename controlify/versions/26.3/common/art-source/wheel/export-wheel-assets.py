@@ -13,6 +13,9 @@ from PIL import Image, ImageDraw
 ART = Path(__file__).resolve().parent
 COMMON = ART.parents[1]
 TARGET = COMMON / "src/main/resources/assets/salts_inventory_controlify/textures/gui/contextual/wheel"
+REPO = next((parent for parent in ART.parents if (parent / "settings.gradle.kts").is_file()), None)
+if REPO is not None:
+    TARGET = REPO / "artwork/shared-resources/controlify/assets/salts_inventory_controlify/textures/gui/contextual/wheel"
 if not TARGET.is_dir() and (COMMON / "wheel").is_dir():
     TARGET = COMMON / "wheel"  # The extracted test ZIP's editable-assets layout.
 MANIFEST = ART / "generation-manifest.json"

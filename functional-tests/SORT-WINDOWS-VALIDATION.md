@@ -36,6 +36,6 @@ The original 26.2 work included NeoForge testing with Sophisticated Storage, nor
 
 ## Editable control texture
 
-Each version's `common/src/main/resources/assets/salts_inventory_update/textures/gui/window_controls.png` is 132 by 33 pixels. Cells are 11 by 11 pixels. Normal sorting occupies zero-based column 10 (x=110); Shift sorting occupies column 11 (x=121). Rows retain normal, hovered, and pressed states. All six copies currently match.
+The shared `artwork/shared-resources/core/assets/salts_inventory_update/textures/gui/window_controls.png` is 132 by 33 pixels. Cells are 11 by 11 pixels. Normal sorting occupies zero-based column 10 (x=110); Shift sorting occupies column 11 (x=121). Rows retain normal, hovered, and pressed states. All six Minecraft versions and both loaders consume this one source.
 
 The tooltips are exactly `Sort into open containers` and, while Shift is held, `Force sort into open containers`.

@@ -12,9 +12,11 @@ import net.p3pp3rf1y.sophisticatedcore.common.gui.StorageContainerMenuBase;
 @Mixin(value = StorageContainerMenuBase.class, remap = false)
 public abstract class StorageContainerSynchronizerMixin {
     @ModifyArg(
-        method = "setSynchronizer",
+        remap = true,
+        method = "setSynchronizer(Lnet/minecraft/world/inventory/ContainerSynchronizer;)V",
         at = @At(
             value = "INVOKE",
+            remap = true,
             target = "Lnet/minecraft/world/inventory/AbstractContainerMenu;setSynchronizer(Lnet/minecraft/world/inventory/ContainerSynchronizer;)V"
         ),
         index = 0

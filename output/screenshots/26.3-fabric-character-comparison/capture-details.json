@@ -1,0 +1,19 @@
+{
+  "minecraft": "26.3",
+  "loader": "Fabric",
+  "gui_scale": 2,
+  "source": "Fresh in-game F2 captures; no visual alterations other than crops.",
+  "character_crop": [
+    1102,
+    531,
+    1470,
+    811
+  ],
+  "vanilla_top_crop": [
+    1104,
+    519,
+    1456,
+    683
+  ],
+  "scope": "UI captures only; no functional test suite."
+}

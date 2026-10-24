@@ -15,6 +15,8 @@ _boundaries = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_boundaries)
 PREFIX = 'com/salts_inventory_update/compat/'
 CLASSES = {
+    'curios': ['curios/CuriosCompatBootstrap', 'curios/CuriosIntegration', 'curios/CuriosClientIntegration',
+               'curios/CuriosDesktopMenu', 'curios/CuriosPanelDefinition', 'curios/CuriosCharacterButton'],
     'raised': ['raised/RaisedHudIntegration'],
     'ae2': ['ae2/AE2Bootstrap'],
     'toms-storage': ['toms_storage/client/TomsStorageClientCompat', 'toms_storage/server/TomsStorageServerCompat'],

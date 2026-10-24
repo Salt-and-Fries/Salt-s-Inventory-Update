@@ -142,7 +142,7 @@ FEATURE_COVERAGE_26_3 = {
     "subtle constrained native UI sounds": ["workspace-ui-muted-native-action-still-operates", "workspace-ui-native-source-mute-suppresses-play", "workspace-ui-native-master-mute-suppresses-play", "workspace-ui-mute-respects-native-preferences", "workspace-ui-neutral-wheel-no-repeating-sounds", "workspace-ui-identical-rejection-is-quiet", "workspace-ui-already-active-tab-is-quiet", "workspace-ui-appropriate-native-actions-have-subtle-sounds", "workspace-ui-native-sounds-global-and-action-rate-limited", "workspace-ui-native-sound-source-volume-pitch-constrained"],
     "compact inventory": ["workspace-all-player-storage-and-hotbar-visible", "workspace-hotbar-gap-is-compact", "workspace-hotbar-inside-compact-inventory"],
     "deferred tooltip and adaptive native cursor": ["deferred-item-tooltip-at-screen-cursor", "stock-cursor-independent-chest-slot-scale", "actual-native-cursor-uses-guide-pane-scale", "guide-and-inventory-require-distinct-cursor-scales", "actual-native-cursor-changes-to-inventory-slot-scale"],
-    "recipe guide fitting and native controls": ["guide-opened-through-native-controller-click", "guide-expanded-fitted-panes-bounded", "guide-expanded-fitted-panes-separate", "native-DPAD-guide-toggle", "native-DPAD-guide-filter", "native-DPAD-guide-search", "native-DPAD-guide-category", "native-DPAD-guide-next-page", "native-DPAD-guide-recipe", "native-DPAD-expanded-guide-choice", "actual-expanded-recipe-choices-populated", "native-recipe-choice-click-consumed", "guide-choice-fitted-panes-bounded", "guide-native-toggle-closed", "legacy-native-guide-compatible-with-contextual-opt-out"],
+    "recipe guide fitting and native controls": ["guide-opened-through-native-controller-click", "guide-expanded-fitted-panes-bounded", "guide-expanded-fitted-panes-separate", "native-DPAD-result-to-lower-crafting-slot", "native-DPAD-guide-source-remains-lower-crafting-slot", "native-DPAD-guide-toggle", "native-DPAD-guide-filter", "native-DPAD-guide-search", "native-DPAD-guide-category", "native-DPAD-guide-next-page", "native-DPAD-guide-recipe", "native-DPAD-expanded-guide-choice", "actual-expanded-recipe-choices-populated", "native-recipe-choice-click-consumed", "guide-choice-fitted-panes-bounded", "guide-native-toggle-closed", "legacy-native-guide-compatible-with-contextual-opt-out"],
     "persistent tucked names": ["tabs-rendered-after-transition", "persistent-tucked-tabs-every-live-window-name", "disabled-animation-tabs-rendered", "disabled-animation-tabs-permanent-inventory-and-character", "new-container-tucked-tab-every-live-window-name"],
     "native all-container normal and force sort": ["sort-source-is-middle-focused-chest", "normal-sort-matches-beyond-displayed-pair", "double-Y-native-edge-within-threshold", "force-sort-moves-unmatched-to-empty-open-container-conserves-all"],
     "radial single-window close and immediate side close": ["only-highlighted-window-closed", "radial-B-closes-highlighted-immediately", "radial-held-B-after-closable-does-not-close-all", "radial-held-B-does-not-close-all", "radial-held-B-protects-mandatory-windows", "radial-rebound-close-owns-A", "side-close-all-returned-gameplay", "close-all-server-sessions-disposed", "side-B-closes-immediately", "side-B-returned-gameplay"],
@@ -578,6 +578,8 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
         assert not missing, f"{name}: missing {group} proof: {sorted(missing)}"
     if feature_parity and not game.startswith("26."):
         legacy_feature_parity(passed, name)
+    if game == "26.3":
+        assert "disabled-animation-observed-first-native-frame" in passed, f"{name}: missing first-render disabled-animation observation"
     if game == "26.3" or feature_parity and game in ("26.1.2", "26.2"):
         for group, names in FEATURE_COVERAGE_26_3.items():
             missing = set(names) - passed
@@ -793,8 +795,23 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
         source = report.get(field, "")
         assert ".jar" in source.lower() and "/classes/" not in source.replace("\\", "/").lower(), \
             f"{name}: {field} did not load from a production JAR: {source}"
+    staging_path = results_root / name / "staged-artifacts.json"
+    staging = json.loads(staging_path.read_text(encoding="utf-8-sig"))
+    assert staging["minecraft"] == game and staging["loader"] == loader, f"{name}: wrong launcher inventory"
+    assert staging.get("withExtension") == with_extension and staging.get("scope") == report.get("scope", "all"), \
+        f"{name}: staged extension mode/scope differs from the requested profile"
     if run_profile == "auto":
-        run_profile = "packaged-controlify-" + name if report_suffix else "packaged-controlify"
+        expected_profile = "packaged-controlify-" + name if report_suffix else "packaged-controlify"
+        allowed_profiles = {expected_profile}
+        # Older all-scope standalone launches record an unscoped runtime directory,
+        # even when their report carries a run ID. Inspect that recorded inventory;
+        # never substitute another run's JARs or skip the exact hash checks below.
+        if not with_extension and report.get("scope", "all") == "all":
+            allowed_profiles.add("packaged-controlify")
+        run_profile = staging.get("runtimeProfile")
+        assert run_profile in allowed_profiles, f"{name}: unexpected staged runtime profile: {run_profile}"
+    else:
+        assert staging.get("runtimeProfile") == run_profile, f"{name}: requested runtime differs from launcher inventory"
     assert "/" not in run_profile and "\\" not in run_profile and run_profile.startswith("packaged-controlify"), \
         f"{name}: invalid disposable runtime profile"
     mods_folder = ROOT / f"controlify/versions/{game}/{loader}/build/runtime-smoke/{run_profile}/mods"
@@ -825,9 +842,6 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
         qa_release = ROOT / f"controlify/versions/{game}/{loader}/build/controlify-qa-artifact/{qa_name}"
         assert (report_suffix and (mods_folder / qa_name).is_file()) or qa_release.is_file() and digest(qa_release) == digest(mods_folder / qa_name), \
             f"{name}: staged QA fixture differs from the compiled opt-in artifact"
-    staging_path = results_root / name / "staged-artifacts.json"
-    staging = json.loads(staging_path.read_text(encoding="utf-8-sig"))
-    assert staging["minecraft"] == game and staging["loader"] == loader, f"{name}: wrong launcher inventory"
     inventory = staging["artifacts"]
     assert len(inventory) == len({item["file"] for item in inventory}) == len(staged), \
         f"{name}: launcher inventory does not describe the exact staged JARs"
@@ -859,6 +873,9 @@ def validate(target, results_root, artifacts, run_profile, report_suffix="", wit
     if with_extension:
         assert mods.get('salts_inventory_compat'), f'{name}: Extended jar did not load'
         modules.append(('compatibility','salts_inventory_compat'))
+    else:
+        assert 'salts_inventory_compat' not in mods and 'extensionCodeSource' not in report, \
+            f'{name}: Compatibility loaded in a standalone profile'
     for module, prefix in modules:
         filename = f"{prefix}-{game}-{LOADER_NAMES[loader]}-{mods[prefix]}.jar"
         release, runtime = artifacts / module / filename, mods_folder / filename

@@ -49,8 +49,7 @@ public final class SophisticatedLegacyMessageBridge {
     }
 
     public static boolean sendToServer(PacketHandler handler, Object message) {
-        DesktopInputContext<?, ?> context = SophisticatedHostedScreenBridge.inputContext();
-        return context != null && context.sendPayload(CHANNEL, encode(handler, message));
+        return ClientHandlers.sendToServer(handler, message);
     }
 
     public static boolean sendToClient(PacketHandler handler, ServerPlayer player, Object message) {
@@ -72,20 +71,7 @@ public final class SophisticatedLegacyMessageBridge {
         return CompletableFuture.completedFuture(null);
     }
 
-    public static void handleClient(Minecraft minecraft, AbstractContainerMenu menu, ResourceLocation channel, byte[] data) {
-        if (!CHANNEL.equals(channel) || minecraft.player == null || minecraft.getConnection() == null) {
-            return;
-        }
-        AbstractContainerMenu previous = minecraft.player.containerMenu;
-        minecraft.player.containerMenu = menu;
-        HANDLING.set(Boolean.TRUE);
-        try {
-            decodeAndHandle(data, minecraft.getConnection().getConnection(), NetworkDirection.PLAY_TO_CLIENT);
-        } finally {
-            HANDLING.remove();
-            minecraft.player.containerMenu = previous;
-        }
-    }
+
 
     private static void handleServer(DesktopServerPayloadContext<AbstractContainerMenu> context) {
         ServerPlayer player = context.player();
@@ -211,6 +197,31 @@ public final class SophisticatedLegacyMessageBridge {
             return method.invoke(owner);
         } catch (ReflectiveOperationException exception) {
             throw new IllegalStateException("Unable to access Sophisticated message " + methodName, exception);
+        }
+    }
+
+    /** Loaded only for client packet routing, never by server registration. */
+    public static final class ClientHandlers {
+        private ClientHandlers() { }
+
+        public static boolean sendToServer(PacketHandler handler, Object message) {
+            DesktopInputContext<?, ?> context = SophisticatedHostedScreenBridge.inputContext();
+            return context != null && context.sendPayload(CHANNEL, encode(handler, message));
+        }
+
+        public static void handleClient(Minecraft minecraft, AbstractContainerMenu menu, ResourceLocation channel, byte[] data) {
+            if (!CHANNEL.equals(channel) || minecraft.player == null || minecraft.getConnection() == null) {
+                return;
+            }
+            AbstractContainerMenu previous = minecraft.player.containerMenu;
+            minecraft.player.containerMenu = menu;
+            HANDLING.set(Boolean.TRUE);
+            try {
+                decodeAndHandle(data, minecraft.getConnection().getConnection(), NetworkDirection.PLAY_TO_CLIENT);
+            } finally {
+                HANDLING.remove();
+                minecraft.player.containerMenu = previous;
+            }
         }
     }
 }

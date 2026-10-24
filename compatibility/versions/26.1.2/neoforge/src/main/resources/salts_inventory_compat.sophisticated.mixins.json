@@ -18,6 +18,7 @@
     "BlockConverterRecipeControlMixin",
     "ClientPacketDistributorMixin",
     "CraftingUpgradeTabMixin",
+    "CraftingUpgradeTupleTabMixin",
     "GuiGraphicsExtractorTooltipMixin",
     "GuiHelperTabBackgroundMixin",
     "PositionedInventoryControlMixin",

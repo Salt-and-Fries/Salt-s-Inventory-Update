@@ -20,6 +20,7 @@ run/
 /output/pdf/
 
 # Local test runs and diagnostic artifacts
+/fabricloader.log
 /tmp/
 /logs/
 /controller-workspace-config/

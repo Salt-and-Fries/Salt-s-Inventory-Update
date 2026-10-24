@@ -41,40 +41,7 @@ public final class SophisticatedStorageCompat {
     }
 
     public static void initializeClient() {
-        MenuType<StorageContainerMenu> storage = ModBlocks.STORAGE_CONTAINER_TYPE;
-        MenuType<LimitedBarrelContainerMenu> limited = ModBlocks.LIMITED_BARREL_CONTAINER_TYPE;
-        MenuType<StorageSettingsContainerMenu> settings = ModBlocks.SETTINGS_CONTAINER_TYPE;
-        MenuType<LimitedBarrelSettingsContainerMenu> limitedSettings = ModBlocks.LIMITED_BARREL_SETTINGS_CONTAINER_TYPE;
-
-        DesktopMenuFactories.register(storage, (minecraft, player, id, data) ->
-            fromOpeningData(minecraft, data, buffer -> StorageContainerMenu.fromBuffer(id, player.getInventory(), buffer))
-        );
-        DesktopMenuFactories.register(limited, (minecraft, player, id, data) ->
-            fromOpeningData(minecraft, data, buffer -> LimitedBarrelContainerMenu.fromBuffer(id, player.getInventory(), buffer))
-        );
-        DesktopMenuFactories.register(settings, (minecraft, player, id, data) ->
-            fromOpeningData(minecraft, data, buffer -> StorageSettingsContainerMenu.fromBuffer(id, player.getInventory(), buffer))
-        );
-        DesktopMenuFactories.register(limitedSettings, (minecraft, player, id, data) ->
-            fromOpeningData(minecraft, data, buffer -> LimitedBarrelSettingsContainerMenu.fromBuffer(id, player.getInventory(), buffer))
-        );
-
-        DesktopClientApi.registerWindow(
-            storage,
-            new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.STANDARD, StorageScreen::constructScreen)
-        );
-        DesktopClientApi.registerWindow(
-            limited,
-            new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.LIMITED_BARREL, LimitedBarrelScreen::new)
-        );
-        DesktopClientApi.registerWindow(
-            settings,
-            new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.SETTINGS, StorageSettingsScreen::constructScreen)
-        );
-        DesktopClientApi.registerWindow(
-            limitedSettings,
-            new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.LIMITED_BARREL_SETTINGS, LimitedBarrelSettingsScreen::new)
-        );
+        ClientRegistration.initialize();
     }
 
     private static void registerMain(MenuType<?> menuType) {
@@ -115,19 +82,58 @@ public final class SophisticatedStorageCompat {
         return DesktopSessions.blockSourceKey(player, pos);
     }
 
-    private static AbstractContainerMenu fromOpeningData(
-        net.minecraft.client.Minecraft minecraft,
-        byte[] data,
-        java.util.function.Function<FriendlyByteBuf, AbstractContainerMenu> factory
-    ) {
-        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(data));
-        try {
-            // Match the native factory contract. Limited barrels intentionally leave
-            // optional storage fields unread; the authenticated payload remains intact.
-            return factory.apply(buffer);
-        } finally {
-            buffer.release();
+    /** Keep screen types out of common-side reflective method resolution. */
+    private static final class ClientRegistration {
+        private static void initialize() {
+            MenuType<StorageContainerMenu> storage = ModBlocks.STORAGE_CONTAINER_TYPE;
+            MenuType<LimitedBarrelContainerMenu> limited = ModBlocks.LIMITED_BARREL_CONTAINER_TYPE;
+            MenuType<StorageSettingsContainerMenu> settings = ModBlocks.SETTINGS_CONTAINER_TYPE;
+            MenuType<LimitedBarrelSettingsContainerMenu> limitedSettings = ModBlocks.LIMITED_BARREL_SETTINGS_CONTAINER_TYPE;
+
+            DesktopMenuFactories.register(storage, (minecraft, player, id, data) ->
+                fromOpeningData(minecraft, data, buffer -> StorageContainerMenu.fromBuffer(id, player.getInventory(), buffer))
+            );
+            DesktopMenuFactories.register(limited, (minecraft, player, id, data) ->
+                fromOpeningData(minecraft, data, buffer -> LimitedBarrelContainerMenu.fromBuffer(id, player.getInventory(), buffer))
+            );
+            DesktopMenuFactories.register(settings, (minecraft, player, id, data) ->
+                fromOpeningData(minecraft, data, buffer -> StorageSettingsContainerMenu.fromBuffer(id, player.getInventory(), buffer))
+            );
+            DesktopMenuFactories.register(limitedSettings, (minecraft, player, id, data) ->
+                fromOpeningData(minecraft, data, buffer -> LimitedBarrelSettingsContainerMenu.fromBuffer(id, player.getInventory(), buffer))
+            );
+
+            DesktopClientApi.registerWindow(
+                storage,
+                new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.STANDARD, StorageScreen::constructScreen)
+            );
+            DesktopClientApi.registerWindow(
+                limited,
+                new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.LIMITED_BARREL, LimitedBarrelScreen::new)
+            );
+            DesktopClientApi.registerWindow(
+                settings,
+                new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.SETTINGS, StorageSettingsScreen::constructScreen)
+            );
+            DesktopClientApi.registerWindow(
+                limitedSettings,
+                new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.LIMITED_BARREL_SETTINGS, LimitedBarrelSettingsScreen::new)
+            );
+        }
+
+        private static AbstractContainerMenu fromOpeningData(
+            net.minecraft.client.Minecraft minecraft,
+            byte[] data,
+            java.util.function.Function<FriendlyByteBuf, AbstractContainerMenu> factory
+        ) {
+            FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(data));
+            try {
+                // Match the native factory contract. Limited barrels intentionally leave
+                // optional storage fields unread; the authenticated payload remains intact.
+                return factory.apply(buffer);
+            } finally {
+                buffer.release();
+            }
         }
     }
-
 }

@@ -66,7 +66,7 @@ import com.salts_inventory_update.protocol.DesktopProtocol;
 public final class DesktopContainerClient {
     private static Object lastDesktopLevel;
     private static final int MODE_REFRESH_INTERVAL_TICKS = 100;
-    private static final long SUPPORTED_CAPABILITIES = DesktopProtocol.KNOWN_CAPABILITIES | DesktopPackets.CAP_MULTI_MENU_GESTURES | DesktopPackets.CAP_SORT_WINDOWS | DesktopPackets.CAP_CLICK_SEQUENCES;
+    private static final long SUPPORTED_CAPABILITIES = DesktopProtocol.KNOWN_CAPABILITIES | DesktopPackets.CAP_MULTI_MENU_GESTURES | DesktopPackets.CAP_SORT_WINDOWS | DesktopPackets.CAP_CLICK_SEQUENCES | DesktopPackets.CAP_SORT_INVENTORY;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final DesktopConnectionState CONNECTION_STATE = new DesktopConnectionState();
     private static final Map<Integer, Long> SESSION_TOKENS = new LinkedHashMap<>();
@@ -255,6 +255,17 @@ public final class DesktopContainerClient {
             InventoryDesktopScreen screen = InventoryDesktopScreen.current(Minecraft.getInstance());
             if (screen != null) {
                 screen.applyGhostRecipe(payload);
+            }
+        });
+        register(DesktopPackets.DesktopPlayerSlotPayload.TYPE, DesktopPackets.DesktopPlayerSlotPayload::new, payload -> {
+            var client = Minecraft.getInstance();
+            if (client.player == null) return;
+            var menu = client.player.inventoryMenu;
+            for (int i = 46; i < menu.slots.size(); i++) {
+                if (payload.key().equals(com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.slotKey(menu.slots.get(i)))) {
+                    menu.setItem(i, payload.stateId(), payload.stack());
+                    break;
+                }
             }
         });
         register(InventoryExpansionSyncPayload.TYPE, InventoryExpansionSyncPayload::new, payload -> {
@@ -602,6 +613,16 @@ public final class DesktopContainerClient {
         CLICK_SEQUENCES.addLast(List.copyOf(collected));
         dispatchClickSequence();
     }
+    private static boolean touchesPlayerMenu(List<SequenceClick> clicks) {
+        return clicks.stream().anyMatch(click -> click.sessionId() == DesktopPackets.PLAYER_MENU_SESSION
+            || click.targetKind() >= 0 && click.targetSessionId() == DesktopPackets.PLAYER_MENU_SESSION);
+    }
+    public static void discardQueuedPlayerMenuMutations() {
+        // Drop complete gestures. Keep the in-flight acknowledgement and sequence numbering intact.
+        boolean discarded = CLICK_SEQUENCES.removeIf(DesktopContainerClient::touchesPlayerMenu);
+        if (collectedClicks != null && touchesPlayerMenu(collectedClicks)) { collectedClicks = null; discarded = true; }
+        if (discarded) slotMutationDiscardEpoch++;
+    }
     private static void resetClickSequences() {
         CLICK_SEQUENCES.clear(); collectedClicks = null; inFlightClickSequence = 0;
         nextClickSequence = 1; clickSequencesBlocked = false; slotMutationDiscardEpoch++;
@@ -818,6 +839,15 @@ public final class DesktopContainerClient {
             ids.stream().map(DesktopContainerClient::sessionReference).toList(), focusedId, shift), "sort-windows");
     }
 
+    public static boolean canSortInventory() {
+        return canSortWindows() && hasCapability(DesktopPackets.CAP_SORT_INVENTORY, true);
+    }
+
+    public static boolean sortInventory(int sessionId) {
+        if (!canSortInventory() || tokenFor(sessionId) == 0L || stateIdFor(sessionId) < 0) return false;
+        return send(new DesktopPackets.DesktopSortInventoryPayload(sessionReference(sessionId)), "sort-inventory");
+    }
+
     public static boolean quickMoveSlots(List<SlotTarget> sources, int targetKind, int targetSessionId) {
         if (targetKind < DesktopPackets.QUICK_TARGET_DEFAULT || targetKind > DesktopPackets.QUICK_TARGET_PLAYER_STORAGE) return false;
         if (sources.isEmpty() || !hasCapability(DesktopPackets.CAP_MULTI_MENU_GESTURES, true)) return false;
@@ -1031,7 +1061,8 @@ public final class DesktopContainerClient {
 
     private static long requiredCapability(DesktopPacket payload, AuthTokens tokens) {
         if (payload instanceof DesktopPackets.DesktopClickSequencePayload) return DesktopPackets.CAP_CLICK_SEQUENCES;
-        long required = payload instanceof DesktopSortWindowsPayload ? DesktopPackets.CAP_SORT_WINDOWS : 0L;
+        if (payload instanceof DesktopPackets.DesktopSortInventoryPayload) return DesktopPackets.CAP_SORT_WINDOWS | DesktopPackets.CAP_SORT_INVENTORY;
+        long required = (payload instanceof DesktopSortWindowsPayload || payload instanceof DesktopPackets.DesktopSortInventoryPayload) ? DesktopPackets.CAP_SORT_WINDOWS : 0L;
         if (payload instanceof DesktopPackets.DesktopCraftToWindowPayload || payload instanceof DesktopPackets.DesktopCookingRecipePayload || payload instanceof DesktopPackets.DesktopRecipeHoverPayload || payload instanceof DesktopPlaceRecipePayload || payload instanceof DesktopJeiTransferPayload) {
             required |= DesktopProtocol.CAP_RECIPE_TRANSFER;
         }
@@ -1099,7 +1130,7 @@ public final class DesktopContainerClient {
             secondary = value.secondSessionId();
         } else if (payload instanceof DesktopCarriedPayload || payload instanceof InventorySlotPurchasePayload) {
             primary = DesktopPackets.PLAYER_MENU_SESSION;
-        } else if (payload instanceof DesktopPackets.DesktopClickSequencePayload || payload instanceof DesktopDragSlotsPayload || payload instanceof DesktopPickupAllPayload || payload instanceof DesktopQuickMoveAllPayload || payload instanceof DesktopSortWindowsPayload) {
+        } else if (payload instanceof DesktopPackets.DesktopClickSequencePayload || payload instanceof DesktopDragSlotsPayload || payload instanceof DesktopPickupAllPayload || payload instanceof DesktopQuickMoveAllPayload || payload instanceof DesktopSortWindowsPayload || payload instanceof DesktopPackets.DesktopSortInventoryPayload) {
             // Every referenced menu carries its own token/state pair and is validated atomically by the server.
         } else if (!(payload instanceof DesktopOpenLinkedSourcesPayload)
         ) {

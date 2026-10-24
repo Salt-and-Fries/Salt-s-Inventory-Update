@@ -17,7 +17,7 @@ $scenario = if ($Mode -eq 'core') { 'core' } else { 'extension-empty' }
 $profile = "raised-$Mode-$RunId"
 $output = if ($Loader -eq 'fabric') {
     Join-Path $repo "build/gameplay-qa/packaged-$scenario/$Minecraft-fabric-$RunId"
-} else { Join-Path $repo "build/raised-qa/runtime/$Minecraft-$Loader-$RunId" }
+} else { Join-Path $repo "build/gameplay-qa/packaged-native/$Minecraft-$Loader-$RunId" }
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $manifest = Join-Path $output 'upstream-fixtures.json'
 $prepare = @('--minecraft',$Minecraft,'--loader',$Loader,'--scenario',$scenario,'--output',$manifest)
@@ -35,8 +35,9 @@ if ($Loader -eq 'fabric') {
         "-PqaExtension=$($Mode -ne 'core')",'-PqaIntegrationOnly=true','-PincludeFunctionalTests=false',
         '-PqaUseDistribution=true',":${Minecraft}:fabric:runPackagedGameplay")
 } else {
-    $task = if ($Mode -eq 'core') { ":${Minecraft}:${Loader}:runClient" } else { ":compatibility:${Minecraft}:${Loader}:runClient" }
-    $arguments += @('-PincludeFunctionalTests=true',$task)
+    $arguments += @('-I',(Join-Path $repo 'functional-tests/chest-close-qa.init.gradle'),
+        '-PqaFullGameplay=true',"-PqaMinecraft=$Minecraft","-PqaLoader=$Loader","-PqaScenario=$scenario","-PqaRunId=$RunId",
+        '-PqaIntegrationOnly=true','-PincludeFunctionalTests=false',":${Minecraft}:${Loader}:runFullGameplayQa")
 }
 $env:SIU_QA_RAISED_ONLY = (!$HudVisibilityOnly -and !$HudMovementOnly).ToString().ToLowerInvariant()
 $env:SIU_QA_HUD_MOVEMENT_ONLY = $HudMovementOnly.ToString().ToLowerInvariant()
@@ -56,8 +57,8 @@ try {
     if ($report.scope -ne $(if ($HudMovementOnly) { 'window-hosted-hud-movement' } elseif ($HudVisibilityOnly) { 'window-hosted-hud-visibility' } else { 'raised-hud-interoperability' }) -or $report.failures -ne 0) { throw "HUD checks failed: $output" }
     if (($null -ne $report.loadedMods.PSObject.Properties['raised']) -ne ($Mode -eq 'raised')) { throw 'Unexpected Raised presence.' }
     if (($null -ne $report.loadedMods.PSObject.Properties['salts_inventory_compat']) -ne ($Mode -ne 'core')) { throw 'Unexpected Compatibility presence.' }
-    if ($Loader -eq 'fabric' -and ($report.coreCodeSource -notmatch '\.jar' -or
-            ($Mode -ne 'core' -and $report.compatibilityCodeSource -notmatch '\.jar'))) { throw 'Packaged HUD QA loaded a source implementation.' }
+    if ($report.coreCodeSource -notmatch '\.jar' -or
+            ($Mode -ne 'core' -and $report.compatibilityCodeSource -notmatch '\.jar')) { throw 'Packaged HUD QA loaded a source implementation.' }
     Write-Output "HUD PASS $Minecraft $Loader $Mode ($($report.results.Count) records): $output"
 } finally {
     Pop-Location

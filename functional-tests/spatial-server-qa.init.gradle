@@ -1,0 +1,44 @@
+// Isolated dedicated server: production Core + normal Fabric runtime, no client QA or Spatial GUI.
+gradle.projectsEvaluated {
+    def root=gradle.rootProject
+    def core=root.project(':26.3:fabric')
+    def run=core.tasks.named('runServer').get()
+    def artifact=core.tasks.named(core.tasks.findByName('remapJar')==null?'jar':'remapJar')
+    core.tasks.register('runSpatialQaServer', JavaExec) {
+        dependsOn(artifact)
+        dependsOn(run.taskDependencies.getDependencies(run).findAll { it.name!='runServer' })
+        javaLauncher.set(run.javaLauncher)
+        mainClass.set(run.mainClass)
+        def runId=root.providers.gradleProperty('qaServerRunId').getOrElse('')
+        if(!(runId ==~ /[a-z0-9-]*/)) throw new GradleException('Invalid server QA run ID')
+        def folder=root.file('build/spatial-server-qa/'+(runId ? runId+'/' : '')+'runtime-server')
+        workingDir=folder
+        doFirst {
+            folder.mkdirs()
+            new File(folder,'eula.txt').text='eula=true\n'
+            def properties=new File(folder,'server.properties')
+            def flatSettings=groovy.json.JsonOutput.toJson([layers:[[height:1,block:'minecraft:bedrock'],[height:2,block:'minecraft:dirt'],[height:1,block:'minecraft:grass_block']],biome:'minecraft:plains'])
+            if(!properties.exists())properties.text='server-ip=127.0.0.1\nserver-port=25587\nonline-mode=false\nspawn-protection=0\nview-distance=2\nsimulation-distance=3\nlevel-type=minecraft:flat\ngenerator-settings='+flatSettings+'\ngenerate-structures=false\ndifficulty=peaceful\nallow-flight=true\nenable-rcon=true\nrcon.port=25588\nrcon.password=spatial-local-qa-only\nbroadcast-rcon-to-ops=false\n'
+            def settings=properties.text
+            properties.text=settings.contains('white-list=') ? settings.replaceAll('(?m)^white-list=.*$', 'white-list=false') : settings+'\nwhite-list=false\n'
+            def prefix=root.projectDir.canonicalPath+File.separator
+            def isolatedCache=gradle.startParameter.projectCacheDir?.canonicalPath
+            classpath=run.classpath.filter { f ->
+                !f.canonicalPath.startsWith(prefix) ||
+                    f.canonicalPath.contains(File.separator+'.gradle'+File.separator) ||
+                    (isolatedCache != null && f.canonicalPath.startsWith(isolatedCache+File.separator))
+            }
+            args=run.args+run.argumentProviders.collectMany { it.asArguments().toList() }
+            if(!args.contains('nogui'))args+=['nogui']
+            jvmArgs=(run.jvmArgs+run.jvmArgumentProviders.collectMany { it.asArguments().toList() }).findAll { !it.startsWith('-Dfabric.classPathGroups=') && !it.startsWith('@') }
+            systemProperties(run.systemProperties.findAll { k,v -> k!='fabric.classPathGroups' })
+            def mods=new File(folder,'mods');mods.mkdirs()
+            def file=root.file('dist/core/'+artifact.get().archiveFile.get().asFile.name)
+            if(!file.isFile())throw new GradleException('Build shipping Core before the remote-server test')
+            root.copy { from(file);into(mods) }
+            def sha=java.security.MessageDigest.getInstance('SHA-256').digest(file.bytes).encodeHex().toString()
+            println("SPATIAL_SERVER_CORE_SHA256=$sha")
+            println('SPATIAL_SERVER_MODS='+mods.listFiles().collect { it.name })
+        }
+    }
+}

@@ -2,10 +2,12 @@ package com.salts_inventory_update.compat.sophisticated.mixin;
 
 import java.util.List;
 import java.util.Set;
+import java.io.IOException;
 
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
+import org.spongepowered.asm.service.MixinService;
 
 import net.neoforged.fml.loading.LoadingModList;
 
@@ -30,6 +32,18 @@ public final class SophisticatedMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (mixinClassName.endsWith(".CraftingUpgradeTabMixin")
+            || mixinClassName.endsWith(".CraftingUpgradeTupleTabMixin")) {
+            if (!this.enabled) return false;
+            try {
+                String descriptor = mixinClassName.endsWith(".CraftingUpgradeTupleTabMixin")
+                    ? "Lnet/minecraft/util/Tuple;" : "Lcom/mojang/datafixers/util/Pair;";
+                return matchesCraftingBounds(MixinService.getService().getBytecodeProvider()
+                    .getClassNode(targetClassName), descriptor);
+            } catch (IOException | ClassNotFoundException failure) {
+                throw new IllegalStateException("Unable to inspect native crafting popup layout", failure);
+            }
+        }
         if (mixinClassName.endsWith(".BackpackContextItemAccessor")
             || mixinClassName.endsWith(".ServerGamePacketListenerItemLockMixin")) {
             return this.backpacksEnabled;
@@ -38,6 +52,17 @@ public final class SophisticatedMixinPlugin implements IMixinConfigPlugin {
             return this.storageEnabled;
         }
         return this.enabled;
+    }
+
+    /** Select a native ABI without initializing any client classes. */
+    static boolean matchesCraftingBounds(ClassNode target, String expected) {
+        String actual = target.fields.stream().filter(field -> field.name.equals("resultListPositionDimensions"))
+            .map(field -> field.desc).findFirst().orElseThrow(() ->
+                new IllegalStateException("Native crafting popup bounds field is missing"));
+        if (!actual.equals("Lcom/mojang/datafixers/util/Pair;") && !actual.equals("Lnet/minecraft/util/Tuple;")) {
+            throw new IllegalStateException("Unsupported native crafting popup bounds: " + actual);
+        }
+        return actual.equals(expected);
     }
 
     @Override

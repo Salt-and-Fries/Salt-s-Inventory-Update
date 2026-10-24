@@ -1,0 +1,23 @@
+// Opt-in fixture only; the QA mod is never an input to either production JAR.
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    def extension = root.project(':compatibility:1.21.1:fabric')
+    def core = root.project(':1.21.1:fabric')
+    def qa = extension.sourceSets.create('trinketsQa') {
+        java.srcDir(root.file('functional-tests/trinkets-1.21.1-fabric/src/main/java'))
+        resources.srcDir(root.file('functional-tests/trinkets-1.21.1-fabric/src/main/resources'))
+        compileClasspath += extension.sourceSets.main.compileClasspath + core.sourceSets.main.output
+        runtimeClasspath += extension.sourceSets.main.runtimeClasspath
+    }
+    extension.tasks.named(qa.compileJavaTaskName).configure { dependsOn(core.tasks.named('classes')) }
+    def fixture = extension.tasks.register('trinketsQaJar', Jar) {
+        from(qa.output)
+        archiveFileName.set('trinkets-focused-qa.jar')
+        destinationDirectory.set(extension.layout.buildDirectory.dir('trinkets-qa'))
+    }
+    extension.tasks.named('runClient', JavaExec).configure {
+        dependsOn(fixture)
+        systemProperty('fabric.addMods', fixture.flatMap { it.archiveFile }.get().asFile.absolutePath)
+        systemProperty('salts.trinkets.qa', root.file('build/trinkets-qa').absolutePath)
+    }
+}

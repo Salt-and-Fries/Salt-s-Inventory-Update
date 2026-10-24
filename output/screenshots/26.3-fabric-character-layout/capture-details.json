@@ -1,0 +1,54 @@
+{
+  "minecraft": "26.3",
+  "loader": "Fabric",
+  "gui_scale": 2,
+  "captures": [
+    {
+      "image": "hotbar-outside.png",
+      "source": "2026-10-22_14.58.16.png",
+      "framebuffer": [
+        2560,
+        1369
+      ],
+      "crop": [
+        1112,
+        556,
+        1472,
+        760
+      ]
+    },
+    {
+      "image": "hotbar-in-inventory.png",
+      "source": "2026-10-22_15.02.09.png",
+      "framebuffer": [
+        2560,
+        1369
+      ],
+      "crop": [
+        1112,
+        556,
+        1472,
+        760
+      ]
+    },
+    {
+      "image": "bottom-padding-and-arrow.png",
+      "source": "2026-10-22_15.09.20.png",
+      "framebuffer": [
+        2560,
+        1369
+      ],
+      "crop": [
+        1112,
+        556,
+        1472,
+        768
+      ],
+      "bottom_padding_gui_pixels": 4,
+      "arrow_gui_size": [
+        16,
+        16
+      ]
+    }
+  ]
+}

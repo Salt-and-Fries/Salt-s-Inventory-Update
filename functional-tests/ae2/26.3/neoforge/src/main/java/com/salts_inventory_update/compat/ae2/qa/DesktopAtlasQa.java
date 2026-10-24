@@ -135,6 +135,8 @@ public final class DesktopAtlasQa {
     private static List<Variant> variants = List.of();
     private static int variantIndex = -1;
     private static boolean basePrepared;
+    private static java.util.concurrent.CompletableFuture<Void> encodingSeed;
+    private static long encodingSeedStarted;
 
     public static void tick(Minecraft mc) {
         try {
@@ -277,19 +279,12 @@ public final class DesktopAtlasQa {
                             stage = 4;
                             return;
                         }
+                        if (encodingSeed != null) {
+                            stage = 6;
+                            return;
+                        }
                     }
-                    var button = variants.get(variantIndex).button;
-                    if (variants.get(variantIndex).label.startsWith("panel-")
-                            && button instanceof appeng.client.gui.widgets.TabButton tab && tab.isSelected()) {
-                        stage = 4;
-                        return;
-                    }
-                    var event = new net.minecraft.client.input.MouseButtonEvent(button.getX() + 5, button.getY() + 5,
-                            new net.minecraft.client.input.MouseButtonInfo(
-                                    com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, 0));
-                    mc.gui.screen().mouseClicked(event, false);
-                    mc.gui.screen().mouseReleased(event);
-                    stage = 4;
+                    clickVariantButton(mc);
                     return;
                 }
                 variants = List.of();
@@ -297,6 +292,15 @@ public final class DesktopAtlasQa {
                 index++;
                 basePrepared = false;
                 stage = 3;
+            } else if (stage == 6) {
+                if (!encodingSeed.isDone()) {
+                    if (System.nanoTime() - encodingSeedStarted > java.util.concurrent.TimeUnit.SECONDS.toNanos(10))
+                        throw new IllegalStateException("Server encoding fixture did not complete before the native mode click");
+                    return;
+                }
+                encodingSeed.join();
+                encodingSeed = null;
+                clickVariantButton(mc);
             }
         } catch (Exception error) {
             LoggerFactory.getLogger(DesktopAtlasQa.class).error("ATLAS FAILED at {} stage {}", index, stage, error);
@@ -310,6 +314,16 @@ public final class DesktopAtlasQa {
             if (Boolean.getBoolean("ae2.desktop.qa.quit"))
                 mc.stop();
         }
+    }
+
+    private static void clickVariantButton(Minecraft mc) {
+        var variant = variants.get(variantIndex);
+        var button = variant.button;
+        if (!(variant.label.startsWith("panel-")
+                && button instanceof appeng.client.gui.widgets.TabButton tab && tab.isSelected())) {
+            click(mc, button.getX() + 5, button.getY() + 5);
+        }
+        stage = 4;
     }
 
     private static net.minecraft.client.renderer.Rect2i visualBounds(DesktopQaHooks.Window window) {
@@ -574,7 +588,14 @@ public final class DesktopAtlasQa {
                 }
             }
             if (variant.button instanceof appeng.client.gui.widgets.TabButton tab && !tab.isSelected()) {
-                throw new IllegalStateException("Native click did not select " + variant.label);
+                var currentTabs = content.children().stream()
+                        .filter(appeng.client.gui.widgets.TabButton.class::isInstance)
+                        .map(appeng.client.gui.widgets.TabButton.class::cast)
+                        .map(current -> current.getMessage().getString() + "=" + current.isSelected()
+                                + "@" + current.getX() + "," + current.getY()
+                                + ":same=" + (current == tab)).toList();
+                throw new IllegalStateException("Native click did not select " + variant.label
+                        + "; clicked=" + tab.getX() + "," + tab.getY() + "; live=" + currentTabs);
             }
             if (variant.label.equals("settings")
                     && !(content instanceof appeng.client.gui.me.common.TerminalSettingsScreen<?>)) {
@@ -966,9 +987,11 @@ public final class DesktopAtlasQa {
 
     private static void populateEncodingMode(String label) {
         var mc = Minecraft.getInstance();
-        mc.getSingleplayerServer().execute(() -> {
+        var server = mc.getSingleplayerServer();
+        encodingSeedStarted = System.nanoTime();
+        encodingSeed = server.submit(() -> {
             var logic = ((appeng.parts.encoding.PatternEncodingTerminalPart) PartHelper.getPart(
-                    mc.getSingleplayerServer().overworld(),
+                    server.overworld(),
                     ORIGIN.offset(2, 1, 0), Direction.NORTH)).getLogic();
             logic.getEncodedInputInv().clear();
             logic.getEncodedOutputInv().clear();

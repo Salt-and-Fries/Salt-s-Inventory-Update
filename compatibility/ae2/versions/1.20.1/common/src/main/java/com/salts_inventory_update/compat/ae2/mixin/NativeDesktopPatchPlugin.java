@@ -63,11 +63,12 @@ public final class NativeDesktopPatchPlugin implements IMixinConfigPlugin {
         LoggerFactory.getLogger(getClass()).warn("AE2 desktop hooks do not match the installed native ABI",failure);
     }
     @Override public String getRefMapperConfig() { return null; }
-    @Override public boolean shouldApplyMixin(String target,String mixin) { return active&&patches.containsKey(target); }
+    // Remapped Fabric marker targets use internal names; development targets use dotted names.
+    @Override public boolean shouldApplyMixin(String target,String mixin) { return active&&patches.containsKey(target.replace('/','.')); }
     @Override public void acceptTargets(Set<String> mine,Set<String> others) { }
     @Override public List<String> getMixins() { return null; }
     @Override public void preApply(String name,ClassNode target,String mixin,IMixinInfo info) {
-        try { NativeClassPatch.apply(target,patches.get(name)); }
+        try { NativeClassPatch.apply(target,patches.get(name.replace('/','.'))); }
         catch (RuntimeException failure) {
             String output=System.getenv("SIU_QA_OUTPUT");
             if (output!=null) try {

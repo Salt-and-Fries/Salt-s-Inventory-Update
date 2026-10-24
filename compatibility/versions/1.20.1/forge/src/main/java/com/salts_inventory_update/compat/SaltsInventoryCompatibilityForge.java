@@ -14,5 +14,6 @@ public final class SaltsInventoryCompatibilityForge {
                 CompatibilityBootstrap.initialize("ae2", "com.salts_inventory_update.compat.ae2.AE2Bootstrap", "initializeCommon")));
         bus.addListener((FMLClientSetupEvent event) -> event.enqueueWork(CompatibilityBootstrap::initializeClient));
         com.salts_inventory_update.compat.sophisticated.SophisticatedCompatBootstrap.initialize(bus);
+        com.salts_inventory_update.compat.curios.CuriosCompatBootstrap.initialize(bus);
     }
 }

@@ -1,0 +1,22 @@
+[
+  {
+    "nativeScreenshot": "compatibility/versions/26.3/neoforge/build/runtime-smoke/curios-controls-fix/screenshots/2026-10-23_00.43.05.png",
+    "image": "output/screenshots/curios-controls-fix-26.3-neoforge/rightmost-visibility-control.png",
+    "sha256": "0e1e377b99661abd36074be43f9089c75b17915970a724353bb638bf4adf15a7"
+  },
+  {
+    "nativeScreenshot": "compatibility/versions/26.3/neoforge/build/runtime-smoke/curios-controls-fix/screenshots/2026-10-23_00.46.04.png",
+    "image": "output/screenshots/curios-controls-fix-26.3-neoforge/scrolling-visibility-controls.png",
+    "sha256": "5221b2695827dce3dee054e939e752559fe4b37b7c707251d189eca1a631e97b"
+  },
+  {
+    "nativeScreenshot": "compatibility/versions/26.3/neoforge/build/runtime-smoke/curios-controls-fix/screenshots/2026-10-23_00.48.35.png",
+    "image": "output/screenshots/curios-controls-fix-26.3-neoforge/equipment-controls.png",
+    "sha256": "85f4d8420e8b48293fba32a37da1e0db289471b633925eadbb0ac3a54e0c8fee"
+  },
+  {
+    "nativeScreenshot": "compatibility/versions/26.3/neoforge/build/runtime-smoke/curios-controls-fix/screenshots/2026-10-23_00.53.11.png",
+    "image": "output/screenshots/curios-controls-fix-26.3-neoforge/final-build-equipment.png",
+    "sha256": "cd3bde59193e36dbfaa1ecb9c3e14b114e84ae30cd7e372d47aff7adb6fc3ea6"
+  }
+]

@@ -25,6 +25,9 @@ def prepare(mc,loader,scenario,output,extra_projects=()):
     queue=[]
     for name in names:
         record=target['integrations'].get(name)
+        if name=='spatial-gui':
+            pin=next(t for t in json.loads((ROOT/'gradle/spatial-gui-targets.json').read_text())['targets'] if t['minecraft']==mc and t['loader']==loader)
+            record={**pin,'available':True}
         if record is None:
             version=next((v for v in get_json('project/'+name+'/version') if mc in v['game_versions'] and loader in v['loaders']),None)
             if version is None: raise ValueError(f'No upstream release for {mc}/{loader}/{name}')
@@ -52,7 +55,7 @@ def prepare(mc,loader,scenario,output,extra_projects=()):
         meta=None
         if loader=='fabric':
             with zipfile.ZipFile(io.BytesIO(data)) as archive:
-                if 'fabric.mod.json' in archive.namelist(): meta=json.loads(archive.read('fabric.mod.json'))
+                if 'fabric.mod.json' in archive.namelist(): meta=json.loads(archive.read('fabric.mod.json'),strict=False)
             if meta and meta['id'] in seen_mods:return
             if meta:seen_mods.add(meta['id'])
         seen[digest]=True
@@ -64,7 +67,7 @@ def prepare(mc,loader,scenario,output,extra_projects=()):
         if loader=='fabric':
             with zipfile.ZipFile(io.BytesIO(data)) as archive:
                 if 'fabric.mod.json' in archive.namelist():
-                    meta=json.loads(archive.read('fabric.mod.json'))
+                    meta=json.loads(archive.read('fabric.mod.json'),strict=False)
                     for nested in meta.get('jars',[]):pending.append((archive.read(nested['file']),Path(nested['file']).name))
     for project,version in selected.items():
         primary=next((f for f in version['files'] if f['primary']),version['files'][0])
@@ -80,7 +83,11 @@ def prepare(mc,loader,scenario,output,extra_projects=()):
         data,filename=pending.pop(0)
         register(data,filename)
     output.parent.mkdir(parents=True,exist_ok=True)
-    report={'minecraft':mc,'loader':loader,'scenario':scenario,'artifacts':artifacts,'runtime':target.get('qa_runtime',{}),
+    runtime=dict(target.get('qa_runtime',{}))
+    if 'spatial-gui' in names:
+        if loader=='fabric':runtime['fabric_loader']='0.19.5'
+        if loader=='neoforge' and mc=='1.21.1':runtime['neoforge']='21.1.240'
+    report={'minecraft':mc,'loader':loader,'scenario':scenario,'artifacts':artifacts,'runtime':runtime,
             'versions':[{'project_id':project,'version_id':v['id'],'version':v['version_number']} for project,v in selected.items()]}
     output.write_text(json.dumps(report,indent=2)+'\n')
     print(f'Prepared {len(selected)} pinned upstream mods and {len(artifacts)} native/library artifacts: {output}')

@@ -1,0 +1,13 @@
+modLoader = "javafml"
+loaderVersion = "[12,13)"
+license = "All Rights Reserved"
+[[mods]]
+modId = "salts_curios_qa"
+version = "1"
+displayName = "Curios focused capacity QA"
+[[dependencies.salts_curios_qa]]
+modId = "salts_inventory_compat"
+type = "required"
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"

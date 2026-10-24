@@ -264,9 +264,9 @@ public final class NeoForgeClientPlatform {
             Field screenField = minecraftScreenField();
             if (screenField != null) {
                 Object screen = screenField.get(minecraft);
-                if (screen instanceof Screen typed) {
-                    return typed;
-                }
+                // A present legacy field may legitimately be null while playing.
+                // Only versions without that field need the newer Gui accessor.
+                return screen instanceof Screen typed ? typed : null;
             }
 
             Field guiField = minecraftGuiField();

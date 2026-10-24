@@ -20,4 +20,10 @@ public abstract class FeatureLayoutViewportProbeMixin {
             QaNativeGuideProbe.layoutWidth = width; QaNativeGuideProbe.layoutHeight = height; QaNativeGuideProbe.layoutFrames++;
         }
     }
+    @Inject(method = "animatedLayout", at = @At("RETURN"), remap = false)
+    private void observeFirstDisabledFrame(int width, int height, CallbackInfoReturnable<WorkspaceLayout<UUID>> callback) {
+        if (Minecraft.getInstance().gui.screen() instanceof RadialInventoryScreen) {
+            QaNativeGuideProbe.animationFrame((SaltsControlifyClient) (Object) this, width, height, callback.getReturnValue());
+        }
+    }
 }

@@ -261,6 +261,9 @@ foreach ($version in $versions) {
 
     $fabricRoot = Join-Path $RepoRoot "versions\$version\fabric\src\main\java\com\salts_inventory_update"
     $client = Join-Path $fabricRoot 'client\InventoryDesktopScreen.java'
+    Assert-Contains -Path $client -Text 'this.clampWindowIntoDesktop(this.movingWindow, 0);' -Label "$version drag keeps the full visual window inside all four edges"
+    Assert-NotContains -Path $client -Text 'this.desktopHeight() - TOP_BAR_HEIGHT));' -Label "$version no title-only bottom boundary"
+    Assert-Matches -Path $client -Pattern '(?s)protected void init\(\).{0,400}clampInitialWindowSize\(window\).{0,700}clampWindowIntoDesktop\(window, 0\)' -Label "$version viewport changes recover full window bounds"
     $server = Join-Path $fabricRoot 'server\DesktopContainerSessions.java'
     $packets = Join-Path $fabricRoot 'network\DesktopPackets.java'
     $windowedClient = Join-Path $fabricRoot 'client\WindowedInventoryClient.java'
@@ -440,15 +443,26 @@ Assert-Matches -Path $hotbarClient -Pattern '(?s)private int minResizableWidth\(
 Assert-Contains -Path $hotbarClient -Text 'int reservedHeight = inventoryHotbarReservedHeight(window);' -Label "$version inventory grid layout reserves hotbar row"
 
 Assert-JavaMethodMatches -Path $hotbarClient -SignaturePattern 'private static boolean workspaceInventoryHud\(\)' -Pattern 'return\s+singleton\s*!=\s*null\s*&&\s*singleton\.workspaceHud\s*&&\s*singleton\.externallyPresented\(\)\s*\|\|\s*SaltsInventoryConfig\.get\(\)\.returnHotbarToInventory\s*;' -Label "$version workspace inventory HUD retains the return-hotbar config fallback"
-Assert-JavaMethodMatches -Path $hotbarClient -SignaturePattern 'private void renderCharacterWindow\([^)]*\)' -Pattern 'if\s*\(workspaceInventoryHud\(\)\)\s*\{\s*Slot offhand\s*=\s*offhandSlot\(menu\);\s*if\s*\(offhand\s*!=\s*null\)' -Label "$version character window conditionally renders offhand"
-Assert-JavaMethodMatches -Path $hotbarClient -SignaturePattern 'private @Nullable SlotHit characterOffhandSlotAt\([^)]*\)' -Pattern '(?s)\A\s*if\s*\(!workspaceInventoryHud\(\)\)\s*\{\s*return null;\s*\}.*?Slot slot\s*=\s*offhandSlot\(playerMenu\);' -Label "$version character offhand hit helper is conditional"
+if ($version -in @('1.20.1', '1.21.1')) {
+    Assert-JavaMethodMatches -Path $hotbarClient -SignaturePattern 'private boolean characterShowsOffhand\([^)]*\)' -Pattern 'return\s+workspaceInventoryHud\(\)\s*\|\|\s*window\.builtinAttachments\.stream\(\)\.anyMatch\(a -> a\.requestsBuiltinSlot\(45\)\);' -Label "$version character offhand allows the public attachment request alongside the config"
+    $characterOffhandGate = 'this\.characterShowsOffhand\(window\)'
+} else {
+    $characterOffhandGate = 'workspaceInventoryHud\(\)'
+}
+Assert-JavaMethodMatches -Path $hotbarClient -SignaturePattern 'private void renderCharacterWindow\([^)]*\)' -Pattern "if\s*\($characterOffhandGate\)\s*\{\s*Slot offhand\s*=\s*offhandSlot\(menu\);\s*if\s*\(offhand\s*!=\s*null\)" -Label "$version character window conditionally renders offhand"
+Assert-JavaMethodMatches -Path $hotbarClient -SignaturePattern 'private @Nullable SlotHit characterOffhandSlotAt\([^)]*\)' -Pattern "(?s)\A\s*if\s*\(!$characterOffhandGate\)\s*\{\s*return null;\s*\}.*?Slot slot\s*=\s*offhandSlot\(playerMenu\);" -Label "$version character offhand hit helper follows the render gate"
 Assert-Contains -Path $hotbarClient -Text 'SlotHit offhandHit = screen.characterOffhandSlotAt(this, mouseX, mouseY);' -Label "$version character window hits offhand"
-Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_MODEL_SLOT_GAP = CHARACTER_MODEL_X - (CHARACTER_ARMOR_X - 1 + SLOT_SIZE);' -Label "$version character offhand mirrors armor-model frame gap"
-Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_OFFHAND_X = CHARACTER_MODEL_X + CHARACTER_MODEL_WIDTH + CHARACTER_MODEL_SLOT_GAP + 1;' -Label "$version character offhand uses mirrored frame gap"
-Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_CRAFT_VERTICAL_OFFSET = 6;' -Label "$version character crafting group downward offset"
-Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_CRAFT_Y = 22 + CHARACTER_CRAFT_VERTICAL_OFFSET;' -Label "$version character crafting grid applies shared offset"
-Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_CRAFT_ARROW_Y = 31 + CHARACTER_CRAFT_VERTICAL_OFFSET;' -Label "$version character crafting arrow applies shared offset"
-Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_CRAFT_RESULT_Y = 31 + CHARACTER_CRAFT_VERTICAL_OFFSET;' -Label "$version character crafting result and recipe button apply shared offset"
+Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_WINDOW_WIDTH = 176;' -Label "$version character uses vanilla inventory width"
+Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_BOTTOM_PADDING = 4;' -Label "$version character leaves a bottom margin"
+Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_WINDOW_HEIGHT = TOP_BAR_HEIGHT + 82 + CHARACTER_BOTTOM_PADDING;' -Label "$version character trims removed stats area"
+Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_OFFHAND_X = 77;' -Label "$version character offhand uses vanilla X"
+Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_OFFHAND_Y = 62;' -Label "$version character offhand uses vanilla Y"
+Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_CRAFT_X = 98;' -Label "$version character crafting grid uses vanilla X"
+Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_CRAFT_Y = 18;' -Label "$version character crafting grid uses vanilla Y"
+Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_CRAFT_RESULT_X = 154;' -Label "$version character result uses vanilla X"
+Assert-Contains -Path $hotbarClient -Text 'private static final int CHARACTER_CRAFT_RESULT_Y = 28;' -Label "$version character result uses vanilla Y"
+Assert-Contains -Path $hotbarClient -Text 'textures/gui/character_crafting_arrow.png' -Label "$version character uses editable compact arrow"
+Assert-NotContains -Path $hotbarClient -Text 'renderCharacterStats(' -Label "$version character removes stats text"
 
 Assert-JavaMethodMatches -Path $hotbarClient -SignaturePattern 'private static int creativeWindowHeight\(\)' -Pattern 'int hotbarHeight\s*=\s*workspaceInventoryHud\(\)\s*\?\s*INVENTORY_HOTBAR_RESERVED_HEIGHT\s*:\s*0;\s*return TOP_BAR_HEIGHT\s*\+\s*CREATIVE_CONTENT_MARGIN\s*\*\s*2\s*\+\s*CREATIVE_CONTENT_HEIGHT\s*\+\s*hotbarHeight;' -Label "$version creative window conditionally reserves hotbar footer"
 Assert-Matches -Path $hotbarClient -Pattern '(?s)else if \(kind == WindowKind\.CREATIVE\).{0,500}creativeWindowWidth\(\).{0,200}creativeWindowHeight\(\)' -Label "$version new creative window uses hotbar-aware fixed size"
@@ -471,8 +485,8 @@ Assert-Matches -Path $hotbarClient -Pattern '(?s)private void renderCreativeInve
 Assert-Matches -Path $hotbarClient -Pattern '(?s)private @Nullable InventoryIncreaseButtonRect creativeIncreaseInventoryButtonRect\([^)]*\).{0,1200}creativeInventoryGridLayout\(\).{0,500}buttonIndex - window\.creativeScrollRow \* CREATIVE_GRID_COLUMNS' -Label "$version creative expansion button follows the inventory scroll viewport"
 
 Assert-Matches -Path $hotbarClient -Pattern '(?s)(?:usesInventoryWindowHotbar\(\).{0,500}renderDesktopHotbarAffordances|renderDesktopHotbarAffordances.{0,500}usesInventoryWindowHotbar\(\))' -Label "$version desktop HUD hotbar affordances gated"
-Assert-Matches -Path $hotbarClient -Pattern '(?s)(?:usesInventoryWindowHotbar\(\).{0,700}hotbarSlotAt|hotbarSlotAt.{0,700}usesInventoryWindowHotbar\(\))' -Label "$version desktop HUD hotbar hits gated"
-Assert-Matches -Path $hotbarClient -Pattern '(?s)(?:usesInventoryWindowHotbar\(\).{0,700}offhandSlotAt|offhandSlotAt.{0,700}usesInventoryWindowHotbar\(\))' -Label "$version desktop HUD offhand hits gated"
+Assert-Matches -Path $hotbarClient -Pattern '(?s)private @Nullable SlotHit detachedHudSlotAt\(.{0,160}usesInventoryWindowHotbar\(\).{0,60}return null' -Label "$version detached HUD hotbar/offhand hits gated together"
+Assert-Matches -Path $hotbarClient -Pattern '(?s)private @Nullable Slot detachedHudSlot\(.{0,160}DesktopHudSlot.Kind.OFFHAND.{0,60}this.offhandSlot\(\)' -Label "$version detached HUD slot adapter retains offhand routing"
 }
 
 $rootBuildScript = Join-Path $RepoRoot 'build.gradle.kts'
@@ -650,6 +664,7 @@ $serializedMutationPayloads = @(
     'DesktopDragSlotsPayload',
     'DesktopPickupAllPayload',
     'DesktopSortWindowsPayload',
+    'DesktopSortInventoryPayload',
     'DesktopQuickMoveAllPayload',
     'DesktopBundleSelectPayload',
     'DesktopQuickMovePayload',
@@ -670,7 +685,7 @@ foreach ($mutationPayload in $serializedMutationPayloads) {
 }
 Assert-Matches -Path $desktopContainerClient -Pattern '(?s)private static boolean queueMutation\(.{0,1500}inFlightMutation != null.{0,1800}queued\.factory\(\)\.create\(mutationId\).{0,1500}nextMutationId = mutationId' -Label '26.2 client serializes shared-cursor mutations with dispatch-time packet construction'
 Assert-Matches -Path $desktopContainerClient -Pattern '(?s)queueMutation\("click".{0,500}SessionAuth auth = sessionAuth\(sessionId\);.{0,250}ItemStack carried = currentClientCarried\(\);.{0,500}auth\.stateId\(\)' -Label '26.2 queued clicks resolve current authentication, state, and carried stack at dispatch'
-Assert-Count -Path $desktopContainerClient -Text 'queueMutation("' -Expected 16 -Label '26.2 routes item, menu, crafting, and cooking mutations through one global client lane'
+Assert-Count -Path $desktopContainerClient -Text 'queueMutation("' -Expected ($serializedMutationPayloads.Count - 1) -Label '26.2 routes item, menu, crafting, and cooking mutations through one global client lane'
 Assert-JavaMethodMatches -Path $desktopContainerClient -SignaturePattern 'private static boolean queueRecipeHover\(int session, long epoch, int action, int recipeIndex\)' -Pattern '(?s)return queueMutation\(label, Set\.of\(session\), mutationId ->\s*\{.*new DesktopPackets\.DesktopRecipeHoverPayload\(CONNECTION\.connectionNonce\(\), mutationId, playerSessionToken,' -Label '26.2 recipe hover mutations share the authenticated global client lane'
 Assert-JavaMethodMatches -Path $desktopInventoryScreen -SignaturePattern 'private QuickMoveTarget quickMoveTarget\(SlotHit hit\)' -Pattern 'if\s*\(focusedWindow\s*!=\s*null\s*&&\s*focusedWindow\.kind\s*==\s*WindowKind\.CONTAINER\s*&&\s*focusedWindow\.session\s*!=\s*null\s*&&\s*this\.sessions\.contains\(focusedWindow\.session\)\s*&&\s*!focusedWindow\.persistentHidden\s*&&\s*focusedWindow\.session\.sessionId\(\)\s*!=\s*hit\.sessionId\(\)\)\s*\{\s*targetKind\s*=\s*DesktopPackets\.QUICK_TARGET_SESSION;\s*targetSessionId\s*=\s*focusedWindow\.session\.sessionId\(\);' -Label '26.2 cross-window quick moves target only registered visible focused sessions'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)private void applyDragDistribution\((?:(?!\r?\n    private).)*List<DesktopContainerClient\.SlotTarget> targets = slots\.stream\(\)(?:(?!\r?\n    private).)*DesktopContainerClient\.dragSlots\(drag\.quickCraftType\(\), targets\)' -Label '26.2 non-legacy mixed-window drags use one authenticated cross-session batch'
@@ -684,7 +699,7 @@ Assert-Matches -Path $desktopContainerClient -Pattern '(?s)public static boolean
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)private void selectBundleItem\(.{0,900}if \(!sent\).{0,700}else \{.{0,300}BundleItem\.toggleSelectedItem' -Label '26.2 optimistic bundle selection occurs only after its mutation intent is accepted'
 Assert-Matches -Path $desktopContainerClient -Pattern '(?s)acceptMutationAck\(DesktopMutationAckPayload payload\).{0,500}CAP_MULTI_MENU_GESTURES.{0,300}payload\.playerSessionToken\(\) != playerSessionToken.{0,1200}payload\.mutationId\(\) != inFlight\.mutationId\(\).{0,900}dispatchNextMutation\(\)' -Label '26.2 client validates mutation acknowledgement nonce, token, id, and ordering'
 Assert-Matches -Path $desktopContainerClient -Pattern '(?s)MUTATION_TIMEOUT_NANOS.{0,40000}markTimedOut\(\);.{0,200}discardPendingMutations\("ack-timeout"\);.{0,200}mutationQueueBlocked = true' -Label '26.2 mutation timeout fails closed while allowing a late acknowledgement to recover'
-Assert-Count -Path $desktopContainerSessions -Text 'context.player(), payload.connectionNonce(), payload.playerSessionToken(), payload.mutationId()' -Expected 16 -Label '26.2 wraps direct item, menu, crafting, and cooking receivers in the serialized server lane'
+Assert-Count -Path $desktopContainerSessions -Text 'context.player(), payload.connectionNonce(), payload.playerSessionToken(), payload.mutationId()' -Expected ($serializedMutationPayloads.Count - 1) -Label '26.2 wraps direct item, menu, crafting, and cooking receivers in the serialized server lane'
 Assert-Matches -Path $desktopPackets -Pattern 'record DesktopCraftStackToWindowPayload\(DesktopCraftToWindowPayload request\)' -Label '26.2 stack crafting reuses the authenticated single-craft request'
 Assert-Contains -Path $desktopContainerSessions -Text 'context.player(), payload.request().connectionNonce(), payload.request().playerSessionToken(), payload.request().mutationId(), "craft-stack-to-window"' -Label '26.2 stack crafting retains request authentication in the serialized server lane'
 Assert-JavaMethodMatches -Path $desktopContainerSessions -SignaturePattern 'private static void handleRecipeHoverMutation\(ServerPlayer player, DesktopPackets\.DesktopRecipeHoverPayload payload\)' -Pattern 'handleMutation\(player, payload\.connectionNonce\(\), payload\.playerSessionToken\(\), payload\.mutationId\(\),' -Label '26.2 recipe hover authenticates and orders mutations through the serialized server lane'
@@ -869,7 +884,7 @@ $mixinLevels = @{
     '26.2' = 'JAVA_25'
     '26.3' = 'JAVA_25'
 }
-$canonicalHotbarDescription = 'Places the hotbar below the player inventory and creative windows and the offhand slot in the character window. The normal HUD hotbar is hidden while any Salt window is open.'
+$canonicalHotbarDescription = 'Places the hotbar below the player inventory and creative windows and the offhand slot in the character window. The normal HUD hotbar and its indicators hide while Salt windows are open. Window Movement Control temporarily shows them and allows hotbar selection; otherwise wheel and hotbar keys cannot change the selected slot.'
 foreach ($version in $versions) {
     $commonResources = Join-Path $RepoRoot "versions\$version\common\src\main\resources"
     Assert-Contains -Path (Join-Path $commonResources 'pack.mcmeta') -Text "`"pack_format`": $($packFormats[$version])" -Label "$version exact pack format"
@@ -892,6 +907,13 @@ foreach ($version in $versions) {
     if ((Assert-File -Path $mixinConfigPath -Label "$version mixin config") -and (Test-Path -LiteralPath $mixinRoot -PathType Container)) {
         $mixinConfig = Get-Content -LiteralPath $mixinConfigPath -Raw | ConvertFrom-Json
         $registeredMixins = @($mixinConfig.mixins) + @($mixinConfig.client) + @($mixinConfig.server)
+        # Fabric-only native HUD hooks deliberately live outside the shared loader config.
+        $fabricHudConfigPath = Join-Path $RepoRoot "versions\$version\fabric\src\main\resources\salts_inventory_update.fabric-hud.mixins.json"
+        if (Assert-File -Path $fabricHudConfigPath -Label "$version Fabric HUD mixin config") {
+            $fabricHudConfig = Get-Content -LiteralPath $fabricHudConfigPath -Raw | ConvertFrom-Json
+            $registeredMixins += @($fabricHudConfig.client)
+            Assert-Contains -Path (Join-Path $RepoRoot "versions\$version\fabric\src\main\resources\fabric.mod.json") -Text '${mod_id}.fabric-hud.mixins.json' -Label "$version Fabric metadata registers its separate HUD hooks"
+        }
         $declaredMixins = Get-ChildItem -LiteralPath $mixinRoot -Recurse -Filter '*.java' -File |
             Where-Object { (Get-Content -LiteralPath $_.FullName -Raw).Contains('@Mixin') } |
             ForEach-Object {
@@ -999,7 +1021,8 @@ foreach ($version in $versions) {
 }
 
 # Sort-to-open-containers must remain available on every supported version/loader.
-$sortAtlasReference = Join-Path $RepoRoot 'versions\26.2\common\src\main\resources\assets\salts_inventory_update\textures\gui\window_controls.png'
+$sortAtlasReference = Join-Path $RepoRoot 'artwork\shared-resources\core\assets\salts_inventory_update\textures\gui\window_controls.png'
+Assert-File -Path $sortAtlasReference -Label 'Shared sort control atlas' | Out-Null
 foreach ($version in $versions) {
     $sortRoot = Join-Path $RepoRoot "versions\$version\fabric\src\main\java\com\salts_inventory_update"
     $sortScreen = Join-Path $sortRoot 'client\InventoryDesktopScreen.java'
@@ -1026,12 +1049,8 @@ foreach ($version in $versions) {
     Assert-Contains -Path $sortLang -Text '"Sort into open containers"' -Label "$version normal sort tooltip"
     Assert-Contains -Path $sortLang -Text '"Force sort into open containers"' -Label "$version Shift sort tooltip"
     $sortAtlas = Join-Path $RepoRoot "versions\$version\common\src\main\resources\assets\salts_inventory_update\textures\gui\window_controls.png"
-    if (Assert-File -Path $sortAtlas -Label "$version sort atlas") {
-        if ((Get-Sha256 -Path $sortAtlas) -ne (Get-Sha256 -Path $sortAtlasReference)) {
-            Add-Failure "$version sort atlas differs from the 26.2 reference"
-        } else {
-            Write-Host "PASS $version sort atlas matches 26.2" -ForegroundColor Green
-        }
+    if (Test-Path -LiteralPath $sortAtlas) {
+        Add-Failure "$version contains a duplicate sort atlas; edit artwork/shared-resources/core instead"
     }
     if ($version -ne '26.3') {
         $sortLoader = if ($version -eq '1.20.1') { 'forge' } else { 'neoforge' }

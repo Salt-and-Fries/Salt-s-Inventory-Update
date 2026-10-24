@@ -54,25 +54,7 @@ public final class SophisticatedBackpacksCompat {
     }
 
     public static void initializeClient() {
-        MenuType<BackpackContainer> backpack = ModItems.BACKPACK_CONTAINER_TYPE.get();
-        MenuType<BackpackSettingsContainerMenu> settings = ModItems.SETTINGS_CONTAINER_TYPE.get();
-        DesktopMenuFactories.register(backpack, (minecraft, player, containerId, data) ->
-            fromOpeningData(minecraft, data, buffer -> BackpackContainer.fromBuffer(containerId, player.getInventory(), buffer))
-        );
-        DesktopMenuFactories.register(settings, (minecraft, player, containerId, data) ->
-            fromOpeningData(minecraft, data, buffer -> BackpackSettingsContainerMenu.fromBuffer(containerId, player.getInventory(), buffer))
-        );
-        DesktopClientApi.registerWindow(
-            backpack,
-            new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.STANDARD, BackpackScreen::constructScreen)
-        );
-        DesktopClientApi.registerWindow(
-            settings,
-            new SophisticatedHostedScreenDefinition<>(
-                SophisticatedHostedScreenDefinition.LayoutKind.SETTINGS,
-                (menu, inventory, title) -> BackpackSettingsScreen.constructScreen(menu, inventory, title)
-            )
-        );
+        ClientRegistration.initialize();
     }
 
     private static String backpackSource(byte[] openingData) {
@@ -84,21 +66,45 @@ public final class SophisticatedBackpacksCompat {
         }
     }
 
-    private static AbstractContainerMenu fromOpeningData(
-        net.minecraft.client.Minecraft minecraft,
-        byte[] data,
-        java.util.function.Function<FriendlyByteBuf, AbstractContainerMenu> factory
-    ) {
-        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(data));
-        try {
-            AbstractContainerMenu menu = factory.apply(buffer);
-            if (buffer.isReadable()) {
-                throw new IllegalArgumentException("Trailing backpack opening data: " + buffer.readableBytes());
+    /** Keep screen types out of common-side reflective method resolution. */
+    private static final class ClientRegistration {
+        private static void initialize() {
+            MenuType<BackpackContainer> backpack = ModItems.BACKPACK_CONTAINER_TYPE.get();
+            MenuType<BackpackSettingsContainerMenu> settings = ModItems.SETTINGS_CONTAINER_TYPE.get();
+            DesktopMenuFactories.register(backpack, (minecraft, player, containerId, data) ->
+                fromOpeningData(minecraft, data, buffer -> BackpackContainer.fromBuffer(containerId, player.getInventory(), buffer))
+            );
+            DesktopMenuFactories.register(settings, (minecraft, player, containerId, data) ->
+                fromOpeningData(minecraft, data, buffer -> BackpackSettingsContainerMenu.fromBuffer(containerId, player.getInventory(), buffer))
+            );
+            DesktopClientApi.registerWindow(
+                backpack,
+                new SophisticatedHostedScreenDefinition<>(SophisticatedHostedScreenDefinition.LayoutKind.STANDARD, BackpackScreen::constructScreen)
+            );
+            DesktopClientApi.registerWindow(
+                settings,
+                new SophisticatedHostedScreenDefinition<>(
+                    SophisticatedHostedScreenDefinition.LayoutKind.SETTINGS,
+                    (menu, inventory, title) -> BackpackSettingsScreen.constructScreen(menu, inventory, title)
+                )
+            );
+        }
+
+        private static AbstractContainerMenu fromOpeningData(
+            net.minecraft.client.Minecraft minecraft,
+            byte[] data,
+            java.util.function.Function<FriendlyByteBuf, AbstractContainerMenu> factory
+        ) {
+            FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(data));
+            try {
+                AbstractContainerMenu menu = factory.apply(buffer);
+                if (buffer.isReadable()) {
+                    throw new IllegalArgumentException("Trailing backpack opening data: " + buffer.readableBytes());
+                }
+                return menu;
+            } finally {
+                buffer.release();
             }
-            return menu;
-        } finally {
-            buffer.release();
         }
     }
-
 }

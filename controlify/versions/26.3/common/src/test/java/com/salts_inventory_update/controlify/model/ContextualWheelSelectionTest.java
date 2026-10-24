@@ -130,7 +130,7 @@ final class ContextualWheelSelectionTest {
         var folder = java.nio.file.Path.of("").toAbsolutePath();
         java.nio.file.Path texture = null;
         while (folder != null) {
-            var candidate = folder.resolve("controlify/versions/26.3/common/src/main/resources/assets/salts_inventory_controlify/textures/gui/contextual/wheel/carousel_opening.png");
+            var candidate = folder.resolve("artwork/shared-resources/controlify/assets/salts_inventory_controlify/textures/gui/contextual/wheel/carousel_opening.png");
             if (java.nio.file.Files.isRegularFile(candidate)) { texture = candidate; break; }
             folder = folder.getParent();
         }

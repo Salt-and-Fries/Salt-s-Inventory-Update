@@ -16,6 +16,9 @@ import net.minecraft.world.item.ItemStack;
 
 /** Shared slot/source/gesture bindings. Register once from a common integration provider. */
 public final class DesktopMenuBindings {
+    /** Bounded menu capacity accepted by the desktop protocol. */
+    public static int maxMenuSlots() { return com.salts_inventory_update.protocol.DesktopProtocol.MAX_OPEN_SESSION_ITEMS; }
+
     private static final Map<MenuType<?>, Access> ACCESS = new LinkedHashMap<>();
 
     /** Declares slots eligible for storage sorting on both client and server. */

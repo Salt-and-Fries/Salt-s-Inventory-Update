@@ -1493,16 +1493,29 @@ public final class ControlifyGameplayHarness {
             guideClosedBounds = owner.desktop().presentationBounds(owner.model().character());
             var toggle = owner.desktop().visibleControls(owner.model().character()).getFirst();
             verifyControlSnaps(owner.model().character(), "closed-guide-toggle");
-            // The result slot is a real neighboring controller target above the native toggle.
-            // Its decorative offset must not prevent moving down into that control.
+            // Vanilla-style Character layout puts the lower crafting slot between
+            // the result and recipe-book control. Verify both actual D-pad hops.
             setDpadExpected(owner.model().character(), toggle);
             pointAtNativeSlot(owner.model().character(), slot -> slot.index == 0);
         }, 2);
+        nativeCursorNeutralReady("native-DPAD-selects-lower-crafting-slot", () ->
+            pointAtNativeSlot(owner.model().character(), slot -> slot.index == 0));
+        add("native-DPAD-selects-lower-crafting-slot-press", () -> {
+            creativeNavigationDispatchBefore = QaFeatureProbe.navigationRequests;
+            driver.buttons.add(GamepadInputs.DPAD_DOWN_BUTTON);
+        }, () -> QaFeatureProbe.navigationRequests > creativeNavigationDispatchBefore,
+            () -> driver.buttons.remove(GamepadInputs.DPAD_DOWN_BUTTON), 0);
+        add("native-DPAD-selects-lower-crafting-slot", () -> driver.buttons.remove(GamepadInputs.DPAD_DOWN_BUTTON),
+            () -> true, () -> {
+                Slot hovered = ((RadialInventoryScreen) mc.screen).controllerHoveredSlot();
+                check("native-DPAD-result-to-lower-crafting-slot", hovered != null && hovered.index == 4);
+            }, 3);
         nativeCursorNeutralReady("native-DPAD-selects-crafting-guide-toggle", () -> {
             var toggle = owner.desktop().visibleControls(owner.model().character()).getFirst();
             setDpadExpected(owner.model().character(), toggle);
-            pointAtNativeSlot(owner.model().character(), slot -> slot.index == 0);
-            record("guide-native-result-source-before-DPAD", "OBSERVED", dpadDiagnostics());
+            Slot hovered = ((RadialInventoryScreen) mc.screen).controllerHoveredSlot();
+            check("native-DPAD-guide-source-remains-lower-crafting-slot", hovered != null && hovered.index == 4);
+            record("guide-native-grid-source-before-DPAD", "OBSERVED", dpadDiagnostics());
         });
         add("native-DPAD-selects-crafting-guide-toggle-press", () -> {
             creativeNavigationDispatchBefore = QaFeatureProbe.navigationRequests;

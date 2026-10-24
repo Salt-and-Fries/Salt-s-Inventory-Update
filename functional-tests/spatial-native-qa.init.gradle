@@ -1,0 +1,33 @@
+// QA-only source-classpath launch for Forge/NeoForge. Release builds never apply this script.
+gradle.projectsEvaluated {
+    def root=gradle.rootProject
+    def mc=root.providers.gradleProperty('qaMinecraft').get()
+    def loader=root.providers.gradleProperty('qaLoader').get()
+    def target=root.project(":${mc}:${loader}")
+    def generated=target.layout.buildDirectory.dir('generated/spatial-qa')
+    def prepare=target.tasks.register('prepareSpatialQa',Exec) {
+        inputs.files(root.fileTree('functional-tests/spatial-java'),root.file('tools/generate-spatial-qa.py'),root.file('functional-tests/spatial-resources/salts_spatial_qa.mixins.json'))
+        inputs.property('minecraft',mc);inputs.property('loader',loader)
+        outputs.dir(generated)
+        commandLine('python',root.file('tools/generate-spatial-qa.py'),'--minecraft',mc,'--loader',loader,'--output',generated.get().asFile)
+    }
+    target.sourceSets.main.java.srcDir(generated.map{it.dir('java')})
+    target.sourceSets.main.resources.srcDir(generated.map{it.dir('resources')})
+    target.tasks.named('compileJava').configure{dependsOn(prepare)}
+    target.tasks.named('processResources').configure {
+        dependsOn(prepare)
+        filesMatching('META-INF/*mods.toml') {
+            filter{line->line.startsWith('license =')?line+'\n[[mixins]]\nconfig = "salts_spatial_qa.mixins.json"':line}
+        }
+    }
+    if(loader=='forge') {
+        def mixins=target.extensions.findByName('mixin')
+        mixins.config('salts_spatial_qa.mixins.json')
+        target.tasks.named('jar').configure{manifest.attributes('MixinConfigs':'salts_inventory_update.mixins.json,salts_inventory_update.spatial.mixins.json,salts_spatial_qa.mixins.json')}
+    }
+    target.tasks.named('runClient',JavaExec).configure {
+        environment('SIU_FUNCTIONAL_TESTS','true');environment('SIU_GAMEPLAY_TESTS','true')
+        environment('SIU_QA_SCENARIO','core');environment('SIU_FUNCTIONAL_TEST_LOADER',loader)
+        environment('SIU_QA_OUTPUT',root.file("build/gameplay-qa/spatial-ports/${mc}-${loader}-"+root.providers.gradleProperty('qaRunId').get()).absolutePath)
+    }
+}

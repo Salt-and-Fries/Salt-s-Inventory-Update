@@ -637,6 +637,20 @@ public final class DesktopContainerClient {
         });
     }
 
+    public static boolean canSortInventory() {
+        // Keep protocol 5 backwards compatible: older servers simply do not advertise this channel.
+        return canSortWindows() && canSendType(DesktopPackets.DesktopSortInventoryPayload.TYPE);
+    }
+
+    public static boolean sortInventory(int sessionId) {
+        if (!canSortInventory()) return false;
+        return queueMutation("sort-inventory", Set.of(sessionId), mutationId -> {
+            List<DesktopSessionReference> target = authenticatedSessionReferences(List.of(sessionId));
+            return target == null ? null : new DesktopPackets.DesktopSortInventoryPayload(
+                CONNECTION.connectionNonce(), mutationId, playerSessionToken, target.get(0));
+        });
+    }
+
     public static boolean quickMoveSlots(List<SlotTarget> sources, int targetKind, int targetSessionId) {
         if (targetKind < DesktopPackets.QUICK_TARGET_DEFAULT || targetKind > DesktopPackets.QUICK_TARGET_PLAYER_STORAGE) {
             return false;

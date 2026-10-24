@@ -1,0 +1,14 @@
+// Opt-in menu-only native-loader launch; no gameplay or Spatial GUI probes.
+gradle.projectsEvaluated {
+    def root=gradle.rootProject
+    def mc=root.providers.gradleProperty('qaMinecraft').get()
+    def loader=root.providers.gradleProperty('qaLoader').get()
+    def runId=root.providers.gradleProperty('qaRunId').getOrElse('')
+    def target=root.project(":${mc}:${loader}")
+    target.tasks.named('runClient',JavaExec).configure {
+        environment('SIU_QA_CONFIG_MENU','true')
+        environment('SIU_FUNCTIONAL_TESTS','true')
+        environment('SIU_FUNCTIONAL_TEST_LOADER',loader)
+        environment('SIU_QA_OUTPUT',root.file("build/config-menu-qa/${mc}-${loader}"+(runId ? "-${runId}" : '')).absolutePath)
+    }
+}

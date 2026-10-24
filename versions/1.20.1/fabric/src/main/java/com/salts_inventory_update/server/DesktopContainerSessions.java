@@ -118,6 +118,9 @@ import com.salts_inventory_update.network.DesktopPackets.DesktopDragSlotsPayload
 import com.salts_inventory_update.network.DesktopPackets.DesktopPickupAllPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopQuickMoveAllPayload;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSortWindowsPayload;
+import com.salts_inventory_update.network.DesktopPackets.DesktopSortInventoryPayload;
+import com.salts_inventory_update.internal.desktop.InventorySortPlan;
+import com.salts_inventory_update.internal.desktop.SmartInventoryOrder;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSlotReference;
 import com.salts_inventory_update.network.DesktopPackets.DesktopSessionReference;
 import com.salts_inventory_update.network.DesktopPackets.DesktopCloseSessionPayload;
@@ -148,7 +151,7 @@ import com.salts_inventory_update.protocol.BoundedLinkGraph;
 import com.salts_inventory_update.protocol.TokenBucket;
 
 public final class DesktopContainerSessions {
-    private static final long SUPPORTED_CAPABILITIES = DesktopProtocol.KNOWN_CAPABILITIES | DesktopPackets.CAP_MULTI_MENU_GESTURES | DesktopPackets.CAP_SORT_WINDOWS | DesktopPackets.CAP_CLICK_SEQUENCES;
+    private static final long SUPPORTED_CAPABILITIES = DesktopProtocol.KNOWN_CAPABILITIES | DesktopPackets.CAP_MULTI_MENU_GESTURES | DesktopPackets.CAP_SORT_WINDOWS | DesktopPackets.CAP_CLICK_SEQUENCES | DesktopPackets.CAP_SORT_INVENTORY;
     private static final int MAX_SESSIONS = DesktopProtocol.MAX_DESKTOP_SESSIONS;
     private static final int MAX_SOURCE_GRANTS = DesktopProtocol.MAX_LINK_NODES;
     private static final int MAX_RETAINED_SOURCES = DesktopProtocol.MAX_DORMANT_SOURCES;
@@ -208,6 +211,7 @@ public final class DesktopContainerSessions {
         registerMutation(DesktopClickPayload.TYPE, DesktopClickPayload::new, 0L, DesktopClickPayload::sessionId, null, DesktopContainerSessions::click);
         registerMutation(DesktopDragSlotsPayload.TYPE, DesktopDragSlotsPayload::new, DesktopPackets.CAP_MULTI_MENU_GESTURES, null, null, DesktopContainerSessions::dragSlots);
         registerMutation(DesktopPickupAllPayload.TYPE, DesktopPickupAllPayload::new, DesktopPackets.CAP_MULTI_MENU_GESTURES, null, null, DesktopContainerSessions::pickupAll);
+        registerMutation(DesktopSortInventoryPayload.TYPE, DesktopSortInventoryPayload::new, DesktopPackets.CAP_SORT_WINDOWS | DesktopPackets.CAP_SORT_INVENTORY, null, null, DesktopContainerSessions::sortInventory);
         registerMutation(DesktopSortWindowsPayload.TYPE, DesktopSortWindowsPayload::new, DesktopPackets.CAP_SORT_WINDOWS, null, null, DesktopContainerSessions::sortWindows);
         registerMutation(DesktopQuickMoveAllPayload.TYPE, DesktopQuickMoveAllPayload::new, DesktopPackets.CAP_MULTI_MENU_GESTURES, null, null, DesktopContainerSessions::quickMoveAll);
         registerMutation(DesktopQuickMovePayload.TYPE, DesktopQuickMovePayload::new, 0L, DesktopQuickMovePayload::sourceSessionId, DesktopContainerSessions::quickMoveTargetSession, DesktopContainerSessions::quickMove);
@@ -1046,12 +1050,27 @@ public final class DesktopContainerSessions {
         InventoryExpansion.setTopologyEnabled(player, false);
     }
 
+    /** Revoke stale state immediately, then publish after the native equipment sync. */
+    public static void playerMenuRebuilt(ServerPlayer player) {
+        PlayerSessions sessions = existingSessions(player);
+        if (sessions != null && sessions.isReady()) {
+            player.inventoryMenu.incrementStateId();
+            sessions.playerMenuRebuilt = true;
+        }
+    }
+
     private static void tick(MinecraftServer server) {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             PlayerSessions sessions = existingSessions(player);
             if (sessions != null && (sessions.isReady()
                 || sessions.sessionWorld != null && sessions.sessionWorld != player.level())) {
                 sessions.tick(player);
+                if (sessions.playerMenuRebuilt && sessions.isReady()) {
+                    sessions.playerMenuRebuilt = false;
+                    InventoryExpansion.syncToClient(player);
+                    player.inventoryMenu.broadcastFullState();
+                    syncPlayerMenu(player);
+                }
             }
         }
     }
@@ -1075,7 +1094,7 @@ public final class DesktopContainerSessions {
                 }
                 Slot slot = menu == null ? null : DesktopMenuBindings.slot(menu, ref.slotIndex());
                 Session owner = sessions.sessions.get(ref.sessionId());
-                if (slot == null || !slot.isActive() || DesktopMenuBindings.isVirtualSlot(menu,slot)
+                if (slot == null || !com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(slot) || DesktopMenuBindings.isVirtualSlot(menu,slot)
                     || DesktopItemSourceLocks.isSlotLocked(player,slot)
                     || ref.sessionId() != DesktopPackets.PLAYER_MENU_SESSION && (owner == null || !owner.visibleToClient)) return;
             }
@@ -1160,7 +1179,7 @@ public final class DesktopContainerSessions {
         for (DesktopSlotReference reference : payload.slots()) {
             AbstractContainerMenu menu = authorizedMenu(player, sessions, reference.sessionId(), reference.sessionToken(), reference.stateId());
             Slot slot = menu == null ? null : DesktopMenuBindings.slot(menu, reference.slotIndex());
-            if (slot == null || DesktopItemSourceLocks.isSlotLocked(player, slot) || !slot.isActive()
+            if (slot == null || DesktopItemSourceLocks.isSlotLocked(player, slot) || !com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(slot)
                 || !slot.mayPlace(carried) || !menu.canDragTo(slot) || !DesktopMenuBindings.canQuickCraft(menu, slot, carried)) return;
             Object owner = DesktopMenuBindings.physicalOwner(menu, slot);
             int index = DesktopMenuBindings.physicalIndex(menu, slot);
@@ -1216,7 +1235,7 @@ public final class DesktopContainerSessions {
                 for (Slot slot : slots) {
                     if (carried.getCount() >= carried.getMaxStackSize()) break;
                     ItemStack source = slot.getItem();
-                    if (DesktopItemSourceLocks.isSlotLocked(player, slot) || !slot.isActive() || source.isEmpty()
+                    if (DesktopItemSourceLocks.isSlotLocked(player, slot) || !com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(slot) || source.isEmpty()
                         || !slot.mayPickup(player) || !ItemStack.isSameItemSameTags(carried, source)
                         || !DesktopMenuBindings.allowsPickupAll(menu, carried, slot)) continue;
                     if (pass == 0 && source.getCount() == source.getMaxStackSize()) continue;
@@ -1237,7 +1256,7 @@ public final class DesktopContainerSessions {
         if (!carried.isEmpty()) return carried;
         Slot anchor = DesktopMenuBindings.slot(menu, slotIndex);
         if (button != 0 || anchor == null || !menu.stillValid(player)
-            || !anchor.isActive() || !anchor.hasItem() || !anchor.mayPickup(player)
+            || !com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(anchor) || !anchor.hasItem() || !anchor.mayPickup(player)
             || DesktopItemSourceLocks.isSlotLocked(player, anchor)
             || !DesktopMenuBindings.allowsPickupAllAnchor(menu, anchor.getItem(), anchor)) {
             return ItemStack.EMPTY;
@@ -1249,6 +1268,100 @@ public final class DesktopContainerSessions {
     }
 
     private record SortDestination(SessionAuthorization authorization, List<Slot> slots, List<ItemStack> contents) {}
+
+    private static void sortInventory(ServerPlayer player, DesktopSortInventoryPayload payload) {
+        PlayerSessions sessions = existingSessions(player);
+        if (sessions == null || !sessions.isReady() || player.isSpectator() || !player.inventoryMenu.getCarried().isEmpty()) return;
+        var reference = payload.target();
+        SessionAuthorization target = authorizeSortMenu(player, sessions, reference);
+        if (target == null) return;
+        AbstractContainerMenu menu = target.menu();
+        boolean inventory = target.sessionId() == DesktopPackets.PLAYER_MENU_SESSION;
+        if (!inventory && !DesktopSortSlots.isStorage(menu)) return;
+        List<Slot> candidates = inventory ? mainInventorySlots(player) : containerSlots(menu, player).stream()
+            .filter(slot -> DesktopSortSlots.storageSlot(menu, slot)).toList();
+        IdentityHashMap<Object, Set<Integer>> seen = new IdentityHashMap<>();
+        List<Slot> slots = candidates.stream().filter(slot -> com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(slot)
+            && !DesktopMenuBindings.isVirtualSlot(menu, slot) && slot.mayPickup(player)
+            && !DesktopItemSourceLocks.isSlotLocked(player, slot) && rememberPhysicalSlot(seen, menu, slot)).toList();
+        try {
+            // Creative tab data is common-side and supplies family ordering, never the contents being moved.
+            net.minecraft.world.item.CreativeModeTabs.tryRebuildTabContents(player.level().enabledFeatures(), false, player.level().registryAccess());
+            executeInventorySort(player, sessions, menu, slots, new SmartInventoryOrder().comparator());
+        } catch (RuntimeException failure) {
+            DesktopDebug.warn("inventory sort rolled back: {}", failure.toString());
+        } finally {
+            resyncSortWindows(player, sessions);
+        }
+    }
+
+    private record InventorySortSnapshot(Slot slot, int logicalIndex, Object owner, int physicalIndex, ItemStack before) {}
+
+    private static boolean executeInventorySort(ServerPlayer player, PlayerSessions sessions, AbstractContainerMenu menu,
+                                                List<Slot> slots, Comparator<ItemStack> order) {
+        if (slots.isEmpty() || !player.inventoryMenu.getCarried().isEmpty()) return false;
+        if (DesktopMenuBindings.size(menu) > DesktopProtocol.MAX_OPEN_SESSION_ITEMS) return false;
+        List<InventorySortSnapshot> snapshots = new ArrayList<>();
+        IdentityHashMap<Object, Set<Integer>> seen = new IdentityHashMap<>();
+        for (int i = 0; i < DesktopMenuBindings.size(menu); i++) {
+            Slot slot = DesktopMenuBindings.slot(menu, i);
+            if (slot != null && !DesktopMenuBindings.isVirtualSlot(menu, slot) && rememberPhysicalSlot(seen, menu, slot))
+                snapshots.add(new InventorySortSnapshot(slot, i, DesktopMenuBindings.physicalOwner(menu, slot),
+                    DesktopMenuBindings.physicalIndex(menu, slot), slot.getItem().copy()));
+        }
+        // Validate after every slot callback, including protected slots. Bound the worst-case read work.
+        if ((long) snapshots.size() * (slots.size() + 2) > MAX_QUICK_MOVE_TRANSACTION_WORK) return false;
+        Map<Slot, ItemStack> expected = new IdentityHashMap<>();
+        for (var snapshot : snapshots) expected.put(snapshot.slot(), snapshot.before());
+        try {
+            var proposed = InventorySortPlan.create(slots, order);
+            verifyInventorySort(player, menu, snapshots, expected);
+            if (proposed.isEmpty()) return false;
+            List<ItemStack> contents = proposed.get();
+            for (int i = 0; i < slots.size(); i++) {
+                Slot slot = slots.get(i);
+                ItemStack next = contents.get(i);
+                ItemStack before = expected.get(slot);
+                if (before == null) throw new IllegalStateException("Sort slot is not in the authenticated menu");
+                if (ItemStack.matches(before, next)) continue;
+                if (!com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(slot) || DesktopItemSourceLocks.isSlotLocked(player, slot)
+                    || !slot.mayPickup(player) || !next.isEmpty() && (!slot.mayPlace(next)
+                        || next.getCount() > Math.min(next.getMaxStackSize(), slot.getMaxStackSize(next))))
+                    throw new IllegalStateException("Sort slot permissions changed");
+                expected.put(slot, next);
+                withMenuNetworkSession(player, sessions, menu, () -> slot.setByPlayer(next.copy()));
+                verifyInventorySort(player, menu, snapshots, expected);
+            }
+            return true;
+        } catch (RuntimeException failure) {
+            // Restore the entire menu: a custom slot callback may have changed a protected neighbour.
+            for (var snapshot : snapshots) {
+                try {
+                    if (!matchesPhysicalSlot(menu, snapshot.slot(), snapshot.owner(), snapshot.physicalIndex()))
+                        throw new IllegalStateException("Sort rollback physical slot changed");
+                    if (!ItemStack.matches(snapshot.before(), snapshot.slot().getItem()))
+                        restoreSlot(player, sessions, menu, snapshot.slot(), snapshot.before(), "inventory sort");
+                    expected.put(snapshot.slot(), snapshot.before());
+                } catch (RuntimeException rollback) { failure.addSuppressed(rollback); }
+            }
+            player.inventoryMenu.setCarried(ItemStack.EMPTY);
+            try { verifyInventorySort(player, menu, snapshots, expected); }
+            catch (RuntimeException rollback) { failure.addSuppressed(rollback); }
+            throw failure;
+        }
+    }
+
+    private static void verifyInventorySort(ServerPlayer player, AbstractContainerMenu menu,
+                                            List<InventorySortSnapshot> snapshots, Map<Slot, ItemStack> expected) {
+        if (!menu.stillValid(player) || !player.inventoryMenu.getCarried().isEmpty())
+            throw new IllegalStateException("Sort menu or cursor changed");
+        for (var snapshot : snapshots) {
+            if (DesktopMenuBindings.slot(menu, snapshot.logicalIndex()) != snapshot.slot()
+                || !matchesPhysicalSlot(menu, snapshot.slot(), snapshot.owner(), snapshot.physicalIndex())
+                || !ItemStack.matches(expected.get(snapshot.slot()), snapshot.slot().getItem()))
+                throw new IllegalStateException("Sort snapshot changed during a slot callback");
+        }
+    }
 
     private static void sortWindows(ServerPlayer player, DesktopSortWindowsPayload payload) {
         PlayerSessions sessions = existingSessions(player);
@@ -1275,7 +1388,7 @@ public final class DesktopContainerSessions {
             if (!key.isBlank() && !sourceKeys.add(key)) continue;
             List<Slot> slots = containerSlots(target.menu(), player).stream()
                 .filter(slot -> DesktopSortSlots.storageSlot(target.menu(), slot))
-                .filter(slot -> slot.isActive()).toList();
+                .filter(slot -> com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(slot)).toList();
             if (slots.isEmpty() || slots.stream().anyMatch(slot -> owners.contains(DesktopMenuBindings.physicalOwner(target.menu(), slot)))) continue;
             for (Slot slot : slots) owners.add(DesktopMenuBindings.physicalOwner(target.menu(), slot));
             destinations.add(new SortDestination(target, slots, slots.stream().map(slot -> slot.getItem().copy()).toList()));
@@ -1285,7 +1398,7 @@ public final class DesktopContainerSessions {
         List<ItemStack> snapshots = new ArrayList<>();
         IdentityHashMap<Object, Set<Integer>> seen = new IdentityHashMap<>();
         for (Slot slot : sourceSlots) {
-            if (!slot.hasItem() || !slot.isActive() || !slot.mayPickup(player)
+            if (!slot.hasItem() || !com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(slot) || !slot.mayPickup(player)
                 || DesktopItemSourceLocks.isSlotLocked(player, slot)
                 || !DesktopMenuBindings.allowsTargetedQuickMoveSource(sourceMenu, slot)
                 || DesktopMenuBindings.repeatedQuickMoveLimit(sourceMenu, slot, slot.getItem()) <= 0
@@ -1344,7 +1457,7 @@ public final class DesktopContainerSessions {
             ItemStack current = source.slot.getItem();
             while (index < candidates.size() && batch.size() < 16 && capacity < current.getCount()) {
                 Slot slot = candidates.get(index++);
-                if (!slot.isActive() || !slot.mayPlace(current)) continue;
+                if (!com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(slot) || !slot.mayPlace(current)) continue;
                 int room = slot.getMaxStackSize(current) - slot.getItem().getCount();
                 if (room <= 0) continue;
                 batch.add(slot);
@@ -1746,7 +1859,7 @@ public final class DesktopContainerSessions {
         List<Slot> storage=contextualSources(player,sessions,menu,excluded);
         Map<Slot,ItemStack> changes=new LinkedHashMap<>();for(Slot slot:storage)changes.put(slot,slot.getItem().copy());
         for(Slot slot:owned){
-            if(slot.hasItem()&&(!slot.isActive()||!slot.mayPickup(player)||DesktopItemSourceLocks.isSlotLocked(player,slot)))return false;
+            if(slot.hasItem()&&(!com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(slot)||!slot.mayPickup(player)||DesktopItemSourceLocks.isSlotLocked(player,slot)))return false;
             if(!insertJeiTransferStack(storage,changes,slot.getItem().copy()))return false;
         }
         // Furnace result removal must run its native extraction callback (recipe awards and XP).
@@ -1789,7 +1902,7 @@ public final class DesktopContainerSessions {
         boolean[][] accepts=new boolean[indices.size()][sources.size()];int[] counts=sources.stream().mapToInt(slot->slot.getItem().getCount()).toArray();
         for(int r=0;r<indices.size();r++)for(int s=0;s<sources.size();s++) {
             Slot target=inputs.get(indices.get(r));ItemStack stack=sources.get(s).getItem();
-            accepts[r][s]=target.isActive()&&target.mayPickup(player)&&!DesktopItemSourceLocks.isSlotLocked(player,target)&&shape.get(indices.get(r)).test(stack)&&target.mayPlace(stack);
+            accepts[r][s]=com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(target)&&target.mayPickup(player)&&!DesktopItemSourceLocks.isSlotLocked(player,target)&&shape.get(indices.get(r)).test(stack)&&target.mayPlace(stack);
         }
         int[] allocation=com.salts_inventory_update.internal.desktop.PartialRecipeAllocation.allocate(accepts,counts);
         Map<Slot,ItemStack> changes=new LinkedHashMap<>();List<HoverPlacement> placements=new ArrayList<>();List<DesktopPackets.RecipeHoverGhost> ghosts=new ArrayList<>();
@@ -1820,7 +1933,7 @@ public final class DesktopContainerSessions {
         hover.placements.clear();hover.ghosts=List.of();
     }
     private static void insertContextualReturn(Slot target,ItemStack moving) {
-        if(moving.isEmpty()||!target.isActive()||!target.mayPlace(moving))return;
+        if(moving.isEmpty()||!com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(target)||!target.mayPlace(moving))return;
         ItemStack current=target.getItem();if(!current.isEmpty()&&!ItemStack.isSameItemSameTags(current,moving))return;
         int amount=Math.min(moving.getCount(),Math.max(0,Math.min(moving.getMaxStackSize(),target.getMaxStackSize(moving))-current.getCount()));
         if(amount>0){setJeiTransferSlotStack(target,moving.copyWithCount(current.getCount()+amount));moving.shrink(amount);}
@@ -2207,7 +2320,7 @@ public final class DesktopContainerSessions {
         List<Slot> gridSlots = new ArrayList<>(gridSize);
         for (int index = 0; index < gridSize; index++) {
             Slot slot = menu.slots.get(firstGridSlot + index);
-            if (!slot.isActive()) {
+            if (!com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(slot)) {
                 return null;
             }
             gridSlots.add(slot);
@@ -2312,7 +2425,7 @@ public final class DesktopContainerSessions {
                 return null;
             }
             Slot slot = menu.slots.get(slotId);
-            if (!slot.isActive()) {
+            if (!com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(slot)) {
                 return null;
             }
             slots.add(slot);
@@ -2358,7 +2471,7 @@ public final class DesktopContainerSessions {
     }
 
     private static boolean isJeiTransferSourceSlot(ServerPlayer player, Slot slot) {
-        if (!slot.isActive() || !slot.hasItem() || !slot.mayPickup(player)) {
+        if (!com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(slot) || !slot.hasItem() || !slot.mayPickup(player)) {
             return false;
         }
         if (slot.container == player.getInventory()) {
@@ -2837,7 +2950,7 @@ public final class DesktopContainerSessions {
         if (payload.targetKind() == DesktopPackets.QUICK_TARGET_PLAYER_EQUIPMENT) {
             // These are precisely the crafting inputs, armor and offhand shown by Character.
             // Result slot zero is an output and must never become an insertion destination.
-            List<Slot> equipment = new ArrayList<>(9);
+            List<Slot> equipment = new ArrayList<>(com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.quickMoveTargets(player, source.slot.getItem()));
             for (int slotIndex = 1; slotIndex <= 8 && slotIndex < player.inventoryMenu.slots.size(); slotIndex++) {
                 equipment.add(player.inventoryMenu.slots.get(slotIndex));
             }
@@ -2878,11 +2991,10 @@ public final class DesktopContainerSessions {
         boolean sourceIsPlayerInventory = isPlayerInventorySlot(player, sourceSlot);
         boolean sourceIsMainInventory = InventoryExpansion.isMainInventorySlot(player, sourceSlot);
         int sourceContainerSlot = sourceSlot.getContainerSlot();
-        if (sourceIsPlayerInventory && sourceContainerSlot >= 0 && sourceContainerSlot < 9) {
-            return mainInventorySlots(player);
-        }
-        if (sourceIsMainInventory) {
-            return hotbarSlots(player);
+        if (sourceIsMainInventory || sourceIsPlayerInventory && sourceContainerSlot >= 0 && sourceContainerSlot < 9) {
+            List<Slot> destinations = new ArrayList<>(com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.quickMoveTargets(player, sourceSlot.getItem()));
+            destinations.addAll(sourceIsMainInventory ? hotbarSlots(player) : mainInventorySlots(player));
+            return destinations;
         }
 
         List<net.minecraft.world.inventory.Slot> slots = new ArrayList<>();
@@ -2903,7 +3015,7 @@ public final class DesktopContainerSessions {
         Slot sourceSlot = source.slot;
         boolean nativeResult = isVanillaResultSource(source, sourceSlot.index);
         boolean replenishingResult = nativeResult && !(source.menu instanceof AbstractFurnaceMenu);
-        if (!sourceSlot.isActive() || !sourceSlot.hasItem() || !sourceSlot.mayPickup(player)) {
+        if (!com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(sourceSlot) || !sourceSlot.hasItem() || !sourceSlot.mayPickup(player)) {
             return false;
         }
 
@@ -3041,7 +3153,7 @@ public final class DesktopContainerSessions {
             if (!ItemStack.matches(plan.expected(), target.getItem())) {
                 throw new IllegalStateException("Quick-move target changed before matching-slot insertion");
             }
-            if (!target.isActive() || !target.hasItem()) {
+            if (!com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(target) || !target.hasItem()) {
                 continue;
             }
             if (!ItemStack.isSameItemSameTags(moving, target.getItem())) {
@@ -3076,7 +3188,7 @@ public final class DesktopContainerSessions {
             if (!ItemStack.matches(plan.expected(), target.getItem())) {
                 throw new IllegalStateException("Quick-move target changed before empty-slot insertion");
             }
-            if (!target.isActive() || target.hasItem()) {
+            if (!com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(target) || target.hasItem()) {
                 continue;
             }
             if (!target.mayPlace(moving) || target.getMaxStackSize(moving) <= 0) {
@@ -3104,14 +3216,14 @@ public final class DesktopContainerSessions {
         ItemStack sourceBefore = source.slot.getItem().copy();
         ItemStack targetBefore = plan.expected();
         if (DesktopItemSourceLocks.isSlotLocked(player, source.slot)
-            || !source.slot.isActive()
+            || !com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(source.slot)
             || !source.slot.hasItem()
             || !source.slot.mayPickup(player)
             || !ItemStack.matches(sourceBefore, moving)) {
             throw new IllegalStateException("Quick-move source changed or became ineligible before target commit");
         }
         if (DesktopItemSourceLocks.isSlotLocked(player, target)
-            || !target.isActive()
+            || !com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(target)
            ) {
             return 0;
         }
@@ -3479,7 +3591,7 @@ public final class DesktopContainerSessions {
     }
 
     private static boolean moveSlotStack(ServerPlayer player, net.minecraft.world.inventory.Slot sourceSlot, List<net.minecraft.world.inventory.Slot> targets) {
-        if (!sourceSlot.isActive() || !sourceSlot.hasItem() || !sourceSlot.mayPickup(player)) {
+        if (!com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(sourceSlot) || !sourceSlot.hasItem() || !sourceSlot.mayPickup(player)) {
             return false;
         }
 
@@ -3515,7 +3627,7 @@ public final class DesktopContainerSessions {
             if (moving.isEmpty()) {
                 return;
             }
-            if (sameBackingSlot(target, sourceSlot) || !target.isActive() || !target.hasItem()) {
+            if (sameBackingSlot(target, sourceSlot) || !com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(target) || !target.hasItem()) {
                 continue;
             }
             if (!ItemStack.isSameItemSameTags(moving, target.getItem())) {
@@ -3530,7 +3642,7 @@ public final class DesktopContainerSessions {
             if (moving.isEmpty()) {
                 return;
             }
-            if (sameBackingSlot(target, sourceSlot) || !target.isActive() || target.hasItem()) {
+            if (sameBackingSlot(target, sourceSlot) || !com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.serverSlotActive(target) || target.hasItem()) {
                 continue;
             }
             target.safeInsert(moving);
@@ -3699,6 +3811,12 @@ public final class DesktopContainerSessions {
         int stateId = player.inventoryMenu.getStateId();
         for (int slotIndex = 0; slotIndex < player.inventoryMenu.slots.size(); slotIndex++) {
             Slot slot = player.inventoryMenu.slots.get(slotIndex);
+            if (slotIndex >= InventoryExpansion.VANILLA_PLAYER_MENU_SLOTS
+                    && com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.hasDynamicEquipment()) {
+                String key = com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.slotKey(slot);
+                if (!key.isEmpty()) send(player, new DesktopPackets.DesktopPlayerSlotPayload(key, stateId, slot.getItem().copy()));
+                continue;
+            }
             send(player, new DesktopSlotPayload(
                 DesktopPackets.PLAYER_MENU_SESSION,
                 slotIndex,
@@ -3983,6 +4101,7 @@ public final class DesktopContainerSessions {
     }
 
     private static final class PlayerSessions {
+        private boolean playerMenuRebuilt;
         private RecipeHover recipeHover;
         private final LinkedHashMap<Integer, Session> sessions = new LinkedHashMap<>();
         private net.minecraft.world.level.@Nullable Level sessionWorld;

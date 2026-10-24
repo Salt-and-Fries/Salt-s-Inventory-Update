@@ -340,6 +340,8 @@ final class DesktopSlotGesturesTest {
         set(session, "containerSlots", List.copyOf(menu.slots));
         Class<?> windowClass = Class.forName(InventoryDesktopScreen.class.getName() + "$InventoryWindow");
         Object window = unsafe.allocateInstance(windowClass);
+        // Unsafe skips field initializers; real windows always start with an empty attachment list.
+        set(window, "builtinAttachments", List.of());
         set(window, "apiSurface", com.salts_inventory_update.api.client.desktop.DesktopWindowSurface.SALT);
         Class<?> kindClass = Class.forName(InventoryDesktopScreen.class.getName() + "$WindowKind");
         Object containerKind = java.util.Arrays.stream(kindClass.getEnumConstants())

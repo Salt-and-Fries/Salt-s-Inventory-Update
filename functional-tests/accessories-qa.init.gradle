@@ -1,0 +1,47 @@
+// Disposable native slot/callback fixtures; no production task consumes these resources.
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+gradle.projectsEvaluated {
+    def root=gradle.rootProject
+    def mc=root.providers.gradleProperty('qaMinecraft').get()
+    def loader=root.providers.gradleProperty('qaLoader').get()
+    def kind=root.providers.gradleProperty('qaAccessory').get()
+    def core=root.project(":${mc}:${loader}")
+    def qa=core.sourceSets.getByName(loader=='fabric'?'gameplayQa':'chestCloseQa')
+    def run=core.tasks.named(loader=='fabric'?'runPackagedGameplay':'runFullGameplayQa')
+    if(kind=='trinkets') {
+        if(loader!='fabric'||!(mc in ['1.20.1','1.21.1']))throw new GradleException('Unsupported Trinkets fixture')
+        def source=root.file("functional-tests/trinkets-${mc}-fabric/src/main")
+        qa.java.srcDir(new File(source,'java'))
+        qa.java.include('**/TrinketsQa.java')
+        qa.resources.srcDir(new File(source,'resources'))
+        qa.compileClasspath+=root.project(":compatibility:${mc}:${loader}").sourceSets.main.compileClasspath
+        core.tasks.named(qa.processResourcesTaskName).configure {
+            exclude('fabric.mod.json')
+        }
+        // Keep the gameplay initializer and native callback fixture in one QA mod.
+        def metadata=core.layout.buildDirectory.dir('accessory-qa-metadata')
+        def generate=core.tasks.register('accessoryQaMetadata') {
+            inputs.property('minecraft',mc);outputs.dir(metadata)
+            doLast {
+                def folder=metadata.get().asFile;folder.mkdirs()
+                new File(folder,'fabric.mod.json').text=JsonOutput.toJson([
+                    schemaVersion:1,id:'salts_gameplay_qa',version:'1.0.0',environment:'client',
+                    entrypoints:[main:['com.salts_inventory_update.qa.trinkets.TrinketsQa'],client:['com.salts_inventory_update.functionaltest.GameplayQaInitializer']],
+                    mixins:['salts_spatial_qa.mixins.json'],depends:[minecraft:mc,salts_inventory_update:core.version.toString(),trinkets:'*']])
+            }
+        }
+        // The source exclusion above applies to all resource roots; add the canonical metadata after copying.
+        core.tasks.named(qa.processResourcesTaskName).configure {
+            dependsOn(generate)
+            doLast {root.copy {from(metadata);into(destinationDir)}}
+        }
+    } else if(kind=='curios') {
+        qa.resources.srcDir(root.file('functional-tests/accessory-resources/curios'))
+    } else throw new GradleException('Unknown accessory fixture')
+    run.configure {
+        environment('SIU_QA_ACCESSORY',kind)
+        systemProperty('salts.trinkets.qa',root.file('build/full-validation-20261023/native-trinkets-'+mc+'-'+root.providers.gradleProperty('qaRunId').get()).absolutePath)
+    }
+}

@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.spatial.mixin",
+  "plugin": "com.salts_inventory_update.spatial.SpatialGuiMixinPlugin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "SpatialClientMixin", "SpatialRendererMixin",
+    "SpatialMouseUtilMixin", "SpatialCameraMixin", "SpatialOptionsMixin",
+    "SpatialMouseMixin", "SpatialDesktopMixin", "SpatialWorldInteractionMixin",
+    "SpatialCoreHudMixin", "SpatialAvatarMixin", "SpatialNativeHudMixin", "SpatialPanelMixin"
+  ],
+  "injectors": { "defaultRequire": 1 }
+}

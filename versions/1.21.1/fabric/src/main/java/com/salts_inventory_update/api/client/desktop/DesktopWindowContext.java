@@ -94,6 +94,9 @@ public interface DesktopWindowContext<T, S> {
 
     int menuSlotId(Slot slot);
 
+    /** Native armor/offhand item bounds of a built-in Character window; absent if hidden. */
+    default java.util.Optional<DesktopWindowBounds> builtinSlotBounds(int menuSlotId) { return java.util.Optional.empty(); }
+
     int fontWidth(String text);
 
     int fontWidth(Component text);

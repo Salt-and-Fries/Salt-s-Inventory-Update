@@ -1,0 +1,20 @@
+// Opt-in, sorting-only in-world checks against the native loader's development runtime.
+// Release builds omit includeFunctionalTests and never package these probes.
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    def mc = root.providers.gradleProperty('qaMinecraft').getOrElse('26.3')
+    def loader = root.providers.gradleProperty('qaLoader').getOrElse('neoforge')
+    def runId = root.providers.gradleProperty('qaRunId').getOrElse('smart-sort')
+    if (!(runId ==~ /[a-zA-Z0-9_-]+/)) throw new GradleException('Invalid QA run id')
+    if (!root.providers.gradleProperty('includeFunctionalTests').map { it.toBoolean() }.getOrElse(false))
+        throw new GradleException('Native sorting QA requires -PincludeFunctionalTests=true')
+    def target = root.project(":${mc}:${loader}")
+    target.tasks.named('runClient', JavaExec).configure {
+        environment('SIU_FUNCTIONAL_TESTS', 'true')
+        environment('SIU_GAMEPLAY_TESTS', 'true')
+        environment('SIU_QA_INVENTORY_SORT_ONLY', 'true')
+        environment('SIU_QA_SCENARIO', 'core')
+        environment('SIU_FUNCTIONAL_TEST_LOADER', loader)
+        environment('SIU_QA_OUTPUT', root.file("build/gameplay-qa/inventory-sort/${mc}-${loader}-${runId}").absolutePath)
+    }
+}

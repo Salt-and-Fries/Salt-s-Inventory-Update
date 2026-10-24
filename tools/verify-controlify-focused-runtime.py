@@ -235,7 +235,7 @@ def fabric_named_lineage(profile, game, staged, mods, report_path):
     return mapping, _FABRIC_PROOFS[key]
 
 
-def validate(folder, artifacts, pins=None):
+def validate(folder, artifacts, pins=None, with_extension=True):
     folder, artifacts = Path(folder).resolve(), Path(artifacts).resolve()
     if folder.is_file():
         assert folder.name == "results.json", "--report must name a report directory or results.json"
@@ -257,10 +257,10 @@ def validate(folder, artifacts, pins=None):
     assert report.get("scope", scope) == scope, f"{name}: report/launcher scope mismatch"
     run_id = staging.get('runId', '')
     assert not run_id or re.fullmatch(r'[a-z0-9-]+', run_id), f'{name}: invalid run ID'
-    expected_name = f"{game}-{loader}-{scope}-extended" + ('-' + run_id if run_id else '')
-    assert name == expected_name, f"{name}: target/scope/Extended path mismatch"
-    assert staging.get("withExtension") is True and not staging.get("fixtures") \
-        and not (folder / "optional-mods.json").exists(), f"{name}: expected the isolated matching Extended profile"
+    expected_name = f"{game}-{loader}-{scope}" + ('-extended' if with_extension else '') + ('-' + run_id if run_id else '')
+    assert name == expected_name, f"{name}: target/scope/extension-mode path mismatch"
+    assert staging.get("withExtension") is with_extension and not staging.get("fixtures") \
+        and not (folder / "optional-mods.json").exists(), f"{name}: expected the isolated matching extension-mode profile"
     records = report["results"]
     assert type(report.get("failures")) is int and report["failures"] == 0 and records, \
         f"{name}: focused gameplay run has failures or no recorded checks"
@@ -349,7 +349,7 @@ def validate(folder, artifacts, pins=None):
         assert (ROOT / f"controlify/versions/{game}/{loader}/build/classes/java/controlifyQa").resolve() in outputs, \
             f"{name}: missing isolated test-only QA output"
 
-    originals, lineage = runtime.forge_lineage(folder, mods_folder, report_path, with_extension=True) \
+    originals, lineage = runtime.forge_lineage(folder, mods_folder, report_path, with_extension=with_extension) \
         if loader == "forge" else ({}, None)
     preserved = {filename: originals.get(filename, path) for filename, path in staged.items()}
     required_files, upstream = set(), {}
@@ -372,7 +372,10 @@ def validate(folder, artifacts, pins=None):
                 f"{name}: invalid native test-only QA JAR"
         required_files.add(qa)
     mods = loaded_mods(report, name)
-    assert mods.get("minecraft") == game and {"controlify", "yet_another_config_lib_v3", *SALT_MODULES.values()} <= mods.keys(), \
+    salt_modules = {family: mod_id for family, mod_id in SALT_MODULES.items() if family != 'compatibility' or with_extension}
+    if not with_extension:
+        assert 'salts_inventory_compat' not in mods and 'extensionCodeSource' not in report, f'{name}: Compatibility loaded in a standalone profile'
+    assert mods.get("minecraft") == game and {"controlify", "yet_another_config_lib_v3", *salt_modules.values()} <= mods.keys(), \
         f"{name}: matching native Minecraft, Core, Extended, companion or dependency did not load"
     version = mods["salts_inventory_update"]
     expected_controller = pin["controller"]["version"].split("-mc", 1)[0] if pin.get("native_forge_port") else pin["controller"]["version"]
@@ -382,7 +385,7 @@ def validate(folder, artifacts, pins=None):
     for dependency in pin.get("runtime_dependencies", []):
         assert mods.get(dependency["mod_id"]) == dependency["version"], f"{name}: required runtime shim did not load"
     artifact_hashes, artifact_lineage, salt_files = {}, {}, set()
-    for family, mod_id in SALT_MODULES.items():
+    for family, mod_id in salt_modules.items():
         filename = f"{mod_id}-{game}-{runtime.LOADER_NAMES[loader]}-{mods[mod_id]}.jar"
         release = artifacts / family / filename
         assert release.is_file() and filename in staged, f"{name}: missing final or staged {family}"
@@ -401,7 +404,7 @@ def validate(folder, artifacts, pins=None):
     assert required_files == set(staged), f"{name}: unexpected JAR outside exact production/upstream/QA inventory"
     if lineage:
         assert set(originals) == salt_files | {upstream["controller"]["file"], upstream["yacl"]["file"]}, \
-            f"{name}: Forge remapped something outside the five original production/upstream JARs"
+            f"{name}: Forge remapped something outside the original production/upstream JAR inventory"
     source_files = {"coreCodeSource": next(filename for filename in salt_files if filename.startswith("salts_inventory_update-")),
                     "companionCodeSource": next(filename for filename in salt_files if filename.startswith("salts_inventory_controlify-")),
                     "controlifyCodeSource": upstream["controller"]["file"]}
@@ -435,7 +438,7 @@ def validate(folder, artifacts, pins=None):
               "artifact_sha256": artifact_hashes, "artifact_lineage": artifact_lineage, "fabric_remap_lineage": fabric_lineage,
               "upstream": upstream, "captures": images, "runtime_remapping": lineage,
               "report": str(report_path.relative_to(ROOT)), "runtime_profile": str(profile.relative_to(ROOT)),
-              "host_sdl_motion_isolation": isolation, "validated_scope": scope}
+              "host_sdl_motion_isolation": isolation, "validated_scope": scope, "with_extension": with_extension}
     print(f"Focused runtime verified: {name}; {len(passed)} distinct PASS checks, {len(images)} screenshots, exact final JARs")
     return result
 
@@ -446,11 +449,12 @@ def main():
     parser.add_argument("--artifacts", type=Path, default=ROOT / "dist")
     parser.add_argument("--summary", required=True, type=Path)
     parser.add_argument("--require-matrix", action="store_true", help="Require supplied focused reports to cover all twelve targets")
+    parser.add_argument("--without-extension", action="store_true", help="Require a Core + Controlify profile with Compatibility absent")
     args = parser.parse_args()
     pins = pinned_matrix()
     reports = [path.resolve() for path in args.report]
     assert len(reports) == len(set(reports)), "Duplicate --report inputs"
-    rows = [validate(path, args.artifacts.resolve(), pins) for path in reports]
+    rows = [validate(path, args.artifacts.resolve(), pins, not args.without_extension) for path in reports]
     identities = [(row["minecraft"], row["loader"], row["scope"]) for row in rows]
     assert all(count == 1 for count in Counter(identities).values()), "Duplicate target/scope evidence"
     if args.require_matrix:

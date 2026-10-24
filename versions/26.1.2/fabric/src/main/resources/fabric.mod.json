@@ -16,6 +16,9 @@
     "discord": "https://discord.gg/kfdE9gGGxP"
   },
   "entrypoints": {
+    "modmenu": [
+      "com.salts_inventory_update.client.modmenu.SaltsInventoryModMenu"
+    ],
     "main": [
       "com.salts_inventory_update.SaltsInventoryUpdateFabric"
     ],
@@ -25,7 +28,8 @@
   },
   "mixins": [
     "${mod_id}.mixins.json",
-    "${mod_id}.fabric-hud.mixins.json"
+    "${mod_id}.fabric-hud.mixins.json",
+    "${mod_id}.spatial.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${fabric_loader_version}",

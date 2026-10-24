@@ -39,6 +39,8 @@ Core 0.1.5 also owns optional Mouse Tweaks input interoperability. This bridges 
 
 ## Module and packaging contract
 
+Core 0.1.5 owns the optional Fabric Mod Menu config entrypoint in `core-integrations/modmenu/`, so Core + Mod Menu can open Core settings without Compatibility. Its single adapter calls the existing public configuration-screen factory and compiles against Mod Menu without bundling or requiring it. Forge/NeoForge register their native config extension points. Compatibility retains its own API-only config link and the fallback it previously supplied for older Core builds; Mod Menu gives Core's own factory priority.
+
 Core keeps the existing `versions/<Minecraft>/<loader>` modules and identifiers.
 The extension lives under `compatibility/versions/<Minecraft>/<loader>` and has
 its own entrypoints, metadata and `salts_inventory_compat` identifier. Keeping
@@ -162,3 +164,10 @@ enter Core, and neither artifact embeds upstream AE2.
 ## Raised HUD interoperability
 
 Core owns the reusable public HUD layout API and its synchronized render/input geometry. Compatibility owns the optional Raised 6.0.2 adapter on all twelve targets, using only public Core and Raised APIs. Raised is compile-only and never embedded. See [HUD interoperability](hud_interoperability.md).
+
+## Trinkets Character attachments
+
+The optional Trinkets adapters support 1.20.1 Fabric (3.7.2) and 1.21.1 Fabric (3.10.0).
+Native hover managers and slot-rebuild mixins stay in Compatibility; Core supplies reusable
+public Character attachment and player-equipment APIs. The adapters do not bypass Core
+internals or embed Core/Trinkets. See the [1.20.1 guide](trinkets-1.20.1-fabric.md).

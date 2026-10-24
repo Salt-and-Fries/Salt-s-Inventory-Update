@@ -1,0 +1,306 @@
+{
+  "upstream": "https://modrinth.com/mod/spatial-gui",
+  "checked": "2026-10-22",
+  "targets": [
+    {
+      "minecraft": "1.20.1",
+      "loader": "fabric",
+      "version": "1.8-fabric+1.20.1",
+      "version_id": "TyDIMNP6",
+      "project_id": "zLBn2IE4",
+      "coordinate": "maven.modrinth:spatial-gui:TyDIMNP6",
+      "url": "https://cdn.modrinth.com/data/zLBn2IE4/versions/TyDIMNP6/spatial-gui-1.8%2B1.20.1-fabric.jar",
+      "filename": "spatial-gui-1.8+1.20.1-fabric.jar",
+      "sha512": "4b8feb471f81eb83c1417611aba82c18babf3d510455922da23d47052b09cf5bdcb7289ebc2fbbbcc171ec26cdb9d94c0ebcb26b6f96660478ebc3c91a5bf6a6",
+      "dependencies": [
+        {
+          "version_id": null,
+          "project_id": "mOgUt4GM",
+          "file_name": null,
+          "dependency_type": "required"
+        },
+        {
+          "version_id": null,
+          "project_id": "P7dR8mSH",
+          "file_name": null,
+          "dependency_type": "required"
+        },
+        {
+          "version_id": null,
+          "project_id": "1eAoo2KR",
+          "file_name": null,
+          "dependency_type": "required"
+        }
+      ]
+    },
+    {
+      "minecraft": "1.20.1",
+      "loader": "forge",
+      "version": "1.8-forge+1.20.1",
+      "version_id": "IjL1I77m",
+      "project_id": "zLBn2IE4",
+      "coordinate": "maven.modrinth:spatial-gui:IjL1I77m",
+      "url": "https://cdn.modrinth.com/data/zLBn2IE4/versions/IjL1I77m/spatial-gui-1.8%2B1.20.1-forge.jar",
+      "filename": "spatial-gui-1.8+1.20.1-forge.jar",
+      "sha512": "234a6cbc42de8e5d387d63de41c540d07015f9bdfd5f00f4d04588e7bf27a1d9d2cad6c71b41d9293b07d740ff661fe3d98d8b7d6c357bc3c68c4fb9da49e19a",
+      "dependencies": [
+        {
+          "version_id": null,
+          "project_id": "1eAoo2KR",
+          "file_name": null,
+          "dependency_type": "required"
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "version": "1.8-fabric+1.21.1",
+      "version_id": "TZhu5jpi",
+      "project_id": "zLBn2IE4",
+      "coordinate": "maven.modrinth:spatial-gui:TZhu5jpi",
+      "url": "https://cdn.modrinth.com/data/zLBn2IE4/versions/TZhu5jpi/spatial-gui-1.8%2B1.21.1-fabric.jar",
+      "filename": "spatial-gui-1.8+1.21.1-fabric.jar",
+      "sha512": "d7016d131c79ca6574fc1548991e3750420ec25e22dd43b07a568a02bf85dbb78f934d8c6d3a1eefe12ab39a8051b5e400ca0d11185937cd1582d97443f5e2f4",
+      "dependencies": [
+        {
+          "version_id": null,
+          "project_id": "mOgUt4GM",
+          "file_name": null,
+          "dependency_type": "required"
+        },
+        {
+          "version_id": null,
+          "project_id": "1eAoo2KR",
+          "file_name": null,
+          "dependency_type": "required"
+        },
+        {
+          "version_id": null,
+          "project_id": "P7dR8mSH",
+          "file_name": null,
+          "dependency_type": "required"
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "version": "1.8-neoforge+1.21.1",
+      "version_id": "uxZqXBBl",
+      "project_id": "zLBn2IE4",
+      "coordinate": "maven.modrinth:spatial-gui:uxZqXBBl",
+      "url": "https://cdn.modrinth.com/data/zLBn2IE4/versions/uxZqXBBl/spatial-gui-1.8%2B1.21.1-neoforge.jar",
+      "filename": "spatial-gui-1.8+1.21.1-neoforge.jar",
+      "sha512": "ac3dd78b232f88c796bba3208cfbb8c4cc31e5f3990b60872b359c7a8443dbef3f70c06c1bfb07f7f1d8f612dda3e8fc09e37b30c1826588d907a39904235dbe",
+      "dependencies": [
+        {
+          "version_id": null,
+          "project_id": "1eAoo2KR",
+          "file_name": null,
+          "dependency_type": "required"
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "fabric",
+      "version": "1.8-fabric+1.21.11",
+      "version_id": "vwuwlxSI",
+      "project_id": "zLBn2IE4",
+      "coordinate": "maven.modrinth:spatial-gui:vwuwlxSI",
+      "url": "https://cdn.modrinth.com/data/zLBn2IE4/versions/vwuwlxSI/spatial-gui-1.8%2B1.21.11-fabric.jar",
+      "filename": "spatial-gui-1.8+1.21.11-fabric.jar",
+      "sha512": "f6aa58b8ddc896cc9fbb6c49577be50839657795fc4764938573c42614ed3a89e263f0790c7cc1dab1ff7c9fe9ac809f1e3e2ba31cb73d60c353997a4b451ae4",
+      "dependencies": [
+        {
+          "version_id": null,
+          "project_id": "mOgUt4GM",
+          "file_name": null,
+          "dependency_type": "required"
+        },
+        {
+          "version_id": null,
+          "project_id": "P7dR8mSH",
+          "file_name": null,
+          "dependency_type": "required"
+        },
+        {
+          "version_id": null,
+          "project_id": "1eAoo2KR",
+          "file_name": null,
+          "dependency_type": "required"
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "neoforge",
+      "version": "1.8-neoforge+1.21.11",
+      "version_id": "duvDO2lS",
+      "project_id": "zLBn2IE4",
+      "coordinate": "maven.modrinth:spatial-gui:duvDO2lS",
+      "url": "https://cdn.modrinth.com/data/zLBn2IE4/versions/duvDO2lS/spatial-gui-1.8%2B1.21.11-neoforge.jar",
+      "filename": "spatial-gui-1.8+1.21.11-neoforge.jar",
+      "sha512": "0eade8937d5ce326cea34d6f1f00fe45a3ffaceed6a16deba279c1172ae522cd06a146c9f5d2c06f8005ce17e01c00770a7cf93fcbbde7e716a485d543218854",
+      "dependencies": [
+        {
+          "version_id": null,
+          "project_id": "1eAoo2KR",
+          "file_name": null,
+          "dependency_type": "required"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "fabric",
+      "version": "1.8-fabric+26.1.x",
+      "version_id": "wZheOhu4",
+      "project_id": "zLBn2IE4",
+      "coordinate": "maven.modrinth:spatial-gui:wZheOhu4",
+      "url": "https://cdn.modrinth.com/data/zLBn2IE4/versions/wZheOhu4/spatial-gui-1.8%2B26.1.2-fabric.jar",
+      "filename": "spatial-gui-1.8+26.1.2-fabric.jar",
+      "sha512": "7f73a2ad34072a48742d6fab276c4f3e3610abe4e5fac8cc72bd8ad7e8ab082cd4865ce5dd92aa54ec7226006615920ba41db51cbcf4f6ea129f2d789b33f0a1",
+      "dependencies": [
+        {
+          "version_id": null,
+          "project_id": "1eAoo2KR",
+          "file_name": null,
+          "dependency_type": "required"
+        },
+        {
+          "version_id": null,
+          "project_id": "P7dR8mSH",
+          "file_name": null,
+          "dependency_type": "required"
+        },
+        {
+          "version_id": null,
+          "project_id": "mOgUt4GM",
+          "file_name": null,
+          "dependency_type": "required"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "neoforge",
+      "version": "1.8-neoforge+26.1.x",
+      "version_id": "bssxEhFw",
+      "project_id": "zLBn2IE4",
+      "coordinate": "maven.modrinth:spatial-gui:bssxEhFw",
+      "url": "https://cdn.modrinth.com/data/zLBn2IE4/versions/bssxEhFw/spatial-gui-1.8%2B26.1.2-neoforge.jar",
+      "filename": "spatial-gui-1.8+26.1.2-neoforge.jar",
+      "sha512": "038592a25af41c93ea7d49554c6ebba64799fadf763a70c2c5f2ff6ec5377b364cf2c889d35f98ce9e226a535f9af0c8336ea28b6f79fca6c6324ace72e6492a",
+      "dependencies": [
+        {
+          "version_id": null,
+          "project_id": "1eAoo2KR",
+          "file_name": null,
+          "dependency_type": "required"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "fabric",
+      "version": "1.8-fabric+26.2",
+      "version_id": "AYIHdhqw",
+      "project_id": "zLBn2IE4",
+      "coordinate": "maven.modrinth:spatial-gui:AYIHdhqw",
+      "url": "https://cdn.modrinth.com/data/zLBn2IE4/versions/AYIHdhqw/spatial-gui-1.8%2B26.2-fabric.jar",
+      "filename": "spatial-gui-1.8+26.2-fabric.jar",
+      "sha512": "8bc63932511fd0b0d6329f083a2f73db636ada6332f3c9d3a7f10830b9b99401f882ee8ecfceacd5b29a7d3b8d3c612c08f24274311e33b485db4b4bca2c5d7d",
+      "dependencies": [
+        {
+          "version_id": null,
+          "project_id": "P7dR8mSH",
+          "file_name": null,
+          "dependency_type": "required"
+        },
+        {
+          "version_id": null,
+          "project_id": "mOgUt4GM",
+          "file_name": null,
+          "dependency_type": "required"
+        },
+        {
+          "version_id": null,
+          "project_id": "1eAoo2KR",
+          "file_name": null,
+          "dependency_type": "required"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "neoforge",
+      "version": "1.8-neoforge+26.2",
+      "version_id": "2tQFAISR",
+      "project_id": "zLBn2IE4",
+      "coordinate": "maven.modrinth:spatial-gui:2tQFAISR",
+      "url": "https://cdn.modrinth.com/data/zLBn2IE4/versions/2tQFAISR/spatial-gui-1.8%2B26.2-neoforge.jar",
+      "filename": "spatial-gui-1.8+26.2-neoforge.jar",
+      "sha512": "aaa3ade1bd3fe4470fccc4efa0fb0e477dcf6c0f80a4d575c3715649b3ed78a7abfac5d408e1d5659dc8557dfc0bd06b10705db2601db755fd487148d78ada23",
+      "dependencies": [
+        {
+          "version_id": null,
+          "project_id": "1eAoo2KR",
+          "file_name": null,
+          "dependency_type": "required"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "fabric",
+      "version": "1.8-fabric+26.3",
+      "version_id": "8y9LJEzb",
+      "project_id": "zLBn2IE4",
+      "coordinate": "maven.modrinth:spatial-gui:8y9LJEzb",
+      "url": "https://cdn.modrinth.com/data/zLBn2IE4/versions/8y9LJEzb/spatial-gui-1.8%2B26.3-fabric.jar",
+      "filename": "spatial-gui-1.8+26.3-fabric.jar",
+      "sha512": "c6ddc8deab4189efc1868d83e69cd453c3e773eca2c67b5854e40284d9ccfa72ca4f9e67edfaed644aaed98e708a745dd09e4362340f308dd2c3ab2956ecd59c",
+      "dependencies": [
+        {
+          "version_id": null,
+          "project_id": "P7dR8mSH",
+          "file_name": null,
+          "dependency_type": "required"
+        },
+        {
+          "version_id": null,
+          "project_id": "1eAoo2KR",
+          "file_name": null,
+          "dependency_type": "required"
+        },
+        {
+          "version_id": null,
+          "project_id": "mOgUt4GM",
+          "file_name": null,
+          "dependency_type": "required"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "neoforge",
+      "version": "1.8-neoforge+26.3",
+      "version_id": "aI6GSQYL",
+      "project_id": "zLBn2IE4",
+      "coordinate": "maven.modrinth:spatial-gui:aI6GSQYL",
+      "url": "https://cdn.modrinth.com/data/zLBn2IE4/versions/aI6GSQYL/spatial-gui-1.8%2B26.3-neoforge.jar",
+      "filename": "spatial-gui-1.8+26.3-neoforge.jar",
+      "sha512": "4e208701789960b1962c56dc88fe2be02783f19d5ed830915d43a419061b71ebc9b25f7d82ad381b057cfe7e78e9e408b6b8eaeb5d5c769d17aaf244aa235dd0",
+      "dependencies": [
+        {
+          "version_id": null,
+          "project_id": "1eAoo2KR",
+          "file_name": null,
+          "dependency_type": "required"
+        }
+      ]
+    }
+  ]
+}

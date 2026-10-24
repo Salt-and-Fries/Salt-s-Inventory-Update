@@ -1,6 +1,6 @@
 # Compatibility coverage audit
 
-Original upstream availability reviewed 2026-10-20; Raised additions reviewed 2026-10-21. Current release labels are Core 0.1.5, Compatibility 0.1.2 and the optional Controlify companion 0.1.1 on every target. The integration gameplay and packaged-JAR evidence below records the preceding Core 0.1.4 / Compatibility 0.1.0 builds; it is not a claim of rerunning the complete integration matrix for the newer artifacts. The controller release has its own [validation record](../../controlify/VALIDATION.md).
+Original upstream availability reviewed 2026-10-20; Raised additions reviewed 2026-10-21 and Curios additions reviewed 2026-10-23. Current release labels are Core 0.1.5, Compatibility 0.1.2 and the optional Controlify companion 0.1.1 on every target. The historical integration gameplay evidence below records the preceding Core 0.1.4 / Compatibility 0.1.0 builds; it is not a claim of rerunning the complete integration matrix for the newer artifacts. Curios has a separate [rollout validation record](../../functional-tests/CURIOS-ROLLOUT-VALIDATION.md). The controller release has its own [validation record](../../controlify/VALIDATION.md).
 
 Use the rebuilt Core and Compatibility pair from this checkout. The new 1.20.1 EMI adapter relies on the additive Core rendering hooks described below.
 
@@ -23,7 +23,9 @@ All targets include adapters for Tom's Simple Storage, JEI and REI. Mod Menu is 
 | 26.3 | fabric | No upstream release | No upstream release | No upstream release | 21.0.0 | 6.0.2 |
 | 26.3 | neoforge | 26.3.1-alpha | No upstream release | Official releases | No upstream release | 6.0.2 |
 
-The [reviewed snapshot](../../compatibility/coverage-targets.json) now records all 120 cells across twelve targets and ten upstream projects: 88 available inputs and 32 unavailable combinations. This includes twelve newly added Raised cells; their focused runtime coverage is reported separately below. Each available input has a version ID, download URL and SHA-512 hash. Fabric Sophisticated entries use Salandora's maintained ports, which have a different native ABI from the official Forge/NeoForge releases.
+The [reviewed snapshot](../../compatibility/coverage-targets.json) now records all 132 cells across twelve targets and eleven upstream projects: 94 available inputs and 38 unavailable combinations. This includes twelve Raised cells and twelve Curios cells. Each available input has a version ID, download URL and SHA-512 hash. Fabric Sophisticated entries use Salandora's maintained ports, which have a different native ABI from the official Forge/NeoForge releases.
+
+Curios is available on Forge 1.20.1 and NeoForge 1.21.1, 1.21.11, 26.1.2, 26.2 and 26.3. All six adapters use the same supported Core public APIs and the installed release's native slots and artwork. No upstream Curios release exists for our six Fabric targets. See the [Curios guide](curios.md) for exact reviewed releases, optional initialization and focused validation.
 
 AE2's [official downloads](https://appliedenergistics.org/download) and [published versions](https://modrinth.com/mod/ae2/versions) provide Fabric 1.20.1 but no modern Fabric release or 1.21.11 release for either loader. A separate search for published modern Fabric ports found add-ons and resource packs, rather than a maintained native AE2 port. Unavailable combinations cannot be enabled by relabeling a JAR.
 

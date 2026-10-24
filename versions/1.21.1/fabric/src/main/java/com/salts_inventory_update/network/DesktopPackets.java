@@ -59,6 +59,7 @@ public final class DesktopPackets {
         PayloadTypeRegistry.serverboundPlay().register(DesktopPickupAllPayload.TYPE, DesktopPickupAllPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopQuickMoveAllPayload.TYPE, DesktopQuickMoveAllPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopSortWindowsPayload.TYPE, DesktopSortWindowsPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DesktopSortInventoryPayload.TYPE, DesktopSortInventoryPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopBundleSelectPayload.TYPE, DesktopBundleSelectPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopQuickMovePayload.TYPE, DesktopQuickMovePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopButtonPayload.TYPE, DesktopButtonPayload.CODEC);
@@ -83,6 +84,7 @@ public final class DesktopPackets {
         PayloadTypeRegistry.clientboundPlay().register(DesktopPlayerSessionPayload.TYPE, DesktopPlayerSessionPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopOpenSessionPayload.TYPE, DesktopOpenSessionPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopSlotPayload.TYPE, DesktopSlotPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DesktopPlayerSlotPayload.TYPE, DesktopPlayerSlotPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopDataPayload.TYPE, DesktopDataPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopCarriedPayload.TYPE, DesktopCarriedPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopMutationAckPayload.TYPE, DesktopMutationAckPayload.CODEC);
@@ -93,6 +95,15 @@ public final class DesktopPackets {
         PayloadTypeRegistry.clientboundPlay().register(DesktopGhostRecipePayload.TYPE, DesktopGhostRecipePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopRecipeHoverStatePayload.TYPE, DesktopRecipeHoverStatePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(InventoryExpansionSyncPayload.TYPE, InventoryExpansionSyncPayload.CODEC);
+    }
+
+    /** Identity-based dynamic player slots cannot be mistaken for expanded storage during rebuilds. */
+    public record DesktopPlayerSlotPayload(String key, int stateId, ItemStack stack) implements CustomPacketPayload {
+        public static final Type<DesktopPlayerSlotPayload> TYPE = new Type<>(id("player_slot_identity"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopPlayerSlotPayload> CODEC = CustomPacketPayload.codec(
+            (payload, buf) -> { buf.writeUtf(payload.key, 512); buf.writeVarInt(payload.stateId); ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, payload.stack); },
+            buf -> new DesktopPlayerSlotPayload(buf.readUtf(512), buf.readVarInt(), ItemStack.OPTIONAL_STREAM_CODEC.decode(buf)));
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
     public static ResourceLocation id(String path) {
@@ -527,6 +538,27 @@ public final class DesktopPackets {
         public Type<? extends CustomPacketPayload> type() {
             return TYPE;
         }
+    }
+
+    /** The server derives contents and ordering; the client supplies only an authenticated session. */
+    public record DesktopSortInventoryPayload(
+        long connectionNonce, long mutationId, long playerSessionToken, DesktopSessionReference target
+    ) implements CustomPacketPayload {
+        public static final Type<DesktopSortInventoryPayload> TYPE = new Type<>(id("desktop_sort_inventory"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, DesktopSortInventoryPayload> CODEC =
+            CustomPacketPayload.codec(DesktopSortInventoryPayload::write, DesktopSortInventoryPayload::new);
+        private DesktopSortInventoryPayload(RegistryFriendlyByteBuf buf) {
+            this(buf.readLong(), buf.readVarLong(), buf.readLong(), readSessionReference(buf));
+        }
+        public DesktopSortInventoryPayload {
+            if (mutationId <= 0 || playerSessionToken == 0 || target == null)
+                throw new IllegalArgumentException("Invalid inventory sort request");
+        }
+        private void write(RegistryFriendlyByteBuf buf) {
+            buf.writeLong(connectionNonce); buf.writeVarLong(mutationId); buf.writeLong(playerSessionToken);
+            writeSessionReference(buf, target);
+        }
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
     public record DesktopSortWindowsPayload(

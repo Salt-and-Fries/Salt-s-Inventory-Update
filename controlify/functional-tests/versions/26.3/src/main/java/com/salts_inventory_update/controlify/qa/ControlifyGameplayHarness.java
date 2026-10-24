@@ -569,18 +569,16 @@ public final class ControlifyGameplayHarness {
             check("queued-native-premultiplied-item-entity-colors", WorkspaceOpacityProbe.premultipliedCalls() > 0);
             check("queued-opacity-scope-restored", com.salts_inventory_update.controlify.render.WorkspaceOpacity.current() == 1);
             record("queued-opacity-native-probe", "OBSERVED", WorkspaceOpacityProbe.snapshot().toString());
+            QaNativeGuideProbe.expectDisabledAnimation();
             try { owner.config().setAnimationsEnabled(false); } catch (Exception failure) { throw new IllegalStateException(failure); }
             driver.trigger = 1; aimWindow(barrelWindow);
-        }, () -> owner.radialActive(), () -> {
-            WorkspaceLayout<UUID> current = renderedLayout();
-            Map<UUID, WindowSize> sizes = new LinkedHashMap<>();
-            owner.windows().forEach((id, window) -> {
-                var bounds = owner.desktop().presentationBounds(id);
-                sizes.put(id, new WindowSize(bounds.width(), bounds.height()));
-            });
-            WorkspaceLayout<UUID> target = new WorkspacePresentationLayout().compute(owner.model(), sizes,
-                    QaNativeGuideProbe.layoutWidth, QaNativeGuideProbe.layoutHeight, 1);
-            check("disabled-animation-immediate-target", current.equals(target));
+        }, () -> owner.radialActive() && QaNativeGuideProbe.disabledAnimationSample != null, () -> {
+            var sample = QaNativeGuideProbe.disabledAnimationSample;
+            check("disabled-animation-observed-first-native-frame", sample != null && sample.sequence() > 0);
+            record("disabled-animation-first-native-render", "OBSERVED", "sequence=" + sample.sequence()
+                + ",viewport=" + sample.width() + "," + sample.height()
+                + ",actual=" + sample.actual() + ",target=" + sample.target());
+            check("disabled-animation-immediate-target", sample.actual().equals(sample.target()));
             check("native-guide-layout-viewport-is-observed-content-area", QaNativeGuideProbe.layoutFrames > 0
                 && QaNativeGuideProbe.layoutWidth == mc.getWindow().getGuiScaledWidth()
                 && QaNativeGuideProbe.layoutHeight > 0 && QaNativeGuideProbe.layoutHeight < mc.getWindow().getGuiScaledHeight());
@@ -1761,16 +1759,29 @@ public final class ControlifyGameplayHarness {
             guideClosedBounds = owner.desktop().presentationBounds(owner.model().character());
             var toggle = owner.desktop().visibleControls(owner.model().character()).getFirst();
             verifyControlSnaps(owner.model().character(), "closed-guide-toggle");
-            // The result slot is a real neighboring controller target above the native toggle.
-            // Its decorative offset must not prevent moving down into that control.
+            // Vanilla-style Character layout puts the lower crafting slot between
+            // the result and recipe-book control. Verify both actual D-pad hops.
             setDpadExpected(owner.model().character(), toggle);
             pointAtNativeSlot(owner.model().character(), slot -> slot.index == 0);
         }, 2);
+        nativeCursorNeutralReady("native-DPAD-selects-lower-crafting-slot", () ->
+            pointAtNativeSlot(owner.model().character(), slot -> slot.index == 0));
+        add("native-DPAD-selects-lower-crafting-slot-press", () -> {
+            creativeNavigationDispatchBefore = QaFeatureProbe.navigationRequests;
+            driver.buttons.add(GamepadInputs.DPAD_DOWN_BUTTON);
+        }, () -> QaFeatureProbe.navigationRequests > creativeNavigationDispatchBefore,
+            () -> driver.buttons.remove(GamepadInputs.DPAD_DOWN_BUTTON), 0);
+        add("native-DPAD-selects-lower-crafting-slot", () -> driver.buttons.remove(GamepadInputs.DPAD_DOWN_BUTTON),
+            () -> true, () -> {
+                Slot hovered = ((RadialInventoryScreen) mc.gui.screen()).controllerHoveredSlot();
+                check("native-DPAD-result-to-lower-crafting-slot", hovered != null && hovered.index == 4);
+            }, 3);
         nativeCursorNeutralReady("native-DPAD-selects-crafting-guide-toggle", () -> {
             var toggle = owner.desktop().visibleControls(owner.model().character()).getFirst();
             setDpadExpected(owner.model().character(), toggle);
-            pointAtNativeSlot(owner.model().character(), slot -> slot.index == 0);
-            record("guide-native-result-source-before-DPAD", "OBSERVED", dpadDiagnostics());
+            Slot hovered = ((RadialInventoryScreen) mc.gui.screen()).controllerHoveredSlot();
+            check("native-DPAD-guide-source-remains-lower-crafting-slot", hovered != null && hovered.index == 4);
+            record("guide-native-grid-source-before-DPAD", "OBSERVED", dpadDiagnostics());
         });
         add("native-DPAD-selects-crafting-guide-toggle-press", () -> {
             creativeNavigationDispatchBefore = QaFeatureProbe.navigationRequests;

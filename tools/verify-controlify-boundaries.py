@@ -4,6 +4,7 @@ import argparse
 import importlib.util
 import hashlib
 import json
+import os
 import re
 import tomllib
 from urllib.parse import urlparse
@@ -93,17 +94,23 @@ def forbidden(text):
                    and not name.replace(".", "/").startswith(ALLOWED)})
 
 
+def source_files(folder, excluded):
+    # Prune excluded outputs before traversal; runtime worlds can contain millions of files.
+    for base, directories, files in os.walk(folder):
+        directories[:] = [name for name in directories if name not in excluded]
+        for name in files:
+            if name.endswith(".java"):
+                yield Path(base) / name
+
+
 def sources():
-    files = [p for p in (ROOT / "controlify").rglob("*.java") if "build" not in p.parts
-             and "functional-tests" not in p.parts]
+    files = list(source_files(ROOT / "controlify", {"build", "functional-tests"}))
     assert files, "No controller implementation sources found"
     for path in files:
         bad = forbidden(path.read_text(encoding="utf-8"))
         assert not bad, f"{path.relative_to(ROOT)}: non-public Salt references {bad}"
     for folder in (ROOT / "versions", ROOT / "compatibility"):
-        for path in folder.rglob("*.java"):
-            if "build" in path.parts or "tests" in path.parts:
-                continue
+        for path in source_files(folder, {"build", "tests"}):
             assert not re.search(r"com\.salts_inventory_update\.controlify\.", path.read_text(encoding="utf-8")), \
                 f"{path.relative_to(ROOT)}: other mod depends on controller implementation"
     print(f"Controller source isolation verified: {len(files)} Java files")
@@ -152,6 +159,17 @@ def jar(path, core_version=None):
         assert not any("/qa/" in name or "ControlifyQa" in name or "GameplayHarness" in name for name in names), \
             f"{path}: bundled controller QA instrumentation"
         assert not any(name.endswith(".jar") for name in names), f"{path}: bundled nested dependency"
+        expected_format = {"1.20.1": 15, "1.21.1": 34, "1.21.11": 75,
+                           "26.1.2": 84, "26.2": 88, "26.3": 97}[game]
+        if (game, loader) == ("1.21.11", "neoforge"):
+            assert "pack.mcmeta" not in names, f"{path}: must use NeoForge's per-type synthesized metadata"
+        else:
+            pack = json.loads(archive.read("pack.mcmeta"))["pack"]
+            assert pack["pack_format"] == expected_format, f"{path}: incorrect resource pack format"
+            if expected_format >= 65:
+                assert pack.get("min_format") == pack.get("max_format") == expected_format, \
+                    f"{path}: incorrect modern resource pack bounds"
+                assert "supported_formats" not in pack, f"{path}: deprecated modern resource pack metadata"
         assert "salts_inventory_controlify.mixins.json" in names, f"{path}: missing controller render mixin configuration"
         mixins = json.loads(archive.read("salts_inventory_controlify.mixins.json"))
         for mixin in mixins.get("client", []):

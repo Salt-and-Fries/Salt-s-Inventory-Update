@@ -98,6 +98,8 @@ final class DesktopSessionResynchronizationTest {
         set(screen,"sessions",new ArrayList<>(List.of(session)));set(screen,"windows",new ArrayList<>());
         minecraft.screen=screen;set(InventoryDesktopScreen.class,"singleton",screen);
         Object window=unsafe.allocateInstance(windowType);UUID id=UUID.randomUUID();
+        // Match the normal constructor's invariant when allocating a headless fixture.
+        set(window,"builtinAttachments",List.of());
         set(window,"apiInstanceId",id);set(window,"session",session);set(window,"legacyContainerSlots",List.of());
         ((List<Object>)field(screen,"windows")).add(window);
         Method handleMethod=InventoryDesktopScreen.class.getDeclaredMethod("apiWindowHandle",windowType);handleMethod.setAccessible(true);

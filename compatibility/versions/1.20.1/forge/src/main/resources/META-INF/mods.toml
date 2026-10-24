@@ -97,3 +97,10 @@ mandatory = false
 versionRange = "[6.0.2,)"
 ordering = "AFTER"
 side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "curios"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"

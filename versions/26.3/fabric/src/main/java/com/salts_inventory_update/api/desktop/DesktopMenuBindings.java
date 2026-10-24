@@ -16,6 +16,10 @@ import net.minecraft.world.item.ItemStack;
 
 /** Shared slot/source/gesture bindings. Register once from a common integration provider. */
 public final class DesktopMenuBindings {
+    /** Maximum real + hidden slots in one desktop menu, including any cosmetic counterparts. */
+    public static int maxMenuSlots() {
+        return com.salts_inventory_update.protocol.DesktopProtocol.MAX_OPEN_SESSION_ITEMS;
+    }
     private static final Map<MenuType<?>, Access> ACCESS = new LinkedHashMap<>();
 
     /** Declares slots eligible for storage sorting on both client and server. */

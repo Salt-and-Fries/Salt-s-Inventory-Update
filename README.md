@@ -4,11 +4,27 @@ Salt's Inventory Update is a multi-version, multi-loader inventory framework. It
 
 Salt's Inventory Controlify provides the controller workspace across all twelve Minecraft and loader targets. Its [installation, controls and build guide](controlify/README.md) describes the radial presentation, separate JARs and pinned upstream dependencies. Install the matching rebuilt core from this branch alongside the native Controlify build, YACL and the controller JAR.
 
-Core provides inventory expansion, vanilla desktop windows, configuration, networking, persistence and the public API. Compatibility contains Tom's Simple Storage, JEI, REI, EMI, Mod Menu, Applied Energistics 2, Raised and the supported Sophisticated integrations, including the maintained Fabric ports on 1.20.1 and 1.21.1. The [coverage audit](docs/markdown/compatibility-coverage.md) records upstream availability for every target. AE2 support follows the [reviewed upstream version matrix](compatibility/ae2/README.md#reviewed-upstream-targets). Current builds use Core 0.1.5, Compatibility 0.1.2 and Controlify companion 0.1.1 on every target. Match the Minecraft version and loader across installed files; Core works on its own, and both companions and supported third-party mods remain optional.
+Core provides inventory expansion, vanilla desktop windows, configuration, networking, persistence and the public API. Compatibility contains Tom's Simple Storage, JEI, REI, EMI, Applied Energistics 2, Raised and the supported Sophisticated integrations, including the maintained Fabric ports on 1.20.1 and 1.21.1. The [coverage audit](docs/markdown/compatibility-coverage.md) records upstream availability for every target. AE2 support follows the [reviewed upstream version matrix](compatibility/ae2/README.md#reviewed-upstream-targets). Current builds use Core 0.1.5, Compatibility 0.1.2 and Controlify companion 0.1.1 on every target. Match the Minecraft version and loader across installed files; Core works on its own, and both companions and supported third-party mods remain optional.
+
+Fabric's Mod Menu **Config** button is provided by Core itself and works without the Compatibility extension. Forge and NeoForge expose Core settings through their native mod-list Config buttons. Mod Menu remains optional.
+
+The [full validation report](functional-tests/FULL-VALIDATION-20261023.md) records the fixes, executed gameplay and server coverage, artifact checks, evidence paths and remaining limits for Core 0.1.5, Compatibility 0.1.2 and Controlify 0.1.1.
+
+Compatibility also supports native Trinkets accessories in Character on **1.20.1 Fabric (Trinkets 3.7.2)** and **1.21.1 Fabric (3.10.0)**, including expandable panels and the shared real offhand. See the [1.20.1 guide](docs/markdown/trinkets-1.20.1-fabric.md) and [1.21.1 guide](docs/markdown/trinkets-1.21.1-fabric.md).
+
+Compatibility supports **Curios on 1.20.1 Forge and every supported NeoForge target**. Its accessory panel joins above Character at the same width, keeps both windows on screen together, and scrolls only when all slots cannot fit. Native cosmetic slots, visibility controls, inventory bindings, artwork and item rules follow each installed Curios release. See the [Curios release matrix, installation and API guide](docs/markdown/curios.md).
 
 Mouse Tweaks input support is included in **Core** on every supported target. Install the matching upstream Mouse Tweaks JAR alongside Core; the Compatibility extension is not required. Drag collection, right-drag placement and wheel transfers use Mouse Tweaks' own settings and also work with real inventory slots exposed by public-API windows. See the [API integration notes](docs/markdown/desktop_window_api.md#mouse-tweaks-input-interoperability).
 
+Every Core target keeps ordinary windows fully inside all four desktop edges during dragging, resizing and resolution/GUI-scale changes.
+
+All twelve **Core Minecraft/loader builds** include [smart sorting within a window](docs/markdown/smart-inventory-sorting.md). Its button sits beside the existing transfer-sort control and groups resources, equipment, supplies and related materials, with bulk terrain last.
+
+Every supported **Core Minecraft/loader target** also includes an experimental optional integration for **Spatial GUI 1.8**. It presents the same bounded desktop as one 3D surface and animates into the normal first-person desktop during Window Movement Control. It coordinates projected input, world targeting, movement control and the hotbar. No Compatibility extension or server-side Spatial GUI installation is required. See the [Spatial GUI guide](docs/markdown/spatial-gui.md).
+
 ## Layout
+
+Edit shared production textures once in [`artwork/shared-resources/`](artwork/README.md), grouped by Core, Compatibility and Controlify. Every Minecraft/loader build uses its mod's shared folder; rebuilding packages the edit automatically across the matching JARs.
 
 ```text
 versions/
@@ -46,6 +62,9 @@ compatibility/
     fabric/            Shared integration implementations and Fabric metadata/entrypoints
     forge|neoforge/    Loader-specific plugins, conditional mixins and metadata
   tests/               Optional integration initialization regressions
+core-integrations/
+  modmenu/             Optional Fabric config entrypoint; no Compatibility extension required
+  spatial-gui/         Optional Spatial GUI client hooks and generated version/loader adapters
 controlify/
   common/              Controller state, layout, animation, input routing and configuration
   versions/<version>/  Controller presentation, Controlify processor and loader entrypoints

@@ -166,7 +166,7 @@ displayName="Salt Controller QA"
             })
             mainClass.set(run.mainClass)
             if (featurePass26) { minHeapSize = '512m'; maxHeapSize = '3g' }
-            def runtimeProfile = withExtension || scope != 'all' ? 'packaged-controlify-' + reportKey : 'packaged-controlify'
+            def runtimeProfile = withExtension || scope != 'all' || runId ? 'packaged-controlify-' + reportKey : 'packaged-controlify'
             def folder = target.layout.buildDirectory.dir('runtime-smoke/' + runtimeProfile).get().asFile
             def output = root.file("build/controlify-qa/${reportKey}").canonicalFile
             workingDir = folder
@@ -176,6 +176,9 @@ displayName="Salt Controller QA"
             environment('SIU_QA_OUTPUT', output.absolutePath)
             environment('MOD_CLASSES', '')
             doFirst {
+                // A release supervisor can stop the next launch without interrupting a live game.
+                if (runId && root.file("build/controlify-release-0.1.1/${runId}-all/stop.request").exists())
+                    throw new GradleException('Controller release QA stopped before launch at a profile boundary')
                 if (root.providers.gradleProperty('includeFunctionalTests').map { it.toBoolean() }.getOrElse(false))
                     throw new GradleException('Packaged controller QA requires production JARs; omit includeFunctionalTests.')
                 if (queuedRendering) {

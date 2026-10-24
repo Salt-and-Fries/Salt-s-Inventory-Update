@@ -1,0 +1,13 @@
+// Apply the filter to every requested target, not only the last CLI test task.
+gradle.projectsEvaluated {
+    gradle.rootProject.subprojects.findAll {
+        it.name == 'fabric' && !it.path.startsWith(':compatibility:') && !it.path.startsWith(':controlify:')
+    }.each { target ->
+        target.tasks.named('test', Test).configure {
+            filter {
+                includeTestsMatching('*InventorySortTest')
+                includeTestsMatching('*SortWindowsTest')
+            }
+        }
+    }
+}

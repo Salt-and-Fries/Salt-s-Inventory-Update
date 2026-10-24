@@ -45,6 +45,7 @@ public final class DesktopPackets {
     public static final long CAP_MULTI_MENU_GESTURES = 1L << 4;
     public static final long CAP_SORT_WINDOWS = 1L << 5;
     public static final long CAP_CLICK_SEQUENCES = 1L << 6;
+    public static final long CAP_SORT_INVENTORY = 1L << 7;
 
     private DesktopPackets() {
     }
@@ -317,6 +318,17 @@ public final class DesktopPackets {
         public DesktopPickupAllPayload { if (anchorSessionId < 0 || anchorSlotIndex < 0 || (button != 0 && button != 1)) throw new IllegalArgumentException("Invalid pickup all"); sources = List.copyOf(sources); requireUniqueBounded(sources, DesktopProtocol.MAX_DESKTOP_SESSIONS + 1, r -> (long) r.sessionId()); }
         @Override public ResourceLocation id() { return TYPE; }
         @Override public void write(FriendlyByteBuf buf) { buf.writeVarInt(anchorSessionId); buf.writeVarInt(anchorSlotIndex); buf.writeVarInt(button); writeSessionReferences(buf, sources); }
+    }
+
+    /** Contents are derived by the server; the authenticated envelope guards this menu reference. */
+    public record DesktopSortInventoryPayload(DesktopSessionReference target) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("desktop_sort_inventory");
+        public DesktopSortInventoryPayload(FriendlyByteBuf buf) { this(readSessionReference(buf)); }
+        public DesktopSortInventoryPayload {
+            if (target == null) throw new IllegalArgumentException("Invalid inventory sort request");
+        }
+        @Override public ResourceLocation id() { return TYPE; }
+        @Override public void write(FriendlyByteBuf buf) { writeSessionReference(buf, target); }
     }
 
     public record DesktopSortWindowsPayload(
@@ -872,6 +884,14 @@ public final class DesktopPackets {
             buf.writeItem(this.carried);
             buf.writeVarIntArray(this.data);
         }
+    }
+
+    /** Logical equipment identities survive native slot-list rebuilds. */
+    public record DesktopPlayerSlotPayload(String key, int stateId, ItemStack stack) implements DesktopPacket {
+        public static final ResourceLocation TYPE = DesktopPackets.id("player_slot_identity");
+        public DesktopPlayerSlotPayload(FriendlyByteBuf buf) { this(buf.readUtf(512), buf.readVarInt(), buf.readItem()); }
+        @Override public ResourceLocation id() { return TYPE; }
+        @Override public void write(FriendlyByteBuf buf) { buf.writeUtf(key, 512); buf.writeVarInt(stateId); buf.writeItem(stack); }
     }
 
     public record DesktopSlotPayload(int sessionId, int slotIndex, int stateId, ItemStack stack) implements DesktopPacket {

@@ -1,0 +1,75 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+// Separate observation mod; Core, Compatibility and upstream AE2 remain shipping archives.
+gradle.projectsEvaluated {
+    def root=gradle.rootProject
+    def mc=root.providers.gradleProperty('qaMinecraft').get()
+    def loader=root.providers.gradleProperty('qaLoader').get()
+    def target=root.project(":${mc}:${loader}")
+    def extension=root.project(":compatibility:${mc}:${loader}")
+    def qa=target.sourceSets.getByName('chestCloseQa')
+    def source=root.file("functional-tests/ae2/${mc}/${loader}/src/main")
+    if(!source.isDirectory() && mc=='1.20.1') source=root.file('functional-tests/ae2/1.20.1/common/src/main')
+    if(!source.isDirectory() && mc in ['26.1.2','26.2']) source=root.file('functional-tests/ae2/26.3/neoforge/src/main')
+    if(!source.isDirectory()) throw new GradleException('No native AE2 atlas fixture for this target')
+    qa.java.srcDir(root.file('functional-tests/ae2/shared/src/main/java'))
+    if(mc=='26.1.2') {
+        def prepared=target.layout.buildDirectory.dir('release-ae2-atlas-sources')
+        def prepare=target.tasks.register('prepareReleaseAe2AtlasQa',Sync) {
+            from(new File(source,'java'));into(prepared)
+            filter { line -> line.replace('.gui.screen()', '.screen')
+                .replace('.gui.setScreen(', '.setScreen(')
+                .replace('mc.gui.hud.getChat()', 'mc.gui.getChat()')
+                .replace('Screenshot.grab(mc, false);', 'Screenshot.grab(mc.gameDirectory, mc.getMainRenderTarget(), ignored -> {});') }
+        }
+        qa.java.srcDir(prepared)
+        target.tasks.named(qa.compileJavaTaskName).configure { dependsOn(prepare) }
+    } else qa.java.srcDir(new File(source,'java'))
+    qa.resources.srcDir(new File(source,'resources'))
+    // The compile-only declarations describe hooks applied to AE2 at runtime. Never stage them.
+    // Resolve after the main build registers its public-API dependency and native declarations.
+    qa.compileClasspath=extension.files(extension.provider { extension.tasks.named('compileJava').get().classpath })+
+        extension.sourceSets.main.output+qa.compileClasspath
+    target.tasks.named(qa.compileJavaTaskName).configure { dependsOn(extension.tasks.named('classes')) }
+    target.tasks.named('chestCloseQaMetadata').configure {
+        inputs.property('releaseAe2Atlas',true)
+        if(loader!='fabric') inputs.file(extension.provider {
+            def archive=extension.tasks.named(extension.tasks.findByName('reobfJar')!=null ? 'reobfJar' : 'jar').get().archiveFile.get().asFile
+            root.file('dist/compatibility/'+archive.name)
+        })
+        doLast {
+            def resources=new File(target.layout.buildDirectory.get().asFile,'chest-close-qa-generated/resources')
+            if(loader=='fabric') {
+                def file=new File(resources,'fabric.mod.json')
+                def values=new JsonSlurper().parse(file)
+                values.mixins=['salts_inventory_compat.ae2-atlas.mixins.json']
+                file.text=JsonOutput.toJson(values)
+            } else {
+                def archive=extension.tasks.named(extension.tasks.findByName('reobfJar')!=null ? 'reobfJar' : 'jar').get().archiveFile.get().asFile
+                def shipping=root.file('dist/compatibility/'+archive.name)
+                def name=loader=='forge' ? 'META-INF/mods.toml' : 'META-INF/neoforge.mods.toml'
+                new java.util.zip.ZipFile(shipping).withCloseable { zip ->
+                    new File(resources,name).text=new String(zip.getInputStream(zip.getEntry(name)).readAllBytes(),java.nio.charset.StandardCharsets.UTF_8)+
+                        (loader=='neoforge' ? '\n[[mixins]]\nconfig="salts_inventory_compat.ae2-atlas.mixins.json"\n' : '')
+                }
+            }
+        }
+    }
+    if(loader!='fabric') target.tasks.named('chestCloseQaJar').configure {
+        // FML groups this observation archive with the unchanged production archive.
+        // Its metadata overlay retains the production mod's entrypoint and dependencies.
+        exclude('com/salts_inventory_update/functionaltest/ChestCloseQaMod.class')
+        doFirst {
+            def archive=extension.tasks.named(extension.tasks.findByName('reobfJar')!=null ? 'reobfJar' : 'jar').get().archiveFile.get().asFile
+            new java.util.jar.JarFile(root.file('dist/compatibility/'+archive.name)).withCloseable { jar ->
+                def original=jar.manifest.mainAttributes.collectEntries { key,value -> [(key.toString()):value.toString()] }
+                if(loader=='forge') original.MixinConfigs=[original.MixinConfigs,'salts_inventory_compat.ae2-atlas.mixins.json'].findAll { it }.join(',')
+                manifest.attributes(original)
+            }
+        }
+    }
+    target.tasks.named('runFullGameplayQa').configure {
+        systemProperty('mixin.debug.verbose','true')
+    }
+}

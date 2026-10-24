@@ -1,0 +1,1 @@
+{"replace": true, "size": 8, "order": 60, "add_cosmetic": true, "render_toggle": true, "validators": ["curios:all"], "entities": ["minecraft:player"]}

@@ -12,6 +12,9 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
 public interface DesktopWindowDefinition<T, S> {
+    /** Optional joined upper surface, retaining this window's authenticated menu and input. */
+    default @Nullable DesktopWindowAttachment attachment(DesktopWindowContext<T, S> context) { return null; }
+
     /** Native list viewports for D-pad edge scrolling and right-stick availability. Input still uses mouseScrolled. */
     default java.util.List<DesktopScrollRegion> controllerScrollRegions(DesktopWindowContext<T, S> context) { return java.util.List.of(); }
     /** Visible editable fields in native GUI coordinates. This distinguishes clicks from retained/automatic focus. */

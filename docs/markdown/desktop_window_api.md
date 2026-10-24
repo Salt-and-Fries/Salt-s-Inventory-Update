@@ -350,6 +350,8 @@ Use `DesktopWindowOptions` to allow moving, pinning, user closing, locking and m
 
 `DesktopResizePolicy.FIXED` disables interactive resize, `FREE` permits arbitrary resizing and `STORAGE_GRID` uses grid-oriented resizing. Sizes describe the surface including its declared insets. Supply `defaultSize`, `minSize`, optional `maxSize` and `snapSize` for your layout. Defaults are a 64×48 minimum, no integration-specific maximum and all seven window options enabled. Your layout must honor these dimensions and update child geometry after moving/resizing; side-region placement may constrain what fits on a small desktop.
 
+Core keeps ordinary frames within all four desktop edges, including the complete bottom/right bounds. Resolution and GUI-scale changes recover retained window bounds as well. If this changes an API window's size or position, its `resized`/`moved` callback receives the current viewport environment; update cached child geometry there. Native surfaces using `PRESERVE` or `ADAPT` retain their existing viewport-policy contract and should select a compact layout when the original surface cannot fit.
+
 Handles expose `state()`, `available(action)`, `request(action)`, `moveTo(x, y)` and `resizeTo(width, height)`. `DesktopWindowAction` supports focus, user close, pin/unpin, lock/unlock and `MANAGEMENT_MENU`. Focus restores a persistently hidden window. Right-click an explicit `MOVE` region to open the management menu, or call `request(MANAGEMENT_MENU)`. Salt anchors it to an ellipsis control when present, otherwise to the surface's upper-right edge, and keeps it in the viewport. Escape dismisses the menu before reaching the owner's key callback. Parameterized movement/resizing use their own methods; `request(MOVE)` and `request(RESIZE)` return false. `windowStateChanged(context, snapshot)` observes changed state. User requests honor permissions, modality and lifetime; permanent owner `close()` remains separate from user-close permission.
 
 ## Lifecycle, persistence and threads
@@ -487,7 +489,7 @@ Reserve the actual control rectangles before laying out your original title, sea
 
 These are the standard Salts controls used on vanilla Minecraft container windows. **All permitted controls should either be stretched out into the complete expanded row, or compressed to the ellipsis (`…`, More) and `X` (Close).** Expanded means separate buttons at their original size; do not stretch the button artwork. This is a two-state decision. There are no intermediate three/four/five-button compression stages, shrinking icons, reduced gaps or controls removed one at a time. Window permissions still apply: omit a forbidden More or Close, and show no management controls on a drag-only companion.
 
-The standard expanded order, from left to right, is Sort (when eligible), Focus, Pin, Lock, Link, Close. Sort appears for eligible inventory/storage sources with negotiated sorting support. Filter unsupported controls before measuring the row. Pin/Unpin and Lock/Unlock retain their positions when state changes. The expanded native row does not include More; the compact row is More followed by Close. During compression, Sort, Focus, Pin, Lock and Link move into More together, in the same order and subject to permissions. Close remains in the title row and is not duplicated inside More. Temporarily disabled actions retain their committed geometry and use the public enabled state.
+The standard expanded order, from left to right, is Sort (when eligible), Focus, Pin, Lock, Link, Close. Sort appears for eligible inventory/storage sources with negotiated sorting support. All twelve Core targets place `SORT_INVENTORY` immediately after `SORT_WINDOWS`; it sorts within the selected storage and is absent from processing windows. See [in-place sorting](smart-inventory-sorting.md). Filter unsupported controls before measuring the row. Pin/Unpin and Lock/Unlock retain their positions when state changes. The expanded native row does not include More; the compact row is More followed by Close. During compression, both eligible sorting controls, Focus, Pin, Lock and Link move into More together, in the same order and subject to permissions. Close remains in the title row and is not duplicated inside More. Temporarily disabled actions retain their committed geometry and use the public enabled state.
 
 For `DesktopChromeMetrics.SALT`, use 11×11-GUI-pixel buttons, a 3-pixel gap, a 2-pixel **extra** right inset and a 4-pixel top inset. The title starts at x=6, its text y=5, and its separation from the control row is 6 pixels. The default title bar is 16 pixels high. Measure the current full, untruncated title with the current font, including the component's styling, before deciding whether to compress. Recompute on width, title, font/resource, options or eligible-control changes; do not use a fixed title character count or framebuffer pixels.
 
@@ -550,3 +552,81 @@ Run your own mod with Salt absent and present, and on a dedicated server, before
 ## HUD interoperability
 
 Core API 6 also provides public detached-HUD layout providers for whole-layout movement, independent slot placement/scaling, visibility and interaction. Rendering and pointer targets use the same resolved geometry. See [HUD interoperability](hud_interoperability.md) for the contract, registration lifecycle, example and optional Raised adapter.
+
+
+### Built-in Character attachments (1.21.1)
+
+These APIs are available in the 1.20.1 and 1.21.1 Core sources; the rebuilt Fabric pairs use
+them for Trinkets 3.7.2 and 3.10.0 respectively. The existing section anchor is retained.
+Core adds `DesktopClientApi.registerBuiltinAttachment(id, Kind.CHARACTER, factory)`.
+Each factory creates one `DesktopBuiltinAttachment` per Character lifetime. Contributions compose
+with the built-in player preview, armor, offhand, crafting grid and recipe guide; they do not replace
+the workspace host or create a second player inventory. Other built-in kinds are rejected in this revision.
+
+Callbacks receive the existing `DesktopWindowContext<AbstractContainerMenu, Void>` interfaces:
+`model()` is the real player menu, `sessionId()` is the authenticated player session, and
+`contentX/Y()` is the origin of the vanilla upper inventory layout. `state()` is null; store attachment
+state on the attachment instance. `builtinSlotBounds(5..8)` supplies visible armor anchors and
+`builtinSlotBounds(45)` supplies the offhand anchor when Core displays it. Override
+`requestsBuiltinSlot(45)` to keep Character's real offhand visible and interactive regardless
+of the hotbar layout. This is an additive visibility request; other views of that same native
+menu slot remain available and share the same stack. Character currently supports slot 45.
+
+Use `render`, `slotAt` and `occludes` together. Return only real menu slot IDs; Core owns pickup,
+swap, drop, drag distribution, quick transfer, shared cursor and tooltips. An attachment hit wins over
+its owner's base slots. `occludes` owns blank popup pixels without making the whole desktop modal.
+`regions` supplies window-relative visual/input areas for z order and controller/Mouse Tweaks slot
+discovery. Hit queries must be pure: controller discovery samples many coordinates.
+`placementBounds` reserves window-relative room for expandable artwork without painting or
+blocking invisible regions. Core applies those bounds during placement, dragging and layout changes.
+`opened`, `tick`, `suspended` and `closed` manage native hover state; suspension may resume on the
+same instance. Core starts a fresh foreground stratum for each attachment, after the owner's
+preview and controls. Later windows and the open recipe guide still cover it. Restore native
+graphics state, and use `rawGraphics().nextStratum()` between native background and item
+passes when their depth conventions differ.
+
+`DesktopPlayerMenuApi.registerEquipment(id, Equipment)` is a common-side registration for
+real player-menu equipment. Implement `owns`, a stable `(group/type/instance)` `slotKey`, and
+`quickMoveTargets`. Apply native quick-move predicates in addition to `Slot.mayPlace`; Core
+continues to check the native removal/insertion rules and authenticated session/state IDs.
+Owner UI visibility is not server permission. Existing MenuType bindings remain unchanged.
+
+Bracket native slot reconstruction with `beforeSlotRebuild(menu)` and
+`afterSlotRebuild(menu, player)`. Core removes only its own expanded slots and tracking entries,
+then appends them after the native rebuild. Logical identity and backing-storage changes invalidate
+old gestures and queued player-menu mutations; ordinary content updates preserve hover selection.
+Dynamic equipment snapshots use namespaced identities instead of assuming every index after 45
+is expanded storage. The provider remains responsible for native slot materialization and inventory
+synchronization. See the [1.20.1](trinkets-1.20.1-fabric.md) and
+[1.21.1 Trinkets adapters](trinkets-1.21.1-fabric.md) for complete consumer examples.
+
+
+### Built-in controls and joined menu windows
+
+Core 0.1.5 on every supported mapping provides Character control contributions through
+`DesktopClientApi.registerBuiltinAttachment(id, kind, factory)`. This revision supplies control
+rendering, `mouseClicked`, `appendTooltip`, window-local `regions` and lifetime callbacks
+(`opened`, `tick`, `suspended`, `closed`). Character contexts expose the player menu and the
+vanilla upper-inventory content origin. An attachment stores local state on its own instance.
+It does not grant access to slots from a different menu or install another item-click transport.
+The older Trinkets attachment contracts described above retain their existing signatures;
+the additional click and tooltip callbacks have default implementations.
+
+A separate `DesktopWindowDefinition` can return a `DesktopWindowAttachment` from
+`attachment(context)`. Supply the owner's window-handle UUID, preferred child body height,
+top protrusion (for example a cosmetic tab) and gap. Core places the child above the owner,
+matches its width, fits both to the desktop and reduces the child's height when necessary.
+The child must adapt its visible content to the committed `windowHeight()`; its definition can
+use normal `mouseScrolled`, pointer capture and `controllerScrollRegions` callbacks.
+The child keeps its own menu, authenticated session, slot IDs and public render/input context.
+
+The owner and child are raised together. Closing/disposing or hiding the owner releases the
+child through the normal window/session lifecycle. One direct child is supported per owner;
+missing owners, multiple children, nested attachments and cycles are rejected. Decorations and
+external tabs still belong in `surface(context).regions()`. Keep layout queries pure and avoid
+independently moving/resizing a joined child. The owner controls movement and the combined bounds.
+
+`DesktopClientApi.isDesktopAvailable()` lets a native mod retain its normal UI when desktop
+sessions are disabled or unavailable. `DesktopMenuBindings.maxMenuSlots()` publishes the menu
+slot bound, including hidden/cosmetic slots. The [Curios adapters](curios.md) cover six
+native-loader releases using only these APIs and the existing menu/session registration contracts.

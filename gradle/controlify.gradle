@@ -44,7 +44,8 @@ gradle.projectsEvaluated {
         target.sourceSets.main.java.srcDir(root.file("controlify/versions/${target.parent.name}/common/src/main/java"))
         target.sourceSets.main.resources.srcDir(root.file('controlify/common/src/main/resources'))
         if (target.parent.name != '26.3') {
-            // Keep one editable artwork/sound palette at the established 26.3 path.
+            // Textures live in artwork/shared-resources/controlify for every target.
+            // The existing sound/localization palette remains shared from 26.3.
             // Version-specific loader metadata, Controlify bindings and services stay local.
             target.tasks.named('processResources').configure {
                 from(root.file('controlify/versions/26.3/common/src/main/resources/assets/salts_inventory_controlify')) {

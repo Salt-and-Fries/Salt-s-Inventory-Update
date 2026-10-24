@@ -126,6 +126,10 @@ fun SourceSet.addFabricModMenuSourceDir() {
     }
 }
 
+fun SourceSet.addCoreFabricModMenuSourceDir() {
+    java.srcDir(rootProject.file("core-integrations/modmenu/src/main/java"))
+}
+
 fun SourceSet.addFabricPlatformSourceDir(minecraftVersion: String) {
     val sourceDir = fabricPlatformSourceDir(minecraftVersion)
     val currentDirs = java.srcDirs.map { it.canonicalFile }.toMutableSet()
@@ -365,11 +369,89 @@ prism {
 
 }
 
+val sharedTextureSources = tasks.register<Exec>("verifySharedTextures") {
+    group = "verification"
+    description = "Checks shared texture ownership and prevents per-version source copies."
+    commandLine("python", rootProject.file("tools/verify-shared-textures.py"))
+}
+
 subprojects {
     val minecraftVersion = parent?.name
     val compatibilityModule = path.startsWith(":compatibility:")
     val controlifyModule = path.startsWith(":controlify:")
     val coreModule = !compatibilityModule && !controlifyModule
+
+    // Optional client hooks are adapted to each pinned upstream Minecraft/loader artifact.
+    if (coreModule && minecraftVersion != null && name in setOf("fabric", "forge", "neoforge")) {
+        @Suppress("UNCHECKED_CAST")
+        val targets = (JsonSlurper().parse(rootProject.file("gradle/spatial-gui-targets.json")) as Map<*, *>)["targets"] as List<Map<String, Any>>
+        val spatial = targets.single { it["minecraft"] == minecraftVersion && it["loader"] == name }
+        val generated = layout.buildDirectory.dir("generated/spatial-gui")
+        val prepareSpatial = tasks.register<Exec>("prepareSpatialGuiIntegration") {
+            inputs.files(rootProject.fileTree("core-integrations/spatial-gui/src/main"), rootProject.file("tools/generate-spatial-sources.py"), rootProject.file("gradle/spatial-gui-targets.json"))
+            inputs.property("minecraft", minecraftVersion)
+            inputs.property("loader", project.name)
+            outputs.dir(generated)
+            commandLine("python", rootProject.file("tools/generate-spatial-sources.py"), "--minecraft", minecraftVersion, "--loader", project.name, "--output", generated.get().asFile)
+        }
+        afterEvaluate {
+            val mapped = (name == "fabric" && !minecraftVersion.startsWith("26.")) || name == "forge"
+            dependencies.add(if (mapped) "modCompileOnly" else "compileOnly", spatial["coordinate"] as String)
+            if(name=="forge") {
+                dependencies.add("compileOnly", "io.github.llamalad7:mixinextras-common:0.5.3")
+                dependencies.add("annotationProcessor", "io.github.llamalad7:mixinextras-common:0.5.3")
+            }
+            extensions.getByType<SourceSetContainer>().named("main") {
+                java.srcDir(prepareSpatial.map { generated.get().dir("java") })
+                resources.srcDir(prepareSpatial.map { generated.get().dir("resources") })
+            }
+            tasks.named("compileJava").configure { dependsOn(prepareSpatial) }
+            tasks.named("processResources").configure { dependsOn(prepareSpatial) }
+        }
+    }
+
+    if (compatibilityModule && minecraftVersion == "1.20.1" && name == "fabric") {
+        repositories.maven {
+            url = uri("https://maven.ladysnake.org/releases")
+            content { includeGroup("dev.onyxstudios.cardinal-components-api") }
+        }
+        afterEvaluate {
+            dependencies.add("modCompileOnly", "dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.0")
+            dependencies.add("modCompileOnly", "maven.modrinth:trinkets:AHxQGtuC")
+            if (providers.gradleProperty("includeTrinketsRuntime").map { it.toBoolean() }.getOrElse(false)) {
+                dependencies.add("modLocalRuntime", "maven.modrinth:trinkets:AHxQGtuC")
+                dependencies.add("modLocalRuntime", "dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.0")
+                dependencies.add("modLocalRuntime", "dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.2.0")
+            }
+        }
+    }
+
+    if (minecraftVersion == "1.21.1" && name == "fabric") {
+        // Keep every launcher on the resource-loader ABI shipped by Fabric API for
+        // 1.21.1, including Core-based packaged QA and Controlify launchers.
+        configurations.configureEach {
+            resolutionStrategy.eachDependency {
+                if ((requested.group == "net.fabricmc.fabric-api" && requested.name == "fabric-resource-loader-v0")
+                    || (requested.group == "remapped.net.fabricmc.fabric-api" && requested.name.startsWith("fabric-resource-loader-v0-")))
+                    useVersion("1.3.1+5b5275af19")
+            }
+        }
+    }
+    if (compatibilityModule && minecraftVersion == "1.21.1" && name == "fabric") {
+        repositories.maven {
+            url = uri("https://maven.ladysnake.org/releases")
+            content { includeGroup("org.ladysnake.cardinal-components-api") }
+        }
+        afterEvaluate {
+            dependencies.add("modCompileOnly", "org.ladysnake.cardinal-components-api:cardinal-components-base:6.1.0")
+            dependencies.add("modCompileOnly", "maven.modrinth:trinkets:JagCscwi")
+            if (providers.gradleProperty("includeTrinketsRuntime").map { it.toBoolean() }.getOrElse(false)) {
+                dependencies.add("modLocalRuntime", "maven.modrinth:trinkets:JagCscwi")
+                dependencies.add("modLocalRuntime", "org.ladysnake.cardinal-components-api:cardinal-components-base:6.1.0")
+                dependencies.add("modLocalRuntime", "org.ladysnake.cardinal-components-api:cardinal-components-entity:6.1.0")
+            }
+        }
+    }
 
     if (compatibilityModule && minecraftVersion != null && name in setOf("fabric", "forge", "neoforge")) {
         @Suppress("UNCHECKED_CAST")
@@ -456,10 +538,14 @@ subprojects {
     }
 
     plugins.withId("java") {
-        if (coreModule && name in setOf("fabric", "forge", "neoforge")) {
-            tasks.withType<ProcessResources>().configureEach {
-                from(rootProject.file("artwork/shared-resources"))
+        if (minecraftVersion != null && name in setOf("fabric", "forge", "neoforge")) {
+            val artworkModule = if (compatibilityModule) "compatibility" else if (controlifyModule) "controlify" else "core"
+            extensions.getByType<SourceSetContainer>().named("main") {
+                // Real source roots keep normal resource processing, incremental builds and source JARs in sync.
+                resources.srcDir(rootProject.file("artwork/shared-resources/$artworkModule"))
+                resources.exclude("**/*.pdn", "**/.gitkeep")
             }
+            tasks.named("check").configure { dependsOn(sharedTextureSources) }
         }
         dependencies.add("compileOnly", "org.jspecify:jspecify:1.0.0")
         if (path == ":common") {
@@ -471,9 +557,18 @@ subprojects {
         }
         tasks.withType<Jar>().configureEach {
             exclude("**/*.pdn")
+            if ((coreModule || controlifyModule) && minecraftVersion == "1.21.11" && project.name == "neoforge") {
+                // NeoForge synthesizes metadata separately for client resources and server data.
+                // A single explicit 1.21.11 pack range cannot express both format codecs.
+                exclude("pack.mcmeta")
+            }
             from(rootProject.file("LICENSE")) {
                 rename { "LICENSE_salts_inventory_update" }
             }
+        }
+        if ((coreModule || controlifyModule) && minecraftVersion == "1.21.11" && project.name == "neoforge") {
+            // Keep ordinary development resources consistent with the production archive.
+            tasks.named<ProcessResources>("processResources") { exclude("pack.mcmeta") }
         }
     }
 
@@ -629,6 +724,10 @@ subprojects {
                         mixinExtension.javaClass.getMethod("config", String::class.java)
                             .invoke(mixinExtension, "salts_inventory_update.mixins.json")
                     }
+                    if (coreModule) {
+                        mixinExtension.javaClass.getMethod("config", String::class.java)
+                            .invoke(mixinExtension, "salts_inventory_update.spatial.mixins.json")
+                    }
                     mixinExtension.javaClass
                         .getMethod("add", SourceSet::class.java, String::class.java)
                         .invoke(mixinExtension, mainSourceSet, when {
@@ -644,12 +743,16 @@ subprojects {
         }
         plugins.withId("java") {
             tasks.named<Jar>("jar") {
-                manifest {
-                    attributes("MixinConfigs" to when {
+                val productionMixinConfigs = when {
                         compatibilityModule -> "salts_inventory_compat.sophisticated.mixins.json,salts_inventory_compat.ae2.mixins.json,salts_inventory_compat.ae2-native.mixins.json"
                         controlifyModule -> "salts_inventory_controlify.mixins.json"
-                        else -> "salts_inventory_update.mixins.json"
-                    })
+                        else -> "salts_inventory_update.mixins.json,salts_inventory_update.spatial.mixins.json"
+                }
+                manifest.attributes("MixinConfigs" to productionMixinConfigs)
+                // Prism's deferred Forge setup replaces this attribute with its first
+                // registered config. Restore the complete, mod-owned list at packaging.
+                doFirst {
+                    manifest.attributes("MixinConfigs" to productionMixinConfigs)
                 }
             }
         }
@@ -659,9 +762,12 @@ subprojects {
         afterEvaluate {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
                 if (compatibilityModule) addFabricModMenuSourceDir()
-                else if (coreModule) addFabricPlatformSourceDir(minecraftVersion)
+                else if (coreModule) {
+                    addFabricPlatformSourceDir(minecraftVersion)
+                    addCoreFabricModMenuSourceDir()
+                }
             }
-            if (compatibilityModule) modMenuVersions[minecraftVersion]?.let { modMenuVersion ->
+            if (compatibilityModule || coreModule) modMenuVersions[minecraftVersion]?.let { modMenuVersion ->
                 val configurationName = if (minecraftVersion.startsWith("26.")) "compileOnly" else "modCompileOnly"
                 if (configurations.findByName(configurationName) != null) {
                     dependencies.add(configurationName, "com.terraformersmc:modmenu:$modMenuVersion")
@@ -853,7 +959,7 @@ subprojects {
             extensions.findByType(SourceSetContainer::class.java)?.named("main") {
                 if (compatibilityModule) {
                     java.srcDir(rootProject.file("compatibility/versions/$minecraftVersion/fabric/src/main/java"))
-                    java.exclude("**/SaltsInventoryCompatibilityFabric.java", "**/SaltsInventoryCompatibilityFabricClient.java",
+                    java.exclude("**/SaltsInventoryCompatibilityFabric.java", "**/SaltsInventoryCompatibilityFabricClient.java", "**/compat/trinkets/**",
                         "**/compat/rei/SaltsReiClientPlugin.java", "**/compat/emi/SaltsEmiClientPlugin.java")
                 } else if (coreModule) addLoaderSourceDirs(minecraftVersion, loaderName)
             }
@@ -1134,6 +1240,7 @@ gradle.projectsEvaluated {
                     val jarFile = matches.single()
                     ZipFile(jarFile).use { zip ->
                         val entries = zip.entries().asSequence().map { it.name }.toSet()
+                        val synthesizedPackMetadata = minecraftVersion == "1.21.11" && loader == "neoforge"
                         val forbidden = entries.filter { entry ->
                             entry.endsWith(".pdn", ignoreCase = true) ||
                                 entry.startsWith("org/jspecify/") ||
@@ -1167,7 +1274,7 @@ gradle.projectsEvaluated {
                             "com/salts_inventory_update/api/server/desktop/DesktopServerApi.class",
                             "com/salts_inventory_update/api/desktop/DesktopMenuBindings.class"
                         )
-                        val missing = required - entries
+                        val missing = (if (synthesizedPackMetadata) required - "pack.mcmeta" else required) - entries
                         if (missing.isNotEmpty()) {
                             throw GradleException("${jarFile.name} is missing required entries: $missing")
                         }
@@ -1181,12 +1288,18 @@ gradle.projectsEvaluated {
                             return zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
                         }
 
-                        val pack = textEntry("pack.mcmeta")
-                        if (!pack.contains("\"pack_format\": ${packFormats.getValue(minecraftVersion)}")) {
+                        if (synthesizedPackMetadata && "pack.mcmeta" in entries) {
+                            throw GradleException("${jarFile.name} must use NeoForge's per-type synthesized pack metadata")
+                        }
+                        val pack = if (synthesizedPackMetadata) "" else textEntry("pack.mcmeta")
+                        if (!synthesizedPackMetadata && !pack.contains("\"pack_format\": ${packFormats.getValue(minecraftVersion)}")) {
                             throw GradleException("${jarFile.name} has the wrong pack format for $minecraftVersion")
                         }
-                        if (minecraftVersion in boundedPackFormatVersions) {
+                        if (!synthesizedPackMetadata && minecraftVersion in boundedPackFormatVersions) {
                             val expectedPackFormat = packFormats.getValue(minecraftVersion)
+                            if (pack.contains("\"supported_formats\"")) {
+                                throw GradleException("${jarFile.name} uses deprecated supported_formats with modern pack bounds")
+                            }
                             if (!pack.contains("\"min_format\": $expectedPackFormat") ||
                                 !pack.contains("\"max_format\": $expectedPackFormat")) {
                                 throw GradleException("${jarFile.name} has incorrect pack format bounds for $minecraftVersion")
@@ -1314,6 +1427,7 @@ gradle.projectsEvaluated {
         description = "Runs root source-parity and release verification checks."
     }
     rootCheck.configure {
+        dependsOn(sharedTextureSources)
         dependsOn(sourceFeatureParity)
         dependsOn(verifyReleaseBundle)
         dependsOn("verifyApiExamples")
@@ -1324,6 +1438,7 @@ gradle.projectsEvaluated {
         description = "Assembles and tests every project, then collects uploadable mod jars."
     }
     rootBuild.configure {
+        dependsOn(sharedTextureSources)
         dependsOn(allProjectBuildTasks)
         dependsOn(sourceFeatureParity)
         dependsOn(writeReleaseChecksums)

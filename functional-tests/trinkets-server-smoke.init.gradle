@@ -1,0 +1,29 @@
+// Dedicated-server startup check only; no gameplay suite or QA inventory mod is installed.
+gradle.projectsEvaluated {
+    def target = gradle.rootProject.project(':compatibility:1.21.1:fabric')
+    def nativeRun = target.tasks.named('runServer').get()
+    target.tasks.register('runTrinketsDedicatedSmoke', JavaExec) {
+        dependsOn(nativeRun.taskDependencies.getDependencies(nativeRun))
+        javaLauncher.set(nativeRun.javaLauncher)
+        mainClass.set(nativeRun.mainClass)
+        workingDir = target.layout.buildDirectory.dir('runtime-smoke/trinkets-server-smoke').get().asFile
+        standardInput = System.in
+        minHeapSize = '512m'; maxHeapSize = '2g'
+        doFirst {
+            workingDir.mkdirs()
+            new File(workingDir, 'eula.txt').text = 'eula=true\n'
+            new File(workingDir, 'server.properties').text = '''server-ip=127.0.0.1
+server-port=0
+online-mode=false
+view-distance=2
+simulation-distance=3
+level-name=trinkets-smoke
+max-players=1
+'''
+            classpath = nativeRun.hasProperty('classpathProvider') ? nativeRun.classpathProvider : nativeRun.classpath
+            args = nativeRun.args + nativeRun.argumentProviders.collectMany { it.asArguments().toList() } + ['nogui']
+            jvmArgs = nativeRun.jvmArgs + nativeRun.jvmArgumentProviders.collectMany { it.asArguments().toList() }
+            systemProperties(nativeRun.systemProperties)
+        }
+    }
+}

@@ -20,7 +20,7 @@ final class WindowManagementApiTest {
     @Test void actionsAndControlsContainNoRemovedCommands() {
         assertEquals(List.of("FOCUS", "USER_CLOSE", "PIN", "UNPIN", "MOVE", "RESIZE", "LOCK", "UNLOCK", "MANAGEMENT_MENU"),
             Arrays.stream(DesktopWindowAction.values()).map(Enum::name).toList());
-        assertEquals(List.of("FOCUS", "CLOSE", "ELLIPSIS", "LINK", "LOCK", "PIN", "SORT_WINDOWS", "RESIZE_GRIP"),
+        assertEquals(List.of("FOCUS", "CLOSE", "ELLIPSIS", "LINK", "LOCK", "PIN", "SORT_WINDOWS", "RESIZE_GRIP", "SORT_INVENTORY"),
             Arrays.stream(DesktopWindowControl.values()).map(Enum::name).toList());
     }
 }

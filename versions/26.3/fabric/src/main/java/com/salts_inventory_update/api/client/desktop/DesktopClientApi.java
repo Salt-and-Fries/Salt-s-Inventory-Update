@@ -41,6 +41,26 @@ public final class DesktopClientApi {
         return screen == null ? java.util.Optional.empty() : java.util.Optional.of(screen.workspaceAccess());
     }
 
+    private record BuiltinRegistration(DesktopWorkspaceWindow.Kind kind,
+            java.util.function.Supplier<? extends DesktopBuiltinAttachment> factory) { }
+    private static final Map<Identifier, BuiltinRegistration> BUILTIN_ATTACHMENTS = new LinkedHashMap<>();
+
+    public static synchronized void registerBuiltinAttachment(Identifier id, DesktopWorkspaceWindow.Kind kind,
+            java.util.function.Supplier<? extends DesktopBuiltinAttachment> factory) {
+        Objects.requireNonNull(id); Objects.requireNonNull(kind); Objects.requireNonNull(factory);
+        var registration = new BuiltinRegistration(kind, factory);
+        if (BUILTIN_ATTACHMENTS.putIfAbsent(id, registration) != null)
+            throw DesktopRegistrationScope.conflict("Built-in attachment already registered: " + id);
+        DesktopRegistrationScope.onRollback(() -> { synchronized (DesktopClientApi.class) {
+            BUILTIN_ATTACHMENTS.remove(id, registration);
+        } });
+    }
+
+    public static synchronized List<DesktopBuiltinAttachment> createBuiltinAttachments(DesktopWorkspaceWindow.Kind kind) {
+        return BUILTIN_ATTACHMENTS.values().stream().filter(r -> r.kind == kind)
+            .map(r -> (DesktopBuiltinAttachment) Objects.requireNonNull(r.factory.get())).toList();
+    }
+
     private static final Map<MenuType<?>, DesktopWindowDefinition<?, ?>> DEFINITIONS = new LinkedHashMap<>();
     private static final Map<Identifier, ViewRegistration<?, ?>> VIEWS = new LinkedHashMap<>();
     private static final List<PredicateRegistration> PREDICATES = new ArrayList<>();
@@ -65,6 +85,12 @@ public final class DesktopClientApi {
     public static synchronized List<DesktopHelpPage> helpPages() { return List.copyOf(HELP_PAGES.values()); }
 
     private DesktopClientApi() {
+    }
+
+    /** True only when this client has enabled the desktop and negotiated real server sessions. */
+    public static boolean isDesktopAvailable() {
+        return com.salts_inventory_update.SaltsInventoryRuntime.isEnabled()
+            && com.salts_inventory_update.client.DesktopContainerClient.canUseServerSessions();
     }
 
     public static synchronized <T extends AbstractContainerMenu, S> void registerWindow(MenuType<T> menuType, DesktopWindowDefinition<T, S> definition) {

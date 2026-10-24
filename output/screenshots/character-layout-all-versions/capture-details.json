@@ -1,0 +1,16 @@
+{
+  "minecraft": "1.20.1",
+  "loader": "Forge",
+  "gui_scale": 2,
+  "source": "versions/1.20.1/forge/build/runtime-smoke/character-layout-port/screenshots/2026-10-22_15.20.48.png",
+  "crop": [
+    1112,
+    556,
+    1472,
+    768
+  ],
+  "framebuffer": [
+    2560,
+    1369
+  ]
+}

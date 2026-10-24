@@ -1,6 +1,6 @@
 # Creative inventory paging buttons
 
-Edit `shared-resources/assets/salts_inventory_update/textures/gui/creative_buttons.png`.
+Edit `shared-resources/core/assets/salts_inventory_update/textures/gui/creative_buttons.png`.
 This single source is packaged for every Minecraft version and loader. Rebuild after editing;
 do not edit generated copies in `build` directories.
 
@@ -18,5 +18,5 @@ cells are also drawn beneath the active buttons, matching the existing renderer.
 
 The starter is an unmodified copy of Fabric API's creative paging atlas from
 fabric-item-group-api-v1 4.0.14+1802ada577, distributed under Apache-2.0.
-Its license is included in `shared-resources/LICENSE-creative-buttons-fabric`.
+Its license is included in `shared-resources/core/LICENSE-creative-buttons-fabric`.
 It is loaded under Salt's own namespace; Fabric is not required.

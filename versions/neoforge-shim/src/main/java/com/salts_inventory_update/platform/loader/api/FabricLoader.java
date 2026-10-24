@@ -29,6 +29,10 @@ public final class FabricLoader {
         return ModList.get().isLoaded(modId);
     }
 
+    public boolean isFabric() {
+        return false;
+    }
+
     public List<Source> integrationSources() {
         List<Source> sources = new ArrayList<>();
         for (var mod : ModList.get().getMods()) {

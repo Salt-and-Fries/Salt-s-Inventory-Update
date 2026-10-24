@@ -49,9 +49,7 @@ public final class SophisticatedLegacyMessageBridge {
     }
 
     public static boolean sendToServer(Object message) {
-        DesktopInputContext<?, ?> context = SophisticatedHostedScreenBridge.inputContext();
-        return context != null && SERVER_MESSAGES.contains(message.getClass().getName())
-            && context.sendPayload(CHANNEL, encode(message));
+        return ClientHandlers.sendToServer(message);
     }
 
     public static boolean sendToClient(ServerPlayer player, Object message) {
@@ -65,16 +63,7 @@ public final class SophisticatedLegacyMessageBridge {
         return session > 0 && DesktopSessions.sendSessionPayload(player, session, CHANNEL, encode(message));
     }
 
-    public static void handleClient(Minecraft minecraft, AbstractContainerMenu menu, ResourceLocation channel, byte[] data) {
-        if (!CHANNEL.equals(channel) || minecraft.player == null || minecraft.getConnection() == null) return;
-        AbstractContainerMenu previous = minecraft.player.containerMenu;
-        minecraft.player.containerMenu = menu;
-        try {
-            decodeAndHandle(data, false, minecraft.getConnection(), null, minecraft.player);
-        } finally {
-            minecraft.player.containerMenu = previous;
-        }
-    }
+
 
     private static void handleServer(DesktopServerPayloadContext<AbstractContainerMenu> context) {
         DesktopServerPayloadContext<AbstractContainerMenu> previous = SERVER_CONTEXT.get();
@@ -127,5 +116,27 @@ public final class SophisticatedLegacyMessageBridge {
     private static IllegalStateException nativeFailure(ReflectiveOperationException failure) {
         Throwable cause = failure instanceof InvocationTargetException invocation ? invocation.getCause() : failure;
         return new IllegalStateException("Native Sophisticated Fabric GUI message failed", cause);
+    }
+
+    /** Loaded only for client packet routing, never by server registration. */
+    public static final class ClientHandlers {
+        private ClientHandlers() { }
+
+        public static boolean sendToServer(Object message) {
+            DesktopInputContext<?, ?> context = SophisticatedHostedScreenBridge.inputContext();
+            return context != null && SERVER_MESSAGES.contains(message.getClass().getName())
+                && context.sendPayload(CHANNEL, encode(message));
+        }
+
+        public static void handleClient(Minecraft minecraft, AbstractContainerMenu menu, ResourceLocation channel, byte[] data) {
+            if (!CHANNEL.equals(channel) || minecraft.player == null || minecraft.getConnection() == null) return;
+            AbstractContainerMenu previous = minecraft.player.containerMenu;
+            minecraft.player.containerMenu = menu;
+            try {
+                decodeAndHandle(data, false, minecraft.getConnection(), null, minecraft.player);
+            } finally {
+                minecraft.player.containerMenu = previous;
+            }
+        }
     }
 }

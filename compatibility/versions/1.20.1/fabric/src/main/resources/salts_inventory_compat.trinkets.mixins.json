@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.compat.trinkets.mixin",
+  "plugin": "com.salts_inventory_update.compat.trinkets.mixin.TrinketsMixinPlugin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": ["TrinketsPlayerMenuMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

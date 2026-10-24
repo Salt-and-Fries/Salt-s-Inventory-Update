@@ -41,6 +41,10 @@ public final class FunctionalTestHarness {
     }
 
     public static synchronized void tryInitialize() {
+        if ("true".equalsIgnoreCase(System.getenv("SIU_QA_CONFIG_MENU"))) {
+            ConfigMenuQa.initialize();
+            return;
+        }
         if ("true".equalsIgnoreCase(System.getenv("SIU_GAMEPLAY_TESTS"))) {
             InWorldGameplayHarness.initialize();
             return;

@@ -26,6 +26,10 @@ public final class FabricLoader {
         return net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded(modId);
     }
 
+    public boolean isFabric() {
+        return true;
+    }
+
     public List<Source> integrationSources() {
         List<Source> sources = new ArrayList<>();
         for (var mod : net.fabricmc.loader.api.FabricLoader.getInstance().getAllMods()) {

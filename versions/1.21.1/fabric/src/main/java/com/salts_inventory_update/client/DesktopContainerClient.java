@@ -320,6 +320,21 @@ public final class DesktopContainerClient {
                 || payload.sessionId() != recipeHoverSession) return;
             RECIPE_HOVER_STATES.put(payload.sessionId(), payload);
         });
+        ClientPlayNetworking.registerGlobalReceiver(DesktopPackets.DesktopPlayerSlotPayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> {
+                if (context.client().player == null) return;
+                var menu = context.client().player.inventoryMenu;
+                // Trinkets' own inventory sync materializes new types. An absent identity is never
+                // written into a different slot; upstream sync supplies it once materialized.
+                for (int i = 46; i < menu.slots.size(); i++) {
+                    if (payload.key().equals(com.salts_inventory_update.api.desktop.DesktopPlayerMenuApi.slotKey(menu.slots.get(i)))) {
+                        menu.setItem(i, payload.stateId(), payload.stack());
+                        break;
+                    }
+                }
+            });
+        });
+
         ClientPlayNetworking.registerGlobalReceiver(InventoryExpansionSyncPayload.TYPE, (payload, context) -> {
             if (!isTopologyNegotiated()) {
                 DesktopDebug.trace("client payload inventory expansion ignored reason=topology-unnegotiated");
@@ -654,6 +669,20 @@ public final class DesktopContainerClient {
         });
     }
 
+    public static boolean canSortInventory() {
+        // Keep protocol 5 backwards compatible: older servers simply do not advertise this channel.
+        return canSortWindows() && canSendType(DesktopPackets.DesktopSortInventoryPayload.TYPE);
+    }
+
+    public static boolean sortInventory(int sessionId) {
+        if (!canSortInventory()) return false;
+        return queueMutation("sort-inventory", Set.of(sessionId), mutationId -> {
+            List<DesktopSessionReference> target = authenticatedSessionReferences(List.of(sessionId));
+            return target == null ? null : new DesktopPackets.DesktopSortInventoryPayload(
+                CONNECTION.connectionNonce(), mutationId, playerSessionToken, target.get(0));
+        });
+    }
+
     public static boolean quickMoveSlots(List<SlotTarget> sources, int targetKind, int targetSessionId) {
         if (targetKind < DesktopPackets.QUICK_TARGET_DEFAULT || targetKind > DesktopPackets.QUICK_TARGET_PLAYER_STORAGE) {
             return false;
@@ -712,6 +741,10 @@ public final class DesktopContainerClient {
             );
         });
         return immediateMutationDispatched("bundle-select", queued);
+    }
+
+    public static void discardQueuedPlayerMenuMutations() {
+        MUTATION_QUEUE.removeIf(mutation -> mutation.sessionIds().contains(DesktopPackets.PLAYER_MENU_SESSION));
     }
 
     public static boolean quickMoveSlot(int sourceSessionId, int sourceSlotIndex, int targetKind, int targetSessionId) {

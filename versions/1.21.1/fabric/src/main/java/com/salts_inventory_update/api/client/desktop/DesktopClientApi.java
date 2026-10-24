@@ -45,6 +45,11 @@ public final class DesktopClientApi {
     private static final Map<ResourceLocation, ViewRegistration<?, ?>> VIEWS = new LinkedHashMap<>();
     private static final List<PredicateRegistration> PREDICATES = new ArrayList<>();
 
+    public static boolean isDesktopAvailable() {
+        return com.salts_inventory_update.SaltsInventoryRuntime.isEnabled()
+            && com.salts_inventory_update.client.DesktopContainerClient.canUseServerSessions();
+    }
+
     /** Readiness for an optimistic mutation. Pending acknowledgements must settle first. */
     public static boolean canDispatchOptimisticMutationNow() {
         return com.salts_inventory_update.client.DesktopContainerClient.canDispatchOptimisticMutationNow();
@@ -63,6 +68,25 @@ public final class DesktopClientApi {
         DesktopRegistrationScope.onRollback(() -> { synchronized (DesktopClientApi.class) { HELP_PAGES.remove(id, page); } });
     }
     public static synchronized List<DesktopHelpPage> helpPages() { return List.copyOf(HELP_PAGES.values()); }
+
+    private static final Map<ResourceLocation, BuiltinRegistration> BUILTIN_ATTACHMENTS = new LinkedHashMap<>();
+
+    /** Each supplier creates one contribution owned by one built-in window's lifetime. */
+    public static synchronized void registerBuiltinAttachment(ResourceLocation id, DesktopWorkspaceWindow.Kind kind,
+            java.util.function.Supplier<DesktopBuiltinAttachment> factory) {
+        Objects.requireNonNull(id); Objects.requireNonNull(kind); Objects.requireNonNull(factory);
+        if (kind != DesktopWorkspaceWindow.Kind.CHARACTER)
+            throw new IllegalArgumentException("This API revision supports Character attachments");
+        var registration = new BuiltinRegistration(kind, factory);
+        if (BUILTIN_ATTACHMENTS.putIfAbsent(id, registration) != null)
+            throw DesktopRegistrationScope.conflict("Built-in attachment already registered: " + id);
+        DesktopRegistrationScope.onRollback(() -> BUILTIN_ATTACHMENTS.remove(id, registration));
+    }
+
+    public static synchronized List<DesktopBuiltinAttachment> createBuiltinAttachments(DesktopWorkspaceWindow.Kind kind) {
+        return BUILTIN_ATTACHMENTS.values().stream().filter(r -> r.kind == kind).map(r -> r.factory.get()).toList();
+    }
+    private record BuiltinRegistration(DesktopWorkspaceWindow.Kind kind, java.util.function.Supplier<DesktopBuiltinAttachment> factory) { }
 
     private DesktopClientApi() {
     }
