@@ -1,0 +1,316 @@
+{
+  "captures": [
+    {
+      "label": "1.21.1 Fabric | Drawer",
+      "run": "1.21.1-fabric-port08",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.1-fabric-port08--fabric-single-drawer-open.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.1-fabric-port08--fabric-single-drawer-open.png",
+      "pixel_crop": [
+        550,
+        174,
+        730,
+        360
+      ],
+      "original_sha256": "c54095923be3f4fb187f3060aba16a1faadcf1e9cab92b9e6473ce674f0aaa22"
+    },
+    {
+      "label": "1.21.1 Fabric | Repair and name",
+      "run": "1.21.1-fabric-port08",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.1-fabric-port08--fabric-anvil-tabs-open.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.1-fabric-port08--fabric-anvil-tabs-open.png",
+      "pixel_crop": [
+        454,
+        128,
+        824,
+        360
+      ],
+      "original_sha256": "bbfd220555b63a56577f3217cb350feaba7b72d9a6e9dd8282b3a22aaafa2e03"
+    },
+    {
+      "label": "1.21.1 Fabric | Link Gear, ready",
+      "run": "1.21.1-fabric-port08",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.1-fabric-port08--fabric-link-ready.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.1-fabric-port08--fabric-link-ready.png",
+      "pixel_crop": [
+        444,
+        116,
+        756,
+        324
+      ],
+      "original_sha256": "2fb6ed51e5a3d59956942e40356c22bcdeca1324e78cb137f3c91c1fe7d2e274"
+    },
+    {
+      "label": "1.21.1 Fabric | Unlink Gear",
+      "run": "1.21.1-fabric-port07",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.1-fabric-port07--fabric-unlink-selected.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.1-fabric-port07--fabric-unlink-selected.png",
+      "pixel_crop": [
+        822,
+        330,
+        1102,
+        572
+      ],
+      "original_sha256": "3a551e17c2c08c3b193e4244c18c66b1463ba587ab4d7e8299299b08999b6156"
+    },
+    {
+      "label": "1.21.1 Fabric | Fletching result",
+      "run": "1.21.1-fabric-port11",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.1-fabric-port11--fabric-fletching-ready.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.1-fabric-port11--fabric-fletching-ready.png",
+      "pixel_crop": [
+        490,
+        170,
+        788,
+        360
+      ],
+      "original_sha256": "871b84f51de3ebdbfdb4df0bc57582c822e9a3d0d5570f60531db2d3b7ef8dc7"
+    },
+    {
+      "label": "1.21.1 Fabric | Chunk Loader",
+      "run": "1.21.1-fabric-port08",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.1-fabric-port08--fabric-chunk-loader-open.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.1-fabric-port08--fabric-chunk-loader-open.png",
+      "pixel_crop": [
+        450,
+        146,
+        828,
+        360
+      ],
+      "original_sha256": "12e1932176c40f2298d4e04b5f69ad3e4d95a76e492e359ed818e90a54e5e16d"
+    },
+    {
+      "label": "1.21.1 NeoForge | Chipped, source selected",
+      "run": "1.21.1-neoforge-port02",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.1-neoforge-port02--neoforge-chipped-selected.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.1-neoforge-port02--neoforge-chipped-selected.png",
+      "pixel_crop": [
+        358,
+        0,
+        922,
+        390
+      ],
+      "original_sha256": "7c8c5d988fd6e108c2c3c9bc29c1ab151a3e9c1285dfda5137c70a19cc80059b"
+    },
+    {
+      "label": "1.21.1 NeoForge | Chipped, picker",
+      "run": "1.21.1-neoforge-port02",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.1-neoforge-port02--neoforge-chipped-picker.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.1-neoforge-port02--neoforge-chipped-picker.png",
+      "pixel_crop": [
+        358,
+        8,
+        922,
+        390
+      ],
+      "original_sha256": "05e384448814e0f6dfc5f17c568daa771524332d487a8a237e28436a18a6203f"
+    },
+    {
+      "label": "1.21.1 NeoForge | Runic Forge, configured",
+      "run": "1.21.1-neoforge-port02",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.1-neoforge-port02--neoforge-runic-forge-configured.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.1-neoforge-port02--neoforge-runic-forge-configured.png",
+      "pixel_crop": [
+        416,
+        156,
+        864,
+        360
+      ],
+      "original_sha256": "6acd439bd99844d0770c4e7ea94366de16ad19e6e9b0fe9a70efb7206945f811"
+    },
+    {
+      "label": "1.21.1 NeoForge | Combiner",
+      "run": "1.21.1-neoforge-port05",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.1-neoforge-port05--neoforge-combiner-open.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.1-neoforge-port05--neoforge-combiner-open.png",
+      "pixel_crop": [
+        514,
+        168,
+        766,
+        360
+      ],
+      "original_sha256": "fcdc4a9ea87433d67f130486c9304f7d29fd5e79af13a9225e8c9112e078b6dd"
+    },
+    {
+      "label": "1.21.1 NeoForge | Combiner result",
+      "run": "1.21.1-neoforge-port05",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.1-neoforge-port05--neoforge-combiner-wait.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.1-neoforge-port05--neoforge-combiner-wait.png",
+      "pixel_crop": [
+        514,
+        168,
+        766,
+        360
+      ],
+      "original_sha256": "e67ae1da8539894275e33209a3c63389975df0481ae92530fda47c4c4a2fae28"
+    },
+    {
+      "label": "26.3 NeoForge | Ossuary recipes",
+      "run": "26.3-neoforge-port02",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\26.3-neoforge-port02--neoforge-ossuary-bone.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\26.3-neoforge-port02--neoforge-ossuary-bone.png",
+      "pixel_crop": [
+        474,
+        166,
+        804,
+        360
+      ],
+      "original_sha256": "86337c4e7f693093a9afedc6afeb7e2715b0efac3eea8f130577866f8e20fdb0"
+    },
+    {
+      "label": "26.3 NeoForge | Urn, item returned",
+      "run": "26.3-neoforge-port02",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\26.3-neoforge-port02--neoforge-urn-returned.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\26.3-neoforge-port02--neoforge-urn-returned.png",
+      "pixel_crop": [
+        450,
+        52,
+        830,
+        360
+      ],
+      "original_sha256": "84cf04b00306e31fa43e3e35989e4adb47f36f0824cff39bdf5234ba1da7a4d0"
+    },
+    {
+      "label": "26.3 NeoForge | Rune crafting",
+      "run": "26.3-neoforge-port02",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\26.3-neoforge-port02--neoforge-runes-ready.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\26.3-neoforge-port02--neoforge-runes-ready.png",
+      "pixel_crop": [
+        490,
+        242,
+        790,
+        360
+      ],
+      "original_sha256": "12bfad03437f8da34c0688d72ff15a5e5660a6eb0f261cf7a1f01684b4d3c93f"
+    },
+    {
+      "label": "26.3 Fabric | End Stone Smelter",
+      "run": "26.3-fabric-port03",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\26.3-fabric-port03--fabric-smelter-burning.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\26.3-fabric-port03--fabric-smelter-burning.png",
+      "pixel_crop": [
+        494,
+        168,
+        784,
+        360
+      ],
+      "original_sha256": "f9d4b75ebf660d29a68e5185dd1e42f21c90fca626af236f2dfc21c1686a7ce8"
+    },
+    {
+      "label": "26.3 Fabric | End Stone Furnace",
+      "run": "26.3-fabric-port02",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\26.3-fabric-port02--fabric-end-furnace-open.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\26.3-fabric-port02--fabric-end-furnace-open.png",
+      "pixel_crop": [
+        526,
+        160,
+        754,
+        360
+      ],
+      "original_sha256": "3aaedf3eed6953a58fd33c50dc13d584c0f57d7b73710ac7d24d05b5e35ab79c"
+    },
+    {
+      "label": "26.2 Fabric | Smelter burning",
+      "run": "26.2-fabric-port01",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\26.2-fabric-port01--fabric-smelter-lit.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\26.2-fabric-port01--fabric-smelter-lit.png",
+      "pixel_crop": [
+        494,
+        168,
+        784,
+        360
+      ],
+      "original_sha256": "02a925858edfcde24b7f70f719d31016e11a30630aa99fcdf11ae09181c6a443"
+    },
+    {
+      "label": "1.21.1 Fabric | Smelter recipe book",
+      "run": "1.21.1-fabric-port09",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.1-fabric-port09--fabric-smelter-book.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.1-fabric-port09--fabric-smelter-book.png",
+      "pixel_crop": [
+        188,
+        172,
+        798,
+        516
+      ],
+      "original_sha256": "2e9a00f8bb0beafdee81c2c8382cc5d4f616ab89a140384427cd8d8b6990bdce"
+    },
+    {
+      "label": "1.21.11 Fabric | Ossuary",
+      "run": "1.21.11-fabric-port01",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.11-fabric-port01--fabric-ossuary-selected.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.11-fabric-port01--fabric-ossuary-selected.png",
+      "pixel_crop": [
+        474,
+        166,
+        804,
+        360
+      ],
+      "original_sha256": "3e39bad35570c5e608847ba7b808ed1621d25a0241ab06d8a504e1da5dca0ddf"
+    },
+    {
+      "label": "1.21.11 NeoForge | Ossuary",
+      "run": "1.21.11-neoforge-port01",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\1.21.11-neoforge-port01--neoforge-ossuary-selected.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\1.21.11-neoforge-port01--neoforge-ossuary-selected.png",
+      "pixel_crop": [
+        474,
+        166,
+        804,
+        360
+      ],
+      "original_sha256": "105ea9d775c3caa0e14526e2de76eb04da61c078e1d8198d25688f80413824ef"
+    },
+    {
+      "label": "26.1.2 Fabric | Rune crafting",
+      "run": "26.1.2-fabric-port01",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\26.1.2-fabric-port01--fabric-rune-ready.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\26.1.2-fabric-port01--fabric-rune-ready.png",
+      "pixel_crop": [
+        490,
+        242,
+        790,
+        360
+      ],
+      "original_sha256": "14a1d759948ea0823c513bcff561801661480fd9dad17cd48d4905455c86d193"
+    },
+    {
+      "label": "26.1.2 NeoForge | Rune crafting",
+      "run": "26.1.2-neoforge-port01",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\26.1.2-neoforge-port01--neoforge-rune-ready.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\26.1.2-neoforge-port01--neoforge-rune-ready.png",
+      "pixel_crop": [
+        490,
+        242,
+        790,
+        360
+      ],
+      "original_sha256": "19240f39dd4c991b5e82567c5fa568c62843e07f0b6df3bb6f66fb9dd85ae6eb"
+    },
+    {
+      "label": "26.2 Fabric | Ossuary",
+      "run": "26.2-fabric-port01",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\26.2-fabric-port01--fabric-ossuary-selected.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\26.2-fabric-port01--fabric-ossuary-selected.png",
+      "pixel_crop": [
+        474,
+        166,
+        804,
+        360
+      ],
+      "original_sha256": "d815949cc044174faf03eaff3f430ff1e6f7bfbaee3ae4100ca9624bda757788"
+    },
+    {
+      "label": "26.2 NeoForge | Ossuary",
+      "run": "26.2-neoforge-port01",
+      "original": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\originals\\26.2-neoforge-port01--neoforge-ossuary-selected.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-targets\\crops\\26.2-neoforge-port01--neoforge-ossuary-selected.png",
+      "pixel_crop": [
+        474,
+        166,
+        804,
+        360
+      ],
+      "original_sha256": "67338b631b04b9bcae02d40a0b19b091f22f2101edaf5007dc94887e909e6cba"
+    }
+  ]
+}

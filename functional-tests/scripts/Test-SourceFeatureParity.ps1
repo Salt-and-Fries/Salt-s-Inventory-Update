@@ -491,7 +491,7 @@ Assert-Matches -Path $hotbarClient -Pattern '(?s)private @Nullable Slot detached
 
 $rootBuildScript = Join-Path $RepoRoot 'build.gradle.kts'
 $settingsScript = Join-Path $RepoRoot 'settings.gradle.kts'
-Assert-Contains -Path $rootBuildScript -Text 'version = "0.1.5"' -Label 'Core release version is 0.1.5'
+Assert-Contains -Path $rootBuildScript -Text 'version = "0.1.6"' -Label 'Core release version is 0.1.6'
 Assert-Contains -Path $rootBuildScript -Text 'org.jspecify:jspecify:1.0.0' -Label 'JSpecify is an explicit compile-only dependency'
 Assert-Contains -Path $rootBuildScript -Text '"**/compat/rei/SaltsReiClientPlugin.java"' -Label 'non-Fabric loaders exclude the Fabric REI entrypoint'
 Assert-NotContains -Path $rootBuildScript -Text '"**/compat/rei/**"' -Label 'non-Fabric loaders retain shared REI runtime support'

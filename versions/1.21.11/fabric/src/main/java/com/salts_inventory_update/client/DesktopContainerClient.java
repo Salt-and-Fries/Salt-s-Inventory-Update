@@ -99,10 +99,28 @@ public final class DesktopContainerClient {
     private static java.util.List<String> requestedForcedMenuIds = java.util.List.of();
     private static java.util.List<String> requestedSupportedMenuIds = java.util.List.of();
 
+    private static boolean automaticNativeReady;
+    private static int nativeReadyRetry;
+    public static void declineAutomaticWindow(int sessionId) {
+        if(!automaticNativeReady||!ClientPlayNetworking.canSend(com.salts_inventory_update.network.AutomaticNativeFallback.TYPE))return;
+        long token=SESSION_TOKENS.getOrDefault(sessionId,0L);
+        if(token!=0)ClientPlayNetworking.send(new com.salts_inventory_update.network.AutomaticNativeFallback(CONNECTION.connectionNonce(),sessionId,token));
+    }
+    public static void refreshNativeTemplates() {
+        if(!CONNECTION.isNegotiated()||!ClientPlayNetworking.canSend(com.salts_inventory_update.network.NativeTemplateCapabilities.TYPE))return;
+        var ids=new java.util.LinkedHashSet<>(com.salts_inventory_update.api.client.desktop.DesktopClientApi.nativeTemplateMenuIds());
+        ids.addAll(com.salts_inventory_update.client.automatic.NativeProfileFiles.menuIds());
+        ClientPlayNetworking.send(new com.salts_inventory_update.network.NativeTemplateCapabilities(CONNECTION.connectionNonce(),java.util.List.copyOf(ids)));
+    }
     private DesktopContainerClient() {
     }
 
     public static void initializeNetworking() {
+        ClientPlayNetworking.registerGlobalReceiver(com.salts_inventory_update.network.AutomaticNativeReady.TYPE,(payload,context)->context.client().execute(()->{
+            if(payload.acknowledged()&&payload.nonce()==CONNECTION.connectionNonce()){
+                automaticNativeReady=true;refreshNativeTemplates();
+            }
+        }));
         ClientPlayNetworking.registerGlobalReceiver(DesktopMenuOpenDataPayload.TYPE, (payload, context) ->
             acceptMenuOpenData(payload, context.client()));
         ClientPlayNetworking.registerGlobalReceiver(DesktopHelloAckPayload.TYPE, (payload, context) -> {
@@ -161,7 +179,7 @@ public final class DesktopContainerClient {
                 rejectIncompatible(context.client(), "The server sent mismatched desktop menu opening data.");
                 return;
             }
-            MenuType<?> incomingMenuType = payload.specialKind() == DesktopPackets.SPECIAL_GENERIC
+            MenuType<?> incomingMenuType = (payload.specialKind() == DesktopPackets.SPECIAL_GENERIC || payload.specialKind() == DesktopPackets.SPECIAL_AUTOMATIC_NATIVE)
                 ? DesktopPackets.menuTypeById(payload.menuTypeId())
                 : null;
             if (incomingMenuType != null && DesktopMenuFactories.hasFactory(incomingMenuType) && menuOpenData == null) {
@@ -202,12 +220,18 @@ public final class DesktopContainerClient {
                 if (previousToken != null && resynchronizeSession(context.client(), payload, menuOpenData)) {
                     return;
                 }
-                session = DesktopContainerSession.create(
+                try {
+                    session = DesktopContainerSession.create(
                     context.client(),
                     payload,
                     menuOpenData == null ? new byte[0] : menuOpenData.data,
                     menuOpenData == null ? -1 : menuOpenData.replacesSessionId
                 );
+                } catch(RuntimeException failure) {
+                    if(payload.specialKind()!=DesktopPackets.SPECIAL_AUTOMATIC_NATIVE)throw failure;
+                    DesktopDebug.warn("native menu reconstruction declined session={} reason={}",payload.sessionId(),failure.toString());
+                    declineAutomaticWindow(payload.sessionId());return;
+                }
                 if (diagnostic) {
                     mountDiag(
                         "client_payload_open_created session={} special={} menu={} slots={} containerSlots={}",
@@ -343,6 +367,10 @@ public final class DesktopContainerClient {
     }
 
     public static void tick(Minecraft minecraft) {
+        if(CONNECTION.isNegotiated()&&!automaticNativeReady&&++nativeReadyRetry%20==1
+            &&ClientPlayNetworking.canSend(com.salts_inventory_update.network.AutomaticNativeReady.TYPE))
+            ClientPlayNetworking.send(new com.salts_inventory_update.network.AutomaticNativeReady(CONNECTION.connectionNonce(),false));
+
         if (lastDesktopLevel != null && lastDesktopLevel != minecraft.level) {
             InventoryDesktopScreen.reset(minecraft);
             // Dimension travel ends window lifetimes, not the authenticated connection.
@@ -390,7 +418,7 @@ public final class DesktopContainerClient {
             CONNECTION.begin(clientNonce, minecraft.level.getGameTime());
             requestedUiEnabled = SaltsInventoryRuntime.isConfiguredEnabled();
             requestedForcedMenuIds = forcedMenuIds();
-            requestedSupportedMenuIds = com.salts_inventory_update.api.client.desktop.DesktopClientApi.supportedMenuIds();
+            requestedSupportedMenuIds = com.salts_inventory_update.client.automatic.AutomaticNativeWindow.advertisedMenuIds(com.salts_inventory_update.api.client.desktop.DesktopClientApi.supportedMenuIds());
             helloSent = send(
                 new DesktopHelloPayload(DesktopProtocol.VERSION, clientNonce, SUPPORTED_CAPABILITIES, requestedUiEnabled, requestedForcedMenuIds, requestedSupportedMenuIds),
                 "hello"
@@ -415,7 +443,7 @@ public final class DesktopContainerClient {
 
         boolean desiredUi = SaltsInventoryRuntime.isConfiguredEnabled();
         java.util.List<String> desiredForcedMenuIds = forcedMenuIds();
-        java.util.List<String> desiredSupportedMenuIds = com.salts_inventory_update.api.client.desktop.DesktopClientApi.supportedMenuIds();
+        java.util.List<String> desiredSupportedMenuIds = com.salts_inventory_update.client.automatic.AutomaticNativeWindow.advertisedMenuIds(com.salts_inventory_update.api.client.desktop.DesktopClientApi.supportedMenuIds());
         boolean periodicResend = ++modeResendTicks >= MODE_RESEND_INTERVAL_TICKS;
         if (desiredUi != requestedUiEnabled || !desiredForcedMenuIds.equals(requestedForcedMenuIds) || !desiredSupportedMenuIds.equals(requestedSupportedMenuIds) || periodicResend) {
             long nextSequence = ++modeSequence;
@@ -1381,6 +1409,7 @@ public final class DesktopContainerClient {
     }
 
     private static void resetConnection() {
+        automaticNativeReady=false;nativeReadyRetry=0;
         recipeHoverSession = -1; recipeHoverIndex = -1; RECIPE_HOVER_STATES.clear();
         resetMutationQueue("connection-reset");
         CONNECTION.reset();

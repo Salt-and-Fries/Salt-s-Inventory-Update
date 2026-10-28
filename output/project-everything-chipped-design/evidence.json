@@ -1,0 +1,58 @@
+{
+  "scope": "Native Chipped 3.0.7 Minecraft 1.20.1 investigation and visual design; no SIU implementation.",
+  "runtime_fixtures": [
+    {
+      "loader": "fabric",
+      "fixture": "fixture-fabric.json",
+      "observations": "observations-fabric.json",
+      "staging": "staged-artifacts-fabric.json",
+      "siu_loaded": false
+    },
+    {
+      "loader": "forge",
+      "fixture": "fixture-forge.json",
+      "observations": "observations-forge.json",
+      "staging": "staged-artifacts-forge.json",
+      "siu_loaded": false
+    }
+  ],
+  "observations": [
+    {
+      "loader": "fabric",
+      "sequence": 3,
+      "event": "Stone x32 selected from player inventory"
+    },
+    {
+      "loader": "fabric",
+      "sequence": 5,
+      "event": "Craft replaced same slot with stone_mini_tiles x32"
+    },
+    {
+      "loader": "forge",
+      "sequence": 3,
+      "event": "Stone x32 selected from player inventory"
+    },
+    {
+      "loader": "forge",
+      "sequence": 5,
+      "event": "Craft replaced same slot with stone_mini_tiles x32"
+    },
+    {
+      "loader": "fabric",
+      "sequence": [
+        115,
+        116,
+        117
+      ],
+      "event": "Sixth row lower-half click left preview unchanged; upper-half click changed it"
+    }
+  ],
+  "limitations": [
+    "SIU absent from native fixture; proposals are composited illustrations, not implemented screens.",
+    "Shift+Craft All and code architecture statements derive from published binary analysis, not a separate runtime test.",
+    "Forge tests used QA remapped copies; see forge-remap-lineage.json.",
+    "No broad gameplay suite was run."
+  ],
+  "analysis": "analysis.json",
+  "design_manifest": "design-manifest.json"
+}

@@ -1,0 +1,103 @@
+{
+  "minecraft": "1.20.1",
+  "scope": "Focused checks for eight integrations; not a complete functional or gameplay suite.",
+  "screenshots": "screenshot-manifest.json",
+  "pdf": "../pdf/siu-next-eight-implemented-windows-1.20.1.pdf",
+  "runtime_artifacts": {
+    "1.20.1-fabric-eight-integration-02": {
+      "core": "e8e1994b2172e2215db76cfe1a9403596b6bf82804885ad36834cf68e36b2d99",
+      "compatibility": "b596d6413a58d494bf9babfa4fcbdbf1d7c6dff54cd7b1618d84689e828fa276"
+    },
+    "1.20.1-fabric-eight-integration-03": {
+      "core": "e8e1994b2172e2215db76cfe1a9403596b6bf82804885ad36834cf68e36b2d99",
+      "compatibility": "8ed3aef0a2fd18551a83f0d1e78e51fc1d438241fd3eb6f7cc437f286da5b0ab"
+    },
+    "1.20.1-forge-eight-integration-02": {
+      "core": "3ebc2bdab5196ab0eff76949b0dc62078f00cf0f0c2b9cc175248d9be574617a",
+      "compatibility": "8960f60f5da202fa3d3e54816c3e56c1ce836ae32104b7ac1fdc6e1885183f35"
+    },
+    "1.20.1-forge-eight-integration-03": {
+      "core": "3ebc2bdab5196ab0eff76949b0dc62078f00cf0f0c2b9cc175248d9be574617a",
+      "compatibility": "912e15a11aad94bd38154e62084c02d35175df620a1f81ad1068c9d5318bb00a"
+    },
+    "1.20.1-fabric-eight-variants-01": {
+      "core": "e8e1994b2172e2215db76cfe1a9403596b6bf82804885ad36834cf68e36b2d99",
+      "compatibility": "cd2b10a225afd46486785f5918592bd7846f29dc5517aadfefb893a66d4f8c7f"
+    }
+  },
+  "fixtures": {
+    "fabric_pinned": "AdditionZ 1.3.2; BetterEnd 4.0.11; ExtendedDrawersAddon 1.0.2; Runes 0.9.13; SmitherZ 1.0.4; Graveyard 3.1; TieredZ 1.3.3",
+    "forge": "Deep Aether 1.1.7; Graveyard 3.1; Runes 1.3.2",
+    "fabric_variant": "Graveyard 4.0.1 and Runes 1.3.2 narrow layout smoke"
+  },
+  "checks": [
+    {
+      "name": "Layouts and bounds",
+      "result": "pass",
+      "detail": "Fabric seven-mod entries, survival and creative drawer sizes, all three gear tab pairs; Forge Graveyard, Runes and Deep Aether. Native template layout errors empty. Graveyard storage and End furnace use Core built-ins."
+    },
+    {
+      "name": "Gravestone exclusion",
+      "result": "pass",
+      "detail": "Both loaders remained native GravestoneScreen without a hosted window."
+    },
+    {
+      "name": "Storage conservation",
+      "result": "pass",
+      "detail": "Fabric and Forge urn, small urn, coffin and sarcophagus each passed server pickup, return and reopen persistence: 16 checks per loader."
+    },
+    {
+      "name": "Drawer utility and lifetime",
+      "result": "pass",
+      "detail": "Player lock item insertion and removal changed authoritative locked flag and returned the item; source removal closed window."
+    },
+    {
+      "name": "Ossuary recipe",
+      "result": "pass",
+      "detail": "Forge recipe selection and pickup consumed one bone block and placed one bone remains on cursor."
+    },
+    {
+      "name": "Rune recipe",
+      "result": "pass",
+      "detail": "Forge Runes 1.3.2: one cobblestone and one amethyst shard produced eight arcane stones."
+    },
+    {
+      "name": "BetterEnd smelter",
+      "result": "pass",
+      "detail": "Real terminite recipe consumed iron, ender dust and fuel; output picked up. Recipe book opened/closed and placed raw iron from player inventory."
+    },
+    {
+      "name": "Combiner",
+      "result": "pass",
+      "detail": "Three each of three ingredients produced three antidotes, picked up from result; book opened/closed and placed three ingredients. Processing used previous isolated run; final run verified compact template and recipe placement."
+    },
+    {
+      "name": "Gear menus",
+      "result": "pass",
+      "detail": "Three paired tab transitions both directions; reforge consumed diamond and amethyst shard; rename output and full cost; normal smithing and grindstone results; linking conserved socketed sword on close; unlink produced unsocketed sword and consumed extraction hammer."
+    },
+    {
+      "name": "Fletching",
+      "result": "pass",
+      "detail": "One flint, stick and feather consumed for six arrows."
+    },
+    {
+      "name": "Chunk Loader",
+      "result": "pass",
+      "detail": "Fuel consumed; contiguous iron/gold upgrades enabled loading; grid click changed ChunkList [4] to [4,0]; source removal closed window."
+    },
+    {
+      "name": "Newer Fabric versions",
+      "result": "pass",
+      "detail": "Graveyard 4.0.1 and Runes 1.3.2 layout, movement and bounds smoke only."
+    }
+  ],
+  "limitations": [
+    "No complete functional or gameplay suite was requested or run.",
+    "Fabric pinned interactions and variant checks used the staged JAR hashes listed above under Fabric Loader 0.19.5. Entry-by-entry comparison with the final distribution found variant classes/resources identical except fabric.mod.json minimum loader and MANIFEST provenance; pinned run03 also differs in DeepAetherNativeUi.class, whose changed alias is Forge-only. Detailed comparison: build/project-everything-eight-mockups/tested-artifact-content-comparison.json.",
+    "Forge tests used a named development runtime with SRG-to-named remapped copies of packaged JARs. An embedded Runes BundleAPI invoker required a QA-only named mapping adjustment. Hashes and transformations are recorded in forge-remap-lineage.json and runes-nested-named-lineage.json in the Forge run directory. This is not retail-launch certification.",
+    "Smither unlink extraction is randomized; this attempt returned an unsocketed sword but did not yield a separate surviving gem.",
+    "Other mod versions, upgrade combinations, dedicated servers and unrelated features were not comprehensively tested."
+  ],
+  "evidence_root": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-eight-implemented\\gameplay"
+}

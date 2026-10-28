@@ -5,6 +5,7 @@ dist/
 .kotlin/
 .idea/
 .codex-remote-attachments/
+.codex-attachments/
 *.iml
 *.ipr
 *.iws
@@ -23,6 +24,7 @@ run/
 /fabricloader.log
 /tmp/
 /logs/
+/output/**/*.log
 /controller-workspace-config/
 /hs_err_pid*.log
 /replay_pid*.log

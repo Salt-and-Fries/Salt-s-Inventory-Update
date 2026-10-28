@@ -101,3 +101,30 @@ type = "optional"
 versionRange = "[0,)"
 ordering = "AFTER"
 side = "BOTH"
+
+[[mixins]]
+config = "salts_inventory_compat.feeding-trough.mixins.json"
+
+[[dependencies.${mod_id}]]
+modId = "animal_feeding_trough"
+type = "optional"
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "netherchested"
+type = "optional"
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[mixins]]
+config="salts_inventory_compat.netherchested.mixins.json"
+
+[[dependencies.${mod_id}]]
+modId = "graveyard"
+type = "optional"
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"

@@ -1,0 +1,37 @@
+{
+  "minecraft": "1.20.1",
+  "loader": "fabric",
+  "artifacts": [
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\902fd3ac7558bebb249f61572227d499f51b3bde.jar",
+      "filename": "simplyswords-1.70.2.jar",
+      "sha512": "bed470510ca902ce7bd0890f391e6f267ab22d49c868565795f8aca1c48ba4697f915e4be4d44c94caa449750040bf12987665f695799404fecb5c2fea9091e9",
+      "coordinate": "local-audit:simplyswords-1.70.2.jar"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\simply-swords-design\\upstream\\simplytooltips-qa-no-tooltip-mixin.jar",
+      "filename": "simplytooltips-qa-no-tooltip-mixin.jar",
+      "sha512": "8cee8ce778c54e0d79a02c8dce8f6b392f5ac1dc86e135b7dc1a31216b99d6374646cb9226ddc3504156cf8a13f17feb1d3a6e72a46dc82dacc5d0e69c2751ee",
+      "coordinate": "qa-only:simplytooltips-disable-drawcontext-mixin"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\cff17781b0b62d8ad9c2e88280020d30b6325ddb.jar",
+      "filename": "fzzy-config-0.7.5.jar",
+      "sha512": "2c7d6b9b24b39484c6c7ddb820a2bd77baced79d83cb2d6753b5bb8cdc0de6aeb01f96be47ac9ae2fd5058dd39d39e3d50642f70f7e0e64d412018b28d4b547b",
+      "coordinate": "local-audit:fzzy-config-0.7.5.jar"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\e3d4ebcc5aef85967ba622f9631e0897cbcd4e2c.jar",
+      "filename": "fabric-language-kotlin-1.13.0.jar",
+      "sha512": "bd6acac5e2196aae0095ec453aec46d54e0d925289895fac94b1426cabd3db7e275302502475c61b9719fc8f026e7aaa305122dcdf374c58620bc38b8b4e99a7",
+      "coordinate": "local-audit:fabric-language-kotlin-1.13.0.jar"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-20261025\\fixtures\\fabric\\architectury-9.2.14-fabric.jar",
+      "filename": "architectury-9.2.14.jar",
+      "sha512": "4cb8f009fd522d68a795d2cf5a657bdbe248b32ba7c33cd968f5ab521e9d60e198f8a3f6c50e7d960a2b8f50375116be0db1fd44b5710ea758697d8ea70d15de",
+      "coordinate": "local-audit:architectury-9.2.14.jar"
+    }
+  ],
+  "scenario": "extension-empty"
+}

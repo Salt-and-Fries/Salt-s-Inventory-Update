@@ -1,0 +1,109 @@
+{
+  "scope": "Chipped 3.0.7, Minecraft 1.20.1; analysis/design only. No SIU integration implemented.",
+  "authority": "Published 3.0.7 binaries and native gameplay are authoritative. The public 1.20.1 branch has later changes (including craft validation) and is supporting evidence only.",
+  "native": {
+    "canvas": [
+      256,
+      256
+    ],
+    "menu": "chipped:workbench",
+    "playerSlots": 36,
+    "ownedNonplayerSlots": 0,
+    "flow": [
+      "Select existing player-inventory stack (selection-only slots; no pickup)",
+      "Choose variant from widgets",
+      "Inspect native fixed-perspective 3D preview",
+      "Craft replaces that inventory stack in place, preserving count",
+      "Shift+Craft replaces matching player-inventory stacks; never other open containers"
+    ],
+    "grid": {
+      "columns": 9,
+      "visibleRows": 6,
+      "cell": 18,
+      "nativeScroll": "Wheel only, 8px step; search resets scroll"
+    },
+    "search": "Localized display-name contains, case insensitive; 50 characters; requires material selection",
+    "modes": [
+      "Single",
+      "Horizontal: three blocks",
+      "Vertical: three blocks",
+      "Two by two: four blocks"
+    ],
+    "preview": "Native FakeLevel/connected textures; full door halves and iron-bar connections. Fixed isometric, not free rotation or processing animation.",
+    "observedNativeIssue": "Native bottom-row lower portion paints but does not select. Terra reproduced upper-half vs lower-half discrepancy. Proposed window must match render/hit bounds, not copy this defect."
+  },
+  "alternatives": [
+    {
+      "id": "A",
+      "name": "Upper native panel plus embedded source inventory",
+      "benefit": "Closest native selection behavior",
+      "cost": "Duplicates 36 inventory cells; bulky"
+    },
+    {
+      "id": "B",
+      "name": "Separate preview and variant windows",
+      "benefit": "Independent placement",
+      "cost": "Extra window/focus management and potentially ambiguous selection"
+    },
+    {
+      "id": "C",
+      "name": "Integrated workshop plus material picker",
+      "benefit": "Compact, self-contained, no duplicate inventory or item transfer",
+      "cost": "Needs purpose-built selection UI and authenticated action bridge",
+      "recommended": true
+    }
+  ],
+  "recommended": {
+    "chrome": "SIU window geometry/controls with warm brown and beige matching native Chipped artwork",
+    "layout": "Compact material-reference bar across top; full native preview/four mode buttons/Craft left, search and nine-by-six variant viewport right",
+    "source": "Icon, count/name, Choose button referencing one existing player inventory stack. No input/output slots or cursor transfer.",
+    "picker": "Bounded popup of eligible real inventory stacks, compact to item count, normal dismissal. No global interception of regular SIU inventory clicks.",
+    "scrollbar": "Slim proposed scrollbar/position indicator; clearly label it as an addition since native is wheel-only.",
+    "dimensions": "Approximately 268x178 GUI units, finalize from actual preview bounds. Reserve complete preview silhouettes; never crop outlines or shrink all cells.",
+    "states": [
+      "Empty material",
+      "Populated selected variant",
+      "Material picker open",
+      "Search results/no matches",
+      "Scrolled list",
+      "Preview modes/tall shapes"
+    ],
+    "stationRule": "Seven workbenches share one UI/texture. Vary title, recipe filter and displayed blocks; do not invent station-switching tabs.",
+    "stability": "Keep nine-by-six viewport stable during filtering; reserved empty cells are deliberate rather than excess border padding."
+  },
+  "apiForecast": {
+    "available": [
+      "DesktopClientApi registerWindow/matcher",
+      "DesktopNativeTemplate/Layout/Region where useful",
+      "DesktopWindowDefinition control/input/text-focus/scroll hooks",
+      "DesktopPopup",
+      "DesktopInputContext.sendPayload",
+      "DesktopServerApi registerWindow/registerPayload/opening data",
+      "DesktopMenuFactories"
+    ],
+    "nativeReuse": [
+      "Original Chipped menu/recipes/results",
+      "RenderWindowWidget/FakeLevel",
+      "SlotWidget with corrected clip limits",
+      "Native search/button/mode/variant artwork"
+    ],
+    "mustBridge": [
+      "Native craft packet assumes player.containerMenu is WorkbenchMenu; use authenticated desktop session payload",
+      "Refresh menu selection, results, search editability and scroll together",
+      "Translate menu slot IDs to inventory indices correctly (main inventory first, hotbar last)",
+      "Record source position and recipe type; validate two-block source lifetime/range (upstream stillValid always true)",
+      "Revalidate selected stack and permitted variant on server; handle moved/replaced stacks",
+      "Maintain independent state across simultaneous workbench windows"
+    ],
+    "assessment": "Existing supported API looks sufficient for a compatibility-side custom definition reusing Chipped widgets. A blind native crop is insufficient. No new Core API has been proven necessary; integration is not implemented or tested. Direct selection from normal SIU inventory would need a generic opt-in observation hook if desired, deliberately not required by recommended popup."
+  },
+  "pdfGuidance": "Visual-first, around 10–15 pages if useful: native anatomy/workflow, three options, best design, key states, seven-station gallery, implementation forecast, evidence/limits/sources. Clearly label all mockups as proposals. No production/gameplay-compatibility claims.",
+  "sources": [
+    "https://github.com/terrarium-earth/Chipped/tree/1.20.1",
+    "https://modrinth.com/mod/chipped/version/pwyEaKDs",
+    "https://modrinth.com/mod/chipped/version/pi3f4er3",
+    "https://github.com/terrarium-earth/Chipped/blob/1.20.1/common/src/main/java/earth/terrarium/chipped/client/screens/WorkbenchScreen.java",
+    "https://github.com/terrarium-earth/Chipped/blob/1.20.1/common/src/main/java/earth/terrarium/chipped/common/menus/WorkbenchMenu.java",
+    "https://github.com/terrarium-earth/Chipped/blob/1.20.1/common/src/main/java/earth/terrarium/chipped/client/screens/RenderWindowWidget.java"
+  ]
+}

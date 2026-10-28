@@ -1,0 +1,455 @@
+{
+  "scope": "Actual 1.20.1 runtime screenshots; crops retain original pixels",
+  "captures": [
+    {
+      "label": "Single drawer - survival",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-drawer-single.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-drawer-single.png",
+      "crop_pixels": [
+        544,
+        172,
+        736,
+        366
+      ],
+      "source_sha256": "75c71b74ee6cccacf55e9f089df8a2bb69c42dab209ea6e4faa44f4780b80fcf",
+      "sequence": 45
+    },
+    {
+      "label": "Double drawer - survival",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-drawer-double.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-drawer-double.png",
+      "crop_pixels": [
+        534,
+        172,
+        746,
+        366
+      ],
+      "source_sha256": "aa6bb38bf5e2e70caefdabfe0aebee4f45931ac24772013df409bca7c207826f",
+      "sequence": 51
+    },
+    {
+      "label": "Quad drawer - survival",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-drawer-quad.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-drawer-quad.png",
+      "crop_pixels": [
+        534,
+        152,
+        746,
+        366
+      ],
+      "source_sha256": "a5afb84864d0be6243e91bd2c4d90979905d5b9cecd143ffa1e9ef0a4b60ed19",
+      "sequence": 57
+    },
+    {
+      "label": "Single drawer - creative",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-drawer-single-creative.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-drawer-single-creative.png",
+      "crop_pixels": [
+        538,
+        78,
+        742,
+        272
+      ],
+      "source_sha256": "e4e23748efe70f65d90aef61f1a56844ff07a43e18299e530e0c9d49cd4cab78",
+      "sequence": 150
+    },
+    {
+      "label": "Double drawer - creative",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-drawer-double-creative.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-drawer-double-creative.png",
+      "crop_pixels": [
+        534,
+        78,
+        746,
+        272
+      ],
+      "source_sha256": "903b176828d1b6b60f353306032d542ec78f2226a07382c1780ac59f2fdc692a",
+      "sequence": 155
+    },
+    {
+      "label": "Quad drawer - creative",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-drawer-quad-creative.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-drawer-quad-creative.png",
+      "crop_pixels": [
+        534,
+        58,
+        746,
+        272
+      ],
+      "source_sha256": "96f5788b6d162ba5dd2626858b7db8eae5abcfe5dc75ae149143f148eb158945",
+      "sequence": 160
+    },
+    {
+      "label": "Ossuary - recipe selection",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-ossuary.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-ossuary.png",
+      "crop_pixels": [
+        468,
+        164,
+        810,
+        366
+      ],
+      "source_sha256": "96a497ec5b94a66153e7324fb0994bbbaae238a4c2976e1c697b131d3a0b1d7c",
+      "sequence": 64
+    },
+    {
+      "label": "Urn",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-urn.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-urn.png",
+      "crop_pixels": [
+        444,
+        50,
+        836,
+        366
+      ],
+      "source_sha256": "06ddd9c6b542536a33ec286b3c43a52c46d819ecf8c49eef646d180802e9c14f",
+      "sequence": 70
+    },
+    {
+      "label": "Small urn",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-small-urn.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-small-urn.png",
+      "crop_pixels": [
+        444,
+        50,
+        836,
+        366
+      ],
+      "source_sha256": "a26b1483cedbd4483fdf93fa0bed3ddb89c94fc4395c8ae7ed3c17a32d45bbd9",
+      "sequence": 76
+    },
+    {
+      "label": "Coffin",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-coffin.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-coffin.png",
+      "crop_pixels": [
+        444,
+        50,
+        836,
+        366
+      ],
+      "source_sha256": "3cf4ee3ed866e3900b13ced1149653dffe1e5983699b8ea0ef330de21e8ab42d",
+      "sequence": 82
+    },
+    {
+      "label": "Sarcophagus",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-sarcophagus.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-sarcophagus.png",
+      "crop_pixels": [
+        444,
+        50,
+        836,
+        366
+      ],
+      "source_sha256": "e6c56d90a393a897079206fe402565e94ae35323261ce78e96d038f2ca691fe5",
+      "sequence": 88
+    },
+    {
+      "label": "End Stone Smelter",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-end-smelter.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-end-smelter.png",
+      "crop_pixels": [
+        476,
+        166,
+        804,
+        366
+      ],
+      "source_sha256": "40d75ec59bfbd2d1052122154c6c8547f7bf194cd492b1d698873405e84ada80",
+      "sequence": 105
+    },
+    {
+      "label": "End Stone Smelter - recipe book",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-smelter-book.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-smelter-book.png",
+      "crop_pixels": [
+        114,
+        166,
+        804,
+        534
+      ],
+      "source_sha256": "e3b555ec355d4e3a9dff3284184a0f902da5551b8e67f3d4baa9277b92bafc15",
+      "sequence": 185
+    },
+    {
+      "label": "End Stone Furnace",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-end-furnace.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-end-furnace.png",
+      "crop_pixels": [
+        520,
+        158,
+        760,
+        366
+      ],
+      "source_sha256": "af385feb7523c1dea2244acefb9220cbdb08090daf192b0cf6d1f65141b8e4b8",
+      "sequence": 111
+    },
+    {
+      "label": "Rune Crafting Altar",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-rune-altar.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-rune-altar.png",
+      "crop_pixels": [
+        484,
+        240,
+        796,
+        366
+      ],
+      "source_sha256": "ca60efee1dc96bb4cf8d39fda4f90f08bc4880f7c3443b7685aaed4c486147c4",
+      "sequence": 99
+    },
+    {
+      "label": "Repair and name",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-reforge-entry.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-reforge-entry.png",
+      "crop_pixels": [
+        448,
+        120,
+        830,
+        366
+      ],
+      "source_sha256": "731ac50dd64c04fa7b4dd2ee1c6cfef4b92564190b1ff10db31fa26563f3e45c",
+      "sequence": 117
+    },
+    {
+      "label": "Repair and name - result and cost",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-anvil-renamed.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-anvil-renamed.png",
+      "crop_pixels": [
+        476,
+        22,
+        858,
+        268
+      ],
+      "source_sha256": "4dbaa9fb1e0a8813dcd82d39dd2bc6bb18953a4f5af055d04007e7513d017ed1",
+      "sequence": 8
+    },
+    {
+      "label": "Reforge Gear",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-reforge.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-reforge.png",
+      "crop_pixels": [
+        816,
+        338,
+        1102,
+        558
+      ],
+      "source_sha256": "4033618c9f828b1ec79cb2ed7c548dd540b095995390c1cfcecf63decb57dd03",
+      "sequence": 167
+    },
+    {
+      "label": "Upgrade Gear",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-smith-entry.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-smith-entry.png",
+      "crop_pixels": [
+        448,
+        128,
+        830,
+        366
+      ],
+      "source_sha256": "b188f709ba67d5531b7fce341297e2a85d14a0a6d474545c551adbc96885305b",
+      "sequence": 123
+    },
+    {
+      "label": "Link Gear",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-link-gear.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-link-gear.png",
+      "crop_pixels": [
+        816,
+        338,
+        1140,
+        560
+      ],
+      "source_sha256": "af79d5ecafab83ce8def98a4655b621a8e7bb794bb270c94dfa26357c3b88eab",
+      "sequence": 173
+    },
+    {
+      "label": "Link Gear - linked gem",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-link-success.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-link-success.png",
+      "crop_pixels": [
+        832,
+        338,
+        1140,
+        560
+      ],
+      "source_sha256": "d40d763f76304b17e5880ebcb8bf51fb396d8012100586577bb32c71c6596fe0",
+      "sequence": 37
+    },
+    {
+      "label": "Repair and Disenchant",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-grind-entry.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-grind-entry.png",
+      "crop_pixels": [
+        480,
+        112,
+        800,
+        366
+      ],
+      "source_sha256": "b901cefd0b5c4345d6bca5ed210a1acb832b3010f76201ca0817ae0223458f23",
+      "sequence": 129
+    },
+    {
+      "label": "Unlink Gear",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-unlink-gear.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-unlink-gear.png",
+      "crop_pixels": [
+        816,
+        322,
+        1080,
+        576
+      ],
+      "source_sha256": "36ad8c1c870b92e30763cd282c1c374a725860915f5ede510018910fed058fe0",
+      "sequence": 179
+    },
+    {
+      "label": "Unlink Gear - result",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-variants-01",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-unlink-ready.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-unlink-ready.png",
+      "crop_pixels": [
+        816,
+        322,
+        1080,
+        576
+      ],
+      "source_sha256": "10750eda7dc6c62eb93ed3e3a2dbf2d7b2f5cf8ea19d9bef737143a01b04eb09",
+      "sequence": 67
+    },
+    {
+      "label": "Fletching Table - populated",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-fletching.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-fletching.png",
+      "crop_pixels": [
+        484,
+        168,
+        794,
+        366
+      ],
+      "source_sha256": "69531e806231700bec5b550ee7efd5f80e4debc667aa133bb17fb053d642b632",
+      "sequence": 136
+    },
+    {
+      "label": "Chunk Loader - selected chunk",
+      "loader": "fabric",
+      "run": "1.20.1-fabric-eight-variants-01",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\fabric-chunk-selected.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\fabric-chunk-selected.png",
+      "crop_pixels": [
+        444,
+        144,
+        834,
+        366
+      ],
+      "source_sha256": "343faf0f7bf19b763ddd4460094e84df52363f609f442499b40b181a4401a13a",
+      "sequence": 60
+    },
+    {
+      "label": "Ossuary - Forge",
+      "loader": "forge",
+      "run": "1.20.1-forge-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\forge-ossuary.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\forge-ossuary.png",
+      "crop_pixels": [
+        468,
+        164,
+        810,
+        366
+      ],
+      "source_sha256": "aee96a5c4956305d7836430a27397cec9ce647b93b755440f8689d14fbd453bb",
+      "sequence": 39
+    },
+    {
+      "label": "Rune Crafting Altar - Forge result",
+      "loader": "forge",
+      "run": "1.20.1-forge-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\forge-rune-result.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\forge-rune-result.png",
+      "crop_pixels": [
+        484,
+        240,
+        796,
+        366
+      ],
+      "source_sha256": "4c26b3d22a2b4f84ed9849161ca38658b0c6cad07c9706d3620bbeba0f1b4ba5",
+      "sequence": 19
+    },
+    {
+      "label": "Combiner - Forge",
+      "loader": "forge",
+      "run": "1.20.1-forge-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\forge-combiner.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\forge-combiner.png",
+      "crop_pixels": [
+        508,
+        166,
+        772,
+        366
+      ],
+      "source_sha256": "fcb63d5bdf1dbaf109870f01dfe8434bf154fe90d68205381f953fb58e16e144",
+      "sequence": 12
+    },
+    {
+      "label": "Combiner - Forge recipe book",
+      "loader": "forge",
+      "run": "1.20.1-forge-eight-integration-03",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\screenshots\\forge-combiner-book.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-eight-implemented\\crops\\forge-combiner-book.png",
+      "crop_pixels": [
+        146,
+        166,
+        772,
+        534
+      ],
+      "source_sha256": "f3718b17a6ede584b33a21236e874d8f1e1de40fe4b64fe964384a7b4f23defe",
+      "sequence": 28
+    }
+  ]
+}

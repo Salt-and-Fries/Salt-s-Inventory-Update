@@ -1,0 +1,628 @@
+{
+  "checked_at": "2026-10-28T01:40:11.291080+00:00",
+  "core_version": "0.1.6",
+  "compatibility_version": "0.1.3",
+  "targets": [
+    {
+      "minecraft": "1.20.1",
+      "loader": "fabric",
+      "integrations": [
+        {
+          "project": "extendeddrawersaddon",
+          "project_id": "daHYok8P",
+          "version": "1.0.2+1.20.1",
+          "version_id": "2k6Tunwz",
+          "filename": "extendeddrawersaddon-1.0.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/daHYok8P/versions/2k6Tunwz/extendeddrawersaddon-1.0.2.jar",
+          "sha512": "392a421a99e92a4d8355c86dd6287dc98132a16a751952ddb69e3c114435a54bcbddfccf291fa743459c5859d8176fc8f54aa4cdf0be78516a15ef186d628c9f",
+          "mod_id": "extendeddrawersaddon",
+          "integration_class": "com.salts_inventory_update.compat.extendeddrawersaddon.ExtendedDrawersAddonIntegration",
+          "version_url": "https://modrinth.com/mod/extendeddrawersaddon/version/2k6Tunwz"
+        },
+        {
+          "project": "the-graveyard-fabric",
+          "project_id": "QivVPB8W",
+          "version": "4.0.1+mc1.20.1-fabric",
+          "version_id": "EOb8Is0J",
+          "filename": "graveyard-FABRIC-4.0.1+mc1.20.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/QivVPB8W/versions/EOb8Is0J/graveyard-FABRIC-4.0.1%2Bmc1.20.1.jar",
+          "sha512": "893803dc34166a02108a0a99fef9bf7eef8ed209ab06a7d40a66139919904485ba47918b86f508e7c67af3a2dd75cc716c8ef88ae6abee9e6fb3584fdbc0e105",
+          "mod_id": "graveyard",
+          "integration_class": "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi",
+          "version_url": "https://modrinth.com/mod/the-graveyard-fabric/version/EOb8Is0J"
+        },
+        {
+          "project": "betterend",
+          "project_id": "gc8OEnCC",
+          "version": "4.0.12",
+          "version_id": "KxnyNtqr",
+          "filename": "better-end-4.0.12.jar",
+          "download_url": "https://cdn.modrinth.com/data/gc8OEnCC/versions/KxnyNtqr/better-end-4.0.12.jar",
+          "sha512": "737afe55cdeb60345ae4a428e97317849aad3bf71a811e6d7036e0d45e15f52690b49a7a096ae2e17563fa2c56dbd964a72caa5f2cd38716673171a6b92baddf",
+          "mod_id": "betterend",
+          "integration_class": "com.salts_inventory_update.compat.betterend.BetterEndNativeUi",
+          "version_url": "https://modrinth.com/mod/betterend/version/KxnyNtqr"
+        },
+        {
+          "project": "runes",
+          "project_id": "lP9Yrr1E",
+          "version": "1.3.2+1.20.1-fabric",
+          "version_id": "C0i3Ewtv",
+          "filename": "runes-fabric-1.3.2+1.20.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/lP9Yrr1E/versions/C0i3Ewtv/runes-fabric-1.3.2%2B1.20.1.jar",
+          "sha512": "c91149c458a0716c03a790c3d48e3286e13a56c871891c7004228d32af1fd5e5330aa0a636ef701e999e4a626738d6f38735c9f83d182872d712e2070e68fc8e",
+          "mod_id": "runes",
+          "integration_class": "com.salts_inventory_update.compat.runes.RunesNativeUi",
+          "version_url": "https://modrinth.com/mod/runes/version/C0i3Ewtv"
+        },
+        {
+          "project": "chipped",
+          "project_id": "BAscRYKm",
+          "version": "3.0.7",
+          "version_id": "pwyEaKDs",
+          "filename": "chipped-fabric-1.20.1-3.0.7.jar",
+          "download_url": "https://cdn.modrinth.com/data/BAscRYKm/versions/pwyEaKDs/chipped-fabric-1.20.1-3.0.7.jar",
+          "sha512": "5e12cc2ac7aec827a06fb9358fa53a25040428ae0f192a96305b129b084073154a6ae862d6875f6a02fe89a7a11d253049ce90b292f4c4ab2c72a9c94b93c9b0",
+          "mod_id": "chipped",
+          "integration_class": "com.salts_inventory_update.compat.chipped.ChippedClient",
+          "version_url": "https://modrinth.com/mod/chipped/version/pwyEaKDs"
+        },
+        {
+          "project": "simply-swords",
+          "project_id": "bK3Ubu9p",
+          "version": "1.70.2-1.20.1",
+          "version_id": "Tq7tcDiO",
+          "filename": "simplyswords-fabric-1.70.2-1.20.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/bK3Ubu9p/versions/Tq7tcDiO/simplyswords-fabric-1.70.2-1.20.1.jar",
+          "sha512": "bed470510ca902ce7bd0890f391e6f267ab22d49c868565795f8aca1c48ba4697f915e4be4d44c94caa449750040bf12987665f695799404fecb5c2fea9091e9",
+          "mod_id": "simplyswords",
+          "integration_class": "com.salts_inventory_update.compat.simplyswords.SimplySwordsClient",
+          "version_url": "https://modrinth.com/mod/simply-swords/version/Tq7tcDiO"
+        },
+        {
+          "project": "tieredz",
+          "project_id": "z6sMEexp",
+          "version": "1.3.3+1.20.1",
+          "version_id": "GFUW7N2P",
+          "filename": "tiered-1.3.3.jar",
+          "download_url": "https://cdn.modrinth.com/data/z6sMEexp/versions/GFUW7N2P/tiered-1.3.3.jar",
+          "sha512": "dcd53a96a74447375e68e3d22a1a7d008fef66dbaafe77035c61b2b7b2ba75f92d509b33c492688aa71ba8d7c5649061e82359d764c52947fed268de5015210f",
+          "mod_id": "tiered",
+          "integration_class": "com.salts_inventory_update.compat.tieredz.TieredZIntegration",
+          "version_url": "https://modrinth.com/mod/tieredz/version/GFUW7N2P"
+        },
+        {
+          "project": "smitherz",
+          "project_id": "po8iVUhc",
+          "version": "1.0.4+1.20.1",
+          "version_id": "5EEPnMB7",
+          "filename": "smitherz-1.0.4.jar",
+          "download_url": "https://cdn.modrinth.com/data/po8iVUhc/versions/5EEPnMB7/smitherz-1.0.4.jar",
+          "sha512": "59c79e6b1bf1270ec39e2cf11d9080d162c2199103b7e028188c6bd62a7b568ef56b1a0f09690847d0d96cb8aabf5ceede2bb466fc118b803f0429a866f83269",
+          "mod_id": "smitherz",
+          "integration_class": "com.salts_inventory_update.compat.smitherz.SmitherZIntegration",
+          "version_url": "https://modrinth.com/mod/smitherz/version/5EEPnMB7"
+        },
+        {
+          "project": "additionz",
+          "project_id": "QeSwHM7w",
+          "version": "1.3.2+1.20.1",
+          "version_id": "uIBwQbWY",
+          "filename": "additionz-1.3.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/QeSwHM7w/versions/uIBwQbWY/additionz-1.3.2.jar",
+          "sha512": "4f5cce7f512964ebc4d689e45b15360dcd1ac4eca962852751832c7f453586bca6459b30e14b625e810dd91a1d512ec4e85c57a62b2de6de324ee3e4306b7b6a",
+          "mod_id": "additionz",
+          "integration_class": "com.salts_inventory_update.compat.additionz.AdditionZIntegration",
+          "version_url": "https://modrinth.com/mod/additionz/version/uIBwQbWY",
+          "native_menu_ids": [
+            "minecraft:fletching",
+            "additionz:chunk_loader"
+          ]
+        }
+      ]
+    },
+    {
+      "minecraft": "1.20.1",
+      "loader": "forge",
+      "integrations": [
+        {
+          "project": "the-graveyard-forge",
+          "project_id": "U1jdQuSf",
+          "version": "4.0.1+mc1.20.1-forge",
+          "version_id": "MSk4YVNp",
+          "filename": "graveyard-FORGE-4.0.1+mc1.20.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/U1jdQuSf/versions/MSk4YVNp/graveyard-FORGE-4.0.1%2Bmc1.20.1.jar",
+          "sha512": "6babd063012e5afeced60635d6c190b5563eb36dae43123ddac8eab83cf06114db9033117bb649e4c8413331fd0e078dd1e77d1e061a4c6d778ec00ad9341d7f",
+          "mod_id": "graveyard",
+          "integration_class": "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi",
+          "version_url": "https://modrinth.com/mod/the-graveyard-forge/version/MSk4YVNp"
+        },
+        {
+          "project": "runes",
+          "project_id": "lP9Yrr1E",
+          "version": "1.3.2+1.20.1-forge",
+          "version_id": "j6Djy4m6",
+          "filename": "runes-forge-1.3.2+1.20.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/lP9Yrr1E/versions/j6Djy4m6/runes-forge-1.3.2%2B1.20.1.jar",
+          "sha512": "877f7b05dba9b86b4b5b3fb64b7f243ccdf0ecd3346924edae37251dd3f420e91bdccd9b19e913dac311ae894b72940f674f5cea9f1df6d3f4d6c810814b6be9",
+          "mod_id": "runes",
+          "integration_class": "com.salts_inventory_update.compat.runes.RunesNativeUi",
+          "version_url": "https://modrinth.com/mod/runes/version/j6Djy4m6"
+        },
+        {
+          "project": "deep-aether",
+          "project_id": "gcHIih5B",
+          "version": "1.20.1-1.1.7",
+          "version_id": "IE1ZMRN3",
+          "filename": "deep_aether-1.20.1-1.1.7.jar",
+          "download_url": "https://cdn.modrinth.com/data/gcHIih5B/versions/IE1ZMRN3/deep_aether-1.20.1-1.1.7.jar",
+          "sha512": "9889ca280247a39d0053eeb25da8979bb57b48069428c95a546453cba63b1d3444fce8b63c73ab20fb96741b9e8d4cf98adc44aa61a234c6c3eec187454af7b5",
+          "mod_id": "deep_aether",
+          "integration_class": "com.salts_inventory_update.compat.deepaether.DeepAetherNativeUi",
+          "version_url": "https://modrinth.com/mod/deep-aether/version/IE1ZMRN3"
+        },
+        {
+          "project": "chipped",
+          "project_id": "BAscRYKm",
+          "version": "3.0.7",
+          "version_id": "pi3f4er3",
+          "filename": "chipped-forge-1.20.1-3.0.7.jar",
+          "download_url": "https://cdn.modrinth.com/data/BAscRYKm/versions/pi3f4er3/chipped-forge-1.20.1-3.0.7.jar",
+          "sha512": "be1871655e213cf488d5049058200e03655f63b5922b6031af142d79d8958dca6653e7fa501f1aa2fda5544ad44a4f593521a7927a516e99579406a23a187045",
+          "mod_id": "chipped",
+          "integration_class": "com.salts_inventory_update.compat.chipped.ChippedClient",
+          "version_url": "https://modrinth.com/mod/chipped/version/pi3f4er3"
+        },
+        {
+          "project": "simply-swords",
+          "project_id": "bK3Ubu9p",
+          "version": "1.70.2-1.20.1",
+          "version_id": "Na6e94J1",
+          "filename": "simplyswords-forge-neoforge-1.70.2-1.20.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/bK3Ubu9p/versions/Na6e94J1/simplyswords-forge-neoforge-1.70.2-1.20.1.jar",
+          "sha512": "f4ba377dc5a3cfa99859933c45746f2c730e5fa2b7a0af40fc3b93a396fa3f671799231af0286e9766e5629a334105f1ede63668a3aa9fff72fbf5f97a76ac61",
+          "mod_id": "simplyswords",
+          "integration_class": "com.salts_inventory_update.compat.simplyswords.SimplySwordsClient",
+          "version_url": "https://modrinth.com/mod/simply-swords/version/Na6e94J1"
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "integrations": [
+        {
+          "project": "extendeddrawersaddon",
+          "project_id": "daHYok8P",
+          "version": "1.1.0+1.21.1",
+          "version_id": "Togcm2bs",
+          "filename": "extendeddrawersaddon-1.1.0.jar",
+          "download_url": "https://cdn.modrinth.com/data/daHYok8P/versions/Togcm2bs/extendeddrawersaddon-1.1.0.jar",
+          "sha512": "8664caafb810dee06821d741923b6c43ab36bea29361d8057ed75e21324ec9c0110ce96ba246045e6a201e798638d1dc1b8155332c59bd4ce2ac1eb311e76b82",
+          "mod_id": "extendeddrawersaddon",
+          "integration_class": "com.salts_inventory_update.compat.extendeddrawersaddon.ExtendedDrawersAddonIntegration",
+          "version_url": "https://modrinth.com/mod/extendeddrawersaddon/version/Togcm2bs"
+        },
+        {
+          "project": "the-graveyard-fabric",
+          "project_id": "QivVPB8W",
+          "version": "4.0.1+mc1.21.1-fabric",
+          "version_id": "rz35FP9e",
+          "filename": "graveyard-FABRIC-4.0.1+mc1.21.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/QivVPB8W/versions/rz35FP9e/graveyard-FABRIC-4.0.1%2Bmc1.21.1.jar",
+          "sha512": "2dcc3eb537a05af35ff1a2c98d23260698efc7bf17a8fc176ca38369222bc5b6efeafe2a5c3b9a42a78d8e29550e346edff08f588f35bd4d651f451b73ee1e89",
+          "mod_id": "graveyard",
+          "integration_class": "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi",
+          "version_url": "https://modrinth.com/mod/the-graveyard-fabric/version/rz35FP9e"
+        },
+        {
+          "project": "betterend",
+          "project_id": "gc8OEnCC",
+          "version": "21.0.11",
+          "version_id": "4qhBEg6J",
+          "filename": "better-end-21.0.11.jar",
+          "download_url": "https://cdn.modrinth.com/data/gc8OEnCC/versions/4qhBEg6J/better-end-21.0.11.jar",
+          "sha512": "d3094b88202fca1ccc055e8429eac42eac1bd696a82ed650a9f1426cd5b28bd08e0af4d41664ed3fad10d8477c6da7c6be9d626a5664cfbc664844355c97c5b1",
+          "mod_id": "betterend",
+          "integration_class": "com.salts_inventory_update.compat.betterend.BetterEndNativeUi",
+          "version_url": "https://modrinth.com/mod/betterend/version/4qhBEg6J"
+        },
+        {
+          "project": "runes",
+          "project_id": "lP9Yrr1E",
+          "version": "1.3.2+1.21.1-fabric",
+          "version_id": "MUfjgRc2",
+          "filename": "runes-fabric-1.3.2+1.21.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/lP9Yrr1E/versions/MUfjgRc2/runes-fabric-1.3.2%2B1.21.1.jar",
+          "sha512": "44e036f6766463c28ac114e28cf38df1e72b0b2ecbd62db90bd8fa3b493a0ee8272eefef79ad9ffeea69c2d81106d8e77255950ccfb19118d487ca6a49f43e4d",
+          "mod_id": "runes",
+          "integration_class": "com.salts_inventory_update.compat.runes.RunesNativeUi",
+          "version_url": "https://modrinth.com/mod/runes/version/MUfjgRc2"
+        },
+        {
+          "project": "chipped",
+          "project_id": "BAscRYKm",
+          "version": "4.0.2",
+          "version_id": "6h2mVZcb",
+          "filename": "chipped-fabric-1.21.1-4.0.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/BAscRYKm/versions/6h2mVZcb/chipped-fabric-1.21.1-4.0.2.jar",
+          "sha512": "68b7ec7efd754f1baef14326e1742332fe671f385bad2c91313de8324cf26b20f2a5548fc36174fd35ae87c1b957aea1441b223001ba18042d2bfcd65362151e",
+          "mod_id": "chipped",
+          "integration_class": "com.salts_inventory_update.compat.chipped.ChippedClient",
+          "version_url": "https://modrinth.com/mod/chipped/version/6h2mVZcb"
+        },
+        {
+          "project": "simply-swords",
+          "project_id": "bK3Ubu9p",
+          "version": "1.70.2-1.21.1",
+          "version_id": "3uFjo0ii",
+          "filename": "simplyswords-fabric-1.70.2-1.21.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/bK3Ubu9p/versions/3uFjo0ii/simplyswords-fabric-1.70.2-1.21.1.jar",
+          "sha512": "96159716b66e3f0f4bd38fd4f1796a66daff95d44ccb68ddaf0aaa7178a8ee445866c7355779b84b706a6eab1989b2a453374280c4b1f762759ca8fc8f2ff445",
+          "mod_id": "simplyswords",
+          "integration_class": "com.salts_inventory_update.compat.simplyswords.SimplySwordsClient",
+          "version_url": "https://modrinth.com/mod/simply-swords/version/3uFjo0ii"
+        },
+        {
+          "project": "tieredz",
+          "project_id": "z6sMEexp",
+          "version": "1.3.8+1.21.1",
+          "version_id": "6qL4yFsW",
+          "filename": "tiered-1.3.8.jar",
+          "download_url": "https://cdn.modrinth.com/data/z6sMEexp/versions/6qL4yFsW/tiered-1.3.8.jar",
+          "sha512": "4d60359c8a5fb7e3fa28b773632be6d1788a91da372c79e41d1c55e9d304f9467a81da9f705b436fed2a9793d936e3e381d2c1f476aba5b287f6b684a07a08fc",
+          "mod_id": "tiered",
+          "integration_class": "com.salts_inventory_update.compat.tieredz.TieredZIntegration",
+          "version_url": "https://modrinth.com/mod/tieredz/version/6qL4yFsW"
+        },
+        {
+          "project": "smitherz",
+          "project_id": "po8iVUhc",
+          "version": "1.2.0+1.21.1",
+          "version_id": "oVJezzDw",
+          "filename": "smitherz-1.2.0.jar",
+          "download_url": "https://cdn.modrinth.com/data/po8iVUhc/versions/oVJezzDw/smitherz-1.2.0.jar",
+          "sha512": "0f32e29af98d707171d5be9729f8fd5be44be25e8b2af4a45f9e9dce6ba12db5ed9a58b2f3adf32bba747b8c03d4cab557a86b0bd7e8139dc916ebb34009ba84",
+          "mod_id": "smitherz",
+          "integration_class": "com.salts_inventory_update.compat.smitherz.SmitherZIntegration",
+          "version_url": "https://modrinth.com/mod/smitherz/version/oVJezzDw"
+        },
+        {
+          "project": "additionz",
+          "project_id": "QeSwHM7w",
+          "version": "1.4.0+1.21.1",
+          "version_id": "6Wyt5Ybg",
+          "filename": "additionz-1.4.0.jar",
+          "download_url": "https://cdn.modrinth.com/data/QeSwHM7w/versions/6Wyt5Ybg/additionz-1.4.0.jar",
+          "sha512": "c89db4af1d4dd737d3813e2d4e7117a7ebade133e57f061834d5aa9e96aebcbfe6d88d075c6080c311b6fa0a704bf41c2b3b5dfd9beb9a89a578652a04b92c3d",
+          "mod_id": "additionz",
+          "integration_class": "com.salts_inventory_update.compat.additionz.AdditionZIntegration",
+          "version_url": "https://modrinth.com/mod/additionz/version/6Wyt5Ybg",
+          "native_menu_ids": [
+            "additionz:fletching",
+            "additionz:chunk_loader"
+          ]
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "integrations": [
+        {
+          "project": "the-graveyard-fabric",
+          "project_id": "QivVPB8W",
+          "version": "4.0.1+mc1.21.1-neoforge",
+          "version_id": "cA7hmRfp",
+          "filename": "graveyard-NEOFORGE-4.0.1+mc1.21.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/QivVPB8W/versions/cA7hmRfp/graveyard-NEOFORGE-4.0.1%2Bmc1.21.1.jar",
+          "sha512": "32eb4da37ee7fcfecb1bcde3ed607b20183ea04f925b39451b86f2df1ae628e1d3cf2fe543ca88d5db63a9700cd4c59b80c095f2c99697620435d11ce4533181",
+          "mod_id": "graveyard",
+          "integration_class": "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi",
+          "version_url": "https://modrinth.com/mod/the-graveyard-fabric/version/cA7hmRfp"
+        },
+        {
+          "project": "runes",
+          "project_id": "lP9Yrr1E",
+          "version": "1.3.2+1.21.1-neoforge",
+          "version_id": "Br4oP4M6",
+          "filename": "runes-neoforge-1.3.2+1.21.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/lP9Yrr1E/versions/Br4oP4M6/runes-neoforge-1.3.2%2B1.21.1.jar",
+          "sha512": "df0a53a540e886223004a42e9b3f40e331d0d004bd60ecd433ea058515092ad7dc81c31a876b441b6c2ca007d9dfbcb699810495e0608f6bbf29cec46b057339",
+          "mod_id": "runes",
+          "integration_class": "com.salts_inventory_update.compat.runes.RunesNativeUi",
+          "version_url": "https://modrinth.com/mod/runes/version/Br4oP4M6"
+        },
+        {
+          "project": "deep-aether",
+          "project_id": "gcHIih5B",
+          "version": "1.21.1-1.1.5.1",
+          "version_id": "MSW5emg8",
+          "filename": "deep_aether-1.21.1-1.1.5.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/gcHIih5B/versions/MSW5emg8/deep_aether-1.21.1-1.1.5.1.jar",
+          "sha512": "f848fee0a8a73d0696bf721753af1b752b067791900a19a949ce9faa0adcf1f03b29f44e5ea945404c4505891b14dadab89009253cd31cc85c241c07fe9c5684",
+          "mod_id": "deep_aether",
+          "integration_class": "com.salts_inventory_update.compat.deepaether.DeepAetherNativeUi",
+          "version_url": "https://modrinth.com/mod/deep-aether/version/MSW5emg8"
+        },
+        {
+          "project": "chipped",
+          "project_id": "BAscRYKm",
+          "version": "4.0.2",
+          "version_id": "eqVowbGc",
+          "filename": "chipped-neoforge-1.21.1-4.0.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/BAscRYKm/versions/eqVowbGc/chipped-neoforge-1.21.1-4.0.2.jar",
+          "sha512": "f3083b01267e7c674c4b42f45a317c93ee7723443cba2051fe5bc593638b533b0fe90699e2101661c934dff458eab693cce4e188533bfe977778c249563a2fa5",
+          "mod_id": "chipped",
+          "integration_class": "com.salts_inventory_update.compat.chipped.ChippedClient",
+          "version_url": "https://modrinth.com/mod/chipped/version/eqVowbGc"
+        },
+        {
+          "project": "simply-swords",
+          "project_id": "bK3Ubu9p",
+          "version": "1.70.2-1.21.1",
+          "version_id": "nS0Yahr5",
+          "filename": "simplyswords-neoforge-1.70.2-1.21.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/bK3Ubu9p/versions/nS0Yahr5/simplyswords-neoforge-1.70.2-1.21.1.jar",
+          "sha512": "9a231c0068318e7f62e3d5dfd81660b3f8efdcae9bcf83cfc3637c897fed29aac1941ef8007e8b29f0badfdce0c8047cfb73cd1ea486f25c69197384adfc8dcd",
+          "mod_id": "simplyswords",
+          "integration_class": "com.salts_inventory_update.compat.simplyswords.SimplySwordsClient",
+          "version_url": "https://modrinth.com/mod/simply-swords/version/nS0Yahr5"
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "fabric",
+      "integrations": [
+        {
+          "project": "the-graveyard-fabric",
+          "project_id": "QivVPB8W",
+          "version": "4.0.0+mc1.21.11-fabric",
+          "version_id": "6QPfcUMY",
+          "filename": "graveyard-FABRIC-4.0.0+mc1.21.11.jar",
+          "download_url": "https://cdn.modrinth.com/data/QivVPB8W/versions/6QPfcUMY/graveyard-FABRIC-4.0.0%2Bmc1.21.11.jar",
+          "sha512": "481667df2c2b633b9aad5c949f9a428e29f9fa6cc52a2b4037b4693f762fa8ba86bf86521cdf416d28f8903e89caa55e54673d2a80588566b48dc651fb8d0a94",
+          "mod_id": "graveyard",
+          "integration_class": "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi",
+          "version_url": "https://modrinth.com/mod/the-graveyard-fabric/version/6QPfcUMY"
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "neoforge",
+      "integrations": [
+        {
+          "project": "the-graveyard-fabric",
+          "project_id": "QivVPB8W",
+          "version": "4.0.0+mc1.21.11-neoforge",
+          "version_id": "MrnIQRGz",
+          "filename": "graveyard-NEOFORGE-4.0.0+mc1.21.11.jar",
+          "download_url": "https://cdn.modrinth.com/data/QivVPB8W/versions/MrnIQRGz/graveyard-NEOFORGE-4.0.0%2Bmc1.21.11.jar",
+          "sha512": "fdac06ee309c138865b061a0bf561131c6d080414223500a719b0df25245afcb30efcd2c785fc5aba93c5763662e93f638aa7815b727bf520ea367ea0a3ef600",
+          "mod_id": "graveyard",
+          "integration_class": "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi",
+          "version_url": "https://modrinth.com/mod/the-graveyard-fabric/version/MrnIQRGz"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "fabric",
+      "integrations": [
+        {
+          "project": "the-graveyard-fabric",
+          "project_id": "QivVPB8W",
+          "version": "4.0.0+mc26.1.2-fabric",
+          "version_id": "TV0S59cn",
+          "filename": "graveyard-FABRIC-4.0.0+mc26.1.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/QivVPB8W/versions/TV0S59cn/graveyard-FABRIC-4.0.0%2Bmc26.1.2.jar",
+          "sha512": "d1f8e62864ca0ccfb450eea409a54fdef84ddcc0fbce8234b7d5bddac5a6b62ed56a33728b70c159e9beec05166aa04550f0f341e1de8a5cd733730e7211e751",
+          "mod_id": "graveyard",
+          "integration_class": "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi",
+          "version_url": "https://modrinth.com/mod/the-graveyard-fabric/version/TV0S59cn"
+        },
+        {
+          "project": "betterend",
+          "project_id": "gc8OEnCC",
+          "version": "26.101.4",
+          "version_id": "8dlasiJv",
+          "filename": "better-end-26.101.4.jar",
+          "download_url": "https://cdn.modrinth.com/data/gc8OEnCC/versions/8dlasiJv/better-end-26.101.4.jar",
+          "sha512": "efaaafa08eac65b45a7126fb6ad46b788b84654907076a6c662a31efb40b2b239fb277b2d5907ffc7db92f9acca185a9d1b8f268b6af7ba6652a2a94fe38b050",
+          "mod_id": "betterend",
+          "integration_class": "com.salts_inventory_update.compat.betterend.BetterEndNativeUi",
+          "version_url": "https://modrinth.com/mod/betterend/version/8dlasiJv"
+        },
+        {
+          "project": "runes",
+          "project_id": "lP9Yrr1E",
+          "version": "1.3.2+26.1.2-fabric",
+          "version_id": "49w4X0AF",
+          "filename": "runes-fabric-1.3.2+26.1.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/lP9Yrr1E/versions/49w4X0AF/runes-fabric-1.3.2%2B26.1.2.jar",
+          "sha512": "839fa2b2a6ab29847b59d94b2a8122cf2416a03d6e390c3797fb4c4ed9586c3fe371582bad50bdf592a0fbefc45e2d42ea27f81528522ee4940e694989f6d5de",
+          "mod_id": "runes",
+          "integration_class": "com.salts_inventory_update.compat.runes.RunesNativeUi",
+          "version_url": "https://modrinth.com/mod/runes/version/49w4X0AF"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "neoforge",
+      "integrations": [
+        {
+          "project": "the-graveyard-fabric",
+          "project_id": "QivVPB8W",
+          "version": "4.0.0+mc26.1.2-neoforge",
+          "version_id": "aZKL96mD",
+          "filename": "graveyard-NEOFORGE-4.0.0+mc26.1.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/QivVPB8W/versions/aZKL96mD/graveyard-NEOFORGE-4.0.0%2Bmc26.1.2.jar",
+          "sha512": "0a4b4a436c76fed3e5cdf425c7804b5ef6f92550988f57fc7f940fa9e4921b735097ccd454116198ef61397c201b3c354b4308be3f409e88d623eb2978ac01b6",
+          "mod_id": "graveyard",
+          "integration_class": "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi",
+          "version_url": "https://modrinth.com/mod/the-graveyard-fabric/version/aZKL96mD"
+        },
+        {
+          "project": "runes",
+          "project_id": "lP9Yrr1E",
+          "version": "1.3.2+26.1.2-neoforge",
+          "version_id": "aVRpTnQZ",
+          "filename": "runes-neoforge-1.3.2+26.1.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/lP9Yrr1E/versions/aVRpTnQZ/runes-neoforge-1.3.2%2B26.1.2.jar",
+          "sha512": "5aa20e60290676a1f35bf09be9d499616bc6d7e6b49a880dfe1881086cb17062e2bf3bdc73b21770f293d70b8103a22177963a5d0f4fcc6558d3492721e62b7c",
+          "mod_id": "runes",
+          "integration_class": "com.salts_inventory_update.compat.runes.RunesNativeUi",
+          "version_url": "https://modrinth.com/mod/runes/version/aVRpTnQZ"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "fabric",
+      "integrations": [
+        {
+          "project": "the-graveyard-fabric",
+          "project_id": "QivVPB8W",
+          "version": "4.0.0+mc26.2-fabric",
+          "version_id": "bBdiRIik",
+          "filename": "graveyard-FABRIC-4.0.0+mc26.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/QivVPB8W/versions/bBdiRIik/graveyard-FABRIC-4.0.0%2Bmc26.2.jar",
+          "sha512": "b71d3a1a6ed7c8b109b9f45ee0da10897d48d866eac6fcda3a9614b9081fc221fb60b8c3863c0b62465c4125282fb86bdb702c3941360bf3558f4cb40501ceb3",
+          "mod_id": "graveyard",
+          "integration_class": "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi",
+          "version_url": "https://modrinth.com/mod/the-graveyard-fabric/version/bBdiRIik"
+        },
+        {
+          "project": "betterend",
+          "project_id": "gc8OEnCC",
+          "version": "26.201.4",
+          "version_id": "9gzUjBjt",
+          "filename": "better-end-26.201.4.jar",
+          "download_url": "https://cdn.modrinth.com/data/gc8OEnCC/versions/9gzUjBjt/better-end-26.201.4.jar",
+          "sha512": "34f4bf92da63090c9582f4442c2ed7fa0fa674732312883b5f4cf52be20950eb6d16fc2aa3352929eb835c687096053248ae117ce64a5b9c612c8459b75675fe",
+          "mod_id": "betterend",
+          "integration_class": "com.salts_inventory_update.compat.betterend.BetterEndNativeUi",
+          "version_url": "https://modrinth.com/mod/betterend/version/9gzUjBjt"
+        },
+        {
+          "project": "runes",
+          "project_id": "lP9Yrr1E",
+          "version": "1.3.2+26.2-fabric",
+          "version_id": "rrNHR0aU",
+          "filename": "runes-fabric-1.3.2+26.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/lP9Yrr1E/versions/rrNHR0aU/runes-fabric-1.3.2%2B26.2.jar",
+          "sha512": "5d620d92d322e6037d6a6b53a4d38c8a080144f0ecf59c981d4999f9d7a3e8d7296f3bc104b237f2a4a1dc1ccb327162b32fea73629eb97869d398f9d3afc1e6",
+          "mod_id": "runes",
+          "integration_class": "com.salts_inventory_update.compat.runes.RunesNativeUi",
+          "version_url": "https://modrinth.com/mod/runes/version/rrNHR0aU"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "neoforge",
+      "integrations": [
+        {
+          "project": "the-graveyard-fabric",
+          "project_id": "QivVPB8W",
+          "version": "4.0.0+mc26.2-neoforge",
+          "version_id": "mqXM2GPp",
+          "filename": "graveyard-NEOFORGE-4.0.0+mc26.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/QivVPB8W/versions/mqXM2GPp/graveyard-NEOFORGE-4.0.0%2Bmc26.2.jar",
+          "sha512": "cc26f891448d5e93ece7d889974d622d91a3f15d1ffa2c32aa17c84c6c8a439c30db345f138ef9f18908e16e850eab876f3d55d35b47c734fd4d91cd8f8f2fc9",
+          "mod_id": "graveyard",
+          "integration_class": "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi",
+          "version_url": "https://modrinth.com/mod/the-graveyard-fabric/version/mqXM2GPp"
+        },
+        {
+          "project": "runes",
+          "project_id": "lP9Yrr1E",
+          "version": "1.3.2+26.2-neoforge",
+          "version_id": "8VuD1vlH",
+          "filename": "runes-neoforge-1.3.2+26.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/lP9Yrr1E/versions/8VuD1vlH/runes-neoforge-1.3.2%2B26.2.jar",
+          "sha512": "46344821358bc9ca8e1f99249a52365b61241ee1bb296b9312bf5904102947683d92b01996d85b148908397b9c2fc1cbd949ca7a0d4f11ae9a03c0445e5fa788",
+          "mod_id": "runes",
+          "integration_class": "com.salts_inventory_update.compat.runes.RunesNativeUi",
+          "version_url": "https://modrinth.com/mod/runes/version/8VuD1vlH"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "fabric",
+      "integrations": [
+        {
+          "project": "the-graveyard-fabric",
+          "project_id": "QivVPB8W",
+          "version": "4.0.0+mc26.3-fabric",
+          "version_id": "yeFv1Dnk",
+          "filename": "graveyard-FABRIC-4.0.0+mc26.3.jar",
+          "download_url": "https://cdn.modrinth.com/data/QivVPB8W/versions/yeFv1Dnk/graveyard-FABRIC-4.0.0%2Bmc26.3.jar",
+          "sha512": "2dd4fdf0111843803d5ce78e2f175e596fffcafc2196297062cce60f6f5cf366b6ad70e8ed94c0927f71d7659bffcd58dae9988cb9e48311c9e88b8dcf43d489",
+          "mod_id": "graveyard",
+          "integration_class": "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi",
+          "version_url": "https://modrinth.com/mod/the-graveyard-fabric/version/yeFv1Dnk"
+        },
+        {
+          "project": "betterend",
+          "project_id": "gc8OEnCC",
+          "version": "26.302.0",
+          "version_id": "T7og1z9G",
+          "filename": "better-end-26.302.0.jar",
+          "download_url": "https://cdn.modrinth.com/data/gc8OEnCC/versions/T7og1z9G/better-end-26.302.0.jar",
+          "sha512": "e5df2d8c7e41ac287ea1e9395f792d9663a53b7c493d53b4617bf101805cc06680730719b9fdb063ba53d1dbd3fa55f6fe17c1205f0b7480f4b626af44631788",
+          "mod_id": "betterend",
+          "integration_class": "com.salts_inventory_update.compat.betterend.BetterEndNativeUi",
+          "version_url": "https://modrinth.com/mod/betterend/version/T7og1z9G"
+        },
+        {
+          "project": "runes",
+          "project_id": "lP9Yrr1E",
+          "version": "1.3.2+26.3-fabric",
+          "version_id": "PwSpmtFJ",
+          "filename": "runes-fabric-1.3.2+26.3.jar",
+          "download_url": "https://cdn.modrinth.com/data/lP9Yrr1E/versions/PwSpmtFJ/runes-fabric-1.3.2%2B26.3.jar",
+          "sha512": "a2b3d1af9a2eaf918a34b56f8ea07c2c72c3e9cc418f1aa7628cc5d9ed6bbbae17d4865d52a66f14afa19ef16981759f0627244cae66ae0ae8225dada9de7f4c",
+          "mod_id": "runes",
+          "integration_class": "com.salts_inventory_update.compat.runes.RunesNativeUi",
+          "version_url": "https://modrinth.com/mod/runes/version/PwSpmtFJ"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "neoforge",
+      "integrations": [
+        {
+          "project": "the-graveyard-fabric",
+          "project_id": "QivVPB8W",
+          "version": "4.0.0+mc26.3-neoforge",
+          "version_id": "ncLH2ul6",
+          "filename": "graveyard-NEOFORGE-4.0.0+mc26.3.jar",
+          "download_url": "https://cdn.modrinth.com/data/QivVPB8W/versions/ncLH2ul6/graveyard-NEOFORGE-4.0.0%2Bmc26.3.jar",
+          "sha512": "016a69d66157d9156a2d3f5cc1fb33a7af23b02e9d52b2bdbb7b252eb344229d4a754e1ffafb6276ea583d7a2ad3d5c500b1e7ad8817f79f3ee4c1ba494afbb8",
+          "mod_id": "graveyard",
+          "integration_class": "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi",
+          "version_url": "https://modrinth.com/mod/the-graveyard-fabric/version/ncLH2ul6"
+        },
+        {
+          "project": "runes",
+          "project_id": "lP9Yrr1E",
+          "version": "1.3.2+26.3-neoforge",
+          "version_id": "HM9Q9huy",
+          "filename": "runes-neoforge-1.3.2+26.3.jar",
+          "download_url": "https://cdn.modrinth.com/data/lP9Yrr1E/versions/HM9Q9huy/runes-neoforge-1.3.2%2B26.3.jar",
+          "sha512": "9de0fb751a57dac631e6388f24ee17b4a890766281fb824e98ac1b0e3752b2e193beedcf9fb4a27f104753bdbfba31fd4f3c86b2503960146eabfeba2ccdd16a",
+          "mod_id": "runes",
+          "integration_class": "com.salts_inventory_update.compat.runes.RunesNativeUi",
+          "version_url": "https://modrinth.com/mod/runes/version/HM9Q9huy"
+        }
+      ]
+    }
+  ],
+  "errors": {}
+}

@@ -1,0 +1,27 @@
+{
+  "minecraft": "1.20.1",
+  "loader": "forge",
+  "artifacts": [
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-design\\upstream\\chipped-forge-1.20.1-3.0.7.jar",
+      "filename": "chipped-forge-1.20.1-3.0.7.jar",
+      "sha512": "be1871655e213cf488d5049058200e03655f63b5922b6031af142d79d8958dca6653e7fa501f1aa2fda5544ad44a4f593521a7927a516e99579406a23a187045",
+      "coordinate": "maven.modrinth:BAscRYKm:pi3f4er3",
+      "version": "3.0.7"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-design\\upstream\\athena-forge-1.20.1-3.1.2.jar",
+      "filename": "athena-forge-1.20.1-3.1.2.jar",
+      "sha512": "5a71a1c220eafbfbdb570fa204454352b48d55f238db1a5b398a8c40f6b0fbd8c09a2f6c10def330abdf3daadaa24dfa52471f8de931a93fd99dc7d85b60960b",
+      "coordinate": "maven.modrinth:b1ZV3DIJ:DULOQFj7",
+      "version": "3.1.2"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-design\\upstream\\resourcefullib-forge-1.20.1-2.1.29.jar",
+      "filename": "resourcefullib-forge-1.20.1-2.1.29.jar",
+      "sha512": "8dbe951d431545a7d18081a8b11a52a248e6d8ff9862ae6462b0f5a6f57ff523af12704c3adb071ae99a7c5c1dd895bd7875dea59f9c4956c1597a668b6e8820",
+      "coordinate": "maven.modrinth:G1hIVOrD:OhsHaCcW",
+      "version": "2.1.29"
+    }
+  ]
+}

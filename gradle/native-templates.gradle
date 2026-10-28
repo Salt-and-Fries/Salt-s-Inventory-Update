@@ -1,0 +1,81 @@
+// Native-template examples compile against the public API boundary on every target.
+gradle.projectsEvaluated {
+    def root=rootProject
+    def compiles=[]
+    def nativeCompiles=[]
+    def nativeInputs=[]
+    ['1.20.1','1.21.1','1.21.11','26.1.2','26.2','26.3'].each { mc ->
+      ['fabric',mc=='1.20.1'?'forge':'neoforge'].each { loader ->
+        def target=root.project(":$mc:$loader")
+        def extension=root.project(":compatibility:$mc:$loader")
+        nativeCompiles.add(target.tasks.named('compileJava'))
+        nativeInputs.add([minecraft:mc,loader:loader,target:target])
+        def generated=target.layout.buildDirectory.dir('generated/native-template-example')
+        def prepare=target.tasks.register('prepareNativeTemplateExample') {
+            inputs.dir(root.file('api-examples/native-template/src/main/java'))
+            inputs.property('minecraft',mc)
+            outputs.dir(generated)
+            doLast {
+                root.copy {
+                    from(root.file('api-examples/native-template/src/main/java'))
+                    into(generated)
+                    filter { line -> mc in ['1.20.1','1.21.1'] ? line : line.replace('com.salts_inventory_update.api.client.input.','net.minecraft.client.input.') }
+                }
+            }
+        }
+        def compile=target.tasks.register('compileNativeTemplateExample', JavaCompile) {
+            dependsOn(target.tasks.named('publicApiJar'),prepare)
+            source(generated)
+            classpath=extension.sourceSets.main.compileClasspath
+            destinationDirectory=target.layout.buildDirectory.dir('native-template-example')
+            javaCompiler=target.tasks.named('compileJava',JavaCompile).flatMap { it.javaCompiler }
+        }
+        compiles.add(compile)
+      }
+    }
+    def verify=root.tasks.register('verifyNativeTemplateExample') { group='verification'; dependsOn(compiles) }
+    root.tasks.named('check').configure { dependsOn(verify) }
+    root.tasks.named('build').configure { dependsOn(verify) }
+    def symbols=root.tasks.register('verifyNativeContainerSymbols',Exec) {
+        group='verification'
+        description='Checks automatic container renderer and mixin symbols against every target Minecraft API.'
+        dependsOn(nativeCompiles)
+        def manifest=root.layout.buildDirectory.file('native-container-symbol-inputs.json')
+        inputs.file(root.file('tools/verify-native-container-symbols.py'))
+        doFirst {
+            def rows=nativeInputs.collect { row ->
+                [minecraft:row.minecraft,loader:row.loader,jdk:row.target.tasks.named('compileJava',JavaCompile).get().javaCompiler.get().metadata.installationPath.asFile.absolutePath,
+                 outputs:row.target.sourceSets.main.output.classesDirs.files.collect{it.absolutePath},
+                 libraries:row.target.tasks.named('compileJava',JavaCompile).get().classpath.files.collect{it.absolutePath}]
+            }
+            manifest.get().asFile.text=groovy.json.JsonOutput.toJson(rows)
+            commandLine('python',root.file('tools/verify-native-container-symbols.py'),manifest.get().asFile)
+        }
+    }
+    root.tasks.named('check').configure { dependsOn(symbols) }
+    root.tasks.named('build').configure { dependsOn(symbols) }
+    def integrationPorts=root.tasks.register('verifyNativeIntegrationPorts',Exec) {
+        group='verification'
+        description='Checks exact second-batch release coverage and optional bootstrap wiring.'
+        commandLine('python',root.file('tools/verify-project-everything-ports.py'))
+    }
+    def integrationPortJars=root.tasks.register('verifyNativeIntegrationPortJars',Exec) {
+        group='verification'
+        dependsOn('verifyModuleJars')
+        commandLine('python',root.file('tools/verify-project-everything-ports.py'),'--jars')
+    }
+    root.tasks.named('check').configure { dependsOn(integrationPorts) }
+    root.tasks.named('build').configure { dependsOn(integrationPorts,integrationPortJars) }
+    def thirdBatchPorts=root.tasks.register('verifyThirdBatchPorts',Exec) {
+        group='verification'
+        description='Checks exact third-batch releases, optional dependencies and workstation registration.'
+        commandLine('python',root.file('tools/verify-third-batch-ports.py'))
+    }
+    def thirdBatchJars=root.tasks.register('verifyThirdBatchPortJars',Exec) {
+        group='verification'
+        dependsOn('verifyModuleJars')
+        commandLine('python',root.file('tools/verify-third-batch-ports.py'),'--jars')
+    }
+    root.tasks.named('check').configure { dependsOn(thirdBatchPorts) }
+    root.tasks.named('build').configure { dependsOn(thirdBatchPorts,thirdBatchJars) }
+}

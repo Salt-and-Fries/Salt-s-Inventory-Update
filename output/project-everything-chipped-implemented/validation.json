@@ -1,0 +1,51 @@
+{
+  "scope": "Focused Chipped 3.0.7 1.20.1 integration checks; not a complete functional suite",
+  "fabric": {
+    "build": "10",
+    "seven_station_open": "pass",
+    "picker_duplicate_stacks": "pass",
+    "single_craft": "pass: slot 9 stone x32 to chosen variant x32",
+    "shift_craft_all": "pass using QA-simulated Shift plus actual button click: inventory 32+17 converted, unrelated dirt unchanged",
+    "preview_modes": "four modes verified using stone",
+    "search_no_results": "pass",
+    "scrollbar_bottom_and_last_row": "pass",
+    "stale_selected_stack": "pass",
+    "simultaneous_workbenches_and_source_removal": "pass",
+    "side_removal": "pass",
+    "ordinary_inventory_cursor_roundtrip": "pass",
+    "out_of_range_closes": "pass"
+  },
+  "forge": {
+    "build": "11",
+    "seven_station_open": "pass",
+    "mason_picker_and_single_craft": "pass: stone x32 to variant x32 in same slot",
+    "positive_search": "pass: tile 62 to 8",
+    "physical_mouse_wheel": "pass: offset 0 to 8",
+    "runtime_caveat": "QA uses SRG-to-named remapped copies; original artifacts and transformed lineage recorded."
+  },
+  "coverage_limits": [
+    "No complete functional suite was run.",
+    "Forge full variant/control matrix was not repeated.",
+    "Preview modes were checked with stone; tall doors and bars were not separately exercised.",
+    "Popup focus and screen-edge clamping were not exhaustively tested.",
+    "Craft All restriction to other open containers was not separately tested; matching inventory stacks and unrelated inventory item were checked.",
+    "Reopening after source removal was not separately tested."
+  ],
+  "evidence": {
+    "fabric_run": "build\\project-everything-chipped-implemented\\gameplay\\1.20.1-fabric-chipped-implementation-10",
+    "forge_run": "build\\project-everything-chipped-implemented\\gameplay\\1.20.1-forge-chipped-implementation-11",
+    "screenshots": "output\\project-everything-chipped-implemented\\screenshot-manifest.json",
+    "forge_remap_lineage": "build\\project-everything-chipped-implemented\\gameplay\\1.20.1-forge-chipped-implementation-11\\forge-remap-lineage.json"
+  },
+  "popup_regression_build12": {
+    "fabric": "pass: no text bleed over picker with no-result search, duplicate second row selects slot10 stone x17, both inventory counts unchanged",
+    "forge": "pass: same scenario and counts; named QA runtime"
+  },
+  "artifact_lineage": {
+    "build12_fabric_original_sha256": "bac231e1a56ce71ddb2135b3d44e79c33ca7d1ebd14103d4afa653603fa2e07a",
+    "build12_forge_original_sha256": "018e7c0933d1a10cbccf3789ba56748c5e5e92b5ec71ef91bd095d9c4a1662bc",
+    "staged_original_equals_dist": "both loaders exact SHA-256 match before Forge runtime remapping",
+    "older_build_comparison": "output\\project-everything-chipped-implemented\\artifact-comparison.json",
+    "forge_runtime_transformed_lineage": "build\\project-everything-chipped-implemented\\gameplay\\1.20.1-forge-chipped-popup-12\\forge-remap-lineage.json"
+  }
+}

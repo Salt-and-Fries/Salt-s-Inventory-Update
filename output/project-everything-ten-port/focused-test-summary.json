@@ -1,0 +1,107 @@
+[
+  {
+    "minecraft": "1.21.1",
+    "class": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest",
+    "tests": 7,
+    "passed": true,
+    "xml": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml"
+  },
+  {
+    "minecraft": "1.21.1",
+    "class": "com.salts_inventory_update.server.NativeCursorBroadcastTest",
+    "tests": 3,
+    "passed": true,
+    "xml": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml"
+  },
+  {
+    "minecraft": "1.21.1",
+    "class": "com.salts_inventory_update.server.NativeOpeningCodecTest",
+    "tests": 3,
+    "passed": true,
+    "xml": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml"
+  },
+  {
+    "minecraft": "1.21.11",
+    "class": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest",
+    "tests": 7,
+    "passed": true,
+    "xml": "compatibility\\versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml"
+  },
+  {
+    "minecraft": "1.21.11",
+    "class": "com.salts_inventory_update.server.NativeCursorBroadcastTest",
+    "tests": 3,
+    "passed": true,
+    "xml": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml"
+  },
+  {
+    "minecraft": "1.21.11",
+    "class": "com.salts_inventory_update.server.NativeOpeningCodecTest",
+    "tests": 3,
+    "passed": true,
+    "xml": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml"
+  },
+  {
+    "minecraft": "26.1.2",
+    "class": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest",
+    "tests": 7,
+    "passed": true,
+    "xml": "compatibility\\versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml"
+  },
+  {
+    "minecraft": "26.1.2",
+    "class": "com.salts_inventory_update.server.NativeCursorBroadcastTest",
+    "tests": 3,
+    "passed": true,
+    "xml": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml"
+  },
+  {
+    "minecraft": "26.1.2",
+    "class": "com.salts_inventory_update.server.NativeOpeningCodecTest",
+    "tests": 3,
+    "passed": true,
+    "xml": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml"
+  },
+  {
+    "minecraft": "26.2",
+    "class": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest",
+    "tests": 7,
+    "passed": true,
+    "xml": "compatibility\\versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml"
+  },
+  {
+    "minecraft": "26.2",
+    "class": "com.salts_inventory_update.server.NativeCursorBroadcastTest",
+    "tests": 3,
+    "passed": true,
+    "xml": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml"
+  },
+  {
+    "minecraft": "26.2",
+    "class": "com.salts_inventory_update.server.NativeOpeningCodecTest",
+    "tests": 3,
+    "passed": true,
+    "xml": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml"
+  },
+  {
+    "minecraft": "26.3",
+    "class": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest",
+    "tests": 7,
+    "passed": true,
+    "xml": "compatibility\\versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml"
+  },
+  {
+    "minecraft": "26.3",
+    "class": "com.salts_inventory_update.server.NativeCursorBroadcastTest",
+    "tests": 3,
+    "passed": true,
+    "xml": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml"
+  },
+  {
+    "minecraft": "26.3",
+    "class": "com.salts_inventory_update.server.NativeOpeningCodecTest",
+    "tests": 3,
+    "passed": true,
+    "xml": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml"
+  }
+]

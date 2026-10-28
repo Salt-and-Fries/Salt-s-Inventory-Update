@@ -1,0 +1,374 @@
+{
+  "minecraft": "1.20.1",
+  "kind": "native screenshots and visual proposals; no SIU implementation",
+  "native_captures": [
+    {
+      "loader": "fabric",
+      "name": "mason-table-empty-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-mason-table-empty-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-mason-table-empty-clean.png",
+      "sha256": "955d367ae7604a050c066df20ada3954548eb6f01457227676018594ab902945",
+      "sequence": 71,
+      "siu_loaded": false,
+      "title": "Mason Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "mason-table-material-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-mason-table-material-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-mason-table-material-clean.png",
+      "sha256": "6501025986a53e6403642b732c34eb52b2afdf9c842b64284effff871d3970e2",
+      "sequence": 73,
+      "siu_loaded": false,
+      "title": "Mason Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "carpenters-table-empty-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-carpenters-table-empty-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-carpenters-table-empty-clean.png",
+      "sha256": "905b05977a7bf4ee8afe67f3c05de828b23a2c9ea452403bce671e99a615fc47",
+      "sequence": 76,
+      "siu_loaded": false,
+      "title": "Carpenters Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "carpenters-table-material-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-carpenters-table-material-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-carpenters-table-material-clean.png",
+      "sha256": "0097fc9eff6f8969a38e2ed1f35eac6908598536e3df631477cd94e53aa34da9",
+      "sequence": 78,
+      "siu_loaded": false,
+      "title": "Carpenters Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "loom-table-empty-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-loom-table-empty-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-loom-table-empty-clean.png",
+      "sha256": "dd2435d3fa7cf06cf841a6c9b86283e1cfbb113583ebf21310b87feffd617e7d",
+      "sequence": 81,
+      "siu_loaded": false,
+      "title": "Loom Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "loom-table-material-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-loom-table-material-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-loom-table-material-clean.png",
+      "sha256": "47ec3d2a26289d230b00f0da794f9058cef9d8e983890270cb482ae28798ae18",
+      "sequence": 83,
+      "siu_loaded": false,
+      "title": "Loom Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "glassblower-empty-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-glassblower-empty-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-glassblower-empty-clean.png",
+      "sha256": "7a8bdbe570abe252b947977ece90f2f24cd55cad6e4fe450202a33d0728560b4",
+      "sequence": 86,
+      "siu_loaded": false,
+      "title": "Glassblower"
+    },
+    {
+      "loader": "fabric",
+      "name": "glassblower-material-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-glassblower-material-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-glassblower-material-clean.png",
+      "sha256": "b9a7e463a321eaa05ac72c18e730fdd2992a060bed6981db0664a5aad320c4b5",
+      "sequence": 88,
+      "siu_loaded": false,
+      "title": "Glassblower"
+    },
+    {
+      "loader": "fabric",
+      "name": "botanist-workbench-empty-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-botanist-workbench-empty-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-botanist-workbench-empty-clean.png",
+      "sha256": "dd736f0eb49f2aee31d0dcbb38f5d76f29a23909e6fbaa3df46bf7b82b1607b2",
+      "sequence": 91,
+      "siu_loaded": false,
+      "title": "Botanist Workbench"
+    },
+    {
+      "loader": "fabric",
+      "name": "botanist-workbench-material-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-botanist-workbench-material-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-botanist-workbench-material-clean.png",
+      "sha256": "933a2be86c2a1ea50fea0e4a8c178f7c4b2ac2fed1ece39b72c9bb969e1d63d2",
+      "sequence": 93,
+      "siu_loaded": false,
+      "title": "Botanist Workbench"
+    },
+    {
+      "loader": "fabric",
+      "name": "alchemy-bench-empty-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-alchemy-bench-empty-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-alchemy-bench-empty-clean.png",
+      "sha256": "cda50a8d9dc0c24102702efdc66bed9defabc78fbd150117a2ead2a180e9186d",
+      "sequence": 96,
+      "siu_loaded": false,
+      "title": "Alchemy Bench"
+    },
+    {
+      "loader": "fabric",
+      "name": "alchemy-bench-material-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-alchemy-bench-material-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-alchemy-bench-material-clean.png",
+      "sha256": "640482b3a1441d497b2ef8bba5dffde0d18d518f276aae6fbf35c738d6560123",
+      "sequence": 98,
+      "siu_loaded": false,
+      "title": "Alchemy Bench"
+    },
+    {
+      "loader": "fabric",
+      "name": "tinkering-table-empty-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-tinkering-table-empty-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-tinkering-table-empty-clean.png",
+      "sha256": "392b39b85cadf259bc816c757c580a4a31eacaf54f812bfd258caba2bf4feded",
+      "sequence": 101,
+      "siu_loaded": false,
+      "title": "Tinkering Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "tinkering-table-material-clean",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-tinkering-table-material-clean.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-tinkering-table-material-clean.png",
+      "sha256": "341e5102bb4353e5223e3c5786b5a43ca0207f87502f183b193cc4a16e78be96",
+      "sequence": 103,
+      "siu_loaded": false,
+      "title": "Tinkering Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "mason-search-brick",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-mason-search-brick.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-mason-search-brick.png",
+      "sha256": "140d0b964fe9b33cb4c948828aec7699979580794bc34ce871606c461b1dfcd3",
+      "sequence": 63,
+      "siu_loaded": false,
+      "title": "Mason Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "mason-search-no-results",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-mason-search-no-results.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-mason-search-no-results.png",
+      "sha256": "479f1ef53837e628552154239cba001801d04339518eba9051262aed1056088d",
+      "sequence": 65,
+      "siu_loaded": false,
+      "title": "Mason Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "mason-row6-upper",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-mason-row6-upper.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-mason-row6-upper.png",
+      "sha256": "9b51c600881fe63b6ebe691845af7372cb790de03190235c7755624446f8c0c1",
+      "sequence": 115,
+      "siu_loaded": false,
+      "title": "Mason Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "mason-row6-lower",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-mason-row6-lower.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-mason-row6-lower.png",
+      "sha256": "9b51c600881fe63b6ebe691845af7372cb790de03190235c7755624446f8c0c1",
+      "sequence": 116,
+      "siu_loaded": false,
+      "title": "Mason Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "mason-row6-other-upper",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-mason-row6-other-upper.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-mason-row6-other-upper.png",
+      "sha256": "02fe3d54a572e39e1c2759a1de5de6b72ea52352f35d7f1c826ca97588188895",
+      "sequence": 117,
+      "siu_loaded": false,
+      "title": "Mason Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "tinkering-preview-mode-1",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-tinkering-preview-mode-1.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-tinkering-preview-mode-1.png",
+      "sha256": "4f913aeec02d662e1e5defc06851b3dc23d56c16e2c82c4f9ba43499f0540649",
+      "sequence": 54,
+      "siu_loaded": false,
+      "title": "Tinkering Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "tinkering-preview-mode-2",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-tinkering-preview-mode-2.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-tinkering-preview-mode-2.png",
+      "sha256": "ab863c00e8816b0d20500ee3599dc37e7ba671e001327dd4ad49279d2823fbfe",
+      "sequence": 55,
+      "siu_loaded": false,
+      "title": "Tinkering Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "tinkering-preview-mode-3",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-tinkering-preview-mode-3.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-tinkering-preview-mode-3.png",
+      "sha256": "38335f81b99a02ae76794940d67bdebea7aef7f851ef966ca715d18d507c62af",
+      "sequence": 56,
+      "siu_loaded": false,
+      "title": "Tinkering Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "tinkering-preview-mode-4",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-tinkering-preview-mode-4.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-tinkering-preview-mode-4.png",
+      "sha256": "82577c84d0964cdf232904475cec43772cc182033f498657d3cb97697802b292",
+      "sequence": 57,
+      "siu_loaded": false,
+      "title": "Tinkering Table"
+    },
+    {
+      "loader": "fabric",
+      "name": "alchemy-bench-amethyst",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\fabric-alchemy-bench-amethyst.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\fabric-alchemy-bench-amethyst.png",
+      "sha256": "744ac3f8edb825b95b5bfd0b5001232de44666272472d623c78fc8454a35b9f2",
+      "sequence": 48,
+      "siu_loaded": false,
+      "title": "Alchemy Bench"
+    },
+    {
+      "loader": "forge",
+      "name": "forge-mason-empty",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\forge-forge-mason-empty.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\forge-forge-mason-empty.png",
+      "sha256": "ec87775cd86ec81e313fd1a557e16d2cde5822051aba98a54ca1c6c63c47663c",
+      "sequence": 1,
+      "siu_loaded": false,
+      "title": "Mason Table"
+    },
+    {
+      "loader": "forge",
+      "name": "forge-mason-clear",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\forge-forge-mason-clear.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\forge-forge-mason-clear.png",
+      "sha256": "66b73f1f131a757381032226ba64f9796ab8e9278f3536eb6982179039918c88",
+      "sequence": 10,
+      "siu_loaded": false,
+      "title": "Mason Table"
+    },
+    {
+      "loader": "forge",
+      "name": "forge-mason-scrolled-clear",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\forge-forge-mason-scrolled-clear.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\forge-forge-mason-scrolled-clear.png",
+      "sha256": "8c1ce345d948f2b7742cec4b27815891a3f9223bd56d8e0e47bb5e78bb3911d3",
+      "sequence": 11,
+      "siu_loaded": false,
+      "title": "Mason Table"
+    },
+    {
+      "loader": "forge",
+      "name": "forge-mason-search-clear",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\forge-forge-mason-search-clear.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\forge-forge-mason-search-clear.png",
+      "sha256": "61345ad1f070c9900ef08d9d96da1591211fb77eff53160852ccbd94adf908da",
+      "sequence": 13,
+      "siu_loaded": false,
+      "title": "Mason Table"
+    },
+    {
+      "loader": "forge",
+      "name": "forge-mason-crafted",
+      "full": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-full\\forge-forge-mason-crafted.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\native-crops\\forge-forge-mason-crafted.png",
+      "sha256": "ed506ff41b7355444509fc19d294741a6453bc74d046eb37f943dd344f55e7ad",
+      "sequence": 5,
+      "siu_loaded": false,
+      "title": "Mason Table"
+    }
+  ],
+  "proposals": [
+    {
+      "state": "empty",
+      "file": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\proposals\\empty.png",
+      "type": "composed visual proposal, not implemented SIU",
+      "base_native_capture": "forge:forge-mason-empty",
+      "geometry_gui": [
+        270,
+        181
+      ]
+    },
+    {
+      "state": "populated",
+      "file": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\proposals\\populated.png",
+      "type": "composed visual proposal, not implemented SIU",
+      "base_native_capture": "forge:forge-mason-clear",
+      "geometry_gui": [
+        270,
+        181
+      ]
+    },
+    {
+      "state": "picker",
+      "file": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\proposals\\picker.png",
+      "type": "composed visual proposal, not implemented SIU",
+      "base_native_capture": "forge:forge-mason-clear",
+      "geometry_gui": [
+        270,
+        181
+      ]
+    },
+    {
+      "state": "search",
+      "file": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\proposals\\search.png",
+      "type": "composed visual proposal, not implemented SIU",
+      "base_native_capture": "forge:forge-mason-search-clear",
+      "geometry_gui": [
+        270,
+        181
+      ]
+    },
+    {
+      "state": "no-results",
+      "file": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\proposals\\no-results.png",
+      "type": "composed visual proposal, not implemented SIU",
+      "base_native_capture": "fabric:mason-search-no-results",
+      "geometry_gui": [
+        270,
+        181
+      ]
+    },
+    {
+      "state": "scrolled",
+      "file": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\proposals\\scrolled.png",
+      "type": "composed visual proposal, not implemented SIU",
+      "base_native_capture": "forge:forge-mason-scrolled-clear",
+      "geometry_gui": [
+        270,
+        181
+      ]
+    },
+    {
+      "state": "preview-vertical",
+      "file": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-chipped-design\\proposals\\preview-vertical.png",
+      "type": "composed visual proposal, not implemented SIU",
+      "base_native_capture": "fabric:tinkering-preview-mode-3",
+      "geometry_gui": [
+        270,
+        181
+      ]
+    }
+  ],
+  "constraints": [
+    "Material picker references existing player inventory; no owned input/output slot",
+    "Nine columns, six visible rows; matching render and hit bounds",
+    "Scrollbar is proposed, native uses wheel",
+    "No station tabs; each source block supplies the title and filter"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "scope": "Focused Minecraft 1.20.1 gameplay checks; not a complete suite",
+  "fabric_core_only": {
+    "nether": "build05: native automatic, bottom slot 53 emerald x7 pickup/return, exact count/cursor; no player inventory strip",
+    "archeology": "build05 visual reference; build02 real processing consumed one artifact, damaged brush, produced book and pickup to cursor",
+    "drag": "build02 moved whole window +65,+30"
+  },
+  "forge_core_only": {
+    "nether": "build05: bottom slot53 emerald x7 pickup/return, window drag +65,+30",
+    "archeology": "build05: four artifacts reduced to three, brush used, enchanted book output taken to cursor",
+    "runtime": "SRG-to-named QA transformed copies; lineage recorded alongside run"
+  },
+  "fabric_compatibility": "build05: Better Archeology resolves NativeTemplateWindow, layoutError empty, pre-existing parchment style retained",
+  "production_jars": {
+    "fabric_sha256": "ec8397a2e58eda7384505bfc490f5753bce1fd161e9807d469ffafda5c5fbb93",
+    "forge_sha256": "644734bf599a6b0567510cc06f88ddecdfa5510d040e5f1567f8bf014e0bce3a"
+  },
+  "limits": [
+    "Focused affected checks only, not full gameplay suite.",
+    "Gameplay was performed on 1.20.1; other target builds were validated separately by implementation owner.",
+    "No distinct native button was present in the two selected screens; slots, drag and native processing were exercised.",
+    "Forge runtime uses remapped QA copies; shipping artifacts are not those remapped runtime files."
+  ],
+  "evidence": {
+    "fabric_run": "build\\automatic-window-bars-implemented\\gameplay\\1.20.1-fabric-bars-fabric-05",
+    "fabric_prior_processing": "build\\automatic-window-bars-implemented\\gameplay\\1.20.1-fabric-bars-fabric-02",
+    "forge_run": "build\\automatic-window-bars-implemented\\gameplay\\1.20.1-forge-bars-forge-05",
+    "api_run": "build\\automatic-window-bars-implemented\\gameplay\\1.20.1-fabric-bars-fabric-api-05",
+    "screenshots": "output\\automatic-window-bars-implemented\\screenshot-manifest.json",
+    "build05_vs_build06": "output\\automatic-window-bars-implemented\\build05-vs-build06.json",
+    "fabric_footer_build06": "build/automatic-window-bars-implemented/gameplay/1.20.1-fabric-bars-fabric-06/footer-check.json"
+  },
+  "fabric_footer_build06": "pass: carried emerald x7 remained on server cursor after click on blank footer; visible slot returned stack intact",
+  "image_build_lineage": "Screenshots show build05; build06 changed only AutomaticNativeWindow.class (input containment), rendering unchanged."
+}

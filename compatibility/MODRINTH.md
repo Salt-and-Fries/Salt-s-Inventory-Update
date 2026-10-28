@@ -14,9 +14,56 @@ paths with the resulting hosted URLs, and remove this comment before publishing.
 
 Salt's Inventory Compatibility brings supported modded inventories and recipe browsers into the movable window system provided by [Salt's Inventory Update](https://modrinth.com/mod/salts-inventory-update). Use storage terminals, backpacks and other supported interfaces alongside your player inventory and other open containers.
 
-**Requires Salt's Inventory Update.** Install the Compatibility JAR alongside the Core JAR for the same Minecraft version and loader. Compatibility **0.1.2** requires Core **0.1.5** on every supported target; the two mods have independent version numbers. Core provides the inventory framework and works on its own. This extra JAR provides the integrations listed below. The optional Controlify companion **0.1.1** uses the same Core release.
+**Requires Salt's Inventory Update.** Install the Compatibility JAR alongside the Core JAR for the same Minecraft version and loader. Compatibility **0.1.3** requires Core **0.1.6** on every supported target; the two mods have independent version numbers. Core provides the inventory framework and works on its own. This extra JAR provides the integrations listed below. The optional Controlify companion **0.1.1** uses the same Core release.
 
 Install third-party mods separately, together with their own dependencies. You only need the integrations for the mods you use; the extension does not require every supported mod to be installed.
+
+## Iron Chests: Restocked
+
+On **Minecraft 1.20.1 Fabric and Forge**, all 15 chest and barrel variants open as movable desktop windows. Sort their contents, transfer items between open inventories, and resize or scroll larger storage grids. Native slot restrictions, including the Dirt Chest's dirt-only storage, remain in effect. Tested upstream release: **5.0.2**.
+
+## Animal Feeding Trough
+
+On **all supported Minecraft versions and loaders**, the feeding trough opens as a compact desktop window with its storage slot centered below the title bar. Move items between the trough and other open inventories using the usual desktop controls. The upstream mod keeps control of animal feeding, stored experience and its crouch-with-an-empty-hand XP collection interaction. Install the matching Animal Feeding Trough release and its required dependencies.
+
+## Native container layouts
+
+These integrations reuse each mod's original artwork and controls, with small layout adjustments for the desktop:
+
+| Mod | Supported Minecraft versions and loaders |
+| --- | --- |
+| Oxidized | 1.20.1 and 1.21.1 Fabric |
+| Brick & Mortar | 1.20.1 Fabric/Forge; 1.21.1 Fabric/NeoForge |
+| Expanded Delight | 1.20.1 Fabric; 1.21.1 NeoForge |
+| Crabber's Delight | 1.20.1 Forge; 1.21.1 NeoForge |
+| Nether Chested | All twelve supported targets |
+| Inmis | 1.20.1 and 1.21.1 Fabric |
+| Bartering Station | All twelve supported targets |
+| Alloy Forgery | 1.20.1, 1.21.1 and 26.1.2 Fabric |
+| Fabric Seasons: Extras | 1.20.1 and 1.21.1 Fabric |
+| Farmer's Delight / Refabricated | 1.20.1 Fabric/Forge; 1.21.1 Fabric/NeoForge; 1.21.11, 26.1.2, 26.2 and 26.3 Fabric |
+| Miner's Delight | 1.20.1 Forge; 1.21.1 NeoForge |
+| Better Archeology | All twelve supported targets |
+| Illager Invasion | 1.20.1 Fabric/Forge; 1.21.1, 1.21.11, 26.1.2 and 26.2 Fabric/NeoForge |
+| Galosphere | 1.20.1 Fabric/Forge; 1.21.1 Fabric/NeoForge |
+| Alloyed (standalone 3.x forge) | 1.21.1 and 26.1.2 Fabric/NeoForge; 26.2 and 26.3 Fabric |
+| Sawmill | 1.20.1 Fabric/Forge; 1.21.1 and 26.1.2 Fabric/NeoForge |
+| ExtendedDrawersAddon | 1.20.1 and 1.21.1 Fabric |
+| The Graveyard containers | All supported Minecraft targets: Fabric, Forge on 1.20.1, NeoForge on later versions |
+| BetterEnd | Fabric: 1.20.1, 1.21.1, 26.1.2, 26.2 and 26.3 |
+| Runes | Fabric/Forge on 1.20.1; Fabric/NeoForge on 1.21.1, 26.1.2, 26.2 and 26.3 |
+| Deep Aether Combiner | 1.20.1 Forge and 1.21.1 NeoForge |
+| TieredZ | 1.20.1 and 1.21.1 Fabric |
+| SmitherZ | 1.20.1 and 1.21.1 Fabric |
+| AdditionZ | 1.20.1 and 1.21.1 Fabric |
+| Chipped | 1.20.1 Fabric/Forge and 1.21.1 Fabric/NeoForge |
+| Simply Swords: Runic Forge | 1.20.1 Fabric/Forge and 1.21.1 Fabric/NeoForge |
+
+Machine panels use compact bounds around their native controls. Brick & Mortar's animated recipe preview sits outside the top border. Storage panels use a bounded viewport when needed; Inmis layouts follow the installed backpack tier, and Nether Chested uses standard inventory cell backgrounds with its native large-stack rendering. Native processing, item restrictions, stack counts and storage remain under the original mods' control.
+
+Cooking pots retain their recipe books, with the toggle button inside a compact wider frame. Better Archeology's identifying table uses a parchment frame and matching controls. Alloy Forgery keeps its lava reservoir above the window. Seasons heaters and chillers retain their fuel modules and switches; Sawmill keeps its recipe search and narrow/wide layouts. Farmer's Delight cabinets use normal storage windows, while its sign editors retain their original screens. Install Compatibility on the server as well as the client for its server-side opening and control bridges.
+
+Legacy Alloyed on 1.20.1 has no separate screen to adapt; its materials work in ordinary inventory windows. The reviewed Forge Create 6.0.8 and Galosphere 1.5.2 releases have an upstream recipe conflict that prevents world loading when installed together. Their UI checks were performed in separate test packs.
 
 ## Applied Energistics 2
 
@@ -79,7 +126,7 @@ On Fabric, the extension also adds **Mod Menu** access to Salt's configuration s
 3. Install **Salt's Inventory Compatibility** for the same Minecraft version and loader, using the Core version required by the extension release.
 4. Install the supported third-party mods you want to use, together with their own required dependencies.
 
-For example, Minecraft 1.21.1 Fabric with Compatibility 0.1.2 needs Core 0.1.5: `salts_inventory_update-1.21.1-Fabric-0.1.5.jar` and `salts_inventory_compat-1.21.1-Fabric-0.1.2.jar`.
+For example, Minecraft 1.21.1 Fabric with Compatibility 0.1.3 needs Core 0.1.6: `salts_inventory_update-1.21.1-Fabric-0.1.6.jar` and `salts_inventory_compat-1.21.1-Fabric-0.1.3.jar`.
 
 For supported container integrations in multiplayer, install matching Core and Compatibility versions on both the client and server. Recipe-browser mods and Mod Menu belong on the client; follow each third-party mod's own installation requirements for its other dependencies.
 

@@ -28,6 +28,10 @@ public final class DesktopSessions {
     public static void withSessionTransition(ServerPlayer player, int sessionId, Runnable action) {
         DesktopContainerSessions.withSessionTransition(player, sessionId, action);
     }
+    /** Current server-thread desktop callback's menu, empty outside that scoped callback. */
+    public static java.util.Optional<AbstractContainerMenu> activeNetworkMenu(ServerPlayer player) {
+        return DesktopContainerSessions.activeNetworkMenu(player);
+    }
     public static int activeNetworkSessionId(ServerPlayer player) { return DesktopContainerSessions.activeNetworkSessionId(player); }
     public static boolean hasActiveSessionTransition(ServerPlayer player) { return DesktopContainerSessions.hasActiveSessionTransition(player); }
     public static boolean hasOpenSessionMatching(Player player, Predicate<AbstractContainerMenu> predicate) {

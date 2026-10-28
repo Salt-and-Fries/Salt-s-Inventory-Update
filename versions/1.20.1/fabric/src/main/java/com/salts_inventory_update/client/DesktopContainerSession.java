@@ -132,6 +132,10 @@ public final class DesktopContainerSession {
                 if (adapted != null) {
                     return adapted;
                 }
+                if (payload.specialKind() == DesktopPackets.SPECIAL_AUTOMATIC_NATIVE) {
+                    return com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.create(
+                        menuType, payload.sessionId(), player.getInventory(), openingData);
+                }
                 return menuType.create(payload.sessionId(), player.getInventory());
             }
         }
@@ -188,6 +192,7 @@ public final class DesktopContainerSession {
     public void close() {
         if (!this.closed) {
             this.closed = true;
+            com.salts_inventory_update.internal.desktop.AutomaticContainerSources.release(this.menu);
             this.sourceLock.close();
         }
     }

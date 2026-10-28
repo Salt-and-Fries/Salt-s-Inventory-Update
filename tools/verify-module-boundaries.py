@@ -10,9 +10,19 @@ ROOT = Path(__file__).resolve().parents[1]
 PREFIX = 'com/salts_inventory_update/'
 ALLOWED = (PREFIX + 'api/', PREFIX + 'compat/')
 NATIVE_INTEGRATION_PREFIXES = (
+    'tech/thatgravyboat/ironchests/',
+    'slexom/animal_feeding_trough/', 'safro/oxidized/', 'com/evandev/brick_and_mortar/',
+    'ianm1647/expandeddelight/', 'alabaster/crabbersdelight/', 'fuzs/netherchested/', 'draylar/inmis/',
     'dev/emi/trinkets/', 'dev/yurisuika/raised/', 'top/theillusivec4/curios/',
     'appeng/', 'com/tom/storagemod/', 'net/p3pp3rf1y/sophisticated',
     'mezz/jei/', 'me/shedaniel/rei/', 'dev/emi/emi/', 'com/terraformersmc/modmenu/',
+    'fuzs/barteringstation/', 'wraith/alloyforgery/', 'io/github/lucaargolo/seasonsextras/',
+    'com/possible_triangle/alloyed/', 'com/molybdenum/alloyed/', 'io/wispforest/alloyforgery/',
+    'vectorwing/farmersdelight/', 'com/sammy/minersdelight/',
+    'net/Pandarix/', 'fuzs/illagerinvasion/', 'net/orcinus/galosphere/', 'net/mehvahdjukaar/sawmill/',
+    'net/extendeddrawersaddon/', 'io/github/mattidragon/extendeddrawers/', 'com/lion/graveyard/',
+    'org/betterx/betterend/', 'net/runes/', 'teamrazor/deepaether/', 'draylar/tiered/',
+    'net/smitherz/', 'net/additionz/', 'earth/terrarium/chipped/', 'net/sweenus/simplyswords/',
 )
 VERSIONS = ['1.20.1', '1.21.1', '1.21.11', '26.1.2', '26.2', '26.3']
 

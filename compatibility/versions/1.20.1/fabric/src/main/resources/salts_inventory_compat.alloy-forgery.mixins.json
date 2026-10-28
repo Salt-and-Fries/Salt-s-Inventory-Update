@@ -1,0 +1,10 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "refmap": "salts_inventory_compat.refmap.json",
+  "package": "com.salts_inventory_update.compat.alloyforgery.mixin",
+  "plugin": "com.salts_inventory_update.compat.alloyforgery.mixin.AlloyForgeryMixinPlugin",
+  "compatibilityLevel": "JAVA_17",
+  "client": ["AlloyForgeScissorMixin"],
+  "injectors": {"defaultRequire": 1}
+}

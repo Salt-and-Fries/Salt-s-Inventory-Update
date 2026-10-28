@@ -1,5 +1,48 @@
 # Compatibility changelog
 
+## 0.1.3 (in development)
+
+- Fixes stretched and cropped Craft, Choose and preview-mode buttons with Chipped 4 on Minecraft 1.21.1, including their highlighted states.
+- Extends the approved drawer, Graveyard, BetterEnd, Runes, Deep Aether Combiner, Chipped, Simply Swords, TieredZ, SmitherZ and AdditionZ integrations to each supported Minecraft version and loader with a matching upstream release. Preserves compact windows, connected tabs, complete previews and native workstation behavior.
+- Keeps newer Ossuary recipe lists attached to their own desktop windows and preserves the configured socket count when opening SmitherZ's newer linking interface.
+- Keeps newer BetterEnd smelters compact after their recipe-book button was removed upstream, and gives AdditionZ's newer Fletching Table its intended compact layout.
+
+- Adds Simply Swords' Runic Forge on Minecraft 1.20.1 Fabric and Forge, with charcoal title/end bars and its native torn stone artwork. Preserves weapon, gem and tablet editing, preview tooltips, glowing channels and the original take-to-apply workflow.
+
+- Adds Chipped's seven workbenches on Minecraft 1.20.1 Fabric and Forge, with a compact matching brown workshop, material picker, full variant browser, search, scrollbar and native preview modes. Craft and Craft All convert existing inventory stacks in place; changed materials and removed or out-of-range workbenches are handled safely.
+- Keeps the complete Unlink Gear grindstone artwork and Upgrade Gear armor-stand preview visible on Minecraft 1.20.1. Selected anvil/reforge, smithing/linking and grindstone/unlinking tabs connect directly to their window frames, aligned to the left edge. Both grindstone views retain their full top outline.
+- Adds compact Minecraft 1.20.1 desktop layouts for ExtendedDrawersAddon, BetterEnd, TieredZ, SmitherZ and AdditionZ on Fabric, The Graveyard containers and Runes on Fabric/Forge, and Deep Aether's Combiner on Forge.
+- Keeps workstation tabs outside their frames, recipe-book toggles inside, and native recipes, animations, previews, upgrade controls and item rules intact. Gravestone editing stays native like editing a sign.
+
+- Prevents newer Alloyed worlds from failing to load when its optional Create-based knife recipe is unavailable. The recipe remains available when Alloyed, Farmer's Delight and Create are installed.
+- Preserves the standalone Alloyed forge's processing and Alloy Forgery's newer slot locks and live indicators in their desktop windows.
+- Extends these native templates to every later supported target with a matching upstream release, including the standalone Alloyed 3.x forge. Parchment identifying tables, in-frame recipe buttons and compact native controls follow the installed mod release.
+- Gives Better Archeology's identifying table a matching parchment frame and controls, while keeping its native artwork, slots and processing.
+- Keeps the cooking and copper pot recipe buttons inside their widened frames.
+
+Requires matching **Core 0.1.6** for the same Minecraft version and loader. Integrations remain optional.
+
+Universal release notes: [Compatibility 0.1.3](../changelogs/changelog-compatibility-0.1.3.md).
+
+- Adds compact Minecraft 1.20.1 desktop layouts for Bartering Station, Farmer's Delight / Refabricated, Better Archeology, Illager Invasion, Galosphere and Sawmill on Fabric and Forge, plus Alloy Forgery and Fabric Seasons: Extras on Fabric and Miner's Delight on Forge.
+- Preserves native processing indicators, recipe selection, search, fuel controls and item rules in these layouts. Cooking recipe buttons sit inside widened pot windows; Alloy Forgery's lava reservoir remains outside the main frame.
+
+- Extends the compact native-window integrations wherever upstream releases exist: Animal Feeding Trough and Nether Chested across all twelve targets; Brick & Mortar on 1.20.1 Fabric/Forge and 1.21.1 Fabric/NeoForge; Oxidized and Inmis on 1.20.1/1.21.1 Fabric; Expanded Delight on 1.20.1 Fabric and 1.21.1 NeoForge; Crabber's Delight on 1.20.1 Forge and 1.21.1 NeoForge. Iron Chests: Restocked remains available on 1.20.1 Fabric/Forge.
+- Retains native processing, preview animations, widget interactions and slot permissions while fitting the desktop frame to the actual content.
+- Preserves large-stack synchronization in newer Nether Chested menus.
+- Identifies every Inmis backpack tier as storage, including the three-slot Baby Backpack.
+
+- Polishes native container windows on Minecraft 1.20.1 using Core's public template API: Oxidized and Expanded Delight on Fabric, Brick & Mortar and Nether Chested on Fabric/Forge, Crabber's Delight on Forge, and Inmis on Fabric.
+- Places Brick & Mortar's animated preview outside the kiln's top border. The compact kiln body stays in place as the preview opens; the complete group remains on screen, with all three hatch buttons and preview-item tooltips retained.
+- Fits the Copper Kiln and Juicer frames to their actual artwork, removes excess right/bottom padding, and sizes every Inmis backpack to its real slot grid, including the three-slot Baby Backpack. Scrollbar space is used only when needed.
+- Uses standard SIU/vanilla slot frames for Nether Chested while preserving its 54 slots and large-stack counts, and tightens the Crab Trap's bait/catch panel. Item rules, processing and synchronization stay in the original mods.
+
+- Adds Animal Feeding Trough integration on Minecraft 1.20.1 Fabric and Forge. Its native inventory opens automatically as a compact desktop window with a centered slot and the usual sorting and transfer controls. Native feeding, item permissions, fill-level updates and crouch-empty-hand XP collection remain in the upstream mod.
+- Fixes stale Animal Feeding Trough desktop sessions after the source is destroyed or replaced, and closes them outside the normal interaction range.
+- Adds Iron Chests: Restocked integration on Minecraft 1.20.1 Fabric and Forge. All 15 chest and barrel variants open as desktop windows without the force-container setting.
+- Enables in-container sorting and transfers between Iron Chests storage and other desktop inventories while preserving native item restrictions, including the dirt-only chest.
+- Shows each tier's complete storage grid by default. Resized windows reflow their slots and provide scrolling when needed, including access to the last slot of 91-slot Netherite storage.
+
 ## 0.1.2
 
 This release provides **Compatibility 0.1.2** for all twelve supported Minecraft/loader targets and requires the matching **Core 0.1.5**. Third-party targets remain optional and follow their upstream version/loader availability.

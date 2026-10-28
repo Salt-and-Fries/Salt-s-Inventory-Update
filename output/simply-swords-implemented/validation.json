@@ -1,0 +1,41 @@
+{
+  "scope": "Focused Simply Swords 1.70.2 1.20.1 gameplay, not a complete functional suite",
+  "fabric_build02": {
+    "window": "SimplySwordsWindow 212x88, native torn artwork and charcoal bars",
+    "slot_acceptance": "slumbering_lichblade accepted; with it, both gem sockets and eight tablet slots accepted",
+    "operations": "real transfers into all 11 visible cells; one-tablet + both-gem commit by taking weapon; eight-tablet commit by closing; counts conserved",
+    "committed": "simplyswords:slumbering_lichblade awakening 1 then 8; runic trailblaze and nether radiance retained",
+    "preview": "client hidden slot47 matched server preview NBT; hover showed +6.31 attack damage for level1",
+    "animation": "cyan channel/pulse captured while inserting tablets",
+    "quick_move": "QA invoked desktop quickMoveSlot on weapon; native transfer returned it once to player inventory (physical Shift key not exercised).",
+    "source_removal": "closed session, returned one weapon; replacement block reopened",
+    "qa_caveat": "named-dev QA disabled Simply Tooltips DrawContextMixin only; transformation recorded"
+  },
+  "forge_build03": {
+    "operation": "actual player inventory transfers for slumbering lichblade, tablet and Runefused Gem; weapon removal commits awakening1 and greater_stoneskin",
+    "tooltip": "rich Simply Tooltips hover captured with all upstream mixins enabled; client hidden preview equals server NBT",
+    "qa_caveat": "QA uses SRG-to-named remapped jars with mixin annotation-string mapping; original jars and class/mapping lineage recorded"
+  },
+  "fabric_build03_absent": "Core+Compatibility only, no Simply Swords loaded; integrated world, handshake and ordinary chest opened",
+  "artifacts": {
+    "fabric_build03_sha256": "963b6865c53e529c6f310e67cf18069864d343806caedf16748693e735a51862",
+    "forge_build03_sha256": "86f1cd5007d2b5b713984592582355f535b5472a78355e955f6c6d69eec46a03",
+    "build02_vs_03": "output\\simply-swords-implemented\\build02-vs-build03.json"
+  },
+  "limits": [
+    "No complete gameplay suite, dedicated server, all weapon forms, every modpack, or resource-pack visual check.",
+    "Fabric rich tooltip dependency hook was disabled for named-dev QA; Forge rich tooltip was tested with all upstream mixins enabled under mapped QA runtime.",
+    "Only one Fabric session was tested after mod absence; the build03 registration reuse guard was not tested through multiple worlds.",
+    "Forge02 tested both gems; final Forge03 spot check used the Runefused Gem and one tablet.",
+    "Quick-move was invoked through the desktop QA helper; a physical Shift+click was not separately exercised."
+  ],
+  "evidence": {
+    "fabric_run": "build\\simply-swords-implemented\\gameplay\\1.20.1-fabric-simply-fabric-02",
+    "forge_final": "build\\simply-swords-implemented\\gameplay\\1.20.1-forge-simply-forge-final03",
+    "absent": "build\\simply-swords-implemented\\gameplay\\1.20.1-fabric-simply-fabric-absent03",
+    "forge_remap_lineage": "build\\simply-swords-implemented\\gameplay\\1.20.1-forge-simply-forge-final03\\forge-remap-lineage.json",
+    "forge_annotation_lineage": "build\\simply-swords-implemented\\gameplay\\1.20.1-forge-simply-forge-final03\\forge-annotation-lineage.json",
+    "fabric_tooltip_transform": "build/simply-swords-design/upstream/qa-transformation.json",
+    "screenshots": "output\\simply-swords-implemented\\screenshot-manifest.json"
+  }
+}

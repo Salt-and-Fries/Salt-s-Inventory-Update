@@ -21,6 +21,23 @@ import net.minecraft.world.inventory.MenuType;
 public final class DesktopClientApi {
 
     private static DesktopWorkspaceHost workspaceHost;
+    private static final Map<Identifier,Set<MenuType<?>>> NATIVE_MATCHER_TYPES = new LinkedHashMap<>();
+
+    /** Explicit native-template families; the original native factory and menu remain in charge. */
+    public static synchronized void registerNativeMatcher(Identifier id,int priority,Set<MenuType<?>> menuTypes,
+            DesktopWindowMatcher matcher,java.util.function.Function<DesktopWindowLookupContext,DesktopNativeTemplate<?,?>> factory) {
+        registerMatcher(id,priority,menuTypes,matcher,factory::apply);
+        NATIVE_MATCHER_TYPES.put(id,Set.copyOf(menuTypes));
+        DesktopRegistrationScope.onRollback(()->{synchronized(DesktopClientApi.class){NATIVE_MATCHER_TYPES.remove(id);}});
+    }
+
+    /** Menu types explicitly opting into native geometry; ordinary API definitions are excluded. */
+    public static synchronized List<String> nativeTemplateMenuIds() {
+        Set<MenuType<?>> types=new java.util.HashSet<>();
+        DEFINITIONS.forEach((type,definition)->{if(definition instanceof DesktopNativeTemplate<?,?>)types.add(type);});
+        NATIVE_MATCHER_TYPES.values().forEach(types::addAll);
+        return types.stream().map(BuiltInRegistries.MENU::getKey).filter(Objects::nonNull).map(Object::toString).sorted().toList();
+    }
 
     /** Installs one client-thread presentation owner. Pass null to release it. */
     public static void setWorkspaceHost(DesktopWorkspaceHost host) { workspaceHost = host; }

@@ -15,7 +15,19 @@
     "issues": "https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/issues",
     "discord": "https://discord.gg/kfdE9gGGxP"
   },
-  "mixins": ["salts_inventory_compat.sophisticated-fabric.mixins.json", "salts_inventory_compat.ae2.mixins.json", "salts_inventory_compat.trinkets.mixins.json"],
+  "mixins": [
+    "salts_inventory_compat.sophisticated-fabric.mixins.json",
+    "salts_inventory_compat.ae2.mixins.json",
+    "salts_inventory_compat.trinkets.mixins.json",
+    "salts_inventory_compat.feeding-trough.mixins.json",
+    "salts_inventory_compat.netherchested.mixins.json",
+    "salts_inventory_compat.seasons-extras.mixins.json",
+    "salts_inventory_compat.alloy-forgery.mixins.json",
+    "salts_inventory_compat.extended-drawers.mixins.json",
+    "salts_inventory_compat.tieredz.mixins.json",
+    "salts_inventory_compat.chipped.mixins.json",
+    "salts_inventory_compat.simplyswords.mixins.json"
+  ],
   "entrypoints": {
     "modmenu": [
       "com.salts_inventory_update.compat.modmenu.SaltsInventoryModMenu"
@@ -64,6 +76,20 @@
     "roughlyenoughitems": "*",
     "emi": "*",
     "modmenu": "*",
-    "toms_storage": "*"
+    "toms_storage": "*",
+    "animal_feeding_trough": "*",
+    "oxidized": "*",
+    "brick_and_mortar": "*",
+    "netherchested": "*",
+    "inmis": "*",
+    "chipped": "*",
+    "simplyswords": "*",
+    "extendeddrawersaddon": "*",
+    "tiered": "*",
+    "smitherz": "*",
+    "additionz": "*",
+    "graveyard": "*",
+    "betterend": "*",
+    "runes": "*"
   }
 }

@@ -1,0 +1,56 @@
+{
+  "captures": [
+    {
+      "minecraft": "1.20.1",
+      "loader": "fabric",
+      "source": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-implemented\\gameplay\\1.20.1-fabric-visual-fix01\\screenshots\\fresh-chipped-craft-normal.png",
+      "source_sha256": "c6bd43aa88cb7e0006852b1c37858ceffd6c4e6fac02a25a70dae60d359b1c75",
+      "crop_pixels": [
+        414,
+        294,
+        566,
+        378
+      ],
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-versions-visual-fixes\\closeups\\1.20.1-fabric-controls.png"
+    },
+    {
+      "minecraft": "1.20.1",
+      "loader": "forge",
+      "source": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-implemented\\gameplay\\1.20.1-forge-visual-fix01\\screenshots\\fresh-chipped-craft-normal.png",
+      "source_sha256": "02a03459117d5a6f50b64979b994f71688a3cb102470c27f7e71c2d1da2c9ce5",
+      "crop_pixels": [
+        414,
+        294,
+        566,
+        378
+      ],
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-versions-visual-fixes\\closeups\\1.20.1-forge-controls.png"
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "source": "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\gameplay\\1.21.1-fabric-visual-fix01\\screenshots\\fresh-chipped-craft-normal.png",
+      "source_sha256": "530fdf8ead6404e9a3d8bd56ebb86fcc6391f7d5bdfc89483b3055df5073a4c7",
+      "crop_pixels": [
+        386,
+        266,
+        538,
+        350
+      ],
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-versions-visual-fixes\\closeups\\1.21.1-fabric-controls.png"
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "source": "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\gameplay\\1.21.1-neoforge-visual-fix01\\screenshots\\fresh-chipped-craft-normal.png",
+      "source_sha256": "e0662e24fbdce63777ebc81fe9912ccc3fa8f99560bc75dd1a2b3ac296c4f766",
+      "crop_pixels": [
+        386,
+        266,
+        538,
+        350
+      ],
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-versions-visual-fixes\\closeups\\1.21.1-neoforge-controls.png"
+    }
+  ]
+}

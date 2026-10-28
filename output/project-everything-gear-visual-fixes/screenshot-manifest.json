@@ -1,0 +1,103 @@
+{
+  "scope": "Fresh 1.20.1 in-game SIU screenshots; crops retain actual pixels",
+  "captures": [
+    {
+      "label": "Repair and Name - selected",
+      "loader": "Fabric",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\screenshots\\gear-anvil-first.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\crops\\gear-anvil-first.png",
+      "crop_pixels": [
+        474,
+        22,
+        860,
+        270
+      ],
+      "source_sha256": "0d016ec73b7ba7fa92fac1169d1a926c4079a89c612ea04a652892bb56a4a702",
+      "observation_sequence": 3
+    },
+    {
+      "label": "Reforge Gear - selected",
+      "loader": "Fabric",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\screenshots\\gear-anvil-second.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\crops\\gear-anvil-second.png",
+      "crop_pixels": [
+        814,
+        338,
+        1104,
+        560
+      ],
+      "source_sha256": "acbadf76153730af52b410eea0c7e6ce092b819adc6f2db84678997709e9e151",
+      "observation_sequence": 5
+    },
+    {
+      "label": "Upgrade Gear - selected",
+      "loader": "Fabric",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\screenshots\\gear-smith-first.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\crops\\gear-smith-first.png",
+      "crop_pixels": [
+        436,
+        108,
+        844,
+        368
+      ],
+      "source_sha256": "f9a40670b3b442a96e3b1bac4c024583729157709aa96c8229679884bff05e05",
+      "observation_sequence": 11
+    },
+    {
+      "label": "Upgrade Gear - equipped preview",
+      "loader": "Fabric",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\screenshots\\gear-smith-equipped.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\crops\\gear-smith-equipped.png",
+      "crop_pixels": [
+        436,
+        108,
+        844,
+        368
+      ],
+      "source_sha256": "79ea5a0ee77ca7815dec6fc84cc0a487b2a2031156222ea959b907577c99b5c7",
+      "observation_sequence": 13
+    },
+    {
+      "label": "Link Gear - selected",
+      "loader": "Fabric",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\screenshots\\gear-smith-second.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\crops\\gear-smith-second.png",
+      "crop_pixels": [
+        814,
+        530,
+        1142,
+        754
+      ],
+      "source_sha256": "88aca9de557beaee934f61a502c4012f60f1e4891fb09396ac01cef17ea89e14",
+      "observation_sequence": 16
+    },
+    {
+      "label": "Repair and Disenchant - selected",
+      "loader": "Fabric",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\screenshots\\gear-grind-first.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\crops\\gear-grind-first.png",
+      "crop_pixels": [
+        478,
+        112,
+        802,
+        368
+      ],
+      "source_sha256": "a85d8c19648c6190ee73b6ad4632015bc9a9e98437e6e9ff1dcf642763d7825f",
+      "observation_sequence": 22
+    },
+    {
+      "label": "Unlink Gear - selected",
+      "loader": "Fabric",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\screenshots\\gear-grind-second.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-visual-fixes\\crops\\gear-grind-second.png",
+      "crop_pixels": [
+        814,
+        322,
+        1110,
+        578
+      ],
+      "source_sha256": "6649f34eebcfc03a9bd29a0c908ac68740b79a34d89201e7697bd96aaf3039e6",
+      "observation_sequence": 24
+    }
+  ]
+}

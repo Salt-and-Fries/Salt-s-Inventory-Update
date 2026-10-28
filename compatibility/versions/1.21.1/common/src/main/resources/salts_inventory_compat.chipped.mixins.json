@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "com.salts_inventory_update.compat.chipped.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "salts_inventory_compat.refmap.json",
+  "plugin": "com.salts_inventory_update.compat.chipped.mixin.ChippedMixinPlugin",
+  "mixins": [
+    "ChippedOpeningMixin",
+    "ChippedMenuMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,0 +1,37 @@
+from pathlib import Path
+from reportlab.pdfgen import canvas
+from reportlab.lib.colors import HexColor
+from reportlab.lib.utils import ImageReader
+W,H=1000,650;p=Path('output/automatic-window-bars-design');a=p/'assets';c=canvas.Canvas('output/pdf/siu-automatic-window-bars-design.pdf',pagesize=(W,H))
+ink=HexColor('#21333b');muted=HexColor('#566e77');accent=HexColor('#007d7d');paper=HexColor('#f1f3f2');dark=HexColor('#1c3037')
+def t(x,y,s,size=12,color=ink,bold=False):c.setFillColor(color);c.setFont('Helvetica-Bold' if bold else 'Helvetica',size);c.drawString(x,y,s)
+def txt(x,y,lines,size=12,leading=18,color=muted):
+ for i,line in enumerate(lines):t(x,y-i*leading,line,size,color)
+def card(x,y,w,h):c.setFillColor(paper);c.roundRect(x,y,w,h,12,stroke=0,fill=1)
+def img(path,x,y,w,h):
+ im=ImageReader(str(path));iw,ih=im.getSize();k=min(w/iw,h/ih);c.drawImage(im,x+(w-iw*k)/2,y+(h-ih*k)/2,width=iw*k,height=ih*k,mask='auto')
+def head(k,title,sub):t(35,615,k,10,accent,True);t(35,580,title,24,ink,True);t(35,555,sub,11,muted)
+def foot(n):c.setStrokeColor(HexColor('#d7e0df'));c.line(35,36,965,36);t(35,20,'DESIGN PROPOSAL  /  STATIC MOCKUPS  /  NOT IMPLEMENTED',8,muted,True);c.setFont('Helvetica',8);c.drawRightString(965,20,f'{n} / 5');c.showPage()
+head('01 / THE IDEA','A native body between two SIU bars','Interpretation of your sketch: a single joined window with a modest overhang.')
+card(35,115,395,410);img(a/'user-sketch.jpg',55,145,355,335);t(56,132,'YOUR SKETCH',10,muted,True)
+card(456,115,509,410);img(a/'workshop-mockup.png',474,190,473,250);t(476,470,'PROPOSED MOCKUP',10,accent,True);txt(476,165,['Top: title and SIU controls   /   Middle: original artwork','Bottom: a wide blank bar, joined to the native body'],10,15)
+foot(1)
+head('02 / THE CHANGE','Replace the surrounding frame','The example compares an existing automatic window with a static design illustration.')
+card(35,155,445,370);card(520,155,445,370);t(55,496,'CURRENT AUTOMATIC WINDOW',10,muted,True);t(540,496,'PROPOSED BARS / MOCKUP',10,accent,True);img(a/'kiln-current.png',57,215,401,250);img(a/'kiln-mockup.png',542,215,401,250);txt(55,185,['A continuous SIU frame surrounds the content.'],11);txt(540,185,['Illustrative body from current capture; actual sides stay native.'],11)
+foot(2)
+head('03 / COLORED NATIVE ART','Let the original surface show','The bars touch the native slice; there is no gray side frame or extra side gutter.')
+card(35,128,596,397);img(a/'workshop-mockup.png',54,169,558,310);t(55,496,'PROPOSED MOCKUP / ARTWORK STUDY',10,accent,True)
+txt(657,476,['Keep the native colors, edge','treatment, controls and proportions.','','The top bar carries the title and','normal SIU window controls.','','The bottom bar is blank and','substantial, with rounded ends.'],12,21)
+txt(55,107,['Illustration uses historical Chipped artwork only. Chipped has a manual integration and is not in scope.'],10,15)
+foot(3)
+head('04 / DIFFERENT NATIVE BODIES','The same treatment works across styles','Examples use historical native artwork as visual references, not claims about their current integrations.')
+card(35,165,445,360);card(520,165,445,360);t(55,496,'CARVING GRID / PROPOSED MOCKUP',10,accent,True);t(540,496,'PROCESSING UI / PROPOSED MOCKUP',10,accent,True);img(a/'ossuary-mockup.png',58,244,399,190);img(a/'smelter-mockup.png',543,244,399,190);txt(55,204,['Slots and original illustrated borders stay aligned.'],11);txt(540,204,['Animated progress and controls remain native.'],11)
+txt(36,128,['Reference art from previously studied integrations illustrates the appearance only; manual/API windows stay unchanged.'],10,15)
+foot(4)
+head('05 / SCOPE AND BEHAVIOR','One draggable window','The three visible pieces move and behave as one joined window.')
+card(35,152,470,370);img(a/'workshop-mockup.png',55,210,430,235);t(55,483,'PROPOSED MOCKUP',10,accent,True);t(55,177,'Native body + top and bottom caps = one window',11,ink,True)
+t(545,487,'APPLIES TO',11,accent,True);txt(545,463,['Automatically hosted foreign-mod windows.'],12,18)
+t(545,414,'PRESERVE',11,accent,True);txt(545,390,['Native rendering, controls, animations and hit areas;','body artwork and necessary decorative edges.','Player inventory stays in the separate SIU workflow.'],12,18)
+t(545,304,'LEAVE AS THEY ARE',11,accent,True);txt(545,280,['Manual and public API window implementations.','No lower player-inventory copy in the native body.'],12,18)
+t(545,210,'NEXT STEP',11,accent,True);txt(545,186,['This document requests design review only.','No implementation or live-behavior claim is implied.'],12,18)
+foot(5);c.save();print('saved')

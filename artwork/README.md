@@ -39,3 +39,13 @@ Editor references and generation originals remain outside the runtime resources:
 Do not edit generated copies in `build/`, `dist/`, or the old version resource folders. Already installed or uploaded JARs change only after rebuilding and replacing them.
 
 Builds run `verifySharedTextures` to prevent duplicate version-local texture sources. The focused audit is `python tools/verify-shared-textures.py --resources --jars`; run resource processing/builds before checking outputs. See [validation](../functional-tests/SHARED-TEXTURES-VALIDATION.md) for the executed scope.
+
+## Better Archeology identifying-table frame
+
+Compatibility's 1.20.1 identifying table uses its own parchment frame:
+
+```
+artwork/shared-resources/compatibility/assets/salts_inventory_compat/textures/gui/better_archeology_window.png
+```
+
+This is an **11 x 11 RGBA nine-slice PNG**, using the public `windowNineSlice` contract: five-pixel corner regions with one stretchable middle row/column. Keep the center opaque. The same file is packaged for Fabric and Forge. The native table artwork and slots still come from Better Archeology; the fossil socket keeps its original gray styling. The frame was generated as a new parchment palette/style variant, then exported to the engine's exact sprite size. Rebuild Compatibility after edits.

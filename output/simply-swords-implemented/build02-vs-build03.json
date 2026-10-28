@@ -1,0 +1,18 @@
+{
+  "fabric": {
+    "build02_sha256": "30ea31afa07ae08c55482bfd6d9a893d90ba77fbaf51bc9d62d3b70c26cba6e3",
+    "build03_sha256": "963b6865c53e529c6f310e67cf18069864d343806caedf16748693e735a51862",
+    "changed_entries": [
+      "com/salts_inventory_update/compat/simplyswords/SimplySwordsIntegration$3.class",
+      "com/salts_inventory_update/compat/simplyswords/SimplySwordsIntegration.class"
+    ]
+  },
+  "forge": {
+    "build02_sha256": "7cee7a5a4eb493f26c1ac03ca747ddc89d0d1813e2b0f256e46183bf80af59ab",
+    "build03_sha256": "86f1cd5007d2b5b713984592582355f535b5472a78355e955f6c6d69eec46a03",
+    "changed_entries": [
+      "com/salts_inventory_update/compat/simplyswords/SimplySwordsIntegration$3.class",
+      "com/salts_inventory_update/compat/simplyswords/SimplySwordsIntegration.class"
+    ]
+  }
+}

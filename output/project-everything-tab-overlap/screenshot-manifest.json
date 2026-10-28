@@ -1,0 +1,29 @@
+{
+  "scope": "Actual Fabric 1.20.1 game screenshots and pixel crops; corner crop uses nearest-neighbor magnification",
+  "captures": [
+    {
+      "case": "reforge",
+      "source_sha256": "8837db67c43fb754fddd3140a13dd5a1847baa833159c45031cac5bc2d102b20",
+      "full_screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-tab-overlap\\reforge-full.png",
+      "window_crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-tab-overlap\\reforge-window.png",
+      "corner_crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-tab-overlap\\reforge-corner.png",
+      "sequence": 4
+    },
+    {
+      "case": "link",
+      "source_sha256": "5c84305729f229330707606418495859cf094ecb46f87bdcd1c3d6c7e645b969",
+      "full_screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-tab-overlap\\link-full.png",
+      "window_crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-tab-overlap\\link-window.png",
+      "corner_crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-tab-overlap\\link-corner.png",
+      "sequence": 10
+    },
+    {
+      "case": "unlink",
+      "source_sha256": "3e26276c927088d5facc9241868e6f9f95476e140abb8915860ab39dbfdbc5ab",
+      "full_screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-tab-overlap\\unlink-full.png",
+      "window_crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-tab-overlap\\unlink-window.png",
+      "corner_crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-tab-overlap\\unlink-corner.png",
+      "sequence": 16
+    }
+  ]
+}

@@ -155,7 +155,8 @@ public final class DesktopContainerSession {
             return;
         }
         this.closed = true;
-        this.sourceLock.close();
+        com.salts_inventory_update.internal.desktop.AutomaticContainerSources.release(this.menu);
+            this.sourceLock.close();
     }
 
     private static AbstractContainerMenu createMenu(
@@ -213,6 +214,10 @@ public final class DesktopContainerSession {
                 );
                 if (adapted != null) {
                     return adapted;
+                }
+                if (payload.specialKind() == DesktopPackets.SPECIAL_AUTOMATIC_NATIVE) {
+                    return com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.create(
+                        menuType, payload.sessionId(), player.getInventory(), player.registryAccess(), openingData);
                 }
                 return menuType.create(payload.sessionId(), player.getInventory());
             }

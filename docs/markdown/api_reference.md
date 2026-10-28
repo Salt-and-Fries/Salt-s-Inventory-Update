@@ -1,4 +1,4 @@
-# Public API signature reference — 0.1.5 / API 6
+# Public API signature reference — 0.1.6 / API 6
 
 This inventory lists public consumer declarations from the shared API and the 26.3 native API. Signatures are reference notation, not standalone implementations. Record components supply their corresponding accessors and canonical constructor; enum values are listed. Bodies and private implementation members are omitted. The [API guide](desktop_window_api.md) specifies defaults, lifecycle, geometry, threading and ownership; the [transfer reference](recipe_transfer_api.md) specifies transfer validation and bounds.
 
@@ -540,6 +540,8 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 public final class DesktopClientApi {
+    public static synchronized void registerNativeMatcher(Identifier id,int priority,Set<MenuType<?>> menuTypes, DesktopWindowMatcher matcher,java.util.function.Function<DesktopWindowLookupContext,DesktopNativeTemplate<?,?>> factory);
+    public static synchronized List<String> nativeTemplateMenuIds();
     public static void setWorkspaceHost(DesktopWorkspaceHost host);
     public static DesktopWorkspaceHost workspaceHost();
     public static void openPlayerWorkspace();
@@ -716,6 +718,90 @@ public final class DesktopMouseButtons {
 }
 ```
 
+## DesktopNativeContext
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopNativeContext.java).
+
+```java
+public interface DesktopNativeContext<T,S> extends DesktopWindowContext<T,S> {
+    DesktopNativeView nativeView();
+}
+```
+
+## DesktopNativeLayout
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopNativeLayout.java).
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+public record DesktopNativeLayout(List<DesktopNativeRegion> regions, int padding, int minimumWidth, int minimumHeight, boolean scrollable) {
+    public DesktopNativeLayout(List<DesktopNativeRegion> regions, int padding, int minimumWidth, int minimumHeight, boolean scrollable);
+    public record Point(String regionId, double x, double y) {
+    }
+    public record Placement(String regionId, DesktopWindowBounds bounds, boolean interactive, boolean exterior) {
+        public Placement(String regionId, DesktopWindowBounds bounds, boolean interactive);
+    }
+    public int width();
+    public int height();
+    public Optional<Point> sourceAt(double x, double y);
+    public Optional<Point> exteriorSourceAt(double windowX,double windowY);
+    public List<Placement> placements(DesktopWindowBounds nativeBounds);
+    public static DesktopNativeLayout automatic(DesktopWindowBounds bounds);
+    public static Builder builder();
+    public Builder toBuilder();
+    public static final class Builder {
+        public Builder inherit(DesktopWindowBounds automaticBounds);
+        public Builder keep(String id, DesktopWindowBounds source, int x, int y);
+        public Builder exterior(String id, DesktopWindowBounds source, int windowX, int windowY);
+        public Builder region(DesktopNativeRegion region);
+        public Builder padding(int pixels);
+        public Builder canvas(int width,int height);
+        public Builder scrollable(boolean scroll);
+        public Builder hide(DesktopWindowBounds source);
+        public Builder move(String id, DesktopWindowBounds source,int x,int y);
+        public Builder moveRegion(String id,int x,int y);
+        public DesktopNativeLayout build();
+    }
+}
+```
+
+## DesktopNativeProfiles
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopNativeProfiles.java).
+
+```java
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+public final class DesktopNativeProfiles {
+    public static JsonObject encode(DesktopNativeLayout layout);
+    public static DesktopNativeLayout decode(JsonObject json);
+}
+```
+
+## DesktopNativeRegion
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopNativeRegion.java).
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+public record DesktopNativeRegion(String id, DesktopWindowBounds source, int x, int y, boolean interactive, List<DesktopWindowBounds> cutouts, boolean exterior) {
+    public DesktopNativeRegion(String id, DesktopWindowBounds source, int x, int y, boolean interactive, List<DesktopWindowBounds> cutouts, boolean exterior);
+    public DesktopNativeRegion(String id, DesktopWindowBounds source, int x, int y, boolean interactive, List<DesktopWindowBounds> cutouts);
+    public DesktopNativeRegion(String id, DesktopWindowBounds source, int x, int y);
+    public DesktopNativeRegion at(int x, int y);
+    public DesktopNativeRegion cut(DesktopWindowBounds bounds);
+    public boolean contains(double sourceX, double sourceY);
+    public boolean covers(DesktopWindowBounds bounds);
+    public List<DesktopWindowBounds> pieces();
+    public static boolean contains(DesktopWindowBounds b, double x, double y);
+    public static boolean intersects(DesktopWindowBounds a, DesktopWindowBounds b);
+}
+```
+
 ## DesktopNativeRenderContext
 
 `com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopNativeRenderContext.java).
@@ -727,6 +813,39 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.inventory.Slot;
 public interface DesktopNativeRenderContext {
     GuiGraphicsExtractor rawGraphics();
+}
+```
+
+## DesktopNativeTemplate
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopNativeTemplate.java).
+
+```java
+import net.minecraft.world.inventory.AbstractContainerMenu;
+public interface DesktopNativeTemplate<T extends AbstractContainerMenu,S> extends DesktopWindowDefinition<T,S> {
+    default DesktopNativeLayout nativeLayout(DesktopNativeContext<T,S> context);
+    default void renderNativeUnderlay(DesktopRenderContext<T,S> context);
+    default boolean nativeSlotBackground(DesktopNativeContext<T,S> context,int menuSlotId);
+}
+```
+
+## DesktopNativeView
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopNativeView.java).
+
+```java
+import java.util.List;
+import java.util.Optional;
+import net.minecraft.network.chat.Component;
+public record DesktopNativeView(String screenType, DesktopWindowBounds imageBounds, DesktopWindowBounds automaticBounds, List<Slot> slots, List<Widget> widgets) {
+    public DesktopNativeView(String screenType, DesktopWindowBounds imageBounds, DesktopWindowBounds automaticBounds, List<Slot> slots, List<Widget> widgets);
+    public record Slot(int menuSlotId, DesktopWindowBounds bounds, boolean player, boolean active) {
+    }
+    public record Widget(String id, String type, Component label, DesktopWindowBounds bounds, boolean visible, boolean active) {
+    }
+    public Optional<DesktopWindowBounds> slotBounds(int... ids);
+    public Optional<DesktopWindowBounds> widgetBounds(String... ids);
+    public static Optional<DesktopWindowBounds> union(List<DesktopWindowBounds> bounds);
 }
 ```
 
@@ -1638,6 +1757,7 @@ public final class DesktopPayloadCodecs {
 import net.minecraft.world.inventory.ContainerSynchronizer;
 public final class DesktopSynchronization {
     public static ContainerSynchronizer preserveDesktop(ContainerSynchronizer proposed);
+    public static boolean isDesktopSynchronizer(ContainerSynchronizer synchronizer);
 }
 ```
 
@@ -1794,6 +1914,7 @@ public final class DesktopSessions {
     public static boolean shouldCapture(ServerPlayer player);
     public static @Nullable OptionalInt openMenuSession(ServerPlayer player, MenuProvider provider, Consumer<RegistryFriendlyByteBuf> openingData);
     public static void withSessionTransition(ServerPlayer player, int sessionId, Runnable action);
+    public static java.util.Optional<AbstractContainerMenu> activeNetworkMenu(ServerPlayer player);
     public static int activeNetworkSessionId(ServerPlayer player);
     public static boolean hasActiveSessionTransition(ServerPlayer player);
     public static boolean hasOpenSessionMatching(Player player, Predicate<AbstractContainerMenu> predicate);

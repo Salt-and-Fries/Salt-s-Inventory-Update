@@ -12,6 +12,13 @@ import com.salts_inventory_update.client.InventoryDesktopScreen;
 
 @Mixin(MultiPlayerGameMode.class)
 public abstract class MultiPlayerGameModeMixin {
+    @Inject(method = "handleInventoryButtonClick", at = @At("HEAD"), cancellable = true)
+    private void salts_inventory_update$nativeButton(int menu, int button, CallbackInfo ci) {
+        var scope = com.salts_inventory_update.client.automatic.AutomaticNativeScope.current();
+        if (scope != null && scope.input() != null && scope.screen().getMenu().containerId == menu) {
+            scope.input().sendMenuButton(button); ci.cancel();
+        }
+    }
     @Inject(method = "handlePlaceRecipe", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$placeDesktopRecipe(int containerId, Recipe<?> recipe, boolean useMaxItems, CallbackInfo ci) {
         if (InventoryDesktopScreen.interceptRecipeBookPlacement(Minecraft.getInstance(), containerId, recipe.getId(), useMaxItems)) {

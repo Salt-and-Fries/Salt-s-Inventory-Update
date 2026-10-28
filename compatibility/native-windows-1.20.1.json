@@ -1,0 +1,222 @@
+{
+  "minecraft": "1.20.1",
+  "core": "0.1.6",
+  "compatibility": "0.1.3",
+  "scope": "Second Project Everything batch; reviewed pins, not a claim about every upstream release",
+  "targets": [
+    {
+      "loader": "fabric",
+      "integrations": [
+        {
+          "family": "bartering-station",
+          "project": "bartering-station",
+          "project_id": "EOig9U0j",
+          "version_id": "tCw8RpfZ",
+          "version": "v8.0.0-1.20.1-Fabric",
+          "sha512": "9a5bb026efee4e764ed4a7ab9d9685755f2be227cbf14a4857f7e00c2edd40a49acd979cee2167a1867c01c77f30ecd38ca8d7797c5b0f4e037f0b7c53c38b9d",
+          "menus": [
+            "barteringstation:bartering_station"
+          ],
+          "class": "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi"
+        },
+        {
+          "family": "alloy-forgery",
+          "project": "alloy-forgery",
+          "project_id": "jhl28YkY",
+          "version_id": "j3GoCoCc",
+          "version": "2.1.2+1.20",
+          "sha512": "8900553bd4498af1c3e6ee3994b986e58149986bd1ad3233cddba06559cce73ae8ff47bceb125f1dab31d73be66014be67e02af86408b3872f32370574233b50",
+          "menus": [
+            "alloy_forgery:alloy_forge"
+          ],
+          "class": "com.salts_inventory_update.compat.alloyforgery.AlloyForgeryNativeUi"
+        },
+        {
+          "family": "fabric-seasons-extras",
+          "project": "fabric-seasons-extras",
+          "project_id": "64FYdx5z",
+          "version_id": "RJ4U7Kz1",
+          "version": "1.3.2-BETA+1.20",
+          "sha512": "1301e77dd4c35306f4527dc1db9940045b733c0429b9be614e685c61d9fb4c005c3ee49fdbc198b79a05d9fb4af7099dd0de6d950f8097bfb1c1594d0438f5a0",
+          "menus": [
+            "seasonsextras:air_conditioning_screen"
+          ],
+          "class": "com.salts_inventory_update.compat.seasonsextras.SeasonsExtrasNativeUi"
+        },
+        {
+          "family": "alloyed",
+          "project": "create-alloyed",
+          "project_id": "KUInlTFo",
+          "version_id": "iGEmzWLN",
+          "version": "2.1.5+1.20.1-fabric",
+          "sha512": "0fa448cd6423a9a5af26289631b71aaef584cdb13bab279b757a5e738dec6599921c9f6e09200ea01262df4d330b26fe71de947f038ec43f9305643ac49f1d67",
+          "menus": [],
+          "class": null
+        },
+        {
+          "family": "farmers-delight",
+          "project": "farmers-delight-refabricated",
+          "project_id": "7vxePowz",
+          "version_id": "7H1g1o5h",
+          "version": "1.20.1-2.5.7",
+          "sha512": "f7197d9d5443626212c87ed1745cd3af14f549e62039bfd332d34cc0870f351afbc5ea5e856cac18831f572e006bb7a08457ff93346a29ac855baddee3b67ad0",
+          "menus": [
+            "farmersdelight:cooking_pot"
+          ],
+          "class": "com.salts_inventory_update.compat.farmersdelight.FarmersDelightNativeUi"
+        },
+        {
+          "family": "better-archeology",
+          "project": "better-archeology",
+          "project_id": "zCh7omyG",
+          "version_id": "QNQXrdhi",
+          "version": "1.2.1-1.20.1",
+          "sha512": "adde77f1e5bcd7092dc7f769fe573ac06a168ad1de4b914ef688f6ab2247093fc38f64518980f28e381096281444058ab5dbadf6d86a4a8e5645c246b289c696",
+          "menus": [
+            "betterarcheology:archeology_table",
+            "betterarcheology:fossil"
+          ],
+          "class": "com.salts_inventory_update.compat.betterarcheology.BetterArcheologyNativeUi"
+        },
+        {
+          "family": "illager-invasion",
+          "project": "illager-invasion",
+          "project_id": "jSV9w0J5",
+          "version_id": "tdl5EQxi",
+          "version": "v8.0.7-1.20.1-Fabric",
+          "sha512": "832aa0607bc0d4e778a86051cadc9a41cfd46bb5335f66e05cb5b8821a56e37cfd8fbd0848221650d819478eb6a1e3fc085119a05c3547308abd535ce52e3aa9",
+          "menus": [
+            "illagerinvasion:imbuing"
+          ],
+          "class": "com.salts_inventory_update.compat.illagerinvasion.IllagerInvasionNativeUi"
+        },
+        {
+          "family": "galosphere",
+          "project": "galosphere",
+          "project_id": "Kn7xyQ1v",
+          "version_id": "Jqxb7gnx",
+          "version": "1.20.1-1.5.2",
+          "sha512": "31a44f05c9b468bfe73ad2468608d36c3ddb7f3afed0ea6529314abe5a16358550545be95cc6eb49bb7d49b39d0cb5d03b16927fb44467021f571155142bf466",
+          "menus": [
+            "galosphere:combustion_table"
+          ],
+          "class": "com.salts_inventory_update.compat.galosphere.GalosphereNativeUi"
+        },
+        {
+          "family": "sawmill",
+          "project": "universal-sawmill",
+          "project_id": "WRaRZdTd",
+          "version_id": "mJomg5hc",
+          "version": "1.20-1.4.11",
+          "sha512": "0a4e79c9b9374b7d8472e3b1303899da9d1c4c6df70f3186679842965ac0f27079a6a9f9348c0143864aabbedca65565b40c757dcf6fb27dc146a057d6a62c73",
+          "menus": [
+            "sawmill:sawmill"
+          ],
+          "class": "com.salts_inventory_update.compat.sawmill.SawmillNativeUi"
+        }
+      ]
+    },
+    {
+      "loader": "forge",
+      "integrations": [
+        {
+          "family": "bartering-station",
+          "project": "bartering-station",
+          "project_id": "EOig9U0j",
+          "version_id": "4op6LZEK",
+          "version": "v8.0.0-1.20.1-Forge",
+          "sha512": "999d29b7e454865e80432da594fb155c1d77c6b2ce9f4f3f1bf1673510b732b75d2a44bce044563ba020fcbdb92fff1c2c67047c4a5a7fc9c0836a32c18744fb",
+          "menus": [
+            "barteringstation:bartering_station"
+          ],
+          "class": "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi"
+        },
+        {
+          "family": "alloyed",
+          "project": "create-alloyed",
+          "project_id": "KUInlTFo",
+          "version_id": "9QsU50Zh",
+          "version": "2.1.4+1.20.1-forge",
+          "sha512": "db86d04d3bb53df61c1662868be057b62f7d410e20a9d8f74651f005789e561ed9352cbce96a15e8cd3953cda9e36a3b0c95715ea3c8954edc657f6de72a7674",
+          "menus": [],
+          "class": null
+        },
+        {
+          "family": "farmers-delight",
+          "project": "farmers-delight",
+          "project_id": "R2OftAxM",
+          "version_id": "SiIpcZzM",
+          "version": "1.20.1-1.3.4",
+          "sha512": "932ae0ab95fa0755bb5a79fbf1d1e31d0e86f3c0f5186796ed06973a3019a618ee8c66a4eae5b901909aed6232abb2bd3b1ff0e1905f74fc70644fada94a80b5",
+          "menus": [
+            "farmersdelight:cooking_pot"
+          ],
+          "class": "com.salts_inventory_update.compat.farmersdelight.FarmersDelightNativeUi"
+        },
+        {
+          "family": "miners-delight",
+          "project": "miners-delight",
+          "project_id": "qMxbM4BQ",
+          "version_id": "p0INUam7",
+          "version": "1.20.1-1.4.5-backport",
+          "sha512": "82e64570bf122c86537635d1fb9efa3a65a5da5acd41d2217ebcae95e337d0675ba94f0eda38a0edaf6e41a3be45838e04759ff96cac64c880db85a8bac4b015",
+          "menus": [
+            "miners_delight:copper_pot"
+          ],
+          "class": "com.salts_inventory_update.compat.minersdelight.MinersDelightNativeUi"
+        },
+        {
+          "family": "better-archeology",
+          "project": "better-archeology",
+          "project_id": "zCh7omyG",
+          "version_id": "vsqxpUo3",
+          "version": "1.2.1-1.20.1",
+          "sha512": "1b1483ae31f42f687915c964cbd07b1f165e4ffa55aec23370f7f0efcb61f78f16a3ef8d6edbc2f4812524f22cc969a8f0d7cd2e2a6b5edf6959342526deaeb1",
+          "menus": [
+            "betterarcheology:identifying",
+            "betterarcheology:fossil"
+          ],
+          "class": "com.salts_inventory_update.compat.betterarcheology.BetterArcheologyNativeUi"
+        },
+        {
+          "family": "illager-invasion",
+          "project": "illager-invasion",
+          "project_id": "jSV9w0J5",
+          "version_id": "h3xEIiW8",
+          "version": "v8.0.7-1.20.1-Forge",
+          "sha512": "add2894b0a5247db10ed9e1fbfd94abd9d54309e91418d4d56da855d6b088ef41f35534d324f7172f66327a1cf111bcec4b3560c31c887f799b559e6190a74e2",
+          "menus": [
+            "illagerinvasion:imbuing"
+          ],
+          "class": "com.salts_inventory_update.compat.illagerinvasion.IllagerInvasionNativeUi"
+        },
+        {
+          "family": "galosphere",
+          "project": "galosphere",
+          "project_id": "Kn7xyQ1v",
+          "version_id": "dO2SHzWh",
+          "version": "1.20.1-1.5.2",
+          "sha512": "05cfab57e4c90da7d6b6810540a44f397e4a813e8663e37744bb1cb6ad17f7271739f627b410c8fb16c14c2ead9115afdf696024c2e3d88c5bdaa0f86a575f65",
+          "menus": [
+            "galosphere:combustion_table"
+          ],
+          "class": "com.salts_inventory_update.compat.galosphere.GalosphereNativeUi"
+        },
+        {
+          "family": "sawmill",
+          "project": "universal-sawmill",
+          "project_id": "WRaRZdTd",
+          "version_id": "oxchyq1r",
+          "version": "1.20-1.4.11",
+          "sha512": "257cdc00716e22c5d07e9aeb9b979ecd2a42857921e8566fc21cb48ebaf04fc911d56ba3e6e94496e9e7bc907e20d4c10697dbe52b46e66b4a3665cb343ca521",
+          "menus": [
+            "sawmill:sawmill"
+          ],
+          "class": "com.salts_inventory_update.compat.sawmill.SawmillNativeUi"
+        }
+      ]
+    }
+  ],
+  "alloyed_note": "Legacy 1.20.1 add-on owns no screen/menu. No fake UI adapter or standalone Create support is claimed.",
+  "forge_fixture_note": "Create 6.0.8 recipes reference silver removed in Galosphere 1.5.2. Each is checked in separate fixtures without changing upstream JARs."
+}

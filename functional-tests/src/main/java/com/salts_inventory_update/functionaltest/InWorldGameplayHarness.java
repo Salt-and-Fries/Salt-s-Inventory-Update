@@ -3126,7 +3126,8 @@ public final class InWorldGameplayHarness {
         // Creating a world while the initial splash overlay is still present leaves
         // Minecraft's synchronous world-load loop waiting for an unrendered overlay.
         if(active==null && mc.player==null && overlay()!=null) return;
-        if(!MANUAL_MOUSE_TWEAKS && System.currentTimeMillis()-startedAt>20*60*1000L){record("suite-timeout","FAIL","20-minute deadline exceeded");finish();return;}
+        long deadline=Long.parseLong(System.getenv().getOrDefault("SIU_QA_SUITE_TIMEOUT_MS","1200000"));
+        if(!MANUAL_MOUSE_TWEAKS && System.currentTimeMillis()-startedAt>deadline){record("suite-timeout","FAIL","Configured gameplay fixture deadline exceeded");finish();return;}
         try {
             if(active==null) {
                 if(STEPS.isEmpty()){

@@ -1,0 +1,10 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "refmap": "salts_inventory_compat.refmap.json",
+  "package": "com.salts_inventory_update.compat.seasonsextras.mixin",
+  "plugin": "com.salts_inventory_update.compat.seasonsextras.mixin.SeasonsExtrasMixinPlugin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": ["AirConditioningMenuMixin"],
+  "injectors": {"defaultRequire": 1}
+}

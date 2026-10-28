@@ -30,6 +30,7 @@ public final class DesktopPackets {
     public static final int SPECIAL_NAUTILUS = 2;
     public static final int SPECIAL_CAMEL = 3;
     public static final int SPECIAL_LLAMA = 4;
+    public static final int SPECIAL_AUTOMATIC_NATIVE = 5;
     public static final int QUICK_TARGET_DEFAULT = 0;
     public static final int QUICK_TARGET_SESSION = 1;
     public static final int QUICK_TARGET_HOTBAR = 2;
@@ -50,6 +51,10 @@ public final class DesktopPackets {
     }
 
     public static void registerPayloadTypes() {
+        PayloadTypeRegistry.serverboundPlay().register(AutomaticNativeReady.TYPE,AutomaticNativeReady.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(AutomaticNativeReady.TYPE,AutomaticNativeReady.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(AutomaticNativeFallback.TYPE,AutomaticNativeFallback.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(NativeTemplateCapabilities.TYPE,NativeTemplateCapabilities.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DesktopMenuOpenDataPayload.TYPE, DesktopMenuOpenDataPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopHelloPayload.TYPE, DesktopHelloPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(DesktopReadyPayload.TYPE, DesktopReadyPayload.CODEC);
@@ -1249,12 +1254,12 @@ public final class DesktopPackets {
         }
 
         public DesktopOpenSessionPayload {
-            boolean generic = specialKind == SPECIAL_GENERIC;
+            boolean generic = specialKind == SPECIAL_GENERIC || specialKind == SPECIAL_AUTOMATIC_NATIVE;
             if (sessionId <= PLAYER_MENU_SESSION
                 || sessionToken == 0L
                 || stateId < 0
                 || specialKind < SPECIAL_GENERIC
-                || specialKind > SPECIAL_LLAMA
+                || specialKind > SPECIAL_AUTOMATIC_NATIVE
                 || columns < 0
                 || columns > DesktopProtocol.MAX_MOUNT_COLUMNS
                 || sourceKey == null

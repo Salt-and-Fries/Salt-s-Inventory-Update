@@ -177,10 +177,37 @@ public final class DesktopContainerSessions {
     private static final ThreadLocal<NetworkSession> ACTIVE_NETWORK_SESSION = new ThreadLocal<>();
     private static final ThreadLocal<HoverCleanupAuthorization> HOVER_CLEANUP_AUTHORIZATION = new ThreadLocal<>();
 
+    private static final ThreadLocal<Boolean> AUTOMATIC_NATIVE_REOPEN=new ThreadLocal<>();
     private DesktopContainerSessions() {
     }
 
     public static void initialize() {
+        ServerPlayNetworking.registerGlobalReceiver(com.salts_inventory_update.network.AutomaticNativeReady.TYPE,(payload,context)->context.server().execute(()->{
+            var sessions=PLAYERS.get(context.player());
+            if(sessions!=null&&sessions.negotiated&&sessions.connectionNonce==payload.nonce()&&!payload.acknowledged()
+                &&sessions.hasCapability(DesktopProtocol.CAP_CUSTOM_WINDOWS)
+                &&ServerPlayNetworking.canSend(context.player(),com.salts_inventory_update.network.AutomaticNativeReady.TYPE)){
+                sessions.automaticNativeReady=true;send(context.player(),new com.salts_inventory_update.network.AutomaticNativeReady(payload.nonce(),true));
+            }
+        }));
+        ServerPlayNetworking.registerGlobalReceiver(com.salts_inventory_update.network.NativeTemplateCapabilities.TYPE,(payload,context)->context.server().execute(()->{
+            var sessions=PLAYERS.get(context.player());if(sessions==null||!sessions.automaticNativeReady||sessions.connectionNonce!=payload.nonce())return;
+            var ids=new HashSet<String>();for(String value:payload.menuIds()){
+                var id=ResourceLocation.tryParse(value);if(id!=null&&BuiltInRegistries.MENU.containsKey(id))ids.add(id.toString());
+            }sessions.nativeTemplateMenuIds=Set.copyOf(ids);
+        }));
+        ServerPlayNetworking.registerGlobalReceiver(com.salts_inventory_update.network.AutomaticNativeFallback.TYPE,(payload,context)->context.server().execute(()->{
+            var player=context.player();var sessions=PLAYERS.get(player);
+            if(sessions==null||!sessions.automaticNativeReady||sessions.connectionNonce!=payload.nonce())return;
+            var session=sessions.sessions.get(payload.sessionId());
+            if(session==null||session.sessionToken!=payload.token()||session.specialKind!=DesktopPackets.SPECIAL_AUTOMATIC_NATIVE
+                ||session.nativeProvider==null||(!session.menu.stillValid(player) || session.specialKind==DesktopPackets.SPECIAL_AUTOMATIC_NATIVE&&!com.salts_inventory_update.internal.desktop.AutomaticContainerSources.valid(session.menu))||!com.salts_inventory_update.internal.desktop.AutomaticContainerSources.valid(session.menu))return;
+            var provider=session.nativeProvider;var writer=session.nativeWriter;sessions.declinedNativeTypes.add(session.menu.getType());
+            sessions.closeAll(player,true);var cursor=player.inventoryMenu.getCarried();player.inventoryMenu.setCarried(ItemStack.EMPTY);
+            if(!cursor.isEmpty())player.getInventory().placeItemBackInInventory(cursor);player.inventoryMenu.broadcastChanges();syncCarried(player,sessions);
+            AUTOMATIC_NATIVE_REOPEN.set(true);try{com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.openNormally(player,provider,writer);}finally{AUTOMATIC_NATIVE_REOPEN.remove();}
+        }));
+
         DesktopDebug.log("server desktop session networking initialized");
         ServerPlayNetworking.registerGlobalReceiver(DesktopHelloPayload.TYPE, (payload, context) ->
             context.server().execute(() -> hello(context.player(), payload))
@@ -327,6 +354,7 @@ public final class DesktopContainerSessions {
     }
 
     public static boolean shouldCapture(ServerPlayer player) {
+        if(Boolean.TRUE.equals(AUTOMATIC_NATIVE_REOPEN.get()))return false;
         PlayerSessions sessions = PLAYERS.get(player);
         return sessions != null && sessions.isActive() && sessions.hasCapability(DesktopProtocol.CAP_CUSTOM_WINDOWS);
     }
@@ -366,6 +394,8 @@ public final class DesktopContainerSessions {
         replacement.lastModeSequence = previous.lastModeSequence;
         replacement.forcedMenuIds = previous.forcedMenuIds;
         replacement.supportedMenuIds = previous.supportedMenuIds;
+        replacement.automaticNativeReady=previous.automaticNativeReady;
+        replacement.nativeTemplateMenuIds=previous.nativeTemplateMenuIds;
         PLAYERS.put(target, replacement);
         send(target, new DesktopPlayerSessionPayload(replacement.connectionNonce, replacement.playerSessionToken));
     }
@@ -513,15 +543,21 @@ public final class DesktopContainerSessions {
                 menu.getType(),
                 sourceKey
             );
+            com.salts_inventory_update.internal.desktop.AutomaticContainerSources.release(menu);
             menu.removed(player);
             return null;
         }
 
+        if(automaticNative(player,sessions,menu)){
+            String inferred=com.salts_inventory_update.internal.desktop.AutomaticContainerSources.bind(player,menu,provider);
+            if(inferred!=null)sourceKey=inferred;
+            if(openingDataWriter==null)openingDataWriter=com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.openingWriter(provider,player,menu.getType());
+        }
         byte[] openingData;
         try {
             DesktopServerApi.OpeningDataWriter<AbstractContainerMenu> apiWriter = DesktopServerApi.findOpeningDataWriter(menu.getType());
             openingData = encodeOpeningData(player, openingDataWriter != null ? openingDataWriter
-                : apiWriter == null ? null : buffer -> apiWriter.write(player, menu, buffer));
+                : apiWriter == null ? null : buffer -> apiWriter.write(player, menu, buffer), automaticNative(player,sessions,menu));
         } catch (RuntimeException exception) {
             DesktopDebug.warn(
                 "server capture skipped player={} title={} reason=invalid-opening-data detail={}",
@@ -529,6 +565,7 @@ public final class DesktopContainerSessions {
                 provider.getDisplayName().getString(),
                 exception.toString()
             );
+            com.salts_inventory_update.internal.desktop.AutomaticContainerSources.release(menu);
             menu.removed(player);
             return null;
         }
@@ -540,7 +577,8 @@ public final class DesktopContainerSessions {
                     provider.getDisplayName().getString(),
                     BuiltInRegistries.MENU.getKey(menu.getType())
                 );
-                menu.removed(player);
+                com.salts_inventory_update.internal.desktop.AutomaticContainerSources.release(menu);
+            menu.removed(player);
                 return null;
             }
         }
@@ -549,6 +587,7 @@ public final class DesktopContainerSessions {
         }
         if (toggleExisting && sessions.closeBySourceKey(player, sourceKey, true)) {
             menu.setCarried(ItemStack.EMPTY);
+            com.salts_inventory_update.internal.desktop.AutomaticContainerSources.release(menu);
             menu.removed(player);
             DesktopDebug.log("server toggle close player={} source={} title={}", player.getName().getString(), sourceKey, provider.getDisplayName().getString());
             return OptionalInt.empty();
@@ -558,7 +597,7 @@ public final class DesktopContainerSessions {
             menu.containerId,
             menu,
             provider.getDisplayName(),
-            DesktopPackets.SPECIAL_GENERIC,
+            automaticNative(player,sessions,menu)?DesktopPackets.SPECIAL_AUTOMATIC_NATIVE:DesktopPackets.SPECIAL_GENERIC,
             -1,
             0,
             DesktopPackets.menuTypeId(menu.getType()),
@@ -567,6 +606,11 @@ public final class DesktopContainerSessions {
             transition == null ? -1 : transition.oldSession.sessionId
         );
 
+        if(session.specialKind==DesktopPackets.SPECIAL_AUTOMATIC_NATIVE){
+            com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.inferStorage(menu,player.getInventory());
+            session.nativeProvider=provider;session.nativeWriter=openingDataWriter;
+            session.nativeLoaderEvents=com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.notifyNativeOpened(player,menu);
+        }
         session.visibleToClient = visibleToClient;
         if (!visibleToClient && menu instanceof DesktopContainerOpener opener) {
             opener.salts_inventory_update$setOpenerVisible(player, false);
@@ -575,8 +619,16 @@ public final class DesktopContainerSessions {
             sessions.add(player, session);
         } else if (!sessions.replace(player, transition.oldSession, session)) {
             menu.setCarried(ItemStack.EMPTY);
+            com.salts_inventory_update.internal.desktop.AutomaticContainerSources.release(menu);
             menu.removed(player);
             return OptionalInt.empty();
+        }
+        // Some native menus intentionally ignore vanilla synchronization. Without an
+        // adapter, return ownership to the original opener before sending any snapshot.
+        if(session.specialKind==DesktopPackets.SPECIAL_AUTOMATIC_NATIVE&&!session.initialSnapshotSent) {
+            sessions.close(player,session.sessionId,false);
+            DesktopDebug.log("native menu kept its own synchronization; using original screen type={}",menu.getType());
+            return null;
         }
         DesktopDebug.log(
             "server capture menu player={} session={} container={} type={} title={} source={} visible={}",
@@ -586,7 +638,6 @@ public final class DesktopContainerSessions {
             session.menuTypeId,
             provider.getDisplayName().getString(),
             session.sourceKey,
-            false,
             session.visibleToClient
         );
         return OptionalInt.of(session.sessionId);
@@ -619,7 +670,8 @@ public final class DesktopContainerSessions {
             if (!isDesktopSupportedMenu(player, sessions, menu) || !menu.stillValid(player)
                 || !companionAuthorized(player, spec)) {
                 menu.setCarried(ItemStack.EMPTY);
-                menu.removed(player);
+                com.salts_inventory_update.internal.desktop.AutomaticContainerSources.release(menu);
+            menu.removed(player);
                 return java.util.Optional.empty();
             }
             DesktopServerApi.OpeningDataWriter<AbstractContainerMenu> writer = DesktopServerApi.findOpeningDataWriter(menu.getType());
@@ -641,7 +693,8 @@ public final class DesktopContainerSessions {
         } catch (RuntimeException failure) {
             Session initialized = sessions.sessions.get(menu.containerId);
             if (initialized != null) sessions.close(player, initialized.sessionId, true);
-            else { menu.setCarried(ItemStack.EMPTY); menu.removed(player); }
+            else { menu.setCarried(ItemStack.EMPTY); com.salts_inventory_update.internal.desktop.AutomaticContainerSources.release(menu);
+            menu.removed(player); }
             throw failure;
         }
     }
@@ -678,6 +731,8 @@ public final class DesktopContainerSessions {
     }
 
     private static boolean validCompanion(ServerPlayer player, PlayerSessions sessions, Session session) {
+        if(session.specialKind==DesktopPackets.SPECIAL_AUTOMATIC_NATIVE&&!com.salts_inventory_update.internal.desktop.AutomaticContainerSources.valid(session.menu))return false;
+
         Companion entry = session.companion;
         if (entry == null) return true;
         if (entry.world != player.level()) {
@@ -742,9 +797,12 @@ public final class DesktopContainerSessions {
         }
     }
 
+    private static byte[] encodeOpeningData(ServerPlayer player, Consumer<RegistryFriendlyByteBuf> writer) {
+        return encodeOpeningData(player,writer,false);
+    }
     private static byte[] encodeOpeningData(
         ServerPlayer player,
-        @Nullable Consumer<RegistryFriendlyByteBuf> openingDataWriter
+        @Nullable Consumer<RegistryFriendlyByteBuf> openingDataWriter, boolean allowEmpty
     ) {
         if (openingDataWriter == null) {
             return new byte[0];
@@ -753,7 +811,7 @@ public final class DesktopContainerSessions {
         try {
             openingDataWriter.accept(buffer);
             int length = buffer.readableBytes();
-            if (length <= 0 || length > DesktopProtocol.MAX_CUSTOM_DATA_BYTES) {
+            if (length < (allowEmpty ? 0 : 1) || length > DesktopProtocol.MAX_CUSTOM_DATA_BYTES) {
                 throw new IllegalArgumentException("Opening data length out of bounds: " + length);
             }
             byte[] result = new byte[length];
@@ -781,6 +839,11 @@ public final class DesktopContainerSessions {
             player.containerMenu = previousMenu;
             ACTIVE_TRANSITION.remove();
         }
+    }
+
+    public static java.util.Optional<AbstractContainerMenu> activeNetworkMenu(ServerPlayer player) {
+        NetworkSession active = ACTIVE_NETWORK_SESSION.get();
+        return active != null && active.player == player ? java.util.Optional.of(active.session.menu) : java.util.Optional.empty();
     }
 
     public static int activeNetworkSessionId(ServerPlayer player) {
@@ -827,6 +890,18 @@ public final class DesktopContainerSessions {
             } else {
                 ACTIVE_NETWORK_SESSION.set(previous);
             }
+        }
+    }
+
+    // Native menus may broadcast inside clicked(), before the shared cursor is committed.
+    private static final ThreadLocal<AbstractContainerMenu> CURSOR_MUTATION_MENU = new ThreadLocal<>();
+    private static void withCursorMutation(AbstractContainerMenu menu, Runnable action) {
+        AbstractContainerMenu previous = CURSOR_MUTATION_MENU.get();
+        CURSOR_MUTATION_MENU.set(menu);
+        try { action.run(); }
+        finally {
+            if (previous == null) CURSOR_MUTATION_MENU.remove();
+            else CURSOR_MUTATION_MENU.set(previous);
         }
     }
 
@@ -929,6 +1004,11 @@ public final class DesktopContainerSessions {
         DesktopDebug.detail("SIU_MOUNT_DIAG " + message, args);
     }
 
+    private static boolean automaticNative(ServerPlayer player,PlayerSessions sessions,AbstractContainerMenu menu) {
+        var type=menu.getType();var id=type==null?null:BuiltInRegistries.MENU.getKey(type);
+        return sessions!=null&&sessions.automaticNativeReady&&id!=null&&sessions.supportedMenuIds.contains(id.toString())
+            &&!sessions.declinedNativeTypes.contains(type)&&com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.candidate(player,menu,sessions.nativeTemplateMenuIds.contains(id.toString()));
+    }
     private static boolean isDesktopSupportedMenu(ServerPlayer player, PlayerSessions sessions, AbstractContainerMenu menu) {
         MenuType<?> type = menu.getType();
         ResourceLocation key = BuiltInRegistries.MENU.getKey(type);
@@ -945,7 +1025,7 @@ public final class DesktopContainerSessions {
             return true;
         }
 
-        return false;
+        return automaticNative(player,sessions,menu);
     }
 
     private static boolean isKnownVanillaDesktopMenu(MenuType<?> type) {
@@ -1846,8 +1926,13 @@ public final class DesktopContainerSessions {
                 try {
                     if (!matchesPhysicalSlot(menu, snapshot.slot(), snapshot.owner(), snapshot.physicalIndex()))
                         throw new IllegalStateException("Sort rollback physical slot changed");
-                    if (!ItemStack.matches(snapshot.before(), snapshot.slot().getItem()))
-                        restoreSlot(player, sessions, menu, snapshot.slot(), snapshot.before(), "inventory sort");
+                    if (!ItemStack.matches(snapshot.before(), snapshot.slot().getItem())) {
+                        if(com.salts_inventory_update.internal.desktop.AutomaticContainerSources.permitsBackingTagUpdate(menu,snapshot.slot(),snapshot.before())) {
+                            var current=snapshot.slot().getItem();
+                            for(var component:java.util.Set.copyOf(current.getComponents().keySet()))current.remove(component);
+                            current.applyComponents(snapshot.before().getComponents());
+                        } else restoreSlot(player, sessions, menu, snapshot.slot(), snapshot.before(), "inventory sort");
+                    }
                     expected.put(snapshot.slot(), snapshot.before());
                 } catch (RuntimeException rollback) { failure.addSuppressed(rollback); }
             }
@@ -1865,7 +1950,8 @@ public final class DesktopContainerSessions {
         for (var snapshot : snapshots) {
             if (DesktopMenuBindings.slot(menu, snapshot.logicalIndex()) != snapshot.slot()
                 || !matchesPhysicalSlot(menu, snapshot.slot(), snapshot.owner(), snapshot.physicalIndex())
-                || !ItemStack.matches(expected.get(snapshot.slot()), snapshot.slot().getItem()))
+                || (!ItemStack.matches(expected.get(snapshot.slot()), snapshot.slot().getItem())
+                    && !com.salts_inventory_update.internal.desktop.AutomaticContainerSources.permitsBackingTagUpdate(menu,snapshot.slot(),expected.get(snapshot.slot()))))
                 throw new IllegalStateException("Sort snapshot changed during a slot callback");
         }
     }
@@ -2788,7 +2874,7 @@ public final class DesktopContainerSessions {
             DesktopDebug.trace("server {} dropped player={} session={} reason=session-auth", operation, player.getName().getString(), sessionId);
             return null;
         }
-        if (!validCompanion(player, sessions, session) || !session.menu.stillValid(player)) {
+        if (!validCompanion(player, sessions, session) || (!session.menu.stillValid(player) || session.specialKind==DesktopPackets.SPECIAL_AUTOMATIC_NATIVE&&!com.salts_inventory_update.internal.desktop.AutomaticContainerSources.valid(session.menu))) {
             sessions.close(player, sessionId, true);
             return null;
         }
@@ -3392,7 +3478,7 @@ public final class DesktopContainerSessions {
         menus.add(player.inventoryMenu);
         for (Session session : List.copyOf(sessions.sessions.values())) {
             if (sessions.sessions.get(session.sessionId) != session || !session.visibleToClient
-                || !companionTransferAuthorized(player, sessions, session) || !session.menu.stillValid(player)) continue;
+                || !companionTransferAuthorized(player, sessions, session) || (!session.menu.stillValid(player) || session.specialKind==DesktopPackets.SPECIAL_AUTOMATIC_NATIVE&&!com.salts_inventory_update.internal.desktop.AutomaticContainerSources.valid(session.menu))) continue;
             menus.add(session.menu);
         }
         Set<ContextualSourceKey> excludedKeys = new HashSet<>();
@@ -3795,7 +3881,7 @@ public final class DesktopContainerSessions {
             DesktopDebug.trace("server JEI transfer dropped player={} targetSession={} reason=hidden", player.getName().getString(), targetSessionId);
             return null;
         }
-        if (!session.menu.stillValid(player)) {
+        if ((!session.menu.stillValid(player) || session.specialKind==DesktopPackets.SPECIAL_AUTOMATIC_NATIVE&&!com.salts_inventory_update.internal.desktop.AutomaticContainerSources.valid(session.menu))) {
             DesktopDebug.log("server JEI transfer invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
             sessions.close(player, session.sessionId, true);
             return null;
@@ -3854,7 +3940,7 @@ public final class DesktopContainerSessions {
         }
         for (Session session : List.copyOf(sessions.sessions.values())) {
             if (sessions.sessions.get(session.sessionId) != session || !session.visibleToClient
-                || !companionTransferAuthorized(player, sessions, session) || !session.menu.stillValid(player)) {
+                || !companionTransferAuthorized(player, sessions, session) || (!session.menu.stillValid(player) || session.specialKind==DesktopPackets.SPECIAL_AUTOMATIC_NATIVE&&!com.salts_inventory_update.internal.desktop.AutomaticContainerSources.valid(session.menu))) {
                 continue;
             }
             for (Slot slot : session.menu.slots) {
@@ -4292,7 +4378,7 @@ public final class DesktopContainerSessions {
                 DesktopDebug.trace("server quick move dropped player={} session={} reason=hidden", player.getName().getString(), sessionId);
                 return null;
             }
-            if (!session.menu.stillValid(player)) {
+            if ((!session.menu.stillValid(player) || session.specialKind==DesktopPackets.SPECIAL_AUTOMATIC_NATIVE&&!com.salts_inventory_update.internal.desktop.AutomaticContainerSources.valid(session.menu))) {
                 DesktopDebug.log("server quick move invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
                 sessions.close(player, session.sessionId, true);
                 return null;
@@ -4970,7 +5056,7 @@ public final class DesktopContainerSessions {
         boolean committedCarried = false;
         try {
             menu.setCarried(effectiveCarried);
-            withMenuNetworkSession(player, sessions, menu, () -> menu.clicked(slotIndex, button, input, player));
+            withCursorMutation(menu, () -> withMenuNetworkSession(player, sessions, menu, () -> menu.clicked(slotIndex, button, input, player)));
             player.inventoryMenu.setCarried(menu.getCarried().copy());
             committedCarried = true;
         } catch (RuntimeException exception) {
@@ -5036,7 +5122,7 @@ public final class DesktopContainerSessions {
         var level = player.level();
         var server = level == null ? null : level.getServer();
         if (server == null || !server.isSameThread() || PLAYERS.get(player) != sessions
-            || sessions.sessions.get(session.sessionId) != session || !session.menu.stillValid(player)) {
+            || sessions.sessions.get(session.sessionId) != session || (!session.menu.stillValid(player) || session.specialKind==DesktopPackets.SPECIAL_AUTOMATIC_NATIVE&&!com.salts_inventory_update.internal.desktop.AutomaticContainerSources.valid(session.menu))) {
             throw new IllegalStateException("Shared cursor access requires a live server-thread session");
         }
     }
@@ -5331,6 +5417,9 @@ public final class DesktopContainerSessions {
     }
 
     private static final class PlayerSessions {
+        private boolean automaticNativeReady;
+        private Set<MenuType<?>> declinedNativeTypes=new HashSet<>();
+        private Set<String> nativeTemplateMenuIds=Set.of();
         private boolean playerMenuRebuilt;
         private @Nullable RecipeHover recipeHover;
         private final LinkedHashMap<Integer, Session> sessions = new LinkedHashMap<>();
@@ -5589,7 +5678,9 @@ public final class DesktopContainerSessions {
                 // The canonical cursor lives on the player menu. A copied cursor on a
                 // desktop menu must never be settled again by removed().
                 session.menu.setCarried(ItemStack.EMPTY);
-                session.menu.removed(player);
+                com.salts_inventory_update.internal.desktop.AutomaticContainerSources.release(session.menu);
+            if(session.nativeLoaderEvents)com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.notifyNativeClosed(player,session.menu);
+            session.menu.removed(player);
             } finally {
                 session.releaseSourceLock();
             }
@@ -5619,7 +5710,7 @@ public final class DesktopContainerSessions {
                 endRecipeHover(player, this);
             for (Session session : List.copyOf(this.sessions.values())) {
                 if (this.sessions.get(session.sessionId) != session) continue;
-                if (!validCompanion(player, this, session) || !session.menu.stillValid(player)) {
+                if (!validCompanion(player, this, session) || (!session.menu.stillValid(player) || session.specialKind==DesktopPackets.SPECIAL_AUTOMATIC_NATIVE&&!com.salts_inventory_update.internal.desktop.AutomaticContainerSources.valid(session.menu))) {
                     DesktopDebug.log("server session invalid player={} session={} title={}", player.getName().getString(), session.sessionId, session.title.getString());
                     if (isCamelOrLlamaSpecial(session.specialKind)) {
                         mountDiag(
@@ -5697,6 +5788,9 @@ public final class DesktopContainerSessions {
     }
 
     private static final class Session {
+        private MenuProvider nativeProvider;
+        private Consumer<RegistryFriendlyByteBuf> nativeWriter;
+        private boolean nativeLoaderEvents;
         private final int sessionId;
         private final long sessionToken;
         private final AbstractContainerMenu menu;
@@ -6360,6 +6454,13 @@ public final class DesktopContainerSessions {
 
         @Override
         public void sendCarriedChange(AbstractContainerMenu menu, ItemStack stack) {
+            if (CURSOR_MUTATION_MENU.get() == menu) {
+                PlayerSessions sessions = PLAYERS.get(this.player);
+                if (sessions != null) send(this.player, new DesktopCarriedPayload(
+                    sessions.connectionNonce, 0L, sessions.playerSessionToken,
+                    this.player.inventoryMenu.getStateId(), menu.getCarried().copy()));
+                return;
+            }
             ItemStack canonicalCarried = this.player.inventoryMenu.getCarried().copy();
             menu.setCarried(ItemStack.EMPTY);
             menu.setRemoteCarried(ItemStack.EMPTY);
@@ -6432,7 +6533,7 @@ public final class DesktopContainerSessions {
     }
 
     private static boolean canRestoreHiddenSession(ServerPlayer player, Session session) {
-        if (!session.menu.stillValid(player)) {
+        if ((!session.menu.stillValid(player) || session.specialKind==DesktopPackets.SPECIAL_AUTOMATIC_NATIVE&&!com.salts_inventory_update.internal.desktop.AutomaticContainerSources.valid(session.menu))) {
             return false;
         }
         if (isBlockBackedSourceKey(session.sourceKey)) {

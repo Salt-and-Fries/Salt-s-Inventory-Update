@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "package": "com.salts_inventory_update.compat.extendeddrawersaddon.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "plugin": "com.salts_inventory_update.compat.extendeddrawersaddon.mixin.DrawerMixinPlugin",
+  "mixins": ["DrawerMenuMixin"],
+  "injectors": {"defaultRequire": 1}
+}

@@ -1,0 +1,18 @@
+{
+  "fabric10": {
+    "old_sha256": "67208a901f62771c85672a9cf0735625fa13fb3cf1619d002a3b0a5dbc2b626d",
+    "final_sha256": "bac231e1a56ce71ddb2135b3d44e79c33ca7d1ebd14103d4afa653603fa2e07a",
+    "changed_entries": [
+      "com/salts_inventory_update/compat/chipped/ChippedWindow.class",
+      "com/salts_inventory_update/compat/chipped/mixin/ChippedForgeOpeningMixin.class",
+      "salts_inventory_compat.chipped.mixins.json"
+    ]
+  },
+  "forge11": {
+    "old_sha256": "ac0fdbcc5183360847389dad2dd1ea9f584c505ba18ae81da0b139df57176b02",
+    "final_sha256": "018e7c0933d1a10cbccf3789ba56748c5e5e92b5ec71ef91bd095d9c4a1662bc",
+    "changed_entries": [
+      "com/salts_inventory_update/compat/chipped/ChippedWindow.class"
+    ]
+  }
+}

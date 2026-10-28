@@ -1,0 +1,77 @@
+[
+  {
+    "loader": "Fabric",
+    "label": "Empty forge",
+    "original": "output\\simply-swords-implemented\\screenshots\\fabric02-empty.png",
+    "crop": "output\\simply-swords-implemented\\crops\\fabric02-empty.png",
+    "source": "build\\simply-swords-implemented\\gameplay\\1.20.1-fabric-simply-fabric-02\\screenshots\\fabric02-empty.png",
+    "crop_rect": [
+      450,
+      38,
+      888,
+      226
+    ],
+    "sha256": "364cb0594c4a3a0f0e5e3f2a81c49c72571fc302391ae0fc4ea77f0160a54250",
+    "build": "02"
+  },
+  {
+    "loader": "Fabric",
+    "label": "Weapon, gems and tablet",
+    "original": "output\\simply-swords-implemented\\screenshots\\fabric02-configured.png",
+    "crop": "output\\simply-swords-implemented\\crops\\fabric02-configured.png",
+    "source": "build\\simply-swords-implemented\\gameplay\\1.20.1-fabric-simply-fabric-02\\screenshots\\fabric02-configured.png",
+    "crop_rect": [
+      450,
+      38,
+      888,
+      226
+    ],
+    "sha256": "c4cd60e3691be33f851ab0e08a464e1217b49d8738dd6dda12ca9df268ec6f5f",
+    "build": "02"
+  },
+  {
+    "loader": "Fabric",
+    "label": "All tablets and channel",
+    "original": "output\\simply-swords-implemented\\screenshots\\fabric02-all-tablets.png",
+    "crop": "output\\simply-swords-implemented\\crops\\fabric02-all-tablets.png",
+    "source": "build\\simply-swords-implemented\\gameplay\\1.20.1-fabric-simply-fabric-02\\screenshots\\fabric02-all-tablets.png",
+    "crop_rect": [
+      450,
+      38,
+      888,
+      226
+    ],
+    "sha256": "4d99471c769679e6ee8060fb49b1a06feb27ee82bddf6a8110cecd4c7418ba8a",
+    "build": "02"
+  },
+  {
+    "loader": "Forge",
+    "label": "Forge configured",
+    "original": "output\\simply-swords-implemented\\screenshots\\forge03-configured.png",
+    "crop": "output\\simply-swords-implemented\\crops\\forge03-configured.png",
+    "source": "build\\simply-swords-implemented\\gameplay\\1.20.1-forge-simply-forge-final03\\screenshots\\forge03-configured.png",
+    "crop_rect": [
+      450,
+      38,
+      888,
+      226
+    ],
+    "sha256": "0ccc64fbdba4141f164f66129bf45a655e1c588d7dfa1599803b5871e5ba4d63",
+    "build": "03"
+  },
+  {
+    "loader": "Forge",
+    "label": "Weapon preview tooltip",
+    "original": "output\\simply-swords-implemented\\screenshots\\forge03-rich-tooltip.png",
+    "crop": "output\\simply-swords-implemented\\crops\\forge03-rich-tooltip.png",
+    "source": "build\\simply-swords-implemented\\gameplay\\1.20.1-forge-simply-forge-final03\\screenshots\\forge03-rich-tooltip.png",
+    "crop_rect": [
+      450,
+      38,
+      1060,
+      545
+    ],
+    "sha256": "baf827c4e982e9601a6ea9ff798ec75b9d14fab7e64e1c666f5fbee9bcb987a4",
+    "build": "03"
+  }
+]

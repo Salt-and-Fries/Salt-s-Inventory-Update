@@ -32,6 +32,7 @@ public final class DesktopPackets {
     public static final int SPECIAL_HORSE = 1;
     public static final int SPECIAL_CAMEL = 2;
     public static final int SPECIAL_LLAMA = 3;
+    public static final int SPECIAL_AUTOMATIC_NATIVE = 4;
     public static final int QUICK_TARGET_DEFAULT = 0;
     public static final int QUICK_TARGET_SESSION = 1;
     public static final int QUICK_TARGET_HOTBAR = 2;
@@ -82,7 +83,7 @@ public final class DesktopPackets {
         }
         buf.writeVarInt(stacks.size());
         for (ItemStack stack : stacks) {
-            buf.writeItem(stack);
+            AutomaticCountCodec.write(buf, stack);
         }
     }
 
@@ -93,7 +94,7 @@ public final class DesktopPackets {
         }
         List<ItemStack> stacks = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            stacks.add(buf.readItem());
+            stacks.add(AutomaticCountCodec.read(buf));
         }
         return stacks;
     }
@@ -493,7 +494,7 @@ public final class DesktopPackets {
         public static final ResourceLocation TYPE = DesktopPackets.id("desktop_click");
 
         public DesktopClickPayload(FriendlyByteBuf buf) {
-            this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(CLICK_INPUT_MAX_LENGTH), buf.readItem());
+            this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(CLICK_INPUT_MAX_LENGTH), AutomaticCountCodec.read(buf));
         }
 
         @Override
@@ -508,7 +509,7 @@ public final class DesktopPackets {
             buf.writeVarInt(this.slotIndex);
             buf.writeVarInt(this.button);
             buf.writeUtf(this.inputName, CLICK_INPUT_MAX_LENGTH);
-            buf.writeItem(this.clientCarried);
+            AutomaticCountCodec.write(buf, this.clientCarried);
         }
     }
 
@@ -582,9 +583,9 @@ public final class DesktopPackets {
         public static final ResourceLocation TYPE=DesktopPackets.id("desktop_recipe_hover_state");
         public DesktopRecipeHoverStatePayload {if(connectionNonce==0||sessionId<0||epoch<=0||ghosts.size()>9)throw new IllegalArgumentException("Invalid hover state");ghosts=List.copyOf(ghosts);}
         public DesktopRecipeHoverStatePayload(FriendlyByteBuf buf){this(buf.readLong(),buf.readVarInt(),buf.readVarLong(),buf.readBoolean(),buf.readBoolean()?buf.readResourceLocation():null,readGhosts(buf));}
-        private static List<RecipeHoverGhost> readGhosts(FriendlyByteBuf buf){int size=buf.readVarInt();if(size<0||size>9)throw new IllegalArgumentException("Too many ghosts");List<RecipeHoverGhost> ghosts=new ArrayList<>();for(int i=0;i<size;i++)ghosts.add(new RecipeHoverGhost(buf.readVarInt(),buf.readItem()));return ghosts;}
+        private static List<RecipeHoverGhost> readGhosts(FriendlyByteBuf buf){int size=buf.readVarInt();if(size<0||size>9)throw new IllegalArgumentException("Too many ghosts");List<RecipeHoverGhost> ghosts=new ArrayList<>();for(int i=0;i<size;i++)ghosts.add(new RecipeHoverGhost(buf.readVarInt(),AutomaticCountCodec.read(buf)));return ghosts;}
         @Override public ResourceLocation id(){return TYPE;}
-        @Override public void write(FriendlyByteBuf buf){buf.writeLong(connectionNonce);buf.writeVarInt(sessionId);buf.writeVarLong(epoch);buf.writeBoolean(active);buf.writeBoolean(recipeId!=null);if(recipeId!=null)buf.writeResourceLocation(recipeId);buf.writeVarInt(ghosts.size());for(var ghost:ghosts){buf.writeVarInt(ghost.slotIndex());buf.writeItem(ghost.item());}}
+        @Override public void write(FriendlyByteBuf buf){buf.writeLong(connectionNonce);buf.writeVarInt(sessionId);buf.writeVarLong(epoch);buf.writeBoolean(active);buf.writeBoolean(recipeId!=null);if(recipeId!=null)buf.writeResourceLocation(recipeId);buf.writeVarInt(ghosts.size());for(var ghost:ghosts){buf.writeVarInt(ghost.slotIndex());AutomaticCountCodec.write(buf, ghost.item());}}
     }
 
     public record DesktopPlaceRecipePayload(int sessionId, ResourceLocation recipeId, boolean useMaxItems) implements DesktopPacket {
@@ -839,7 +840,7 @@ public final class DesktopPackets {
                 buf.readUtf(MENU_SOURCE_KEY_MAX_LENGTH),
                 buf.readComponent(),
                 readItemList(buf),
-                buf.readItem(),
+                AutomaticCountCodec.read(buf),
                 buf.readVarIntArray(DATA_LIST_MAX_SIZE)
             );
         }
@@ -881,7 +882,7 @@ public final class DesktopPackets {
             buf.writeUtf(this.sourceKey, MENU_SOURCE_KEY_MAX_LENGTH);
             buf.writeComponent(this.title);
             writeItemList(buf, this.items);
-            buf.writeItem(this.carried);
+            AutomaticCountCodec.write(buf, this.carried);
             buf.writeVarIntArray(this.data);
         }
     }
@@ -889,16 +890,16 @@ public final class DesktopPackets {
     /** Logical equipment identities survive native slot-list rebuilds. */
     public record DesktopPlayerSlotPayload(String key, int stateId, ItemStack stack) implements DesktopPacket {
         public static final ResourceLocation TYPE = DesktopPackets.id("player_slot_identity");
-        public DesktopPlayerSlotPayload(FriendlyByteBuf buf) { this(buf.readUtf(512), buf.readVarInt(), buf.readItem()); }
+        public DesktopPlayerSlotPayload(FriendlyByteBuf buf) { this(buf.readUtf(512), buf.readVarInt(), AutomaticCountCodec.read(buf)); }
         @Override public ResourceLocation id() { return TYPE; }
-        @Override public void write(FriendlyByteBuf buf) { buf.writeUtf(key, 512); buf.writeVarInt(stateId); buf.writeItem(stack); }
+        @Override public void write(FriendlyByteBuf buf) { buf.writeUtf(key, 512); buf.writeVarInt(stateId); AutomaticCountCodec.write(buf, stack); }
     }
 
     public record DesktopSlotPayload(int sessionId, int slotIndex, int stateId, ItemStack stack) implements DesktopPacket {
         public static final ResourceLocation TYPE = DesktopPackets.id("desktop_slot");
 
         public DesktopSlotPayload(FriendlyByteBuf buf) {
-            this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readItem());
+            this(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), AutomaticCountCodec.read(buf));
         }
 
         @Override
@@ -911,7 +912,7 @@ public final class DesktopPackets {
             buf.writeVarInt(this.sessionId);
             buf.writeVarInt(this.slotIndex);
             buf.writeVarInt(this.stateId);
-            buf.writeItem(this.stack);
+            AutomaticCountCodec.write(buf, this.stack);
         }
     }
 
@@ -939,7 +940,7 @@ public final class DesktopPackets {
         public static final ResourceLocation TYPE = DesktopPackets.id("desktop_carried");
 
         public DesktopCarriedPayload(FriendlyByteBuf buf) {
-            this(buf.readItem());
+            this(AutomaticCountCodec.read(buf));
         }
 
         @Override
@@ -949,7 +950,7 @@ public final class DesktopPackets {
 
         @Override
         public void write(FriendlyByteBuf buf) {
-            buf.writeItem(this.carried);
+            AutomaticCountCodec.write(buf, this.carried);
         }
     }
 

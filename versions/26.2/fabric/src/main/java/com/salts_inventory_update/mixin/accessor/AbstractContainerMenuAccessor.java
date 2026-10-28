@@ -8,6 +8,11 @@ import net.minecraft.world.inventory.Slot;
 
 @Mixin(AbstractContainerMenu.class)
 public interface AbstractContainerMenuAccessor {
+    @org.spongepowered.asm.mixin.Mutable
+    @org.spongepowered.asm.mixin.gen.Accessor("containerId")
+    void salts_inventory_update$setContainerId(int id);
+    @org.spongepowered.asm.mixin.gen.Accessor("synchronizer")
+    void salts_inventory_update$setSynchronizer(net.minecraft.world.inventory.ContainerSynchronizer synchronizer);
     @org.spongepowered.asm.mixin.gen.Accessor("dataSlots")
     java.util.List<net.minecraft.world.inventory.DataSlot> salts_inventory_update$getDataSlots();
 

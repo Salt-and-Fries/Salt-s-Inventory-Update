@@ -1,5 +1,7 @@
 # Optional API examples for 0.1.4
 
+The separate [native-template example](native-template/README.md) demonstrates the experimental Minecraft 1.20.1 Fabric/Forge native composition API. Run `verifyNativeTemplateExample` to check its public-API-only classpath on both loaders.
+
 `optional-mod` is the external-style loading fixture. Its ordinary entrypoint contains no Salt references. The common test suite compiles its providers against the public API, removes Salt from the runtime classpath for an absence test, then verifies phased discovery and dedicated-server client-class safety.
 
 `ui/src/main/java/example/desktop` contains the original-style machine, irregular virtual terminal, native client-only settings and styled-decoration examples. Their ordinary models/menus/hooks contain no Salt references. Register real `MenuType`s in your normal Fabric/Forge/NeoForge mod lifecycle and call `ExampleMenus.bind(...)` before Salt's deferred discovery. Register your original screens normally. Copy the providers into your mod alongside the descriptor below, replacing its owner id with your own.
@@ -28,3 +30,7 @@ Build the standalone NeoForge 26.3 consumer with `./gradlew :26.3:neoforge:compa
 ## HUD positioning
 
 [RearrangedHud](hud/src/main/java/example/hud/RearrangedHud.java) demonstrates a public-API-only provider with independently placed offhand and a scaled vertical hotbar. Match it to your own HUD renderer. See the [HUD API guide](../docs/markdown/hud_interoperability.md).
+
+## Native window templates
+
+[native-template](native-template/README.md) demonstrates composing selected native UI fragments and adding API controls. `verifyNativeTemplateExample` compiles against the public API on all twelve targets in Core 0.1.6. The example stays outside production JARs.

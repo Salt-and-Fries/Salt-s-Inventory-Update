@@ -1,0 +1,48 @@
+{
+  "scope": "Focused visual and related interaction checks, not a complete gameplay suite.",
+  "fresh_runs": [
+    {
+      "directory": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-eight-implemented\\gameplay\\1.20.1-fabric-visual-fix01",
+      "checks": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-eight-implemented\\gameplay\\1.20.1-fabric-visual-fix01\\visual-fix-checks.json",
+      "staged_artifacts": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-eight-implemented\\gameplay\\1.20.1-fabric-visual-fix01\\staged-artifacts.json"
+    },
+    {
+      "directory": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-implemented\\gameplay\\1.20.1-fabric-visual-fix01",
+      "checks": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-implemented\\gameplay\\1.20.1-fabric-visual-fix01\\visual-fix-checks.json",
+      "staged_artifacts": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-implemented\\gameplay\\1.20.1-fabric-visual-fix01\\staged-artifacts.json"
+    },
+    {
+      "directory": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-implemented\\gameplay\\1.20.1-forge-visual-fix01",
+      "checks": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-implemented\\gameplay\\1.20.1-forge-visual-fix01\\visual-fix-checks.json",
+      "staged_artifacts": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-implemented\\gameplay\\1.20.1-forge-visual-fix01\\staged-artifacts.json"
+    },
+    {
+      "directory": "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\gameplay\\1.21.1-fabric-visual-fix01",
+      "checks": "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\gameplay\\1.21.1-fabric-visual-fix01\\visual-fix-checks.json",
+      "staged_artifacts": "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\gameplay\\1.21.1-fabric-visual-fix01\\staged-artifacts.json"
+    },
+    {
+      "directory": "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\gameplay\\1.21.1-neoforge-visual-fix01",
+      "checks": "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\gameplay\\1.21.1-neoforge-visual-fix01\\visual-fix-checks.json",
+      "staged_artifacts": "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\gameplay\\1.21.1-neoforge-visual-fix01\\staged-artifacts.json"
+    }
+  ],
+  "screenshot_manifest": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-versions-visual-fixes\\screenshot-manifest.json",
+  "closeup_manifest": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-versions-visual-fixes\\closeup-manifest.json",
+  "chipped_pixel_proof": "G:\\Codex Projects\\Salts Inventory Update\\output\\third-batch-all-versions-visual-fixes\\chipped-pixel-proof.json",
+  "drawer_and_tab_pixel_proof": "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\gameplay\\1.21.1-fabric-visual-fix01\\pixel-proof.json",
+  "ordinary_inventory_control": "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\gameplay\\1.21.1-neoforge-visual-fix01\\screenshots\\fresh-native-inventory-control.png",
+  "notes": [
+    "45 real screenshot entries cover all supported mod/version/loader combinations; changed Chipped, drawer and gear examples are fresh.",
+    "Older unchanged captures are reused with exact source hashes and upstream version labels. 1.20.1 BetterEnd image is 4.0.11 and Forge Graveyard image is 3.1.",
+    "1.21.1 Fabric QA uses Loom-remapped synthetic nested libraries; BetterEnd and Graveyard use documented QA-only selector mappings. 1.21.1 NeoForge Aether QA maps two Accessories lambda selectors. Original affected UI mixins remain enabled.",
+    "Screen background control opens a normal InventoryScreen outside the native capture scope and visually retains dimming.",
+    "Chipped hover-mode pixel proof excludes the eight pixels covered by the native tooltip; all compared opaque pixels match upstream sprites."
+  ],
+  "lineage": [
+    "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\nested\\library-lineage.json",
+    "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\qa-transforms\\bclib-lineage.json",
+    "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\qa-transforms\\trader-lineage.json",
+    "G:\\Codex Projects\\Salts Inventory Update\\build\\third-batch-ports\\qa-transforms\\accessories-lambda-lineage.json"
+  ]
+}

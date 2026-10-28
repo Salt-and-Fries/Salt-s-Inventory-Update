@@ -34,6 +34,7 @@ public final class WindowedInventoryClient {
     private static Field mouseYposField;
     private static int pendingConfigScreenOpenTicks;
     private static int pendingInstructionsWindowOpenTicks;
+    private static int pendingNativeInspectorTicks;
 
     private WindowedInventoryClient() {
     }
@@ -129,7 +130,13 @@ public final class WindowedInventoryClient {
                 .then(ClientCommandManager.literal("help").executes(context -> {
                     scheduleInstructionsWindowOpen();
                     return 1;
-                })));
+                }))
+                .then(ClientCommandManager.literal("nativeui")
+                    .then(ClientCommandManager.literal("inspect").executes(context -> { pendingNativeInspectorTicks=2;return 1; }))
+                    .then(ClientCommandManager.literal("reload").executes(context -> {
+                        com.salts_inventory_update.client.automatic.NativeProfileFiles.reload();DesktopContainerClient.refreshNativeTemplates();
+                        Minecraft.getInstance().player.displayClientMessage(net.minecraft.network.chat.Component.literal("Native UI profiles reloaded. Reopen the container to apply them."),false);return 1;
+                    }))));
         });
     }
 
@@ -238,6 +245,11 @@ public final class WindowedInventoryClient {
 
     private static void onClientTick(Minecraft minecraft) {
         DesktopContainerClient.tick(minecraft);
+        if(pendingNativeInspectorTicks>0&&--pendingNativeInspectorTicks==0&&minecraft.player!=null){
+            var desktop=InventoryDesktopScreen.current(minecraft);
+            if(desktop!=null&&desktop.inspectNativeWindow())minecraft.setScreen(desktop);
+            else minecraft.player.displayClientMessage(net.minecraft.network.chat.Component.literal("Open an automatic or native-template container window first."),false);
+        }
         openPendingConfigScreen(minecraft);
         if (!SaltsInventoryRuntime.isEnabled()) {
             movementControl.reset();

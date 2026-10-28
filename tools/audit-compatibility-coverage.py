@@ -15,6 +15,15 @@ _boundaries = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_boundaries)
 PREFIX = 'com/salts_inventory_update/compat/'
 CLASSES = {
+    'ironchests': ['ironchests/IronChestsIntegration', 'ironchests/IronChestsClientIntegration'],
+    'animal_feeding_trough': ['feedingtrough/FeedingTroughIntegration', 'feedingtrough/FeedingTroughClientIntegration',
+                             'feedingtrough/mixin/FeedingTroughMenuMixin', 'feedingtrough/mixin/FeedingTroughMixinPlugin'],
+    'oxidized': ['oxidized/OxidizedNativeUi', 'nativewindows/NativeWindowPolish'],
+    'brick_and_mortar': ['brickmortar/BrickMortarNativeUi', 'nativewindows/NativeWindowPolish'],
+    'expandeddelight': ['expandeddelight/ExpandedDelightNativeUi', 'nativewindows/NativeWindowPolish'],
+    'crabbersdelight': ['crabbersdelight/CrabbersDelightNativeUi', 'nativewindows/NativeWindowPolish'],
+    'netherchested': ['netherchested/NetherChestedNativeUi', 'nativewindows/NativeWindowPolish'],
+    'inmis': ['inmis/InmisNativeUi', 'nativewindows/NativeWindowPolish'],
     'curios': ['curios/CuriosCompatBootstrap', 'curios/CuriosIntegration', 'curios/CuriosClientIntegration',
                'curios/CuriosDesktopMenu', 'curios/CuriosPanelDefinition', 'curios/CuriosCharacterButton'],
     'raised': ['raised/RaisedHudIntegration'],

@@ -1,0 +1,861 @@
+{
+  "schema": 1,
+  "scope": "Second Project Everything batch after 1.20.1",
+  "source": "https://api.modrinth.com/v2",
+  "checked_on": "2026-10-27",
+  "targets": [
+    {
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "integrations": [
+        {
+          "project": "bartering-station",
+          "project_id": "EOig9U0j",
+          "version_id": "pxuwney2",
+          "version": "v21.1.0-1.21.1-Fabric",
+          "filename": "BarteringStation-v21.1.0-1.21.1-Fabric.jar",
+          "sha512": "1f2a376c525f15264c5c0fb2ec306832762e205e596497dadc98b44fdcaa001f6a95f87a3a2eadcb55ced565a2165d27f9c224f73ae317274d4782b04b6d9c82",
+          "url": "https://cdn.modrinth.com/data/EOig9U0j/versions/pxuwney2/BarteringStation-v21.1.0-1.21.1-Fabric.jar",
+          "menu_screens": [
+            "fuzs.barteringstation.client.gui.screens.inventory.BarteringStationScreen",
+            "fuzs.barteringstation.world.inventory.BarteringStationMenu"
+          ],
+          "mod_id": "barteringstation",
+          "integration_class": "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi"
+        },
+        {
+          "project": "alloy-forgery",
+          "project_id": "jhl28YkY",
+          "version_id": "czJc7eUX",
+          "version": "2.4.1+1.21",
+          "filename": "alloy-forgery-2.4.1+1.21.jar",
+          "sha512": "ded73374818ab224946d60cbbf366374cb5b82d9c6bcd6ae7855dc433863c94ef279d558f7c48dce47c2b2a4046f135afb8c80923b799083b317cb5047b64726",
+          "url": "https://cdn.modrinth.com/data/jhl28YkY/versions/czJc7eUX/alloy-forgery-2.4.1%2B1.21.jar",
+          "menu_screens": [
+            "wraith.alloyforgery.AlloyForgeScreenHandler",
+            "wraith.alloyforgery.client.AlloyForgeScreen"
+          ],
+          "mod_id": "alloy_forgery",
+          "integration_class": "com.salts_inventory_update.compat.alloyforgery.AlloyForgeryNativeUi"
+        },
+        {
+          "project": "fabric-seasons-extras",
+          "project_id": "64FYdx5z",
+          "version_id": "ZIfSos0S",
+          "version": "1.3.3-BETA+1.21",
+          "filename": "fabric-seasons-extras-1.3.3-BETA+1.21.jar",
+          "sha512": "b6628a8de14df962d7baa7a20e2f1cfcb92f790b39a448f629e9b241aff193e386a7fb97c560c4db701d2c8f64fc6c0ebcb61a7bcbed1e89e564b4efc2cf8e22",
+          "url": "https://cdn.modrinth.com/data/64FYdx5z/versions/ZIfSos0S/fabric-seasons-extras-1.3.3-BETA%2B1.21.jar",
+          "menu_screens": [
+            "io.github.lucaargolo.seasonsextras.client.screen.AirConditioningScreen",
+            "io.github.lucaargolo.seasonsextras.screenhandlers.AirConditioningScreenHandler"
+          ],
+          "mod_id": "seasonsextras",
+          "integration_class": "com.salts_inventory_update.compat.seasonsextras.SeasonsExtrasNativeUi"
+        },
+        {
+          "project": "create-alloyed",
+          "project_id": "KUInlTFo",
+          "version_id": "UO8Sm1hB",
+          "version": "3.0.12+1.21.1-fabric",
+          "filename": "alloyed-3.0.12+1.21.1-fabric.jar",
+          "sha512": "954995f6bd3de070b3f366d9a9889fc0a8874b9fb30db2a50d179a5221e433bb378bcedbd469b022e6bb31e3169476ec48ce14b454543728cfab67becb45bef4",
+          "url": "https://cdn.modrinth.com/data/KUInlTFo/versions/UO8Sm1hB/alloyed-3.0.12%2B1.21.1-fabric.jar",
+          "menu_screens": [
+            "com.molybdenum.alloyed.client.screen.ForgeScreen",
+            "com.molybdenum.alloyed.common.screen.ForgeMenu"
+          ],
+          "mod_id": "alloyed",
+          "integration_class": "com.salts_inventory_update.compat.alloyed.AlloyedNativeUi"
+        },
+        {
+          "project": "farmers-delight-refabricated",
+          "project_id": "7vxePowz",
+          "version_id": "wbVXT4Ua",
+          "version": "1.21.1-3.3.6",
+          "filename": "FarmersDelight-1.21.1-3.3.6+refabricated.jar",
+          "sha512": "2667773f31494a1f3e8f6adf2308406fd35f5f05572ef23709fd5450489ff85f789a57b036c1650d1b4b292b9b5ca5c93d2d5d8dc0cb686a6c5831ef872b1f5b",
+          "url": "https://cdn.modrinth.com/data/7vxePowz/versions/wbVXT4Ua/FarmersDelight-1.21.1-3.3.6%2Brefabricated.jar",
+          "menu_screens": [
+            "vectorwing.farmersdelight.client.gui.CanvasSignEditScreen",
+            "vectorwing.farmersdelight.client.gui.CookingPotScreen",
+            "vectorwing.farmersdelight.client.gui.HangingCanvasSignEditScreen",
+            "vectorwing.farmersdelight.common.block.entity.container.CookingPotMenu",
+            "vectorwing.farmersdelight.refabricated.mlconfigs.fabric.FabricConfigListScreen"
+          ],
+          "mod_id": "farmersdelight",
+          "integration_class": "com.salts_inventory_update.compat.farmersdelight.FarmersDelightNativeUi"
+        },
+        {
+          "project": "better-archeology",
+          "project_id": "zCh7omyG",
+          "version_id": "pmaDTnkB",
+          "version": "1.21.1-1.3.9",
+          "filename": "betterarcheology-fabric-1.21.1-1.3.9.jar",
+          "sha512": "69dba8c676860eb9071e45b99f7a99930690d1b225d7b48b3c38823d059e8b810a4a805b09868f67ffd4de8e7ca719223a074918f799ad330213797eb0ab79be",
+          "url": "https://cdn.modrinth.com/data/zCh7omyG/versions/pmaDTnkB/betterarcheology-fabric-1.21.1-1.3.9.jar",
+          "menu_screens": [
+            "net.Pandarix.screen.BAAbstractContainerMenu",
+            "net.Pandarix.screen.FossilInventoryMenu",
+            "net.Pandarix.screen.FossilInventoryScreen",
+            "net.Pandarix.screen.IdentifyingMenu",
+            "net.Pandarix.screen.IdentifyingScreen"
+          ],
+          "mod_id": "betterarcheology",
+          "integration_class": "com.salts_inventory_update.compat.betterarcheology.BetterArcheologyNativeUi"
+        },
+        {
+          "project": "illager-invasion",
+          "project_id": "jSV9w0J5",
+          "version_id": "rfLsSsrL",
+          "version": "v21.1.6-1.21.1-Fabric",
+          "filename": "IllagerInvasion-v21.1.6-1.21.1-Fabric.jar",
+          "sha512": "e8d805f1c1015dd925f5b925c0b165939ce9ab64469daf0effe8dd58a72e58bf6e1dc0c73361fbdc6c2676b344c823cb07a788d46ad74b4d3e389c2134f1100e",
+          "url": "https://cdn.modrinth.com/data/jSV9w0J5/versions/rfLsSsrL/IllagerInvasion-v21.1.6-1.21.1-Fabric.jar",
+          "menu_screens": [
+            "fuzs.illagerinvasion.client.gui.screens.inventory.ImbuingScreen",
+            "fuzs.illagerinvasion.world.inventory.ImbuingMenu"
+          ],
+          "mod_id": "illagerinvasion",
+          "integration_class": "com.salts_inventory_update.compat.illagerinvasion.IllagerInvasionNativeUi"
+        },
+        {
+          "project": "galosphere",
+          "project_id": "Kn7xyQ1v",
+          "version_id": "jviVa3qz",
+          "version": "1.21.1-1.5.4",
+          "filename": "Galosphere-1.21.1-1.5.4-Fabric.jar",
+          "sha512": "db0390a6c5cf21d218ffec006732039f119006b0ade5bfe916026bb88dc810a74afea834ee0f7af91310896286a6ca43142203b48aa55a2493ab77540e38f9a4",
+          "url": "https://cdn.modrinth.com/data/Kn7xyQ1v/versions/jviVa3qz/Galosphere-1.21.1-1.5.4-Fabric.jar",
+          "menu_screens": [
+            "net.orcinus.galosphere.client.gui.CombustionTableMenu",
+            "net.orcinus.galosphere.client.gui.CombustionTableScreen"
+          ],
+          "mod_id": "galosphere",
+          "integration_class": "com.salts_inventory_update.compat.galosphere.GalosphereNativeUi"
+        },
+        {
+          "project": "universal-sawmill",
+          "project_id": "WRaRZdTd",
+          "version_id": "vpZZ1D50",
+          "version": "1.21-1.8.1",
+          "filename": "sawmill-1.21-1.8.1-fabric.jar",
+          "sha512": "1b72a72a030fe0a04b59a992524a49486fc1221acabe9c4dbe1b3c14a059d49632ce5bc872602691fb6e7751c091621a3b1d9bac9d28a015601fefc6a48aec08",
+          "url": "https://cdn.modrinth.com/data/WRaRZdTd/versions/vpZZ1D50/sawmill-1.21-1.8.1-fabric.jar",
+          "menu_screens": [
+            "net.mehvahdjukaar.sawmill.SawmillMenu",
+            "net.mehvahdjukaar.sawmill.SawmillScreen"
+          ],
+          "mod_id": "sawmill",
+          "integration_class": "com.salts_inventory_update.compat.sawmill.SawmillNativeUi"
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "integrations": [
+        {
+          "project": "bartering-station",
+          "project_id": "EOig9U0j",
+          "version_id": "GOAgiH0l",
+          "version": "v21.1.0-1.21.1-NeoForge",
+          "filename": "BarteringStation-v21.1.0-1.21.1-NeoForge.jar",
+          "sha512": "68b6a63feb16e529650ebf6b39161717454a75b4b8b233930208fc9c9db6f2c4b348ba61460b925fa358a0a02e0677aaefa2fc333040afff811431e57b9cf31e",
+          "url": "https://cdn.modrinth.com/data/EOig9U0j/versions/GOAgiH0l/BarteringStation-v21.1.0-1.21.1-NeoForge.jar",
+          "menu_screens": [
+            "fuzs.barteringstation.client.gui.screens.inventory.BarteringStationScreen",
+            "fuzs.barteringstation.world.inventory.BarteringStationMenu"
+          ],
+          "mod_id": "barteringstation",
+          "integration_class": "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi"
+        },
+        {
+          "project": "create-alloyed",
+          "project_id": "KUInlTFo",
+          "version_id": "VtGEohEU",
+          "version": "3.0.12+1.21.1-neoforge",
+          "filename": "alloyed-3.0.12+1.21.1-neoforge.jar",
+          "sha512": "59dab4ba91ff9dae67c5094a8e5c3769756b7a396e670041985f6ecfb6f529fc31b4585979295167dcc5784a8121e7d1e31f867c6bd18d3fbe084b6f9aa85a4b",
+          "url": "https://cdn.modrinth.com/data/KUInlTFo/versions/VtGEohEU/alloyed-3.0.12%2B1.21.1-neoforge.jar",
+          "menu_screens": [
+            "com.molybdenum.alloyed.client.screen.ForgeScreen",
+            "com.molybdenum.alloyed.common.screen.ForgeMenu"
+          ],
+          "mod_id": "alloyed",
+          "integration_class": "com.salts_inventory_update.compat.alloyed.AlloyedNativeUi"
+        },
+        {
+          "project": "farmers-delight",
+          "project_id": "R2OftAxM",
+          "version_id": "XTVZDOol",
+          "version": "1.21.1-1.3.4",
+          "filename": "FarmersDelight-1.21.1-1.3.4.jar",
+          "sha512": "1f6f8796469f747cff36f477b4f589a3d69613882399f9ee7f86db36c7bca9aa4828731f43db15dc6c7f5a4c1bbe3d4092a232e8cef010b09cec0581848fda90",
+          "url": "https://cdn.modrinth.com/data/R2OftAxM/versions/XTVZDOol/FarmersDelight-1.21.1-1.3.4.jar",
+          "menu_screens": [
+            "vectorwing.farmersdelight.client.gui.CanvasSignEditScreen",
+            "vectorwing.farmersdelight.client.gui.CookingPotScreen",
+            "vectorwing.farmersdelight.client.gui.HangingCanvasSignEditScreen",
+            "vectorwing.farmersdelight.common.block.entity.container.CookingPotMenu"
+          ],
+          "mod_id": "farmersdelight",
+          "integration_class": "com.salts_inventory_update.compat.farmersdelight.FarmersDelightNativeUi"
+        },
+        {
+          "project": "miners-delight",
+          "project_id": "qMxbM4BQ",
+          "version_id": "YUHbwbgQ",
+          "version": "1.4.5",
+          "filename": "minersdelight-1.21.1-1.4.5.jar",
+          "sha512": "98db53ab135281ab11e9abacbce846bfb42fdee6e0a85ae38802a5809fddc24af2e3fb5ba6ed53aa2244ce45f3a5ff93970dd1bc1b55d599560f99019a7fcac1",
+          "url": "https://cdn.modrinth.com/data/qMxbM4BQ/versions/YUHbwbgQ/minersdelight-1.21.1-1.4.5.jar",
+          "menu_screens": [
+            "com.sammy.minersdelight.content.block.copper_pot.CopperPotMenu",
+            "com.sammy.minersdelight.content.block.copper_pot.CopperPotScreen"
+          ],
+          "mod_id": "minersdelight",
+          "integration_class": "com.salts_inventory_update.compat.minersdelight.MinersDelightNativeUi"
+        },
+        {
+          "project": "better-archeology",
+          "project_id": "zCh7omyG",
+          "version_id": "zTMR6t3J",
+          "version": "1.21.1-1.3.9",
+          "filename": "betterarcheology-neoforge-1.21.1-1.3.9.jar",
+          "sha512": "c539aac7eee3ec51d55e9c053d4ad29ee467c9ef6d1206a33a15b7ad5c7937f684453f856ed304b657e6baa8bcc63c6fd56090c46d2d6ff1dcefd0f854a943c2",
+          "url": "https://cdn.modrinth.com/data/zCh7omyG/versions/zTMR6t3J/betterarcheology-neoforge-1.21.1-1.3.9.jar",
+          "menu_screens": [
+            "net.Pandarix.screen.BAAbstractContainerMenu",
+            "net.Pandarix.screen.FossilInventoryMenu",
+            "net.Pandarix.screen.FossilInventoryScreen",
+            "net.Pandarix.screen.IdentifyingMenu",
+            "net.Pandarix.screen.IdentifyingScreen"
+          ],
+          "mod_id": "betterarcheology",
+          "integration_class": "com.salts_inventory_update.compat.betterarcheology.BetterArcheologyNativeUi"
+        },
+        {
+          "project": "illager-invasion",
+          "project_id": "jSV9w0J5",
+          "version_id": "9bEpNrvK",
+          "version": "v21.1.6-1.21.1-NeoForge",
+          "filename": "IllagerInvasion-v21.1.6-1.21.1-NeoForge.jar",
+          "sha512": "5ad618c60d78ab9196ef386c63d5855f3eab2f90006156b786d5b4f4ea7e6bcc1fd9f61dfa45b7b2df44dd900fe9747c9ac1ccac6fdb11814e2f4a7e53d93107",
+          "url": "https://cdn.modrinth.com/data/jSV9w0J5/versions/9bEpNrvK/IllagerInvasion-v21.1.6-1.21.1-NeoForge.jar",
+          "menu_screens": [
+            "fuzs.illagerinvasion.client.gui.screens.inventory.ImbuingScreen",
+            "fuzs.illagerinvasion.world.inventory.ImbuingMenu"
+          ],
+          "mod_id": "illagerinvasion",
+          "integration_class": "com.salts_inventory_update.compat.illagerinvasion.IllagerInvasionNativeUi"
+        },
+        {
+          "project": "galosphere",
+          "project_id": "Kn7xyQ1v",
+          "version_id": "IgULrnXA",
+          "version": "1.21.1-1.5.5",
+          "filename": "Galosphere-1.21.1-1.5.5-NeoForge.jar",
+          "sha512": "2ac38a71cae2adbad3f9891c2ec038b626c384e750f83c535810f1b234e3b78f80863b6089de9fbb92e3ba479a130d9e3d7f64cf6a4f11bd9cb4e01ce5d7e97d",
+          "url": "https://cdn.modrinth.com/data/Kn7xyQ1v/versions/IgULrnXA/Galosphere-1.21.1-1.5.5-NeoForge.jar",
+          "menu_screens": [
+            "net.orcinus.galosphere.client.gui.CombustionTableMenu",
+            "net.orcinus.galosphere.client.gui.CombustionTableScreen"
+          ],
+          "mod_id": "galosphere",
+          "integration_class": "com.salts_inventory_update.compat.galosphere.GalosphereNativeUi"
+        },
+        {
+          "project": "universal-sawmill",
+          "project_id": "WRaRZdTd",
+          "version_id": "vX4jdWHb",
+          "version": "1.21-1.8.1",
+          "filename": "sawmill-1.21-1.8.1-neoforge.jar",
+          "sha512": "8531d70d8d79f975ad772d42cf487f5164584c6cb62c106b136b97c42802d9b00c37a6d70e66e3c035d54320aa6e8178b897aea47e038f578734070a514530ab",
+          "url": "https://cdn.modrinth.com/data/WRaRZdTd/versions/vX4jdWHb/sawmill-1.21-1.8.1-neoforge.jar",
+          "menu_screens": [
+            "net.mehvahdjukaar.sawmill.SawmillMenu",
+            "net.mehvahdjukaar.sawmill.SawmillScreen"
+          ],
+          "mod_id": "sawmill",
+          "integration_class": "com.salts_inventory_update.compat.sawmill.SawmillNativeUi"
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "fabric",
+      "integrations": [
+        {
+          "project": "bartering-station",
+          "project_id": "EOig9U0j",
+          "version_id": "S28l1IW6",
+          "version": "21.11.0",
+          "filename": "BarteringStation-v21.11.0-mc1.21.11-Fabric.jar",
+          "sha512": "7541bb57f3aaef50d508d032cb880346d0a1a82a0ecc819b43ce259e0102a72fdf81c4d1802d69d484b95e1d10898dcdd69059760c5380a99017413e9b4a4657",
+          "url": "https://cdn.modrinth.com/data/EOig9U0j/versions/S28l1IW6/BarteringStation-v21.11.0-mc1.21.11-Fabric.jar",
+          "menu_screens": [
+            "fuzs.barteringstation.client.gui.screens.inventory.BarteringStationScreen",
+            "fuzs.barteringstation.world.inventory.BarteringStationMenu"
+          ],
+          "mod_id": "barteringstation",
+          "integration_class": "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi"
+        },
+        {
+          "project": "farmers-delight-refabricated",
+          "project_id": "7vxePowz",
+          "version_id": "z70iEKnH",
+          "version": "1.21.11-3.6.16",
+          "filename": "FarmersDelight-1.21.11-3.6.16+refabricated.jar",
+          "sha512": "c77773c0eadaeeda971264f3a1d8cd7475fe8f00853d9280c50d3e1aef2886fff3f0426b068589b240f0767e2d7f1794a9eff93077065ede7c1006ee418acbdf",
+          "url": "https://cdn.modrinth.com/data/7vxePowz/versions/z70iEKnH/FarmersDelight-1.21.11-3.6.16%2Brefabricated.jar",
+          "menu_screens": [
+            "vectorwing.farmersdelight.client.gui.CanvasSignEditScreen",
+            "vectorwing.farmersdelight.client.gui.CookingPotScreen",
+            "vectorwing.farmersdelight.client.gui.HangingCanvasSignEditScreen",
+            "vectorwing.farmersdelight.common.block.entity.container.CookingPotMenu",
+            "vectorwing.farmersdelight.refabricated.mlconfigs.fabric.FabricConfigListScreen"
+          ],
+          "mod_id": "farmersdelight",
+          "integration_class": "com.salts_inventory_update.compat.farmersdelight.FarmersDelightNativeUi"
+        },
+        {
+          "project": "better-archeology",
+          "project_id": "zCh7omyG",
+          "version_id": "mu2nBeTk",
+          "version": "1.21.11-1.3.9",
+          "filename": "betterarcheology-fabric-1.21.11-1.3.9.jar",
+          "sha512": "656416273e48a4eac1742574b7e321f18df6f73ecfb354af018c31477741df3d806e7cf9e2a166ec6c8a6d1fc369751fd48bb80caa582272ccbba7a0e2e86144",
+          "url": "https://cdn.modrinth.com/data/zCh7omyG/versions/mu2nBeTk/betterarcheology-fabric-1.21.11-1.3.9.jar",
+          "menu_screens": [
+            "net.Pandarix.screen.BAAbstractContainerMenu",
+            "net.Pandarix.screen.FossilInventoryMenu",
+            "net.Pandarix.screen.FossilInventoryScreen",
+            "net.Pandarix.screen.IdentifyingMenu",
+            "net.Pandarix.screen.IdentifyingScreen"
+          ],
+          "mod_id": "betterarcheology",
+          "integration_class": "com.salts_inventory_update.compat.betterarcheology.BetterArcheologyNativeUi"
+        },
+        {
+          "project": "illager-invasion",
+          "project_id": "jSV9w0J5",
+          "version_id": "yvVMFPsK",
+          "version": "21.11.1",
+          "filename": "IllagerInvasion-v21.11.1-mc1.21.11-Fabric.jar",
+          "sha512": "0123fbe08102ee00fb2e493e2a668bfb52318764a2e287ec56716890060ffc0eb9537eb6cbed357fb47c5ee179fa426a41bca0da3ca040c181814235c027c1b7",
+          "url": "https://cdn.modrinth.com/data/jSV9w0J5/versions/yvVMFPsK/IllagerInvasion-v21.11.1-mc1.21.11-Fabric.jar",
+          "menu_screens": [
+            "fuzs.illagerinvasion.client.gui.screens.inventory.ImbuingScreen",
+            "fuzs.illagerinvasion.world.inventory.ImbuingMenu"
+          ],
+          "mod_id": "illagerinvasion",
+          "integration_class": "com.salts_inventory_update.compat.illagerinvasion.IllagerInvasionNativeUi"
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "neoforge",
+      "integrations": [
+        {
+          "project": "bartering-station",
+          "project_id": "EOig9U0j",
+          "version_id": "6MTJKqS4",
+          "version": "21.11.0",
+          "filename": "BarteringStation-v21.11.0-mc1.21.11-NeoForge.jar",
+          "sha512": "ab8db5424c44fccb29adfe8879213656c2f5e1ae2920709159bbcc2527a425cf131ebdc6edca9af49cc11ad119a5f4673d580b600a1a767a8c95d77ede6ca8fd",
+          "url": "https://cdn.modrinth.com/data/EOig9U0j/versions/6MTJKqS4/BarteringStation-v21.11.0-mc1.21.11-NeoForge.jar",
+          "menu_screens": [
+            "fuzs.barteringstation.client.gui.screens.inventory.BarteringStationScreen",
+            "fuzs.barteringstation.world.inventory.BarteringStationMenu"
+          ],
+          "mod_id": "barteringstation",
+          "integration_class": "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi"
+        },
+        {
+          "project": "better-archeology",
+          "project_id": "zCh7omyG",
+          "version_id": "MGg8pIzy",
+          "version": "1.21.11-1.3.9",
+          "filename": "betterarcheology-neoforge-1.21.11-1.3.9.jar",
+          "sha512": "f8e753477064f83eb190cc8b21b22f0c5b7d433cec6c14c2ad92ba06bcb82d6c6b8c624112a73daf08eaa4944c2d00155683fe8b99ddcf3086971a682d1957b1",
+          "url": "https://cdn.modrinth.com/data/zCh7omyG/versions/MGg8pIzy/betterarcheology-neoforge-1.21.11-1.3.9.jar",
+          "menu_screens": [
+            "net.Pandarix.screen.BAAbstractContainerMenu",
+            "net.Pandarix.screen.FossilInventoryMenu",
+            "net.Pandarix.screen.FossilInventoryScreen",
+            "net.Pandarix.screen.IdentifyingMenu",
+            "net.Pandarix.screen.IdentifyingScreen"
+          ],
+          "mod_id": "betterarcheology",
+          "integration_class": "com.salts_inventory_update.compat.betterarcheology.BetterArcheologyNativeUi"
+        },
+        {
+          "project": "illager-invasion",
+          "project_id": "jSV9w0J5",
+          "version_id": "hlXotJld",
+          "version": "21.11.1",
+          "filename": "IllagerInvasion-v21.11.1-mc1.21.11-NeoForge.jar",
+          "sha512": "dc0dbce0f49f96d865520cb67ab0d364ed23e16876822a76a6bf5dcf4a1eaf5bd88bab394d6e1afb76fb8264fb8bb11534ec9d259e1bf965beed714470457798",
+          "url": "https://cdn.modrinth.com/data/jSV9w0J5/versions/hlXotJld/IllagerInvasion-v21.11.1-mc1.21.11-NeoForge.jar",
+          "menu_screens": [
+            "fuzs.illagerinvasion.client.gui.screens.inventory.ImbuingScreen",
+            "fuzs.illagerinvasion.world.inventory.ImbuingMenu"
+          ],
+          "mod_id": "illagerinvasion",
+          "integration_class": "com.salts_inventory_update.compat.illagerinvasion.IllagerInvasionNativeUi"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "fabric",
+      "integrations": [
+        {
+          "project": "bartering-station",
+          "project_id": "EOig9U0j",
+          "version_id": "u0rjIDkh",
+          "version": "26.1.0",
+          "filename": "BarteringStation-v26.1.0-mc26.1.x-Fabric.jar",
+          "sha512": "f4acb89bb1b0189f5bc0da1b284527a9418389b28ba40191aad287df69f68b7d65dcc444936b88ec98219fde1332713595a1e13d8f8ec6db254c32b8c65cb1fa",
+          "url": "https://cdn.modrinth.com/data/EOig9U0j/versions/u0rjIDkh/BarteringStation-v26.1.0-mc26.1.x-Fabric.jar",
+          "menu_screens": [
+            "fuzs.barteringstation.common.client.gui.screens.inventory.BarteringStationScreen",
+            "fuzs.barteringstation.common.world.inventory.BarteringStationMenu"
+          ],
+          "mod_id": "barteringstation",
+          "integration_class": "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi"
+        },
+        {
+          "project": "alloy-forgery",
+          "project_id": "jhl28YkY",
+          "version_id": "7bsTNh92",
+          "version": "3.1.1",
+          "filename": "alloy-forgery-fabric-3.1.1+26.1.2.jar",
+          "sha512": "2d5185d542837c5d6e8607ba11ff9dfb6c42813a7a1755c9e2692b9c66c701937dde713c4e47768582251fbc736783f7b3199cd6e99640bccdd2643fa6c23885",
+          "url": "https://cdn.modrinth.com/data/jhl28YkY/versions/7bsTNh92/alloy-forgery-fabric-3.1.1%2B26.1.2.jar",
+          "menu_screens": [
+            "io.wispforest.alloyforgery.AlloyForgeScreenHandler",
+            "io.wispforest.alloyforgery.client.AlloyForgeScreen"
+          ],
+          "mod_id": "alloy-forgery",
+          "integration_class": "com.salts_inventory_update.compat.alloyforgery.AlloyForgeryNativeUi"
+        },
+        {
+          "project": "create-alloyed",
+          "project_id": "KUInlTFo",
+          "version_id": "xhkBG1pk",
+          "version": "3.0.10+26.1.2-fabric",
+          "filename": "alloyed-3.0.10+26.1.2-fabric.jar",
+          "sha512": "adf9cb3eac2290d7c090f4f4f0c3ed3b0523dfd889d8b847da2643bb6b6c026c8286d8da294d83ccc1328c1b6b8a44785eef5b23c92ce7efa4c3ecb4ed08093c",
+          "url": "https://cdn.modrinth.com/data/KUInlTFo/versions/xhkBG1pk/alloyed-3.0.10%2B26.1.2-fabric.jar",
+          "menu_screens": [
+            "com.molybdenum.alloyed.client.screen.ForgeScreen",
+            "com.molybdenum.alloyed.common.screen.ForgeMenu"
+          ],
+          "mod_id": "alloyed",
+          "integration_class": "com.salts_inventory_update.compat.alloyed.AlloyedNativeUi"
+        },
+        {
+          "project": "farmers-delight-refabricated",
+          "project_id": "7vxePowz",
+          "version_id": "3s3vr72P",
+          "version": "26.1-3.6.30",
+          "filename": "FarmersDelight-26.1-3.6.30+refabricated.jar",
+          "sha512": "9d1143a53c8950b8ea57119c2d9d88a9a19089ef5a24869d4fcdba5275fb9c910205b9468de33cb6cc968ba8d3913783d72205a5079db30f61b0de8bcb54e782",
+          "url": "https://cdn.modrinth.com/data/7vxePowz/versions/3s3vr72P/FarmersDelight-26.1-3.6.30%2Brefabricated.jar",
+          "menu_screens": [
+            "vectorwing.farmersdelight.client.gui.CanvasSignEditScreen",
+            "vectorwing.farmersdelight.client.gui.CookingPotScreen",
+            "vectorwing.farmersdelight.client.gui.HangingCanvasSignEditScreen",
+            "vectorwing.farmersdelight.common.block.entity.container.CookingPotMenu",
+            "vectorwing.farmersdelight.refabricated.mlconfigs.fabric.FabricConfigListScreen"
+          ],
+          "mod_id": "farmersdelight",
+          "integration_class": "com.salts_inventory_update.compat.farmersdelight.FarmersDelightNativeUi"
+        },
+        {
+          "project": "better-archeology",
+          "project_id": "zCh7omyG",
+          "version_id": "kp9vTymm",
+          "version": "26.1.x-1.3.9",
+          "filename": "betterarcheology-fabric-26.1.2-1.3.9.jar",
+          "sha512": "46eb8341040b78c6bad2df00aa767325d1b43cd6e4df5e63997d447278168398c442274ec569cdfe8e69daa83b0e4a29521a89c01d3f35f97e20458639c412e7",
+          "url": "https://cdn.modrinth.com/data/zCh7omyG/versions/kp9vTymm/betterarcheology-fabric-26.1.2-1.3.9.jar",
+          "menu_screens": [
+            "net.Pandarix.screen.BAAbstractContainerMenu",
+            "net.Pandarix.screen.FossilInventoryMenu",
+            "net.Pandarix.screen.FossilInventoryScreen",
+            "net.Pandarix.screen.IdentifyingMenu",
+            "net.Pandarix.screen.IdentifyingScreen"
+          ],
+          "mod_id": "betterarcheology",
+          "integration_class": "com.salts_inventory_update.compat.betterarcheology.BetterArcheologyNativeUi"
+        },
+        {
+          "project": "illager-invasion",
+          "project_id": "jSV9w0J5",
+          "version_id": "gnAygGyJ",
+          "version": "26.1.0",
+          "filename": "IllagerInvasion-v26.1.0-mc26.1.x-Fabric.jar",
+          "sha512": "f83d6962c1bba7c24e1b810de0031e40da56be309ec65eae5ca3cd33edb03acb3f5ed24e5e7a7452b00ec5fd3d2179f6389ab7e9bf9b3706fb549a3ab515640b",
+          "url": "https://cdn.modrinth.com/data/jSV9w0J5/versions/gnAygGyJ/IllagerInvasion-v26.1.0-mc26.1.x-Fabric.jar",
+          "menu_screens": [
+            "fuzs.illagerinvasion.common.client.gui.screens.inventory.ImbuingScreen",
+            "fuzs.illagerinvasion.common.world.inventory.ImbuingMenu"
+          ],
+          "mod_id": "illagerinvasion",
+          "integration_class": "com.salts_inventory_update.compat.illagerinvasion.IllagerInvasionNativeUi"
+        },
+        {
+          "project": "universal-sawmill",
+          "project_id": "WRaRZdTd",
+          "version_id": "KVTdOr0H",
+          "version": "26.1.2-1.9.1",
+          "filename": "sawmill-26.1.2-1.9.1-fabric.jar",
+          "sha512": "4171e4e9cb2ca0cae4db95487cd2ddaabae10c1868f0a4f92830940f44e232722ac0a7048f61d2adcdccd38b8035bb1b662eeca55309ca7c4ec61ab2fede13f7",
+          "url": "https://cdn.modrinth.com/data/WRaRZdTd/versions/KVTdOr0H/sawmill-26.1.2-1.9.1-fabric.jar",
+          "menu_screens": [
+            "net.mehvahdjukaar.sawmill.SawmillMenu",
+            "net.mehvahdjukaar.sawmill.SawmillScreen"
+          ],
+          "mod_id": "sawmill",
+          "integration_class": "com.salts_inventory_update.compat.sawmill.SawmillNativeUi"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "neoforge",
+      "integrations": [
+        {
+          "project": "bartering-station",
+          "project_id": "EOig9U0j",
+          "version_id": "9FVjKLNO",
+          "version": "26.1.0",
+          "filename": "BarteringStation-v26.1.0-mc26.1.x-NeoForge.jar",
+          "sha512": "ac4b7a29440f8f3a1dd4186d33a0d47eea575d34f737387c096f831d3a4d7b740a57b3f7bef3fc3949b3b5aec87fdfebf40eb2f0768e198e18c635522d5d8750",
+          "url": "https://cdn.modrinth.com/data/EOig9U0j/versions/9FVjKLNO/BarteringStation-v26.1.0-mc26.1.x-NeoForge.jar",
+          "menu_screens": [
+            "fuzs.barteringstation.common.client.gui.screens.inventory.BarteringStationScreen",
+            "fuzs.barteringstation.common.world.inventory.BarteringStationMenu"
+          ],
+          "mod_id": "barteringstation",
+          "integration_class": "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi"
+        },
+        {
+          "project": "create-alloyed",
+          "project_id": "KUInlTFo",
+          "version_id": "RozJocdS",
+          "version": "3.0.10+26.1.2-neoforge",
+          "filename": "alloyed-3.0.10+26.1.2-neoforge.jar",
+          "sha512": "537e19ecb9919c5ac842e24ea1df1697fb93e32ab341ec7ab5f3d8c563b801a94f802e97574c932306476e43990db8ca465eebc8b59adfe38732e2cb9b9f3540",
+          "url": "https://cdn.modrinth.com/data/KUInlTFo/versions/RozJocdS/alloyed-3.0.10%2B26.1.2-neoforge.jar",
+          "menu_screens": [
+            "com.molybdenum.alloyed.client.screen.ForgeScreen",
+            "com.molybdenum.alloyed.common.screen.ForgeMenu"
+          ],
+          "mod_id": "alloyed",
+          "integration_class": "com.salts_inventory_update.compat.alloyed.AlloyedNativeUi"
+        },
+        {
+          "project": "better-archeology",
+          "project_id": "zCh7omyG",
+          "version_id": "eWsVMFv4",
+          "version": "26.1.x-1.3.9",
+          "filename": "betterarcheology-neoforge-26.1.2-1.3.9.jar",
+          "sha512": "9f51e87f31c8623542e1b6bb532a3d57d2a490159b0a349deacffb1d23ed82523cc3c4d347c186f9e0dee3fb2ce5911c2863d6c3378aa47f60bbdc16d85331de",
+          "url": "https://cdn.modrinth.com/data/zCh7omyG/versions/eWsVMFv4/betterarcheology-neoforge-26.1.2-1.3.9.jar",
+          "menu_screens": [
+            "net.Pandarix.screen.BAAbstractContainerMenu",
+            "net.Pandarix.screen.FossilInventoryMenu",
+            "net.Pandarix.screen.FossilInventoryScreen",
+            "net.Pandarix.screen.IdentifyingMenu",
+            "net.Pandarix.screen.IdentifyingScreen"
+          ],
+          "mod_id": "betterarcheology",
+          "integration_class": "com.salts_inventory_update.compat.betterarcheology.BetterArcheologyNativeUi"
+        },
+        {
+          "project": "illager-invasion",
+          "project_id": "jSV9w0J5",
+          "version_id": "Rl9dfKjx",
+          "version": "26.1.0",
+          "filename": "IllagerInvasion-v26.1.0-mc26.1.x-NeoForge.jar",
+          "sha512": "acf28afb659507f73ba44f9dc7a27e5fc5d257fb07e85cc59a1cd7aa30f52c693a731e3a8745499a87a18a6a1dd13184df5556fe05b997d54e5df7575cff5310",
+          "url": "https://cdn.modrinth.com/data/jSV9w0J5/versions/Rl9dfKjx/IllagerInvasion-v26.1.0-mc26.1.x-NeoForge.jar",
+          "menu_screens": [
+            "fuzs.illagerinvasion.common.client.gui.screens.inventory.ImbuingScreen",
+            "fuzs.illagerinvasion.common.world.inventory.ImbuingMenu"
+          ],
+          "mod_id": "illagerinvasion",
+          "integration_class": "com.salts_inventory_update.compat.illagerinvasion.IllagerInvasionNativeUi"
+        },
+        {
+          "project": "universal-sawmill",
+          "project_id": "WRaRZdTd",
+          "version_id": "gSK6WEYe",
+          "version": "26.1.2-1.9.1",
+          "filename": "sawmill-26.1.2-1.9.1-neoforge.jar",
+          "sha512": "0ffbdfe087abf4a3b02a90512423b65bb53b9aaedbc0684c35504ec60e019ff290af38fd70fb52aa2057379d8737b00313f4bafbfd961d3ce489f81af6b1577e",
+          "url": "https://cdn.modrinth.com/data/WRaRZdTd/versions/gSK6WEYe/sawmill-26.1.2-1.9.1-neoforge.jar",
+          "menu_screens": [
+            "net.mehvahdjukaar.sawmill.SawmillMenu",
+            "net.mehvahdjukaar.sawmill.SawmillScreen"
+          ],
+          "mod_id": "sawmill",
+          "integration_class": "com.salts_inventory_update.compat.sawmill.SawmillNativeUi"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "fabric",
+      "integrations": [
+        {
+          "project": "bartering-station",
+          "project_id": "EOig9U0j",
+          "version_id": "vaBOiOWp",
+          "version": "26.2.0",
+          "filename": "BarteringStation-v26.2.0-mc26.2.x-Fabric.jar",
+          "sha512": "912a64196cbb691e0faa54270a13ea5a7e7eecd7cd8fa511db1ab76dced69e5a59f8100fce57871290ed5dc7acde4a4969e10f783355df5e0f975094f42d91dd",
+          "url": "https://cdn.modrinth.com/data/EOig9U0j/versions/vaBOiOWp/BarteringStation-v26.2.0-mc26.2.x-Fabric.jar",
+          "menu_screens": [
+            "fuzs.barteringstation.common.client.gui.screens.inventory.BarteringStationScreen",
+            "fuzs.barteringstation.common.world.inventory.BarteringStationMenu"
+          ],
+          "mod_id": "barteringstation",
+          "integration_class": "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi"
+        },
+        {
+          "project": "create-alloyed",
+          "project_id": "KUInlTFo",
+          "version_id": "h9Fgdp9f",
+          "version": "3.0.12+26.2-fabric",
+          "filename": "alloyed-3.0.12+26.2-fabric.jar",
+          "sha512": "64de5d47d25fc165a56cb50af8500423ec427c63ac14d4986d50e64a3e77c803a77326a1b9a042768c75d38e9ee8f5b773e8388198d87151ef3a4383cec23eb8",
+          "url": "https://cdn.modrinth.com/data/KUInlTFo/versions/h9Fgdp9f/alloyed-3.0.12%2B26.2-fabric.jar",
+          "menu_screens": [
+            "com.molybdenum.alloyed.client.screen.ForgeScreen",
+            "com.molybdenum.alloyed.common.screen.ForgeMenu"
+          ],
+          "mod_id": "alloyed",
+          "integration_class": "com.salts_inventory_update.compat.alloyed.AlloyedNativeUi"
+        },
+        {
+          "project": "farmers-delight-refabricated",
+          "project_id": "7vxePowz",
+          "version_id": "J6sAZl6u",
+          "version": "26.2-3.6.30",
+          "filename": "FarmersDelight-26.2-3.6.30+refabricated.jar",
+          "sha512": "c47e5e278b7efaf4cc5e3a2e3207b42db50684342276077e7425714a25000a331d913b7803d9769f12c1ab9c790602c605bace7da32e077ce471de70764d26b5",
+          "url": "https://cdn.modrinth.com/data/7vxePowz/versions/J6sAZl6u/FarmersDelight-26.2-3.6.30%2Brefabricated.jar",
+          "menu_screens": [
+            "vectorwing.farmersdelight.client.gui.CookingPotScreen",
+            "vectorwing.farmersdelight.common.block.entity.container.CookingPotMenu",
+            "vectorwing.farmersdelight.refabricated.mlconfigs.fabric.FabricConfigListScreen"
+          ],
+          "mod_id": "farmersdelight",
+          "integration_class": "com.salts_inventory_update.compat.farmersdelight.FarmersDelightNativeUi"
+        },
+        {
+          "project": "better-archeology",
+          "project_id": "zCh7omyG",
+          "version_id": "hXLeE6KF",
+          "version": "26.2.x-1.3.9",
+          "filename": "betterarcheology-fabric-26.2-1.3.9.jar",
+          "sha512": "f70ca714b7316c839c801c210aab82f3e173637bc358edaa21a125b5e39e44ef176899a63bcbe13e00af0adf4a9ea91a85c7f6e7ac6bf5fbd8ec1c380fe98911",
+          "url": "https://cdn.modrinth.com/data/zCh7omyG/versions/hXLeE6KF/betterarcheology-fabric-26.2-1.3.9.jar",
+          "menu_screens": [
+            "net.Pandarix.screen.BAAbstractContainerMenu",
+            "net.Pandarix.screen.FossilInventoryMenu",
+            "net.Pandarix.screen.FossilInventoryScreen",
+            "net.Pandarix.screen.IdentifyingMenu",
+            "net.Pandarix.screen.IdentifyingScreen"
+          ],
+          "mod_id": "betterarcheology",
+          "integration_class": "com.salts_inventory_update.compat.betterarcheology.BetterArcheologyNativeUi"
+        },
+        {
+          "project": "illager-invasion",
+          "project_id": "jSV9w0J5",
+          "version_id": "1EML9Osa",
+          "version": "26.2.0",
+          "filename": "IllagerInvasion-v26.2.0-mc26.2.x-Fabric.jar",
+          "sha512": "3e2e5c3d07ae8afaa226b09c9ff44662753f39a18a75fa17492dd5db2f44fdbf14110ca9a79086ab93a0cbc1b7f4015f1a1b0a88a0a378ebe9dd1d133c4f243b",
+          "url": "https://cdn.modrinth.com/data/jSV9w0J5/versions/1EML9Osa/IllagerInvasion-v26.2.0-mc26.2.x-Fabric.jar",
+          "menu_screens": [
+            "fuzs.illagerinvasion.common.client.gui.screens.inventory.ImbuingScreen",
+            "fuzs.illagerinvasion.common.world.inventory.ImbuingMenu"
+          ],
+          "mod_id": "illagerinvasion",
+          "integration_class": "com.salts_inventory_update.compat.illagerinvasion.IllagerInvasionNativeUi"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "neoforge",
+      "integrations": [
+        {
+          "project": "bartering-station",
+          "project_id": "EOig9U0j",
+          "version_id": "oBpzTtDD",
+          "version": "26.2.0",
+          "filename": "BarteringStation-v26.2.0-mc26.2.x-NeoForge.jar",
+          "sha512": "19de4025c487d540616249982cc939dba72ea7e9dadb317838c31e64b920fbb5e3acec5f0d3504f2ae09695dabad7f929b26be0397b5ab4aceec79f6e04898c5",
+          "url": "https://cdn.modrinth.com/data/EOig9U0j/versions/oBpzTtDD/BarteringStation-v26.2.0-mc26.2.x-NeoForge.jar",
+          "menu_screens": [
+            "fuzs.barteringstation.common.client.gui.screens.inventory.BarteringStationScreen",
+            "fuzs.barteringstation.common.world.inventory.BarteringStationMenu"
+          ],
+          "mod_id": "barteringstation",
+          "integration_class": "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi"
+        },
+        {
+          "project": "better-archeology",
+          "project_id": "zCh7omyG",
+          "version_id": "IJArJ270",
+          "version": "26.2.x-1.3.9",
+          "filename": "betterarcheology-neoforge-26.2-1.3.9.jar",
+          "sha512": "7cb50b6320385139b441fe07118611f4d5081e9cf787c76ba33a69d743e85cbd0fe716d57403174aa39f2b648c14f13b886c1a6bac425e08817b1b0ab9e7940d",
+          "url": "https://cdn.modrinth.com/data/zCh7omyG/versions/IJArJ270/betterarcheology-neoforge-26.2-1.3.9.jar",
+          "menu_screens": [
+            "net.Pandarix.screen.BAAbstractContainerMenu",
+            "net.Pandarix.screen.FossilInventoryMenu",
+            "net.Pandarix.screen.FossilInventoryScreen",
+            "net.Pandarix.screen.IdentifyingMenu",
+            "net.Pandarix.screen.IdentifyingScreen"
+          ],
+          "mod_id": "betterarcheology",
+          "integration_class": "com.salts_inventory_update.compat.betterarcheology.BetterArcheologyNativeUi"
+        },
+        {
+          "project": "illager-invasion",
+          "project_id": "jSV9w0J5",
+          "version_id": "R3vcYb75",
+          "version": "26.2.0",
+          "filename": "IllagerInvasion-v26.2.0-mc26.2.x-NeoForge.jar",
+          "sha512": "a95303d20ba78210fd6bac1c39aeb0088c20242d46aa77bae05a93d1dd7b484b865875f8381fed290fbf59db8cc894de3fb871a5f467373fe2c809762f15d19f",
+          "url": "https://cdn.modrinth.com/data/jSV9w0J5/versions/R3vcYb75/IllagerInvasion-v26.2.0-mc26.2.x-NeoForge.jar",
+          "menu_screens": [
+            "fuzs.illagerinvasion.common.client.gui.screens.inventory.ImbuingScreen",
+            "fuzs.illagerinvasion.common.world.inventory.ImbuingMenu"
+          ],
+          "mod_id": "illagerinvasion",
+          "integration_class": "com.salts_inventory_update.compat.illagerinvasion.IllagerInvasionNativeUi"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "fabric",
+      "integrations": [
+        {
+          "project": "bartering-station",
+          "project_id": "EOig9U0j",
+          "version_id": "FHYV3FNX",
+          "version": "26.3.0",
+          "filename": "barteringstation-v26.3.0-mc26.3.x+fabric.jar",
+          "sha512": "10a39708163119674ad1ac9c34e967ff862d6a74f5381bdb6637e9a1bb045024100a0c3cdc483ed22c72dd4f42f1801b834842130fa7068392f8f84c764b7d85",
+          "url": "https://cdn.modrinth.com/data/EOig9U0j/versions/FHYV3FNX/barteringstation-v26.3.0-mc26.3.x%2Bfabric.jar",
+          "menu_screens": [
+            "fuzs.barteringstation.common.client.gui.screens.inventory.BarteringStationScreen",
+            "fuzs.barteringstation.common.world.inventory.BarteringStationMenu"
+          ],
+          "mod_id": "barteringstation",
+          "integration_class": "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi"
+        },
+        {
+          "project": "create-alloyed",
+          "project_id": "KUInlTFo",
+          "version_id": "312gtOYI",
+          "version": "3.0.12+26.3-fabric",
+          "filename": "alloyed-3.0.12+26.3-fabric.jar",
+          "sha512": "29055331139b722dd300bc0161215bf6208029f1f224fda3db71575c90336394610a2c7206aa127a6ab28d6be96fe2d7154556bcc7a91c54128c40336dafeb9f",
+          "url": "https://cdn.modrinth.com/data/KUInlTFo/versions/312gtOYI/alloyed-3.0.12%2B26.3-fabric.jar",
+          "menu_screens": [
+            "com.molybdenum.alloyed.client.screen.ForgeScreen",
+            "com.molybdenum.alloyed.common.screen.ForgeMenu"
+          ],
+          "mod_id": "alloyed",
+          "integration_class": "com.salts_inventory_update.compat.alloyed.AlloyedNativeUi"
+        },
+        {
+          "project": "farmers-delight-refabricated",
+          "project_id": "7vxePowz",
+          "version_id": "dRScyUeE",
+          "version": "26.3-3.6.30",
+          "filename": "FarmersDelight-26.3-3.6.30+refabricated.jar",
+          "sha512": "099f724599022ac9232f265d62907fdde6ad48a73b246d45930d938a7f850be6a8b520244ffa218a59fdef96b0170fc0c04f00ff91f108b5a02bbc4cb2a013bc",
+          "url": "https://cdn.modrinth.com/data/7vxePowz/versions/dRScyUeE/FarmersDelight-26.3-3.6.30%2Brefabricated.jar",
+          "menu_screens": [
+            "vectorwing.farmersdelight.client.gui.CookingPotScreen",
+            "vectorwing.farmersdelight.common.block.entity.container.CookingPotMenu",
+            "vectorwing.farmersdelight.refabricated.mlconfigs.fabric.FabricConfigListScreen"
+          ],
+          "mod_id": "farmersdelight",
+          "integration_class": "com.salts_inventory_update.compat.farmersdelight.FarmersDelightNativeUi"
+        },
+        {
+          "project": "better-archeology",
+          "project_id": "zCh7omyG",
+          "version_id": "WY4acAvi",
+          "version": "26.3.x-1.3.9",
+          "filename": "betterarcheology-fabric-26.3-1.3.9.jar",
+          "sha512": "f3a6db197d3eed9dbfded7cf49c34d2f9fa5cb27807fc4cf6acb0a8d5aa0fe9efddd301cbb50207870930cc7f42b9bc688271c9bc73392846418c20d5b81b76a",
+          "url": "https://cdn.modrinth.com/data/zCh7omyG/versions/WY4acAvi/betterarcheology-fabric-26.3-1.3.9.jar",
+          "menu_screens": [
+            "net.Pandarix.screen.BAAbstractContainerMenu",
+            "net.Pandarix.screen.FossilInventoryMenu",
+            "net.Pandarix.screen.FossilInventoryScreen",
+            "net.Pandarix.screen.IdentifyingMenu",
+            "net.Pandarix.screen.IdentifyingScreen"
+          ],
+          "mod_id": "betterarcheology",
+          "integration_class": "com.salts_inventory_update.compat.betterarcheology.BetterArcheologyNativeUi"
+        }
+      ]
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "neoforge",
+      "integrations": [
+        {
+          "project": "bartering-station",
+          "project_id": "EOig9U0j",
+          "version_id": "m2jTYyh9",
+          "version": "26.3.0",
+          "filename": "barteringstation-v26.3.0-mc26.3.x+neoforge.jar",
+          "sha512": "437f3785cd3035fd15a0de976fde519b797fa3cd7e65a11f6d955745d97e9a1a833bdb8ab1caa59760f61df5d1f9fbcec49cc2a9b038207532f263c9e2fd615c",
+          "url": "https://cdn.modrinth.com/data/EOig9U0j/versions/m2jTYyh9/barteringstation-v26.3.0-mc26.3.x%2Bneoforge.jar",
+          "menu_screens": [
+            "fuzs.barteringstation.common.client.gui.screens.inventory.BarteringStationScreen",
+            "fuzs.barteringstation.common.world.inventory.BarteringStationMenu"
+          ],
+          "mod_id": "barteringstation",
+          "integration_class": "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi"
+        },
+        {
+          "project": "better-archeology",
+          "project_id": "zCh7omyG",
+          "version_id": "ORCVRudw",
+          "version": "26.3.x-1.3.9",
+          "filename": "betterarcheology-neoforge-26.3-1.3.9.jar",
+          "sha512": "3433ba6082a4c45d9bc2d899efe31b47238307be89b03cb4ffeb4eae3b37d731cc219e8ab9dd21168cabdd22d9b4ad60efa4505249d289fc022006e31c837200",
+          "url": "https://cdn.modrinth.com/data/zCh7omyG/versions/ORCVRudw/betterarcheology-neoforge-26.3-1.3.9.jar",
+          "menu_screens": [
+            "net.Pandarix.screen.BAAbstractContainerMenu",
+            "net.Pandarix.screen.FossilInventoryMenu",
+            "net.Pandarix.screen.FossilInventoryScreen",
+            "net.Pandarix.screen.IdentifyingMenu",
+            "net.Pandarix.screen.IdentifyingScreen"
+          ],
+          "mod_id": "betterarcheology",
+          "integration_class": "com.salts_inventory_update.compat.betterarcheology.BetterArcheologyNativeUi"
+        }
+      ]
+    }
+  ]
+}

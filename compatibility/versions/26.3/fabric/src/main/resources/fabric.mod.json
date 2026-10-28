@@ -16,7 +16,8 @@
     "discord": "https://discord.gg/kfdE9gGGxP"
   },
   "mixins": [
-    "salts_inventory_compat.ae2.mixins.json"
+    "salts_inventory_compat.ae2.mixins.json",
+    "salts_inventory_compat.feeding-trough.mixins.json"
   ],
   "entrypoints": {
     "modmenu": [
@@ -59,6 +60,11 @@
     "roughlyenoughitems": "*",
     "emi": "*",
     "modmenu": "*",
-    "toms_storage": "*"
+    "toms_storage": "*",
+    "animal_feeding_trough": "*",
+    "netherchested": "*",
+    "graveyard": "*",
+    "betterend": "*",
+    "runes": "*"
   }
 }

@@ -1,0 +1,64 @@
+{
+  "minecraft": "1.20.1",
+  "loader": "forge",
+  "scenario": "extension-empty",
+  "artifacts": [
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\9889ca280247a39d-deep_aether-1.20.1-1.1.7.jar",
+      "filename": "deep_aether-1.20.1-1.1.7.jar",
+      "coordinate": "maven.modrinth:gcHIih5B:IE1ZMRN3",
+      "sha512": "9889ca280247a39d0053eeb25da8979bb57b48069428c95a546453cba63b1d3444fce8b63c73ab20fb96741b9e8d4cf98adc44aa61a234c6c3eec187454af7b5"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\60b23e439b244645-aether-1.20.1-1.5.2-neoforge.jar",
+      "filename": "aether-1.20.1-1.5.2-neoforge.jar",
+      "coordinate": "maven.modrinth:YhmgMVyu:2411kUqF",
+      "sha512": "60b23e439b244645eafda5f3ddd620ac37e94bd75441d2deea9c328e1e154362f48b08aff1959849a7428ae7664422723fdbdb12aaeddfd56409ba4b54a7eaaf"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\a784082052e22916-TerraBlender-forge-1.20.1-3.0.1.11.jar",
+      "filename": "TerraBlender-forge-1.20.1-3.0.1.11.jar",
+      "coordinate": "maven.modrinth:kkmrDlKT:IfcgopfA",
+      "sha512": "a784082052e229167f52f01a4ec5d0a7d94a27f2832f5df6918a99f5b680818c8d7c0116fd4897cdff044e9d2bc3129a13ba1454d1cd3ec9d851260d8c2c97fc"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-eight-implemented\\upstream\\The_Graveyard_3.1_(FORGE)_for_1.20.1.jar",
+      "filename": "The_Graveyard_3.1_(FORGE)_for_1.20.1.jar",
+      "coordinate": "maven.modrinth:U1jdQuSf:Q66WyQ3F",
+      "sha512": "3d44f32ddef0167e62e9842d622ba3d3367bf9a14401756143e843ef8ed8158d3c056c443586ea024f2985f412b4ff3041fbef349feb477e25c2cad7a2de88b4"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-eight-implemented\\upstream\\geckolib-forge-1.20.1-4.8.4.jar",
+      "filename": "geckolib-forge-1.20.1-4.8.4.jar",
+      "coordinate": "maven.modrinth:8BmcQJ2H:aC5KMoNg",
+      "sha512": "443a321a293e3cb92fbbc3c97a38b179a45d1db703cd7bdb123270a9e04e7b7d67d5b06cd8e77a6d4d9139e033e901b9660cccf53ad5f9beaae6d06eae68febf"
+    }
+  ],
+  "runtime": {},
+  "versions": [
+    {
+      "project_id": "gcHIih5B",
+      "version_id": "IE1ZMRN3",
+      "version": "1.20.1-1.1.7"
+    },
+    {
+      "project_id": "YhmgMVyu",
+      "version_id": "2411kUqF",
+      "version": "1.20.1-1.5.2-neoforge"
+    },
+    {
+      "project_id": "kkmrDlKT",
+      "version_id": "IfcgopfA",
+      "version": "3.0.1.11"
+    }
+  ],
+  "requested_mods": [
+    {
+      "title": "Deep Aether",
+      "slug": "deep-aether",
+      "version": "1.20.1-1.1.7",
+      "version_id": "IE1ZMRN3"
+    }
+  ],
+  "siu_enabled": true
+}

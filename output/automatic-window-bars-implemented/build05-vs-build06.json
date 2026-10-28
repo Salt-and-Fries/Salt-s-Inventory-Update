@@ -1,0 +1,16 @@
+{
+  "fabric": {
+    "build05_sha256": "507b09b49aae9873ca4d0a532cbe6744bd100d7e9394671f9492fe1f3fa816e2",
+    "build06_sha256": "ec8397a2e58eda7384505bfc490f5753bce1fd161e9807d469ffafda5c5fbb93",
+    "changed_entries": [
+      "com/salts_inventory_update/client/automatic/AutomaticNativeWindow.class"
+    ]
+  },
+  "forge": {
+    "build05_sha256": "999fd8c829518a2e4282ea3066dd26925406b6f68e1e4784faf0c7c972883cfb",
+    "build06_sha256": "644734bf599a6b0567510cc06f88ddecdfa5510d040e5f1567f8bf014e0bce3a",
+    "changed_entries": [
+      "com/salts_inventory_update/client/automatic/AutomaticNativeWindow.class"
+    ]
+  }
+}

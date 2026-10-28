@@ -1,0 +1,103 @@
+// Native screenshot fixture: Core, Compatibility and Controlify are absent.
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.security.MessageDigest
+
+gradle.projectsEvaluated {
+    def root=gradle.rootProject
+    def loader=root.providers.gradleProperty('nativeLoader').getOrElse('fabric')
+    def runId=root.providers.gradleProperty('nativeRun').getOrElse('reference-01')
+    if(!(loader in ['fabric','forge']) || !(runId ==~ /[a-z0-9-]+/))throw new GradleException('Invalid native capture target')
+    def target=root.project(":1.20.1:${loader}")
+    def fixture=new JsonSlurper().parse(root.file("build/project-everything-eight-mockups/fixture-${loader}.json"))
+    def generated=target.layout.buildDirectory.dir('native-reference-metadata').get().asFile
+    def qa=target.sourceSets.create('nativeUiReference')
+    qa.java.srcDir(root.file('functional-tests/next-eight-native/java'));qa.java.srcDir(new File(generated,'java'));qa.resources.srcDir(new File(generated,'resources'))
+    qa.compileClasspath+=target.sourceSets.main.compileClasspath
+    def metadata=target.tasks.register('nativeReferenceMetadata'){
+        outputs.dir(generated)
+        doLast{
+            def resources=new File(generated,'resources');resources.mkdirs()
+            new File(resources,'pack.mcmeta').text=JsonOutput.toJson([pack:[pack_format:15,description:'Excluded native UI reference capture']])
+            def java=new File(generated,'java/com/siu_reference');java.mkdirs()
+            if(loader=='fabric'){
+                new File(resources,'fabric.mod.json').text=JsonOutput.toJson([schemaVersion:1,id:'native_ui_reference',version:'1.0.0',environment:'client',entrypoints:[client:['com.siu_reference.NativeReferenceFabric']],depends:[minecraft:'1.20.1','fabric-api':'*']])
+                new File(java,'NativeReferenceFabric.java').text='''package com.siu_reference;
+public final class NativeReferenceFabric implements net.fabricmc.api.ClientModInitializer {
+ public void onInitializeClient(){net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(mc->NativeUiReference.tick());}
+}'''
+            }else{
+                def meta=new File(resources,'META-INF/mods.toml');meta.parentFile.mkdirs();meta.text='modLoader="javafml"\nloaderVersion="[47,)"\nlicense="Test fixture"\n[[mods]]\nmodId="native_ui_reference"\nversion="1.0.0"\ndisplayName="Native UI reference capture"\n'
+                new File(java,'NativeReferenceForge.java').text='''package com.siu_reference;
+@net.minecraftforge.fml.common.Mod("native_ui_reference")
+public final class NativeReferenceForge {
+ public NativeReferenceForge(){net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener((net.minecraftforge.event.TickEvent.ClientTickEvent e)->{if(e.phase==net.minecraftforge.event.TickEvent.Phase.END)NativeUiReference.tick();});}
+}'''
+            }
+        }
+    }
+    target.tasks.named(qa.compileJavaTaskName).configure{dependsOn(metadata)}
+    target.tasks.named(qa.processResourcesTaskName).configure{dependsOn(metadata)}
+    def qaJar=target.tasks.register('nativeReferenceJar',Jar){from(qa.output);archiveFileName='native-ui-reference.jar';destinationDirectory=target.layout.buildDirectory.dir('native-reference-artifact')}
+    def original=target.tasks.named('runClient').get()
+    target.tasks.register('runNativeReference',JavaExec){
+        dependsOn(target.tasks.named(qa.classesTaskName),qaJar)
+        dependsOn(original.taskDependencies.getDependencies(original).findAll{it.name!='runClient'&&it.name!='classes'})
+        javaLauncher.set(original.javaLauncher);mainClass.set(original.mainClass)
+        minHeapSize='512m';maxHeapSize='3g'
+        def output=root.file("build/project-everything-eight-mockups/gameplay/${loader}-${runId}")
+        workingDir=target.layout.buildDirectory.dir("native-reference/${runId}").get().asFile
+        environment('MOD_CLASSES','');environment('NATIVE_REFERENCE_OUTPUT',output.absolutePath);environment('NATIVE_REFERENCE_LOADER',loader)
+        doFirst{
+            workingDir.mkdirs();output.mkdirs()
+            if(new File(output,'ready.json').exists())throw new GradleException('Preserve the existing capture; choose a new run ID')
+            def retained={f->!f.canonicalPath.startsWith(root.projectDir.canonicalPath+File.separator)||f.canonicalPath.contains(File.separator+'.gradle'+File.separator)||f.canonicalPath.contains(File.separator+'moddev'+File.separator)}
+            def runtime=original.hasProperty('classpathProvider')?original.classpathProvider:original.classpath
+            classpath=runtime.filter(retained)
+            if(loader=='fabric')classpath+=qa.output
+            args=original.args+original.argumentProviders.collectMany{it.asArguments().toList()}
+            jvmArgs=(original.jvmArgs+original.jvmArgumentProviders.collectMany{it.asArguments().toList()}).findAll{!it.startsWith('-Dfabric.classPathGroups=')&&!it.startsWith('-Dfml.modFolders=')}
+            if(loader=='fabric')jvmArgs+=['-XX:ActiveProcessorCount=2']
+            systemProperties(original.systemProperties.findAll{k,v->!(k in ['fabric.classPathGroups','fml.modFolders'])})
+            if(loader=='fabric')systemProperty('fabric.classPathGroups',qa.output.files.collect{it.absolutePath}.join(File.pathSeparator))
+            if(loader=='forge'){
+                def launch=new File(workingDir,'launch');launch.mkdirs()
+                args=args.collect{arg->
+                    if(!arg.startsWith('@'))return arg
+                    def source=new File(arg.substring(1).replace('\\\\','\\'));def copy=new File(launch,'native-'+source.name)
+                    boolean skip=false
+                    copy.text=source.readLines().findAll{line->
+                        if(skip){skip=false;return false}
+                        if(line.trim()=='--mixin.config'){skip=true;return false}
+                        return true
+                    }.join('\n')
+                    '@'+copy.absolutePath
+                }
+                jvmArgs=jvmArgs.collect{arg->
+                    if(!arg.startsWith('@'))return arg
+                    def file=new File(arg.substring(1).replace('\\\\','\\'));def copy=new File(launch,file.name)
+                    copy.text=file.readLines().collect{line->
+                        if(!line.contains('-DlegacyClassPath.file='))return line
+                        def path=line.substring(line.indexOf('-DlegacyClassPath.file=')+'-DlegacyClassPath.file='.length()).replace('"','').replace('\\\\','\\')
+                        def filtered=new File(launch,'nativeLegacyClasspath.txt');filtered.text=new File(path).readLines().findAll{retained(new File(it))}.join('\n')
+                        '-DlegacyClassPath.file="'+filtered.absolutePath.replace('\\','/')+'"'
+                    }.join('\n');'@'+copy.absolutePath
+                }
+            }
+            def mods=new File(workingDir,'mods');mods.mkdirs()
+            def inputs=fixture.artifacts.findAll{it.coordinate}.collect{r->
+                def file=root.file(r.path)
+                if(MessageDigest.getInstance('SHA-512').digest(file.bytes).encodeHex().toString()!=r.sha512)throw new GradleException('Upstream artifact hash mismatch')
+                [file:file,filename:r.filename]
+            }
+            if(loader=='forge'){
+                def arguments=['python',root.file('tools/remap-controlify-forge-qa.py'),'--java',javaLauncher.get().executablePath.asFile,'--installer-tools',target.configurations.getByName('installerToolsRuntime').singleFile,'--mappings',target.extensions.getByName('obfuscation').srgToNamedMappings.get().asFile,'--output-directory',mods,'--evidence',new File(output,'forge-remap-lineage.json')]
+                inputs.each{e->arguments+=['--jar',e.file]}
+                def task=root.providers.exec{commandLine(arguments)};println(task.standardOutput.asText.get());task.result.get().assertNormalExitValue()
+                root.copy{from(qaJar.get().archiveFile);into(mods)}
+            }else inputs.each{e->root.copy{from(e.file);into(mods);rename{e.filename}}}
+            new File(output,'staged-artifacts.json').text=JsonOutput.prettyPrint(JsonOutput.toJson([minecraft:'1.20.1',loader:loader,siu_loaded:false,artifacts:inputs.collect{e->[file:e.file.absolutePath,filename:e.filename,sha256:MessageDigest.getInstance('SHA-256').digest(e.file.bytes).encodeHex().toString()]},runtimeClasspath:classpath.files.collect{it.absolutePath}]))
+            new File(workingDir,'options.txt').text='tutorialStep:none\nrenderDistance:2\nsimulationDistance:5\nguiScale:2\npauseOnLostFocus:false\nautoJump:false\n'
+        }
+    }
+}

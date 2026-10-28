@@ -1,0 +1,598 @@
+{
+  "coreVersion": "0.1.6",
+  "compatibilityVersion": "0.1.3",
+  "controlifyVersion": "0.1.1",
+  "rootBuild": "build/native-all-targets/root-build-05.log",
+  "junitReports": {
+    "tests": 1669,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "artifacts": [
+    {
+      "family": "core",
+      "file": "dist\\core\\salts_inventory_update-1.20.1-Fabric-0.1.6.jar",
+      "sha256": "dfcea07482a00790bbff16d5f65a68fc003446ac40b10978a6b749e508b19f5e"
+    },
+    {
+      "family": "core",
+      "file": "dist\\core\\salts_inventory_update-1.20.1-Forge-0.1.6.jar",
+      "sha256": "eda126be5c5f02698d41b54f59a8fa9351fec0b93a769ec6e3e55690c3993f3a"
+    },
+    {
+      "family": "core",
+      "file": "dist\\core\\salts_inventory_update-1.21.1-Fabric-0.1.6.jar",
+      "sha256": "26a65b3c22c7d4bb9af7d8797f15c8852748866004899b465f7105815eff3955"
+    },
+    {
+      "family": "core",
+      "file": "dist\\core\\salts_inventory_update-1.21.1-NeoForge-0.1.6.jar",
+      "sha256": "f884cfee5f89b38febb7c7fb9d105597fcf2d2befe3c82d527bb193dc3b9f34d"
+    },
+    {
+      "family": "core",
+      "file": "dist\\core\\salts_inventory_update-1.21.11-Fabric-0.1.6.jar",
+      "sha256": "74aba6ba84e11b62d2f594f0fcd4a5df80ebe1e5cbe2d8adbd10b7f535fdfca3"
+    },
+    {
+      "family": "core",
+      "file": "dist\\core\\salts_inventory_update-1.21.11-NeoForge-0.1.6.jar",
+      "sha256": "9929471da20653d194fe1413e64a7b1c617e77ab94a5df5ec38ed0bbb5e1873e"
+    },
+    {
+      "family": "core",
+      "file": "dist\\core\\salts_inventory_update-26.1.2-Fabric-0.1.6.jar",
+      "sha256": "b106b2dc97fa3614f67a88b7b09c0f90738d44676fe9eabd9b1295ab18803e04"
+    },
+    {
+      "family": "core",
+      "file": "dist\\core\\salts_inventory_update-26.1.2-NeoForge-0.1.6.jar",
+      "sha256": "5fb04f7051c5c6a57f65e805f5862ab722c587d2f921b732fd0aa4f0b49318ed"
+    },
+    {
+      "family": "core",
+      "file": "dist\\core\\salts_inventory_update-26.2-Fabric-0.1.6.jar",
+      "sha256": "fe1df75ec23d9502fdddb86827c30466b80f5586ca4bc862fbb7b034bdb3bb30"
+    },
+    {
+      "family": "core",
+      "file": "dist\\core\\salts_inventory_update-26.2-NeoForge-0.1.6.jar",
+      "sha256": "27a228f6bd191b1ba7a259543b6b01c18fa8732db6c47534cec82f6a2c56e8a5"
+    },
+    {
+      "family": "core",
+      "file": "dist\\core\\salts_inventory_update-26.3-Fabric-0.1.6.jar",
+      "sha256": "eede109dddaf850c0665f34b32d7e8c88786ae201c22a3d323217be73431abd3"
+    },
+    {
+      "family": "core",
+      "file": "dist\\core\\salts_inventory_update-26.3-NeoForge-0.1.6.jar",
+      "sha256": "72cc8e09fbb5f7424af7e794108568f9de2a601bb220aff07abcf810c85a7521"
+    },
+    {
+      "family": "compatibility",
+      "file": "dist\\compatibility\\salts_inventory_compat-1.20.1-Fabric-0.1.3.jar",
+      "sha256": "0006761dd8a910b280a2503825b78cffe2189302e274e8db414d23233822e061"
+    },
+    {
+      "family": "compatibility",
+      "file": "dist\\compatibility\\salts_inventory_compat-1.20.1-Forge-0.1.3.jar",
+      "sha256": "429eb43af0db3248c61bfd13bcaa70a8ce5d36f8ee922aefba6f104a3fda2a5e"
+    },
+    {
+      "family": "compatibility",
+      "file": "dist\\compatibility\\salts_inventory_compat-1.21.1-Fabric-0.1.3.jar",
+      "sha256": "e77be1bf8c5664595c7e08b1ec4b8754fd12d8d9cd5575a464238cf1a655f053"
+    },
+    {
+      "family": "compatibility",
+      "file": "dist\\compatibility\\salts_inventory_compat-1.21.1-NeoForge-0.1.3.jar",
+      "sha256": "7ecf7d050f9e1554f0d05789664da8482e3d0b1ac08025cd896564d0f72ac2d2"
+    },
+    {
+      "family": "compatibility",
+      "file": "dist\\compatibility\\salts_inventory_compat-1.21.11-Fabric-0.1.3.jar",
+      "sha256": "1951d6783db8f297e16ba5524c1393689c997a32e0c221dc78a2e69c50796c06"
+    },
+    {
+      "family": "compatibility",
+      "file": "dist\\compatibility\\salts_inventory_compat-1.21.11-NeoForge-0.1.3.jar",
+      "sha256": "69b5b68236e38971e1dc86114ec07537cea8c73e03e69143f000afe22c3fb705"
+    },
+    {
+      "family": "compatibility",
+      "file": "dist\\compatibility\\salts_inventory_compat-26.1.2-Fabric-0.1.3.jar",
+      "sha256": "e766b04651d6850f016ebea89e2dcf452e06d01afb7e86bdba3d148375fb159c"
+    },
+    {
+      "family": "compatibility",
+      "file": "dist\\compatibility\\salts_inventory_compat-26.1.2-NeoForge-0.1.3.jar",
+      "sha256": "40e2d90aede40d02eb52f727a0f6ed5fb0ed82e4954e49da54210b350f32fbeb"
+    },
+    {
+      "family": "compatibility",
+      "file": "dist\\compatibility\\salts_inventory_compat-26.2-Fabric-0.1.3.jar",
+      "sha256": "329dac670c9b708762760861b530c0283c2d04c689ac49b999c0b809b11e4083"
+    },
+    {
+      "family": "compatibility",
+      "file": "dist\\compatibility\\salts_inventory_compat-26.2-NeoForge-0.1.3.jar",
+      "sha256": "66e4c8c3bf9093f1c7e51c2d5d5d272a4a0687fabad7cf9d48d782cd4d687e4a"
+    },
+    {
+      "family": "compatibility",
+      "file": "dist\\compatibility\\salts_inventory_compat-26.3-Fabric-0.1.3.jar",
+      "sha256": "22c7eafb7803ec2d5a190b5d36419d7e8975c68803a9d31c05c3be6962185897"
+    },
+    {
+      "family": "compatibility",
+      "file": "dist\\compatibility\\salts_inventory_compat-26.3-NeoForge-0.1.3.jar",
+      "sha256": "7847306208a32f688ad0bd81fab93c7595fbe308d888a696ce5bc01afcf85e28"
+    },
+    {
+      "family": "controlify",
+      "file": "dist\\controlify\\salts_inventory_controlify-1.20.1-Fabric-0.1.1.jar",
+      "sha256": "52b1c7e259e4f4dd3774288f1d14949b874ab3a841aa472aba09a517d5f61c5b"
+    },
+    {
+      "family": "controlify",
+      "file": "dist\\controlify\\salts_inventory_controlify-1.20.1-Forge-0.1.1.jar",
+      "sha256": "7ee1dc0cab98cb28d1503e0c40adddeef22de1c20c42d39c1e9eaffc624bd2fa"
+    },
+    {
+      "family": "controlify",
+      "file": "dist\\controlify\\salts_inventory_controlify-1.21.1-Fabric-0.1.1.jar",
+      "sha256": "5ca16fbe832037815c44d69cedcf6c91a94b5860d59a9645e685d7d997c1f531"
+    },
+    {
+      "family": "controlify",
+      "file": "dist\\controlify\\salts_inventory_controlify-1.21.1-NeoForge-0.1.1.jar",
+      "sha256": "db3321353c9ff26316236c96a2e749b513be1369ed4ed60ca3665e66e69f3e9f"
+    },
+    {
+      "family": "controlify",
+      "file": "dist\\controlify\\salts_inventory_controlify-1.21.11-Fabric-0.1.1.jar",
+      "sha256": "7f5da67a1e40596b6b6c7042ad587ead66305e5761945e2ea663e85186dffc6b"
+    },
+    {
+      "family": "controlify",
+      "file": "dist\\controlify\\salts_inventory_controlify-1.21.11-NeoForge-0.1.1.jar",
+      "sha256": "afd3981335511cec551938893c41457267ae1e018fa7e27f3e48f9d987e2603d"
+    },
+    {
+      "family": "controlify",
+      "file": "dist\\controlify\\salts_inventory_controlify-26.1.2-Fabric-0.1.1.jar",
+      "sha256": "a7fde0d966818c93136cc8419d5f48dc2f19bdb51f24a9a5e98daef3718eceaf"
+    },
+    {
+      "family": "controlify",
+      "file": "dist\\controlify\\salts_inventory_controlify-26.1.2-NeoForge-0.1.1.jar",
+      "sha256": "d92acc83dc9bb92963013b76021c301e60500d9566393729cf480ca32e04dbab"
+    },
+    {
+      "family": "controlify",
+      "file": "dist\\controlify\\salts_inventory_controlify-26.2-Fabric-0.1.1.jar",
+      "sha256": "32b494dc26c7b2e664552b561531e9afb0663a9d3ef82153e5e5700d87ca25f1"
+    },
+    {
+      "family": "controlify",
+      "file": "dist\\controlify\\salts_inventory_controlify-26.2-NeoForge-0.1.1.jar",
+      "sha256": "5b4bf7c4223819ff5037254db865fab021c5ce150f48b121223a3cb89b16ffac"
+    },
+    {
+      "family": "controlify",
+      "file": "dist\\controlify\\salts_inventory_controlify-26.3-Fabric-0.1.1.jar",
+      "sha256": "04ddbe8b44ff9df236160818dc713c5b90aa84ef90dce4481f71e71ac86dbe51"
+    },
+    {
+      "family": "controlify",
+      "file": "dist\\controlify\\salts_inventory_controlify-26.3-NeoForge-0.1.1.jar",
+      "sha256": "c4dfce73f2ac85c8954d2ee4203d86ad213fc313487731fad64a0f7fb408d5d5"
+    }
+  ],
+  "focusedRuntime": [
+    {
+      "run": "1.20.1-fabric-port-final-02",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "1b1aaac6a1e00cb4fe7316772442c69f92136012a348b6b7c5c5d9c147dcb610",
+          "equalsFinalDistribution": false
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "2daca8b858cd2aa622c442996da2635f4a44d5c3e01f33cadf98ff0c46dc9ba9",
+          "equalsFinalDistribution": false
+        }
+      ]
+    },
+    {
+      "run": "1.20.1-forge-port-final-02",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "eda126be5c5f02698d41b54f59a8fa9351fec0b93a769ec6e3e55690c3993f3a",
+          "equalsFinalDistribution": true
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "429eb43af0db3248c61bfd13bcaa70a8ce5d36f8ee922aefba6f104a3fda2a5e",
+          "equalsFinalDistribution": true
+        }
+      ]
+    },
+    {
+      "run": "1.21.1-fabric-core-only-final-01",
+      "assertions": {
+        "core-without-compatibility-native-fallback": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "8547953834c2967f8dc98f053dd9b7845b46f9c11217d5925f87f58c03193a09",
+          "equalsFinalDistribution": false
+        }
+      ]
+    },
+    {
+      "run": "1.21.1-fabric-port-fabric-05",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "45d751f35d96d1d817e422f9dace854166611d33e3da0c6574870161128486b9",
+          "equalsFinalDistribution": false
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "8c0cd60e9b56818422b7312e9c89b775ed74c9ccb2a23e59dae7e7edfe1fbc03",
+          "equalsFinalDistribution": false
+        }
+      ]
+    },
+    {
+      "run": "1.21.1-fabric-port-fabric-06",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "8547953834c2967f8dc98f053dd9b7845b46f9c11217d5925f87f58c03193a09",
+          "equalsFinalDistribution": false
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "5c5b84e1c709687140c87cceac05a95af026ab41a6b62a5a46cf8d8957f300e1",
+          "equalsFinalDistribution": false
+        }
+      ]
+    },
+    {
+      "run": "1.21.1-neoforge-port-neo-03",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "f884cfee5f89b38febb7c7fb9d105597fcf2d2befe3c82d527bb193dc3b9f34d",
+          "equalsFinalDistribution": true
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "9815888c555ba3cd784e50e35b27fc8470fdad53de821ddb9313093254cc9077",
+          "equalsFinalDistribution": false
+        }
+      ]
+    },
+    {
+      "run": "1.21.1-neoforge-port-neo-04",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "f884cfee5f89b38febb7c7fb9d105597fcf2d2befe3c82d527bb193dc3b9f34d",
+          "equalsFinalDistribution": true
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "7ecf7d050f9e1554f0d05789664da8482e3d0b1ac08025cd896564d0f72ac2d2",
+          "equalsFinalDistribution": true
+        }
+      ]
+    },
+    {
+      "run": "1.21.11-fabric-background-final-01",
+      "assertions": {
+        "core-native-trough-pickup-placement": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "671467ccedec88ce8bc3ea9ac62cc06dde3f8587ea78a783a14f993ca66a2929",
+          "equalsFinalDistribution": false
+        }
+      ]
+    },
+    {
+      "run": "1.21.11-fabric-port-final-01",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "cf7465ae965c6d889e21ae350953dc8b8684c4ae525bc9058f0eb0ad37a3af1c",
+          "equalsFinalDistribution": false
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "8130dbee024dcc7738e9ed386a03b6205615f939fd22cd5e177d4871156dd15d",
+          "equalsFinalDistribution": false
+        }
+      ]
+    },
+    {
+      "run": "1.21.11-neoforge-background-final-01",
+      "assertions": {
+        "native-background-and-transfer": "passed",
+        "neoforge-deferred-template-render": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "9929471da20653d194fe1413e64a7b1c617e77ab94a5df5ec38ed0bbb5e1873e",
+          "equalsFinalDistribution": true
+        }
+      ]
+    },
+    {
+      "run": "1.21.11-neoforge-port-final-01",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "5d789e524ed5e57ef4d85f810b963e65cc01a34c542fe7eb22a8d98fc3dd6e97",
+          "equalsFinalDistribution": false
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "69b5b68236e38971e1dc86114ec07537cea8c73e03e69143f000afe22c3fb705",
+          "equalsFinalDistribution": true
+        }
+      ]
+    },
+    {
+      "run": "1.21.11-neoforge-template-native-final-02",
+      "assertions": {
+        "public-api-native-template-retains-original-texture": "passed",
+        "native-template-large-stack-transfer": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "9929471da20653d194fe1413e64a7b1c617e77ab94a5df5ec38ed0bbb5e1873e",
+          "equalsFinalDistribution": true
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "69b5b68236e38971e1dc86114ec07537cea8c73e03e69143f000afe22c3fb705",
+          "equalsFinalDistribution": true
+        }
+      ]
+    },
+    {
+      "run": "26.1.2-fabric-port-final-01",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "41f64324c8d004c1d953e6325b07ff567d21a23a592faf6e5139ff857c615aa7",
+          "equalsFinalDistribution": false
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "fe14c7fcadcdca19bce9f1b1312514c65d0e05de247147c412afe082df01ddc9",
+          "equalsFinalDistribution": false
+        }
+      ]
+    },
+    {
+      "run": "26.1.2-neoforge-port-final-01",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "0a4f99e7040375e2911d2db0c1fd59fb72c163b6cb280ece16280c65c714d124",
+          "equalsFinalDistribution": false
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "40e2d90aede40d02eb52f727a0f6ed5fb0ed82e4954e49da54210b350f32fbeb",
+          "equalsFinalDistribution": true
+        }
+      ]
+    },
+    {
+      "run": "26.2-fabric-port-final-01",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "95255486a5207b238b3f828b52eb50337c219b4e74f82f39ad5f1812ccf14e43",
+          "equalsFinalDistribution": false
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "31a4e24b8811067f82b906707611955a719edc18a77c613623b71e78cb95bc3b",
+          "equalsFinalDistribution": false
+        }
+      ]
+    },
+    {
+      "run": "26.2-neoforge-port-final-01",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "eb9b06b43cabafd13d42c0ca7cf3cf71b157d1d1e3d294f67c3880d9ec150fbc",
+          "equalsFinalDistribution": false
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "66e4c8c3bf9093f1c7e51c2d5d5d272a4a0687fabad7cf9d48d782cd4d687e4a",
+          "equalsFinalDistribution": true
+        }
+      ]
+    },
+    {
+      "run": "26.3-fabric-background-final-01",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "eede109dddaf850c0665f34b32d7e8c88786ae201c22a3d323217be73431abd3",
+          "equalsFinalDistribution": true
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "22c7eafb7803ec2d5a190b5d36419d7e8975c68803a9d31c05c3be6962185897",
+          "equalsFinalDistribution": true
+        }
+      ]
+    },
+    {
+      "run": "26.3-fabric-core-artwork-final-01",
+      "assertions": {
+        "standalone-native-pickup-placement": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "0b7e35e5c5e936ebf9afa3884886b27f1651f2a716b55b91ce76b64911ec63d2",
+          "equalsFinalDistribution": false
+        }
+      ]
+    },
+    {
+      "run": "26.3-fabric-core-artwork-final-02",
+      "assertions": {
+        "standalone-native-pickup-placement": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "eede109dddaf850c0665f34b32d7e8c88786ae201c22a3d323217be73431abd3",
+          "equalsFinalDistribution": true
+        }
+      ]
+    },
+    {
+      "run": "26.3-fabric-core-profile-final-01",
+      "assertions": {
+        "core-automatic-large-stack-transfer": "passed",
+        "profile-version-filter-and-reload": "passed",
+        "profile-selected-template": "passed",
+        "inspector-open": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "b9f0215c5c9fcabf066e22bb9873ee0d9b14299bc482f7d7d2d698e682ebfd45",
+          "equalsFinalDistribution": false
+        }
+      ]
+    },
+    {
+      "run": "26.3-fabric-port-modern-04",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "b8a0c5b514c7473bc8072240938e8c048b459fb2d347ad3041f6e802a111ee38",
+          "equalsFinalDistribution": false
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "22c7eafb7803ec2d5a190b5d36419d7e8975c68803a9d31c05c3be6962185897",
+          "equalsFinalDistribution": true
+        }
+      ]
+    },
+    {
+      "run": "26.3-neoforge-port-final-01",
+      "assertions": {
+        "scope": "native-window-focused",
+        "assertions": 10,
+        "status": "passed"
+      },
+      "artifacts": [
+        {
+          "family": "core",
+          "testedSha256": "8a8ea3dc8baa79978850f4ca70f4dbf5ae8916d35bc982992d4c82595187b544",
+          "equalsFinalDistribution": false
+        },
+        {
+          "family": "compatibility",
+          "testedSha256": "7847306208a32f688ad0bd81fab93c7595fbe308d888a696ce5bc01afcf85e28",
+          "equalsFinalDistribution": true
+        }
+      ]
+    }
+  ],
+  "fullFunctionalSuite": false
+}

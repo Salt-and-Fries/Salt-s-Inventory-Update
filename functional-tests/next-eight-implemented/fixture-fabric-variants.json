@@ -1,0 +1,385 @@
+{
+  "minecraft": "1.20.1",
+  "loader": "fabric",
+  "scenario": "extension-empty",
+  "artifacts": [
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\4f5cce7f512964eb-additionz-1.3.2.jar",
+      "filename": "additionz-1.3.2.jar",
+      "coordinate": "maven.modrinth:QeSwHM7w:uIBwQbWY",
+      "sha512": "4f5cce7f512964ebc4d689e45b15360dcd1ac4eca962852751832c7f453586bca6459b30e14b625e810dd91a1d512ec4e85c57a62b2de6de324ee3e4306b7b6a"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\5faae5cb3d875983-better-end-4.0.11.jar",
+      "filename": "better-end-4.0.11.jar",
+      "coordinate": "maven.modrinth:gc8OEnCC:7QwyTILr",
+      "sha512": "5faae5cb3d8759837ec341c605dd9c8b6b32a908e7e1f1248b3b2567c5f9969079df33694cdfb6c743a732bfc9d5824843a93edec07f09e68f8b408e355d15e7"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\392a421a99e92a4d-extendeddrawersaddon-1.0.2.jar",
+      "filename": "extendeddrawersaddon-1.0.2.jar",
+      "coordinate": "maven.modrinth:daHYok8P:2k6Tunwz",
+      "sha512": "392a421a99e92a4d8355c86dd6287dc98132a16a751952ddb69e3c114435a54bcbddfccf291fa743459c5859d8176fc8f54aa4cdf0be78516a15ef186d628c9f"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\59c79e6b1bf1270e-smitherz-1.0.4.jar",
+      "filename": "smitherz-1.0.4.jar",
+      "coordinate": "maven.modrinth:po8iVUhc:5EEPnMB7",
+      "sha512": "59c79e6b1bf1270ec39e2cf11d9080d162c2199103b7e028188c6bd62a7b568ef56b1a0f09690847d0d96cb8aabf5ceede2bb466fc118b803f0429a866f83269"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\dcd53a96a7444737-tiered-1.3.3.jar",
+      "filename": "tiered-1.3.3.jar",
+      "coordinate": "maven.modrinth:z6sMEexp:GFUW7N2P",
+      "sha512": "dcd53a96a74447375e68e3d22a1a7d008fef66dbaafe77035c61b2b7b2ba75f92d509b33c492688aa71ba8d7c5649061e82359d764c52947fed268de5015210f"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\2da85c071c854223-cloth-config-11.1.136-fabric.jar",
+      "filename": "cloth-config-11.1.136-fabric.jar",
+      "coordinate": "maven.modrinth:9s6osm5g:2xQdCMyG",
+      "sha512": "2da85c071c854223cc30c8e46794391b77e53f28ecdbbde59dc83b3dbbdfc74be9e68da9ed464e7f98b4361033899ba4f681ebff1f35edc2c60e599a59796f1c"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\7e657348f37fd518-bclib-3.0.16.jar",
+      "filename": "bclib-3.0.16.jar",
+      "coordinate": "maven.modrinth:BgNRHReB:SF3ws3Yh",
+      "sha512": "7e657348f37fd51877b132ae57c5cb4bbe36d601263b2456369ec79ac1b978b8dd3c250aad3e978e2b71165dcf0b8b2eacd4217747aaa2e910b34fd4ff67f469"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\071ed371ffcf8114-ExtendedDrawers-2.1.1+mc.1.20.1.jar",
+      "filename": "ExtendedDrawers-2.1.1+mc.1.20.1.jar",
+      "coordinate": "maven.modrinth:AhtxbnpG:jAVkcXz6",
+      "sha512": "071ed371ffcf81144a85177b30a3781948e2345431b8f89509cf65a48b997dde95182578af97d36051703c75ffc5e94581f74b3d122bf0b7e59887ef56ce1df7"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\8724fe22274465f3-modelfix-1.15-fabric.jar",
+      "filename": "modelfix-1.15-fabric.jar",
+      "coordinate": "maven.modrinth:QdG47OkI:GkLb4bRl",
+      "sha512": "8724fe22274465f38129f81babb97b7fff68e89b0c88e22a2acbd801ddbeb0210864c2774377fe7b69b917db5889677c1b0d67084f4847cab0f7bd3203e187d4"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\86b27da622ca4d50-autotag-2.0.2+1.20.jar",
+      "filename": "autotag-2.0.2+1.20.jar",
+      "coordinate": "maven.modrinth:8FdYDHF5:ocD9XA8D",
+      "sha512": "86b27da622ca4d5003e2c78c9da91468fde31e6d57af92e3f346403935818b6b1f02f16114ff11fc635a2f6b7511003c37141fb947d9d8537805b7deff2bbd5d"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\3f93b393c3e5af9a-arrp-0.8.1.jar",
+      "filename": "arrp-0.8.1.jar",
+      "coordinate": "maven.modrinth:USLVyT7V:L4ojkbl8",
+      "sha512": "3f93b393c3e5af9a621bf4bb0ef6b681e85b544be917c6b9d0a5c89868ba72cc6bc632ac3a214debb8d35cac6245539afea8fa89ef0e96f0a6a892529dd41f35"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\7b352fcc2a1ef4e7-libz-1.0.3.jar",
+      "filename": "libz-1.0.3.jar",
+      "coordinate": "maven.modrinth:yUBXc3AH:BEPAjfEE",
+      "sha512": "7b352fcc2a1ef4e7075ceaee3f1015478f9e9fd1337fe28a0e8a9f11af20742a8eb83a0ea74ebcd4994f57979f655f15356746d9b1961e80a192df396e95f572"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\757cf010eef44500-geckolib-fabric-1.20.1-4.8.4.jar",
+      "filename": "geckolib-fabric-1.20.1-4.8.4.jar",
+      "coordinate": "maven.modrinth:8BmcQJ2H:SD2lOScS",
+      "sha512": "757cf010eef44500c0722afc193d874b62fb1b3e61ba8dea952f8434b2a939536e3440e04c01bc58922d75bb76c16c605d72f9fa9157ac62806e862d9652d13f"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\1f251aecbed568a8-reach-entity-attributes-2.4.0.jar",
+      "filename": "reach-entity-attributes-2.4.0.jar",
+      "coordinate": null,
+      "sha512": "1f251aecbed568a804934f2e393736273ae7d66b213a7b310bf1b28d5bf0b380985eb248fd6fcb8dd7ee548db8ee65cf854b3f9e99d413ca921915c424c0c84c"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\4a06ad636a80bbe1-basic-math-0.6.1.jar",
+      "filename": "basic-math-0.6.1.jar",
+      "coordinate": null,
+      "sha512": "4a06ad636a80bbe1315e3b756dbc49fa6a911de9a945d5faabc89f925a310300ebdc14c325faee825e7a25cc1e2da2653350d1188859619c7d0912ed6abf1e45"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\14cb5b8ef9cd407e-wunderlib-1.1.5.jar",
+      "filename": "wunderlib-1.1.5.jar",
+      "coordinate": null,
+      "sha512": "14cb5b8ef9cd407e3239e950458f5b6b8509cc0d8083402ae5202d9868ba697e0e352d0304f36d7e4d2ed9bceb256cfa588d17c6613c3b651adf9bae0d525fdb"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\f90a4a2ee4274631-graphlib-1.4.0+1.20.jar",
+      "filename": "graphlib-1.4.0+1.20.jar",
+      "coordinate": null,
+      "sha512": "f90a4a2ee4274631bb897a90bad9c3e10dd259217b63c952259303c126a81c2749b1b57ceb3c2d4a8b6fe7ae43e95660f92ce6c4a36dcf375c0815d123242ac5"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\2f44161ec0eca09f-ConfigToolkit-1.0.0.jar",
+      "filename": "ConfigToolkit-1.0.0.jar",
+      "coordinate": null,
+      "sha512": "2f44161ec0eca09f600db62bee483448850752dec65573b709d100aa4ec8be020a84c0b8f5cef46cae37ea7d326136b9b9ce17f5693de4a8127461300644f1ad"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\2f1c3b68e6ea62e3-yet-another-config-lib-fabric-3.2.1+1.20.jar",
+      "filename": "yet-another-config-lib-fabric-3.2.1+1.20.jar",
+      "coordinate": null,
+      "sha512": "2f1c3b68e6ea62e33a2fa00b2b77041000f354c9be71f04caa2ef5217676bfe86c7d891605c1b9410e9e49b40ab98255d3422334f52b6e97e4e9fc0c5ebcc293"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\71d1c371292fb886-mixinextras-fabric-0.2.0-rc.5.jar",
+      "filename": "mixinextras-fabric-0.2.0-rc.5.jar",
+      "coordinate": null,
+      "sha512": "71d1c371292fb8868753a0e92884d43592ef0fd8f98b5fe499e3f32826c9b9acbc99c665846b5098248744154af4f13356dc4ff7af052f53b01e9344abae7af9"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\6d8ce71cf5cb1831-NoIndium-1.1.0+1.20.jar",
+      "filename": "NoIndium-1.1.0+1.20.jar",
+      "coordinate": null,
+      "sha512": "6d8ce71cf5cb18311d49d32eb5df98f7d031901d8ba822b8e92ef1debe0c977574a04eefa54f51aa8ca6299aa8eebdaf9a98d2e4c3ed269b79ee6542575644fe"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\40335e7b67953d10-autotag-api-2.0.2+1.20.jar",
+      "filename": "autotag-api-2.0.2+1.20.jar",
+      "coordinate": null,
+      "sha512": "40335e7b67953d1061b2963b6a846cae46eb910414836799ccbfab5d052a4c028dd306cbddc09e8004507c8176569bf839043813688478668701b8f80135cbe2"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\41d1a04a01f03ec7-fabric-api-base-0.4.29+b04edc7a77.jar",
+      "filename": "fabric-api-base-0.4.29+b04edc7a77.jar",
+      "coordinate": null,
+      "sha512": "41d1a04a01f03ec76b466111685f02d89eedeaa43266da089714c5fb0515c15aeb723d61000dbce3dae6daf01a2a7d2b1cb35d25d050161c5a6b376190dda7e5"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\164238fac3cad333-jackson-core-2.15.2.jar",
+      "filename": "jackson-core-2.15.2.jar",
+      "coordinate": null,
+      "sha512": "164238fac3cad33363ee3854fd09cd4198dc2f671e6afcd9d963c40ff5dabfe678cb8369eb07f94751fc3359138cb520d78a2b847f93499658af11964a300e34"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\f101eb08b15f3697-jackson-databind-2.15.2.jar",
+      "filename": "jackson-databind-2.15.2.jar",
+      "coordinate": null,
+      "sha512": "f101eb08b15f3697e092bb27a8ece8b1dd6ad7bfd79f52b0cf4c49a04aabaa554172f3510c720f2fe465b73515108ed903e18282844d6fc3192f328765b39266"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\965e1dd499667170-jackson-annotations-2.15.2.jar",
+      "filename": "jackson-annotations-2.15.2.jar",
+      "coordinate": null,
+      "sha512": "965e1dd499667170591124802f753a08dbed3eef94edc6c8f1201daff0a7b8e0dd5e1858a116702907357a6410f1581f96b0a212a27a7e7c83cd842f8b13a268"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\584153c6abbe56dd-mclib-20.jar",
+      "filename": "mclib-20.jar",
+      "coordinate": null,
+      "sha512": "584153c6abbe56dd040965637cd4849e6d5a38c3f7f66abbc142f1a74ad043b82e7fe53b300dd9e40421156ff4a3e1ba716d81e919ef8d85ca6ddf30f60e50ed"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\2633b764cf49155e-libnetworkstack-base-0.10.0.jar",
+      "filename": "libnetworkstack-base-0.10.0.jar",
+      "coordinate": null,
+      "sha512": "2633b764cf49155e5ad437376e246772cbb8ea138b0af5ad217de1d983a54af98cdf431af3a182193c32bfd06a1e6a840a78d86ee0a6bdb3ea1028c73ba3470a"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\de644d1296563733-kmodlib-overlay-0.2.12+1.20.jar",
+      "filename": "kmodlib-overlay-0.2.12+1.20.jar",
+      "coordinate": null,
+      "sha512": "de644d12965637339427eb07c350609b071f404e7b7d6cacacf07bd2cf6e9b3a6b6e5e2626b1cf66cb8232d59913d4676b7e5f15194d2676040028546543ea64"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\8ccdde8f484e005d-shadow-api-17-0.1.1.jar",
+      "filename": "shadow-api-17-0.1.1.jar",
+      "coordinate": null,
+      "sha512": "8ccdde8f484e005dd9851079779eaf4806ed9615e58f95029f0308f9ad423bc4781daf7709d4c73ba0a27f8baaa3f4fa58baa70ebc3bf4e740404ab21a3f5ea6"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\55ce20eb380c1539-javapoet-0.1.0.jar",
+      "filename": "javapoet-0.1.0.jar",
+      "coordinate": null,
+      "sha512": "55ce20eb380c1539fcbb8a5c259fd2fcc8ac192ef7287510603260d13a5912175f0d9111397b70399d46c62517d135450d752ae68813a2bfc544b372d320a7a2"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\2189aaac66f7c037-imageio-webp-3.10.0-SNAPSHOT.jar",
+      "filename": "imageio-webp-3.10.0-SNAPSHOT.jar",
+      "coordinate": null,
+      "sha512": "2189aaac66f7c037143c570666d5ee560ade7168ab8d1c39832046e03d629feded752b3909a7a2629a527afb06e38d81ef7d46ce949f4b926beb6dd09cf7bb1e"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\999ed4e1120e38e3-json-0.2.1.jar",
+      "filename": "json-0.2.1.jar",
+      "coordinate": null,
+      "sha512": "999ed4e1120e38e32ac0ad6ce0a7b2504ea26f055cf2941b58947fd7b005e8af810c56f07dc40855419600bd9e7beb37eb39553f34f34fe6e33151922e236529"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\5bcc5e3ca6d8c8b4-imageio-core-3.10.0-SNAPSHOT.jar",
+      "filename": "imageio-core-3.10.0-SNAPSHOT.jar",
+      "coordinate": null,
+      "sha512": "5bcc5e3ca6d8c8b4b5fe810568d03caa6a3a21e7f0a7416969e1e9c6d3738e7da92d651519edf7016d0de57348b1024b7dd5b961b7cd2aa4b8ecac4832ee06ec"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\68faa6db9a8543a1-gson-0.2.1.jar",
+      "filename": "gson-0.2.1.jar",
+      "coordinate": null,
+      "sha512": "68faa6db9a8543a1b9d9ae455d8269736299130aa148ff6ee5125ce5ae8be6f0b8f4a487a4fac43ff9a269904213e90cedf31471bc644d64285bd50f351bf1fc"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\fd57b583cf3ed8c9-common-lang-3.10.0-SNAPSHOT.jar",
+      "filename": "common-lang-3.10.0-SNAPSHOT.jar",
+      "coordinate": null,
+      "sha512": "fd57b583cf3ed8c9a9facafc0069278f894d2cfe5b49ed30f8d5774e5c486f1c9e2b08b0d5a90f75d729ab2908dd972fdab1da1ce65538c86d34ede3f95756e0"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\0a56baf486478acd-common-image-3.10.0-SNAPSHOT.jar",
+      "filename": "common-image-3.10.0-SNAPSHOT.jar",
+      "coordinate": null,
+      "sha512": "0a56baf486478acdd21c1428d847173a9789c9928d40a8490abdaf74d64c74b8153ba399dd3bb92a9e323c0c87f4868513bf2b9b933e8fcb0fca935e4532f371"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\8a64bddad4fe933b-common-io-3.10.0-SNAPSHOT.jar",
+      "filename": "common-io-3.10.0-SNAPSHOT.jar",
+      "coordinate": null,
+      "sha512": "8a64bddad4fe933b2e272d081ecaa4b6a02b7ee0fabf751d0906f23b644cf5c85d03d74e9cc4ef96024eac492c61d3f6aceb369488bed85514b0c538c3c057e2"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\af4bedb8309fef72-imageio-metadata-3.10.0-SNAPSHOT.jar",
+      "filename": "imageio-metadata-3.10.0-SNAPSHOT.jar",
+      "coordinate": null,
+      "sha512": "af4bedb8309fef722c4764014da7333ca2de719ad85892ffc5ae841a072b1304772c6a0fa9fdd3cba3c29d02b9ace7d56f20cb69cd1cd8fb2a1df8ce2551f647"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-eight-implemented\\upstream\\runes-fabric-1.3.2+1.20.1.jar",
+      "filename": "runes-fabric-1.3.2+1.20.1.jar",
+      "coordinate": "maven.modrinth:lP9Yrr1E:C0i3Ewtv",
+      "sha512": "c91149c458a0716c03a790c3d48e3286e13a56c871891c7004228d32af1fd5e5330aa0a636ef701e999e4a626738d6f38735c9f83d182872d712e2070e68fc8e"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-eight-implemented\\upstream\\graveyard-FABRIC-4.0.1+mc1.20.1.jar",
+      "filename": "graveyard-FABRIC-4.0.1+mc1.20.1.jar",
+      "coordinate": "maven.modrinth:QivVPB8W:EOb8Is0J",
+      "sha512": "893803dc34166a02108a0a99fef9bf7eef8ed209ab06a7d40a66139919904485ba47918b86f508e7c67af3a2dd75cc716c8ef88ae6abee9e6fb3584fdbc0e105"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-eight-implemented\\upstream\\villagertradingplus-fabric-mc1.20.1-1.1.1.jar",
+      "filename": "villagertradingplus-fabric-mc1.20.1-1.1.1.jar",
+      "coordinate": "maven.modrinth:DhOXUfnP:hSF37DpJ",
+      "sha512": "a1f9e2729ad438fd97038d6bad7a82bc7739fd79fa9096a0d812690df5ac0ed4641761c89873c3917f0e06324b545bf129130ce99dc4c2984d4b850cf3196ed6"
+    }
+  ],
+  "runtime": {
+    "fabric_loader": "0.19.5",
+    "fabric_api": "0.92.11+1.20.1"
+  },
+  "versions": [
+    {
+      "project_id": "QeSwHM7w",
+      "version_id": "uIBwQbWY",
+      "version": "1.3.2+1.20.1"
+    },
+    {
+      "project_id": "gc8OEnCC",
+      "version_id": "7QwyTILr",
+      "version": "4.0.11"
+    },
+    {
+      "project_id": "daHYok8P",
+      "version_id": "2k6Tunwz",
+      "version": "1.0.2+1.20.1"
+    },
+    {
+      "project_id": "lP9Yrr1E",
+      "version_id": "Z915LCkR",
+      "version": "0.9.13+1.20.1"
+    },
+    {
+      "project_id": "po8iVUhc",
+      "version_id": "5EEPnMB7",
+      "version": "1.0.4+1.20.1"
+    },
+    {
+      "project_id": "QivVPB8W",
+      "version_id": "Hpn2GMza",
+      "version": "3.1"
+    },
+    {
+      "project_id": "z6sMEexp",
+      "version_id": "GFUW7N2P",
+      "version": "1.3.3+1.20.1"
+    },
+    {
+      "project_id": "9s6osm5g",
+      "version_id": "2xQdCMyG",
+      "version": "11.1.136+fabric"
+    },
+    {
+      "project_id": "BgNRHReB",
+      "version_id": "SF3ws3Yh",
+      "version": "3.0.16"
+    },
+    {
+      "project_id": "AhtxbnpG",
+      "version_id": "jAVkcXz6",
+      "version": "2.1.1+mc.1.20.1"
+    },
+    {
+      "project_id": "QdG47OkI",
+      "version_id": "GkLb4bRl",
+      "version": "1.15"
+    },
+    {
+      "project_id": "8FdYDHF5",
+      "version_id": "ocD9XA8D",
+      "version": "2.0.2+1.20"
+    },
+    {
+      "project_id": "USLVyT7V",
+      "version_id": "L4ojkbl8",
+      "version": "0.8.1"
+    },
+    {
+      "project_id": "yUBXc3AH",
+      "version_id": "BEPAjfEE",
+      "version": "1.0.3+1.20.1"
+    },
+    {
+      "project_id": "8BmcQJ2H",
+      "version_id": "SD2lOScS",
+      "version": "4.8.4"
+    }
+  ],
+  "requested_mods": [
+    {
+      "title": "AdditionZ",
+      "slug": "additionz",
+      "version": "1.3.2+1.20.1",
+      "version_id": "uIBwQbWY"
+    },
+    {
+      "title": "BetterEnd",
+      "slug": "betterend",
+      "version": "4.0.11",
+      "version_id": "7QwyTILr"
+    },
+    {
+      "title": "ExtendedDrawersAddon",
+      "slug": "extendeddrawersaddon",
+      "version": "1.0.2+1.20.1",
+      "version_id": "2k6Tunwz"
+    },
+    {
+      "title": "Runes",
+      "slug": "runes",
+      "version": "0.9.13+1.20.1",
+      "version_id": "Z915LCkR"
+    },
+    {
+      "title": "SmitherZ",
+      "slug": "smitherz",
+      "version": "1.0.4+1.20.1",
+      "version_id": "5EEPnMB7"
+    },
+    {
+      "title": "The Graveyard (Fabric/Neoforge)",
+      "slug": "the-graveyard-fabric",
+      "version": "3.1",
+      "version_id": "Hpn2GMza"
+    },
+    {
+      "title": "TieredZ",
+      "slug": "tieredz",
+      "version": "1.3.3+1.20.1",
+      "version_id": "GFUW7N2P"
+    }
+  ],
+  "siu_enabled": true
+}

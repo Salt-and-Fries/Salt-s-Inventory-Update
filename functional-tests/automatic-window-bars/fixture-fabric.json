@@ -1,0 +1,52 @@
+{
+  "minecraft": "1.20.1",
+  "loader": "fabric",
+  "scenario": "extension-empty",
+  "artifacts": [
+    {
+      "filename": "NetherChested-v8.0.4-1.20.1-Fabric.jar",
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-20261025\\fixtures\\fabric\\NetherChested-v8.0.4-1.20.1-Fabric.jar",
+      "sha512": "c4fd1816b2cf3d79b45c641265e05656bc76c8bb7f40977fb2ee8f425e4b5bfd9911596e616dee4600b922cdd4841a8172092d309a4321464b069ed444f91147",
+      "coordinate": "maven.modrinth:bHJp2GRg:ctUjPcK0",
+      "version": "v8.0.4-1.20.1-Fabric",
+      "project": "bHJp2GRg",
+      "version_id": "ctUjPcK0"
+    },
+    {
+      "filename": "ForgeConfigAPIPort-v8.0.3-1.20.1-Fabric.jar",
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-20261025\\fixtures\\fabric\\ForgeConfigAPIPort-v8.0.3-1.20.1-Fabric.jar",
+      "sha512": "15144d6d7b74dfbe2eede6e3b0aa0c841670be1bd6121608bc28f3b1e46846ccd36b506060a081c988da96cf46fce8bf2e55601e3934b9a52d22dc2fa6cbfd32",
+      "coordinate": "maven.modrinth:ohNO6lps:HvR3IdRE",
+      "version": "v8.0.3-1.20.1-Fabric",
+      "project": "ohNO6lps",
+      "version_id": "HvR3IdRE"
+    },
+    {
+      "filename": "PuzzlesLib-v8.1.36-1.20.1-Fabric.jar",
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-20261025\\fixtures\\fabric\\PuzzlesLib-v8.1.36-1.20.1-Fabric.jar",
+      "sha512": "3f06be6865b04be0916593f56f98a52969721b4ea059752be792ae0844201bc21df900e00629d826d1a5574beec2e4b07d1cb304bca31679d00a4165c8104178",
+      "coordinate": "maven.modrinth:QAGBst4M:QSW0oJPl",
+      "version": "v8.1.36-1.20.1-Fabric",
+      "project": "QAGBst4M",
+      "version_id": "QSW0oJPl"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\adde77f1e5bcd709-betterarcheology-1.2.1-1.20.1.jar",
+      "filename": "betterarcheology-1.2.1-1.20.1.jar",
+      "coordinate": "maven.modrinth:zCh7omyG:QNQXrdhi",
+      "sha512": "adde77f1e5bcd7092dc7f769fe573ac06a168ad1de4b914ef688f6ab2247093fc38f64518980f28e381096281444058ab5dbadf6d86a4a8e5645c246b289c696"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\90fea70f21cd09bd-YungsApi-1.20-Fabric-4.0.6.jar",
+      "filename": "YungsApi-1.20-Fabric-4.0.6.jar",
+      "coordinate": "maven.modrinth:Ua7DFN59:lscV1N5k",
+      "sha512": "90fea70f21cd09bdeefe9cb6bd23677595b32156b1b8053611449504ba84a21ee1e13e5a620851299090ce989f41b97b9b4bdc98def1ccecb33115e19553c64e"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\bccd2d3e55a70c7d-supermartijn642configlib-1.1.8a-fabric-mc1.20.jar",
+      "filename": "supermartijn642configlib-1.1.8a-fabric-mc1.20.jar",
+      "coordinate": "maven.modrinth:LN9BxssP:Ur02nrUT",
+      "sha512": "bccd2d3e55a70c7d4c1aedaa9e85d6d0039e982ebdab40bc2aeba4b27a5112859f7a05c342c3c9575ff5d8ced769d1feffb104ecdd4d19cac8afba9ea2017c52"
+    }
+  ]
+}

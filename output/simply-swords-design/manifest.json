@@ -1,0 +1,29 @@
+{
+  "scope": "Design proposal only; no SIU implementation",
+  "upstream": {
+    "mod": "Simply Swords",
+    "version": "1.70.2-1.20.1 Fabric",
+    "artifact": "build\\ui-modpack-audit-20261025\\jars\\902fd3ac7558bebb249f61572227d499f51b3bde.jar",
+    "sha1": "902fd3ac7558bebb249f61572227d499f51b3bde",
+    "sha256": "b374382303e5ecdfa2b0e1156dd3b9a03af189279d2bf7ccd3c7017374757ad9",
+    "source": "https://github.com/Sweenus/SimplySwords/blob/5132625f7ef0916168b53999587b73490b8876d4/common/src/main/java/net/sweenus/simplyswords/client/screen/RunicForgeScreen.java",
+    "release": "https://modrinth.com/mod/simply-swords/version/Tq7tcDiO"
+  },
+  "native_evidence": "build\\simply-swords-design\\gameplay\\fabric-simply-swords-02",
+  "native_screenshots": [
+    "native/native-forge-empty.png",
+    "native/native-forge-seeded.png"
+  ],
+  "native_caveat": "SIU absent; test fixture disabled Simply Tooltips DrawContextMixin only because named-dev GUI overload mapping fails. Simply Swords JAR and textures unmodified; seeded items illustrate layout and do not prove successful activation.",
+  "qa_transformation": "build/simply-swords-design/upstream/qa-transformation.json",
+  "mockups": [
+    "mockups/gray-empty.png",
+    "mockups/bars-empty.png",
+    "mockups/dark-empty.png",
+    "mockups/dark-seeded.png",
+    "mockups/hybrid-empty.png",
+    "mockups/hybrid-seeded.png"
+  ],
+  "layout": "Native y16..74 corridor; y68..73 inventory-bag lip replaced by nearby native stone while retaining tablet artwork; gray/charcoal SIU frame and native sprite samples are static composites.",
+  "recommended": "B layout with two separate charcoal-stone SIU bars in C colors; native torn sides exposed without background or side frame"
+}

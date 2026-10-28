@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.6
+
+- Prevents Minecraft 1.21.1's screen dimming from darkening captured native windows or appearing behind transparent tabs.
+- Automatically host conventional third-party container interfaces as desktop windows, retaining native artwork, animations, controls and inventory interactions.
+- Frames unconfigured automatic mod windows with an SIU title/control bar and a blank bottom bar, retaining the original interface's side artwork between them. Existing API and manually designed windows keep their appearance.
+- Added public native-window templates, compact sizing, attached exterior panels, slot-background choices, local profiles and an in-game inspector.
+- Ordinary containers now retain menu-specific size state, avoiding incorrect dimensions inherited from unrelated menus.
+- Ported the native hosting and template features across all twelve supported Minecraft/loader targets.
+- Keeps extended-menu opening data and custom native-menu synchronization working with newer Fabric releases.
+- Retains newer Minecraft screens' separate native background pass, including when Compatibility is absent.
+
+Every Core build now uses **0.1.6**. The optional companions remain Compatibility **0.1.3** and Controlify **0.1.1**, with dependencies on matching Core **0.1.6**.
+
+Standalone release notes: [Core 0.1.6](changelogs/changelog-0.1.6.md).
+
+- Fixes native windows losing a picked-up item when the original menu broadcasts during the click, and preserves Forge 1.20.1 extended-menu opening data.
+- Native recipe books fit beside their desktop window and exterior controls, with reliable single-click toggling after reopening.
+
 ## 0.1.5
 
 This release applies to all twelve supported Minecraft/loader targets: Fabric and Forge on 1.20.1, and Fabric and NeoForge on 1.21.1, 1.21.11, 26.1.2, 26.2 and 26.3. Every Core JAR uses version **0.1.5**.

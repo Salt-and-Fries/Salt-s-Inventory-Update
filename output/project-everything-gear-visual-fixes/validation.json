@@ -1,0 +1,252 @@
+{
+  "scope": "Focused six gear-window visual checks; not a complete functional or gameplay suite.",
+  "minecraft": "1.20.1",
+  "loader": "Fabric 0.19.5",
+  "runtime_run": "1.20.1-fabric-gear-visual-02",
+  "staged_artifacts": [
+    {
+      "family": "core",
+      "filename": "salts_inventory_update-1.20.1-Fabric-0.1.6.jar",
+      "sha256": "e8e1994b2172e2215db76cfe1a9403596b6bf82804885ad36834cf68e36b2d99"
+    },
+    {
+      "family": "compatibility",
+      "filename": "salts_inventory_compat-1.20.1-Fabric-0.1.3.jar",
+      "sha256": "d4c2bc323f7a6309f6e3fc0fde7ee5e00aaf3b0b22c4830efa99e010ea6b495b"
+    }
+  ],
+  "automated_checks": {
+    "passed": 27,
+    "total": 27,
+    "details": [
+      {
+        "case": "anvil",
+        "name": "first menu",
+        "passed": true,
+        "detail": "net.minecraft.world.inventory.AnvilMenu"
+      },
+      {
+        "case": "anvil-first",
+        "name": "one native template",
+        "passed": true,
+        "detail": null
+      },
+      {
+        "case": "anvil-first",
+        "name": "native layout valid",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "case": "anvil-first",
+        "name": "window within screen",
+        "passed": true,
+        "detail": {
+          "width": 173,
+          "height": 80,
+          "x": 247,
+          "y": 45
+        }
+      },
+      {
+        "case": "anvil",
+        "name": "switch to second",
+        "passed": true,
+        "detail": "draylar.tiered.reforge.ReforgeScreenHandler"
+      },
+      {
+        "case": "anvil-second",
+        "name": "one native template",
+        "passed": true,
+        "detail": null
+      },
+      {
+        "case": "anvil-second",
+        "name": "native layout valid",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "case": "anvil-second",
+        "name": "window within screen",
+        "passed": true,
+        "detail": {
+          "width": 125,
+          "height": 67,
+          "x": 417,
+          "y": 203
+        }
+      },
+      {
+        "case": "anvil",
+        "name": "switch back to first",
+        "passed": true,
+        "detail": "net.minecraft.world.inventory.AnvilMenu"
+      },
+      {
+        "case": "smith",
+        "name": "first menu",
+        "passed": true,
+        "detail": "net.minecraft.world.inventory.SmithingMenu"
+      },
+      {
+        "case": "smith-first",
+        "name": "one native template",
+        "passed": true,
+        "detail": null
+      },
+      {
+        "case": "smith-first",
+        "name": "native layout valid",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "case": "smith-first",
+        "name": "window within screen",
+        "passed": true,
+        "detail": {
+          "width": 184,
+          "height": 86,
+          "x": 228,
+          "y": 88
+        }
+      },
+      {
+        "case": "smith",
+        "name": "switch to second",
+        "passed": true,
+        "detail": "net.smitherz.screen.SmitherScreenHandler"
+      },
+      {
+        "case": "smith-second",
+        "name": "one native template",
+        "passed": true,
+        "detail": null
+      },
+      {
+        "case": "smith-second",
+        "name": "native layout valid",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "case": "smith-second",
+        "name": "window within screen",
+        "passed": true,
+        "detail": {
+          "width": 144,
+          "height": 68,
+          "x": 417,
+          "y": 299
+        }
+      },
+      {
+        "case": "smith",
+        "name": "switch back to first",
+        "passed": true,
+        "detail": "net.minecraft.world.inventory.SmithingMenu"
+      },
+      {
+        "case": "grind",
+        "name": "first menu",
+        "passed": true,
+        "detail": "net.minecraft.world.inventory.GrindstoneMenu"
+      },
+      {
+        "case": "grind-first",
+        "name": "one native template",
+        "passed": true,
+        "detail": null
+      },
+      {
+        "case": "grind-first",
+        "name": "native layout valid",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "case": "grind-first",
+        "name": "window within screen",
+        "passed": true,
+        "detail": {
+          "width": 142,
+          "height": 84,
+          "x": 249,
+          "y": 90
+        }
+      },
+      {
+        "case": "grind",
+        "name": "switch to second",
+        "passed": true,
+        "detail": "net.smitherz.screen.GrinderScreenHandler"
+      },
+      {
+        "case": "grind-second",
+        "name": "one native template",
+        "passed": true,
+        "detail": null
+      },
+      {
+        "case": "grind-second",
+        "name": "native layout valid",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "case": "grind-second",
+        "name": "window within screen",
+        "passed": true,
+        "detail": {
+          "width": 128,
+          "height": 84,
+          "x": 417,
+          "y": 195
+        }
+      },
+      {
+        "case": "grind",
+        "name": "switch back to first",
+        "passed": true,
+        "detail": "net.minecraft.world.inventory.GrindstoneMenu"
+      }
+    ]
+  },
+  "visual_review": [
+    "All three first/second tab pairs connect their selected tab to the frame without a horizontal line through the selected interior.",
+    "Unlink Gear shows both grindstone support rails.",
+    "Upgrade Gear displays the complete empty stand and the complete equipped stand after a valid netherite chestplate recipe, with no stray native bevel stripe."
+  ],
+  "evidence_root": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-eight-implemented\\gameplay\\1.20.1-fabric-gear-visual-02",
+  "screenshot_manifest": "screenshot-manifest.json",
+  "pdf": "../pdf/siu-gear-window-visual-fixes-1.20.1.pdf",
+  "limitations": [
+    "The focused runtime check covers Fabric 1.20.1 and the specified six windows. It does not certify other game versions, loaders, unrelated screens or the full gameplay suite.",
+    "The equipped preview used a valid netherite chestplate recipe; other armor types and poses were not exhaustively tested.",
+    "The staged QA JAR hashes are listed above; distribution packaging and any metadata differences are assessed separately."
+  ],
+  "final_production_artifacts": [
+    {
+      "loader": "fabric",
+      "path": "dist\\compatibility\\salts_inventory_compat-1.20.1-Fabric-0.1.3.jar",
+      "sha256": "cec333d6eec07772cb007a627a1df45546d8e3080bbbc3182cc9e31379176036",
+      "bytes": 939558
+    },
+    {
+      "loader": "forge",
+      "path": "dist\\compatibility\\salts_inventory_compat-1.20.1-Forge-0.1.3.jar",
+      "sha256": "60149c632d1f9d673f1aedc32829e702967cc67c0830cdcc11159d1aff498d4e",
+      "bytes": 959468
+    }
+  ],
+  "fabric_content_comparison": {
+    "staged_sha256": "d4c2bc323f7a6309f6e3fc0fde7ee5e00aaf3b0b22c4830efa99e010ea6b495b",
+    "final_sha256": "cec333d6eec07772cb007a627a1df45546d8e3080bbbc3182cc9e31379176036",
+    "differing_entries": [
+      "META-INF/MANIFEST.MF",
+      "fabric.mod.json"
+    ],
+    "note": "Class and non-metadata resource bytes match. QA loader override changes the declared loader minimum and build provenance only."
+  }
+}

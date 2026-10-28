@@ -15,7 +15,20 @@
     "issues": "https://github.com/Salt-and-Fries/Salt-s-Inventory-Update/issues",
     "discord": "https://discord.gg/kfdE9gGGxP"
   },
-  "mixins": ["salts_inventory_compat.trinkets.mixins.json", "salts_inventory_compat.sophisticated-fabric.mixins.json", "salts_inventory_compat.ae2.mixins.json", "salts_inventory_compat.ae2-native.mixins.json"],
+  "mixins": [
+    "salts_inventory_compat.simplyswords.mixins.json",
+    "salts_inventory_compat.chipped.mixins.json",
+    "salts_inventory_compat.tieredz.mixins.json",
+    "salts_inventory_compat.extended-drawers.mixins.json",
+    "salts_inventory_compat.trinkets.mixins.json",
+    "salts_inventory_compat.sophisticated-fabric.mixins.json",
+    "salts_inventory_compat.ae2.mixins.json",
+    "salts_inventory_compat.ae2-native.mixins.json",
+    "salts_inventory_compat.feeding-trough.mixins.json",
+    "salts_inventory_compat.farmers-delight.mixins.json",
+    "salts_inventory_compat.alloy-forgery.mixins.json",
+    "salts_inventory_compat.seasons-extras.mixins.json"
+  ],
   "entrypoints": {
     "modmenu": [
       "com.salts_inventory_update.compat.modmenu.SaltsInventoryModMenu"
@@ -54,6 +67,21 @@
     "fabric-api": "*"
   },
   "suggests": {
+    "chipped": "*",
+    "extendeddrawersaddon": "*",
+    "graveyard": "*",
+    "betterend": "*",
+    "runes": "*",
+    "tiered": "*",
+    "smitherz": "*",
+    "additionz": "*",
+    "oxidized": "*",
+    "brick_and_mortar": "*",
+    "expandeddelight": "*",
+    "netherchested": "*",
+    "inmis": "*",
+    "animal_feeding_trough": "*",
+    "ironchests": "*",
     "trinkets": "=3.7.2",
     "raised": ">=6.0.2",
     "sophisticatedcore": "*",
@@ -64,6 +92,15 @@
     "roughlyenoughitems": "*",
     "emi": "*",
     "modmenu": "*",
-    "toms_storage": "*"
+    "toms_storage": "*",
+    "barteringstation": "*",
+    "alloy_forgery": "*",
+    "seasonsextras": "*",
+    "farmersdelight": "*",
+    "betterarcheology": "*",
+    "illagerinvasion": "*",
+    "galosphere": "*",
+    "sawmill": "*",
+    "simplyswords": "*"
   }
 }

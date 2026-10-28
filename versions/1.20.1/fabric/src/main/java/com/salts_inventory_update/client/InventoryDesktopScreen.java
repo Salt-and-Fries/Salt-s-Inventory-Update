@@ -1596,6 +1596,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         return singleton;
     }
 
+    /** Explicit developer action; ordinary API definitions are never replaced by the inspector. */
+    public boolean inspectNativeWindow() {
+        for(int i=this.windows.size()-1;i>=0;i--) {
+            InventoryWindow window=this.windows.get(i);
+            if(window.persistentHidden||window.companionHidden||!(window.apiDefinition instanceof com.salts_inventory_update.client.automatic.AutomaticNativeWindow))continue;
+            var editor=window.apiDefinition instanceof com.salts_inventory_update.client.automatic.NativeTemplateWindow existing?existing:
+                new com.salts_inventory_update.client.automatic.NativeTemplateWindow((com.salts_inventory_update.client.automatic.AutomaticNativeWindow.State)window.apiState,null);
+            window.apiDefinition=editor;editor.enableInspector();this.setFocusedWindow(window);return true;
+        }
+        return false;
+    }
+
     static @Nullable DesktopContainerSession sessionForNetworking(Minecraft minecraft, int sessionId) {
         InventoryDesktopScreen screen = current(minecraft);
         return screen == null ? null : screen.session(sessionId);
@@ -1683,6 +1695,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     /** Reload listeners marshal here on the client thread; worlds do not repeat provider registration. */
     public static void resourcesReloaded() {
         apiResourceRevision++;
+        com.salts_inventory_update.client.automatic.NativeProfileFiles.reload();
+        DesktopContainerClient.refreshNativeTemplates();
         if (singleton == null) return;
         for (InventoryWindow window : List.copyOf(singleton.windows)) {
             try {
@@ -2306,6 +2320,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         } catch (AssertionError accessorError) {
             return getMenuScreenConstructorsReflectively(accessorError);
         }
+    }
+
+    /** Original constructor for the internal automatic host; API definitions always win first. */
+    public static MenuScreens.ScreenConstructor<?, ?> nativeContainerConstructor(MenuType<?> type) {
+        MenuScreens.ScreenConstructor<?, ?> original = VANILLA_SCREEN_CONSTRUCTORS.get(type);
+        return original != null ? original : getMenuScreenConstructors().get(type);
     }
 
     private static Map<MenuType<?>, MenuScreens.ScreenConstructor<?, ?>> getMenuScreenConstructorsReflectively(AssertionError accessorError) {
@@ -6143,6 +6163,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 session.sourceKey(),
                 session.specialKind()
             );
+        if (apiDefinition == null && session.specialKind() == DesktopPackets.SPECIAL_AUTOMATIC_NATIVE) {
+            DesktopContainerClient.declineAutomaticWindow(session.sessionId());
+            session.close();
+            return;
+        }
         DesktopWindowSetupContext<?> apiSetup = this.apiSetupContext(
             session.menu(),
             session.title(),
@@ -6362,6 +6387,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             contentHeight
         );
         DesktopWindowDefinition<?, ?> definition = DesktopClientApi.findDefinition(context);
+        if (definition instanceof com.salts_inventory_update.api.client.desktop.DesktopNativeTemplate<?, ?> template) {
+            return com.salts_inventory_update.client.automatic.AutomaticNativeWindow.create(this.minecraft, menu, title, template);
+        }
         if (definition != null) {
             DesktopDebug.log(
                 "client api lookup desktop={} menu={} menuType={} title='{}' session={} source='{}' special={} slots={} content={}x{} definition={}",
@@ -6380,6 +6408,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         }
 
+        if (definition == null && (specialKind == DesktopPackets.SPECIAL_AUTOMATIC_NATIVE
+            || com.salts_inventory_update.client.automatic.NativeProfileFiles.has(menuType))) {
+            return com.salts_inventory_update.client.automatic.AutomaticNativeWindow.create(this.minecraft, menu, title);
+        }
         return definition;
     }
 
@@ -7303,7 +7335,6 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         for (DesktopWindowRegion region : regions) {
             if (region == null
                 || !region.constrainsWindow()
-                || (!region.visual() && !region.interactive())
                 || region.width() <= 0
                 || region.height() <= 0) {
                 continue;
@@ -7427,6 +7458,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.forceFixedWindowSize(window);
 
         this.clampInitialWindowSize(window);
+        // Saved generic storage sizes must still fit whole cells, without stranded blank strips.
+        if (window.apiDefinition == null && this.isResizableStorageWindow(window)) this.snapResizableWindow(window);
         if (window.pinMode == PinMode.UNPINNED && window.kind != WindowKind.JEI) {
             this.placeWindow(window, placement);
         } else {
@@ -7453,7 +7486,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return null;
         }
 
-        return DesktopWindowStateStore.load(this.minecraft == null ? Minecraft.getInstance() : this.minecraft, key).orElse(null);
+        Minecraft client = this.minecraft == null ? Minecraft.getInstance() : this.minecraft;
+        var saved = DesktopWindowStateStore.load(client, key).orElse(null);
+        if (saved != null) return saved;
+        String legacyKey = window.genericLegacyStateKey();
+        if (legacyKey == null) return null;
+        var legacy = DesktopWindowStateStore.load(client, legacyKey).orElse(null);
+        if (legacy == null) return null;
+        // Old source-only entries may belong to a different block/menu at the same position.
+        // Carry over placement/pins, but let this menu choose its own initial grid dimensions.
+        var migrated = new DesktopWindowStateStore.WindowState(legacy.x, legacy.y, 0, 0, legacy.locked, legacy.pinMode());
+        migrated.localState(legacy.localState());
+        return migrated;
     }
 
     private void saveWindowState(InventoryWindow window) {
@@ -8021,7 +8065,6 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         for (DesktopWindowRegion region : this.apiExternalRegions(window)) {
             if (region == null
                 || !region.constrainsWindow()
-                || (!region.visual() && !region.interactive())
                 || region.width() <= 0
                 || region.height() <= 0) {
                 continue;
@@ -9242,6 +9285,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (menu instanceof CraftingMenu craftingMenu) {
             return craftingMenu;
         }
+        // A definition may supply its original recipe component for a foreign
+        // RecipeBookMenu. Initialize that component in desktop coordinates too.
+        // Menus without an explicitly supplied component retain the old fallback.
+        if (window.apiDefinition != null && window.recipeBook != null && menu instanceof RecipeBookMenu<?>) {
+            return menu;
+        }
         return menu instanceof AbstractFurnaceMenu furnaceMenu ? furnaceMenu : null;
     }
 
@@ -9307,16 +9356,24 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private RecipeBookPosition recipeBookPosition(InventoryWindow window) {
+        int left=window.x, right=window.x+window.width;
+        int top=window.y, bottom=window.y+window.height;
+        for (DesktopWindowRegion region : this.apiExternalRegions(window)) {
+            left=Math.min(left,window.x+region.x());
+            right=Math.max(right,window.x+region.x()+region.width());
+            top=Math.min(top,window.y+region.y());
+            bottom=Math.max(bottom,window.y+region.y()+region.height());
+        }
         if (this.externallyPresented()) {
             // The external presentation fits the combined surface. Keep its attached guide on
             // a stable side rather than re-positioning it against the untransformed desktop.
-            return new RecipeBookPosition(window.x - RECIPE_BOOK_WIDTH - RECIPE_BOOK_GAP, window.y);
+            return new RecipeBookPosition(left - RECIPE_BOOK_WIDTH - RECIPE_BOOK_GAP, window.y);
         }
         List<RecipeBookPosition> candidates = List.of(
-            new RecipeBookPosition(window.x - RECIPE_BOOK_WIDTH - RECIPE_BOOK_GAP, window.y),
-            new RecipeBookPosition(window.x + window.width + RECIPE_BOOK_GAP + RECIPE_BOOK_TAB_LEFT_OVERHANG, window.y),
-            new RecipeBookPosition(window.x + RECIPE_BOOK_TAB_LEFT_OVERHANG, window.y - RECIPE_BOOK_HEIGHT - RECIPE_BOOK_GAP),
-            new RecipeBookPosition(window.x + RECIPE_BOOK_TAB_LEFT_OVERHANG, window.y + window.height + RECIPE_BOOK_GAP)
+            new RecipeBookPosition(left - RECIPE_BOOK_WIDTH - RECIPE_BOOK_GAP, window.y),
+            new RecipeBookPosition(right + RECIPE_BOOK_GAP + RECIPE_BOOK_TAB_LEFT_OVERHANG, window.y),
+            new RecipeBookPosition(window.x + RECIPE_BOOK_TAB_LEFT_OVERHANG, top - RECIPE_BOOK_HEIGHT - RECIPE_BOOK_GAP),
+            new RecipeBookPosition(window.x + RECIPE_BOOK_TAB_LEFT_OVERHANG, bottom + RECIPE_BOOK_GAP)
         );
         for (RecipeBookPosition candidate : candidates) {
             if (this.recipeBookFits(candidate)) {
@@ -9326,7 +9383,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         return new RecipeBookPosition(
             clamp(
-                window.x - RECIPE_BOOK_WIDTH - RECIPE_BOOK_GAP,
+                left - RECIPE_BOOK_WIDTH - RECIPE_BOOK_GAP,
                 RECIPE_BOOK_TAB_LEFT_OVERHANG,
                 Math.max(RECIPE_BOOK_TAB_LEFT_OVERHANG, this.desktopWidth() - RECIPE_BOOK_WIDTH)
             ),
@@ -10399,7 +10456,6 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         for (DesktopWindowRegion region : this.apiExternalRegions(window)) {
             if (region != null
                 && region.constrainsWindow()
-                && (region.visual() || region.interactive())
                 && region.width() > 0
                 && region.height() > 0) {
                 return true;
@@ -20408,6 +20464,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         private @Nullable String stateKey() {
             if (this.session != null && !this.session.sourceKey().isEmpty()) {
+                String legacy = this.genericLegacyStateKey();
+                if (legacy != null) return legacy + ":menu:" + BuiltInRegistries.MENU.getKey(safeMenuType(this.session.menu()));
                 return "source:" + this.session.sourceKey();
             }
             if (this.session == null && this.legacyMenu == null) {
@@ -20425,6 +20483,12 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 return "legacy:" + this.legacyMenu.getType() + ":" + this.title.getString();
             }
             return null;
+        }
+
+        private @Nullable String genericLegacyStateKey() {
+            if (this.kind != WindowKind.CONTAINER || this.apiDefinition != null || this.session == null
+                || this.session.sourceKey().isEmpty() || safeMenuType(this.session.menu()) == null) return null;
+            return "source:" + this.session.sourceKey();
         }
 
         private int contentX() {

@@ -15,6 +15,12 @@ description = "${description}"
 [[mixins]]
 config = "${mod_id}.sophisticated.mixins.json"
 
+[[mixins]]
+config = "${mod_id}.feeding-trough.mixins.json"
+
+[[mixins]]
+config = "${mod_id}.chipped.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId = "forge"
 mandatory = true
@@ -42,6 +48,41 @@ mandatory = false
 versionRange = "[15.20.0,)"
 ordering = "NONE"
 side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "brick_and_mortar"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "crabbersdelight"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "netherchested"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "ironchests"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "animal_feeding_trough"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
 
 [[dependencies.${mod_id}]]
 modId = "roughlyenoughitems"
@@ -100,6 +141,93 @@ side = "CLIENT"
 
 [[dependencies.${mod_id}]]
 modId = "curios"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "barteringstation"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "farmersdelight"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "miners_delight"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "betterarcheology"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "illagerinvasion"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "galosphere"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "sawmill"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "graveyard"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "runes"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "deep_aether"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "chipped"
+mandatory = false
+versionRange = "[3.0.7,4)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[mixins]]
+config = "${mod_id}.simplyswords.mixins.json"
+
+[[dependencies.${mod_id}]]
+modId = "simplyswords"
 mandatory = false
 versionRange = "[0,)"
 ordering = "AFTER"

@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.compat.feedingtrough.mixin",
+  "plugin": "com.salts_inventory_update.compat.feedingtrough.mixin.FeedingTroughMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "FeedingTroughMenuMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

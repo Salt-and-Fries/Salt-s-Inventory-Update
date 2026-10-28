@@ -1,1 +1,3 @@
 *.pdf binary
+# JAR manifests require a terminating blank line.
+*.mf whitespace=-blank-at-eof

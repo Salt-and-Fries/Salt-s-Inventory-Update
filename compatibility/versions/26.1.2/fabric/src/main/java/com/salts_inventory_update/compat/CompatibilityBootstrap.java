@@ -7,10 +7,24 @@ import java.lang.reflect.InvocationTargetException;
 public final class CompatibilityBootstrap {
     private CompatibilityBootstrap() { }
     public static void initializeCommon() {
+        initialize("graveyard", "com.salts_inventory_update.compat.graveyard.OssuarySync", "initializeCommon");
+        initialize("animal_feeding_trough", "com.salts_inventory_update.compat.feedingtrough.FeedingTroughIntegration", "initializeCommon");
         initialize("ae2", "com.salts_inventory_update.compat.ae2.AE2Bootstrap", "initializeCommon");
         initialize("toms_storage", "com.salts_inventory_update.compat.toms_storage.server.TomsStorageServerCompat", "initialize");
     }
     public static void initializeClient() {
+        initialize("graveyard", "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi", "initialize");
+        if (DesktopEnvironment.isModLoaded("fabricloader")) initialize("betterend", "com.salts_inventory_update.compat.betterend.BetterEndNativeUi", "initialize");
+        initialize("runes", "com.salts_inventory_update.compat.runes.RunesNativeUi", "initialize");
+        initialize("barteringstation", "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi", "initialize");
+        initialize("alloy-forgery", "com.salts_inventory_update.compat.alloyforgery.AlloyForgeryNativeUi", "initialize");
+        initialize("farmersdelight", "com.salts_inventory_update.compat.farmersdelight.FarmersDelightNativeUi", "initialize");
+        initialize("betterarcheology", "com.salts_inventory_update.compat.betterarcheology.BetterArcheologyNativeUi", "initialize");
+        initialize("illagerinvasion", "com.salts_inventory_update.compat.illagerinvasion.IllagerInvasionNativeUi", "initialize");
+        initialize("sawmill", "com.salts_inventory_update.compat.sawmill.SawmillNativeUi", "initialize");
+        initialize("alloyed", "com.salts_inventory_update.compat.alloyed.AlloyedNativeUi", "initialize");
+        initialize("animal_feeding_trough", "com.salts_inventory_update.compat.feedingtrough.FeedingTroughClientIntegration", "initialize");
+        initialize("netherchested", "com.salts_inventory_update.compat.netherchested.NetherChestedNativeUi", "initialize");
         initialize("raised", "com.salts_inventory_update.compat.raised.RaisedHudIntegration", "initialize");
         initialize("ae2", "com.salts_inventory_update.compat.ae2.AE2Bootstrap", "initializeClient");
         initialize("toms_storage", "com.salts_inventory_update.compat.toms_storage.client.TomsStorageClientCompat", "initialize");

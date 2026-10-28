@@ -64,6 +64,8 @@ import com.salts_inventory_update.protocol.DesktopConnectionState;
 import com.salts_inventory_update.protocol.DesktopProtocol;
 
 public final class DesktopContainerClient {
+    private static boolean automaticNativeReady;
+    private static final Map<ResourceLocation, ClientPlayNetworking.PlayChannelHandler> AUTOMATIC_RECEIVERS = new LinkedHashMap<>();
     private static Object lastDesktopLevel;
     private static final int MODE_REFRESH_INTERVAL_TICKS = 100;
     private static final long SUPPORTED_CAPABILITIES = DesktopProtocol.KNOWN_CAPABILITIES | DesktopPackets.CAP_MULTI_MENU_GESTURES | DesktopPackets.CAP_SORT_WINDOWS | DesktopPackets.CAP_CLICK_SEQUENCES | DesktopPackets.CAP_SORT_INVENTORY;
@@ -99,6 +101,36 @@ public final class DesktopContainerClient {
     }
 
     public static void initializeNetworking() {
+        register(com.salts_inventory_update.network.AutomaticNativeReady.TYPE,
+            com.salts_inventory_update.network.AutomaticNativeReady::new, payload -> {
+                if (payload.acknowledged() && payload.nonce() == CONNECTION_STATE.connectionNonce()
+                    && CONNECTION_STATE.isNegotiated()) automaticNativeReady = true;
+            });
+        ClientPlayNetworking.registerGlobalReceiver(com.salts_inventory_update.network.AutomaticNativeEnvelope.TYPE,
+            (client, listener, buffer, sender) -> {
+                try {
+                    var envelope = new com.salts_inventory_update.network.AutomaticNativeEnvelope(buffer);
+                    var receiver = AUTOMATIC_RECEIVERS.get(envelope.innerType());
+                    if (buffer.isReadable() || receiver == null) throw new IllegalArgumentException("Unknown native envelope");
+                    // Preserve packet order with the ready acknowledgement on the client
+                    // thread. Netty may receive both before the acknowledgement is applied.
+                    client.execute(() -> {
+                        if (client.getConnection() != listener) return;
+                        if (!automaticNativeReady || envelope.nonce() != CONNECTION_STATE.connectionNonce()) {
+                            rejectServerProtocol("unnegotiated automatic native envelope"); return;
+                        }
+                        FriendlyByteBuf body = new FriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(envelope.body()));
+                        try {
+                            com.salts_inventory_update.network.AutomaticCountCodec.restore(envelope.counts(), () -> {
+                                receiver.receive(client, listener, body, sender); return null;
+                            });
+                        } catch (RuntimeException failure) { rejectServerProtocol("malformed automatic native envelope"); }
+                        finally { body.release(); }
+                    });
+                } catch (RuntimeException failure) {
+                    client.execute(() -> rejectServerProtocol("malformed automatic native envelope"));
+                }
+            });
         register(DesktopPackets.DesktopClickSequenceAckPayload.TYPE, DesktopPackets.DesktopClickSequenceAckPayload::new, DesktopContainerClient::acknowledgeClickSequence);
         register(DesktopPackets.DesktopRecipeHoverStatePayload.TYPE,DesktopPackets.DesktopRecipeHoverStatePayload::new,payload->{
             if(payload.connectionNonce()!=CONNECTION_STATE.connectionNonce()||payload.epoch()!=recipeHoverEpoch||payload.sessionId()!=recipeHoverSession)return;
@@ -177,9 +209,17 @@ public final class DesktopContainerClient {
             Minecraft client = Minecraft.getInstance();
             if (resynchronizeSession(client, payload, authorizedToken, openingData)) return;
             SESSION_SNAPSHOTS.remove(payload.sessionId());
-            DesktopContainerSession session = DesktopContainerSession.create(client, payload,
-                openingData == null ? new byte[0] : openingData.data(),
-                openingData == null ? -1 : openingData.replacesSessionId());
+            DesktopContainerSession session;
+            try {
+                session = DesktopContainerSession.create(client, payload,
+                    openingData == null ? new byte[0] : openingData.data(),
+                    openingData == null ? -1 : openingData.replacesSessionId());
+            } catch (RuntimeException failure) {
+                if (payload.specialKind() != DesktopPackets.SPECIAL_AUTOMATIC_NATIVE) throw failure;
+                DesktopDebug.warn("client native reconstruction declined session={} reason={}", payload.sessionId(), failure.toString());
+                declineAutomaticWindow(payload.sessionId());
+                return;
+            }
             if (openingData != null) session.setCompanionOwners(openingData.companionOwnerIds());
             InventoryDesktopScreen.openOrAddSession(client, session, payload.visible());
             if (InventoryDesktopScreen.sessionForNetworking(client, payload.sessionId()) == session)
@@ -289,9 +329,10 @@ public final class DesktopContainerClient {
 
     private static <P extends DesktopPacket> void register(ResourceLocation id, Function<FriendlyByteBuf, P> decoder, Consumer<P> handler) {
         DesktopDebug.probe("client desktop payload receiver register id={}", id);
-        ClientPlayNetworking.registerGlobalReceiver(id, (client, listener, buf, sender) -> {
+        ClientPlayNetworking.PlayChannelHandler receiver = (client, listener, buf, sender) -> {
             try {
                 P payload = decoder.apply(buf);
+                com.salts_inventory_update.network.AutomaticCountCodec.requireComplete();
                 if (buf.isReadable()) {
                     throw new IllegalArgumentException("Trailing bytes in desktop payload " + id + ": " + buf.readableBytes());
                 }
@@ -316,7 +357,9 @@ public final class DesktopContainerClient {
                     }
                 });
             }
-        });
+        };
+        AUTOMATIC_RECEIVERS.put(id, receiver);
+        ClientPlayNetworking.registerGlobalReceiver(id, receiver);
     }
 
     private static void rejectServerProtocol(String reason) {
@@ -372,6 +415,10 @@ public final class DesktopContainerClient {
             }
         }
         SaltsInventoryRuntime.setServerDesktopAvailable(true);
+        if (ClientPlayNetworking.canSend(com.salts_inventory_update.network.AutomaticNativeReady.TYPE)) {
+            sendRaw(new com.salts_inventory_update.network.AutomaticNativeReady(CONNECTION_STATE.connectionNonce(), false), "automatic-native-ready");
+            refreshNativeTemplates();
+        }
         DesktopDebug.log(
             "client desktop negotiation active capabilities={} uiEnabled={}",
             payload.capabilities(),
@@ -380,6 +427,7 @@ public final class DesktopContainerClient {
     }
 
     private static void resetConnection() {
+        automaticNativeReady = false;
         resetClickSequences();
         if (topologyPlayer != null) {
             InventoryExpansion.setGameplayEnabled(topologyPlayer, false);
@@ -477,7 +525,8 @@ public final class DesktopContainerClient {
             clientNonce = nextNonce();
             CONNECTION_STATE.begin(clientNonce, minecraft.level.getGameTime());
             List<String> forcedMenuIds = configuredForcedMenuIds();
-            List<String> supportedMenuIds = com.salts_inventory_update.api.client.desktop.DesktopClientApi.supportedMenuIds();
+            List<String> supportedMenuIds = com.salts_inventory_update.client.automatic.AutomaticNativeWindow.advertisedMenuIds(
+                com.salts_inventory_update.api.client.desktop.DesktopClientApi.supportedMenuIds());
             boolean sent = sendRaw(new DesktopHelloPayload(
                 DesktopProtocol.VERSION,
                 clientNonce,
@@ -517,7 +566,8 @@ public final class DesktopContainerClient {
             InventoryExpansion.setTopologyEnabled(minecraft.player, topologyEnabled);
             boolean desiredMode = SaltsInventoryRuntime.isConfiguredEnabled();
             List<String> forcedMenuIds = configuredForcedMenuIds();
-            List<String> supportedMenuIds = com.salts_inventory_update.api.client.desktop.DesktopClientApi.supportedMenuIds();
+            List<String> supportedMenuIds = com.salts_inventory_update.client.automatic.AutomaticNativeWindow.advertisedMenuIds(
+                com.salts_inventory_update.api.client.desktop.DesktopClientApi.supportedMenuIds());
             modeRefreshTicks++;
             InventoryExpansion.setGameplayEnabled(
                 minecraft.player,
@@ -996,6 +1046,20 @@ public final class DesktopContainerClient {
 
 
 
+    public static void declineAutomaticWindow(int sessionId) {
+        if (!automaticNativeReady) return;
+        long token = SESSION_TOKENS.getOrDefault(sessionId, 0L);
+        if (token != 0L) sendRaw(new com.salts_inventory_update.network.AutomaticNativeFallback(
+            CONNECTION_STATE.connectionNonce(), sessionId, token), "automatic-native-fallback");
+    }
+
+    public static void refreshNativeTemplates() {
+        if(!CONNECTION_STATE.isNegotiated()||!ClientPlayNetworking.canSend(com.salts_inventory_update.network.NativeTemplateCapabilities.TYPE))return;
+        var ids=new java.util.LinkedHashSet<>(com.salts_inventory_update.api.client.desktop.DesktopClientApi.nativeTemplateMenuIds());
+        ids.addAll(com.salts_inventory_update.client.automatic.NativeProfileFiles.menuIds());
+        sendRaw(new com.salts_inventory_update.network.NativeTemplateCapabilities(CONNECTION_STATE.connectionNonce(),List.copyOf(ids)),"native-template-capabilities");
+    }
+
     private static boolean send(DesktopPacket payload, String label) {
         if (!SaltsInventoryRuntime.isEnabled()) {
             DesktopDebug.trace("client desktop packet skipped label={} type={} reason=runtime-disabled", label, payload.id());
@@ -1021,11 +1085,15 @@ public final class DesktopContainerClient {
             return false;
         }
 
-        FriendlyByteBuf inner = DesktopPackets.toBuffer(payload);
+        com.salts_inventory_update.network.AutomaticCountCodec.Encoded nativeCounts = automaticNativeReady
+            && payload instanceof DesktopClickPayload click && click.clientCarried().getCount() > 127
+            ? com.salts_inventory_update.network.AutomaticCountCodec.encode(payload) : null;
+        FriendlyByteBuf inner = nativeCounts == null ? DesktopPackets.toBuffer(payload)
+            : new FriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(nativeCounts.body()));
         try {
             byte[] data = new byte[inner.readableBytes()];
             inner.readBytes(data);
-            return sendRaw(new DesktopAuthenticatedPayload(
+            DesktopAuthenticatedPayload authenticated = new DesktopAuthenticatedPayload(
                 CONNECTION_STATE.connectionNonce(),
                 tokens.primaryToken(),
                 tokens.secondaryToken(),
@@ -1033,7 +1101,16 @@ public final class DesktopContainerClient {
                 tokens.secondaryStateId(),
                 payload.id(),
                 data
-            ), label);
+            );
+            if (nativeCounts != null) {
+                FriendlyByteBuf encoded = DesktopPackets.toBuffer(authenticated);
+                try {
+                    byte[] body = new byte[encoded.readableBytes()]; encoded.readBytes(body);
+                    return sendRaw(new com.salts_inventory_update.network.AutomaticNativeEnvelope(
+                        CONNECTION_STATE.connectionNonce(), authenticated.id(), body, nativeCounts.counts()), label);
+                } finally { encoded.release(); }
+            }
+            return sendRaw(authenticated, label);
         } finally {
             inner.release();
         }

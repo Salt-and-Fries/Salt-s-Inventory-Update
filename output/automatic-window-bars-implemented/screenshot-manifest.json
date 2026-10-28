@@ -1,0 +1,82 @@
+[
+  {
+    "loader": "Fabric",
+    "scope": "Core-only automatic",
+    "label": "Nether Chest",
+    "source": "build\\automatic-window-bars-implemented\\gameplay\\1.20.1-fabric-bars-fabric-05\\screenshots\\fabric05-nether.png",
+    "original": "output\\automatic-window-bars-implemented\\screenshots\\fabric05-nether.png",
+    "crop": "output\\automatic-window-bars-implemented\\crops\\fabric05-nether.png",
+    "crop_rect": [
+      472,
+      36,
+      864,
+      350
+    ],
+    "window_definition": "com.salts_inventory_update.client.automatic.AutomaticNativeWindow",
+    "sha256": "39909693aee1126789929e0d32627aca1f15cabbec99d303270eb61487317024"
+  },
+  {
+    "loader": "Fabric",
+    "scope": "Core-only automatic",
+    "label": "Archeology Table",
+    "source": "build\\automatic-window-bars-implemented\\gameplay\\1.20.1-fabric-bars-fabric-05\\screenshots\\fabric05-archeology.png",
+    "original": "output\\automatic-window-bars-implemented\\screenshots\\fabric05-archeology.png",
+    "crop": "output\\automatic-window-bars-implemented\\crops\\fabric05-archeology.png",
+    "crop_rect": [
+      444,
+      160,
+      836,
+      356
+    ],
+    "window_definition": "com.salts_inventory_update.client.automatic.AutomaticNativeWindow",
+    "sha256": "3006dc30386cb35e221afa0ac0c67193db8f036c5c3e0ec0527f173560958cbf"
+  },
+  {
+    "loader": "Forge",
+    "scope": "Core-only automatic",
+    "label": "Nether Chest",
+    "source": "build\\automatic-window-bars-implemented\\gameplay\\1.20.1-forge-bars-forge-05\\screenshots\\forge05-nether.png",
+    "original": "output\\automatic-window-bars-implemented\\screenshots\\forge05-nether.png",
+    "crop": "output\\automatic-window-bars-implemented\\crops\\forge05-nether.png",
+    "crop_rect": [
+      472,
+      36,
+      864,
+      350
+    ],
+    "window_definition": "com.salts_inventory_update.client.automatic.AutomaticNativeWindow",
+    "sha256": "7b0a1d2af61e77038a828efd530a29901c8a35c2fc4612a0857eed029d55ae6a"
+  },
+  {
+    "loader": "Forge",
+    "scope": "Core-only automatic",
+    "label": "Archeology Table - result",
+    "source": "build\\automatic-window-bars-implemented\\gameplay\\1.20.1-forge-bars-forge-05\\screenshots\\forge05-archeology-result.png",
+    "original": "output\\automatic-window-bars-implemented\\screenshots\\forge05-archeology-result.png",
+    "crop": "output\\automatic-window-bars-implemented\\crops\\forge05-archeology-result.png",
+    "crop_rect": [
+      444,
+      160,
+      836,
+      356
+    ],
+    "window_definition": "com.salts_inventory_update.client.automatic.AutomaticNativeWindow",
+    "sha256": "c17c94aa65a19e130b0c98414d1f123c6fb66fe51bbf4e16bcc6ade9c02c0cf6"
+  },
+  {
+    "loader": "Fabric",
+    "scope": "Compatibility API reference",
+    "label": "Archeology Table - unchanged",
+    "source": "build\\automatic-window-bars-implemented\\gameplay\\1.20.1-fabric-bars-fabric-api-05\\screenshots\\fabric05-archeology-api.png",
+    "original": "output\\automatic-window-bars-implemented\\screenshots\\fabric05-archeology-api.png",
+    "crop": "output\\automatic-window-bars-implemented\\crops\\fabric05-archeology-api.png",
+    "crop_rect": [
+      952,
+      360,
+      1254,
+      534
+    ],
+    "window_definition": "com.salts_inventory_update.client.automatic.NativeTemplateWindow",
+    "sha256": "f06904ee3df383b1a3a0bb29469474cadf81f8dbe07233821473df4b6a9df285"
+  }
+]

@@ -115,6 +115,7 @@ public final class DesktopItemSourceLocks {
     }
 
     public static synchronized boolean isInventorySlotLocked(Player player, int inventorySlot) {
+        if (AutomaticContainerSources.locks(player, inventorySlot)) return true;
         Map<SourceKey, ActiveLock> playerLocks = ACTIVE.get(player);
         if (playerLocks == null) {
             return false;

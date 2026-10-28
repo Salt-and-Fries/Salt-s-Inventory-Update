@@ -1,0 +1,366 @@
+{
+  "scope": "Opaque Craft perimeter and full mode icon pixels; native tooltip overlay excluded",
+  "proof": [
+    {
+      "minecraft": "1.20.1",
+      "loader": "fabric",
+      "source_jar": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-design\\upstream\\chipped-fabric-1.20.1-3.0.7.jar",
+      "source_sha512": "5e12cc2ac7aec827a06fb9358fa53a25040428ae0f192a96305b129b084073154a6ae862d6875f6a02fe89a7a11d253049ce90b292f4c4ab2c72a9c94b93c9b0",
+      "gui_scale": [
+        2.0,
+        2.0
+      ],
+      "craft": [
+        {
+          "matching": 176,
+          "compared": 176,
+          "unmatched": [],
+          "hover": false
+        },
+        {
+          "matching": 176,
+          "compared": 176,
+          "unmatched": [],
+          "hover": true
+        }
+      ],
+      "modes": [
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "single_block_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "single_block_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        },
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "horizontal_blocks_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "horizontal_blocks_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        },
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "vertical_blocks_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "vertical_blocks_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        },
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "two_by_two_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "two_by_two_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        }
+      ]
+    },
+    {
+      "minecraft": "1.20.1",
+      "loader": "forge",
+      "source_jar": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-design\\upstream\\chipped-forge-1.20.1-3.0.7.jar",
+      "source_sha512": "be1871655e213cf488d5049058200e03655f63b5922b6031af142d79d8958dca6653e7fa501f1aa2fda5544ad44a4f593521a7927a516e99579406a23a187045",
+      "gui_scale": [
+        2.0,
+        2.0
+      ],
+      "craft": [
+        {
+          "matching": 176,
+          "compared": 176,
+          "unmatched": [],
+          "hover": false
+        },
+        {
+          "matching": 176,
+          "compared": 176,
+          "unmatched": [],
+          "hover": true
+        }
+      ],
+      "modes": [
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "single_block_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "single_block_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        },
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "horizontal_blocks_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "horizontal_blocks_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        },
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "vertical_blocks_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "vertical_blocks_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        },
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "two_by_two_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "two_by_two_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "source_jar": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\68b7ec7efd754f1b-chipped-fabric-1.21.1-4.0.2.jar",
+      "source_sha512": "68b7ec7efd754f1baef14326e1742332fe671f385bad2c91313de8324cf26b20f2a5548fc36174fd35ae87c1b957aea1441b223001ba18042d2bfcd65362151e",
+      "gui_scale": [
+        2.0,
+        2.0
+      ],
+      "craft": [
+        {
+          "matching": 176,
+          "compared": 176,
+          "unmatched": [],
+          "hover": false
+        },
+        {
+          "matching": 176,
+          "compared": 176,
+          "unmatched": [],
+          "hover": true
+        }
+      ],
+      "modes": [
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "single_block_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "single_block_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        },
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "horizontal_blocks_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "horizontal_blocks_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        },
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "vertical_blocks_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "vertical_blocks_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        },
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "two_by_two_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "two_by_two_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        }
+      ]
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "source_jar": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\f3083b01267e7c67-chipped-neoforge-1.21.1-4.0.2.jar",
+      "source_sha512": "f3083b01267e7c674c4b42f45a317c93ee7723443cba2051fe5bc593638b533b0fe90699e2101661c934dff458eab693cce4e188533bfe977778c249563a2fa5",
+      "gui_scale": [
+        2.0,
+        2.0
+      ],
+      "craft": [
+        {
+          "matching": 176,
+          "compared": 176,
+          "unmatched": [],
+          "hover": false
+        },
+        {
+          "matching": 176,
+          "compared": 176,
+          "unmatched": [],
+          "hover": true
+        }
+      ],
+      "modes": [
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "single_block_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "single_block_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        },
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "horizontal_blocks_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "horizontal_blocks_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        },
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "vertical_blocks_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "vertical_blocks_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        },
+        {
+          "matching": 324,
+          "compared": 324,
+          "unmatched": [],
+          "mode": "two_by_two_button",
+          "hover": false,
+          "tooltip_pixels_excluded": 0
+        },
+        {
+          "matching": 316,
+          "compared": 316,
+          "unmatched": [],
+          "mode": "two_by_two_button",
+          "hover": true,
+          "tooltip_pixels_excluded": 8
+        }
+      ]
+    }
+  ],
+  "mismatches": []
+}

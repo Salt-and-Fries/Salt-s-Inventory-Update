@@ -6,7 +6,7 @@ Salt's Inventory Controlify adds a controller interface to Salt's Inventory Upda
 
 This is an add-on for **[Salt's Inventory Update Core](https://modrinth.com/mod/salts-inventory-update)** and **[Controlify](https://modrinth.com/mod/controlify)**. The separate Salt's Inventory Compatibility extension is optional and provides integrations for supported third-party mods.
 
-Companion **0.1.1** requires **Core 0.1.5** on every supported target. The optional Compatibility extension **0.1.2** uses the same Core release. Choose matching Minecraft versions and loaders for all installed files. Core's regular-window tutorial stays closed automatically while this companion is installed; manual help remains available.
+Companion **0.1.1** requires **Core 0.1.6** on every supported target. The optional Compatibility extension **0.1.3** uses the same Core release. Choose matching Minecraft versions and loaders for all installed files. Core's regular-window tutorial stays closed automatically while this companion is installed; manual help remains available.
 
 ![Player inventory and a chest displayed side by side, with controller action hints along the bottom.](docs/modrinth/images/inventory-workspace.png)
 

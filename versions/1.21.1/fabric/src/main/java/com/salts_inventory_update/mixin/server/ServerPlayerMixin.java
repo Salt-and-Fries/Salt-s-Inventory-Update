@@ -23,7 +23,7 @@ public abstract class ServerPlayerMixin {
         DesktopContainerSessions.beforePlayerReplacement((ServerPlayer) (Object) this);
     }
 
-    @Inject(method = "openMenu", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "openMenu(Lnet/minecraft/world/MenuProvider;)Ljava/util/OptionalInt;", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$openDesktopMenu(MenuProvider provider, CallbackInfoReturnable<OptionalInt> cir) {
         ServerPlayer player = (ServerPlayer) (Object) this;
         if (DesktopContainerSessions.shouldCapture(player)) {
@@ -32,6 +32,15 @@ public abstract class ServerPlayerMixin {
                 cir.setReturnValue(desktopSession);
                 cir.cancel();
             }
+        }
+    }
+
+    @Inject(method="openMenu(Lnet/minecraft/world/MenuProvider;Ljava/util/function/Consumer;)Ljava/util/OptionalInt;",at=@At("HEAD"),cancellable=true,require=0)
+    private void salts_inventory_update$extendedDesktopMenu(MenuProvider provider,java.util.function.Consumer<net.minecraft.network.RegistryFriendlyByteBuf> writer,CallbackInfoReturnable<OptionalInt> cir) {
+        ServerPlayer player=(ServerPlayer)(Object)this;
+        if(DesktopContainerSessions.shouldCapture(player)) {
+            OptionalInt result=DesktopContainerSessions.openMenuSession(player,provider,writer);
+            if(result!=null)cir.setReturnValue(result);
         }
     }
 

@@ -1,0 +1,134 @@
+{
+  "comparisons": [
+    {
+      "label": "Empty workshop",
+      "loader": "fabric",
+      "proposal": "output\\project-everything-chipped-design\\proposals\\empty.png",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\fabric-mason-table-empty.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\fabric-mason-table-empty.png",
+      "sha256": "9856f3a709009d37ca8aa2993eb7e5ef58f9b402bd2e89eaa95b7c80f13a921a",
+      "runtime_build": "10"
+    },
+    {
+      "label": "Populated variants",
+      "loader": "fabric",
+      "proposal": "output\\project-everything-chipped-design\\proposals\\populated.png",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\fabric10-mode3.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\fabric10-mode3.png",
+      "sha256": "f4f57515acf7bae7a06c59d95d0989fbbecc160d5b348e13973f91c6c802bca8",
+      "runtime_build": "10"
+    },
+    {
+      "label": "Material picker over no-result search",
+      "loader": "fabric",
+      "proposal": "output\\project-everything-chipped-design\\proposals\\picker.png",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\fabric12-picker-noresults.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\fabric12-picker-noresults.png",
+      "sha256": "0dd6e153d691e69d21b14e4073af5942e4d7e9eeeae45963ab192f1348daf41a",
+      "runtime_build": "12"
+    },
+    {
+      "label": "Search with matches",
+      "loader": "forge",
+      "proposal": "output\\project-everything-chipped-design\\proposals\\search.png",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\forge11-search.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\forge11-search.png",
+      "sha256": "38b99dbc14096a8d0e49b80bb0f73971e7ecb7228f4b22d152164dc6ce11ce83",
+      "runtime_build": "11"
+    },
+    {
+      "label": "Search without matches",
+      "loader": "fabric",
+      "proposal": "output\\project-everything-chipped-design\\proposals\\no-results.png",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\fabric10-no-results.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\fabric10-no-results.png",
+      "sha256": "a8c2b185438bce6f09ac243ea387d8f8278d8dfc3bab3c1fd0b23e563ac98cb8",
+      "runtime_build": "10"
+    },
+    {
+      "label": "Scrolled variant grid",
+      "loader": "fabric",
+      "proposal": "output\\project-everything-chipped-design\\proposals\\scrolled.png",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\fabric10-scrolled.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\fabric10-scrolled.png",
+      "sha256": "812388e24f3c28d191c425dad5533ee31b53397c1aeb37723c89f9728eb11c77",
+      "runtime_build": "10"
+    },
+    {
+      "label": "Vertical preview",
+      "loader": "fabric",
+      "proposal": "output\\project-everything-chipped-design\\proposals\\preview-vertical.png",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\fabric10-mode2.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\fabric10-mode2.png",
+      "sha256": "bbc6a901ecdb72f7c63216d6a5c5c363ed48bd5647b3221248801b654c2a1703",
+      "runtime_build": "10"
+    },
+    {
+      "label": "Forge populated workshop",
+      "loader": "forge",
+      "proposal": "output\\project-everything-chipped-design\\proposals\\populated.png",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\forge11-before-wheel.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\forge11-before-wheel.png",
+      "sha256": "6f7f5ac617f79d3d5df7a40ef25628d63e84c49633a0813ae427f16b6f374a17",
+      "runtime_build": "11"
+    }
+  ],
+  "gallery": [
+    {
+      "station": "Mason Table",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\fabric-mason-table-empty.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\fabric-mason-table-empty.png",
+      "sha256": "9856f3a709009d37ca8aa2993eb7e5ef58f9b402bd2e89eaa95b7c80f13a921a",
+      "loader": "fabric",
+      "build": "10"
+    },
+    {
+      "station": "Carpenters Table",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\fabric-carpenters-table-empty.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\fabric-carpenters-table-empty.png",
+      "sha256": "a99870daf8f16d21c6b39135e9a0c36bf7183df7b401833831196939cd2a23f1",
+      "loader": "fabric",
+      "build": "10"
+    },
+    {
+      "station": "Loom Table",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\fabric-loom-table-empty.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\fabric-loom-table-empty.png",
+      "sha256": "2462ea87acee2233b625d4d2f330beb9b528b5a0367650d0fe372538a8874757",
+      "loader": "fabric",
+      "build": "10"
+    },
+    {
+      "station": "Glassblower",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\fabric-glassblower-empty.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\fabric-glassblower-empty.png",
+      "sha256": "7fdc602e7a915961a878bbaaefd590f46e5bb071eeb376759876c64830ef52ac",
+      "loader": "fabric",
+      "build": "10"
+    },
+    {
+      "station": "Botanist Workbench",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\fabric-botanist-workbench-empty.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\fabric-botanist-workbench-empty.png",
+      "sha256": "e98f4a7867cf9e6142bde81690a81a7071a69136309a2c49b8d90ab69d01c380",
+      "loader": "fabric",
+      "build": "10"
+    },
+    {
+      "station": "Alchemy Bench",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\fabric-alchemy-bench-empty.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\fabric-alchemy-bench-empty.png",
+      "sha256": "a880fb526a61fc5d703f7107f22ef389f6f0968586c37de980b15ccc785b2e0b",
+      "loader": "fabric",
+      "build": "10"
+    },
+    {
+      "station": "Tinkering Table",
+      "runtime_crop": "output\\project-everything-chipped-implemented\\crops\\fabric-tinkering-table-empty.png",
+      "runtime_original": "output\\project-everything-chipped-implemented\\screenshots\\fabric-tinkering-table-empty.png",
+      "sha256": "8884fdfbd4cd06def89807e9e6a34efe83926b09fcb862630759582c45814f95",
+      "loader": "fabric",
+      "build": "10"
+    }
+  ]
+}

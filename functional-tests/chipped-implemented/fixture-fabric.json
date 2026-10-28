@@ -1,0 +1,28 @@
+{
+  "minecraft": "1.20.1",
+  "loader": "fabric",
+  "artifacts": [
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-design\\upstream\\chipped-fabric-1.20.1-3.0.7.jar",
+      "filename": "chipped-fabric-1.20.1-3.0.7.jar",
+      "sha512": "5e12cc2ac7aec827a06fb9358fa53a25040428ae0f192a96305b129b084073154a6ae862d6875f6a02fe89a7a11d253049ce90b292f4c4ab2c72a9c94b93c9b0",
+      "coordinate": "maven.modrinth:BAscRYKm:pwyEaKDs",
+      "version": "3.0.7"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-design\\upstream\\athena-fabric-1.20.1-3.1.2.jar",
+      "filename": "athena-fabric-1.20.1-3.1.2.jar",
+      "sha512": "e55d49348a9d944bbd19390c64a4f42a1375eaaf0cbd4d69b4f523e441d9d23ce9498c912db724260cde32a43b776832cb867161e0989995d974de7e19e12389",
+      "coordinate": "maven.modrinth:b1ZV3DIJ:mXJWSwbJ",
+      "version": "3.1.2"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-chipped-design\\upstream\\resourcefullib-fabric-1.20.1-2.1.29.jar",
+      "filename": "resourcefullib-fabric-1.20.1-2.1.29.jar",
+      "sha512": "d3fcf5440c9359ee84cdec6ab198a6b2e10e5b1939995d2b12837ffdaa1f82d3caa80b14107cf02380718c65f20672b1faca3a498d2b41d79c79de34b2f7189b",
+      "coordinate": "maven.modrinth:G1hIVOrD:UOdaYbhh",
+      "version": "2.1.29"
+    }
+  ],
+  "scenario": "extension-empty"
+}

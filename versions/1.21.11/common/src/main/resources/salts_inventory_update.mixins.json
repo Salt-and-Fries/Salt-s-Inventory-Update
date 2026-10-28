@@ -36,7 +36,19 @@
     "client.MouseHandlerHandoffMixin",
     "client.RecipeBookComponentAccessor",
     "client.RecipeBookPageAccessor",
-    "client.OverlayRecipeComponentAccessor"
+    "client.OverlayRecipeComponentAccessor",
+    "client.AutomaticContainerScreenAccessor",
+    "client.AutomaticContainerScreenMixin",
+    "client.AutomaticGuiGraphicsMixin",
+    "client.AutomaticRecipeBookMixin",
+    "client.AutomaticRecipeButtonAccessor",
+    "client.AutomaticRecipeButtonMixin",
+    "client.AutomaticRecipeScreenAccessor",
+    "client.AutomaticRenderNodeAccessor",
+    "client.AutomaticRenderStateAccessor",
+    "client.AutomaticScreenBackgroundMixin",
+    "client.AutomaticTextStateAccessor",
+    "client.AutomaticGraphicsCaptureAccessor"
   ],
   "server": [],
   "injectors": {

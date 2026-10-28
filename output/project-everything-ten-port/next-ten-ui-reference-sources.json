@@ -1,0 +1,369 @@
+{
+  "pdf": "G:\\Codex Projects\\Salts Inventory Update\\output\\pdf\\siu-project-everything-next-ten-native-ui-reference.pdf",
+  "pages": 12,
+  "mods": 10,
+  "owned_menu_families": 12,
+  "gameplay_tests_run": false,
+  "figures": [
+    {
+      "page": 2,
+      "title": "Drawer upgrades - upstream view",
+      "caption": "Original project screenshot; not a SIU capture.",
+      "source": {
+        "kind": "upstream screenshot",
+        "url": "https://i.imgur.com/6y9B2GN.png",
+        "crop": null,
+        "version": "Not stated by screenshot author",
+        "sha256": "136a1d8b94fe3ca320ca405734515820e4478cdbc3efc042c688889a2f464d92"
+      }
+    },
+    {
+      "page": 2,
+      "title": "Native control sprites",
+      "caption": "Atlas fragment; not their on-screen arrangement.",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "ExtendedDrawersAddon",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\fe1b5bd0aaea21363175b0656f46d0ef69072da6.jar",
+        "resource": "assets/extendeddrawersaddon/textures/gui/drawer.png",
+        "crop": [
+          176,
+          0,
+          248,
+          54
+        ],
+        "asset_sha256": "b07dd1e4fd6c1a6dd81bfa2492ca2c03be19e00f70fe35cfae4c9ac5423cacd9"
+      }
+    },
+    {
+      "page": 3,
+      "title": "Ossuary - native base frame",
+      "caption": "Uses the vanilla stonecutter texture; recipe entries are drawn at runtime.",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "The Graveyard (Fabric/Neoforge)",
+        "artifact": "C:\\Users\\texca\\.gradle\\caches\\fabric-loom\\1.20.1\\minecraft-client.jar",
+        "resource": "assets/minecraft/textures/gui/container/stonecutter.png",
+        "crop": [
+          0,
+          0,
+          176,
+          166
+        ],
+        "asset_sha256": "540c2cec4bd431ad7f2547dfdc289db276081a91b67f248489d8f3a7359ee069"
+      }
+    },
+    {
+      "page": 3,
+      "title": "Recipe-button states",
+      "caption": "Original selector sprites: normal / selected / hover.",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "The Graveyard (Fabric/Neoforge)",
+        "artifact": "C:\\Users\\texca\\.gradle\\caches\\fabric-loom\\1.20.1\\minecraft-client.jar",
+        "resource": "assets/minecraft/textures/gui/container/stonecutter.png",
+        "crop": [
+          0,
+          166,
+          16,
+          220
+        ],
+        "asset_sha256": "540c2cec4bd431ad7f2547dfdc289db276081a91b67f248489d8f3a7359ee069"
+      }
+    },
+    {
+      "page": 4,
+      "title": "Smelter - native GUI artwork",
+      "caption": "Original 1.20.1 texture; live text, stacks and progress are not included.",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "BetterEnd",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\1e54364d63245a51e66e414ca73efbac9e05f11d.jar",
+        "resource": "assets/betterend/textures/gui/smelter_gui.png",
+        "crop": [
+          0,
+          0,
+          176,
+          166
+        ],
+        "asset_sha256": "a8ea488bc39eed37e0689953d6b0b6b84b37ef2fc0a6037440545204507affb1"
+      }
+    },
+    {
+      "page": 4,
+      "title": "Native recipe toggle",
+      "caption": "The recipe component opens separately from the machine body.",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "BetterEnd",
+        "artifact": "C:\\Users\\texca\\.gradle\\caches\\fabric-loom\\1.20.1\\minecraft-client.jar",
+        "resource": "assets/minecraft/textures/gui/recipe_button.png",
+        "crop": [
+          0,
+          0,
+          20,
+          36
+        ],
+        "asset_sha256": "637bcc3bfd14e7e82cc070fe4426e9e65c52346262ad96e6ab0b36e5dfe8ba2f"
+      }
+    },
+    {
+      "page": 5,
+      "title": "Rune Crafting Altar - native GUI artwork",
+      "caption": "Original texture reference; item contents and text are drawn in game.",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "Runes",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\9a13275dc0cf1c092fda619bfb88415fee7e2e67.jar",
+        "resource": "assets/runes/textures/gui/crafting_altar.png",
+        "crop": [
+          0,
+          0,
+          176,
+          166
+        ],
+        "asset_sha256": "143efeb988897f00a9b728a6f637198534136ce5436992f7d8079d1bd0719576"
+      }
+    },
+    {
+      "page": 6,
+      "title": "Combiner - native GUI artwork",
+      "caption": "Original texture reference; runtime stacks and recipe component omitted.",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "Deep Aether",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\3f0240c6ae68eb55a16173d22c06689e78442f06.jar",
+        "resource": "assets/deep_aether/textures/gui/combiner_gui.png",
+        "crop": [
+          0,
+          0,
+          176,
+          166
+        ],
+        "asset_sha256": "7b2a53af8359d138fe0bb98fb75b807effd0257c2abfa37e82aa329fe35a2a58"
+      }
+    },
+    {
+      "page": 6,
+      "title": "Native arrow artwork",
+      "caption": "Bundled animation/state strip, shown unassembled.",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "Deep Aether",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\3f0240c6ae68eb55a16173d22c06689e78442f06.jar",
+        "resource": "assets/deep_aether/textures/gui/sprites/combiner_arrow.png",
+        "crop": null,
+        "asset_sha256": "d8ccf8c85d93db8b6e57f8043dd6120852f53121317c5251524d59a8f9d6afd6"
+      }
+    },
+    {
+      "page": 7,
+      "title": "Workbench - full native artwork",
+      "caption": "Original full-size background; recipe results and 3D preview render at runtime.",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "Chipped",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\add35e79f6a930825e4dbe77d5d0468fb96c533f.jar",
+        "resource": "assets/chipped/textures/gui/container/workbench.png",
+        "crop": null,
+        "asset_sha256": "0955de9f5fc68d71f0fde40d658a53b3eb82b15a6d97475286305e39a02b1f73"
+      }
+    },
+    {
+      "page": 7,
+      "title": "Single-block preview",
+      "caption": "Normal / hover states",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "Chipped",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\add35e79f6a930825e4dbe77d5d0468fb96c533f.jar",
+        "resource": "assets/chipped/textures/gui/sprites/single_block_button.png",
+        "crop": null,
+        "asset_sha256": "27f81fdff62c923dcd3bf79fea5a4baae705cab1ec14d47246a825d23f2f0213"
+      }
+    },
+    {
+      "page": 7,
+      "title": "Horizontal preview",
+      "caption": "Normal / hover states",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "Chipped",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\add35e79f6a930825e4dbe77d5d0468fb96c533f.jar",
+        "resource": "assets/chipped/textures/gui/sprites/horizontal_blocks_button.png",
+        "crop": null,
+        "asset_sha256": "57407333a2eec3479624adbed2a618d45b75218c0453f039b25dfef2cbb044eb"
+      }
+    },
+    {
+      "page": 7,
+      "title": "Vertical preview",
+      "caption": "Normal / hover states",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "Chipped",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\add35e79f6a930825e4dbe77d5d0468fb96c533f.jar",
+        "resource": "assets/chipped/textures/gui/sprites/vertical_blocks_button.png",
+        "crop": null,
+        "asset_sha256": "14f05659d4717a437efc3facbb2d2eccc4194b8107fd6e9d57320a2dc6a20e39"
+      }
+    },
+    {
+      "page": 7,
+      "title": "2 x 2 preview",
+      "caption": "Normal / hover states",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "Chipped",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\add35e79f6a930825e4dbe77d5d0468fb96c533f.jar",
+        "resource": "assets/chipped/textures/gui/sprites/two_by_two_button.png",
+        "crop": null,
+        "asset_sha256": "df3fee5a0fe6dafac59045d41419b7f51bb3c4537dd1bf75711a6ff29c0528b5"
+      }
+    },
+    {
+      "page": 8,
+      "title": "Runic Forge - ornate artwork",
+      "caption": "Texture used by the audited screen; live slot effects are not pictured.",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "Simply Swords",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\902fd3ac7558bebb249f61572227d499f51b3bde.jar",
+        "resource": "assets/simplyswords/textures/gui/container/runic_forge.png",
+        "crop": [
+          0,
+          0,
+          200,
+          182
+        ],
+        "asset_sha256": "df365f6a0ebf8b23eab4184153ab4a2adf7452109a417ca9d9965a628a275a1f"
+      }
+    },
+    {
+      "page": 8,
+      "title": "Bundled alternate artwork",
+      "caption": "Not a second menu; active use of this alternate asset is unverified.",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "Simply Swords",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\902fd3ac7558bebb249f61572227d499f51b3bde.jar",
+        "resource": "assets/simplyswords/textures/gui/container/runic_forge_vanilla.png",
+        "crop": [
+          12,
+          0,
+          188,
+          166
+        ],
+        "asset_sha256": "42111185b2b6eeb82a9b66d5026baaaf486d0ad98c80958f47b81c5194e94593"
+      }
+    },
+    {
+      "page": 9,
+      "title": "Reforge Gear - upstream view",
+      "caption": "Original project screenshot; includes the native anvil/reforge tabs.",
+      "source": {
+        "kind": "upstream screenshot",
+        "url": "https://i.imgur.com/XPMvlPJ.png",
+        "crop": null,
+        "version": "Not stated by screenshot author",
+        "sha256": "375767206518b1013bd9e769f8ad6ba277fae916d80f143c9ffc4311dbbfec5f"
+      }
+    },
+    {
+      "page": 9,
+      "title": "Native action sprites",
+      "caption": "Original action states; not their on-screen arrangement.",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "TieredZ",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\57bd2de3b230c501ca6538832f9ca1ce5d2f5375.jar",
+        "resource": "assets/tiered/textures/gui/reforging_screen.png",
+        "crop": [
+          176,
+          0,
+          230,
+          18
+        ],
+        "asset_sha256": "6cdf75d87389e51ff00aad7fdfb3084bdf97842353672568882ffcb31fa2bb27"
+      }
+    },
+    {
+      "page": 10,
+      "title": "Smither / Link Gear",
+      "caption": "Upstream screenshot crop; native entry tabs retained in the image.",
+      "source": {
+        "kind": "upstream screenshot",
+        "url": "https://i.imgur.com/9cmDvbX.png",
+        "crop": [
+          800,
+          100,
+          1780,
+          1130
+        ],
+        "version": "Not stated by screenshot author",
+        "sha256": "aba80881c95f09c3d3d9b4ea949629c129faebec8e757786290c15c791048ca8"
+      }
+    },
+    {
+      "page": 10,
+      "title": "Grinder / Unlink Gear",
+      "caption": "Upstream screenshot crop; native entry tabs retained in the image.",
+      "source": {
+        "kind": "upstream screenshot",
+        "url": "https://i.imgur.com/oO6QUZV.png",
+        "crop": [
+          800,
+          100,
+          1780,
+          1130
+        ],
+        "version": "Not stated by screenshot author",
+        "sha256": "f4f7fc0d07b7f1b3ff217cce63ddc7559fb25edfe46e8d6a9664a8342f91502e"
+      }
+    },
+    {
+      "page": 11,
+      "title": "Fletching Table - upstream view",
+      "caption": "Original project screenshot with native inputs and arrow result.",
+      "source": {
+        "kind": "upstream screenshot",
+        "url": "https://i.imgur.com/XOaYO8w.png",
+        "crop": null,
+        "version": "Not stated by screenshot author",
+        "sha256": "01c307dffa44de44f1019686f817eaa2d127e54012b79fc5afe6483706761c15"
+      }
+    },
+    {
+      "page": 11,
+      "title": "Chunk Loader - native base frame",
+      "caption": "Its 3 x 3 chunk buttons and status colors are drawn at runtime.",
+      "source": {
+        "kind": "native texture crop",
+        "mod": "AdditionZ",
+        "artifact": "G:\\Codex Projects\\Salts Inventory Update\\build\\ui-modpack-audit-20261025\\jars\\3a5563c935351453dc00f7a247c74f95146b4335.jar",
+        "resource": "assets/additionz/textures/gui/chunk_loader.png",
+        "crop": [
+          0,
+          0,
+          176,
+          166
+        ],
+        "asset_sha256": "48874e26e649698e92bba2cd878a176af5d2b5df06f8cf1a3e4416b1bfc659c8"
+      }
+    }
+  ],
+  "pdf_sha256": "76592bcb0f6ebb40689ed17e74369f91c6fe30333655d9ddf9cb74830495e6bd",
+  "visual_review": {
+    "all_12_pages_rendered": true,
+    "all_pages_reviewed_via_contact_sheet": true,
+    "full_size_review_pages": [
+      3,
+      7,
+      10
+    ],
+    "source_types": [
+      "original texture crops",
+      "upstream screenshots"
+    ]
+  }
+}

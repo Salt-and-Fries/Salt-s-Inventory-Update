@@ -1,0 +1,245 @@
+{
+  "scope": "Focused tab alignment and grindstone artwork checks; not a complete functional or gameplay suite.",
+  "minecraft": "1.20.1",
+  "loader": "Fabric 0.19.5",
+  "runtime_run": "1.20.1-fabric-gear-alignment-01",
+  "staged_artifacts": [
+    {
+      "family": "core",
+      "filename": "salts_inventory_update-1.20.1-Fabric-0.1.6.jar",
+      "sha256": "e8e1994b2172e2215db76cfe1a9403596b6bf82804885ad36834cf68e36b2d99"
+    },
+    {
+      "family": "compatibility",
+      "filename": "salts_inventory_compat-1.20.1-Fabric-0.1.3.jar",
+      "sha256": "897911394ff0326090d406eb97c8f44c51577a10609d4cb75d82819d2a11c46b"
+    }
+  ],
+  "final_compatibility_sha256": "94e0caa4d0cf0afca85dab6faead2bf90ebe9b1c2a041ae6b1615b6666406851",
+  "artifact_content_comparison": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-gear-alignment\\tested-artifact-content-comparison.json",
+  "artifact_comparison_summary": "Staged and final Fabric archives differ only in fabric.mod.json and MANIFEST metadata; all class and non-metadata resource entries are byte-identical.",
+  "automated_checks": {
+    "passed": 27,
+    "total": 27,
+    "details": [
+      {
+        "case": "anvil",
+        "name": "first menu",
+        "passed": true,
+        "detail": "net.minecraft.world.inventory.AnvilMenu"
+      },
+      {
+        "case": "anvil-first",
+        "name": "one native template",
+        "passed": true,
+        "detail": null
+      },
+      {
+        "case": "anvil-first",
+        "name": "native layout valid",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "case": "anvil-first",
+        "name": "window within screen",
+        "passed": true,
+        "detail": {
+          "y": 46,
+          "x": 247,
+          "height": 80,
+          "width": 173
+        }
+      },
+      {
+        "case": "anvil",
+        "name": "switch to second",
+        "passed": true,
+        "detail": "draylar.tiered.reforge.ReforgeScreenHandler"
+      },
+      {
+        "case": "anvil-second",
+        "name": "one native template",
+        "passed": true,
+        "detail": null
+      },
+      {
+        "case": "anvil-second",
+        "name": "native layout valid",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "case": "anvil-second",
+        "name": "window within screen",
+        "passed": true,
+        "detail": {
+          "y": 204,
+          "x": 417,
+          "height": 67,
+          "width": 125
+        }
+      },
+      {
+        "case": "anvil",
+        "name": "switch back to first",
+        "passed": true,
+        "detail": "net.minecraft.world.inventory.AnvilMenu"
+      },
+      {
+        "case": "smith",
+        "name": "first menu",
+        "passed": true,
+        "detail": "net.minecraft.world.inventory.SmithingMenu"
+      },
+      {
+        "case": "smith-first",
+        "name": "one native template",
+        "passed": true,
+        "detail": null
+      },
+      {
+        "case": "smith-first",
+        "name": "native layout valid",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "case": "smith-first",
+        "name": "window within screen",
+        "passed": true,
+        "detail": {
+          "y": 88,
+          "x": 228,
+          "height": 86,
+          "width": 184
+        }
+      },
+      {
+        "case": "smith",
+        "name": "switch to second",
+        "passed": true,
+        "detail": "net.smitherz.screen.SmitherScreenHandler"
+      },
+      {
+        "case": "smith-second",
+        "name": "one native template",
+        "passed": true,
+        "detail": null
+      },
+      {
+        "case": "smith-second",
+        "name": "native layout valid",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "case": "smith-second",
+        "name": "window within screen",
+        "passed": true,
+        "detail": {
+          "y": 300,
+          "x": 417,
+          "height": 68,
+          "width": 144
+        }
+      },
+      {
+        "case": "smith",
+        "name": "switch back to first",
+        "passed": true,
+        "detail": "net.minecraft.world.inventory.SmithingMenu"
+      },
+      {
+        "case": "grind",
+        "name": "first menu",
+        "passed": true,
+        "detail": "net.minecraft.world.inventory.GrindstoneMenu"
+      },
+      {
+        "case": "grind-first",
+        "name": "one native template",
+        "passed": true,
+        "detail": null
+      },
+      {
+        "case": "grind-first",
+        "name": "native layout valid",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "case": "grind-first",
+        "name": "window within screen",
+        "passed": true,
+        "detail": {
+          "y": 89,
+          "x": 249,
+          "height": 85,
+          "width": 142
+        }
+      },
+      {
+        "case": "grind",
+        "name": "switch to second",
+        "passed": true,
+        "detail": "net.smitherz.screen.GrinderScreenHandler"
+      },
+      {
+        "case": "grind-second",
+        "name": "one native template",
+        "passed": true,
+        "detail": null
+      },
+      {
+        "case": "grind-second",
+        "name": "native layout valid",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "case": "grind-second",
+        "name": "window within screen",
+        "passed": true,
+        "detail": {
+          "y": 195,
+          "x": 417,
+          "height": 85,
+          "width": 128
+        }
+      },
+      {
+        "case": "grind",
+        "name": "switch back to first",
+        "passed": true,
+        "detail": "net.minecraft.world.inventory.GrindstoneMenu"
+      }
+    ]
+  },
+  "visual_review": [
+    "First selected tab outer edge is flush with the window left across all three pairs.",
+    "Both selected-tab positions join the top bevel without a line across the selected interior.",
+    "Repair and Disenchant and Unlink Gear show complete grindstone caps and supports."
+  ],
+  "evidence_root": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-eight-implemented\\gameplay\\1.20.1-fabric-gear-alignment-01",
+  "screenshot_manifest": "screenshot-manifest.json",
+  "pdf": "../pdf/siu-gear-window-alignment-1.20.1.pdf",
+  "limitations": [
+    "Focused runtime validation covered the six specified windows on Fabric 1.20.1. Other loaders and unrelated features were not exercised.",
+    "No complete functional or gameplay suite was requested or run."
+  ],
+  "final_production_artifacts": [
+    {
+      "loader": "fabric",
+      "path": "dist\\compatibility\\salts_inventory_compat-1.20.1-Fabric-0.1.3.jar",
+      "sha256": "94e0caa4d0cf0afca85dab6faead2bf90ebe9b1c2a041ae6b1615b6666406851",
+      "bytes": 939560
+    },
+    {
+      "loader": "forge",
+      "path": "dist\\compatibility\\salts_inventory_compat-1.20.1-Forge-0.1.3.jar",
+      "sha256": "ac2985e20a640ce11818316fa599aebb71d62afb9582518321f530797770775a",
+      "bytes": 959470
+    }
+  ]
+}

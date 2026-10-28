@@ -1,0 +1,67 @@
+{
+  "sketch": ".codex-attachments\\7ad23c5a-e0b0-403a-a589-707dc7c3024d\\59653fc9-a356-4f48-88fa-df9705647ddb\\40874.jpg",
+  "current_kiln": "build\\native-container-autohost\\gameplay\\1.20.1-forge-automatic-forge-a3\\screenshots\\core-only-native-kiln.png",
+  "proposals": [
+    {
+      "source": "output\\project-everything-chipped-design\\native-crops\\forge-forge-mason-clear.png",
+      "source_crop": [
+        0,
+        72,
+        768,
+        450
+      ],
+      "title": "Example Workshop",
+      "body_size": [
+        512,
+        252
+      ],
+      "proposal": "output\\automatic-window-bars-design\\assets\\workshop-mockup.png"
+    },
+    {
+      "source": "output\\project-everything-eight-mockups\\ossuary-recipes-native-crop.png",
+      "source_crop": [
+        8,
+        36,
+        360,
+        150
+      ],
+      "title": "Example Carving",
+      "body_size": [
+        352,
+        114
+      ],
+      "proposal": "output\\automatic-window-bars-design\\assets\\ossuary-mockup.png"
+    },
+    {
+      "source": "output\\project-everything-eight-mockups\\end-smelter-closed-native-crop.png",
+      "source_crop": [
+        8,
+        36,
+        360,
+        150
+      ],
+      "title": "Example Smelter",
+      "body_size": [
+        352,
+        114
+      ],
+      "proposal": "output\\automatic-window-bars-design\\assets\\smelter-mockup.png"
+    },
+    {
+      "source": "build\\native-container-autohost\\gameplay\\1.20.1-forge-automatic-forge-a3\\screenshots\\core-only-native-kiln.png",
+      "source_crop": [
+        464,
+        202,
+        816,
+        385
+      ],
+      "title": "Kiln",
+      "body_size": [
+        352,
+        183
+      ],
+      "proposal": "output\\automatic-window-bars-design\\assets\\kiln-mockup.png"
+    }
+  ],
+  "note": "Composites are static design mockups, not implemented or evidence of live behavior."
+}

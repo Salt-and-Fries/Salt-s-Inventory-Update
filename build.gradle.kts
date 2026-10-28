@@ -23,7 +23,7 @@ plugins {
 }
 
 group = "com.salts_inventory_update"
-version = "0.1.5"
+version = "0.1.6"
 
 // A Minecraft-specific hotfix does not advance the other Core release targets.
 val coreVersionOverrides = mapOf("1.20.1" to providers.gradleProperty("coreVersion1_20_1").get())
@@ -551,6 +551,10 @@ subprojects {
         if (path == ":common") {
             dependencies.add("testImplementation", "org.junit.jupiter:junit-jupiter:5.11.4")
             dependencies.add("testRuntimeOnly", "org.junit.platform:junit-platform-launcher:1.11.4")
+            tasks.named<JavaCompile>("compileTestJava") {
+                // Exercise the 1.20.1 inference algorithm without bootstrapping Minecraft.
+                source(rootProject.file("versions/1.20.1/fabric/src/main/java/com/salts_inventory_update/client/automatic/AutomaticContainerLayout.java"))
+            }
             tasks.withType<Test>().configureEach {
                 useJUnitPlatform()
             }
@@ -961,6 +965,10 @@ subprojects {
                     java.srcDir(rootProject.file("compatibility/versions/$minecraftVersion/fabric/src/main/java"))
                     java.exclude("**/SaltsInventoryCompatibilityFabric.java", "**/SaltsInventoryCompatibilityFabricClient.java", "**/compat/trinkets/**",
                         "**/compat/rei/SaltsReiClientPlugin.java", "**/compat/emi/SaltsEmiClientPlugin.java")
+                    if (minecraftVersion in setOf("1.20.1", "1.21.1", "26.1.2")) {
+                        java.exclude("**/compat/alloyforgery/mixin/**", "**/compat/seasonsextras/mixin/**",
+                            "**/compat/farmersdelight/mixin/**")
+                    }
                 } else if (coreModule) addLoaderSourceDirs(minecraftVersion, loaderName)
             }
         }
@@ -1449,3 +1457,4 @@ gradle.projectsEvaluated {
 apply(from = "gradle/compatibility.gradle")
 apply(from = "gradle/sophisticated-fabric.gradle")
 apply(from = "gradle/controlify.gradle")
+apply(from = "gradle/native-templates.gradle")

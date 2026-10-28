@@ -1,0 +1,42 @@
+{
+  "minecraft": "1.20.1",
+  "loader": "forge",
+  "scenario": "extension-empty",
+  "artifacts": [
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\simply-swords-design\\upstream\\forge\\simplyswords-forge-neoforge-1.70.2-1.20.1.jar",
+      "filename": "simplyswords-forge-neoforge-1.70.2-1.20.1.jar",
+      "sha512": "f4ba377dc5a3cfa99859933c45746f2c730e5fa2b7a0af40fc3b93a396fa3f671799231af0286e9766e5629a334105f1ede63668a3aa9fff72fbf5f97a76ac61",
+      "coordinate": "maven.modrinth:bK3Ubu9p:Na6e94J1",
+      "version": "1.70.2-1.20.1"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\simply-swords-design\\upstream\\forge\\SimplyTooltips-forge-0.1.5-1.20.1.jar",
+      "filename": "SimplyTooltips-forge-0.1.5-1.20.1.jar",
+      "sha512": "802790a630344de51c74f30e02ac1a2454b6dbc8450e7ea0101495a9196a7d320ad746b4a4628fa43f6e615b6bf15acd9574791c69c4ce5caea756e71dfc5895",
+      "coordinate": "maven.modrinth:6avVoBVB:s87jNabF",
+      "version": "0.1.5-1.20.1"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\simply-swords-design\\upstream\\forge\\fzzy_config-0.7.5+1.20.1+forge.jar",
+      "filename": "fzzy_config-0.7.5+1.20.1+forge.jar",
+      "sha512": "a5e86b8ea8a63bf8b9102b351314393aad5ede26b2480ae8ecaf55eefc482824a27e63ffa088a6d4e30a1ab814502f5e19bc77ac5a09e5120902f191ded59439",
+      "coordinate": "maven.modrinth:hYykXjDp:Dt5erL4a",
+      "version": "0.7.5+1.20.1+forge"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\simply-swords-design\\upstream\\forge\\architectury-9.2.14-forge.jar",
+      "filename": "architectury-9.2.14-forge.jar",
+      "sha512": "cf67f2050cafa00f0bee42e6d7bef77fdb808ac4f71742f7b4d6d5c1e6ffb49561a5a252f332d2b78a9767bdb5faa284611790dba303fbdc736ae36d794f61c7",
+      "coordinate": "maven.modrinth:lhGA9TYQ:1MKTLiiG",
+      "version": "9.2.14+forge"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\simply-swords-design\\upstream\\forge\\kotlinforforge-4.12.0-all.jar",
+      "filename": "kotlinforforge-4.12.0-all.jar",
+      "sha512": "767f40030ed4b370a3838fa65ae1b79974f31979342fff7cc834a0d5f39eb28612642519352ff2a1dd5226ce1f745f8b3156ee3625ffde01219137d064c1ee40",
+      "coordinate": "maven.modrinth:ordsPcFz:Zsh14XeQ",
+      "version": "4.12.0"
+    }
+  ]
+}

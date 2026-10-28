@@ -1,0 +1,473 @@
+{
+  "date": "2026-10-27",
+  "scope": "Affected native-window integrations after Minecraft 1.20.1; focused checks only",
+  "available_integration_target_pairs": 50,
+  "minecraft_versions": [
+    "1.21.1",
+    "1.21.11",
+    "26.1.2",
+    "26.2",
+    "26.3"
+  ],
+  "target_count": 10,
+  "focused_gameplay_assertions": 781,
+  "gameplay_runs": [
+    {
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "run": "ten-port-final-01",
+      "passed": true,
+      "assertions": 114,
+      "output": "build\\project-everything-ten-port\\gameplay\\1.21.1-fabric-ten-port-final-01"
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "run": "ten-port-final-01",
+      "passed": true,
+      "assertions": 84,
+      "output": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-port-final-01"
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "fabric",
+      "run": "ten-port-final-01",
+      "passed": true,
+      "assertions": 54,
+      "output": "build\\project-everything-ten-port\\gameplay\\1.21.11-fabric-ten-port-final-01"
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "neoforge",
+      "run": "ten-port-final-01",
+      "passed": true,
+      "assertions": 41,
+      "output": "build\\project-everything-ten-port\\gameplay\\1.21.11-neoforge-ten-port-final-01"
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "fabric",
+      "run": "ten-port-final-05",
+      "passed": true,
+      "assertions": 99,
+      "output": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-port-final-05"
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "neoforge",
+      "run": "ten-port-final-05",
+      "passed": true,
+      "assertions": 71,
+      "output": "build\\project-everything-ten-port\\gameplay\\26.1.2-neoforge-ten-port-final-05"
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "fabric",
+      "run": "ten-port-final-05",
+      "passed": true,
+      "assertions": 75,
+      "output": "build\\project-everything-ten-port\\gameplay\\26.2-fabric-ten-port-final-05"
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "neoforge",
+      "run": "ten-port-final-05",
+      "passed": true,
+      "assertions": 46,
+      "output": "build\\project-everything-ten-port\\gameplay\\26.2-neoforge-ten-port-final-05"
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "fabric",
+      "run": "ten-port-final-07",
+      "passed": true,
+      "assertions": 64,
+      "output": "build\\project-everything-ten-port\\gameplay\\26.3-fabric-ten-port-final-07"
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "neoforge",
+      "run": "ten-port-final-07",
+      "passed": true,
+      "assertions": 35,
+      "output": "build\\project-everything-ten-port\\gameplay\\26.3-neoforge-ten-port-final-07"
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "run": "ten-followup-01",
+      "passed": true,
+      "assertions": 45,
+      "output": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-followup-01"
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "fabric",
+      "run": "ten-head-01",
+      "passed": true,
+      "assertions": 16,
+      "output": "build\\project-everything-ten-port\\gameplay\\1.21.11-fabric-ten-head-01"
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "neoforge",
+      "run": "ten-head-01",
+      "passed": true,
+      "assertions": 15,
+      "output": "build\\project-everything-ten-port\\gameplay\\1.21.11-neoforge-ten-head-01"
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "fabric",
+      "run": "ten-owo-01",
+      "passed": true,
+      "assertions": 22,
+      "output": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-owo-01"
+    }
+  ],
+  "junit_suites": [
+    {
+      "minecraft": "1.21.1",
+      "class": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest",
+      "tests": 7,
+      "passed": true,
+      "xml": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml"
+    },
+    {
+      "minecraft": "1.21.1",
+      "class": "com.salts_inventory_update.server.NativeCursorBroadcastTest",
+      "tests": 3,
+      "passed": true,
+      "xml": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml"
+    },
+    {
+      "minecraft": "1.21.1",
+      "class": "com.salts_inventory_update.server.NativeOpeningCodecTest",
+      "tests": 3,
+      "passed": true,
+      "xml": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml"
+    },
+    {
+      "minecraft": "1.21.11",
+      "class": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest",
+      "tests": 7,
+      "passed": true,
+      "xml": "compatibility\\versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml"
+    },
+    {
+      "minecraft": "1.21.11",
+      "class": "com.salts_inventory_update.server.NativeCursorBroadcastTest",
+      "tests": 3,
+      "passed": true,
+      "xml": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml"
+    },
+    {
+      "minecraft": "1.21.11",
+      "class": "com.salts_inventory_update.server.NativeOpeningCodecTest",
+      "tests": 3,
+      "passed": true,
+      "xml": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml"
+    },
+    {
+      "minecraft": "26.1.2",
+      "class": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest",
+      "tests": 7,
+      "passed": true,
+      "xml": "compatibility\\versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml"
+    },
+    {
+      "minecraft": "26.1.2",
+      "class": "com.salts_inventory_update.server.NativeCursorBroadcastTest",
+      "tests": 3,
+      "passed": true,
+      "xml": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml"
+    },
+    {
+      "minecraft": "26.1.2",
+      "class": "com.salts_inventory_update.server.NativeOpeningCodecTest",
+      "tests": 3,
+      "passed": true,
+      "xml": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml"
+    },
+    {
+      "minecraft": "26.2",
+      "class": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest",
+      "tests": 7,
+      "passed": true,
+      "xml": "compatibility\\versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml"
+    },
+    {
+      "minecraft": "26.2",
+      "class": "com.salts_inventory_update.server.NativeCursorBroadcastTest",
+      "tests": 3,
+      "passed": true,
+      "xml": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml"
+    },
+    {
+      "minecraft": "26.2",
+      "class": "com.salts_inventory_update.server.NativeOpeningCodecTest",
+      "tests": 3,
+      "passed": true,
+      "xml": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml"
+    },
+    {
+      "minecraft": "26.3",
+      "class": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest",
+      "tests": 7,
+      "passed": true,
+      "xml": "compatibility\\versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml"
+    },
+    {
+      "minecraft": "26.3",
+      "class": "com.salts_inventory_update.server.NativeCursorBroadcastTest",
+      "tests": 3,
+      "passed": true,
+      "xml": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml"
+    },
+    {
+      "minecraft": "26.3",
+      "class": "com.salts_inventory_update.server.NativeOpeningCodecTest",
+      "tests": 3,
+      "passed": true,
+      "xml": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml"
+    }
+  ],
+  "limits": [
+    "Not the complete functional or gameplay suite",
+    "Integrated-server single-player worlds; no dedicated or mixed-client validation",
+    "Fabric 1.21.1/1.21.11 used named release classes because upstream enum-extension runtime remapping fails before SIU initializes",
+    "Create-present Alloyed knife crafting not tested; original recipe structurally preserved and absent-Create world-loading tested"
+  ],
+  "artifacts": [
+    {
+      "module": "core",
+      "path": "dist\\core\\salts_inventory_update-1.20.1-Fabric-0.1.6.jar",
+      "sha256": "e0188cc482e98a9316b987848a407c6105582eb9eccc081f8272d1d598271739",
+      "version": "0.1.6"
+    },
+    {
+      "module": "core",
+      "path": "dist\\core\\salts_inventory_update-1.20.1-Forge-0.1.6.jar",
+      "sha256": "3ebc2bdab5196ab0eff76949b0dc62078f00cf0f0c2b9cc175248d9be574617a",
+      "version": "0.1.6"
+    },
+    {
+      "module": "core",
+      "path": "dist\\core\\salts_inventory_update-1.21.1-Fabric-0.1.6.jar",
+      "sha256": "8877ccea79cd66fd1efb0d3e2b2d142aaeb0b073ddec5b43fd462f224f0ee3a4",
+      "version": "0.1.6"
+    },
+    {
+      "module": "core",
+      "path": "dist\\core\\salts_inventory_update-1.21.1-NeoForge-0.1.6.jar",
+      "sha256": "ca62dd4224a397278020ae07c2cc09cd3ab42f035b6a60990d6191d10649738e",
+      "version": "0.1.6"
+    },
+    {
+      "module": "core",
+      "path": "dist\\core\\salts_inventory_update-1.21.11-Fabric-0.1.6.jar",
+      "sha256": "207327ce6ae72ea5f1dbc4b2c319c5994969ea7d936d33e6558529bfdc9b0dce",
+      "version": "0.1.6"
+    },
+    {
+      "module": "core",
+      "path": "dist\\core\\salts_inventory_update-1.21.11-NeoForge-0.1.6.jar",
+      "sha256": "329d019975557d5c596f3e05494415b7962a5cf7e55f2d1c884c9aeefcee8ed9",
+      "version": "0.1.6"
+    },
+    {
+      "module": "core",
+      "path": "dist\\core\\salts_inventory_update-26.1.2-Fabric-0.1.6.jar",
+      "sha256": "a861d28372968bffa25df7f6a3712e7dc182961ca9bc06ad12d78f28401f4537",
+      "version": "0.1.6"
+    },
+    {
+      "module": "core",
+      "path": "dist\\core\\salts_inventory_update-26.1.2-NeoForge-0.1.6.jar",
+      "sha256": "0837dc5fd2593864444a2bcf4887affb87e8cc232dfe912ac678c93742854d95",
+      "version": "0.1.6"
+    },
+    {
+      "module": "core",
+      "path": "dist\\core\\salts_inventory_update-26.2-Fabric-0.1.6.jar",
+      "sha256": "35283ed8894b0a6fdc9ead58c559a2ba2829a363f36623879131b6a17ff0068a",
+      "version": "0.1.6"
+    },
+    {
+      "module": "core",
+      "path": "dist\\core\\salts_inventory_update-26.2-NeoForge-0.1.6.jar",
+      "sha256": "5df14d9b8a314f825b83d5272b79ffb17b8d95edcb1867fff63583830ae5d9b2",
+      "version": "0.1.6"
+    },
+    {
+      "module": "core",
+      "path": "dist\\core\\salts_inventory_update-26.3-Fabric-0.1.6.jar",
+      "sha256": "6ad5ce439dbbe4c6f246b2a884ed1b44f6825f8376d634bcfab5df057f42b590",
+      "version": "0.1.6"
+    },
+    {
+      "module": "core",
+      "path": "dist\\core\\salts_inventory_update-26.3-NeoForge-0.1.6.jar",
+      "sha256": "1d95ab76bc4406a735e25f2c2ae91e218a8a7b3edf8241bc8ddccc7ec34611f7",
+      "version": "0.1.6"
+    },
+    {
+      "module": "compatibility",
+      "path": "dist\\compatibility\\salts_inventory_compat-1.20.1-Fabric-0.1.3.jar",
+      "sha256": "d63e58586260756c098aca77f0746af8de7b639036a17facfaa94c181dda7bef",
+      "version": "0.1.3"
+    },
+    {
+      "module": "compatibility",
+      "path": "dist\\compatibility\\salts_inventory_compat-1.20.1-Forge-0.1.3.jar",
+      "sha256": "d417404a23a898c35bfb00a749cdcd74dbda2e74624f55aa9ceb1b62b9c0b0fd",
+      "version": "0.1.3"
+    },
+    {
+      "module": "compatibility",
+      "path": "dist\\compatibility\\salts_inventory_compat-1.21.1-Fabric-0.1.3.jar",
+      "sha256": "50c102191c29c09aac8a3a5fd3f8ce2b29276bf37d8dd434933c9d76ff3255b6",
+      "version": "0.1.3"
+    },
+    {
+      "module": "compatibility",
+      "path": "dist\\compatibility\\salts_inventory_compat-1.21.1-NeoForge-0.1.3.jar",
+      "sha256": "d6a244ea6ae0efa74697af6db2f5a055f6da8ec11008c4e38e67b6491fe62197",
+      "version": "0.1.3"
+    },
+    {
+      "module": "compatibility",
+      "path": "dist\\compatibility\\salts_inventory_compat-1.21.11-Fabric-0.1.3.jar",
+      "sha256": "84fde832e608464351e91ad9872ed1cd68c7dc08115d04fc689064101e71fc0b",
+      "version": "0.1.3"
+    },
+    {
+      "module": "compatibility",
+      "path": "dist\\compatibility\\salts_inventory_compat-1.21.11-NeoForge-0.1.3.jar",
+      "sha256": "619bb0f3ee3b107b531b12a80bfaeabc528194c0c42b1aead297562f5eca2e1e",
+      "version": "0.1.3"
+    },
+    {
+      "module": "compatibility",
+      "path": "dist\\compatibility\\salts_inventory_compat-26.1.2-Fabric-0.1.3.jar",
+      "sha256": "341a298bd08843468bb691e621353faf727e9d9143446fe0542187c26d4cba96",
+      "version": "0.1.3"
+    },
+    {
+      "module": "compatibility",
+      "path": "dist\\compatibility\\salts_inventory_compat-26.1.2-NeoForge-0.1.3.jar",
+      "sha256": "87c43e04fbbb0bf1dd44d89650e6dff2ce1575f8b7f07379a974a79542bd584a",
+      "version": "0.1.3"
+    },
+    {
+      "module": "compatibility",
+      "path": "dist\\compatibility\\salts_inventory_compat-26.2-Fabric-0.1.3.jar",
+      "sha256": "61f4ee5e7afd9ed41c44541335835eabe9c9e0ce344dcf0d6c1aa5b3f4f3282b",
+      "version": "0.1.3"
+    },
+    {
+      "module": "compatibility",
+      "path": "dist\\compatibility\\salts_inventory_compat-26.2-NeoForge-0.1.3.jar",
+      "sha256": "06cf552290d5f1281f33c674bac6b0e42db87d4e7a2f64cb5e1a733d7eca043f",
+      "version": "0.1.3"
+    },
+    {
+      "module": "compatibility",
+      "path": "dist\\compatibility\\salts_inventory_compat-26.3-Fabric-0.1.3.jar",
+      "sha256": "8f3e4a56650e37bdbd36af789422db6f88057b602144616fc3eba8545df3f356",
+      "version": "0.1.3"
+    },
+    {
+      "module": "compatibility",
+      "path": "dist\\compatibility\\salts_inventory_compat-26.3-NeoForge-0.1.3.jar",
+      "sha256": "5f4c2dd8aa743af07668edcc3dc4d2873f9d2aa7cbb911e82963ccbc12d5972e",
+      "version": "0.1.3"
+    },
+    {
+      "module": "controlify",
+      "path": "dist\\controlify\\salts_inventory_controlify-1.20.1-Fabric-0.1.1.jar",
+      "sha256": "52b1c7e259e4f4dd3774288f1d14949b874ab3a841aa472aba09a517d5f61c5b",
+      "version": "0.1.1"
+    },
+    {
+      "module": "controlify",
+      "path": "dist\\controlify\\salts_inventory_controlify-1.20.1-Forge-0.1.1.jar",
+      "sha256": "7ee1dc0cab98cb28d1503e0c40adddeef22de1c20c42d39c1e9eaffc624bd2fa",
+      "version": "0.1.1"
+    },
+    {
+      "module": "controlify",
+      "path": "dist\\controlify\\salts_inventory_controlify-1.21.1-Fabric-0.1.1.jar",
+      "sha256": "5ca16fbe832037815c44d69cedcf6c91a94b5860d59a9645e685d7d997c1f531",
+      "version": "0.1.1"
+    },
+    {
+      "module": "controlify",
+      "path": "dist\\controlify\\salts_inventory_controlify-1.21.1-NeoForge-0.1.1.jar",
+      "sha256": "db3321353c9ff26316236c96a2e749b513be1369ed4ed60ca3665e66e69f3e9f",
+      "version": "0.1.1"
+    },
+    {
+      "module": "controlify",
+      "path": "dist\\controlify\\salts_inventory_controlify-1.21.11-Fabric-0.1.1.jar",
+      "sha256": "7f5da67a1e40596b6b6c7042ad587ead66305e5761945e2ea663e85186dffc6b",
+      "version": "0.1.1"
+    },
+    {
+      "module": "controlify",
+      "path": "dist\\controlify\\salts_inventory_controlify-1.21.11-NeoForge-0.1.1.jar",
+      "sha256": "afd3981335511cec551938893c41457267ae1e018fa7e27f3e48f9d987e2603d",
+      "version": "0.1.1"
+    },
+    {
+      "module": "controlify",
+      "path": "dist\\controlify\\salts_inventory_controlify-26.1.2-Fabric-0.1.1.jar",
+      "sha256": "a7fde0d966818c93136cc8419d5f48dc2f19bdb51f24a9a5e98daef3718eceaf",
+      "version": "0.1.1"
+    },
+    {
+      "module": "controlify",
+      "path": "dist\\controlify\\salts_inventory_controlify-26.1.2-NeoForge-0.1.1.jar",
+      "sha256": "d92acc83dc9bb92963013b76021c301e60500d9566393729cf480ca32e04dbab",
+      "version": "0.1.1"
+    },
+    {
+      "module": "controlify",
+      "path": "dist\\controlify\\salts_inventory_controlify-26.2-Fabric-0.1.1.jar",
+      "sha256": "32b494dc26c7b2e664552b561531e9afb0663a9d3ef82153e5e5700d87ca25f1",
+      "version": "0.1.1"
+    },
+    {
+      "module": "controlify",
+      "path": "dist\\controlify\\salts_inventory_controlify-26.2-NeoForge-0.1.1.jar",
+      "sha256": "5b4bf7c4223819ff5037254db865fab021c5ce150f48b121223a3cb89b16ffac",
+      "version": "0.1.1"
+    },
+    {
+      "module": "controlify",
+      "path": "dist\\controlify\\salts_inventory_controlify-26.3-Fabric-0.1.1.jar",
+      "sha256": "04ddbe8b44ff9df236160818dc713c5b90aa84ef90dce4481f71e71ac86dbe51",
+      "version": "0.1.1"
+    },
+    {
+      "module": "controlify",
+      "path": "dist\\controlify\\salts_inventory_controlify-26.3-NeoForge-0.1.1.jar",
+      "sha256": "c4dfce73f2ac85c8954d2ee4203d86ad213fc313487731fad64a0f7fb408d5d5",
+      "version": "0.1.1"
+    }
+  ],
+  "release_bundle": {
+    "path": "dist\\salts-inventory-all-latest.zip",
+    "sha256": "671b9633f8a9a7b72d37002064b8b8cd6c9f4f3a224ec28d01eb82855d95e1e2"
+  },
+  "shared_textures": {
+    "textures": 63,
+    "module_targets": 36,
+    "resources_and_jars_verified": true
+  },
+  "release_build": {
+    "command": "gradlew.bat build -x test --console=plain",
+    "passed": true,
+    "log": "build/project-everything-ten-port/release-build.log"
+  }
+}

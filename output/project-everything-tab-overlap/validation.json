@@ -1,0 +1,94 @@
+{
+  "scope": "Focused right-selected tab corner review, Minecraft 1.20.1 Fabric; not a full gameplay suite.",
+  "checks": [
+    {
+      "case": "reforge",
+      "menu": "draylar.tiered.reforge.ReforgeScreenHandler",
+      "expected_menu": "ReforgeScreenHandler",
+      "menu_pass": true,
+      "window_count": 1,
+      "definition": "com.salts_inventory_update.client.automatic.NativeTemplateWindow",
+      "layout_error": "",
+      "bounds": {
+        "width": 125,
+        "height": 67,
+        "x": 417,
+        "y": 204
+      },
+      "sequence": 4
+    },
+    {
+      "case": "link",
+      "menu": "net.smitherz.screen.SmitherScreenHandler",
+      "expected_menu": "SmitherScreenHandler",
+      "menu_pass": true,
+      "window_count": 1,
+      "definition": "com.salts_inventory_update.client.automatic.NativeTemplateWindow",
+      "layout_error": "",
+      "bounds": {
+        "width": 144,
+        "height": 68,
+        "x": 417,
+        "y": 300
+      },
+      "sequence": 10
+    },
+    {
+      "case": "unlink",
+      "menu": "net.smitherz.screen.GrinderScreenHandler",
+      "expected_menu": "GrinderScreenHandler",
+      "menu_pass": true,
+      "window_count": 1,
+      "definition": "com.salts_inventory_update.client.automatic.NativeTemplateWindow",
+      "layout_error": "",
+      "bounds": {
+        "width": 128,
+        "height": 85,
+        "x": 417,
+        "y": 195
+      },
+      "sequence": 16
+    }
+  ],
+  "visual_review": "Reforge, Link and Unlink retain rounded window borders while the inactive left tab extends behind the corner, with no world-colored gap.",
+  "staged_artifacts": [
+    {
+      "family": "core",
+      "filename": "salts_inventory_update-1.20.1-Fabric-0.1.6.jar",
+      "sha256": "e8e1994b2172e2215db76cfe1a9403596b6bf82804885ad36834cf68e36b2d99"
+    },
+    {
+      "family": "compatibility",
+      "filename": "salts_inventory_compat-1.20.1-Fabric-0.1.3.jar",
+      "sha256": "c6487fbd70c575dac8d14e30f25f700f503affc23bb9834d51f841f2d3a7be8e"
+    }
+  ],
+  "limitations": [
+    "Only the three affected right-selected tab states were exercised on Fabric 1.20.1. No complete functional suite was run."
+  ],
+  "evidence_root": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-eight-implemented\\gameplay\\1.20.1-fabric-tab-overlap-01",
+  "screenshot_manifest": "screenshot-manifest.json",
+  "final_production_artifacts": [
+    {
+      "loader": "fabric",
+      "path": "dist\\compatibility\\salts_inventory_compat-1.20.1-Fabric-0.1.3.jar",
+      "sha256": "7c1da0a12eb96d507a21b1df0794343a3eaaf7f04ba6e78e75c988d6c63f64ab",
+      "bytes": 939560
+    },
+    {
+      "loader": "forge",
+      "path": "dist\\compatibility\\salts_inventory_compat-1.20.1-Forge-0.1.3.jar",
+      "sha256": "ea5fb4fef0921fd22fa35426db16d9593fbc8d043adb8a0343afe7728f2462cd",
+      "bytes": 959467
+    }
+  ],
+  "artifact_content_comparison": {
+    "staged_sha256": "c6487fbd70c575dac8d14e30f25f700f503affc23bb9834d51f841f2d3a7be8e",
+    "final_sha256": "7c1da0a12eb96d507a21b1df0794343a3eaaf7f04ba6e78e75c988d6c63f64ab",
+    "differing_entries": [
+      "META-INF/MANIFEST.MF",
+      "fabric.mod.json"
+    ],
+    "note": "Class and non-metadata resource bytes match; only QA loader/build metadata differs."
+  }
+}

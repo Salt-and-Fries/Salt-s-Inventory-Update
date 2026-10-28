@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "com.salts_inventory_update.compat.tieredz.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": ["HostedAnvilRenameMixin"],
+  "injectors": {"defaultRequire": 1}
+}

@@ -1,10 +1,10 @@
 {
-  "checked_at": "2026-10-21",
-  "core_version": "0.1.5",
+  "checked_at": "2026-10-26",
+  "core_version": "0.1.6",
   "core_version_overrides": {
-    "1.20.1": "0.1.5"
+    "1.20.1": "0.1.6"
   },
-  "compatibility_version": "0.1.2",
+  "compatibility_version": "0.1.3",
   "upstream_source": "https://api.modrinth.com/v2",
   "targets": [
     {
@@ -360,6 +360,157 @@
           "checked_at": "2026-10-23",
           "available": false,
           "reason": "No upstream Curios release exists for this Minecraft/Fabric target in the reviewed release listing."
+        },
+        "ironchests": {
+          "project": "ironchests",
+          "project_id": "n2de3t2z",
+          "versions_api": "https://api.modrinth.com/v2/project/n2de3t2z/version",
+          "available": true,
+          "version": "5.0.2",
+          "version_id": "gioHN8Aw",
+          "filename": "ironchests-5.0.2-fabric.jar",
+          "download_url": "https://cdn.modrinth.com/data/n2de3t2z/versions/gioHN8Aw/ironchests-5.0.2-fabric.jar",
+          "sha512": "c4eceb44a99dbd9a4e3ce744bce6fe2f5a9d17ef36d0cbd012cd4344999f8cac9d16b964b966969175dea5da947071389616968caa91a9fcfbe360c36c6e0ac8",
+          "dependencies": [
+            {
+              "version_id": "lmvJ0Hcp",
+              "project_id": "G1hIVOrD",
+              "file_name": null,
+              "dependency_type": "embedded"
+            }
+          ]
+        },
+        "animal_feeding_trough": {
+          "project": "animal_feeding_trough",
+          "project_id": "bRFWnJ87",
+          "versions_api": "https://api.modrinth.com/v2/project/bRFWnJ87/version",
+          "available": true,
+          "version": "1.1.0+1.20.1",
+          "version_id": "WkJeqkhZ",
+          "filename": "animal_feeding_trough-1.1.0+1.20.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/bRFWnJ87/versions/WkJeqkhZ/animal_feeding_trough-1.1.0%2B1.20.1.jar",
+          "sha512": "88a51133662db318bf42a12a59de76b169bcf6eba7f5c429c3f8f782c69cb730e9263bc855d8d9ca085309c449cc3b468ea23fe016fb5b32805cf05554fac535",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "oxidized": {
+          "project": "oxidized",
+          "project_id": "wOZRkmgG",
+          "versions_api": "https://api.modrinth.com/v2/project/wOZRkmgG/version",
+          "available": true,
+          "version": "1.8.2",
+          "version_id": "dH4eImYJ",
+          "filename": "oxidized-1.8.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/wOZRkmgG/versions/dH4eImYJ/oxidized-1.8.2.jar",
+          "sha512": "ce7b21a2c7779dcec878aa2fab71142c3c07fb7399bfb347048666e8803e31795316b2508c72b8e3ce8213a0cd81c2dfd852198ee480f5ca3ded0e1f08a7fc6b",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "brick_and_mortar": {
+          "project": "brick-and-mortar",
+          "project_id": "ntRJD9NS",
+          "versions_api": "https://api.modrinth.com/v2/project/ntRJD9NS/version",
+          "available": true,
+          "version": "1.2.1-1.20.1-fabric",
+          "version_id": "rXsoc3aH",
+          "filename": "brick_and_mortar-fabric-1.20.1-1.2.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/ntRJD9NS/versions/rXsoc3aH/brick_and_mortar-fabric-1.20.1-1.2.1.jar",
+          "sha512": "efa6d83aa52f0dc11a2264f4ad10982c2d94626dfa19e8e8652b159fd9382db13d4f96a95c276f1bd8aa75c7cd158e7fb3284a52e726d130aac7adf959846f96",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "expandeddelight": {
+          "project": "expanded-delight",
+          "project_id": "e9V6wFcR",
+          "versions_api": "https://api.modrinth.com/v2/project/e9V6wFcR/version",
+          "available": true,
+          "version": "0.3.2-fabric",
+          "version_id": "4KEfJPHI",
+          "filename": "expandeddelight-0.3.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/e9V6wFcR/versions/4KEfJPHI/expandeddelight-0.3.2.jar",
+          "sha512": "bee505d4f291f779ac62000476489d26eaa5d649f887223a2dc37ca03378e7b076cdfa5ba7c895d6866cabdea9a362a96a4e56f6d964243b892fde194a988b4b",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "7vxePowz",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "crabbersdelight": {
+          "project": "crabbers-delight",
+          "project_id": "gBGdVBJy",
+          "versions_api": "https://api.modrinth.com/v2/project/gBGdVBJy/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "netherchested": {
+          "project": "nether-chested",
+          "project_id": "bHJp2GRg",
+          "versions_api": "https://api.modrinth.com/v2/project/bHJp2GRg/version",
+          "available": true,
+          "version": "v8.0.4-1.20.1-Fabric",
+          "version_id": "ctUjPcK0",
+          "filename": "NetherChested-v8.0.4-1.20.1-Fabric.jar",
+          "download_url": "https://cdn.modrinth.com/data/bHJp2GRg/versions/ctUjPcK0/NetherChested-v8.0.4-1.20.1-Fabric.jar",
+          "sha512": "c4fd1816b2cf3d79b45c641265e05656bc76c8bb7f40977fb2ee8f425e4b5bfd9911596e616dee4600b922cdd4841a8172092d309a4321464b069ed444f91147",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "QAGBst4M",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "ohNO6lps",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "inmis": {
+          "project": "inmis",
+          "project_id": "I0UYcPa0",
+          "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
+          "available": true,
+          "version": "2.7.2+1.20.1",
+          "version_id": "ed738xvb",
+          "filename": "inmis-2.7.2-1.20.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/I0UYcPa0/versions/ed738xvb/inmis-2.7.2-1.20.1.jar",
+          "sha512": "98dca2d8a9b371bf4c84a4300aaa0c87e6cac3d5f598600ea78f4e74dbe6d73dff2b1f1f53d8fb251d71ecb23097376d857012ef5eb1e3122bea2dee4363f652",
+          "dependencies": []
         }
       },
       "qa_runtime": {
@@ -673,6 +824,115 @@
           "dependencies": [],
           "maven_sha512": "ef75155534bdf16588282f44c06bdaeb0ab845382eebfbf2a32ee84810037487356c5c17d24e650df22f0628946813abb6066dc7dd10dd0a7ebccdea3beb25af",
           "distribution_note": "Maven and Modrinth 1.20.1 JAR entries are identical except META-INF/MANIFEST.MF; both digests are recorded."
+        },
+        "ironchests": {
+          "project": "ironchests",
+          "project_id": "n2de3t2z",
+          "versions_api": "https://api.modrinth.com/v2/project/n2de3t2z/version",
+          "available": true,
+          "version": "5.0.2",
+          "version_id": "BlgpMWjV",
+          "filename": "ironchests-5.0.2-forge.jar",
+          "download_url": "https://cdn.modrinth.com/data/n2de3t2z/versions/BlgpMWjV/ironchests-5.0.2-forge.jar",
+          "sha512": "948a446b1e65776a4184df89fdc7d3af424bf53ef62cef7fdd03c51a8ebefc8be78c1027ad073d0bc21d003ef85e84318b184bdcf90ef8f497ffaafb6942f6e1",
+          "dependencies": [
+            {
+              "version_id": "9lVbDpOY",
+              "project_id": "G1hIVOrD",
+              "file_name": null,
+              "dependency_type": "embedded"
+            }
+          ]
+        },
+        "animal_feeding_trough": {
+          "project": "animal_feeding_trough",
+          "project_id": "bRFWnJ87",
+          "versions_api": "https://api.modrinth.com/v2/project/bRFWnJ87/version",
+          "available": true,
+          "version": "1.1.0+1.20.1-forge",
+          "version_id": "xdtARhJP",
+          "filename": "animal_feeding_trough-1.1.0+1.20.1-forge.jar",
+          "download_url": "https://cdn.modrinth.com/data/bRFWnJ87/versions/xdtARhJP/animal_feeding_trough-1.1.0%2B1.20.1-forge.jar",
+          "sha512": "db70c257e3ed1dafe8e72d1fc98e60d47687cd64dc5fd6d41788c9b72341c5a466c376e5b55067027064db8414fe742ddecd3f85466fc0bf644f8c1f3991cb7d",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "oxidized": {
+          "project": "oxidized",
+          "project_id": "wOZRkmgG",
+          "versions_api": "https://api.modrinth.com/v2/project/wOZRkmgG/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "brick_and_mortar": {
+          "project": "brick-and-mortar",
+          "project_id": "ntRJD9NS",
+          "versions_api": "https://api.modrinth.com/v2/project/ntRJD9NS/version",
+          "available": true,
+          "version": "1.2.2-1.20.1-forge",
+          "version_id": "im02EjYf",
+          "filename": "brick_and_mortar-forge-1.20.1-1.2.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/ntRJD9NS/versions/im02EjYf/brick_and_mortar-forge-1.20.1-1.2.2.jar",
+          "sha512": "2b48c3241b09a5a185e3aacf09c85858a22c9f95593cdb698d7f15c07ba96cf59b209f60bfc1c5329585b71f987ef6c463229cc2c743b9490db47ba83a71b829",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "expandeddelight": {
+          "project": "expanded-delight",
+          "project_id": "e9V6wFcR",
+          "versions_api": "https://api.modrinth.com/v2/project/e9V6wFcR/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "crabbersdelight": {
+          "project": "crabbers-delight",
+          "project_id": "gBGdVBJy",
+          "versions_api": "https://api.modrinth.com/v2/project/gBGdVBJy/version",
+          "available": true,
+          "version": "1.2.3",
+          "version_id": "9NT9IkSs",
+          "filename": "crabbersdelight-1.20.1-1.2.3.jar",
+          "download_url": "https://cdn.modrinth.com/data/gBGdVBJy/versions/9NT9IkSs/crabbersdelight-1.20.1-1.2.3.jar",
+          "sha512": "8a17311cea966ac40020efa32b682aa9e15a98acd4082b2d9243f09c39dec4d892c019f9810ee2382efba5bae42106d3aaf821471804ec102db52ee78aecbdcd",
+          "dependencies": []
+        },
+        "netherchested": {
+          "project": "nether-chested",
+          "project_id": "bHJp2GRg",
+          "versions_api": "https://api.modrinth.com/v2/project/bHJp2GRg/version",
+          "available": true,
+          "version": "v8.0.4-1.20.1-Forge",
+          "version_id": "pg7wiIfo",
+          "filename": "NetherChested-v8.0.4-1.20.1-Forge.jar",
+          "download_url": "https://cdn.modrinth.com/data/bHJp2GRg/versions/pg7wiIfo/NetherChested-v8.0.4-1.20.1-Forge.jar",
+          "sha512": "1ea89f3ae0a23aed205076789b6e99bc9fc204d6fd49f0f03f363a3f5c717a968a7cea5c7b197de17ba370a8575076c7637b0882bae75df333d6ed2bf98e9ce6",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "QAGBst4M",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "inmis": {
+          "project": "inmis",
+          "project_id": "I0UYcPa0",
+          "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
         }
       }
     },
@@ -1024,6 +1284,146 @@
           "checked_at": "2026-10-23",
           "available": false,
           "reason": "No upstream Curios release exists for this Minecraft/Fabric target in the reviewed release listing."
+        },
+        "ironchests": {
+          "project": "ironchests",
+          "project_id": "n2de3t2z",
+          "versions_api": "https://api.modrinth.com/v2/project/n2de3t2z/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "animal_feeding_trough": {
+          "project": "animal_feeding_trough",
+          "project_id": "bRFWnJ87",
+          "versions_api": "https://api.modrinth.com/v2/project/bRFWnJ87/version",
+          "available": true,
+          "version": "1.1.2+1.21.1",
+          "version_id": "BgW2cRLu",
+          "filename": "animal_feeding_trough-1.1.2+1.21.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/bRFWnJ87/versions/BgW2cRLu/animal_feeding_trough-1.1.2%2B1.21.1.jar",
+          "sha512": "cfe3598c2ef5cc71333fafcca0f636254c85be172320dfb46bed6417f435cdd7429189800a1986d130ff0ae2894906ad49c5457aef860d1c9cc6b726e27d38df",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "oxidized": {
+          "project": "oxidized",
+          "project_id": "wOZRkmgG",
+          "versions_api": "https://api.modrinth.com/v2/project/wOZRkmgG/version",
+          "available": true,
+          "version": "1.8.4",
+          "version_id": "sxaTrNon",
+          "filename": "oxidized-1.8.4.jar",
+          "download_url": "https://cdn.modrinth.com/data/wOZRkmgG/versions/sxaTrNon/oxidized-1.8.4.jar",
+          "sha512": "25bc4ecbc3993c7f7c68e33efaba2db8535b20fb6c5e0c461ca4ce97731ac1d1286376dabf0052ef5a3a6cda769b395b8754c6bc2668e29941b704eaad518564",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "brick_and_mortar": {
+          "project": "brick-and-mortar",
+          "project_id": "ntRJD9NS",
+          "versions_api": "https://api.modrinth.com/v2/project/ntRJD9NS/version",
+          "available": true,
+          "version": "1.3.1-1.21.1-fabric",
+          "version_id": "O8yQG7Vv",
+          "filename": "brick_and_mortar-fabric-1.21.1-1.3.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/ntRJD9NS/versions/O8yQG7Vv/brick_and_mortar-fabric-1.21.1-1.3.1.jar",
+          "sha512": "b171596518deedb11eb92bbb9401ef0c7910fdf46a54e27847bccd88ab3259f3d1c55f9cbc7137fe478c33bc2b43f7d14c25c6f8b45bf6773d03429f92eeb0f4",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "expandeddelight": {
+          "project": "expanded-delight",
+          "project_id": "e9V6wFcR",
+          "versions_api": "https://api.modrinth.com/v2/project/e9V6wFcR/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "crabbersdelight": {
+          "project": "crabbers-delight",
+          "project_id": "gBGdVBJy",
+          "versions_api": "https://api.modrinth.com/v2/project/gBGdVBJy/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "netherchested": {
+          "project": "nether-chested",
+          "project_id": "bHJp2GRg",
+          "versions_api": "https://api.modrinth.com/v2/project/bHJp2GRg/version",
+          "available": true,
+          "version": "v21.1.1-1.21.1-Fabric",
+          "version_id": "fNixrBTj",
+          "filename": "NetherChested-v21.1.1-1.21.1-Fabric.jar",
+          "download_url": "https://cdn.modrinth.com/data/bHJp2GRg/versions/fNixrBTj/NetherChested-v21.1.1-1.21.1-Fabric.jar",
+          "sha512": "9d03e97700e0894ef56ab12a5a4311c22f1bafd666393cffee2213838609d102082f1b934e51ca7bd664e58db4cf901629b6b71694d79435540c7cdd3729513a",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "5WeWGLoJ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "QAGBst4M",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "ohNO6lps",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "inmis": {
+          "project": "inmis",
+          "project_id": "I0UYcPa0",
+          "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
+          "available": true,
+          "version": "2.8.2-1.21.1",
+          "version_id": "iE11BIfP",
+          "filename": "inmis-2.8.2-1.21.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/I0UYcPa0/versions/iE11BIfP/inmis-2.8.2-1.21.1.jar",
+          "sha512": "245e77e43f19408f37656f51e97246bb12aae9f4bc30db47c9a2cb3fc1cfd555264c34a1370221f940ebc168dc46463dc7972ca57806152c9bce90be65dddc2e",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
         }
       },
       "qa_runtime": {
@@ -1360,6 +1760,114 @@
           "sha512": "5981a267686b744e7e3c227f78cbcd5267c14ac6979a28e814695f4589273998563147207fef4a5cdb7cdbdc39797cd95d9e4abadb55869f18e02a38d0654ae5",
           "dependencies": [],
           "maven_sha512": "5981a267686b744e7e3c227f78cbcd5267c14ac6979a28e814695f4589273998563147207fef4a5cdb7cdbdc39797cd95d9e4abadb55869f18e02a38d0654ae5"
+        },
+        "ironchests": {
+          "project": "ironchests",
+          "project_id": "n2de3t2z",
+          "versions_api": "https://api.modrinth.com/v2/project/n2de3t2z/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "animal_feeding_trough": {
+          "project": "animal_feeding_trough",
+          "project_id": "bRFWnJ87",
+          "versions_api": "https://api.modrinth.com/v2/project/bRFWnJ87/version",
+          "available": true,
+          "version": "1.1.2+1.21(.1)-neoforge",
+          "version_id": "9u4bmtUp",
+          "filename": "animal_feeding_trough-1.1.2+1.21-neoforge.jar",
+          "download_url": "https://cdn.modrinth.com/data/bRFWnJ87/versions/9u4bmtUp/animal_feeding_trough-1.1.2%2B1.21-neoforge.jar",
+          "sha512": "d9d5df677432ae68040ce413c6123e876d77a663ddcdc8bd06ee7d9e4f0b04b67872ce6b639cebc4bbb12259742168820a6a713032e4f1376e98a01f6e23ecb8",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "oxidized": {
+          "project": "oxidized",
+          "project_id": "wOZRkmgG",
+          "versions_api": "https://api.modrinth.com/v2/project/wOZRkmgG/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "brick_and_mortar": {
+          "project": "brick-and-mortar",
+          "project_id": "ntRJD9NS",
+          "versions_api": "https://api.modrinth.com/v2/project/ntRJD9NS/version",
+          "available": true,
+          "version": "1.3.1-1.21.1-neoforge",
+          "version_id": "8wAguQz5",
+          "filename": "brick_and_mortar-neoforge-1.21.1-1.3.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/ntRJD9NS/versions/8wAguQz5/brick_and_mortar-neoforge-1.21.1-1.3.1.jar",
+          "sha512": "e688821f5b306b0792270cd2e8c6cf1657ae5b054f2d0e2e42d2dcae63d18c7b0976c0cdf7edf80f649dd57e3c0944190d9528f5159c6aaa0f16f390bd2b4f81",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "optional"
+            }
+          ]
+        },
+        "expandeddelight": {
+          "project": "expanded-delight",
+          "project_id": "e9V6wFcR",
+          "versions_api": "https://api.modrinth.com/v2/project/e9V6wFcR/version",
+          "available": true,
+          "version": "0.1.4-neoforge",
+          "version_id": "RTRYPIJp",
+          "filename": "expandeddelight-0.1.4.jar",
+          "download_url": "https://cdn.modrinth.com/data/e9V6wFcR/versions/RTRYPIJp/expandeddelight-0.1.4.jar",
+          "sha512": "13a2bd17c5c184902da9eb78ce9b993073864301e8cb4a038f7fd7e596188826ef13381cf615533286f53eaeaabfc4c8b27ab91113a15ea68e4bd9f84ca16b8b",
+          "dependencies": []
+        },
+        "crabbersdelight": {
+          "project": "crabbers-delight",
+          "project_id": "gBGdVBJy",
+          "versions_api": "https://api.modrinth.com/v2/project/gBGdVBJy/version",
+          "available": true,
+          "version": "1.3.1",
+          "version_id": "j5Nzh8kh",
+          "filename": "crabbersdelight-1.21.1-1.3.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/gBGdVBJy/versions/j5Nzh8kh/crabbersdelight-1.21.1-1.3.1.jar",
+          "sha512": "897d8e98b96c512411a3dd0536700598b159cc6ca5af89eeaf294f739c03433ce0f2e80ca883f257500db72f11c60c616b140527a3fa488a19bb64d8b03b3c46",
+          "dependencies": []
+        },
+        "netherchested": {
+          "project": "nether-chested",
+          "project_id": "bHJp2GRg",
+          "versions_api": "https://api.modrinth.com/v2/project/bHJp2GRg/version",
+          "available": true,
+          "version": "v21.1.1-1.21.1-NeoForge",
+          "version_id": "fII2Ezk6",
+          "filename": "NetherChested-v21.1.1-1.21.1-NeoForge.jar",
+          "download_url": "https://cdn.modrinth.com/data/bHJp2GRg/versions/fII2Ezk6/NetherChested-v21.1.1-1.21.1-NeoForge.jar",
+          "sha512": "e79b792cdf8359cb353479cafe6ca3dadc3ba2d9cabc07f19414a5e569ebd990cb8581793cc3697cf3e9b715da959e7ca3404c3444a5d7705f9897d16c6cf011",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "5WeWGLoJ",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "QAGBst4M",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "inmis": {
+          "project": "inmis",
+          "project_id": "I0UYcPa0",
+          "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
         }
       },
       "qa_runtime": {
@@ -1559,6 +2067,98 @@
           "checked_at": "2026-10-23",
           "available": false,
           "reason": "No upstream Curios release exists for this Minecraft/Fabric target in the reviewed release listing."
+        },
+        "ironchests": {
+          "project": "ironchests",
+          "project_id": "n2de3t2z",
+          "versions_api": "https://api.modrinth.com/v2/project/n2de3t2z/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "animal_feeding_trough": {
+          "project": "animal_feeding_trough",
+          "project_id": "bRFWnJ87",
+          "versions_api": "https://api.modrinth.com/v2/project/bRFWnJ87/version",
+          "available": true,
+          "version": "1.2.0+1.21.11",
+          "version_id": "aTRE6QT1",
+          "filename": "animal_feeding_trough-1.2.0+1.21.11.jar",
+          "download_url": "https://cdn.modrinth.com/data/bRFWnJ87/versions/aTRE6QT1/animal_feeding_trough-1.2.0%2B1.21.11.jar",
+          "sha512": "f6f8a80cf17b88912e02bb6eb0cc3a88aaa64d658b429159c0f5b62a9d9c3a1cb0c3596491b802b05f49607e0df5f5179d7f9cee60907d10fcdfc1b3cc6ba8dd",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "oxidized": {
+          "project": "oxidized",
+          "project_id": "wOZRkmgG",
+          "versions_api": "https://api.modrinth.com/v2/project/wOZRkmgG/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "brick_and_mortar": {
+          "project": "brick-and-mortar",
+          "project_id": "ntRJD9NS",
+          "versions_api": "https://api.modrinth.com/v2/project/ntRJD9NS/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "expandeddelight": {
+          "project": "expanded-delight",
+          "project_id": "e9V6wFcR",
+          "versions_api": "https://api.modrinth.com/v2/project/e9V6wFcR/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "crabbersdelight": {
+          "project": "crabbers-delight",
+          "project_id": "gBGdVBJy",
+          "versions_api": "https://api.modrinth.com/v2/project/gBGdVBJy/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "netherchested": {
+          "project": "nether-chested",
+          "project_id": "bHJp2GRg",
+          "versions_api": "https://api.modrinth.com/v2/project/bHJp2GRg/version",
+          "available": true,
+          "version": "21.11.0",
+          "version_id": "TNoxD5CV",
+          "filename": "NetherChested-v21.11.0-mc1.21.11-Fabric.jar",
+          "download_url": "https://cdn.modrinth.com/data/bHJp2GRg/versions/TNoxD5CV/NetherChested-v21.11.0-mc1.21.11-Fabric.jar",
+          "sha512": "e530f5f6488642656dc475da7bc9eb680de1a185fc41032a308775c60658ce1f1bfe7947faa1e45938f82627aaaa47137075c2113053bcc1019edf0c60fb775b",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "QAGBst4M",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "ohNO6lps",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "inmis": {
+          "project": "inmis",
+          "project_id": "I0UYcPa0",
+          "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
         }
       },
       "qa_runtime": {
@@ -1842,6 +2442,86 @@
           "sha512": "f23f03079091aca8287302803cc0fd8b238f91d85ac07dd6a5502fcadcd473bab5202ae3ad9de42963bcd8535ba79eefc4e86129f016659dd5eda513b959f6ca",
           "dependencies": [],
           "maven_sha512": "f23f03079091aca8287302803cc0fd8b238f91d85ac07dd6a5502fcadcd473bab5202ae3ad9de42963bcd8535ba79eefc4e86129f016659dd5eda513b959f6ca"
+        },
+        "ironchests": {
+          "project": "ironchests",
+          "project_id": "n2de3t2z",
+          "versions_api": "https://api.modrinth.com/v2/project/n2de3t2z/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "animal_feeding_trough": {
+          "project": "animal_feeding_trough",
+          "project_id": "bRFWnJ87",
+          "versions_api": "https://api.modrinth.com/v2/project/bRFWnJ87/version",
+          "available": true,
+          "version": "1.2.0+1.21.11-neoforge",
+          "version_id": "TLNU4xDL",
+          "filename": "animal_feeding_trough-1.2.0+1.21.11-neoforge.jar",
+          "download_url": "https://cdn.modrinth.com/data/bRFWnJ87/versions/TLNU4xDL/animal_feeding_trough-1.2.0%2B1.21.11-neoforge.jar",
+          "sha512": "3b26bda6a54a7b014ab9177c6c26b3db454ebf8a03208996f7537484abb535ad1f25454e4f0ff7a8bd3d88ca5cb2fb8ea6061d994d5931278ae3752358f709a5",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "oxidized": {
+          "project": "oxidized",
+          "project_id": "wOZRkmgG",
+          "versions_api": "https://api.modrinth.com/v2/project/wOZRkmgG/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "brick_and_mortar": {
+          "project": "brick-and-mortar",
+          "project_id": "ntRJD9NS",
+          "versions_api": "https://api.modrinth.com/v2/project/ntRJD9NS/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "expandeddelight": {
+          "project": "expanded-delight",
+          "project_id": "e9V6wFcR",
+          "versions_api": "https://api.modrinth.com/v2/project/e9V6wFcR/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "crabbersdelight": {
+          "project": "crabbers-delight",
+          "project_id": "gBGdVBJy",
+          "versions_api": "https://api.modrinth.com/v2/project/gBGdVBJy/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "netherchested": {
+          "project": "nether-chested",
+          "project_id": "bHJp2GRg",
+          "versions_api": "https://api.modrinth.com/v2/project/bHJp2GRg/version",
+          "available": true,
+          "version": "21.11.0",
+          "version_id": "QZVGzcGl",
+          "filename": "NetherChested-v21.11.0-mc1.21.11-NeoForge.jar",
+          "download_url": "https://cdn.modrinth.com/data/bHJp2GRg/versions/QZVGzcGl/NetherChested-v21.11.0-mc1.21.11-NeoForge.jar",
+          "sha512": "4625fc5a6bacb463007385a622de331fea0eef27ad38c9f9b1ae7aad7b9eeca814998dbcb29145a71608499398a769f27dbb264c50039fc96212fa2b99c8741f",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "QAGBst4M",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "inmis": {
+          "project": "inmis",
+          "project_id": "I0UYcPa0",
+          "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
         }
       },
       "qa_runtime": {
@@ -2041,6 +2721,91 @@
           "checked_at": "2026-10-23",
           "available": false,
           "reason": "No upstream Curios release exists for this Minecraft/Fabric target in the reviewed release listing."
+        },
+        "ironchests": {
+          "project": "ironchests",
+          "project_id": "n2de3t2z",
+          "versions_api": "https://api.modrinth.com/v2/project/n2de3t2z/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "animal_feeding_trough": {
+          "project": "animal_feeding_trough",
+          "project_id": "bRFWnJ87",
+          "versions_api": "https://api.modrinth.com/v2/project/bRFWnJ87/version",
+          "available": true,
+          "version": "1.2.1+26.1.2",
+          "version_id": "HwX7awp8",
+          "filename": "animal_feeding_trough-1.2.1+26.1.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/bRFWnJ87/versions/HwX7awp8/animal_feeding_trough-1.2.1%2B26.1.2.jar",
+          "sha512": "6e8bd7a38e7b05de37d422bc6b46a1cd3519186e5db15af28e647f19dbeed1ed2bb27ced24ab46b7a515ee8ab69996c51f91e15ff3e8277da3ab0c88ad3afe05",
+          "dependencies": []
+        },
+        "oxidized": {
+          "project": "oxidized",
+          "project_id": "wOZRkmgG",
+          "versions_api": "https://api.modrinth.com/v2/project/wOZRkmgG/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "brick_and_mortar": {
+          "project": "brick-and-mortar",
+          "project_id": "ntRJD9NS",
+          "versions_api": "https://api.modrinth.com/v2/project/ntRJD9NS/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "expandeddelight": {
+          "project": "expanded-delight",
+          "project_id": "e9V6wFcR",
+          "versions_api": "https://api.modrinth.com/v2/project/e9V6wFcR/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "crabbersdelight": {
+          "project": "crabbers-delight",
+          "project_id": "gBGdVBJy",
+          "versions_api": "https://api.modrinth.com/v2/project/gBGdVBJy/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "netherchested": {
+          "project": "nether-chested",
+          "project_id": "bHJp2GRg",
+          "versions_api": "https://api.modrinth.com/v2/project/bHJp2GRg/version",
+          "available": true,
+          "version": "26.1.1",
+          "version_id": "M6rwmJpG",
+          "filename": "NetherChested-v26.1.1-mc26.1.x-Fabric.jar",
+          "download_url": "https://cdn.modrinth.com/data/bHJp2GRg/versions/M6rwmJpG/NetherChested-v26.1.1-mc26.1.x-Fabric.jar",
+          "sha512": "8714beaa0a954dd86296f5d17255f497f6e8f28edae8d4dd803cb040bd5bde74fddf25ea25736cc5ea0c215dcca3847779d5fa2a786a61226ff32fd11fcd741e",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "ohNO6lps",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "QAGBst4M",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "inmis": {
+          "project": "inmis",
+          "project_id": "I0UYcPa0",
+          "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
         }
       },
       "qa_runtime": {
@@ -2372,6 +3137,79 @@
           "sha512": "0b1a79e78e74e1fd45fe70264ac69329432199ea9e21dfae01a3435b5da8b153b4b218276091b2fa82de6cf40a42273af2b2cbc84667b3b5de2f9c932b4551db",
           "dependencies": [],
           "maven_sha512": "0b1a79e78e74e1fd45fe70264ac69329432199ea9e21dfae01a3435b5da8b153b4b218276091b2fa82de6cf40a42273af2b2cbc84667b3b5de2f9c932b4551db"
+        },
+        "ironchests": {
+          "project": "ironchests",
+          "project_id": "n2de3t2z",
+          "versions_api": "https://api.modrinth.com/v2/project/n2de3t2z/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "animal_feeding_trough": {
+          "project": "animal_feeding_trough",
+          "project_id": "bRFWnJ87",
+          "versions_api": "https://api.modrinth.com/v2/project/bRFWnJ87/version",
+          "available": true,
+          "version": "1.2.1+26.1.2-neoforge",
+          "version_id": "CNejDxr9",
+          "filename": "animal_feeding_trough-1.2.1+26.1.2-neoforge.jar",
+          "download_url": "https://cdn.modrinth.com/data/bRFWnJ87/versions/CNejDxr9/animal_feeding_trough-1.2.1%2B26.1.2-neoforge.jar",
+          "sha512": "92284dac54f7f5d802bbeb03964b72d12960d39f7b1182d043dee776d09627399c734b5c710f891ac4e2a689115c3509a34c2c9ee5ec77070ae78e056ea29f4d",
+          "dependencies": []
+        },
+        "oxidized": {
+          "project": "oxidized",
+          "project_id": "wOZRkmgG",
+          "versions_api": "https://api.modrinth.com/v2/project/wOZRkmgG/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "brick_and_mortar": {
+          "project": "brick-and-mortar",
+          "project_id": "ntRJD9NS",
+          "versions_api": "https://api.modrinth.com/v2/project/ntRJD9NS/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "expandeddelight": {
+          "project": "expanded-delight",
+          "project_id": "e9V6wFcR",
+          "versions_api": "https://api.modrinth.com/v2/project/e9V6wFcR/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "crabbersdelight": {
+          "project": "crabbers-delight",
+          "project_id": "gBGdVBJy",
+          "versions_api": "https://api.modrinth.com/v2/project/gBGdVBJy/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "netherchested": {
+          "project": "nether-chested",
+          "project_id": "bHJp2GRg",
+          "versions_api": "https://api.modrinth.com/v2/project/bHJp2GRg/version",
+          "available": true,
+          "version": "26.1.1",
+          "version_id": "e0ZYUkvT",
+          "filename": "NetherChested-v26.1.1-mc26.1.x-NeoForge.jar",
+          "download_url": "https://cdn.modrinth.com/data/bHJp2GRg/versions/e0ZYUkvT/NetherChested-v26.1.1-mc26.1.x-NeoForge.jar",
+          "sha512": "a780e89c87b07878b0eb443be2c42470838164b62b3849b65fae9c2e54cffbf94e890f6299b15ec06df6b2d8400368f9cb988d7b2b73e56781180fa877f350d9",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "QAGBst4M",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "inmis": {
+          "project": "inmis",
+          "project_id": "I0UYcPa0",
+          "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
         }
       },
       "qa_runtime": {
@@ -2571,6 +3409,91 @@
           "checked_at": "2026-10-23",
           "available": false,
           "reason": "No upstream Curios release exists for this Minecraft/Fabric target in the reviewed release listing."
+        },
+        "ironchests": {
+          "project": "ironchests",
+          "project_id": "n2de3t2z",
+          "versions_api": "https://api.modrinth.com/v2/project/n2de3t2z/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "animal_feeding_trough": {
+          "project": "animal_feeding_trough",
+          "project_id": "bRFWnJ87",
+          "versions_api": "https://api.modrinth.com/v2/project/bRFWnJ87/version",
+          "available": true,
+          "version": "1.2.1+26.2",
+          "version_id": "HIUVmKsY",
+          "filename": "animal_feeding_trough-1.2.1+26.2.jar",
+          "download_url": "https://cdn.modrinth.com/data/bRFWnJ87/versions/HIUVmKsY/animal_feeding_trough-1.2.1%2B26.2.jar",
+          "sha512": "2b03e67980d5bdcebcb0a736e290286a30643b0b3e6ddcd6d96c850bf370f26ebdd721ff9e45a5bf3fc19899fe374a89a09c485feefda2920b8a2a5a125de463",
+          "dependencies": []
+        },
+        "oxidized": {
+          "project": "oxidized",
+          "project_id": "wOZRkmgG",
+          "versions_api": "https://api.modrinth.com/v2/project/wOZRkmgG/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "brick_and_mortar": {
+          "project": "brick-and-mortar",
+          "project_id": "ntRJD9NS",
+          "versions_api": "https://api.modrinth.com/v2/project/ntRJD9NS/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "expandeddelight": {
+          "project": "expanded-delight",
+          "project_id": "e9V6wFcR",
+          "versions_api": "https://api.modrinth.com/v2/project/e9V6wFcR/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "crabbersdelight": {
+          "project": "crabbers-delight",
+          "project_id": "gBGdVBJy",
+          "versions_api": "https://api.modrinth.com/v2/project/gBGdVBJy/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "netherchested": {
+          "project": "nether-chested",
+          "project_id": "bHJp2GRg",
+          "versions_api": "https://api.modrinth.com/v2/project/bHJp2GRg/version",
+          "available": true,
+          "version": "26.2.0",
+          "version_id": "FM8m2ljh",
+          "filename": "NetherChested-v26.2.0-mc26.2.x-Fabric.jar",
+          "download_url": "https://cdn.modrinth.com/data/bHJp2GRg/versions/FM8m2ljh/NetherChested-v26.2.0-mc26.2.x-Fabric.jar",
+          "sha512": "75f294aeb7e2ab0914e570d652910fdac50c129eb46dde55b19a9d289cb02fe11765a932bd336cc9ccf398bc21a09a73aff05a5536fab7621847a4508159578f",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "QAGBst4M",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "ohNO6lps",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "inmis": {
+          "project": "inmis",
+          "project_id": "I0UYcPa0",
+          "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
         }
       },
       "qa_runtime": {
@@ -2902,6 +3825,79 @@
           "sha512": "e4dc10aaaa5ba5fb54a9b48af7507055c62fc515819578b1c1b95ade786449e6ceeda72a3cf0375060b07b92f4ded1a7f3b784608a57177ca3f4899c61b871e6",
           "dependencies": [],
           "maven_sha512": "e4dc10aaaa5ba5fb54a9b48af7507055c62fc515819578b1c1b95ade786449e6ceeda72a3cf0375060b07b92f4ded1a7f3b784608a57177ca3f4899c61b871e6"
+        },
+        "ironchests": {
+          "project": "ironchests",
+          "project_id": "n2de3t2z",
+          "versions_api": "https://api.modrinth.com/v2/project/n2de3t2z/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "animal_feeding_trough": {
+          "project": "animal_feeding_trough",
+          "project_id": "bRFWnJ87",
+          "versions_api": "https://api.modrinth.com/v2/project/bRFWnJ87/version",
+          "available": true,
+          "version": "1.2.1+26.2-neoforge",
+          "version_id": "Inz4VnfB",
+          "filename": "animal_feeding_trough-1.2.1+26.2-neoforge.jar",
+          "download_url": "https://cdn.modrinth.com/data/bRFWnJ87/versions/Inz4VnfB/animal_feeding_trough-1.2.1%2B26.2-neoforge.jar",
+          "sha512": "2849afd15e721c78fa102fed0d2b0ff510cff421289bc5f5011d91f88cc00751ba56b4c3ff523200119395f0b2a7f5e1db6ad8ef97b8e1711735e5700e30ae10",
+          "dependencies": []
+        },
+        "oxidized": {
+          "project": "oxidized",
+          "project_id": "wOZRkmgG",
+          "versions_api": "https://api.modrinth.com/v2/project/wOZRkmgG/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "brick_and_mortar": {
+          "project": "brick-and-mortar",
+          "project_id": "ntRJD9NS",
+          "versions_api": "https://api.modrinth.com/v2/project/ntRJD9NS/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "expandeddelight": {
+          "project": "expanded-delight",
+          "project_id": "e9V6wFcR",
+          "versions_api": "https://api.modrinth.com/v2/project/e9V6wFcR/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "crabbersdelight": {
+          "project": "crabbers-delight",
+          "project_id": "gBGdVBJy",
+          "versions_api": "https://api.modrinth.com/v2/project/gBGdVBJy/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "netherchested": {
+          "project": "nether-chested",
+          "project_id": "bHJp2GRg",
+          "versions_api": "https://api.modrinth.com/v2/project/bHJp2GRg/version",
+          "available": true,
+          "version": "26.2.0",
+          "version_id": "9XxkB1Q4",
+          "filename": "NetherChested-v26.2.0-mc26.2.x-NeoForge.jar",
+          "download_url": "https://cdn.modrinth.com/data/bHJp2GRg/versions/9XxkB1Q4/NetherChested-v26.2.0-mc26.2.x-NeoForge.jar",
+          "sha512": "048949bff6804f23b3f9fec51959241c3b0fa90668d8da9b1d0ab72dabfd40cd6d73a08a31ff0385991ef336d35b4147f8eaad70e73ea512704a449d39cb7e3c",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "QAGBst4M",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "inmis": {
+          "project": "inmis",
+          "project_id": "I0UYcPa0",
+          "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
         }
       },
       "qa_runtime": {
@@ -3101,6 +4097,91 @@
           "checked_at": "2026-10-23",
           "available": false,
           "reason": "No upstream Curios release exists for this Minecraft/Fabric target in the reviewed release listing."
+        },
+        "ironchests": {
+          "project": "ironchests",
+          "project_id": "n2de3t2z",
+          "versions_api": "https://api.modrinth.com/v2/project/n2de3t2z/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "animal_feeding_trough": {
+          "project": "animal_feeding_trough",
+          "project_id": "bRFWnJ87",
+          "versions_api": "https://api.modrinth.com/v2/project/bRFWnJ87/version",
+          "available": true,
+          "version": "1.2.1+26.3",
+          "version_id": "pTYiM3Eb",
+          "filename": "animal_feeding_trough-1.2.1+26.3.jar",
+          "download_url": "https://cdn.modrinth.com/data/bRFWnJ87/versions/pTYiM3Eb/animal_feeding_trough-1.2.1%2B26.3.jar",
+          "sha512": "022351f8ab792530352c2761d628308c64b01844497881b37c10e9b9dfd657b9428cab2dba1de946b61ccd25811037a4d8e19e7c61abfc3e8f85793dd5a93566",
+          "dependencies": []
+        },
+        "oxidized": {
+          "project": "oxidized",
+          "project_id": "wOZRkmgG",
+          "versions_api": "https://api.modrinth.com/v2/project/wOZRkmgG/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "brick_and_mortar": {
+          "project": "brick-and-mortar",
+          "project_id": "ntRJD9NS",
+          "versions_api": "https://api.modrinth.com/v2/project/ntRJD9NS/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "expandeddelight": {
+          "project": "expanded-delight",
+          "project_id": "e9V6wFcR",
+          "versions_api": "https://api.modrinth.com/v2/project/e9V6wFcR/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "crabbersdelight": {
+          "project": "crabbers-delight",
+          "project_id": "gBGdVBJy",
+          "versions_api": "https://api.modrinth.com/v2/project/gBGdVBJy/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "netherchested": {
+          "project": "nether-chested",
+          "project_id": "bHJp2GRg",
+          "versions_api": "https://api.modrinth.com/v2/project/bHJp2GRg/version",
+          "available": true,
+          "version": "26.3.0",
+          "version_id": "2TZfPf82",
+          "filename": "netherchested-v26.3.0-mc26.3.x+fabric.jar",
+          "download_url": "https://cdn.modrinth.com/data/bHJp2GRg/versions/2TZfPf82/netherchested-v26.3.0-mc26.3.x%2Bfabric.jar",
+          "sha512": "dd8d4aab8a880efcce0d5c3d18269b64b999871c6bcc2725b0ad28d8c44ee8c4eaf95c92e53705139913371e5c8bf6a337a17b7a6cf931e53e34ec1b68a4a774",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "ohNO6lps",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "QAGBst4M",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "inmis": {
+          "project": "inmis",
+          "project_id": "I0UYcPa0",
+          "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
         }
       },
       "qa_runtime": {
@@ -3431,6 +4512,79 @@
           "download_url": "https://cdn.modrinth.com/data/vvuO3ImH/versions/W912LxOl/curios-neoforge-17.0.0-beta.3%2B26.3.jar",
           "sha512": "ebacde6e36685849fefcaaace4ae3c2f725dd1540adca128a83b5c611998d87158750fdc224fd9faf4af8f249bb1005466e6e951d6516a99f4e0d6102a382ea1",
           "dependencies": []
+        },
+        "ironchests": {
+          "project": "ironchests",
+          "project_id": "n2de3t2z",
+          "versions_api": "https://api.modrinth.com/v2/project/n2de3t2z/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "animal_feeding_trough": {
+          "project": "animal_feeding_trough",
+          "project_id": "bRFWnJ87",
+          "versions_api": "https://api.modrinth.com/v2/project/bRFWnJ87/version",
+          "available": true,
+          "version": "1.2.1+26.3-neoforge",
+          "version_id": "BLZ45NBU",
+          "filename": "animal_feeding_trough-1.2.1+26.3-neoforge.jar",
+          "download_url": "https://cdn.modrinth.com/data/bRFWnJ87/versions/BLZ45NBU/animal_feeding_trough-1.2.1%2B26.3-neoforge.jar",
+          "sha512": "48848183ba2a523124ac2c5de9b8a2828d76abf5a483b5301892e58c41456c0e91e883ad2211b75b56225707b650d27d4265bd8115c1d53a4827d6da04660972",
+          "dependencies": []
+        },
+        "oxidized": {
+          "project": "oxidized",
+          "project_id": "wOZRkmgG",
+          "versions_api": "https://api.modrinth.com/v2/project/wOZRkmgG/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "brick_and_mortar": {
+          "project": "brick-and-mortar",
+          "project_id": "ntRJD9NS",
+          "versions_api": "https://api.modrinth.com/v2/project/ntRJD9NS/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "expandeddelight": {
+          "project": "expanded-delight",
+          "project_id": "e9V6wFcR",
+          "versions_api": "https://api.modrinth.com/v2/project/e9V6wFcR/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "crabbersdelight": {
+          "project": "crabbers-delight",
+          "project_id": "gBGdVBJy",
+          "versions_api": "https://api.modrinth.com/v2/project/gBGdVBJy/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "netherchested": {
+          "project": "nether-chested",
+          "project_id": "bHJp2GRg",
+          "versions_api": "https://api.modrinth.com/v2/project/bHJp2GRg/version",
+          "available": true,
+          "version": "26.3.0",
+          "version_id": "WesJu2AZ",
+          "filename": "netherchested-v26.3.0-mc26.3.x+neoforge.jar",
+          "download_url": "https://cdn.modrinth.com/data/bHJp2GRg/versions/WesJu2AZ/netherchested-v26.3.0-mc26.3.x%2Bneoforge.jar",
+          "sha512": "f9a4975dcac8b6ca5a1c6f9411de2f99b0b38881e4e71f1af3d3abf7623dd6e60ad394bb5cf218281aeb8c0048ed1bdf5eb211ead617f2027206a65d1afa6ce3",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "QAGBst4M",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
+        },
+        "inmis": {
+          "project": "inmis",
+          "project_id": "I0UYcPa0",
+          "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
+          "available": false,
+          "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
         }
       },
       "qa_runtime": {

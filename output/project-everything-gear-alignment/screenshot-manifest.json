@@ -1,0 +1,89 @@
+{
+  "scope": "Fresh 1.20.1 in-game SIU screenshots; crops retain actual pixels",
+  "captures": [
+    {
+      "label": "Repair and Name - selected",
+      "loader": "Fabric",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-alignment\\screenshots\\gear-anvil-first.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-alignment\\crops\\gear-anvil-first.png",
+      "crop_pixels": [
+        474,
+        24,
+        860,
+        272
+      ],
+      "source_sha256": "19ef76b4d6a013fe168491a7ee75af3dfe3ec9c0468a88b927c02da87ecebf91",
+      "observation_sequence": 3
+    },
+    {
+      "label": "Reforge Gear - selected",
+      "loader": "Fabric",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-alignment\\screenshots\\gear-anvil-second.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-alignment\\crops\\gear-anvil-second.png",
+      "crop_pixels": [
+        814,
+        340,
+        1104,
+        562
+      ],
+      "source_sha256": "0ad788ad12bdb70ea35cd49e78f703ca751a9dbf86b818c035a3a5711803f2f4",
+      "observation_sequence": 5
+    },
+    {
+      "label": "Upgrade Gear - selected",
+      "loader": "Fabric",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-alignment\\screenshots\\gear-smith-first.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-alignment\\crops\\gear-smith-first.png",
+      "crop_pixels": [
+        436,
+        108,
+        844,
+        368
+      ],
+      "source_sha256": "5ba2293b2db6bd57f88027dfc873b4feac1029d68bdc60793b72ed4319b404e7",
+      "observation_sequence": 11
+    },
+    {
+      "label": "Link Gear - selected",
+      "loader": "Fabric",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-alignment\\screenshots\\gear-smith-second.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-alignment\\crops\\gear-smith-second.png",
+      "crop_pixels": [
+        814,
+        532,
+        1142,
+        756
+      ],
+      "source_sha256": "1d83014175b92d34d4484c4bd002203c93bc5469cae15233235e7725d9d7ebf0",
+      "observation_sequence": 13
+    },
+    {
+      "label": "Repair and Disenchant - selected",
+      "loader": "Fabric",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-alignment\\screenshots\\gear-grind-first.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-alignment\\crops\\gear-grind-first.png",
+      "crop_pixels": [
+        478,
+        110,
+        802,
+        368
+      ],
+      "source_sha256": "8cd3d75df64d6fcf0cd062b2cf626531ba866518d8c4665760157dd1cd7f7412",
+      "observation_sequence": 19
+    },
+    {
+      "label": "Unlink Gear - selected",
+      "loader": "Fabric",
+      "screenshot": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-alignment\\screenshots\\gear-grind-second.png",
+      "crop": "G:\\Codex Projects\\Salts Inventory Update\\output\\project-everything-gear-alignment\\crops\\gear-grind-second.png",
+      "crop_pixels": [
+        814,
+        322,
+        1110,
+        580
+      ],
+      "source_sha256": "da8c361ab59a84acd19b8cb4c69f97d8762f3b2b93b822e2c4a15d06c13d09b8",
+      "observation_sequence": 21
+    }
+  ]
+}

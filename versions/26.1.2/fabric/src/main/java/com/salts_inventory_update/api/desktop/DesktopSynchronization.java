@@ -8,4 +8,10 @@ public final class DesktopSynchronization {
     public static ContainerSynchronizer preserveDesktop(ContainerSynchronizer proposed) {
         return com.salts_inventory_update.internal.desktop.DesktopSynchronizerOverride.preserveDesktop(proposed);
     }
+    /** Whether a synchronizer carries an authenticated desktop session. Native menu
+     * adapters can route it through their normal full-count synchronization setter.
+     * This does not transfer ownership or expose Core implementation types. */
+    public static boolean isDesktopSynchronizer(ContainerSynchronizer synchronizer) {
+        return synchronizer instanceof com.salts_inventory_update.internal.desktop.DesktopSessionSynchronizer;
+    }
 }

@@ -1,0 +1,43 @@
+{
+  "minecraft": "1.20.1",
+  "loader": "forge",
+  "scenario": "extension-empty",
+  "artifacts": [
+    {
+      "filename": "NetherChested-v8.0.4-1.20.1-Forge.jar",
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-20261025\\fixtures\\forge\\NetherChested-v8.0.4-1.20.1-Forge.jar",
+      "sha512": "1ea89f3ae0a23aed205076789b6e99bc9fc204d6fd49f0f03f363a3f5c717a968a7cea5c7b197de17ba370a8575076c7637b0882bae75df333d6ed2bf98e9ce6",
+      "coordinate": "maven.modrinth:bHJp2GRg:pg7wiIfo",
+      "version": "v8.0.4-1.20.1-Forge",
+      "project": "bHJp2GRg",
+      "version_id": "pg7wiIfo"
+    },
+    {
+      "filename": "PuzzlesLib-v8.1.36-1.20.1-Forge.jar",
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\project-everything-20261025\\fixtures\\forge\\PuzzlesLib-v8.1.36-1.20.1-Forge.jar",
+      "sha512": "232c7c052c32d07bbb9daa02e16eab3ff45d41cf91488dca79e099965cb33983b09554c758c7e0df0516c33a9327880068ceb167ed3f0df60d590588aad55d99",
+      "coordinate": "maven.modrinth:QAGBst4M:hOfDHA4g",
+      "version": "8.1.36",
+      "project": "QAGBst4M",
+      "version_id": "hOfDHA4g"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\1b1483ae31f42f68-betterarcheology-1.2.1-1.20.1.jar",
+      "filename": "betterarcheology-1.2.1-1.20.1.jar",
+      "coordinate": "maven.modrinth:zCh7omyG:vsqxpUo3",
+      "sha512": "1b1483ae31f42f687915c964cbd07b1f165e4ffa55aec23370f7f0efcb61f78f16a3ef8d6edbc2f4812524f22cc969a8f0d7cd2e2a6b5edf6959342526deaeb1"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\7d83d94a90e55a71-YungsApi-1.20-Forge-4.0.6.jar",
+      "filename": "YungsApi-1.20-Forge-4.0.6.jar",
+      "coordinate": "maven.modrinth:Ua7DFN59:PJOYAmAs",
+      "sha512": "7d83d94a90e55a712f6508485c044ff202916e9b9b9166b75177cb8f2eb919543bbbe1547d11c41cfd4763820f934235f47c0b26dd9e89bc1030954afa9fb889"
+    },
+    {
+      "path": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\476595aacc7c66a0-supermartijn642configlib-1.1.8-forge-mc1.20.jar",
+      "filename": "supermartijn642configlib-1.1.8-forge-mc1.20.jar",
+      "coordinate": "maven.modrinth:LN9BxssP:ZKor79dR",
+      "sha512": "476595aacc7c66a0cf7bcd56143975122ea54ae4c5b61a232d3b0b9b1e3c013575efcc05de31a5d2c4e129542bfd8ae255a25d1486a4e08961cc4a303940fd19"
+    }
+  ]
+}

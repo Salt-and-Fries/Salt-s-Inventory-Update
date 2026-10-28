@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.compat.netherchested.mixin",
+  "plugin": "com.salts_inventory_update.compat.netherchested.mixin.NetherChestedMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "LimitlessSynchronizerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

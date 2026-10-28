@@ -23,7 +23,8 @@ public final class DesktopSortSlots {
     }
     public static boolean isStorage(AbstractContainerMenu menu) {
         return menu instanceof ChestMenu || menu instanceof ShulkerBoxMenu
-            || menu instanceof HopperMenu || menu instanceof DispenserMenu || adapter(menu) != null;
+            || menu instanceof HopperMenu || menu instanceof DispenserMenu || adapter(menu) != null
+            || AutomaticContainerSupport.isStorage(menu);
     }
     private static BiPredicate<AbstractContainerMenu, Slot> adapter(AbstractContainerMenu menu) {
         if (menu instanceof InventoryMenu) return null;
@@ -35,6 +36,7 @@ public final class DesktopSortSlots {
     }
     public static boolean storageSlot(AbstractContainerMenu menu, Slot slot) {
         var adapter = adapter(menu);
+        if (adapter == null && AutomaticContainerSupport.isStorage(menu)) return AutomaticContainerSupport.storageSlot(menu, slot);
         return isStorage(menu) && (adapter == null || adapter.test(menu, slot));
     }
     public static boolean sourceSlot(AbstractContainerMenu menu, Slot slot) {

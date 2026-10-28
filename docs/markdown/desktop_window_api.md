@@ -1,10 +1,12 @@
-# Salt Desktop API — 0.1.5
+# Salt Desktop API — 0.1.6
 
 Salt's Inventory Update hosts mod UIs as independent desktop windows. API version **6** supports menu-backed windows and client-only views. Salt remains an optional installation: your normal mod and UI run without it, while Salt discovers your integration providers when installed.
 
 There are no adapters for the earlier public API. Build your integration for the exact Minecraft version, loader and mappings you support. The supported matrix is Fabric on 1.20.1, 1.21.1, 1.21.11, 26.1.2, 26.2 and 26.3; Forge on 1.20.1; NeoForge on the other five versions.
 
 Core and the optional compatibility extension are independent JARs. The extension uses this same API as any other consumer. The [separation guide](jar-separation.md) documents recipe providers, native menu/session hooks, item-backed inventories, lifecycle callbacks and integration help pages. On legacy targets, the public graphics and input wrappers now live in `api.client.gui` and `api.client.input`; consumers must use these supported packages instead of the former implementation packages. Native Minecraft input/rendering types on newer targets remain unchanged.
+
+On **every supported version and loader**, Core 0.1.6's additive [native window template API](native-window-templates-1.20.1.md) can inherit automatic native artwork and controls, compose multiple regions/cutouts, and add ordinary API content. Its opt-in contracts, profiles and inspector preserve ordinary definitions' priority.
 
 ## Mouse Tweaks input interoperability
 
@@ -108,13 +110,13 @@ Run `./gradlew verifyApiExamples` to compile these integrations against all twel
 
 Use Salt as a **compile-only** mod dependency. Do not bundle its jar, copy its API classes into your mod, or list it as a required runtime dependency. The full matching Salt jar provides the public API; there is no separate runtime API mod.
 
-For a local build, use the matching artifact from `build/release/0.1.5`, or the matching project's development output. Keep Minecraft mappings consistent. Pre-26 Fabric consumers should let Loom remap the production mod dependency; ForgeGradle consumers should use their usual deobfuscated mod dependency configuration. Modern ModDev consumers must also use the appropriate development mappings. A plain unmapped production jar is not interchangeable with a development jar.
+For a local build, use the matching artifact from `build/release/0.1.6`, or the matching project's development output. Keep Minecraft mappings consistent. Pre-26 Fabric consumers should let Loom remap the production mod dependency; ForgeGradle consumers should use their usual deobfuscated mod dependency configuration. Modern ModDev consumers must also use the appropriate development mappings. A plain unmapped production jar is not interchangeable with a development jar.
 
 A Fabric project using Loom can use:
 
 ```kotlin
 dependencies {
-    modCompileOnly(files("libs/salts_inventory_update-<minecraft>-Fabric-0.1.5.jar"))
+    modCompileOnly(files("libs/salts_inventory_update-<minecraft>-Fabric-0.1.6.jar"))
     // Add the same matching jar to a local runtime only when testing Salt-present behavior.
 }
 ```
@@ -630,3 +632,9 @@ independently moving/resizing a joined child. The owner controls movement and th
 sessions are disabled or unavailable. `DesktopMenuBindings.maxMenuSlots()` publishes the menu
 slot bound, including hidden/cosmetic slots. The [Curios adapters](curios.md) cover six
 native-loader releases using only these APIs and the existing menu/session registration contracts.
+
+## Native templates in Core 0.1.6
+
+The [native-template guide](native-window-templates-1.20.1.md) covers automatic window composition, retained native fragments, exterior panels, standard slot backgrounds, local profiles and the in-game inspector. These additive contracts are available across every supported version and loader; existing API window definitions retain priority.
+
+`DesktopSynchronization.isDesktopSynchronizer(ContainerSynchronizer)` identifies a synchronizer owned by an authenticated desktop session. A native-menu adapter can pass that synchronizer to its upstream full-count setter when the upstream menu intentionally ignores the vanilla setter. The predicate exposes no implementation type and grants no inventory authority. Outside desktop ownership, retain the mod's original synchronization behavior.

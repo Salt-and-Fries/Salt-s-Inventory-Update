@@ -61,7 +61,7 @@ def inventory(source, masked, opening, end, interface=False, enum=False, indent=
         cursor = finish + 1
     return result
 
-lines = ['# Public API signature reference — 0.1.5 / API 6', '',
+lines = ['# Public API signature reference — 0.1.6 / API 6', '',
          'This inventory lists public consumer declarations from the shared API and the 26.3 native API. Signatures are reference notation, not standalone implementations. Record components supply their corresponding accessors and canonical constructor; enum values are listed. Bodies and private implementation members are omitted. The [API guide](desktop_window_api.md) specifies defaults, lifecycle, geometry, threading and ownership; the [transfer reference](recipe_transfer_api.md) specifies transfer validation and bounds.', '',
          'The shared contracts apply to every supported target. Native declarations use 26.3 names/imports here. On 1.20.1/1.21.1, `Identifier` is `ResourceLocation` and input events use Salt’s legacy event package; 1.20.1 lacks typed payload codecs. `nativeGraphics()` is `GuiGraphics` through 1.21.11 and `GuiGraphicsExtractor` on 26.x. Slot action types are `ClickType` through 1.21.11 and `ContainerInput` on 26.x. Compile the examples on the matching target to resolve native binary differences.', '',
          'Regenerate with `python tools/generate-api-reference.py`; verify without writing with `python tools/generate-api-reference.py --check`.', '']

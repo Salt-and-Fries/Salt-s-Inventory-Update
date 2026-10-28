@@ -1,0 +1,6 @@
+{
+  "minecraft": "1.20.1",
+  "loader": "fabric",
+  "scenario": "extension-empty",
+  "artifacts": []
+}

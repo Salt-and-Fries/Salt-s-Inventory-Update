@@ -1,0 +1,2464 @@
+{
+  "pdf": "output\\pdf\\siu-project-everything-ten-all-targets-ui.pdf",
+  "pages": 38,
+  "unique_views": 124,
+  "displayed_figures": 128,
+  "targets": [
+    {
+      "minecraft": "1.20.1",
+      "loader": "fabric",
+      "views": 25,
+      "first_page": 3
+    },
+    {
+      "minecraft": "1.20.1",
+      "loader": "forge",
+      "views": 16,
+      "first_page": 10
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "views": 12,
+      "first_page": 14
+    },
+    {
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "views": 12,
+      "first_page": 17
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "fabric",
+      "views": 7,
+      "first_page": 20
+    },
+    {
+      "minecraft": "1.21.11",
+      "loader": "neoforge",
+      "views": 5,
+      "first_page": 22
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "fabric",
+      "views": 13,
+      "first_page": 24
+    },
+    {
+      "minecraft": "26.1.2",
+      "loader": "neoforge",
+      "views": 8,
+      "first_page": 28
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "fabric",
+      "views": 9,
+      "first_page": 30
+    },
+    {
+      "minecraft": "26.2",
+      "loader": "neoforge",
+      "views": 5,
+      "first_page": 33
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "fabric",
+      "views": 8,
+      "first_page": 35
+    },
+    {
+      "minecraft": "26.3",
+      "loader": "neoforge",
+      "views": 4,
+      "first_page": 37
+    }
+  ],
+  "page_index": [
+    {
+      "page": 1,
+      "title": "Every supported target. Every adapted UI.",
+      "subtitle": "Ten mod families | Minecraft 1.20.1 through 26.3 | Fabric, Forge and NeoForge"
+    },
+    {
+      "page": 2,
+      "title": "Version and loader index",
+      "subtitle": "Click a column heading or use the PDF bookmarks to jump to a target."
+    },
+    {
+      "page": 3,
+      "title": "1.20.1 / Fabric | 1/7",
+      "subtitle": "Corrected layouts and native controls | 9 available mod families"
+    },
+    {
+      "page": 4,
+      "title": "1.20.1 / Fabric | 2/7",
+      "subtitle": "Corrected layouts and native controls | 9 available mod families"
+    },
+    {
+      "page": 5,
+      "title": "1.20.1 / Fabric | 3/7",
+      "subtitle": "Corrected layouts and native controls | 9 available mod families"
+    },
+    {
+      "page": 6,
+      "title": "1.20.1 / Fabric | 4/7",
+      "subtitle": "Corrected layouts and native controls | 9 available mod families"
+    },
+    {
+      "page": 7,
+      "title": "1.20.1 / Fabric | 5/7",
+      "subtitle": "Corrected layouts and native controls | 9 available mod families"
+    },
+    {
+      "page": 8,
+      "title": "1.20.1 / Fabric | 6/7",
+      "subtitle": "Corrected layouts and native controls | 9 available mod families"
+    },
+    {
+      "page": 9,
+      "title": "1.20.1 / Fabric | 7/7",
+      "subtitle": "Corrected layouts and native controls | 9 available mod families"
+    },
+    {
+      "page": 10,
+      "title": "1.20.1 / Forge | 1/4",
+      "subtitle": "Corrected layouts and native controls | 8 available mod families"
+    },
+    {
+      "page": 11,
+      "title": "1.20.1 / Forge | 2/4",
+      "subtitle": "Corrected layouts and native controls | 8 available mod families"
+    },
+    {
+      "page": 12,
+      "title": "1.20.1 / Forge | 3/4",
+      "subtitle": "Corrected layouts and native controls | 8 available mod families"
+    },
+    {
+      "page": 13,
+      "title": "1.20.1 / Forge | 4/4",
+      "subtitle": "Corrected layouts and native controls | 8 available mod families"
+    },
+    {
+      "page": 14,
+      "title": "1.21.1 / Fabric | 1/3",
+      "subtitle": "Corrected layouts and native controls | 9 available mod families | Loom-mapped release classes"
+    },
+    {
+      "page": 15,
+      "title": "1.21.1 / Fabric | 2/3",
+      "subtitle": "Corrected layouts and native controls | 9 available mod families | Loom-mapped release classes"
+    },
+    {
+      "page": 16,
+      "title": "1.21.1 / Fabric | 3/3",
+      "subtitle": "Corrected layouts and native controls | 9 available mod families | Loom-mapped release classes"
+    },
+    {
+      "page": 17,
+      "title": "1.21.1 / NeoForge | 1/3",
+      "subtitle": "Corrected layouts and native controls | 8 available mod families"
+    },
+    {
+      "page": 18,
+      "title": "1.21.1 / NeoForge | 2/3",
+      "subtitle": "Corrected layouts and native controls | 8 available mod families"
+    },
+    {
+      "page": 19,
+      "title": "1.21.1 / NeoForge | 3/3",
+      "subtitle": "Corrected layouts and native controls | 8 available mod families"
+    },
+    {
+      "page": 20,
+      "title": "1.21.11 / Fabric | 1/2",
+      "subtitle": "Corrected layouts and native controls | 4 available mod families | Loom-mapped release classes"
+    },
+    {
+      "page": 21,
+      "title": "1.21.11 / Fabric | 2/2",
+      "subtitle": "Corrected layouts and native controls | 4 available mod families | Loom-mapped release classes"
+    },
+    {
+      "page": 22,
+      "title": "1.21.11 / NeoForge | 1/2",
+      "subtitle": "Corrected layouts and native controls | 3 available mod families"
+    },
+    {
+      "page": 23,
+      "title": "1.21.11 / NeoForge | 2/2",
+      "subtitle": "Corrected layouts and native controls | 3 available mod families"
+    },
+    {
+      "page": 24,
+      "title": "26.1.2 / Fabric | 1/4",
+      "subtitle": "Corrected layouts and native controls | 7 available mod families"
+    },
+    {
+      "page": 25,
+      "title": "26.1.2 / Fabric | 2/4",
+      "subtitle": "Corrected layouts and native controls | 7 available mod families"
+    },
+    {
+      "page": 26,
+      "title": "26.1.2 / Fabric | 3/4",
+      "subtitle": "Corrected layouts and native controls | 7 available mod families"
+    },
+    {
+      "page": 27,
+      "title": "26.1.2 / Fabric | 4/4",
+      "subtitle": "Corrected layouts and native controls | 7 available mod families"
+    },
+    {
+      "page": 28,
+      "title": "26.1.2 / NeoForge | 1/2",
+      "subtitle": "Corrected layouts and native controls | 5 available mod families"
+    },
+    {
+      "page": 29,
+      "title": "26.1.2 / NeoForge | 2/2",
+      "subtitle": "Corrected layouts and native controls | 5 available mod families"
+    },
+    {
+      "page": 30,
+      "title": "26.2 / Fabric | 1/3",
+      "subtitle": "Corrected layouts and native controls | 5 available mod families"
+    },
+    {
+      "page": 31,
+      "title": "26.2 / Fabric | 2/3",
+      "subtitle": "Corrected layouts and native controls | 5 available mod families"
+    },
+    {
+      "page": 32,
+      "title": "26.2 / Fabric | 3/3",
+      "subtitle": "Corrected layouts and native controls | 5 available mod families"
+    },
+    {
+      "page": 33,
+      "title": "26.2 / NeoForge | 1/2",
+      "subtitle": "Corrected layouts and native controls | 3 available mod families"
+    },
+    {
+      "page": 34,
+      "title": "26.2 / NeoForge | 2/2",
+      "subtitle": "Corrected layouts and native controls | 3 available mod families"
+    },
+    {
+      "page": 35,
+      "title": "26.3 / Fabric | 1/2",
+      "subtitle": "Corrected layouts and native controls | 4 available mod families"
+    },
+    {
+      "page": 36,
+      "title": "26.3 / Fabric | 2/2",
+      "subtitle": "Corrected layouts and native controls | 4 available mod families"
+    },
+    {
+      "page": 37,
+      "title": "26.3 / NeoForge",
+      "subtitle": "Corrected layouts and native controls | 2 available mod families"
+    },
+    {
+      "page": 38,
+      "title": "What these screenshots establish",
+      "subtitle": "Focused affected-window evidence, collected in real Minecraft clients."
+    }
+  ],
+  "figures": [
+    {
+      "page": 1,
+      "target": "cover",
+      "title": "Bartering Station",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.3-fabric-ten-port-final-07\\screenshots\\bartering-returned.png",
+      "capture": "bartering-returned",
+      "run": "ten-port-final-07",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-001.png",
+      "source_sha256": "1c3bb28362dbe23436ffb3d36e47b191ee86dafc6ebe1130a86bb42ce248c9b0"
+    },
+    {
+      "page": 1,
+      "target": "cover",
+      "title": "Better Archeology - identifying table",
+      "detail": "Updated parchment frame / processing",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-polish-fabric-11\\screenshots\\fabric-identifying-identifying-active.png",
+      "capture": "identifying-active",
+      "run": "ten-polish-fabric-11",
+      "pixel_crop": [
+        480,
+        178,
+        798,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-002.png",
+      "source_sha256": "514a435620fbf4111e223ea335545013c76c057ecf62ed487ffcc01db54be40f"
+    },
+    {
+      "page": 1,
+      "target": "cover",
+      "title": "Alloy Forgery",
+      "detail": "Native input slot locked",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-owo-01\\screenshots\\alloy-forge-slot-disabled.png",
+      "capture": "alloy-forge-slot-disabled",
+      "run": "ten-owo-01",
+      "pixel_crop": [
+        456,
+        98,
+        824,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-003.png",
+      "source_sha256": "0dfdbca2c63c103b9deb66a1a95affb8c2704c81db8505a1077a2f69447c3083"
+    },
+    {
+      "page": 1,
+      "target": "cover",
+      "title": "Miner's Delight - copper pot",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-followup-01\\screenshots\\copper-pot-returned.png",
+      "capture": "copper-pot-returned",
+      "run": "ten-followup-01",
+      "pixel_crop": [
+        494,
+        162,
+        786,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-004.png",
+      "source_sha256": "8651cd43e8b4c87013dabe2777a0e14289f2e96f1c9f001a1d1eb746a30ea603"
+    },
+    {
+      "page": 3,
+      "target": "1.20.1/fabric",
+      "title": "Bartering Station",
+      "detail": "Native preview and collected loot",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-bartering-bartered-loot.png",
+      "capture": "bartered-loot",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        452,
+        160,
+        828,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-005.png",
+      "source_sha256": "378697f30b83c812ba769f7c86b928c716f6742d13a292b022c84135c8c34c9c"
+    },
+    {
+      "page": 3,
+      "target": "1.20.1/fabric",
+      "title": "Alloy Forgery",
+      "detail": "Native smelting animation",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-alloy-forge-smelting-active.png",
+      "capture": "smelting-active",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        448,
+        100,
+        832,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-006.png",
+      "source_sha256": "75dfd19ee839c0b7e24f8e1c51907efc34937baa0a8e6f7095302724ab2ddb75"
+    },
+    {
+      "page": 3,
+      "target": "1.20.1/fabric",
+      "title": "Alloy Forgery",
+      "detail": "Exterior lava reservoir",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-alloy-forge-lava-reservoir.png",
+      "capture": "lava-reservoir",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        912,
+        0,
+        1280,
+        254
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-007.png",
+      "source_sha256": "084c342471a2edc58076a522d5865125ecbf4e5d670f764f4732258d8d43b8be"
+    },
+    {
+      "page": 3,
+      "target": "1.20.1/fabric",
+      "title": "Alloy Forgery",
+      "detail": "Bricks controller",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-alloy-bricks-active.png",
+      "capture": "active",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        448,
+        100,
+        832,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-008.png",
+      "source_sha256": "5c5ccb6f04382d4024ec8d5afac454f27341b690f96e7eccff4fb147bd62547b"
+    },
+    {
+      "page": 4,
+      "target": "1.20.1/fabric",
+      "title": "Alloy Forgery",
+      "detail": "Stone bricks controller",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-alloy-stone_bricks-active.png",
+      "capture": "active",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        448,
+        100,
+        832,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-009.png",
+      "source_sha256": "010296365d167cafb7a069d31c314756c7f505b5cf9c166c4791cdb21e2f4f1e"
+    },
+    {
+      "page": 4,
+      "target": "1.20.1/fabric",
+      "title": "Alloy Forgery",
+      "detail": "Deepslate bricks controller",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-alloy-deepslate_bricks-active.png",
+      "capture": "active",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        448,
+        100,
+        832,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-010.png",
+      "source_sha256": "40697c175c1f2a9da5fbca563b54ea2b11ca52ed8b43e9d99426072049226b5d"
+    },
+    {
+      "page": 4,
+      "target": "1.20.1/fabric",
+      "title": "Alloy Forgery",
+      "detail": "Polished blackstone controller",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-alloy-polished_blackstone-active.png",
+      "capture": "active",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        448,
+        100,
+        832,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-011.png",
+      "source_sha256": "e4635b5f0688107e367870a3a080bb05bdb3b795e2c4a427d6bc3ca88a85a7cd"
+    },
+    {
+      "page": 4,
+      "target": "1.20.1/fabric",
+      "title": "Alloy Forgery",
+      "detail": "Prismarine bricks controller",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-alloy-prismarine_bricks-active.png",
+      "capture": "active",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        448,
+        100,
+        832,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-012.png",
+      "source_sha256": "e22facdcc49ac6930a1db764b7cfc2e3c18913cfbb5707c9564fc991697532cc"
+    },
+    {
+      "page": 5,
+      "target": "1.20.1/fabric",
+      "title": "Alloy Forgery",
+      "detail": "End stone bricks controller",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-alloy-end_stone_bricks-active.png",
+      "capture": "active",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        448,
+        100,
+        832,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-013.png",
+      "source_sha256": "8614d6de0d3c24fbc78a366bb83fae25a5f9f7e527d6df893c07126bb8cae1e9"
+    },
+    {
+      "page": 5,
+      "target": "1.20.1/fabric",
+      "title": "Seasons: Extras - heater",
+      "detail": "Three native fuel modules",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-heater-three-modules.png",
+      "capture": "three-modules",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        478,
+        162,
+        800,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-014.png",
+      "source_sha256": "fb92089d87102f3310880733b3eb8068bc64f1d112d8be054a9e1ba37327c135"
+    },
+    {
+      "page": 5,
+      "target": "1.20.1/fabric",
+      "title": "Seasons: Extras - chiller",
+      "detail": "Original chiller artwork and controls",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-chiller-three-modules.png",
+      "capture": "three-modules",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        478,
+        162,
+        800,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-015.png",
+      "source_sha256": "3f6fc1944ec6205941fc046938248ae400c384ea91d9ba274c7f1c0c31899a0d"
+    },
+    {
+      "page": 5,
+      "target": "1.20.1/fabric",
+      "title": "Seasons: Extras",
+      "detail": "Two independent windows",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-seasons-two-windows-fuel-transferred.png",
+      "capture": "fuel-transferred",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        478,
+        162,
+        1280,
+        634
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-016.png",
+      "source_sha256": "b5b5eb13642be32c6fa5f606b50788c03c55be20641e36315c4951fc2a9532bc"
+    },
+    {
+      "page": 6,
+      "target": "1.20.1/fabric",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Recipe toggle inside the updated frame",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-polish-fabric-11\\screenshots\\fabric-cooking-pot-cooking-active.png",
+      "capture": "cooking-active",
+      "run": "ten-polish-fabric-11",
+      "pixel_crop": [
+        496,
+        32,
+        838,
+        238
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-017.png",
+      "source_sha256": "22d31b0befb78545e92878d2c39f7f255ccb99addb2b59b7fd73e52cc86604cc"
+    },
+    {
+      "page": 6,
+      "target": "1.20.1/fabric",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native recipe book and ingredient placement",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-polish-fabric-11\\screenshots\\fabric-cooking-pot-recipe-selected.png",
+      "capture": "recipe-selected",
+      "run": "ten-polish-fabric-11",
+      "pixel_crop": [
+        106,
+        158,
+        810,
+        518
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-018.png",
+      "source_sha256": "1691010097d1a37aa674b3545762f5b71225f43b393ad043fc222f3b2ed2bea4"
+    },
+    {
+      "page": 6,
+      "target": "1.20.1/fabric",
+      "title": "Better Archeology - identifying table",
+      "detail": "Updated parchment frame / processing",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-polish-fabric-11\\screenshots\\fabric-identifying-identifying-active.png",
+      "capture": "identifying-active",
+      "run": "ten-polish-fabric-11",
+      "pixel_crop": [
+        480,
+        178,
+        798,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-019.png",
+      "source_sha256": "514a435620fbf4111e223ea335545013c76c057ecf62ed487ffcc01db54be40f"
+    },
+    {
+      "page": 6,
+      "target": "1.20.1/fabric",
+      "title": "Better Archeology - identifying table",
+      "detail": "Native identified result",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-polish-fabric-11\\screenshots\\fabric-identifying-identified.png",
+      "capture": "identified",
+      "run": "ten-polish-fabric-11",
+      "pixel_crop": [
+        480,
+        178,
+        798,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-020.png",
+      "source_sha256": "df09b312d7d0bd12e476ac169c4ab67d05e739962887c11f381a9532fa024f09"
+    },
+    {
+      "page": 7,
+      "target": "1.20.1/fabric",
+      "title": "Better Archeology - fossil socket",
+      "detail": "Complete native decorative socket",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-fossil-ready.png",
+      "capture": "ready",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        570,
+        208,
+        710,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-021.png",
+      "source_sha256": "c97c0cef30e51bd5bb8434e1796dd1fa93acb3505951e8deba8e2cf400d05882"
+    },
+    {
+      "page": 7,
+      "target": "1.20.1/fabric",
+      "title": "Illager Invasion - Imbuing Table",
+      "detail": "Native illustration and valid upgrade",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-imbuing-valid-upgrade.png",
+      "capture": "valid-upgrade",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        478,
+        148,
+        800,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-022.png",
+      "source_sha256": "cd3e1c625ea6d591989dc57908986c48885cc9ba36e5d4aae03a0b72d5e368c3"
+    },
+    {
+      "page": 7,
+      "target": "1.20.1/fabric",
+      "title": "Galosphere - Combustion Table",
+      "detail": "All three native bomb modifiers",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-combustion-configured-bomb.png",
+      "capture": "configured-bomb",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        516,
+        162,
+        762,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-023.png",
+      "source_sha256": "7a86ff501bcbce0d0c56d115da4a4e5c07da84dab4060f8e0ce3afcc4ae21b48"
+    },
+    {
+      "page": 7,
+      "target": "1.20.1/fabric",
+      "title": "Sawmill",
+      "detail": "Narrow layout / filtered native recipe",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-sawmill-narrow-search-result.png",
+      "capture": "search-result",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        464,
+        156,
+        816,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-024.png",
+      "source_sha256": "4d62fb6c523b467cfad7093d36e5bdcdfe7fd78cd5be3d9b8a01eb7cd9282ade"
+    },
+    {
+      "page": 8,
+      "target": "1.20.1/fabric",
+      "title": "Sawmill",
+      "detail": "Wide layout / filtered native recipe",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-sawmill-wide-search-result.png",
+      "capture": "search-result",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        456,
+        156,
+        822,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-025.png",
+      "source_sha256": "ec6e97fcd51390608a1684ea667e03ab247089c6c823325fea2cfed5a8a09089"
+    },
+    {
+      "page": 8,
+      "target": "1.20.1/fabric",
+      "title": "Farmer's Delight - cabinet",
+      "detail": "Ordinary SIU storage window",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-farmers-cabinet-native-storage.png",
+      "capture": "native-storage",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        446,
+        164,
+        834,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-026.png",
+      "source_sha256": "6443b7c00f323646aae273ce17912856b758864d1232c73ea910484222a5d56d"
+    },
+    {
+      "page": 8,
+      "target": "1.20.1/fabric",
+      "title": "Farmer's Delight - canvas sign",
+      "detail": "Original standalone editor",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-canvas-sign-native-editor.png",
+      "capture": "native-editor",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        320,
+        40,
+        960,
+        680
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-027.png",
+      "source_sha256": "8b02a21c0b16077e4e49d3a3a6ca2631912e7840b9ae3b2fb36603686829a47f"
+    },
+    {
+      "page": 8,
+      "target": "1.20.1/fabric",
+      "title": "Farmer's Delight - hanging sign",
+      "detail": "Original standalone editor",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-hanging-canvas-sign-native-editor.png",
+      "capture": "native-editor",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        320,
+        40,
+        960,
+        680
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-028.png",
+      "source_sha256": "973aa76c7e6db5624b5d7fe67949d3d3fe3946e326d5c2b13387c4b9d62e7c9f"
+    },
+    {
+      "page": 9,
+      "target": "1.20.1/fabric",
+      "title": "Alloyed - legacy 2.x",
+      "detail": "Materials in storage; no owned forge UI",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-fabric-ten-final-fabric-09\\screenshots\\fabric-alloyed-items-in-storage.png",
+      "capture": "items-in-storage",
+      "run": "ten-final-fabric-09",
+      "pixel_crop": [
+        446,
+        164,
+        834,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-029.png",
+      "source_sha256": "2e69caa0972207a0d7909093135a2854dc15555b058f24632feceff5e0ab3e9e"
+    },
+    {
+      "page": 10,
+      "target": "1.20.1/forge",
+      "title": "Bartering Station",
+      "detail": "Native preview and collected loot",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-forge-03\\screenshots\\forge-bartering-bartered-loot.png",
+      "capture": "bartered-loot",
+      "run": "ten-forge-03",
+      "pixel_crop": [
+        452,
+        160,
+        828,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-030.png",
+      "source_sha256": "c52d3bf8f21862a7ed75064e45e93dacc4d5b8085049a083d5426c648d3f1ffa"
+    },
+    {
+      "page": 10,
+      "target": "1.20.1/forge",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Recipe toggle inside the updated frame",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-polish-forge-06\\screenshots\\forge-cooking-pot-cooking-active.png",
+      "capture": "cooking-active",
+      "run": "ten-polish-forge-06",
+      "pixel_crop": [
+        496,
+        32,
+        838,
+        238
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-031.png",
+      "source_sha256": "996e26b1dfcf60099ae37c2937714bfb4d76070c0c6347b94a9708017be88d41"
+    },
+    {
+      "page": 10,
+      "target": "1.20.1/forge",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native recipe book and ingredient placement",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-polish-forge-06\\screenshots\\forge-cooking-pot-recipe-selected.png",
+      "capture": "recipe-selected",
+      "run": "ten-polish-forge-06",
+      "pixel_crop": [
+        106,
+        158,
+        810,
+        518
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-032.png",
+      "source_sha256": "bc60a639b0890ff79b0f70f53f02bf8be82836612f74a1ff0d1577d6dae518ad"
+    },
+    {
+      "page": 10,
+      "target": "1.20.1/forge",
+      "title": "Miner's Delight - copper pot",
+      "detail": "Copper pot and serving slots",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-polish-forge-06\\screenshots\\forge-copper-pot-cooking-active.png",
+      "capture": "cooking-active",
+      "run": "ten-polish-forge-06",
+      "pixel_crop": [
+        486,
+        158,
+        794,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-033.png",
+      "source_sha256": "f9e32e61511bca1829cf747b95a36ccaceb6b4fa97d2181570bf5fce4ffadf40"
+    },
+    {
+      "page": 11,
+      "target": "1.20.1/forge",
+      "title": "Miner's Delight - copper pot",
+      "detail": "Native copper-pot recipe book",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-polish-forge-06\\screenshots\\forge-copper-pot-recipe-selected.png",
+      "capture": "recipe-selected",
+      "run": "ten-polish-forge-06",
+      "pixel_crop": [
+        124,
+        158,
+        794,
+        518
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-034.png",
+      "source_sha256": "8460704df2b7364a4eaa4f89ecb3c3f351c111d1b3b9d88819b34097dd663cae"
+    },
+    {
+      "page": 11,
+      "target": "1.20.1/forge",
+      "title": "Better Archeology - identifying table",
+      "detail": "Updated parchment frame / processing",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-polish-forge-06\\screenshots\\forge-identifying-identifying-active.png",
+      "capture": "identifying-active",
+      "run": "ten-polish-forge-06",
+      "pixel_crop": [
+        480,
+        178,
+        798,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-035.png",
+      "source_sha256": "90abd26108b17f8ed204a221ff75b4b2343335da46b42b0d958d387099bd9e19"
+    },
+    {
+      "page": 11,
+      "target": "1.20.1/forge",
+      "title": "Better Archeology - identifying table",
+      "detail": "Native identified result",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-polish-forge-06\\screenshots\\forge-identifying-identified.png",
+      "capture": "identified",
+      "run": "ten-polish-forge-06",
+      "pixel_crop": [
+        480,
+        178,
+        798,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-036.png",
+      "source_sha256": "23334f5d6bd45b75b133047d6f407e6a7a15964229b75025798362530fa1b8b9"
+    },
+    {
+      "page": 11,
+      "target": "1.20.1/forge",
+      "title": "Better Archeology - fossil socket",
+      "detail": "Complete native decorative socket",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-forge-04\\screenshots\\forge-fossil-ready.png",
+      "capture": "ready",
+      "run": "ten-forge-04",
+      "pixel_crop": [
+        570,
+        208,
+        710,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-037.png",
+      "source_sha256": "d1724fba172bee031b7dda4b937774410ec6612e4e7e407e0dbc379573edef20"
+    },
+    {
+      "page": 12,
+      "target": "1.20.1/forge",
+      "title": "Illager Invasion - Imbuing Table",
+      "detail": "Native illustration and valid upgrade",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-recipes-forge-05\\screenshots\\forge-imbuing-valid-upgrade.png",
+      "capture": "valid-upgrade",
+      "run": "ten-recipes-forge-05",
+      "pixel_crop": [
+        478,
+        148,
+        800,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-038.png",
+      "source_sha256": "98e2b92259af215dd51642495c7df92714e793aa8cd93ac8bec29878d0f2724f"
+    },
+    {
+      "page": 12,
+      "target": "1.20.1/forge",
+      "title": "Galosphere - Combustion Table",
+      "detail": "All three native bomb modifiers",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-recipes-forge-05\\screenshots\\forge-combustion-configured-bomb.png",
+      "capture": "configured-bomb",
+      "run": "ten-recipes-forge-05",
+      "pixel_crop": [
+        516,
+        162,
+        762,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-039.png",
+      "source_sha256": "a488d9a61ee4ae08b6da5676cf2897941c04797c403617e3f1eb4d452ab5f2a7"
+    },
+    {
+      "page": 12,
+      "target": "1.20.1/forge",
+      "title": "Sawmill",
+      "detail": "Narrow layout / filtered native recipe",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-forge-04\\screenshots\\forge-sawmill-narrow-search-result.png",
+      "capture": "search-result",
+      "run": "ten-forge-04",
+      "pixel_crop": [
+        464,
+        156,
+        816,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-040.png",
+      "source_sha256": "2bd5275a806cba2ad17b02587bd795eb660060d5292fd09bf35260a4bd35dfee"
+    },
+    {
+      "page": 12,
+      "target": "1.20.1/forge",
+      "title": "Sawmill",
+      "detail": "Wide layout / filtered native recipe",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-forge-04\\screenshots\\forge-sawmill-wide-search-result.png",
+      "capture": "search-result",
+      "run": "ten-forge-04",
+      "pixel_crop": [
+        456,
+        156,
+        822,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-041.png",
+      "source_sha256": "20597d09650e524cbbc410de3c61a680cdeb16ef4370304466222b732ff5a01a"
+    },
+    {
+      "page": 13,
+      "target": "1.20.1/forge",
+      "title": "Farmer's Delight - cabinet",
+      "detail": "Ordinary SIU storage window",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-forge-03\\screenshots\\forge-farmers-cabinet-native-storage.png",
+      "capture": "native-storage",
+      "run": "ten-forge-03",
+      "pixel_crop": [
+        446,
+        164,
+        834,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-042.png",
+      "source_sha256": "a2667db2f4e66de6d9d1030e9e411bdcc671f5457de1cb9a093e24ffad40ced6"
+    },
+    {
+      "page": 13,
+      "target": "1.20.1/forge",
+      "title": "Farmer's Delight - canvas sign",
+      "detail": "Original standalone editor",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-forge-03\\screenshots\\forge-canvas-sign-native-editor.png",
+      "capture": "native-editor",
+      "run": "ten-forge-03",
+      "pixel_crop": [
+        320,
+        40,
+        960,
+        680
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-043.png",
+      "source_sha256": "81af1fcf6e082360301d13ed6eba7dc131707a95b77fc0645f9c54289deee4cc"
+    },
+    {
+      "page": 13,
+      "target": "1.20.1/forge",
+      "title": "Farmer's Delight - hanging sign",
+      "detail": "Original standalone editor",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-forge-03\\screenshots\\forge-hanging-canvas-sign-native-editor.png",
+      "capture": "native-editor",
+      "run": "ten-forge-03",
+      "pixel_crop": [
+        320,
+        40,
+        960,
+        680
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-044.png",
+      "source_sha256": "87dcd8c38869366079da92713aa4bfa3ac15dfad572620fe82bee93754ff747c"
+    },
+    {
+      "page": 13,
+      "target": "1.20.1/forge",
+      "title": "Alloyed - legacy 2.x",
+      "detail": "Materials in storage; no owned forge UI",
+      "source": "build\\project-everything-ten-1.20.1\\gameplay\\1.20.1-forge-ten-forge-04\\screenshots\\forge-alloyed-items-in-storage.png",
+      "capture": "items-in-storage",
+      "run": "ten-forge-04",
+      "pixel_crop": [
+        446,
+        164,
+        834,
+        364
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-045.png",
+      "source_sha256": "1e7048c5149cd295387e47fbcad7016377c35a04419527db4e21b51adc08d7b7"
+    },
+    {
+      "page": 14,
+      "target": "1.21.1/fabric",
+      "title": "Bartering Station",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-fabric-ten-port-final-01\\screenshots\\bartering-returned.png",
+      "capture": "bartering-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-046.png",
+      "source_sha256": "75a9fa804d609b17f7a047d9b71414d53af4407e30ebc58b3da56ad107c56a20"
+    },
+    {
+      "page": 14,
+      "target": "1.21.1/fabric",
+      "title": "Alloy Forgery",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-fabric-ten-port-final-01\\screenshots\\alloy-forge-returned.png",
+      "capture": "alloy-forge-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        456,
+        100,
+        824,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-047.png",
+      "source_sha256": "cc2a07c01c932f517d9a60b8ffc9e2b003769390bc6d096658a304998bf45a7f"
+    },
+    {
+      "page": 14,
+      "target": "1.21.1/fabric",
+      "title": "Seasons: Extras - heater",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-fabric-ten-port-final-01\\screenshots\\heater-returned.png",
+      "capture": "heater-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        486,
+        166,
+        792,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-048.png",
+      "source_sha256": "1672b6bbb2826f8168e48edccee10293a3412dddc227b458d6ce1e5b9da0dc5c"
+    },
+    {
+      "page": 14,
+      "target": "1.21.1/fabric",
+      "title": "Seasons: Extras - chiller",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-fabric-ten-port-final-01\\screenshots\\chiller-returned.png",
+      "capture": "chiller-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        486,
+        166,
+        792,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-049.png",
+      "source_sha256": "edf2bc76adc9c8499a0ad0793cb2348baa53db2a78e028594aad2ba0b6a4e5bb"
+    },
+    {
+      "page": 15,
+      "target": "1.21.1/fabric",
+      "title": "Alloyed",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-fabric-ten-port-final-01\\screenshots\\alloyed-returned.png",
+      "capture": "alloyed-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        500,
+        162,
+        780,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-050.png",
+      "source_sha256": "ec6a4de49534e10eea83469a229953fe6c7d0bc28190ff4521ead5a4b6d5abf1"
+    },
+    {
+      "page": 15,
+      "target": "1.21.1/fabric",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-fabric-ten-port-final-01\\screenshots\\cooking-pot-returned.png",
+      "capture": "cooking-pot-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        476,
+        162,
+        802,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-051.png",
+      "source_sha256": "68034877971812c7c084d28e2c4823ccab223e76737d23124b279dda47886b02"
+    },
+    {
+      "page": 15,
+      "target": "1.21.1/fabric",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native recipe book after opening",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-fabric-ten-port-final-01\\screenshots\\cooking-pot-book.png",
+      "capture": "cooking-pot-book",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        110,
+        162,
+        802,
+        512
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-052.png",
+      "source_sha256": "538bcf69f9fcf94a23ab64fde093134b3e6bcdff871945914e882aae28d7046d"
+    },
+    {
+      "page": 15,
+      "target": "1.21.1/fabric",
+      "title": "Better Archeology - identifying table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-fabric-ten-port-final-01\\screenshots\\identifying-returned.png",
+      "capture": "identifying-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        488,
+        182,
+        790,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-053.png",
+      "source_sha256": "5dd62f3467f1afe6f77b368cd27832935c61aeeb4d74ec8f0c543dd3bf7378ac"
+    },
+    {
+      "page": 16,
+      "target": "1.21.1/fabric",
+      "title": "Better Archeology - fossil socket",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-fabric-ten-port-final-01\\screenshots\\fossil-returned.png",
+      "capture": "fossil-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        578,
+        212,
+        702,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-054.png",
+      "source_sha256": "95669253c2c0ca8140d50f898a174a30dee06291905f9438aa0ff2a9cb68df69"
+    },
+    {
+      "page": 16,
+      "target": "1.21.1/fabric",
+      "title": "Illager Invasion - Imbuing Table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-fabric-ten-port-final-01\\screenshots\\imbuing-returned.png",
+      "capture": "imbuing-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        486,
+        152,
+        792,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-055.png",
+      "source_sha256": "dcc995410c035362b3febe8f3948898dd2fb78f82489282aec6ef6f95c0f1205"
+    },
+    {
+      "page": 16,
+      "target": "1.21.1/fabric",
+      "title": "Galosphere - Combustion Table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-fabric-ten-port-final-01\\screenshots\\combustion-returned.png",
+      "capture": "combustion-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        524,
+        166,
+        754,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-056.png",
+      "source_sha256": "3282c13a9d9d7bf6996cb9eae121aad72246f9ff72f96f611bb0729346a04197"
+    },
+    {
+      "page": 16,
+      "target": "1.21.1/fabric",
+      "title": "Sawmill",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-fabric-ten-port-final-01\\screenshots\\sawmill-returned.png",
+      "capture": "sawmill-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        472,
+        160,
+        808,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-057.png",
+      "source_sha256": "e593322ff972042b434b0c7385ea388c5a9301ba23fc7bd97c3d50cd0f322290"
+    },
+    {
+      "page": 17,
+      "target": "1.21.1/neoforge",
+      "title": "Bartering Station",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-port-final-01\\screenshots\\bartering-returned.png",
+      "capture": "bartering-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-058.png",
+      "source_sha256": "df2e0f01e223858450b6b137c3f584d9e1485d026b7d61fc4204792a0c824f13"
+    },
+    {
+      "page": 17,
+      "target": "1.21.1/neoforge",
+      "title": "Alloyed",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-followup-01\\screenshots\\alloyed-returned.png",
+      "capture": "alloyed-returned",
+      "run": "ten-followup-01",
+      "pixel_crop": [
+        500,
+        162,
+        780,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-059.png",
+      "source_sha256": "3a6c132f0e18be458114d5efaa6f69cbb202fe983843472d7522bd394ddd0cde"
+    },
+    {
+      "page": 17,
+      "target": "1.21.1/neoforge",
+      "title": "Alloyed",
+      "detail": "Native forge processing",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-followup-01\\screenshots\\alloyed-processing.png",
+      "capture": "alloyed-processing",
+      "run": "ten-followup-01",
+      "pixel_crop": [
+        500,
+        162,
+        780,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-060.png",
+      "source_sha256": "b641b2f9235572a76fc3e44ab2ee733a0f149c300a7cc0745d48c10d7ed466d3"
+    },
+    {
+      "page": 17,
+      "target": "1.21.1/neoforge",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-port-final-01\\screenshots\\cooking-pot-returned.png",
+      "capture": "cooking-pot-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        476,
+        162,
+        802,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-061.png",
+      "source_sha256": "9e82365eaf0be3475eb7532f23d6a57c96594d5769ba17b06a4324e8574475f0"
+    },
+    {
+      "page": 18,
+      "target": "1.21.1/neoforge",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native recipe book after opening",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-port-final-01\\screenshots\\cooking-pot-book.png",
+      "capture": "cooking-pot-book",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        110,
+        162,
+        802,
+        512
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-062.png",
+      "source_sha256": "cd398a82e152b312bd41dfc409c21f8bd89edc65986b6277a084aae3c72c9b5b"
+    },
+    {
+      "page": 18,
+      "target": "1.21.1/neoforge",
+      "title": "Miner's Delight - copper pot",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-followup-01\\screenshots\\copper-pot-returned.png",
+      "capture": "copper-pot-returned",
+      "run": "ten-followup-01",
+      "pixel_crop": [
+        494,
+        162,
+        786,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-063.png",
+      "source_sha256": "8651cd43e8b4c87013dabe2777a0e14289f2e96f1c9f001a1d1eb746a30ea603"
+    },
+    {
+      "page": 18,
+      "target": "1.21.1/neoforge",
+      "title": "Miner's Delight - copper pot",
+      "detail": "Native recipe book after opening",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-followup-01\\screenshots\\copper-pot-book-after-reopen.png",
+      "capture": "copper-pot-book-after-reopen",
+      "run": "ten-followup-01",
+      "pixel_crop": [
+        128,
+        162,
+        786,
+        512
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-064.png",
+      "source_sha256": "1c3b66c4ef0b39bb4b589d082d2a8e7496f7064683323f8e92c32b5b0a3cd060"
+    },
+    {
+      "page": 18,
+      "target": "1.21.1/neoforge",
+      "title": "Better Archeology - identifying table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-port-final-01\\screenshots\\identifying-returned.png",
+      "capture": "identifying-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        488,
+        182,
+        790,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-065.png",
+      "source_sha256": "d685fd00728c1c1773f263f553a5e9336bc952bd274dbbcd3ec52fd224f0c90d"
+    },
+    {
+      "page": 19,
+      "target": "1.21.1/neoforge",
+      "title": "Better Archeology - fossil socket",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-port-final-01\\screenshots\\fossil-returned.png",
+      "capture": "fossil-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        578,
+        212,
+        702,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-066.png",
+      "source_sha256": "0b59812cd12943d4d43408ba8f69fb514092f77f47a3c2db1993d235796ccc30"
+    },
+    {
+      "page": 19,
+      "target": "1.21.1/neoforge",
+      "title": "Illager Invasion - Imbuing Table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-followup-01\\screenshots\\imbuing-returned.png",
+      "capture": "imbuing-returned",
+      "run": "ten-followup-01",
+      "pixel_crop": [
+        486,
+        152,
+        792,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-067.png",
+      "source_sha256": "c043d33c8ff456bcccf5bc382b8be48492d071b8b42ae124bb6f00437f9c493d"
+    },
+    {
+      "page": 19,
+      "target": "1.21.1/neoforge",
+      "title": "Galosphere - Combustion Table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-port-final-01\\screenshots\\combustion-returned.png",
+      "capture": "combustion-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        524,
+        166,
+        754,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-068.png",
+      "source_sha256": "051893231abe022f7160ac241d7c5d50a99bff0548f7b7ca4a813d233dfe7eb2"
+    },
+    {
+      "page": 19,
+      "target": "1.21.1/neoforge",
+      "title": "Sawmill",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.1-neoforge-ten-port-final-01\\screenshots\\sawmill-returned.png",
+      "capture": "sawmill-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        472,
+        160,
+        808,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-069.png",
+      "source_sha256": "1f47f8b4afd3cd0f40f8ed6b2ac101127c4c0c29c9b327b1cdf010b96d42e415"
+    },
+    {
+      "page": 20,
+      "target": "1.21.11/fabric",
+      "title": "Bartering Station",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.11-fabric-ten-head-01\\screenshots\\bartering-returned.png",
+      "capture": "bartering-returned",
+      "run": "ten-head-01",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-070.png",
+      "source_sha256": "b6008953f9f94e0b3ef9d768e248e710c0fd7e4fc03d5b41e8ce9fc59693487c"
+    },
+    {
+      "page": 20,
+      "target": "1.21.11/fabric",
+      "title": "Bartering Station",
+      "detail": "Native piglin-highlight control active",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.11-fabric-ten-head-01\\screenshots\\bartering-head-active.png",
+      "capture": "bartering-head-active",
+      "run": "ten-head-01",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-071.png",
+      "source_sha256": "b6eb005e27af20f6151b0fce7a2b58138607202de4da067cbb05e0bec0390baf"
+    },
+    {
+      "page": 20,
+      "target": "1.21.11/fabric",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.11-fabric-ten-port-final-01\\screenshots\\cooking-pot-returned.png",
+      "capture": "cooking-pot-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        476,
+        162,
+        802,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-072.png",
+      "source_sha256": "883873e054ea27cd0c2f69231927885d7217f9e6d6efe0975bb093d14505fd69"
+    },
+    {
+      "page": 20,
+      "target": "1.21.11/fabric",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native recipe book after opening",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.11-fabric-ten-port-final-01\\screenshots\\cooking-pot-book.png",
+      "capture": "cooking-pot-book",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        110,
+        162,
+        802,
+        512
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-073.png",
+      "source_sha256": "ff1e8675f0fcd5e9bbd8915b49187a703fba07b333820eaae159e5ebf8aa476d"
+    },
+    {
+      "page": 21,
+      "target": "1.21.11/fabric",
+      "title": "Better Archeology - identifying table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.11-fabric-ten-port-final-01\\screenshots\\identifying-returned.png",
+      "capture": "identifying-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        488,
+        182,
+        790,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-074.png",
+      "source_sha256": "018966d77171c4e7b813c94cc8837a343d002f6dd9e3bd18cc6d61efb70953b4"
+    },
+    {
+      "page": 21,
+      "target": "1.21.11/fabric",
+      "title": "Better Archeology - fossil socket",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.11-fabric-ten-port-final-01\\screenshots\\fossil-returned.png",
+      "capture": "fossil-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        578,
+        212,
+        702,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-075.png",
+      "source_sha256": "560be96520f4c0248acd7c1fd0746a978978cb61d62e366079524f0e9024e7f1"
+    },
+    {
+      "page": 21,
+      "target": "1.21.11/fabric",
+      "title": "Illager Invasion - Imbuing Table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.11-fabric-ten-port-final-01\\screenshots\\imbuing-returned.png",
+      "capture": "imbuing-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        486,
+        152,
+        792,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-076.png",
+      "source_sha256": "7271889f54f937293d43db9097ddc0b3713c7e60b2c5774530ac5c86d188a7c2"
+    },
+    {
+      "page": 22,
+      "target": "1.21.11/neoforge",
+      "title": "Bartering Station",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.11-neoforge-ten-head-01\\screenshots\\bartering-returned.png",
+      "capture": "bartering-returned",
+      "run": "ten-head-01",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-077.png",
+      "source_sha256": "946837f3b333a0b27055138f1c10f5c46c53caa136c5fa68071cd1c2c1e641d5"
+    },
+    {
+      "page": 22,
+      "target": "1.21.11/neoforge",
+      "title": "Bartering Station",
+      "detail": "Native piglin-highlight control active",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.11-neoforge-ten-head-01\\screenshots\\bartering-head-active.png",
+      "capture": "bartering-head-active",
+      "run": "ten-head-01",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-078.png",
+      "source_sha256": "a3de88ca95bb9553868c98ff81f59c9c21d5ae8c6829d5d678f5ff52fc0b2a81"
+    },
+    {
+      "page": 22,
+      "target": "1.21.11/neoforge",
+      "title": "Better Archeology - identifying table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.11-neoforge-ten-port-final-01\\screenshots\\identifying-returned.png",
+      "capture": "identifying-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        488,
+        182,
+        790,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-079.png",
+      "source_sha256": "11f98744dbee23e1983b06e33870ecd2f0019fd1dd4a34578ebef95673b52325"
+    },
+    {
+      "page": 22,
+      "target": "1.21.11/neoforge",
+      "title": "Better Archeology - fossil socket",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.11-neoforge-ten-port-final-01\\screenshots\\fossil-returned.png",
+      "capture": "fossil-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        578,
+        212,
+        702,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-080.png",
+      "source_sha256": "807220e457e89a0b6b87fac8f682e7f1ef96c4b7a3f2880369d753c8f44a8943"
+    },
+    {
+      "page": 23,
+      "target": "1.21.11/neoforge",
+      "title": "Illager Invasion - Imbuing Table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\1.21.11-neoforge-ten-port-final-01\\screenshots\\imbuing-returned.png",
+      "capture": "imbuing-returned",
+      "run": "ten-port-final-01",
+      "pixel_crop": [
+        486,
+        152,
+        792,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-081.png",
+      "source_sha256": "6ff2edac3263a281d7c410fc43cd2c8697097ccfea3079ca59a93dc1aa196804"
+    },
+    {
+      "page": 24,
+      "target": "26.1.2/fabric",
+      "title": "Bartering Station",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-port-final-05\\screenshots\\bartering-returned.png",
+      "capture": "bartering-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-082.png",
+      "source_sha256": "fd0382be6040cfd6cfcea89e143f659861686ceaae24eeada6eea370581a722e"
+    },
+    {
+      "page": 24,
+      "target": "26.1.2/fabric",
+      "title": "Bartering Station",
+      "detail": "Native piglin-highlight control active",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-port-final-05\\screenshots\\bartering-head-active.png",
+      "capture": "bartering-head-active",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-083.png",
+      "source_sha256": "e6484ea8e4d53f87706659ba1b61070801c8baeb6d268f0975f45b4d846fbf2f"
+    },
+    {
+      "page": 24,
+      "target": "26.1.2/fabric",
+      "title": "Alloy Forgery",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-owo-01\\screenshots\\alloy-forge-returned.png",
+      "capture": "alloy-forge-returned",
+      "run": "ten-owo-01",
+      "pixel_crop": [
+        456,
+        98,
+        824,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-084.png",
+      "source_sha256": "6531f84e3412db16c473510dc6b40f341c25f271ee872bf8665444f5ab8a9552"
+    },
+    {
+      "page": 24,
+      "target": "26.1.2/fabric",
+      "title": "Alloy Forgery",
+      "detail": "Native input slot locked",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-owo-01\\screenshots\\alloy-forge-slot-disabled.png",
+      "capture": "alloy-forge-slot-disabled",
+      "run": "ten-owo-01",
+      "pixel_crop": [
+        456,
+        98,
+        824,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-085.png",
+      "source_sha256": "0dfdbca2c63c103b9deb66a1a95affb8c2704c81db8505a1077a2f69447c3083"
+    },
+    {
+      "page": 25,
+      "target": "26.1.2/fabric",
+      "title": "Alloy Forgery",
+      "detail": "Live fuel/property synchronization",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-owo-01\\screenshots\\alloy-forge-processing.png",
+      "capture": "alloy-forge-processing",
+      "run": "ten-owo-01",
+      "pixel_crop": [
+        456,
+        98,
+        824,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-086.png",
+      "source_sha256": "f8b41303fdc54755072c53636d8eb0608ad564d002789644c2c909a8fa8667da"
+    },
+    {
+      "page": 25,
+      "target": "26.1.2/fabric",
+      "title": "Alloyed",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-port-final-05\\screenshots\\alloyed-returned.png",
+      "capture": "alloyed-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        500,
+        162,
+        780,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-087.png",
+      "source_sha256": "e17c5e36794445b29a01bada28873d7f2745cf4a32f3479ada90527828a8edc2"
+    },
+    {
+      "page": 25,
+      "target": "26.1.2/fabric",
+      "title": "Alloyed",
+      "detail": "Native forge processing",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-port-final-05\\screenshots\\alloyed-processing.png",
+      "capture": "alloyed-processing",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        500,
+        162,
+        780,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-088.png",
+      "source_sha256": "eddca283aad10d7e170608c4dfed95909ddd501ead7b2792a31a0c28b6e7c9d8"
+    },
+    {
+      "page": 25,
+      "target": "26.1.2/fabric",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-port-final-05\\screenshots\\cooking-pot-returned.png",
+      "capture": "cooking-pot-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        476,
+        162,
+        802,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-089.png",
+      "source_sha256": "202cce2b1f5151ce4d8dbeb499a01dbbc059bb7b981d3aafc916dfbbf1935360"
+    },
+    {
+      "page": 26,
+      "target": "26.1.2/fabric",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native recipe book after opening",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-port-final-05\\screenshots\\cooking-pot-book-after-reopen.png",
+      "capture": "cooking-pot-book-after-reopen",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        110,
+        162,
+        802,
+        512
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-090.png",
+      "source_sha256": "cdc7a6553dae92d8cbe5d9900559cf5f722dc20de06fbfec503cb0f51d50151b"
+    },
+    {
+      "page": 26,
+      "target": "26.1.2/fabric",
+      "title": "Better Archeology - identifying table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-port-final-05\\screenshots\\identifying-returned.png",
+      "capture": "identifying-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        488,
+        182,
+        790,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-091.png",
+      "source_sha256": "4ef23b4b2684657d6b75769fa286eaf47ca393bb0ee77ec89c416f92a666dc8e"
+    },
+    {
+      "page": 26,
+      "target": "26.1.2/fabric",
+      "title": "Better Archeology - fossil socket",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-port-final-05\\screenshots\\fossil-returned.png",
+      "capture": "fossil-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        578,
+        212,
+        702,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-092.png",
+      "source_sha256": "93de8d3868077318a9d60c4f7fb7bdd810d4b497e0eb7fb58b3ced0e5dff4267"
+    },
+    {
+      "page": 26,
+      "target": "26.1.2/fabric",
+      "title": "Illager Invasion - Imbuing Table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-port-final-05\\screenshots\\imbuing-returned.png",
+      "capture": "imbuing-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        486,
+        152,
+        792,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-093.png",
+      "source_sha256": "9031369d9ad787dccb64c3652cef981aeb0bd50104e0a1e02f5781249bb0f553"
+    },
+    {
+      "page": 27,
+      "target": "26.1.2/fabric",
+      "title": "Sawmill",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-fabric-ten-port-final-05\\screenshots\\sawmill-returned.png",
+      "capture": "sawmill-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        472,
+        160,
+        808,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-094.png",
+      "source_sha256": "88e6786b3d6224502bbac27d56d2802fb30f29ba78ce62faadad805e3f4ede8f"
+    },
+    {
+      "page": 28,
+      "target": "26.1.2/neoforge",
+      "title": "Bartering Station",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-neoforge-ten-port-final-05\\screenshots\\bartering-returned.png",
+      "capture": "bartering-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-095.png",
+      "source_sha256": "b2ca2a7a3231e6047655590ffb3abc9e236a847aa1b48aca3fe10393227ccf0e"
+    },
+    {
+      "page": 28,
+      "target": "26.1.2/neoforge",
+      "title": "Bartering Station",
+      "detail": "Native piglin-highlight control active",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-neoforge-ten-port-final-05\\screenshots\\bartering-head-active.png",
+      "capture": "bartering-head-active",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-096.png",
+      "source_sha256": "bf65b2574b77331d39bda3a6668c0adfd4ce337297b61464901c3927841d4faf"
+    },
+    {
+      "page": 28,
+      "target": "26.1.2/neoforge",
+      "title": "Alloyed",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-neoforge-ten-port-final-05\\screenshots\\alloyed-returned.png",
+      "capture": "alloyed-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        500,
+        162,
+        780,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-097.png",
+      "source_sha256": "4cffa9a875abf3f5e0fafbcb2c68daa248f34010ec6599f667ff7d63c0ee9282"
+    },
+    {
+      "page": 28,
+      "target": "26.1.2/neoforge",
+      "title": "Alloyed",
+      "detail": "Native forge processing",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-neoforge-ten-port-final-05\\screenshots\\alloyed-processing.png",
+      "capture": "alloyed-processing",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        500,
+        162,
+        780,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-098.png",
+      "source_sha256": "2c2c0a122e9b9f4622009631a1503b0cd5ffafd851d6c62bd44658044b678313"
+    },
+    {
+      "page": 29,
+      "target": "26.1.2/neoforge",
+      "title": "Better Archeology - identifying table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-neoforge-ten-port-final-05\\screenshots\\identifying-returned.png",
+      "capture": "identifying-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        488,
+        182,
+        790,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-099.png",
+      "source_sha256": "eaaee73d8e5d7baabf493072238de7983703fca1c1ff7e2f70867fa5f47f6454"
+    },
+    {
+      "page": 29,
+      "target": "26.1.2/neoforge",
+      "title": "Better Archeology - fossil socket",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-neoforge-ten-port-final-05\\screenshots\\fossil-returned.png",
+      "capture": "fossil-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        578,
+        212,
+        702,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-100.png",
+      "source_sha256": "34572d780d9eafc0c9de3f67abb619f884dcd058a685e79e4e47c5dead120760"
+    },
+    {
+      "page": 29,
+      "target": "26.1.2/neoforge",
+      "title": "Illager Invasion - Imbuing Table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-neoforge-ten-port-final-05\\screenshots\\imbuing-returned.png",
+      "capture": "imbuing-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        486,
+        152,
+        792,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-101.png",
+      "source_sha256": "2f6fedc166616b10aada4143c8720a20ddbcdf78f2db94c2313def8ace940bb5"
+    },
+    {
+      "page": 29,
+      "target": "26.1.2/neoforge",
+      "title": "Sawmill",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.1.2-neoforge-ten-port-final-05\\screenshots\\sawmill-returned.png",
+      "capture": "sawmill-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        472,
+        160,
+        808,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-102.png",
+      "source_sha256": "e8bc21a156bd0326f76e871f0ba560bad36645dca75d2db81cbed6399bbc0d64"
+    },
+    {
+      "page": 30,
+      "target": "26.2/fabric",
+      "title": "Bartering Station",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-fabric-ten-port-final-05\\screenshots\\bartering-returned.png",
+      "capture": "bartering-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-103.png",
+      "source_sha256": "71102fbd2bff21c0c4dc482b439dce40ad4a10af6163d839c39bedefaf88e101"
+    },
+    {
+      "page": 30,
+      "target": "26.2/fabric",
+      "title": "Bartering Station",
+      "detail": "Native piglin-highlight control active",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-fabric-ten-port-final-05\\screenshots\\bartering-head-active.png",
+      "capture": "bartering-head-active",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-104.png",
+      "source_sha256": "950ad9a6b67d7b8a44fbebe313b43b7b00e1ba0a64aa4b8d2338b6eb92b7595c"
+    },
+    {
+      "page": 30,
+      "target": "26.2/fabric",
+      "title": "Alloyed",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-fabric-ten-port-final-05\\screenshots\\alloyed-returned.png",
+      "capture": "alloyed-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        500,
+        162,
+        780,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-105.png",
+      "source_sha256": "a572efa4d943b1b9cc8202e3584bae81b86a0863908664899d7819085075cfc1"
+    },
+    {
+      "page": 30,
+      "target": "26.2/fabric",
+      "title": "Alloyed",
+      "detail": "Native forge processing",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-fabric-ten-port-final-05\\screenshots\\alloyed-processing.png",
+      "capture": "alloyed-processing",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        500,
+        162,
+        780,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-106.png",
+      "source_sha256": "0b4b695e60dc44b7da3e3f95cdf03d6391b85243214d02de87ab5ef8993359e9"
+    },
+    {
+      "page": 31,
+      "target": "26.2/fabric",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-fabric-ten-port-final-05\\screenshots\\cooking-pot-returned.png",
+      "capture": "cooking-pot-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        476,
+        162,
+        802,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-107.png",
+      "source_sha256": "f361bc97e6856db2e84d381469a8181400f21011123add2812d5661e741b2880"
+    },
+    {
+      "page": 31,
+      "target": "26.2/fabric",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native recipe book after opening",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-fabric-ten-port-final-05\\screenshots\\cooking-pot-book-after-reopen.png",
+      "capture": "cooking-pot-book-after-reopen",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        110,
+        162,
+        802,
+        512
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-108.png",
+      "source_sha256": "03f0d7aaa25d1f5653d691374cc7642435b5edd82e985dfbcd801ec73a5d6591"
+    },
+    {
+      "page": 31,
+      "target": "26.2/fabric",
+      "title": "Better Archeology - identifying table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-fabric-ten-port-final-05\\screenshots\\identifying-returned.png",
+      "capture": "identifying-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        488,
+        182,
+        790,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-109.png",
+      "source_sha256": "f970c609c02d9df8a9673457d500328cc5e8c5c7c3c84f8779d4e23bc823b45f"
+    },
+    {
+      "page": 31,
+      "target": "26.2/fabric",
+      "title": "Better Archeology - fossil socket",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-fabric-ten-port-final-05\\screenshots\\fossil-returned.png",
+      "capture": "fossil-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        578,
+        212,
+        702,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-110.png",
+      "source_sha256": "1c0997c8e34e62ad4aab60528330460d0dca0c57c52e9b6094b17eff73136bda"
+    },
+    {
+      "page": 32,
+      "target": "26.2/fabric",
+      "title": "Illager Invasion - Imbuing Table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-fabric-ten-port-final-05\\screenshots\\imbuing-returned.png",
+      "capture": "imbuing-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        486,
+        152,
+        792,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-111.png",
+      "source_sha256": "707302bb4fda508a3b576f35952a7e841fca5105ee76c7773a4e91cb0433a325"
+    },
+    {
+      "page": 33,
+      "target": "26.2/neoforge",
+      "title": "Bartering Station",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-neoforge-ten-port-final-05\\screenshots\\bartering-returned.png",
+      "capture": "bartering-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-112.png",
+      "source_sha256": "0680543019c2091bc5d154ac30fe01e184c2460864c0c0e62893a99e46dcfbc7"
+    },
+    {
+      "page": 33,
+      "target": "26.2/neoforge",
+      "title": "Bartering Station",
+      "detail": "Native piglin-highlight control active",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-neoforge-ten-port-final-05\\screenshots\\bartering-head-active.png",
+      "capture": "bartering-head-active",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-113.png",
+      "source_sha256": "2f0fe48bbd0bd86bf3b64766dbcd965b75ac9a2e9b11fc2847d8cddfcef6461d"
+    },
+    {
+      "page": 33,
+      "target": "26.2/neoforge",
+      "title": "Better Archeology - identifying table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-neoforge-ten-port-final-05\\screenshots\\identifying-returned.png",
+      "capture": "identifying-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        488,
+        182,
+        790,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-114.png",
+      "source_sha256": "26594f8043c907b2b1b6b1b5a7b488a017d4cd39e38c6c690a957c60c3074d89"
+    },
+    {
+      "page": 33,
+      "target": "26.2/neoforge",
+      "title": "Better Archeology - fossil socket",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-neoforge-ten-port-final-05\\screenshots\\fossil-returned.png",
+      "capture": "fossil-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        578,
+        212,
+        702,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-115.png",
+      "source_sha256": "8de8f893d139aebb096c355acbce8736db7238a16e82af29e757dd7b82011ec2"
+    },
+    {
+      "page": 34,
+      "target": "26.2/neoforge",
+      "title": "Illager Invasion - Imbuing Table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.2-neoforge-ten-port-final-05\\screenshots\\imbuing-returned.png",
+      "capture": "imbuing-returned",
+      "run": "ten-port-final-05",
+      "pixel_crop": [
+        486,
+        152,
+        792,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-116.png",
+      "source_sha256": "53f1b5817f0328ce944ff18c244706e794332e99469f6a3c77f5996faa7a745e"
+    },
+    {
+      "page": 35,
+      "target": "26.3/fabric",
+      "title": "Bartering Station",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.3-fabric-ten-port-final-07\\screenshots\\bartering-returned.png",
+      "capture": "bartering-returned",
+      "run": "ten-port-final-07",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-117.png",
+      "source_sha256": "1c3bb28362dbe23436ffb3d36e47b191ee86dafc6ebe1130a86bb42ce248c9b0"
+    },
+    {
+      "page": 35,
+      "target": "26.3/fabric",
+      "title": "Bartering Station",
+      "detail": "Native piglin-highlight control active",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.3-fabric-ten-port-final-07\\screenshots\\bartering-head-active.png",
+      "capture": "bartering-head-active",
+      "run": "ten-port-final-07",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-118.png",
+      "source_sha256": "34fe84929e9e914859c08981770bda41d48ac1e578af452e6a9269c517e3bbc1"
+    },
+    {
+      "page": 35,
+      "target": "26.3/fabric",
+      "title": "Alloyed",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.3-fabric-ten-port-final-07\\screenshots\\alloyed-returned.png",
+      "capture": "alloyed-returned",
+      "run": "ten-port-final-07",
+      "pixel_crop": [
+        500,
+        162,
+        780,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-119.png",
+      "source_sha256": "94b3fdb32baeeb3ea4af06f2d994097d0c1ced7babbb780833b33709dc97dc0e"
+    },
+    {
+      "page": 35,
+      "target": "26.3/fabric",
+      "title": "Alloyed",
+      "detail": "Native forge processing",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.3-fabric-ten-port-final-07\\screenshots\\alloyed-processing.png",
+      "capture": "alloyed-processing",
+      "run": "ten-port-final-07",
+      "pixel_crop": [
+        500,
+        162,
+        780,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-120.png",
+      "source_sha256": "4fccc289ca98598af4754688bc54459af26fd46d8cd2de02bf107e7bdf37d8fe"
+    },
+    {
+      "page": 36,
+      "target": "26.3/fabric",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.3-fabric-ten-port-final-07\\screenshots\\cooking-pot-returned.png",
+      "capture": "cooking-pot-returned",
+      "run": "ten-port-final-07",
+      "pixel_crop": [
+        476,
+        162,
+        802,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-121.png",
+      "source_sha256": "d745c85e658c70d34329af9cb434a6711a477f22199400ccd995e45eb5d39455"
+    },
+    {
+      "page": 36,
+      "target": "26.3/fabric",
+      "title": "Farmer's Delight - cooking pot",
+      "detail": "Native recipe book after opening",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.3-fabric-ten-port-final-07\\screenshots\\cooking-pot-book-after-reopen.png",
+      "capture": "cooking-pot-book-after-reopen",
+      "run": "ten-port-final-07",
+      "pixel_crop": [
+        110,
+        162,
+        802,
+        512
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-122.png",
+      "source_sha256": "a4768c6c0040541de23d139680f5dce31f582609781167a088c09a99a82011d4"
+    },
+    {
+      "page": 36,
+      "target": "26.3/fabric",
+      "title": "Better Archeology - identifying table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.3-fabric-ten-port-final-07\\screenshots\\identifying-returned.png",
+      "capture": "identifying-returned",
+      "run": "ten-port-final-07",
+      "pixel_crop": [
+        488,
+        182,
+        790,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-123.png",
+      "source_sha256": "cee069e05bd85f05f64ecff169a9512de42a0b4ff4ab5fabd28eff037346ae5f"
+    },
+    {
+      "page": 36,
+      "target": "26.3/fabric",
+      "title": "Better Archeology - fossil socket",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.3-fabric-ten-port-final-07\\screenshots\\fossil-returned.png",
+      "capture": "fossil-returned",
+      "run": "ten-port-final-07",
+      "pixel_crop": [
+        578,
+        212,
+        702,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-124.png",
+      "source_sha256": "99d4ffb8d984279d3bf95896d7e80ce770f0f0d174ad835986d00b74cf1e5319"
+    },
+    {
+      "page": 37,
+      "target": "26.3/neoforge",
+      "title": "Bartering Station",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.3-neoforge-ten-port-final-07\\screenshots\\bartering-returned.png",
+      "capture": "bartering-returned",
+      "run": "ten-port-final-07",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-125.png",
+      "source_sha256": "e36930b3880ff697480c815edf55f64b044f5d7ef9c628b2fa9d113f03fb5c6a"
+    },
+    {
+      "page": 37,
+      "target": "26.3/neoforge",
+      "title": "Bartering Station",
+      "detail": "Native piglin-highlight control active",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.3-neoforge-ten-port-final-07\\screenshots\\bartering-head-active.png",
+      "capture": "bartering-head-active",
+      "run": "ten-port-final-07",
+      "pixel_crop": [
+        460,
+        164,
+        820,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-126.png",
+      "source_sha256": "18e580e030089c514a651ff8162f7254c506515199b2fb205d253a4432e4ab2d"
+    },
+    {
+      "page": 37,
+      "target": "26.3/neoforge",
+      "title": "Better Archeology - identifying table",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.3-neoforge-ten-port-final-07\\screenshots\\identifying-returned.png",
+      "capture": "identifying-returned",
+      "run": "ten-port-final-07",
+      "pixel_crop": [
+        488,
+        182,
+        790,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-127.png",
+      "source_sha256": "e25ef164901a7e73de2e73d8094befcd5d7d956f5816f799c69f3af6a76261b1"
+    },
+    {
+      "page": 37,
+      "target": "26.3/neoforge",
+      "title": "Better Archeology - fossil socket",
+      "detail": "Native window / item returned",
+      "source": "build\\project-everything-ten-port\\gameplay\\26.3-neoforge-ten-port-final-07\\screenshots\\fossil-returned.png",
+      "capture": "fossil-returned",
+      "run": "ten-port-final-07",
+      "pixel_crop": [
+        578,
+        212,
+        702,
+        356
+      ],
+      "crop": "tmp\\pdfs\\project-everything-ten-all-targets\\figure-128.png",
+      "source_sha256": "191d6ccab7d89c695d4eec7aba6797b61d545950923aad72cd41f1eb46474f87"
+    }
+  ],
+  "pdf_sha256": "4e602be1291cf6f97e20167e3709a0ccd86f65092b4218572df0b8479f1e9558",
+  "review": {
+    "all_38_pages_rendered": true,
+    "all_contact_sheets_reviewed": true,
+    "full_size_pages_reviewed": [
+      2,
+      6,
+      18,
+      25,
+      38
+    ],
+    "all_12_targets_and_67_available_family_pairs_represented": true,
+    "new_gameplay_tests_run": false
+  }
+}

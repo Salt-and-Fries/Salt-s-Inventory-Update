@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+MixinConfigs: salts_inventory_compat.simplyswords.mixins.json,salts_inventory_compat.feeding-trough.mixins.json,salts_inventory_compat.chipped.mixins.json
+
