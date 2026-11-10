@@ -59,7 +59,7 @@ import net.minecraft.world.inventory.GrindstoneMenu;
 import net.minecraft.world.inventory.HorseInventoryMenu;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.LoomMenu;
-import net.minecraft.world.inventory.MerchantMenu;
+import com.salts_inventory_update.api.desktop.DesktopMerchantAccess;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.NautilusInventoryMenu;
 import net.minecraft.world.inventory.RemoteSlot;
@@ -398,6 +398,26 @@ public final class DesktopContainerSessions {
         }
     }
 
+    /** Only a validated game-mode block interaction may lend its source identity
+     * to a menu opener. Packet cancellation and thread handoff happen outside. */
+    public static <T> T withUseTarget(ServerPlayer player, BlockHitResult hit, java.util.function.Supplier<T> action) {
+        String target = shouldCapture(player) && hit.getType() == HitResult.Type.BLOCK
+            ? sourceKeyForBlock(player, hit.getBlockPos()) : null;
+        return withPendingUseTarget(player, target, action);
+    }
+
+    private static <T> T withPendingUseTarget(ServerPlayer player, @Nullable String target, java.util.function.Supplier<T> action) {
+        var identity = player;
+        String previous = PENDING_USE_TARGETS.get(identity);
+        if (target == null) PENDING_USE_TARGETS.remove(identity);
+        else PENDING_USE_TARGETS.put(identity, target);
+        try { return action.get(); }
+        finally {
+            if (previous == null) PENDING_USE_TARGETS.remove(identity);
+            else PENDING_USE_TARGETS.put(identity, previous);
+        }
+    }
+
     public static void captureUseTarget(ServerPlayer player, BlockHitResult hitResult) {
         if (!shouldCapture(player)) {
             return;
@@ -479,7 +499,16 @@ public final class DesktopContainerSessions {
         return openMenuSession(player, provider, null, true, true, openingDataWriter);
     }
 
+    /** Native openMenu extras use the publisher wire format, not an explicit API payload. */
+    public static @Nullable OptionalInt captureNativeMenuSession(ServerPlayer player, MenuProvider provider, @Nullable Consumer<RegistryFriendlyByteBuf> nativeWriter) {
+        return openMenuSession(player, provider, null, true, true, nativeWriter, true);
+    }
+
     private static @Nullable OptionalInt openMenuSession(ServerPlayer player, MenuProvider provider, @Nullable String forcedSourceKey, boolean toggleExisting, boolean visibleToClient, @Nullable Consumer<RegistryFriendlyByteBuf> openingDataWriter) {
+        return openMenuSession(player, provider, forcedSourceKey, toggleExisting, visibleToClient, openingDataWriter, false);
+    }
+
+    private static @Nullable OptionalInt openMenuSession(ServerPlayer player, MenuProvider provider, @Nullable String forcedSourceKey, boolean toggleExisting, boolean visibleToClient, @Nullable Consumer<RegistryFriendlyByteBuf> openingDataWriter, boolean nativeInvocation) {
         if (provider == null) {
             DesktopDebug.warn("server capture skipped player={} reason=null-provider", player.getName().getString());
             return OptionalInt.empty();
@@ -531,16 +560,21 @@ public final class DesktopContainerSessions {
             return null;
         }
 
+        boolean nativeWireFormat = nativeInvocation || openingDataWriter == null;
         if(automaticNative(player,sessions,menu)){
             String inferred=com.salts_inventory_update.internal.desktop.AutomaticContainerSources.bind(player,menu,provider);
             if(inferred!=null)sourceKey=inferred;
             if(openingDataWriter==null)openingDataWriter=com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.openingWriter(provider,player,menu.getType());
         }
+        Consumer<RegistryFriendlyByteBuf> nativeOpeningDataWriter=openingDataWriter;
         byte[] openingData;
         try {
             DesktopServerApi.OpeningDataWriter<AbstractContainerMenu> apiWriter = DesktopServerApi.findOpeningDataWriter(menu.getType());
-            openingData = encodeOpeningData(player, openingDataWriter != null ? openingDataWriter
-                : apiWriter == null ? null : buffer -> apiWriter.write(player, menu, buffer), automaticNative(player,sessions,menu));
+            Consumer<RegistryFriendlyByteBuf> registeredWriter=apiWriter==null?null:buffer->apiWriter.write(player,menu,buffer);
+            Consumer<RegistryFriendlyByteBuf> captureWriter=automaticNative(player,sessions,menu)
+                ?com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.captureOpeningWriter(provider,menu,openingDataWriter,registeredWriter,nativeWireFormat)
+                :com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.registeredOpeningWriter(openingDataWriter,registeredWriter,nativeWireFormat);
+            openingData = encodeOpeningData(player,captureWriter,automaticNative(player,sessions,menu));
         } catch (RuntimeException exception) {
             DesktopDebug.warn(
                 "server capture skipped player={} title={} reason=invalid-opening-data detail={}",
@@ -591,7 +625,7 @@ public final class DesktopContainerSessions {
 
         if(session.specialKind==DesktopPackets.SPECIAL_AUTOMATIC_NATIVE){
             com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.inferStorage(menu,player.getInventory());
-            session.nativeProvider=provider;session.nativeWriter=openingDataWriter;
+            session.nativeProvider=provider;session.nativeWriter=nativeOpeningDataWriter;
             session.nativeLoaderEvents=com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.notifyNativeOpened(player,menu);
         }
         session.visibleToClient = visibleToClient;
@@ -792,7 +826,7 @@ public final class DesktopContainerSessions {
         }
         RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), player.registryAccess());
         try {
-            openingDataWriter.accept(buffer);
+            NativePacketContext.run(player,()->openingDataWriter.accept(buffer));
             int length = buffer.readableBytes();
             if (length < (allowEmpty ? 0 : 1) || length > DesktopProtocol.MAX_CUSTOM_DATA_BYTES) {
                 throw new IllegalArgumentException("Opening data length out of bounds: " + length);
@@ -1027,6 +1061,12 @@ public final class DesktopContainerSessions {
             return true;
         }
 
+        // An explicit per-instance rejection also applies to vanilla-shaped
+        // menus. Virtual selectors may intentionally use a vanilla chest type.
+        if (DesktopServerApi.findWindowHandler(type) != null && !DesktopServerApi.supportsWindow(player, menu)) {
+            return false;
+        }
+
         if (isKnownVanillaDesktopMenu(type)) {
             return true;
         }
@@ -1074,12 +1114,12 @@ public final class DesktopContainerSessions {
             return false;
         }
 
-        if (sessions.sessions.get(containerId).menu instanceof MerchantMenu merchantMenu) {
-            merchantMenu.setOffers(offers);
-            merchantMenu.setMerchantLevel(villagerLevel);
-            merchantMenu.setXp(villagerXp);
-            merchantMenu.setShowProgressBar(showProgress);
-            merchantMenu.setCanRestock(canRestock);
+        if (sessions.sessions.get(containerId).menu instanceof DesktopMerchantAccess merchantMenu) {
+            merchantMenu.desktopSetOffers(offers);
+            merchantMenu.desktopSetLevel(villagerLevel);
+            merchantMenu.desktopSetXp(villagerXp);
+            merchantMenu.desktopSetProgress(showProgress);
+            merchantMenu.desktopSetRestock(canRestock);
         }
 
         send(player, new DesktopMerchantOffersPayload(containerId, offers, villagerLevel, villagerXp, showProgress, canRestock));
@@ -1204,6 +1244,17 @@ public final class DesktopContainerSessions {
             if (sessions != null && (sessions.isActive()
                 || sessions.sessionWorld != null && sessions.sessionWorld != player.level())) {
                 sessions.tick(player);
+                if (sessions.isActive() && !sessions.sessions.isEmpty()) {
+                    // Publish passive host-item changes before retaining the
+                    // exact revision the client can subsequently click from.
+                    sessions.playerClickSnapshots.rememberPublished(player.inventoryMenu, System.nanoTime());
+                    if (player.inventoryMenu.getStateId() != sessions.publishedPlayerRevision) {
+                        // Native publication can advance the revision before this
+                        // tick, and retaining an immutable snapshot can allocate
+                        // one too. Acknowledge either before the next cursor action.
+                        syncCarried(player, sessions);
+                    }
+                }
             }
         }
     }
@@ -1426,10 +1477,17 @@ public final class DesktopContainerSessions {
             DesktopDebug.trace("server click dropped player={} session={} reason=not-ready", player.getName().getString(), payload.sessionId());
             return;
         }
-        SessionAuthorization authorization = authorizeMenu(
-            player, sessions, payload.connectionNonce(), payload.sessionId(), payload.sessionToken(),
-            payload.stateId(), 0L, "click"
-        );
+        SessionAuthorization authorization;
+        if (payload.sessionId() == DesktopPackets.PLAYER_MENU_SESSION
+                && payload.stateId() != player.inventoryMenu.getStateId()
+                && revalidatesPlayerClick(player, sessions, payload.stateId(), payload.slotIndex(),
+                    payload.button(), payload.inputName(), payload.clientCarried())) {
+            authorization = authorizeSession(player, sessions, payload.connectionNonce(), payload.sessionId(),
+                payload.sessionToken(), 0L, true, "click");
+        } else {
+            authorization = authorizeMenu(player, sessions, payload.connectionNonce(), payload.sessionId(),
+                payload.sessionToken(), payload.stateId(), 0L, "click");
+        }
         if (authorization == null) {
             return;
         }
@@ -1867,7 +1925,7 @@ public final class DesktopContainerSessions {
             .filter(slot -> DesktopSortSlots.storageSlot(menu, slot)).toList();
         IdentityHashMap<Object, Set<Integer>> seen = new IdentityHashMap<>();
         List<Slot> slots = candidates.stream().filter(slot -> slot.isActive() && !slot.isFake()
-            && !DesktopMenuBindings.isVirtualSlot(menu, slot) && slot.mayPickup(player)
+            && !DesktopMenuBindings.isVirtualSlot(menu, slot) && (!slot.hasItem() || slot.mayPickup(player))
             && !DesktopItemSourceLocks.isSlotLocked(player, slot) && rememberPhysicalSlot(seen, menu, slot)).toList();
         runGestureMutation(player, sessions, "sort-inventory", () -> {
             // Creative tab data is common-side and supplies family ordering, never the contents being moved.
@@ -1907,7 +1965,7 @@ public final class DesktopContainerSessions {
                 if (before == null) throw new IllegalStateException("Sort slot is not in the authenticated menu");
                 if (ItemStack.matches(before, next)) continue;
                 if (!slot.isActive() || slot.isFake() || DesktopItemSourceLocks.isSlotLocked(player, slot)
-                    || !slot.mayPickup(player) || !next.isEmpty() && (!slot.mayPlace(next)
+                    || slot.hasItem() && !slot.mayPickup(player) || !next.isEmpty() && (!slot.mayPlace(next)
                         || next.getCount() > Math.min(next.getMaxStackSize(), slot.getMaxStackSize(next))))
                     throw new IllegalStateException("Sort slot permissions changed");
                 expected.put(slot, next);
@@ -3095,7 +3153,7 @@ public final class DesktopContainerSessions {
             return slotIndex == GrindstoneMenu.RESULT_SLOT;
         }
         if (menu instanceof LoomMenu) return slotIndex == 3;
-        if (menu instanceof MerchantMenu) {
+        if (menu instanceof DesktopMerchantAccess) {
             return slotIndex == MERCHANT_RESULT_SLOT;
         }
         if (menu instanceof SmithingMenu) {
@@ -3151,11 +3209,11 @@ public final class DesktopContainerSessions {
                 }
             } else if (session.menu instanceof BeaconMenu beaconMenu) {
                 clicked = applyBeaconButton(beaconMenu, payload.buttonId());
-            } else if (session.menu instanceof MerchantMenu merchantMenu) {
-                clicked = payload.buttonId() >= 0 && payload.buttonId() < merchantMenu.getOffers().size();
+            } else if (session.menu instanceof DesktopMerchantAccess merchantMenu) {
+                clicked = payload.buttonId() >= 0 && payload.buttonId() < merchantMenu.desktopOffers().size();
                 if (clicked) {
-                    merchantMenu.setSelectionHint(payload.buttonId());
-                    merchantMenu.tryMoveItems(payload.buttonId());
+                    merchantMenu.desktopSelect(payload.buttonId());
+                    merchantMenu.desktopMovePayment(payload.buttonId());
                 }
             } else {
                 clicked = session.menu.clickMenuButton(player, payload.buttonId());
@@ -5129,6 +5187,14 @@ public final class DesktopContainerSessions {
         );
     }
 
+    private static boolean revalidatesPlayerClick(ServerPlayer player, PlayerSessions sessions, int revision,
+            int slot, int button, String input, ItemStack clientCarried) {
+        return "PICKUP".equals(input) && (button == 0 || button == 1)
+            && sessions.playerClickSnapshots.permits(revision, slot, player.inventoryMenu.slots,
+                player.inventoryMenu.getCarried(), clientCarried,
+                candidate -> DesktopItemSourceLocks.isSlotLocked(player, candidate), System.nanoTime());
+    }
+
     private static ItemStack serverSlotStack(AbstractContainerMenu menu, int slotIndex) {
         Slot slot = DesktopMenuBindings.slot(menu, slotIndex);
         if (slot == null) {
@@ -5139,6 +5205,8 @@ public final class DesktopContainerSessions {
     }
 
     private static void syncCarried(ServerPlayer player, PlayerSessions sessions) {
+        sessions.playerClickSnapshots.rememberPublished(player.inventoryMenu, System.nanoTime());
+        sessions.publishedPlayerRevision = player.inventoryMenu.getStateId();
         ItemStack carried = player.inventoryMenu.getCarried().copy();
         DesktopDebug.trace("server sync carried player={} stack={}", player.getName().getString(), carried);
         send(player, new DesktopCarriedPayload(
@@ -5148,6 +5216,8 @@ public final class DesktopContainerSessions {
 
     private static void syncPlayerMenu(ServerPlayer player) {
         InventoryExpansion.appendMissingMenuSlots(player.inventoryMenu, player);
+        PlayerSessions snapshotOwner = PLAYERS.get(player);
+        if (snapshotOwner != null) snapshotOwner.playerClickSnapshots.rememberPublished(player.inventoryMenu, System.nanoTime());
         int stateId = player.inventoryMenu.getStateId();
         for (int slotIndex = 0; slotIndex < player.inventoryMenu.slots.size(); slotIndex++) {
             Slot slot = player.inventoryMenu.slots.get(slotIndex);
@@ -5216,17 +5286,35 @@ public final class DesktopContainerSessions {
     }
 
     private static void syncMerchantOffers(ServerPlayer player, Session session) {
-        if (!(session.menu instanceof MerchantMenu merchantMenu)) {
+        syncMerchantOffers(player, session, true);
+    }
+
+    private static void syncMerchantOffers(ServerPlayer player, Session session, boolean force) {
+        if (!(session.menu instanceof DesktopMerchantAccess merchantMenu)) {
             return;
         }
 
+        // Native merchant XP and offer uses are not ordinary menu data slots.
+        // Refresh their existing payload when their authoritative values change,
+        // including after purchases/restocks, without resending every tick.
+        MerchantOffers offers = merchantMenu.desktopOffers();
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), player.registryAccess());
+        byte[] state;
+        try {
+            NativePacketContext.run(player,()->MerchantOffers.STREAM_CODEC.encode(buffer, offers));
+            buffer.writeVarInt(merchantMenu.desktopLevel());buffer.writeVarInt(merchantMenu.desktopXp());
+            buffer.writeBoolean(merchantMenu.desktopShowProgress());buffer.writeBoolean(merchantMenu.desktopCanRestock());
+            state = new byte[buffer.readableBytes()];buffer.getBytes(buffer.readerIndex(),state);
+        } finally {buffer.release();}
+        if (!force && java.util.Arrays.equals(state,session.merchantSyncState)) return;
+        session.merchantSyncState = state;
         send(player, new DesktopMerchantOffersPayload(
             session.sessionId,
-            merchantMenu.getOffers(),
-            merchantMenu.getTraderLevel(),
-            merchantMenu.getTraderXp(),
-            merchantMenu.showProgressBar(),
-            merchantMenu.canRestock()
+            offers,
+            merchantMenu.desktopLevel(),
+            merchantMenu.desktopXp(),
+            merchantMenu.desktopShowProgress(),
+            merchantMenu.desktopCanRestock()
         ));
     }
 
@@ -5460,6 +5548,8 @@ public final class DesktopContainerSessions {
     }
 
     private static final class PlayerSessions {
+        private final PlayerMenuClickSnapshots playerClickSnapshots = new PlayerMenuClickSnapshots();
+        private int publishedPlayerRevision = -1;
         private boolean automaticNativeReady;
         private Set<MenuType<?>> declinedNativeTypes=new HashSet<>();
         private Set<String> nativeTemplateMenuIds=Set.of();
@@ -5623,6 +5713,10 @@ public final class DesktopContainerSessions {
             }
             session.sourceLock = DesktopItemSourceLocks.acquire(player, session.menu);
             this.sessions.put(session.sessionId, session);
+            if (session.specialKind == DesktopPackets.SPECIAL_AUTOMATIC_NATIVE)
+                com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.inferStorage(session.menu, player.getInventory());
+            if (session.specialKind == DesktopPackets.SPECIAL_AUTOMATIC_NATIVE)
+                session.nativeItemSourceLease=com.salts_inventory_update.internal.desktop.DesktopItemSourceLocks.acquire(player,session.menu);
             session.initializeServerHandler(player, this);
             session.menu.setCarried(ItemStack.EMPTY);
             SessionSynchronizer synchronizer = new SessionSynchronizer(player, session);
@@ -5703,6 +5797,9 @@ public final class DesktopContainerSessions {
                 DesktopDebug.trace("server close ignored player={} session={} reason=missing", player.getName().getString(), sessionId);
                 return;
             }
+            if (session.specialKind == DesktopPackets.SPECIAL_AUTOMATIC_NATIVE)
+                com.salts_inventory_update.internal.desktop.AutomaticContainerSources.release(session.menu);
+            if(session.nativeItemSourceLease!=null){session.nativeItemSourceLease.close();session.nativeItemSourceLease=null;}
 
             // Remove the lifetime before callbacks, then release its ownerships exactly once.
             if (session.companion != null) {
@@ -5771,6 +5868,7 @@ public final class DesktopContainerSessions {
                 } else {
                     withNetworkSession(player, session, session.menu::broadcastChanges);
                     session.dispatchTick(player, this);
+                    syncMerchantOffers(player, session, false);
                 }
             }
 
@@ -5845,6 +5943,8 @@ public final class DesktopContainerSessions {
         private final byte[] openingData;
         private final int replacesSessionId;
         private @Nullable SourceIdentity sourceIdentity;
+        private @Nullable byte[] merchantSyncState;
+        private com.salts_inventory_update.internal.desktop.DesktopItemSourceLocks.@Nullable Lease nativeItemSourceLease;
 
         private boolean visibleToClient = true;
         private @Nullable DesktopServerWindowHandler<AbstractContainerMenu, Object> serverHandler;
@@ -5952,7 +6052,7 @@ public final class DesktopContainerSessions {
             }
             sessions.beginHandlerCallback();
             try {
-                this.serverHandler.tick(new ServerSessionContext(player, sessions, this));
+                NativePacketContext.run(player,()->this.serverHandler.tick(new ServerSessionContext(player, sessions, this)));
             } catch (RuntimeException exception) {
                 this.quarantineServerHandler(player, "tick", exception);
             } finally {
@@ -6453,7 +6553,11 @@ public final class DesktopContainerSessions {
             }
             PlayerSessions sessions = PLAYERS.get(this.player);
             int replacesSessionId = this.session.initialSnapshotSent ? -1 : this.session.replacesSessionId;
-            if (sessions != null && (this.session.openingData.length > 0 || this.session.companion != null)) {
+            // A transition also needs metadata when its native constructor has
+            // no opening bytes (e.g. anvil/reforge). Otherwise the client sees
+            // an unauthorized duplicate physical source and rejects the new UI.
+            if (sessions != null && (this.session.openingData.length > 0 || this.session.companion != null
+                    || replacesSessionId > DesktopPackets.PLAYER_MENU_SESSION)) {
                 send(this.player, new DesktopMenuOpenDataPayload(
                     sessions.connectionNonce,
                     this.session.sessionId,
@@ -6496,13 +6600,9 @@ public final class DesktopContainerSessions {
 
         @Override
         public void sendCarriedChange(AbstractContainerMenu menu, ItemStack stack) {
-            if (CURSOR_MUTATION_MENU.get() == menu) {
-                PlayerSessions sessions = PLAYERS.get(this.player);
-                if (sessions != null) send(this.player, new DesktopCarriedPayload(
-                    sessions.connectionNonce, 0L, sessions.playerSessionToken,
-                    this.player.inventoryMenu.getStateId(), menu.getCarried().copy()));
-                return;
-            }
+            // A native callback may broadcast its temporary cursor before the
+            // canonical player cursor commits. The final sync owns publication.
+            if (CURSOR_MUTATION_MENU.get() == menu) return;
             ItemStack canonicalCarried = this.player.inventoryMenu.getCarried().copy();
             menu.setCarried(ItemStack.EMPTY);
             menu.setRemoteCarried(HashedStack.EMPTY);

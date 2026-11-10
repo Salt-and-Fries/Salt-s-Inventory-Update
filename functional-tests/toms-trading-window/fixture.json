@@ -1,0 +1,3 @@
+{
+  "block_nbt": "{Config:[{Slot:0b,id:\"minecraft:emerald\",Count:2b},{Slot:4b,id:\"minecraft:bread\",Count:3b}],Inputs:[{Slot:0b,id:\"minecraft:bread\",Count:30b}],Outputs:[{Slot:0b,id:\"minecraft:emerald\",Count:4b}],matchNBT:255,inputSides:0,outputSides:0,autoSides:0,Creative:0b,CustomName:'{\"text\":\"Market Stall\"}'}"
+}

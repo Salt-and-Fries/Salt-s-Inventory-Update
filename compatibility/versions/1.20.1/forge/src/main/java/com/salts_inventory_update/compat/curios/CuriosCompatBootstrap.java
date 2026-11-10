@@ -9,6 +9,13 @@ import com.salts_inventory_update.compat.CompatibilityLog;
 /** The optional native implementation is resolved only after its supported dependency is present. */
 public final class CuriosCompatBootstrap {
     private CuriosCompatBootstrap() { }
+    public static void closeAttached(java.util.UUID owner) {
+        // Aether can run with an older Curios bundled by another publisher.
+        // Resolve our newer native menu ABI only when its adapter was supported.
+        var mod = ModList.get().getModContainerById("curios");
+        if (mod.isPresent() && mod.get().getModInfo().getVersion().toString().equals("5.14.1+1.20.1"))
+            CuriosClientIntegration.closeAttached(owner);
+    }
     public static void initialize(IEventBus bus) {
         var mod = ModList.get().getModContainerById("curios");
         if (mod.isEmpty()) return;

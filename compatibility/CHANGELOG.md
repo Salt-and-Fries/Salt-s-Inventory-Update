@@ -1,6 +1,88 @@
 # Compatibility changelog
 
-## 0.1.3 (in development)
+## 0.1.3 (release candidate)
+
+Exact artifacts, scoped verification and independent review status are recorded in the [release manifest](../output/release-readiness/release-manifest-final.json).
+
+- Protects Gallery's complete held painting stack while its selector is open.
+  Native search and selection use the owning window session, and closing keeps
+  the exact native variant and item data. Applies to 1.20.1 Forge and 1.21.1
+  NeoForge; the Core public API and ordinary native screen remain unchanged.
+- Fixes Bountiful Analyzer refresh after decree insertion or removal on
+  1.21.1 Fabric and NeoForge, retaining native mode and resolution controls.
+- Keeps Extended AE client packet helpers isolated from dedicated-server
+  loading on the affected modern target.
+- Preserves native film names and complete item data through confirm/cancel,
+  and retains Create package-address updates and stock-window closing.
+- Keeps the original Mine Cells recipe identifier on 1.21.1, so native recipe
+  selection and crafting refer to the same recipe.
+- Excludes the foreign FTB sidebar button from Modern Industrialization's
+  content measurements while retaining the real machine trays and their padding.
+
+- Migrates Aether, aircraft side panels, Quark pairing and Traveler's Backpack
+  bridges to additive Core public contracts. Retains the approved linked-window
+  ownership and allowed controls. Native launcher and visibility controls remain
+  individually discoverable by controller navigation. Existing public API
+  signatures remain binary compatible; see the root release-readiness checklist
+  for final-artifact acceptance status.
+
+- Places Curios and Accessories buttons in opposite player-preview corners.
+  Selecting either swaps the Character-attached equipment panel, preserves
+  equipped items and the shared cursor, and rejects delayed openings of the
+  previous view. Retains exclusive switching with Aether's Character subview.
+
+- Extends Tech Reborn's native windows to 1.21.1, 26.1.2, 26.2 and 26.3 Fabric,
+  alongside the existing 1.20.1 Fabric adapter. Preserves opaque upgrade trays,
+  native inspectors and typed actions, session-owned live values and the 6.x
+  Nuclear Reactor. Uses each installed release's own artwork. The public API
+  is unchanged. See [target coverage](tech-reborn-all-targets.md).
+
+- Adds all 51 Tech Reborn machine windows on 1.20.1 Fabric, with attached
+  left settings tabs and right upgrade trays. Preserves native artwork,
+  configuration inspectors, equipment cells, original actions and per-window
+  live properties. Core/API are unchanged. See [focused coverage](tech-reborn-1.20.1.md).
+
+- Fills the right and bottom inner gutters of Tech Reborn's upgrade trays with
+  the opaque window material, preserving all four native cell textures.
+
+- Aligns Extended AE IO Port and Mod Export Bus frame bottoms with their upgrade
+  trays, and restores native top-right tabs above the frame on every supported
+  target. Retains their exposed click areas and original artwork.
+
+- Extends Extended AE's approved windows to 1.21.1 and 26.1.2 NeoForge with
+  modern AE2 artwork, native machine pages and additional configuration views.
+  Preserves external tabs, complete slot rims, original actions, populated
+  terminal updates and rapid text edits. Together with 1.20.1 Fabric/Forge,
+  these cover all available SIU targets. Core/API are unchanged. See
+  [target coverage](ae2/extended-ae-all-targets.md).
+
+- Extends all Kibe windows to 1.21.1 Fabric and NeoForge, adapting the shared
+  generator menu, typed rune channels, newer rune artwork and Cooler container
+  components. Together with 1.20.1 Fabric, this covers every official Kibe
+  release overlapping SIU's targets. Core and the public API are unchanged.
+  See [target coverage and focused checks](kibe-all-targets.md).
+
+- Adds Kibe's thirteen custom container screen types on 1.20.1 Fabric,
+  including every Cobblestone/Basalt Generator tier. Preserves the approved
+  cyan, teal, gold and charcoal windows, native slot art, rune channels, XP
+  conversion, original menus and separate Inventory. The Pocket Crafting Table
+  uses existing crafting support; Chunk Loader stays native. Held Coolers keep
+  their source protection and native feeding pause while editing. Core and the
+  public API are unchanged. See [focused coverage](kibe-1.20.1.md).
+
+- Adds all seven Zenith Renewed container screen types on 1.20.1 Fabric,
+  covering nine workstation views and the native augmenting selector. Preserves
+  engraved/wooden artwork, circular slots, native processing and costs, and the
+  separate Inventory window. Enchanting stats and offer clues follow their own
+  session; the information tab opens full-screen and returns to the same
+  desktop. Core and the public API are unchanged. See [coverage and focused
+  checks](zenith-1.20.1.md).
+
+- Extends all five Aether interfaces to 1.21.1 Fabric/NeoForge. Cloud reformats
+  Character in place, retains native equipment/visibility and excludes the
+  general Accessories/Curios panel. Backpack remains attached to Inventory.
+  Together with 1.20.1 Fabric/Forge, this covers all applicable official Aether
+  releases within SIU's target set; Core and the public API are unchanged.
 
 - Fixes stretched and cropped Craft, Choose and preview-mode buttons with Chipped 4 on Minecraft 1.21.1, including their highlighted states.
 - Extends the approved drawer, Graveyard, BetterEnd, Runes, Deep Aether Combiner, Chipped, Simply Swords, TieredZ, SmitherZ and AdditionZ integrations to each supported Minecraft version and loader with a matching upstream release. Preserves compact windows, connected tabs, complete previews and native workstation behavior.
@@ -109,3 +191,19 @@ Standalone release notes: [Compatibility 0.1.2](../changelogs/changelog-compatib
 - Keeps third-party integrations optional and the Core framework independent.
 
 Use the rebuilt Core 0.1.4 and Compatibility 0.1.0 pair for the same Minecraft version and loader; the 1.20.1 EMI adapter uses the added public Core rendering hooks. Fabric also requires Fabric API. Install third-party mods and their required dependencies separately. Availability follows the upstream release matrix; an extension JAR does not imply that upstream mods exist for every loader and Minecraft version.
+
+Known upstream limitation: SmitherZ1.0.4 on Minecraft1.20.1 Fabric previews a recovered gem but loses it during native grinder result pickup. The same exact-jar behavior is confirmed with every SIU module absent. This release does not claim a fix or guaranteed gem return on that pin; see the release notes and native control663.
+
+- Records the exact Simple Storage Network 1.13.2 upstream filter limitations
+  on 1.20.1 Forge, 1.21.1 NeoForge and 26.1.2 NeoForge, independently reproduced
+  with SIU absent on each pin. Source removal retains both native menus; the
+  Collector ghost display stays blank while its server filter persists.
+  Right-click with the same carried item re-copies one ghost. Ordinary close,
+  full item data and physical ownership have separate focused checks; no SIU
+  repair of those upstream behaviors is claimed.
+
+- Records the SSN 1.13.2 / 1.21.1 and 26.1.2 NeoForge original process-cable
+  redstone icon/client-state mismatch and persistent native source lifetime,
+  reproduced with SIU absent on both pins. Native server settings and full
+  item ownership remain checked. No upstream repair, immediate icon sync or
+  processing-automation coverage is claimed.

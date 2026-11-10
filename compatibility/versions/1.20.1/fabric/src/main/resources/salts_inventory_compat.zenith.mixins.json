@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.compat.zenith.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "plugin": "com.salts_inventory_update.compat.nativewindows.mixin.NativeWindowsMixinPlugin",
+  "refmap": "salts_inventory_compat.refmap.json",
+  "mixins": [
+    "ZenithStatsMixin",
+    "ZenithCluesMixin",
+    "ZenithEnchantingContextMixin"
+  ],
+  "client": [
+    "ZenithInformationReturnMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

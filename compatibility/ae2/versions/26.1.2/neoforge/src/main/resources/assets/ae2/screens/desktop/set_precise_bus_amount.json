@@ -1,0 +1,24 @@
+{
+  "includes": [
+    "../set_precise_bus_amount.json"
+  ],
+  "desktop": {
+    "width": 176,
+    "height": 109,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 0
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.siu.extendedae.set_precise_bus_amount"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "includes": [
+    "../ex_pattern_access_terminal.json"
+  ],
+  "desktop": {
+    "width": 209,
+    "height": 129,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.siu.extendedae.pattern_access"
+      },
+      "position": {
+        "left": 21,
+        "top": 8
+      }
+    }
+  }
+}

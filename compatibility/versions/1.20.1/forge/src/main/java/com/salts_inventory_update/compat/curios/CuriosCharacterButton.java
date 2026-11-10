@@ -11,12 +11,13 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 public final class CuriosCharacterButton implements DesktopBuiltinAttachment {
     private static final int X = 27, Y = 9, SIZE = 10;
     private static boolean contains(DesktopWindowContext<?, ?> c, double x, double y) {
-        return x >= c.contentX() + X && x < c.contentX() + X + SIZE
+        int bx=com.salts_inventory_update.compat.aether.AetherEquipmentClient.generalButtonX(c);
+        return x >= bx && x < bx + SIZE
             && y >= c.contentY() + Y && y < c.contentY() + Y + SIZE;
     }
     @Override public void render(DesktopRenderContext<AbstractContainerMenu, Void> c) {
         boolean hover = contains(c, c.mouseX(), c.mouseY());
-        c.texture(CuriosClientIntegration.CONTROLS, c.contentX() + X, c.contentY() + Y,
+        c.texture(CuriosClientIntegration.CONTROLS, com.salts_inventory_update.compat.aether.AetherEquipmentClient.generalButtonX(c), c.contentY() + Y,
             50, hover ? 14 : 0, SIZE, SIZE, 14, 14, 256, 256);
     }
     @Override public boolean mouseClicked(DesktopInputContext<AbstractContainerMenu, Void> c, MouseButtonEvent event, boolean doubleClick) {
@@ -29,7 +30,7 @@ public final class CuriosCharacterButton implements DesktopBuiltinAttachment {
         c.tooltip(Component.translatable("key.curios.open.desc"), x, y); return true;
     }
     @Override public List<DesktopWindowRegion> regions(DesktopWindowContext<AbstractContainerMenu, Void> c) {
-        return List.of(DesktopWindowRegion.interactive(c.contentX() - c.windowX() + X,
-            c.contentY() - c.windowY() + Y, SIZE, SIZE));
+        return List.of(DesktopWindowRegion.interactive(com.salts_inventory_update.compat.aether.AetherEquipmentClient.generalButtonX(c) - c.windowX(),
+            c.contentY() - c.windowY() + Y, SIZE, SIZE).withRole(DesktopHitRole.CONTROL));
     }
 }

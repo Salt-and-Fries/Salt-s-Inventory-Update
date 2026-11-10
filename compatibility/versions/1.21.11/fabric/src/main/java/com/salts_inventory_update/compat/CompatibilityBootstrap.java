@@ -7,11 +7,23 @@ import java.lang.reflect.InvocationTargetException;
 public final class CompatibilityBootstrap {
     private CompatibilityBootstrap() { }
     public static void initializeCommon() {
+        initialize("immersive_aircraft", "com.salts_inventory_update.compat.aircraft.AircraftWindows", "initializeCommon");
+        initialize("universal-graves", "com.salts_inventory_update.compat.graves.UniversalGravesWindows", "initializeCommon");
+        initialize("travelersbackpack", "com.salts_inventory_update.compat.travelersbackpack.TravelersWindows", "initializeCommon");
+        initialize("toms_trading_network", "com.salts_inventory_update.compat.tomstrading.TomsTradingWindows", "initializeCommon");
+        initialize("tradingpost", "com.salts_inventory_update.compat.tradingpost.TradingPostWindows", "initializeCommon");
+        com.salts_inventory_update.compat.nativewindows.ReviewedNativeWindows.initializeCommon();
         initialize("graveyard", "com.salts_inventory_update.compat.graveyard.OssuarySync", "initializeCommon");
         initialize("animal_feeding_trough", "com.salts_inventory_update.compat.feedingtrough.FeedingTroughIntegration", "initializeCommon");
         initialize("toms_storage", "com.salts_inventory_update.compat.toms_storage.server.TomsStorageServerCompat", "initialize");
     }
     public static void initializeClient() {
+        initialize("immersive_aircraft", "com.salts_inventory_update.compat.aircraft.AircraftWindows", "initializeClient");
+        initialize("universal-graves", "com.salts_inventory_update.compat.graves.UniversalGravesWindows", "initializeClient");
+        initialize("travelersbackpack", "com.salts_inventory_update.compat.travelersbackpack.TravelersWindows", "initializeClient");
+        initialize("toms_trading_network", "com.salts_inventory_update.compat.tomstrading.TomsTradingWindows", "initializeClient");
+        initialize("tradingpost", "com.salts_inventory_update.compat.tradingpost.TradingPostWindows", "initializeClient");
+        com.salts_inventory_update.compat.nativewindows.ReviewedNativeWindows.initializeClient();
         initialize("graveyard", "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi", "initialize");
         initialize("barteringstation", "com.salts_inventory_update.compat.barteringstation.BarteringStationNativeUi", "initialize");
         initialize("farmersdelight", "com.salts_inventory_update.compat.farmersdelight.FarmersDelightNativeUi", "initialize");

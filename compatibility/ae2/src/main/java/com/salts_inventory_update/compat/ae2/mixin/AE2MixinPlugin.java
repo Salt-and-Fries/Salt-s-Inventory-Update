@@ -32,6 +32,9 @@ public final class AE2MixinPlugin implements IMixinConfigPlugin {
         if (!enabled) return false;
         try {
             ClassNode target = MixinService.getService().getBytecodeProvider().getClassNode(targetClassName);
+            if (mixinClassName.endsWith(".ExtendedAeNativePacketsMixin")) {
+                return (target.access & org.objectweb.asm.Opcodes.ACC_INTERFACE) == 0;
+            }
             if (mixinClassName.endsWith(".UnregisteredMenuTypeBuilderMixin")) {
                 return target.methods.stream().anyMatch(method -> method.name.equals("buildUnregistered"));
             }

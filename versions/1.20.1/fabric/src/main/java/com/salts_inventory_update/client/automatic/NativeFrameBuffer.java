@@ -21,6 +21,7 @@ final class NativeFrameBuffer implements AutoCloseable {
     void capture(DesktopRenderContext<?,?> context, AutomaticNativeWindow.State state,
                  AutomaticNativeScope.Frame frame, DesktopWindowBounds sourceBounds, int mouseX,int mouseY) {
         var mc=context.minecraft();var outer=context.nativeGraphics();outer.flush();
+        var callerScreen=mc.screen;
         int draw=GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING),read=GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
         int[] viewport=new int[4],scissor=new int[4];GL11.glGetIntegerv(GL11.GL_VIEWPORT,viewport);GL11.glGetIntegerv(GL11.GL_SCISSOR_BOX,scissor);
         boolean clipped=GL11.glIsEnabled(GL11.GL_SCISSOR_TEST),depth=GL11.glIsEnabled(GL11.GL_DEPTH_TEST),blend=GL11.glIsEnabled(GL11.GL_BLEND);
@@ -37,8 +38,13 @@ final class NativeFrameBuffer implements AutoCloseable {
             model.setIdentity();model.translate(0,0,-11000);RenderSystem.applyModelViewMatrix();RenderSystem.setShaderColor(1,1,1,1);
             var graphics=new GuiGraphics(mc,mc.renderBuffers().bufferSource());graphics.pose().translate(frame.offsetX(),frame.offsetY(),0);
             state.capturing=true;
+            // Some native screens intentionally paint only while they are the
+            // active screen. This render-only identity must be their own; do
+            // not call setScreen or run either screen's lifecycle callbacks.
+            mc.screen=state.screen;
             AutomaticNativeScope.call(frame,()->{state.screen.render(graphics,mouseX,mouseY,mc.getFrameTime());graphics.flush();return null;});
         } finally {
+            mc.screen=callerScreen;
             state.capturing=false;
             GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER,draw);GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER,read);
             RenderSystem.viewport(viewport[0],viewport[1],viewport[2],viewport[3]);

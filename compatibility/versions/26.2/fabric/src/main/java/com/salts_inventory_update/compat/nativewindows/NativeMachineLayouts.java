@@ -2,7 +2,7 @@ package com.salts_inventory_update.compat.nativewindows;
 
 import com.salts_inventory_update.api.client.desktop.*;
 
-/** Reviewed native artwork crops. Slots keep their original identity and behavior. */
+/** Native 1.20.1 artwork crops. Slots keep their original identity and behavior. */
 public final class NativeMachineLayouts {
     private NativeMachineLayouts() { }
 
@@ -19,6 +19,20 @@ public final class NativeMachineLayouts {
                     || cell.y()+cell.height()>body.y()+body.height()) return NativeWindowPolish.machine(view);
         }
         return DesktopNativeLayout.builder().keep("body",body,0,0).build();
+    }
+
+    /** Keep the full decoration workspace, including its preview and native output rim. */
+    public static DesktopNativeLayout decorationTable(DesktopNativeView view) {
+        var players=view.slots().stream().filter(DesktopNativeView.Slot::player).toList();
+        int playerTop=players.stream().mapToInt(s->s.bounds().y()).min().orElse(view.imageBounds().height());
+        int playerLeft=players.stream().mapToInt(s->s.bounds().x()).min().orElse(45);
+        var owned=view.slots().stream().filter(s->!s.player()&&s.active()).map(DesktopNativeView.Slot::bounds).toList();
+        int top=owned.stream().mapToInt(DesktopWindowBounds::y).min().orElse(17)-1;
+        // The preview extends below the last item cell. The inventory begins
+        // five pixels after the native machine body's bottom edge.
+        var body=box(6,top,view.imageBounds().width()-12,playerTop-5-top);
+        return DesktopNativeLayout.builder().keep("decoration-workspace",body,0,0)
+            .hide(box(playerLeft-1,playerTop-12,86,9)).build();
     }
 
     public static DesktopNativeLayout bartering(DesktopNativeView view) {
@@ -87,16 +101,15 @@ public final class NativeMachineLayouts {
         var layout=crop(view,box(5,21,160,71)).toBuilder();
         // Owo draws the lava reservoir as a small tab above the main forge body.
         return layout.hide(box(30,21,105,13))
-                .exterior("lava-reservoir",box(57,0,66,18),55,-16).build();
-    }
-
-    public static DesktopNativeLayout alloyed(DesktopNativeView view) {
-        return crop(view,box(29,14,116,57));
+                .exterior("lava-reservoir",box(53,0,70,16),53,-16).build();
     }
 
     public static DesktopNativeLayout conditioning(DesktopNativeView view) {
         // Nine ingredients, three fuel/module cells, valve switches and indicators.
         return crop(view,box(25,16,129,55)).toBuilder()
                 .keep("particles",box(163,6,7,7),122,0).build();
+    }
+    public static DesktopNativeLayout alloyed(DesktopNativeView view) {
+        return crop(view,box(29,14,116,57));
     }
 }

@@ -22,6 +22,31 @@ public final class DesktopClientApi {
 
     private static DesktopWorkspaceHost workspaceHost;
     private static final Map<Identifier,Set<MenuType<?>>> NATIVE_MATCHER_TYPES = new LinkedHashMap<>();
+    private static final Set<MenuType<?>> BUILTIN_MERCHANT_TYPES = new java.util.HashSet<>();
+    private static final Map<MenuType<?>,NativeScreenFactory<?>> NATIVE_SCREENS=new LinkedHashMap<>();
+
+    /** Native constructors for entity menus whose upstream opener bypasses MenuScreens. */
+    public static synchronized <T extends AbstractContainerMenu> void registerNativeScreen(MenuType<T> type,NativeScreenFactory<T> factory) {
+        Objects.requireNonNull(type);Objects.requireNonNull(factory);
+        if(NATIVE_SCREENS.putIfAbsent(type,factory)!=null)throw DesktopRegistrationScope.conflict("Native screen already registered: "+type);
+        DesktopRegistrationScope.onRollback(()->{synchronized(DesktopClientApi.class){NATIVE_SCREENS.remove(type,factory);}});
+    }
+    @SuppressWarnings({"rawtypes","unchecked"})
+    public static synchronized net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> createNativeScreen(
+            AbstractContainerMenu menu,net.minecraft.world.entity.player.Inventory inventory,net.minecraft.network.chat.Component title) {
+        NativeScreenFactory factory=NATIVE_SCREENS.get(menu.getType());return factory==null?null:factory.create(menu,inventory,title);
+    }
+    @FunctionalInterface public interface NativeScreenFactory<T extends AbstractContainerMenu> {
+        net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> create(T menu,net.minecraft.world.entity.player.Inventory inventory,
+            net.minecraft.network.chat.Component title);
+    }
+
+    /** Announces a mod-owned menu implementing DesktopMerchantAccess, using the built-in trading UI. */
+    public static synchronized void registerBuiltinMerchant(MenuType<?> type) {
+        Objects.requireNonNull(type);
+        if(!BUILTIN_MERCHANT_TYPES.add(type))throw DesktopRegistrationScope.conflict("Merchant already registered: "+type);
+        DesktopRegistrationScope.onRollback(()->{synchronized(DesktopClientApi.class){BUILTIN_MERCHANT_TYPES.remove(type);}});
+    }
 
     /** Explicit native-template families; the original native factory and menu remain in charge. */
     public static synchronized void registerNativeMatcher(Identifier id,int priority,Set<MenuType<?>> menuTypes,
@@ -100,6 +125,46 @@ public final class DesktopClientApi {
         DesktopRegistrationScope.onRollback(() -> { synchronized (DesktopClientApi.class) { HELP_PAGES.remove(id, page); } });
     }
     public static synchronized List<DesktopHelpPage> helpPages() { return List.copyOf(HELP_PAGES.values()); }
+
+    private static final Map<net.minecraft.world.inventory.MenuType<?>, DesktopEmbeddedSessionHandler<?>> EMBEDDED_SESSIONS = new java.util.IdentityHashMap<>();
+    private static final Map<Identifier, java.util.function.Predicate<java.util.UUID>> GEOMETRY_RESET_POLICIES = new LinkedHashMap<>();
+
+    /** Opt in to synchronized sessions displayed by an existing built-in attachment. */
+    public static synchronized <T extends AbstractContainerMenu> void registerEmbeddedSession(
+            net.minecraft.world.inventory.MenuType<T> type, DesktopEmbeddedSessionHandler<T> handler) {
+        Objects.requireNonNull(type); Objects.requireNonNull(handler);
+        if (EMBEDDED_SESSIONS.putIfAbsent(type, handler) != null)
+            throw DesktopRegistrationScope.conflict("Embedded session already registered: " + type);
+        DesktopRegistrationScope.onRollback(() -> { synchronized (DesktopClientApi.class) { EMBEDDED_SESSIONS.remove(type, handler); } });
+    }
+
+    /** Dispatcher lookup; exposes the registered contract, never a Core implementation. */
+    public static synchronized DesktopEmbeddedSessionHandler<?> embeddedSessionHandler(AbstractContainerMenu menu) {
+        try { return EMBEDDED_SESSIONS.get(menu.getType()); }
+        catch (UnsupportedOperationException noType) { return null; }
+    }
+
+    /** Preserve grouped geometry when an ordinary lock action would reset one member. */
+    public static synchronized void registerGeometryResetPolicy(Identifier id, java.util.function.Predicate<java.util.UUID> allowsReset) {
+        Objects.requireNonNull(id); Objects.requireNonNull(allowsReset);
+        if (GEOMETRY_RESET_POLICIES.putIfAbsent(id, allowsReset) != null)
+            throw DesktopRegistrationScope.conflict("Geometry reset policy already registered: " + id);
+        DesktopRegistrationScope.onRollback(() -> { synchronized (DesktopClientApi.class) { GEOMETRY_RESET_POLICIES.remove(id, allowsReset); } });
+    }
+
+    /** Pure client-thread query. A failing policy preserves current geometry. */
+    public static synchronized boolean allowsGeometryReset(java.util.UUID instanceId) {
+        for (var entry : GEOMETRY_RESET_POLICIES.entrySet()) {
+            try { if (!entry.getValue().test(instanceId)) return false; }
+            catch (RuntimeException failure) {
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                    com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                    entry.getKey().toString(), "geometry-reset", "Window geometry policy failed", failure);
+                return false;
+            }
+        }
+        return true;
+    }
 
     private DesktopClientApi() {
     }
@@ -180,6 +245,8 @@ public final class DesktopClientApi {
     /** Menu capabilities announced to the server. Matchers must cover all declared menu instances. */
     public static synchronized List<String> supportedMenuIds() {
         Set<MenuType<?>> types = new java.util.HashSet<>(DEFINITIONS.keySet());
+        types.addAll(EMBEDDED_SESSIONS.keySet());
+        types.addAll(BUILTIN_MERCHANT_TYPES);
         for (PredicateRegistration registration : PREDICATES) types.addAll(registration.menuTypes);
         List<String> ids = types.stream().map(BuiltInRegistries.MENU::getKey)
             .filter(Objects::nonNull).map(Object::toString).distinct().sorted().toList();

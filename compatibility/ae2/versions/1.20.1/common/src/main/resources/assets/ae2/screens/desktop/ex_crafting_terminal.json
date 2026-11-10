@@ -1,0 +1,13 @@
+{
+  "includes": [
+    "../ex_crafting_terminal.json"
+  ],
+  "desktop": {
+    "width": 195,
+    "height": 158,
+    "resize": "grid",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  }
+}

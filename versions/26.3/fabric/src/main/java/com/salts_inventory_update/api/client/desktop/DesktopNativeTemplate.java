@@ -14,4 +14,10 @@ public interface DesktopNativeTemplate<T extends AbstractContainerMenu,S> extend
     default void renderNativeUnderlay(DesktopRenderContext<T,S> context) { }
     /** False replaces only this real cell's captured background with the standard SIU slot frame. */
     default boolean nativeSlotBackground(DesktopNativeContext<T,S> context,int menuSlotId) { return true; }
+    /**
+     * Opt in individual player cells when they are part of this tool's purpose
+     * (for example, selecting inventory slots as tool sources). The original
+     * menu still handles each click. Ordinary templates omit player inventory.
+     */
+    default boolean retainPlayerSlot(DesktopNativeContext<T,S> context,int menuSlotId) { return false; }
 }

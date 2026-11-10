@@ -1,0 +1,24 @@
+{
+  "includes": [
+    "../ex_pattern_access_terminal.json"
+  ],
+  "desktop": {
+    "width": 195,
+    "height": 107,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.extendedae.ex_pattern_access_terminal"
+      },
+      "position": {
+        "left": 7,
+        "top": 6
+      }
+    }
+  }
+}

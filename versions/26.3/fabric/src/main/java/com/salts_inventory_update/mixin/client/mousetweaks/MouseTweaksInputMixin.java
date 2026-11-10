@@ -8,7 +8,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import yalter.mousetweaks.MouseButton;
 
-@Mixin(value = yalter.mousetweaks.Main.class, remap = false)
+@org.spongepowered.asm.mixin.Pseudo
+@Mixin(targets = "yalter.mousetweaks.Main", remap = false)
 public abstract class MouseTweaksInputMixin {
     @org.spongepowered.asm.mixin.Shadow private static boolean canDoLMBDrag;
     @org.spongepowered.asm.mixin.Shadow private static boolean canDoRMBDrag;

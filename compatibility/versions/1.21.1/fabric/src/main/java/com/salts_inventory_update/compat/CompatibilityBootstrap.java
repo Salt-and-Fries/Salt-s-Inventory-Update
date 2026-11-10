@@ -7,6 +7,27 @@ import java.lang.reflect.InvocationTargetException;
 public final class CompatibilityBootstrap {
     private CompatibilityBootstrap() { }
     public static void initializeCommon() {
+        if (DesktopEnvironment.isModLoaded("fabricloader")) initialize("techreborn", "com.salts_inventory_update.compat.techreborn.TechRebornWindows", "initializeCommon");
+        initialize("ad_astra", "com.salts_inventory_update.compat.adastra.AdAstraWindows", "initializeCommon");
+        initialize("kibe", "com.salts_inventory_update.compat.kibe.KibeWindows", "initializeCommon");
+        initialize("powah", "com.salts_inventory_update.compat.powah.PowahWindows", "initializeCommon");
+        initialize("storagenetwork", "com.salts_inventory_update.compat.ssn.SsnWindows", "initializeCommon");
+        initialize("aether", "com.salts_inventory_update.compat.aether.AetherWindows", "initializeCommon");
+        initialize("enchanted", "com.salts_inventory_update.compat.enchanted.EnchantedWindows", "initializeCommon");
+        initialize("quark", "com.salts_inventory_update.compat.quark.QuarkWindows", "initializeCommon");
+        initialize("modern_industrialization", "com.salts_inventory_update.compat.modernindustrialization.ModernIndustrializationWindows", "initializeCommon");
+        initialize("minecells", "com.salts_inventory_update.compat.minecells.MineCellsWindows", "initializeCommon");
+        initialize("cataclysm", "com.salts_inventory_update.compat.cataclysm.WeaponFusionWindows", "initializeCommon");
+        initialize("immersive_aircraft", "com.salts_inventory_update.compat.aircraft.AircraftWindows", "initializeCommon");
+        initialize("accessories", "com.salts_inventory_update.compat.accessories.AccessoriesIntegration", "initializeCommon");
+        initialize("universal-graves", "com.salts_inventory_update.compat.graves.UniversalGravesWindows", "initializeCommon");
+        initialize("travelersbackpack", "com.salts_inventory_update.compat.travelersbackpack.TravelersWindows", "initializeCommon");
+        initialize("toms_trading_network", "com.salts_inventory_update.compat.tomstrading.TomsTradingWindows", "initializeCommon");
+        initialize("bountiful", "com.salts_inventory_update.compat.bountiful.BountifulWindows", "initializeCommon");
+        initialize("tradingpost", "com.salts_inventory_update.compat.tradingpost.TradingPostWindows", "initializeCommon");
+        initialize("the_bumblezone", "com.salts_inventory_update.compat.bumblezone.BumblezoneWindows", "initializeCommon");
+        initialize("create", "com.salts_inventory_update.compat.create.CreateWindows", "initializeCommon");
+        com.salts_inventory_update.compat.nativewindows.ReviewedNativeWindows.initializeCommon();
         if (DesktopEnvironment.isModLoaded("fabricloader")) initialize("extendeddrawersaddon", "com.salts_inventory_update.compat.extendeddrawersaddon.ExtendedDrawersAddonIntegration", "initializeCommon");
         if (DesktopEnvironment.isModLoaded("fabricloader")) initialize("tiered", "com.salts_inventory_update.compat.tieredz.TieredZIntegration", "initializeCommon");
         if (DesktopEnvironment.isModLoaded("fabricloader")) initialize("smitherz", "com.salts_inventory_update.compat.smitherz.SmitherZIntegration", "initializeCommon");
@@ -22,6 +43,28 @@ public final class CompatibilityBootstrap {
         initialize("toms_storage", "com.salts_inventory_update.compat.toms_storage.server.TomsStorageServerCompat", "initialize");
     }
     public static void initializeClient() {
+        if (DesktopEnvironment.isModLoaded("fabricloader")) initialize("techreborn", "com.salts_inventory_update.compat.techreborn.TechRebornClient", "initializeClient");
+        initialize("ad_astra", "com.salts_inventory_update.compat.adastra.AdAstraClient", "initializeClient");
+        initialize("kibe", "com.salts_inventory_update.compat.kibe.KibeClient", "initializeClient");
+        initialize("powah", "com.salts_inventory_update.compat.powah.PowahClient", "initializeClient");
+        initialize("storagenetwork", "com.salts_inventory_update.compat.ssn.SsnClient", "initializeClient");
+        initialize("aether", "com.salts_inventory_update.compat.aether.AetherWindows", "initializeClient");
+        initialize("enchanted", "com.salts_inventory_update.compat.enchanted.EnchantedWindows", "initializeClient");
+        initialize("quark", "com.salts_inventory_update.compat.quark.QuarkWindows", "initializeClient");
+        initialize("modern_industrialization", "com.salts_inventory_update.compat.modernindustrialization.ModernIndustrializationWindows", "initializeClient");
+        initialize("minecells", "com.salts_inventory_update.compat.minecells.MineCellsClient", "initializeClient");
+        initialize("cataclysm", "com.salts_inventory_update.compat.cataclysm.MinistrosityWindows", "initializeClient");
+        initialize("cataclysm", "com.salts_inventory_update.compat.cataclysm.WeaponFusionWindows", "initializeClient");
+        initialize("immersive_aircraft", "com.salts_inventory_update.compat.aircraft.AircraftWindows", "initializeClient");
+        initialize("accessories", "com.salts_inventory_update.compat.accessories.AccessoriesIntegration", "initializeClient");
+        initialize("universal-graves", "com.salts_inventory_update.compat.graves.UniversalGravesWindows", "initializeClient");
+        initialize("travelersbackpack", "com.salts_inventory_update.compat.travelersbackpack.TravelersWindows", "initializeClient");
+        initialize("toms_trading_network", "com.salts_inventory_update.compat.tomstrading.TomsTradingWindows", "initializeClient");
+        initialize("bountiful", "com.salts_inventory_update.compat.bountiful.BountifulWindows", "initializeClient");
+        initialize("tradingpost", "com.salts_inventory_update.compat.tradingpost.TradingPostWindows", "initializeClient");
+        initialize("the_bumblezone", "com.salts_inventory_update.compat.bumblezone.BumblezoneWindows", "initializeClient");
+        initialize("create", "com.salts_inventory_update.compat.create.CreateWindows", "initializeClient");
+        com.salts_inventory_update.compat.nativewindows.ReviewedNativeWindows.initializeClient();
         initialize("graveyard", "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi", "initialize");
         if (DesktopEnvironment.isModLoaded("fabricloader")) initialize("betterend", "com.salts_inventory_update.compat.betterend.BetterEndNativeUi", "initialize");
         initialize("runes", "com.salts_inventory_update.compat.runes.RunesNativeUi", "initialize");

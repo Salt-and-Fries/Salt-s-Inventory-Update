@@ -24,4 +24,9 @@ public final class ForeignMenuAccess {
     public static BlockPos position(AbstractContainerMenu menu) {
         Object value=invoke(menu,"getPos");return value instanceof BlockPos pos?pos:null;
     }
+    public static AbstractContainerMenu create(String name,int id,Inventory inventory,ContainerLevelAccess access) {
+        try{return (AbstractContainerMenu)Class.forName(name).getConstructor(int.class,Inventory.class,ContainerLevelAccess.class)
+            .newInstance(id,inventory,access);}
+        catch(ReflectiveOperationException failure){throw new IllegalStateException("Upstream menu construction failed: "+name,failure);}
+    }
 }

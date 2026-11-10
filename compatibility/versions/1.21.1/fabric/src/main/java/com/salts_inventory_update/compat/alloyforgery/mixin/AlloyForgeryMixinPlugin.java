@@ -13,6 +13,7 @@ public final class AlloyForgeryMixinPlugin implements IMixinConfigPlugin {
         try{
             var bytecode=MixinService.getService().getBytecodeProvider();
             bytecode.getClassNode("wraith.alloyforgery.client.AlloyForgeScreen");
+            if(mixin.endsWith("AlloyForgeScreenCaptureMixin"))return true;
             return bytecode.getClassNode(target).methods.stream().anyMatch(m->m.name.equals("applyState"));
         }catch(ClassNotFoundException|IOException absent){return false;}
     }

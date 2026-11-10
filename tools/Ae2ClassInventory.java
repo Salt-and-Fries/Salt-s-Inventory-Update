@@ -14,11 +14,18 @@ public final class Ae2ClassInventory {
     public static void main(String[] args) throws Exception {
         Path output = Path.of(args[1]);
         Files.createDirectories(output);
+        java.util.Set<String> selected = null;
+        if (args.length > 2 && args[2].startsWith("--manifest=")) {
+            selected = new java.util.HashSet<>();
+            var manifest = JsonParser.parseString(Files.readString(Path.of(args[2].substring(11)))).getAsJsonObject();
+            for (var value : manifest.getAsJsonArray("classes")) selected.add(value.getAsJsonObject().get("class").getAsString()+".class");
+        }
         try (var jar = new ZipFile(args[0])) {
             var entries = jar.entries();
             while (entries.hasMoreElements()) {
                 var entry = entries.nextElement();
                 if (!entry.getName().startsWith("appeng/") || !entry.getName().endsWith(".class")) continue;
+                if (selected != null && !selected.contains(entry.getName())) continue;
                 var node = new ClassNode();
                 new ClassReader(jar.getInputStream(entry).readAllBytes()).accept(node, ClassReader.EXPAND_FRAMES);
                 Path path = output.resolve(node.name + ".json");

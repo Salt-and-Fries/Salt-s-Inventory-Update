@@ -17,6 +17,7 @@ public final class DesktopUpdates {
     public static void apply(BasePacket packet, AEBaseScreen<?> content) {
         var menu=content.getMenu();
         NativeMenuPacketScope.run(menu, () -> {
+            if(com.salts_inventory_update.compat.ae2.nativeview.ExtendedAePackets.applyNativeUpdate(packet,content))return;
             if (packet instanceof GuiDataSyncPacket update) menu.receiveServerSyncData(update);
             else if (packet instanceof ConfigValuePacket update && menu instanceof IConfigurableObject configurable)
                 withNativeMenu(menu, () -> update.clientPacketData(menu.getPlayer()));

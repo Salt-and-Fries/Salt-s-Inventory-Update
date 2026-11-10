@@ -1,6 +1,7 @@
 """Enforce the consumer boundary in source and production class constant pools."""
 from pathlib import Path
 import argparse
+import os
 import json
 import re
 import struct
@@ -25,6 +26,14 @@ NATIVE_INTEGRATION_PREFIXES = (
     'net/smitherz/', 'net/additionz/', 'earth/terrarium/chipped/', 'net/sweenus/simplyswords/',
 )
 VERSIONS = ['1.20.1', '1.21.1', '1.21.11', '26.1.2', '26.2', '26.3']
+
+def source_files(root):
+    # Exclude generated trees before descending. Filtering Path.rglob results
+    # afterwards still traverses every extracted runtime/cache in build/.
+    for folder, directories, files in os.walk(root):
+        directories[:] = [name for name in directories if name != 'build']
+        for name in files:
+            yield Path(folder) / name
 
 def utf8_constants(data):
     assert data[:4] == b'\xca\xfe\xba\xbe', 'Invalid class file'
@@ -72,17 +81,18 @@ def sources():
     legacy_chest = ROOT / 'compatibility/ae2/versions/1.20.1/common/src/main/resources/assets/ae2/screens/desktop/chest.json'
     assert json.loads(legacy_chest.read_text())['includes'] == ['../chest.json'], \
         'AE2 15 chest factory must resolve its original native style'
-    for manifest in (ROOT / 'compatibility' / 'ae2' / 'versions').glob('**/src/main/resources/ae2-native-patches*/manifest.json'):
+    ae2_sources=list(source_files(ROOT/'compatibility'/'ae2'))
+    for manifest in (p for p in ae2_sources if p.name=='manifest.json' and p.parent.name.startswith('ae2-native-patches')
+                     and '/src/main/resources/' in p.as_posix()):
         verify_native_activation(json.loads(manifest.read_text()), manifest.relative_to(ROOT))
     failures = []
     count = 0
-    for p in (ROOT / 'compatibility').rglob('*.java'):
-        if 'build' in p.parts: continue
+    for p in (p for p in source_files(ROOT/'compatibility') if p.suffix=='.java'):
         count += 1
         for name in forbidden_references(p.read_text(encoding='utf-8')):
             if name == 'com.salts_inventory_update.compat': continue  # package declaration
             failures.append(f'{p.relative_to(ROOT)}: forbidden reference {name}')
-    core_sources = list((ROOT / 'versions').rglob('*.java')) + list((ROOT / 'core-integrations').rglob('*.java'))
+    core_sources = [p for root in [ROOT/'versions',ROOT/'core-integrations'] for p in source_files(root) if p.suffix=='.java']
     for p in core_sources:
         if 'build' in p.parts or 'tests' in p.parts: continue
         text = p.read_text(encoding='utf-8')
@@ -91,9 +101,9 @@ def sources():
         if re.search(r'com\.salts_inventory_update\.compat\.|\bappeng\.|\bdev\.yurisuika\.raised\.|\btop\.theillusivec4\.curios\.|["\'](?:raised|ae2|toms_storage|sophisticatedcore|sophisticatedstorage|sophisticatedbackpacks|roughlyenoughitems|jei|emi)["\']', text):
             failures.append(f'{p.relative_to(ROOT)}: core references a moved integration')
     patch_count = 0
-    patch_files = [p for folder in ['ae2-native-patches', 'ae2-native-patches-runtime']
-                   for root in (ROOT / 'compatibility' / 'ae2').rglob(folder)
-                   for p in (root / 'appeng').rglob('*.json')]
+    patch_files = [p for p in ae2_sources if p.suffix=='.json' and any(
+        folder in p.parts and p.parts[p.parts.index(folder)+1]=='appeng'
+        for folder in ['ae2-native-patches','ae2-native-patches-runtime'])]
     for p in patch_files:
         patch_count += 1
         patch = json.loads(p.read_text(encoding='utf-8'))
@@ -202,9 +212,25 @@ def jars():
                     reference = json.loads(z.read('META-INF/ae2-desktop-reference.json'))
                     assert len(reference['styles']) == 42, f'{p}: incomplete AE2 desktop resource inventory'
                     import hashlib
+                    adaptations = reference.get('localAdaptations', {})
+                    assert set(adaptations) <= set(reference['styles']), f'{p}: adaptation without an original style'
                     for resource, expected in reference['styles'].items():
-                        assert hashlib.sha256(z.read(resource)).hexdigest() == expected, f'{p}!{resource}: fork geometry changed'
-                    assert hashlib.sha256(z.read('assets/ae2/lang/en_us.json')).hexdigest() == reference['translationSha256'], f'{p}: altered AE2 desktop translations'
+                        adaptation = adaptations.get(resource)
+                        if adaptation:
+                            assert adaptation['originalSha256'] == expected and adaptation['reason'], f'{p}: missing adaptation provenance'
+                            expected = adaptation['sha256']
+                        assert hashlib.sha256(z.read(resource)).hexdigest() == expected, f'{p}!{resource}: reviewed geometry changed'
+                    language_raw = z.read('assets/ae2/lang/en_us.json')
+                    language = json.loads(language_raw)
+                    additions = reference.get('translationAdditions', {})
+                    assert all(language.get(key) == value for key, value in additions.items()), f'{p}: altered addon titles'
+                    assert set(language) == set(reference['translationKeys']) | set(additions), f'{p}: unreviewed translation keys'
+                    original_language = {key: value for key, value in language.items() if key not in additions}
+                    original_raw = (json.dumps(original_language, ensure_ascii=False, indent=2) + '\n').encode()
+                    if reference.get('translationReferenceLineEndings') == 'CRLF':
+                        original_raw = original_raw.replace(b'\n', b'\r\n')
+                    assert hashlib.sha256(original_raw).hexdigest() == reference['translationSha256'], f'{p}: altered original AE2 desktop translations'
+                    assert hashlib.sha256(language_raw).hexdigest() == reference.get('adaptedTranslationSha256', reference['translationSha256']), f'{p}: altered reviewed translations'
                     assert 'salts_inventory_compat.ae2.mixins.json' in names, f'{p}: missing optional AE2 hooks'
                     for resource in names:
                         if resource in ['ae2-native-patches/manifest.json', 'ae2-native-patches-runtime/manifest.json']:
@@ -220,7 +246,19 @@ def jars():
                         for value in utf8_constants(z.read(name)):
                             bad = forbidden_references(value)
                             assert not bad, f'{p.name}!{name}: forbidden core bytecode references {bad}'
-                    assert not any(name.endswith('.jar') for name in names), f'{p}: nested JAR'
+                    nested = {name for name in names if name.endswith('.jar')}
+                    # Forge 47 requires the declared MixinExtras runtime for
+                    # the native integration hooks. Permit only that pinned
+                    # helper, never a bundled Core/API or publisher mod.
+                    helper = 'META-INF/jarjar/mixinextras-forge-0.5.5.jar'
+                    allowed_nested = {helper} if '1.20.1-Forge-' in p.name else set()
+                    assert nested == allowed_nested, f'{p}: unexpected nested JARs {nested}'
+                    if nested:
+                        assert hashlib.sha256(z.read(helper)).hexdigest() == '42564e02756fbdf78e1f1fd2115fe2d01fb42497ba3be2a3c261da2058122533', f'{p}: changed MixinExtras runtime'
+                        declared = json.loads(z.read('META-INF/jarjar/metadata.json'))['jars']
+                        assert len(declared) == 1 and declared[0]['path'] == helper
+                        assert declared[0]['identifier'] == {'group': 'io.github.llamalad7', 'artifact': 'mixinextras-forge'}
+                        assert declared[0]['version']['artifactVersion'] == '0.5.5'
                 if 'fabric.mod.json' in names:
                     metadata = json.loads(z.read('fabric.mod.json'))
                     assert metadata['id'] == ('salts_inventory_update' if kind == 'core' else 'salts_inventory_compat'), p

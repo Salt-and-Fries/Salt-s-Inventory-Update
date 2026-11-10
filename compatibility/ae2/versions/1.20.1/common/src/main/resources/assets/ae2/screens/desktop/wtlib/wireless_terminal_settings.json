@@ -1,0 +1,6 @@
+{
+  "includes": ["../../wtlib/wireless_terminal_settings.json"],
+  "desktop": {"width": 200, "height": 130, "resize": "fixed", "showTitle": true, "preserveAeLayout": true},
+  "generatedBackground": {"width": 200, "height": 130},
+  "widgets": {"back": {"left": 175, "top": -4, "width": 22, "height": 22, "hideEdge": true}}
+}

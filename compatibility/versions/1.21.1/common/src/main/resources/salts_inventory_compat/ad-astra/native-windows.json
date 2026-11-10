@@ -1,0 +1,1190 @@
+[
+  {
+    "id": "ad-astra-coal-generator",
+    "menu": "ad_astra:coal_generator_menu",
+    "screen": "earth.terrarium.adastra.client.screens.machines.CoalGeneratorScreen",
+    "title": "Coal Generator",
+    "texture": "ad_astra:textures/gui/container/coal_generator.png",
+    "width": 176,
+    "height": 113,
+    "textureHeight": 189,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      0,
+      14,
+      176,
+      99
+    ],
+    "battery": true,
+    "vehicle": false,
+    "labelY": 95,
+    "titleY": 6,
+    "titleColor": -14014933,
+    "reserve": 0,
+    "fragments": [
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          104,
+          -32,
+          72,
+          30
+        ],
+        "at": [
+          104,
+          -32
+        ],
+        "cutouts": [
+          [
+            104,
+            -32,
+            2,
+            1
+          ],
+          [
+            104,
+            -31,
+            1,
+            1
+          ],
+          [
+            175,
+            -4,
+            1,
+            1
+          ],
+          [
+            174,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ad-astra-compressor",
+    "menu": "ad_astra:compressor_menu",
+    "screen": "earth.terrarium.adastra.client.screens.machines.CompressorScreen",
+    "title": "Compressor",
+    "texture": "ad_astra:textures/gui/container/compressor.png",
+    "width": 184,
+    "height": 127,
+    "textureHeight": 201,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      0,
+      14,
+      184,
+      113
+    ],
+    "battery": true,
+    "vehicle": false,
+    "labelY": 102,
+    "titleY": 9,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": [
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          112,
+          -32,
+          72,
+          30
+        ],
+        "at": [
+          112,
+          -32
+        ],
+        "cutouts": [
+          [
+            112,
+            -32,
+            2,
+            1
+          ],
+          [
+            112,
+            -31,
+            1,
+            1
+          ],
+          [
+            183,
+            -4,
+            1,
+            1
+          ],
+          [
+            182,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "adastra-gap-etrionic-blast-furnace",
+    "menu": "ad_astra:etrionic_blast_furnace_menu",
+    "screen": "earth.terrarium.adastra.client.screens.machines.EtrionicBlastFurnaceScreen",
+    "title": "Etrionic Blast Furnace",
+    "texture": "ad_astra:textures/gui/container/etrionic_blast_furnace.png",
+    "width": 184,
+    "height": 127,
+    "textureHeight": 201,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      0,
+      14,
+      184,
+      113
+    ],
+    "battery": true,
+    "vehicle": false,
+    "labelY": 102,
+    "titleY": 9,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": [
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          112,
+          -32,
+          72,
+          30
+        ],
+        "at": [
+          112,
+          -32
+        ],
+        "cutouts": [
+          [
+            112,
+            -32,
+            2,
+            1
+          ],
+          [
+            112,
+            -31,
+            1,
+            1
+          ],
+          [
+            183,
+            -4,
+            1,
+            1
+          ],
+          [
+            182,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ad-astra-nasa-workbench",
+    "menu": "ad_astra:nasa_workbench_menu",
+    "screen": "earth.terrarium.adastra.client.screens.machines.NasaWorkbenchScreen",
+    "title": "Nasa Workbench",
+    "texture": "ad_astra:textures/gui/container/nasa_workbench.png",
+    "width": 177,
+    "height": 147,
+    "textureHeight": 224,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      0,
+      14,
+      177,
+      133
+    ],
+    "battery": false,
+    "vehicle": false,
+    "labelY": 130,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": [
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          126,
+          -32,
+          51,
+          30
+        ],
+        "at": [
+          126,
+          -32
+        ],
+        "cutouts": [
+          [
+            126,
+            -32,
+            2,
+            1
+          ],
+          [
+            126,
+            -31,
+            1,
+            1
+          ],
+          [
+            176,
+            -4,
+            1,
+            1
+          ],
+          [
+            175,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ad-astra-fuel-refinery",
+    "menu": "ad_astra:fuel_refinery_menu",
+    "screen": "earth.terrarium.adastra.client.screens.machines.FuelRefineryScreen",
+    "title": "Fuel Refinery",
+    "texture": "ad_astra:textures/gui/container/fuel_refinery.png",
+    "width": 177,
+    "height": 106,
+    "textureHeight": 184,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      0,
+      14,
+      177,
+      92
+    ],
+    "battery": true,
+    "vehicle": false,
+    "labelY": 90,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": [
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          105,
+          -32,
+          72,
+          30
+        ],
+        "at": [
+          105,
+          -32
+        ],
+        "cutouts": [
+          [
+            105,
+            -32,
+            2,
+            1
+          ],
+          [
+            105,
+            -31,
+            1,
+            1
+          ],
+          [
+            176,
+            -4,
+            1,
+            1
+          ],
+          [
+            175,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ad-astra-cryo-freezer",
+    "menu": "ad_astra:cryo_freezer_menu",
+    "screen": "earth.terrarium.adastra.client.screens.machines.CryoFreezerScreen",
+    "title": "Cryo Freezer",
+    "texture": "ad_astra:textures/gui/container/cryo_freezer.png",
+    "width": 177,
+    "height": 106,
+    "textureHeight": 184,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      0,
+      14,
+      177,
+      92
+    ],
+    "battery": true,
+    "vehicle": false,
+    "labelY": 90,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": [
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          105,
+          -32,
+          72,
+          30
+        ],
+        "at": [
+          105,
+          -32
+        ],
+        "cutouts": [
+          [
+            105,
+            -32,
+            2,
+            1
+          ],
+          [
+            105,
+            -31,
+            1,
+            1
+          ],
+          [
+            176,
+            -4,
+            1,
+            1
+          ],
+          [
+            175,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ad-astra-oxygen-loader",
+    "menu": "ad_astra:oxygen_loader_menu",
+    "screen": "earth.terrarium.adastra.client.screens.machines.OxygenLoaderScreen",
+    "title": "Oxygen Loader",
+    "texture": "ad_astra:textures/gui/container/oxygen_loader.png",
+    "width": 177,
+    "height": 106,
+    "textureHeight": 184,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      0,
+      14,
+      177,
+      92
+    ],
+    "battery": true,
+    "vehicle": false,
+    "labelY": 90,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": [
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          105,
+          -32,
+          72,
+          30
+        ],
+        "at": [
+          105,
+          -32
+        ],
+        "cutouts": [
+          [
+            105,
+            -32,
+            2,
+            1
+          ],
+          [
+            105,
+            -31,
+            1,
+            1
+          ],
+          [
+            176,
+            -4,
+            1,
+            1
+          ],
+          [
+            175,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "adastra-gap-water-pump",
+    "menu": "ad_astra:water_pump_menu",
+    "screen": "earth.terrarium.adastra.client.screens.machines.WaterPumpScreen",
+    "title": "Water Pump",
+    "texture": "ad_astra:textures/gui/container/water_pump.png",
+    "width": 177,
+    "height": 112,
+    "textureHeight": 191,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      0,
+      14,
+      177,
+      98
+    ],
+    "battery": true,
+    "vehicle": false,
+    "labelY": 97,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": [
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          105,
+          -32,
+          72,
+          30
+        ],
+        "at": [
+          105,
+          -32
+        ],
+        "cutouts": [
+          [
+            105,
+            -32,
+            2,
+            1
+          ],
+          [
+            105,
+            -31,
+            1,
+            1
+          ],
+          [
+            176,
+            -4,
+            1,
+            1
+          ],
+          [
+            175,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ad-astra-solar-panel",
+    "menu": "ad_astra:solar_panel_menu",
+    "screen": "earth.terrarium.adastra.client.screens.machines.SolarPanelScreen",
+    "title": "Solar Panel",
+    "texture": "ad_astra:textures/gui/container/solar_panel.png",
+    "width": 177,
+    "height": 103,
+    "textureHeight": 230,
+    "header": 16,
+    "plate": 41,
+    "body": [
+      0,
+      57,
+      177,
+      138
+    ],
+    "battery": true,
+    "vehicle": false,
+    "labelY": 136,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 14,
+    "fragments": [
+      {
+        "id": "native-status-monitor",
+        "source": [
+          0,
+          0,
+          177,
+          41
+        ],
+        "at": [
+          0,
+          -41
+        ],
+        "cutouts": [
+          [
+            0,
+            0,
+            177,
+            1
+          ],
+          [
+            160,
+            1,
+            17,
+            12
+          ],
+          [
+            167,
+            13,
+            10,
+            1
+          ],
+          [
+            168,
+            14,
+            9,
+            1
+          ],
+          [
+            160,
+            16,
+            5,
+            1
+          ],
+          [
+            0,
+            1,
+            18,
+            34
+          ],
+          [
+            160,
+            17,
+            6,
+            18
+          ],
+          [
+            169,
+            15,
+            8,
+            24
+          ],
+          [
+            0,
+            35,
+            26,
+            4
+          ],
+          [
+            32,
+            35,
+            12,
+            4
+          ],
+          [
+            50,
+            35,
+            78,
+            4
+          ],
+          [
+            134,
+            35,
+            12,
+            4
+          ],
+          [
+            152,
+            35,
+            14,
+            4
+          ]
+        ]
+      },
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          105,
+          -32,
+          72,
+          30
+        ],
+        "at": [
+          105,
+          -73
+        ],
+        "cutouts": [
+          [
+            105,
+            -32,
+            2,
+            1
+          ],
+          [
+            105,
+            -31,
+            1,
+            1
+          ],
+          [
+            176,
+            -4,
+            1,
+            1
+          ],
+          [
+            175,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "adastra-gap-oxygen-distributor",
+    "menu": "ad_astra:oxygen_distributor_menu",
+    "screen": "earth.terrarium.adastra.client.screens.machines.OxygenDistributorScreen",
+    "title": "Oxygen Distributor",
+    "texture": "ad_astra:textures/gui/container/oxygen_distributor.png",
+    "width": 177,
+    "height": 97,
+    "textureHeight": 244,
+    "header": 16,
+    "plate": 61,
+    "body": [
+      0,
+      77,
+      177,
+      152
+    ],
+    "battery": true,
+    "vehicle": false,
+    "labelY": 150,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 14,
+    "fragments": [
+      {
+        "id": "native-status-monitor",
+        "source": [
+          0,
+          0,
+          177,
+          61
+        ],
+        "at": [
+          0,
+          -61
+        ],
+        "cutouts": [
+          [
+            0,
+            0,
+            2,
+            58
+          ],
+          [
+            94,
+            0,
+            83,
+            58
+          ],
+          [
+            0,
+            58,
+            17,
+            2
+          ],
+          [
+            23,
+            58,
+            50,
+            2
+          ],
+          [
+            79,
+            58,
+            98,
+            2
+          ]
+        ]
+      },
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          98,
+          0,
+          93,
+          30
+        ],
+        "at": [
+          98,
+          -61
+        ],
+        "cutouts": [
+          [
+            98,
+            0,
+            2,
+            1
+          ],
+          [
+            98,
+            1,
+            1,
+            1
+          ],
+          [
+            190,
+            28,
+            1,
+            1
+          ],
+          [
+            189,
+            29,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "adastra-gap-gravity-normalizer",
+    "menu": "ad_astra:gravity_normalizer_menu",
+    "screen": "earth.terrarium.adastra.client.screens.machines.GravityNormalizerScreen",
+    "title": "Gravity Normalizer",
+    "texture": "ad_astra:textures/gui/container/gravity_normalizer.png",
+    "width": 184,
+    "height": 143,
+    "textureHeight": 215,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      0,
+      14,
+      184,
+      129
+    ],
+    "battery": true,
+    "vehicle": false,
+    "labelY": 118,
+    "titleY": 9,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": [
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          91,
+          -32,
+          93,
+          30
+        ],
+        "at": [
+          91,
+          -32
+        ],
+        "cutouts": [
+          [
+            91,
+            -32,
+            2,
+            1
+          ],
+          [
+            91,
+            -31,
+            1,
+            1
+          ],
+          [
+            183,
+            -4,
+            1,
+            1
+          ],
+          [
+            182,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "own-adastra-tier-1-rocket",
+    "menu": "ad_astra:rocket_menu",
+    "screen": "earth.terrarium.adastra.client.screens.vehicles.RocketScreen",
+    "title": "Tier 1 Rocket",
+    "texture": "ad_astra:textures/gui/container/rocket.png",
+    "width": 177,
+    "height": 94,
+    "textureHeight": 174,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      -8,
+      14,
+      169,
+      80
+    ],
+    "battery": false,
+    "vehicle": true,
+    "labelY": 80,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": []
+  },
+  {
+    "id": "own-adastra-tier-1-rover",
+    "menu": "ad_astra:rover_menu",
+    "screen": "earth.terrarium.adastra.client.screens.vehicles.RoverScreen",
+    "title": "Tier 1 Rover",
+    "texture": "ad_astra:textures/gui/container/rover.png",
+    "width": 177,
+    "height": 106,
+    "textureHeight": 181,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      -8,
+      14,
+      169,
+      92
+    ],
+    "battery": false,
+    "vehicle": true,
+    "labelY": 87,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": []
+  },
+  {
+    "id": "own-adastra-lander",
+    "menu": "ad_astra:lander_menu",
+    "screen": "earth.terrarium.adastra.client.screens.vehicles.LanderScreen",
+    "title": "Lander",
+    "texture": "ad_astra:textures/gui/container/lander.png",
+    "width": 177,
+    "height": 95,
+    "textureHeight": 174,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      -8,
+      14,
+      169,
+      81
+    ],
+    "battery": false,
+    "vehicle": true,
+    "labelY": 80,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": []
+  },
+  {
+    "id": "ad-astra-giselle-addon-automation-nasa-workbench",
+    "menu": "ad_astra_giselle_addon:automation_nasa_workbench",
+    "screen": "ad_astra_giselle_addon.client.screen.AutomationNasaWorkbenchScreen",
+    "title": "Automation NASA Workbench",
+    "texture": "ad_astra_giselle_addon:textures/gui/container/automation_nasa_workbench.png",
+    "width": 177,
+    "height": 147,
+    "textureHeight": 224,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      0,
+      14,
+      177,
+      133
+    ],
+    "battery": true,
+    "vehicle": false,
+    "labelY": 130,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": [
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          105,
+          -32,
+          72,
+          30
+        ],
+        "at": [
+          105,
+          -32
+        ],
+        "cutouts": [
+          [
+            105,
+            -32,
+            2,
+            1
+          ],
+          [
+            105,
+            -31,
+            1,
+            1
+          ],
+          [
+            176,
+            -4,
+            1,
+            1
+          ],
+          [
+            175,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ad-astra-giselle-addon-fuel-loader",
+    "menu": "ad_astra_giselle_addon:fuel_loader",
+    "screen": "ad_astra_giselle_addon.client.screen.FuelLoaderScreen",
+    "title": "Fuel Loader",
+    "texture": "ad_astra_giselle_addon:textures/gui/container/fuel_loader.png",
+    "width": 176,
+    "height": 98,
+    "textureHeight": 182,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      0,
+      14,
+      176,
+      84
+    ],
+    "battery": false,
+    "vehicle": false,
+    "labelY": 88,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": [
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          104,
+          -32,
+          72,
+          30
+        ],
+        "at": [
+          104,
+          -32
+        ],
+        "cutouts": [
+          [
+            104,
+            -32,
+            2,
+            1
+          ],
+          [
+            104,
+            -31,
+            1,
+            1
+          ],
+          [
+            175,
+            -4,
+            1,
+            1
+          ],
+          [
+            174,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ad-astra-giselle-addon-gravity-normalizer",
+    "menu": "ad_astra_giselle_addon:gravity_normalizer",
+    "screen": "ad_astra_giselle_addon.client.screen.GravityNormalizerScreen",
+    "title": "Gravity Normalizer(Deprecated)",
+    "texture": "ad_astra_giselle_addon:textures/gui/container/gravity_normalizer.png",
+    "width": 176,
+    "height": 127,
+    "textureHeight": 196,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      0,
+      14,
+      176,
+      113
+    ],
+    "battery": true,
+    "vehicle": false,
+    "labelY": 102,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": [
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          83,
+          -32,
+          93,
+          30
+        ],
+        "at": [
+          83,
+          -32
+        ],
+        "cutouts": [
+          [
+            83,
+            -32,
+            2,
+            1
+          ],
+          [
+            83,
+            -31,
+            1,
+            1
+          ],
+          [
+            175,
+            -4,
+            1,
+            1
+          ],
+          [
+            174,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ad-astra-giselle-addon-rocket-sensor",
+    "menu": "ad_astra_giselle_addon:rocket_sensor",
+    "screen": "ad_astra_giselle_addon.client.screen.RocketSensorScreen",
+    "title": "Rocket Sensor",
+    "texture": "ad_astra_giselle_addon:textures/gui/container/rocket_sensor.png",
+    "width": 176,
+    "height": 188,
+    "textureHeight": 180,
+    "header": 22,
+    "plate": 0,
+    "body": [
+      0,
+      14,
+      176,
+      174
+    ],
+    "battery": false,
+    "vehicle": false,
+    "labelY": -100,
+    "titleY": 6,
+    "titleColor": -2106397,
+    "reserve": 0,
+    "fragments": [
+      {
+        "id": "native-options-toolbar",
+        "source": [
+          104,
+          -32,
+          72,
+          30
+        ],
+        "at": [
+          104,
+          -32
+        ],
+        "cutouts": [
+          [
+            104,
+            -32,
+            2,
+            1
+          ],
+          [
+            104,
+            -31,
+            1,
+            1
+          ],
+          [
+            175,
+            -4,
+            1,
+            1
+          ],
+          [
+            174,
+            -3,
+            2,
+            1
+          ]
+        ]
+      }
+    ]
+  }
+]

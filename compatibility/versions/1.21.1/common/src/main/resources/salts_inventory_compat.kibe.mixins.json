@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.compat.nativewindows.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "com.salts_inventory_update.compat.nativewindows.mixin.NativeWindowsMixinPlugin",
+  "mixins": [
+    "KibeCoolerTickMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

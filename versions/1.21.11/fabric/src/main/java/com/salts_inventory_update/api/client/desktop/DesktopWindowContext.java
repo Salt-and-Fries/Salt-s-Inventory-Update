@@ -94,6 +94,9 @@ public interface DesktopWindowContext<T, S> {
 
     int menuSlotId(Slot slot);
 
+    /** Native player-slot bounds of a built-in subview; absent when not exposed. */
+    default java.util.Optional<DesktopWindowBounds> builtinSlotBounds(int menuSlotId) { return java.util.Optional.empty(); }
+
     int fontWidth(String text);
 
     int fontWidth(Component text);

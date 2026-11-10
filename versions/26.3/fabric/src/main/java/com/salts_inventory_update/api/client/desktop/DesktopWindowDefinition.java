@@ -12,6 +12,9 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
 public interface DesktopWindowDefinition<T, S> {
+    /** Filters manager controls without transferring their routing or server authority. */
+    default boolean managementControlAllowed(DesktopWindowContext<T,S> context, DesktopWindowControl control) { return true; }
+
     /** Optional joined upper surface. Its own authenticated menu and input context are retained. */
     default @Nullable DesktopWindowAttachment attachment(DesktopWindowContext<T, S> context) { return null; }
 

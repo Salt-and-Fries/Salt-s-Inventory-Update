@@ -11,7 +11,13 @@ public final class TieredZIntegration {
     public static void initializeCommon() {
         DesktopEnvironment.onServerStarting(server->DesktopEnvironment.registerIntegration("tiered",()->
             GearMenuBridge.register(NativeMenuSupport.type("minecraft:anvil"),NativeMenuSupport.type("tiered:reforge"),
-                "draylar.tiered.reforge.ReforgeScreenHandler","container.repair","container.reforge",true)));
+                nativeMenuClass(),"container.repair","container.reforge",true)));
+    }
+    private static String nativeMenuClass() {
+        // Tierify is the 1.20.1 fork: it retains the tiered menu ID and artwork,
+        // but moved the implementation. Do not construct the absent TieredZ class.
+        return TieredZIntegration.class.getClassLoader().getResource("elocindev/tierify/screen/ReforgeScreenHandler.class")!=null
+            ?"elocindev.tierify.screen.ReforgeScreenHandler":"draylar.tiered.reforge.ReforgeScreenHandler";
     }
     public static void initializeClient() {
         NativeMenuSupport.bindNative(NativeMenuSupport.type("tiered:reforge"),false);

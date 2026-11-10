@@ -290,6 +290,13 @@ public final class DesktopContainerClient {
                 || payload.playerSessionToken() != playerSessionToken) {
                 return;
             }
+            // Modern vanilla cursor/player-inventory packets need not update
+            // InventoryMenu.stateId. Apply the authenticated SIU revision before
+            // setSharedCarried can dispatch a deferred click from the new cursor.
+            if (context.client().player != null) {
+                ((com.salts_inventory_update.mixin.accessor.AbstractContainerMenuAccessor) context.client().player.inventoryMenu)
+                    .salts_inventory_update$setStateId(payload.stateId());
+            }
             DesktopDebug.trace("client payload carried stack={}", payload.carried());
             InventoryDesktopScreen screen = InventoryDesktopScreen.current(context.client());
             if (screen != null) {
@@ -980,12 +987,23 @@ public final class DesktopContainerClient {
             || channel.toString().length() > DesktopProtocol.MAX_IDENTIFIER_LENGTH
             || data == null
             || data.length > DesktopProtocol.MAX_CUSTOM_DATA_BYTES
-            || sessionAuth(sessionId) == null
-            || !canDispatchOptimisticMutationNow()) {
+            || sessionAuth(sessionId) == null) {
+            return false;
+        }
+        boolean nativeRename = isRegisteredNativeRename(sessionId, channel);
+        if (nativeRename ? !canAcceptMutationIntent() : !canDispatchOptimisticMutationNow()) {
             return false;
         }
         byte[] intentData = data.clone();
-        boolean queued = queueMutation("custom", Set.of(sessionId), mutationId -> {
+        String label = nativeRename ? "native-rename" : "custom";
+        // Name edits carry their complete desired value. Keep the newest
+        // adjacent unsent edit, without crossing another action or session.
+        QueuedMutation last = MUTATION_QUEUE.peekLast();
+        if (nativeRename && last != null && last.label().equals(label)
+            && last.sessionIds().equals(Set.of(sessionId))) {
+            MUTATION_QUEUE.removeLast();
+        }
+        MutationPacketFactory intent = mutationId -> {
             SessionAuth auth = sessionAuth(sessionId);
             if (auth == null) {
                 return null;
@@ -998,8 +1016,19 @@ public final class DesktopContainerClient {
                 CONNECTION.connectionNonce(), mutationId, playerSessionToken,
                 sessionId, auth.token(), auth.stateId(), channel, intentData
             );
-        });
-        return immediateMutationDispatched("custom", queued);
+        };
+        boolean queued = nativeRename
+            ? queueMutation(label, Set.of(sessionId), intent)
+            : queueMutation("custom", Set.of(sessionId), intent);
+        return nativeRename ? queued : immediateMutationDispatched("custom", queued);
+    }
+
+    private static boolean isRegisteredNativeRename(int sessionId, Identifier channel) {
+        if (!channel.toString().equals("minecraft:rename_item")) return false;
+        var scope = com.salts_inventory_update.client.automatic.AutomaticNativeScope.current();
+        return scope != null && scope.input() != null && scope.input().sessionId() == sessionId
+            && com.salts_inventory_update.api.server.desktop.DesktopServerApi.findPayloadHandler(
+                scope.screen().getMenu().getType(), channel) != null;
     }
 
     public static boolean syncCarried(ItemStack carried) {

@@ -17,6 +17,7 @@ public final class LegacyFrameRendering {
 
     public static void background(AEBaseScreen<?> screen, GuiGraphics graphics,
             int x, int y, int mouseX, int mouseY, float delta) {
+        if (ExtendedAeLayout.background(screen, graphics, mouseX, mouseY, delta)) return;
         if (!screen.usesAeDesktopLayout() || screen.desktopInventoryCut() == 0) {
             screen.drawBG(graphics, x, y, mouseX, mouseY, delta);
             return;
@@ -38,9 +39,13 @@ public final class LegacyFrameRendering {
     }
 
     public static void bottom(AEBaseScreen<?> screen, GuiGraphicsExtractor graphics) {
+        if (ExtendedAeLayout.fixed(screen)) return;
         if (!screen.usesAeDesktopLayout() || screen.desktopInventoryCut() == 0) return;
         var style = screen.getStyle();
         var source = style.getTerminalStyle() == null ? style.getBackground() : style.getTerminalStyle().getBottom();
+        if(source==null&&screen.getClass().getName().startsWith("com.almostreliable.merequester.")) {
+            RequesterDesktop.bottom(screen,graphics);return;
+        }
         if (source == null || source.getSrcHeight() < 4) return;
         var body = screen.desktopContentBounds();
         var segments = screen.desktopSurfaceSegments();

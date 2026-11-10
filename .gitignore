@@ -30,3 +30,9 @@ run/
 /replay_pid*.log
 __pycache__/
 *.py[cod]
+
+# Generated evidence, captured runtimes and private QA/source archives.
+# Compact release summaries are deliberately added when preparing a commit.
+/output/
+/installer.log
+/options.txt

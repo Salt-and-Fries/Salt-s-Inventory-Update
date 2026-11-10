@@ -1,0 +1,6668 @@
+[
+  {
+    "id": "pr-create-toolbox",
+    "kind": "toolbox",
+    "screen": "com.simibubi.create.content.equipment.toolbox.ToolboxScreen",
+    "bounds": {
+      "y": 97,
+      "x": 200,
+      "height": 255,
+      "width": 218
+    },
+    "slots": [
+      {
+        "player": false,
+        "index": 0,
+        "y": 37,
+        "x": 79,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 1,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 2,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 3,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 4,
+        "y": 31,
+        "x": 112,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 5,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 6,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 7,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 8,
+        "y": 37,
+        "x": 145,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 9,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 10,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 11,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 12,
+        "y": 70,
+        "x": 151,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 13,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 14,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 15,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 16,
+        "y": 103,
+        "x": 145,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 17,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 18,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 19,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 20,
+        "y": 109,
+        "x": 112,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 21,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 22,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 23,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 24,
+        "y": 103,
+        "x": 79,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 25,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 26,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 27,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 28,
+        "y": 70,
+        "x": 73,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 29,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 30,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 31,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 165,
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 165,
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 165,
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 165,
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 36,
+        "y": 165,
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 37,
+        "y": 165,
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 38,
+        "y": 165,
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 39,
+        "y": 165,
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 40,
+        "y": 165,
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 41,
+        "y": 183,
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 42,
+        "y": 183,
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 43,
+        "y": 183,
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 44,
+        "y": 183,
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 45,
+        "y": 183,
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 46,
+        "y": 183,
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 47,
+        "y": 183,
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 48,
+        "y": 183,
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 49,
+        "y": 183,
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 50,
+        "y": 201,
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 51,
+        "y": 201,
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 52,
+        "y": 201,
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 53,
+        "y": 201,
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 54,
+        "y": 201,
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 55,
+        "y": 201,
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 56,
+        "y": 201,
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 57,
+        "y": 201,
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 58,
+        "y": 201,
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 59,
+        "y": 223,
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 60,
+        "y": 223,
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 61,
+        "y": 223,
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 62,
+        "y": 223,
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 63,
+        "y": 223,
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 64,
+        "y": 223,
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 65,
+        "y": 223,
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 66,
+        "y": 223,
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 67,
+        "y": 223,
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0
+      }
+    ]
+  },
+  {
+    "id": "pr-railways-mounted-toolbox",
+    "kind": "toolbox",
+    "screen": "com.railwayteam.railways.content.conductor.toolbox.MountedToolboxScreen",
+    "bounds": {
+      "y": 97,
+      "x": 200,
+      "height": 255,
+      "width": 218
+    },
+    "slots": [
+      {
+        "player": false,
+        "index": 0,
+        "y": 37,
+        "x": 79,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 1,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 2,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 3,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 4,
+        "y": 31,
+        "x": 112,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 5,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 6,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 7,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 8,
+        "y": 37,
+        "x": 145,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 9,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 10,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 11,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 12,
+        "y": 70,
+        "x": 151,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 13,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 14,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 15,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 16,
+        "y": 103,
+        "x": 145,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 17,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 18,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 19,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 20,
+        "y": 109,
+        "x": 112,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 21,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 22,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 23,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 24,
+        "y": 103,
+        "x": 79,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 25,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 26,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 27,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 28,
+        "y": 70,
+        "x": 73,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 29,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 30,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 31,
+        "y": -10000,
+        "x": -10000,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 165,
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 165,
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 165,
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 165,
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 36,
+        "y": 165,
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 37,
+        "y": 165,
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 38,
+        "y": 165,
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 39,
+        "y": 165,
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 40,
+        "y": 165,
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 41,
+        "y": 183,
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 42,
+        "y": 183,
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 43,
+        "y": 183,
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 44,
+        "y": 183,
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 45,
+        "y": 183,
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 46,
+        "y": 183,
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 47,
+        "y": 183,
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 48,
+        "y": 183,
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 49,
+        "y": 183,
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 50,
+        "y": 201,
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 51,
+        "y": 201,
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 52,
+        "y": 201,
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 53,
+        "y": 201,
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 54,
+        "y": 201,
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 55,
+        "y": 201,
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 56,
+        "y": 201,
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 57,
+        "y": 201,
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 58,
+        "y": 201,
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 59,
+        "y": 223,
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 60,
+        "y": 223,
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 61,
+        "y": 223,
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 62,
+        "y": 223,
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 63,
+        "y": 223,
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 64,
+        "y": 223,
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 65,
+        "y": 223,
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 66,
+        "y": 223,
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 67,
+        "y": 223,
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0
+      }
+    ]
+  },
+  {
+    "id": "pr-create-schematicannon",
+    "kind": "schematicannon",
+    "screen": "com.simibubi.create.content.schematics.cannon.SchematicannonScreen",
+    "bounds": {
+      "y": 99,
+      "x": 202,
+      "height": 251,
+      "width": 213
+    },
+    "slots": [
+      {
+        "player": false,
+        "index": 0,
+        "y": 65,
+        "x": 15,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 1,
+        "y": 65,
+        "x": 171,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 2,
+        "y": 19,
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 3,
+        "y": 19,
+        "x": 174,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 4,
+        "y": 19,
+        "x": 15,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 5,
+        "y": 161,
+        "x": 37,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 6,
+        "y": 161,
+        "x": 55,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 7,
+        "y": 161,
+        "x": 73,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 8,
+        "y": 161,
+        "x": 91,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 9,
+        "y": 161,
+        "x": 109,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 10,
+        "y": 161,
+        "x": 127,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 11,
+        "y": 161,
+        "x": 145,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 12,
+        "y": 161,
+        "x": 163,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 13,
+        "y": 161,
+        "x": 181,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 14,
+        "y": 179,
+        "x": 37,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 15,
+        "y": 179,
+        "x": 55,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 16,
+        "y": 179,
+        "x": 73,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 17,
+        "y": 179,
+        "x": 91,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 18,
+        "y": 179,
+        "x": 109,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 19,
+        "y": 179,
+        "x": 127,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 20,
+        "y": 179,
+        "x": 145,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 21,
+        "y": 179,
+        "x": 163,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 22,
+        "y": 179,
+        "x": 181,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 23,
+        "y": 197,
+        "x": 37,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 24,
+        "y": 197,
+        "x": 55,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 25,
+        "y": 197,
+        "x": 73,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 26,
+        "y": 197,
+        "x": 91,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 27,
+        "y": 197,
+        "x": 109,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 28,
+        "y": 197,
+        "x": 127,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 29,
+        "y": 197,
+        "x": 145,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 30,
+        "y": 197,
+        "x": 163,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 31,
+        "y": 197,
+        "x": 181,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 219,
+        "x": 37,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 219,
+        "x": 55,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 219,
+        "x": 73,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 219,
+        "x": 91,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 36,
+        "y": 219,
+        "x": 109,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 37,
+        "y": 219,
+        "x": 127,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 38,
+        "y": 219,
+        "x": 145,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 39,
+        "y": 219,
+        "x": 163,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 40,
+        "y": 219,
+        "x": 181,
+        "item": "minecraft:air",
+        "count": 0
+      }
+    ]
+  },
+  {
+    "id": "pr-create-schematic-table",
+    "kind": "schematic-table",
+    "screen": "com.simibubi.create.content.schematics.table.SchematicTableScreen",
+    "bounds": {
+      "y": 134,
+      "x": 202,
+      "height": 197,
+      "width": 214
+    },
+    "slots": [
+      {
+        "player": false,
+        "index": 0,
+        "y": 59,
+        "x": 21,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 1,
+        "y": 59,
+        "x": 166,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 2,
+        "y": 107,
+        "x": 38,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 3,
+        "y": 107,
+        "x": 56,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 4,
+        "y": 107,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 5,
+        "y": 107,
+        "x": 92,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 6,
+        "y": 107,
+        "x": 110,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 7,
+        "y": 107,
+        "x": 128,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 8,
+        "y": 107,
+        "x": 146,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 9,
+        "y": 107,
+        "x": 164,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 10,
+        "y": 107,
+        "x": 182,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 11,
+        "y": 125,
+        "x": 38,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 12,
+        "y": 125,
+        "x": 56,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 13,
+        "y": 125,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 14,
+        "y": 125,
+        "x": 92,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 15,
+        "y": 125,
+        "x": 110,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 16,
+        "y": 125,
+        "x": 128,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 17,
+        "y": 125,
+        "x": 146,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 18,
+        "y": 125,
+        "x": 164,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 19,
+        "y": 125,
+        "x": 182,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 20,
+        "y": 143,
+        "x": 38,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 21,
+        "y": 143,
+        "x": 56,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 22,
+        "y": 143,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 23,
+        "y": 143,
+        "x": 92,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 24,
+        "y": 143,
+        "x": 110,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 25,
+        "y": 143,
+        "x": 128,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 26,
+        "y": 143,
+        "x": 146,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 27,
+        "y": 143,
+        "x": 164,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 28,
+        "y": 143,
+        "x": 182,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 29,
+        "y": 165,
+        "x": 38,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 30,
+        "y": 165,
+        "x": 56,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 31,
+        "y": 165,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 165,
+        "x": 92,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 165,
+        "x": 110,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 165,
+        "x": 128,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 165,
+        "x": 146,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 36,
+        "y": 165,
+        "x": 164,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 37,
+        "y": 165,
+        "x": 182,
+        "item": "minecraft:air",
+        "count": 0
+      }
+    ]
+  },
+  {
+    "id": "own-create-fabric-blueprint",
+    "kind": "blueprint",
+    "screen": "com.simibubi.create.content.equipment.blueprint.BlueprintScreen",
+    "bounds": {
+      "y": 114,
+      "x": 231,
+      "height": 221,
+      "width": 179
+    },
+    "slots": [
+      {
+        "count": 0,
+        "player": true,
+        "index": 0,
+        "y": 131,
+        "x": 8,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 1,
+        "y": 131,
+        "x": 26,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 2,
+        "y": 131,
+        "x": 44,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 3,
+        "y": 131,
+        "x": 62,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 4,
+        "y": 131,
+        "x": 80,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 5,
+        "y": 131,
+        "x": 98,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 6,
+        "y": 131,
+        "x": 116,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 7,
+        "y": 131,
+        "x": 134,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 8,
+        "y": 131,
+        "x": 152,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 9,
+        "y": 149,
+        "x": 8,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 10,
+        "y": 149,
+        "x": 26,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 11,
+        "y": 149,
+        "x": 44,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 12,
+        "y": 149,
+        "x": 62,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 13,
+        "y": 149,
+        "x": 80,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 14,
+        "y": 149,
+        "x": 98,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 15,
+        "y": 149,
+        "x": 116,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 16,
+        "y": 149,
+        "x": 134,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 17,
+        "y": 149,
+        "x": 152,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 18,
+        "y": 167,
+        "x": 8,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 19,
+        "y": 167,
+        "x": 26,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 20,
+        "y": 167,
+        "x": 44,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 21,
+        "y": 167,
+        "x": 62,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 22,
+        "y": 167,
+        "x": 80,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 23,
+        "y": 167,
+        "x": 98,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 24,
+        "y": 167,
+        "x": 116,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 25,
+        "y": 167,
+        "x": 134,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 26,
+        "y": 167,
+        "x": 152,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 27,
+        "y": 189,
+        "x": 8,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 28,
+        "y": 189,
+        "x": 26,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 29,
+        "y": 189,
+        "x": 44,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 30,
+        "y": 189,
+        "x": 62,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 31,
+        "y": 189,
+        "x": 80,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 32,
+        "y": 189,
+        "x": 98,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 33,
+        "y": 189,
+        "x": 116,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 34,
+        "y": 189,
+        "x": 134,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 35,
+        "y": 189,
+        "x": 152,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": false,
+        "index": 36,
+        "y": 21,
+        "x": 29,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": false,
+        "index": 37,
+        "y": 21,
+        "x": 47,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": false,
+        "index": 38,
+        "y": 21,
+        "x": 65,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": false,
+        "index": 39,
+        "y": 39,
+        "x": 29,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": false,
+        "index": 40,
+        "y": 39,
+        "x": 47,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": false,
+        "index": 41,
+        "y": 39,
+        "x": 65,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": false,
+        "index": 42,
+        "y": 57,
+        "x": 29,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": false,
+        "index": 43,
+        "y": 57,
+        "x": 47,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": false,
+        "index": 44,
+        "y": 57,
+        "x": 65,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": false,
+        "index": 45,
+        "y": 40,
+        "x": 123,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": false,
+        "index": 46,
+        "y": 57,
+        "x": 135,
+        "item": "minecraft:air"
+      }
+    ]
+  },
+  {
+    "id": "pr-create-frogport",
+    "kind": "frogport",
+    "screen": "com.simibubi.create.content.logistics.packagePort.PackagePortScreen",
+    "bounds": {
+      "y": 130,
+      "x": 210,
+      "height": 190,
+      "width": 220
+    },
+    "slots": [
+      {
+        "player": false,
+        "index": 0,
+        "y": 9,
+        "x": 27,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 1,
+        "y": 9,
+        "x": 45,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 2,
+        "y": 9,
+        "x": 63,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 3,
+        "y": 9,
+        "x": 81,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 4,
+        "y": 9,
+        "x": 99,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 5,
+        "y": 9,
+        "x": 117,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 6,
+        "y": 9,
+        "x": 135,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 7,
+        "y": 9,
+        "x": 153,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 8,
+        "y": 9,
+        "x": 171,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 9,
+        "y": 27,
+        "x": 27,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 10,
+        "y": 27,
+        "x": 45,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 11,
+        "y": 27,
+        "x": 63,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 12,
+        "y": 27,
+        "x": 81,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 13,
+        "y": 27,
+        "x": 99,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 14,
+        "y": 27,
+        "x": 117,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 15,
+        "y": 27,
+        "x": 135,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 16,
+        "y": 27,
+        "x": 153,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 17,
+        "y": 27,
+        "x": 171,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 18,
+        "y": 108,
+        "x": 38,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 19,
+        "y": 108,
+        "x": 56,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 20,
+        "y": 108,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 21,
+        "y": 108,
+        "x": 92,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 22,
+        "y": 108,
+        "x": 110,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 23,
+        "y": 108,
+        "x": 128,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 24,
+        "y": 108,
+        "x": 146,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 25,
+        "y": 108,
+        "x": 164,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 26,
+        "y": 108,
+        "x": 182,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 27,
+        "y": 126,
+        "x": 38,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 28,
+        "y": 126,
+        "x": 56,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 29,
+        "y": 126,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 30,
+        "y": 126,
+        "x": 92,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 31,
+        "y": 126,
+        "x": 110,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 126,
+        "x": 128,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 126,
+        "x": 146,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 126,
+        "x": 164,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 126,
+        "x": 182,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 36,
+        "y": 144,
+        "x": 38,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 37,
+        "y": 144,
+        "x": 56,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 38,
+        "y": 144,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 39,
+        "y": 144,
+        "x": 92,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 40,
+        "y": 144,
+        "x": 110,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 41,
+        "y": 144,
+        "x": 128,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 42,
+        "y": 144,
+        "x": 146,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 43,
+        "y": 144,
+        "x": 164,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 44,
+        "y": 144,
+        "x": 182,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 45,
+        "y": 166,
+        "x": 38,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 46,
+        "y": 166,
+        "x": 56,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 47,
+        "y": 166,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 48,
+        "y": 166,
+        "x": 92,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 49,
+        "y": 166,
+        "x": 110,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 50,
+        "y": 166,
+        "x": 128,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 51,
+        "y": 166,
+        "x": 146,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 52,
+        "y": 166,
+        "x": 164,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 53,
+        "y": 166,
+        "x": 182,
+        "item": "minecraft:air",
+        "count": 0
+      }
+    ]
+  },
+  {
+    "id": "pr-create-redstone-requester",
+    "kind": "requester",
+    "screen": "com.simibubi.create.content.logistics.redstoneRequester.RedstoneRequesterScreen",
+    "bounds": {
+      "y": 111,
+      "x": 204,
+      "height": 228,
+      "width": 232
+    },
+    "slots": [
+      {
+        "player": true,
+        "index": 0,
+        "y": 142,
+        "x": 5,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 1,
+        "y": 142,
+        "x": 23,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 2,
+        "y": 142,
+        "x": 41,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 3,
+        "y": 142,
+        "x": 59,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 4,
+        "y": 142,
+        "x": 77,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 5,
+        "y": 142,
+        "x": 95,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 6,
+        "y": 142,
+        "x": 113,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 7,
+        "y": 142,
+        "x": 131,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 8,
+        "y": 142,
+        "x": 149,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 9,
+        "y": 160,
+        "x": 5,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 10,
+        "y": 160,
+        "x": 23,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 11,
+        "y": 160,
+        "x": 41,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 12,
+        "y": 160,
+        "x": 59,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 13,
+        "y": 160,
+        "x": 77,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 14,
+        "y": 160,
+        "x": 95,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 15,
+        "y": 160,
+        "x": 113,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 16,
+        "y": 160,
+        "x": 131,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 17,
+        "y": 160,
+        "x": 149,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 18,
+        "y": 178,
+        "x": 5,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 19,
+        "y": 178,
+        "x": 23,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 20,
+        "y": 178,
+        "x": 41,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 21,
+        "y": 178,
+        "x": 59,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 22,
+        "y": 178,
+        "x": 77,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 23,
+        "y": 178,
+        "x": 95,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 24,
+        "y": 178,
+        "x": 113,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 25,
+        "y": 178,
+        "x": 131,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 26,
+        "y": 178,
+        "x": 149,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 27,
+        "y": 200,
+        "x": 5,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 28,
+        "y": 200,
+        "x": 23,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 29,
+        "y": 200,
+        "x": 41,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 30,
+        "y": 200,
+        "x": 59,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 31,
+        "y": 200,
+        "x": 77,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 200,
+        "x": 95,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 200,
+        "x": 113,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 200,
+        "x": 131,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 200,
+        "x": 149,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 36,
+        "y": 28,
+        "x": 27,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 37,
+        "y": 28,
+        "x": 47,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 38,
+        "y": 28,
+        "x": 67,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 39,
+        "y": 28,
+        "x": 87,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 40,
+        "y": 28,
+        "x": 107,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 41,
+        "y": 28,
+        "x": 127,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 42,
+        "y": 28,
+        "x": 147,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 43,
+        "y": 28,
+        "x": 167,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 44,
+        "y": 28,
+        "x": 187,
+        "item": "minecraft:air",
+        "count": 0
+      }
+    ]
+  },
+  {
+    "id": "pr-create-stock-ticker",
+    "kind": "category",
+    "screen": "com.simibubi.create.content.logistics.stockTicker.StockKeeperCategoryScreen",
+    "bounds": {
+      "y": 159,
+      "x": 224,
+      "height": 131,
+      "width": 192
+    },
+    "slots": [
+      {
+        "player": false,
+        "index": 0,
+        "y": 24,
+        "x": 16,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 1,
+        "y": 106,
+        "x": 18,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 2,
+        "y": 106,
+        "x": 36,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 3,
+        "y": 106,
+        "x": 54,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 4,
+        "y": 106,
+        "x": 72,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 5,
+        "y": 106,
+        "x": 90,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 6,
+        "y": 106,
+        "x": 108,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 7,
+        "y": 106,
+        "x": 126,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 8,
+        "y": 106,
+        "x": 144,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 9,
+        "y": 106,
+        "x": 162,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 10,
+        "y": 124,
+        "x": 18,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 11,
+        "y": 124,
+        "x": 36,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 12,
+        "y": 124,
+        "x": 54,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 13,
+        "y": 124,
+        "x": 72,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 14,
+        "y": 124,
+        "x": 90,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 15,
+        "y": 124,
+        "x": 108,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 16,
+        "y": 124,
+        "x": 126,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 17,
+        "y": 124,
+        "x": 144,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 18,
+        "y": 124,
+        "x": 162,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 19,
+        "y": 142,
+        "x": 18,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 20,
+        "y": 142,
+        "x": 36,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 21,
+        "y": 142,
+        "x": 54,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 22,
+        "y": 142,
+        "x": 72,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 23,
+        "y": 142,
+        "x": 90,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 24,
+        "y": 142,
+        "x": 108,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 25,
+        "y": 142,
+        "x": 126,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 26,
+        "y": 142,
+        "x": 144,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 27,
+        "y": 142,
+        "x": 162,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 28,
+        "y": 164,
+        "x": 18,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 29,
+        "y": 164,
+        "x": 36,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 30,
+        "y": 164,
+        "x": 54,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 31,
+        "y": 164,
+        "x": 72,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 164,
+        "x": 90,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 164,
+        "x": 108,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 164,
+        "x": 126,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 164,
+        "x": 144,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 36,
+        "y": 164,
+        "x": 162,
+        "item": "minecraft:air",
+        "count": 0
+      }
+    ]
+  },
+  {
+    "id": "cplus-stock-category-editor",
+    "kind": "category-editor",
+    "screen": "com.simibubi.create.content.logistics.stockTicker.StockKeeperCategoryScreen",
+    "bounds": {
+      "y": 159,
+      "x": 224,
+      "height": 131,
+      "width": 192
+    },
+    "slots": [
+      {
+        "player": false,
+        "index": 0,
+        "y": 24,
+        "x": 16,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 1,
+        "y": 106,
+        "x": 18,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 2,
+        "y": 106,
+        "x": 36,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 3,
+        "y": 106,
+        "x": 54,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 4,
+        "y": 106,
+        "x": 72,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 5,
+        "y": 106,
+        "x": 90,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 6,
+        "y": 106,
+        "x": 108,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 7,
+        "y": 106,
+        "x": 126,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 8,
+        "y": 106,
+        "x": 144,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 9,
+        "y": 106,
+        "x": 162,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 10,
+        "y": 124,
+        "x": 18,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 11,
+        "y": 124,
+        "x": 36,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 12,
+        "y": 124,
+        "x": 54,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 13,
+        "y": 124,
+        "x": 72,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 14,
+        "y": 124,
+        "x": 90,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 15,
+        "y": 124,
+        "x": 108,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 16,
+        "y": 124,
+        "x": 126,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 17,
+        "y": 124,
+        "x": 144,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 18,
+        "y": 124,
+        "x": 162,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 19,
+        "y": 142,
+        "x": 18,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 20,
+        "y": 142,
+        "x": 36,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 21,
+        "y": 142,
+        "x": 54,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 22,
+        "y": 142,
+        "x": 72,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 23,
+        "y": 142,
+        "x": 90,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 24,
+        "y": 142,
+        "x": 108,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 25,
+        "y": 142,
+        "x": 126,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 26,
+        "y": 142,
+        "x": 144,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 27,
+        "y": 142,
+        "x": 162,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 28,
+        "y": 164,
+        "x": 18,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 29,
+        "y": 164,
+        "x": 36,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 30,
+        "y": 164,
+        "x": 54,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 31,
+        "y": 164,
+        "x": 72,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 164,
+        "x": 90,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 164,
+        "x": 108,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 164,
+        "x": 126,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 164,
+        "x": 144,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 36,
+        "y": 164,
+        "x": 162,
+        "item": "minecraft:air",
+        "count": 0
+      }
+    ]
+  },
+  {
+    "id": "own-create-stock-request-real",
+    "kind": "stock",
+    "screen": "com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestScreen",
+    "bounds": {
+      "y": 7,
+      "x": 207,
+      "height": 436,
+      "width": 226
+    },
+    "slots": [
+      {
+        "count": 0,
+        "player": true,
+        "index": 0,
+        "y": 0,
+        "x": -1000,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 1,
+        "y": 0,
+        "x": -982,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 2,
+        "y": 0,
+        "x": -964,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 3,
+        "y": 0,
+        "x": -946,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 4,
+        "y": 0,
+        "x": -928,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 5,
+        "y": 0,
+        "x": -910,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 6,
+        "y": 0,
+        "x": -892,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 7,
+        "y": 0,
+        "x": -874,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 8,
+        "y": 0,
+        "x": -856,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 9,
+        "y": 18,
+        "x": -1000,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 10,
+        "y": 18,
+        "x": -982,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 11,
+        "y": 18,
+        "x": -964,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 12,
+        "y": 18,
+        "x": -946,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 13,
+        "y": 18,
+        "x": -928,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 14,
+        "y": 18,
+        "x": -910,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 15,
+        "y": 18,
+        "x": -892,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 16,
+        "y": 18,
+        "x": -874,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 17,
+        "y": 18,
+        "x": -856,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 18,
+        "y": 36,
+        "x": -1000,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 19,
+        "y": 36,
+        "x": -982,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 20,
+        "y": 36,
+        "x": -964,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 21,
+        "y": 36,
+        "x": -946,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 22,
+        "y": 36,
+        "x": -928,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 23,
+        "y": 36,
+        "x": -910,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 24,
+        "y": 36,
+        "x": -892,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 25,
+        "y": 36,
+        "x": -874,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 26,
+        "y": 36,
+        "x": -856,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 27,
+        "y": 58,
+        "x": -1000,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 64,
+        "player": true,
+        "index": 28,
+        "y": 58,
+        "x": -982,
+        "item": "minecraft:stone"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 29,
+        "y": 58,
+        "x": -964,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 30,
+        "y": 58,
+        "x": -946,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 31,
+        "y": 58,
+        "x": -928,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 32,
+        "y": 58,
+        "x": -910,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 33,
+        "y": 58,
+        "x": -892,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 34,
+        "y": 58,
+        "x": -874,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 35,
+        "y": 58,
+        "x": -856,
+        "item": "minecraft:air"
+      }
+    ]
+  },
+  {
+    "id": "own-create-gauge-set-item",
+    "kind": "gauge",
+    "screen": "com.simibubi.create.content.logistics.factoryBoard.FactoryPanelSetItemScreen",
+    "bounds": {
+      "y": 127,
+      "x": 228,
+      "height": 196,
+      "width": 184
+    },
+    "slots": [
+      {
+        "count": 0,
+        "player": true,
+        "index": 0,
+        "y": 112,
+        "x": 13,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 1,
+        "y": 112,
+        "x": 31,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 2,
+        "y": 112,
+        "x": 49,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 3,
+        "y": 112,
+        "x": 67,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 4,
+        "y": 112,
+        "x": 85,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 5,
+        "y": 112,
+        "x": 103,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 6,
+        "y": 112,
+        "x": 121,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 7,
+        "y": 112,
+        "x": 139,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 8,
+        "y": 112,
+        "x": 157,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 9,
+        "y": 130,
+        "x": 13,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 10,
+        "y": 130,
+        "x": 31,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 11,
+        "y": 130,
+        "x": 49,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 12,
+        "y": 130,
+        "x": 67,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 13,
+        "y": 130,
+        "x": 85,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 14,
+        "y": 130,
+        "x": 103,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 15,
+        "y": 130,
+        "x": 121,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 16,
+        "y": 130,
+        "x": 139,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 17,
+        "y": 130,
+        "x": 157,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 18,
+        "y": 148,
+        "x": 13,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 19,
+        "y": 148,
+        "x": 31,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 20,
+        "y": 148,
+        "x": 49,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 21,
+        "y": 148,
+        "x": 67,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 22,
+        "y": 148,
+        "x": 85,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 23,
+        "y": 148,
+        "x": 103,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 24,
+        "y": 148,
+        "x": 121,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 25,
+        "y": 148,
+        "x": 139,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 26,
+        "y": 148,
+        "x": 157,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 27,
+        "y": 170,
+        "x": 13,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 28,
+        "y": 170,
+        "x": 31,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 29,
+        "y": 170,
+        "x": 49,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 30,
+        "y": 170,
+        "x": 67,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 31,
+        "y": 170,
+        "x": 85,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 32,
+        "y": 170,
+        "x": 103,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 33,
+        "y": 170,
+        "x": 121,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 34,
+        "y": 170,
+        "x": 139,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 35,
+        "y": 170,
+        "x": 157,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": false,
+        "index": 36,
+        "y": 28,
+        "x": 74,
+        "item": "minecraft:air"
+      }
+    ]
+  },
+  {
+    "id": "pr-create-filter",
+    "kind": "filter",
+    "screen": "com.simibubi.create.content.logistics.filter.FilterScreen",
+    "bounds": {
+      "y": 124,
+      "x": 202,
+      "height": 211,
+      "width": 214
+    },
+    "slots": [
+      {
+        "player": true,
+        "index": 0,
+        "y": 121,
+        "x": 38,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 1,
+        "y": 121,
+        "x": 56,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 2,
+        "y": 121,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 3,
+        "y": 121,
+        "x": 92,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 4,
+        "y": 121,
+        "x": 110,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 5,
+        "y": 121,
+        "x": 128,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 6,
+        "y": 121,
+        "x": 146,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 7,
+        "y": 121,
+        "x": 164,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 8,
+        "y": 121,
+        "x": 182,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 9,
+        "y": 139,
+        "x": 38,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 10,
+        "y": 139,
+        "x": 56,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 11,
+        "y": 139,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 12,
+        "y": 139,
+        "x": 92,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 13,
+        "y": 139,
+        "x": 110,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 14,
+        "y": 139,
+        "x": 128,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 15,
+        "y": 139,
+        "x": 146,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 16,
+        "y": 139,
+        "x": 164,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 17,
+        "y": 139,
+        "x": 182,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 18,
+        "y": 157,
+        "x": 38,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 19,
+        "y": 157,
+        "x": 56,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 20,
+        "y": 157,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 21,
+        "y": 157,
+        "x": 92,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 22,
+        "y": 157,
+        "x": 110,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 23,
+        "y": 157,
+        "x": 128,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 24,
+        "y": 157,
+        "x": 146,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 25,
+        "y": 157,
+        "x": 164,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 26,
+        "y": 157,
+        "x": 182,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 27,
+        "y": 179,
+        "x": 38,
+        "item": "create:filter",
+        "count": 1
+      },
+      {
+        "player": true,
+        "index": 28,
+        "y": 179,
+        "x": 56,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 29,
+        "y": 179,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 30,
+        "y": 179,
+        "x": 92,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 31,
+        "y": 179,
+        "x": 110,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 179,
+        "x": 128,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 179,
+        "x": 146,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 179,
+        "x": 164,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 179,
+        "x": 182,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 36,
+        "y": 25,
+        "x": 23,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 37,
+        "y": 25,
+        "x": 41,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 38,
+        "y": 25,
+        "x": 59,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 39,
+        "y": 25,
+        "x": 77,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 40,
+        "y": 25,
+        "x": 95,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 41,
+        "y": 25,
+        "x": 113,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 42,
+        "y": 25,
+        "x": 131,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 43,
+        "y": 25,
+        "x": 149,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 44,
+        "y": 25,
+        "x": 167,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 45,
+        "y": 43,
+        "x": 23,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 46,
+        "y": 43,
+        "x": 41,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 47,
+        "y": 43,
+        "x": 59,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 48,
+        "y": 43,
+        "x": 77,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 49,
+        "y": 43,
+        "x": 95,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 50,
+        "y": 43,
+        "x": 113,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 51,
+        "y": 43,
+        "x": 131,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 52,
+        "y": 43,
+        "x": 149,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 53,
+        "y": 43,
+        "x": 167,
+        "item": "minecraft:air",
+        "count": 0
+      }
+    ]
+  },
+  {
+    "id": "pr-create-attribute-filter",
+    "kind": "attribute",
+    "screen": "com.simibubi.create.content.logistics.filter.AttributeFilterScreen",
+    "bounds": {
+      "y": 133,
+      "x": 188,
+      "height": 197,
+      "width": 241
+    },
+    "slots": [
+      {
+        "player": true,
+        "index": 0,
+        "y": 107,
+        "x": 51,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 1,
+        "y": 107,
+        "x": 69,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 2,
+        "y": 107,
+        "x": 87,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 3,
+        "y": 107,
+        "x": 105,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 4,
+        "y": 107,
+        "x": 123,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 5,
+        "y": 107,
+        "x": 141,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 6,
+        "y": 107,
+        "x": 159,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 7,
+        "y": 107,
+        "x": 177,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 8,
+        "y": 107,
+        "x": 195,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 9,
+        "y": 125,
+        "x": 51,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 10,
+        "y": 125,
+        "x": 69,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 11,
+        "y": 125,
+        "x": 87,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 12,
+        "y": 125,
+        "x": 105,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 13,
+        "y": 125,
+        "x": 123,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 14,
+        "y": 125,
+        "x": 141,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 15,
+        "y": 125,
+        "x": 159,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 16,
+        "y": 125,
+        "x": 177,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 17,
+        "y": 125,
+        "x": 195,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 18,
+        "y": 143,
+        "x": 51,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 19,
+        "y": 143,
+        "x": 69,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 20,
+        "y": 143,
+        "x": 87,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 21,
+        "y": 143,
+        "x": 105,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 22,
+        "y": 143,
+        "x": 123,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 23,
+        "y": 143,
+        "x": 141,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 24,
+        "y": 143,
+        "x": 159,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 25,
+        "y": 143,
+        "x": 177,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 26,
+        "y": 143,
+        "x": 195,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 27,
+        "y": 165,
+        "x": 51,
+        "item": "create:attribute_filter",
+        "count": 1
+      },
+      {
+        "player": true,
+        "index": 28,
+        "y": 165,
+        "x": 69,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 29,
+        "y": 165,
+        "x": 87,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 30,
+        "y": 165,
+        "x": 105,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 31,
+        "y": 165,
+        "x": 123,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 165,
+        "x": 141,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 165,
+        "x": 159,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 165,
+        "x": 177,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 165,
+        "x": 195,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 36,
+        "y": 27,
+        "x": 16,
+        "item": "minecraft:stone",
+        "count": 1
+      },
+      {
+        "player": false,
+        "index": 37,
+        "y": 62,
+        "x": 16,
+        "item": "minecraft:name_tag",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "pr-create-package-filter",
+    "kind": "package",
+    "screen": "com.simibubi.create.content.logistics.filter.PackageFilterScreen",
+    "bounds": {
+      "y": 136,
+      "x": 200,
+      "height": 191,
+      "width": 218
+    },
+    "slots": [
+      {
+        "player": true,
+        "index": 0,
+        "y": 101,
+        "x": 40,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 1,
+        "y": 101,
+        "x": 58,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 2,
+        "y": 101,
+        "x": 76,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 3,
+        "y": 101,
+        "x": 94,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 4,
+        "y": 101,
+        "x": 112,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 5,
+        "y": 101,
+        "x": 130,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 6,
+        "y": 101,
+        "x": 148,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 7,
+        "y": 101,
+        "x": 166,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 8,
+        "y": 101,
+        "x": 184,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 9,
+        "y": 119,
+        "x": 40,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 10,
+        "y": 119,
+        "x": 58,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 11,
+        "y": 119,
+        "x": 76,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 12,
+        "y": 119,
+        "x": 94,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 13,
+        "y": 119,
+        "x": 112,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 14,
+        "y": 119,
+        "x": 130,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 15,
+        "y": 119,
+        "x": 148,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 16,
+        "y": 119,
+        "x": 166,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 17,
+        "y": 119,
+        "x": 184,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 18,
+        "y": 137,
+        "x": 40,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 19,
+        "y": 137,
+        "x": 58,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 20,
+        "y": 137,
+        "x": 76,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 21,
+        "y": 137,
+        "x": 94,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 22,
+        "y": 137,
+        "x": 112,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 23,
+        "y": 137,
+        "x": 130,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 24,
+        "y": 137,
+        "x": 148,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 25,
+        "y": 137,
+        "x": 166,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 26,
+        "y": 137,
+        "x": 184,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 27,
+        "y": 159,
+        "x": 40,
+        "item": "create:package_filter",
+        "count": 1
+      },
+      {
+        "player": true,
+        "index": 28,
+        "y": 159,
+        "x": 58,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 29,
+        "y": 159,
+        "x": 76,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 30,
+        "y": 159,
+        "x": 94,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 31,
+        "y": 159,
+        "x": 112,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 159,
+        "x": 130,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 159,
+        "x": 148,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 159,
+        "x": 166,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 159,
+        "x": 184,
+        "item": "minecraft:air",
+        "count": 0
+      }
+    ]
+  },
+  {
+    "id": "pr-create-linked-controller",
+    "kind": "controller",
+    "screen": "com.simibubi.create.content.redstone.link.controller.LinkedControllerScreen",
+    "bounds": {
+      "y": 114,
+      "x": 231,
+      "height": 221,
+      "width": 179
+    },
+    "slots": [
+      {
+        "player": true,
+        "index": 0,
+        "y": 131,
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 1,
+        "y": 131,
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 2,
+        "y": 131,
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 3,
+        "y": 131,
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 4,
+        "y": 131,
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 5,
+        "y": 131,
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 6,
+        "y": 131,
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 7,
+        "y": 131,
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 8,
+        "y": 131,
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 9,
+        "y": 149,
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 10,
+        "y": 149,
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 11,
+        "y": 149,
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 12,
+        "y": 149,
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 13,
+        "y": 149,
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 14,
+        "y": 149,
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 15,
+        "y": 149,
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 16,
+        "y": 149,
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 17,
+        "y": 149,
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 18,
+        "y": 167,
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 19,
+        "y": 167,
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 20,
+        "y": 167,
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 21,
+        "y": 167,
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 22,
+        "y": 167,
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 23,
+        "y": 167,
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 24,
+        "y": 167,
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 25,
+        "y": 167,
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 26,
+        "y": 167,
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 27,
+        "y": 189,
+        "x": 8,
+        "item": "create:linked_controller",
+        "count": 1
+      },
+      {
+        "player": true,
+        "index": 28,
+        "y": 189,
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 29,
+        "y": 189,
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 30,
+        "y": 189,
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 31,
+        "y": 189,
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 189,
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 189,
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 189,
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 189,
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 36,
+        "y": 34,
+        "x": 12,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 37,
+        "y": 52,
+        "x": 12,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 38,
+        "y": 34,
+        "x": 36,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 39,
+        "y": 52,
+        "x": 36,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 40,
+        "y": 34,
+        "x": 60,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 41,
+        "y": 52,
+        "x": 60,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 42,
+        "y": 34,
+        "x": 84,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 43,
+        "y": 52,
+        "x": 84,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 44,
+        "y": 34,
+        "x": 119,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 45,
+        "y": 52,
+        "x": 119,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 46,
+        "y": 34,
+        "x": 143,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 47,
+        "y": 52,
+        "x": 143,
+        "item": "minecraft:air",
+        "count": 0
+      }
+    ]
+  },
+  {
+    "id": "own-create-fabric-schedule",
+    "kind": "schedule",
+    "screen": "com.simibubi.create.content.trains.schedule.ScheduleScreen",
+    "bounds": {
+      "y": 112,
+      "x": 192,
+      "height": 226,
+      "width": 256
+    },
+    "slots": [
+      {
+        "player": true,
+        "index": 0,
+        "y": 140,
+        "x": 46,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 1,
+        "y": 140,
+        "x": 64,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 2,
+        "y": 140,
+        "x": 82,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 3,
+        "y": 140,
+        "x": 100,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 4,
+        "y": 140,
+        "x": 118,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 5,
+        "y": 140,
+        "x": 136,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 6,
+        "y": 140,
+        "x": 154,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 7,
+        "y": 140,
+        "x": 172,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 8,
+        "y": 140,
+        "x": 190,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 9,
+        "y": 158,
+        "x": 46,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 10,
+        "y": 158,
+        "x": 64,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 11,
+        "y": 158,
+        "x": 82,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 12,
+        "y": 158,
+        "x": 100,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 13,
+        "y": 158,
+        "x": 118,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 14,
+        "y": 158,
+        "x": 136,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 15,
+        "y": 158,
+        "x": 154,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 16,
+        "y": 158,
+        "x": 172,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 17,
+        "y": 158,
+        "x": 190,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 18,
+        "y": 176,
+        "x": 46,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 19,
+        "y": 176,
+        "x": 64,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 20,
+        "y": 176,
+        "x": 82,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 21,
+        "y": 176,
+        "x": 100,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 22,
+        "y": 176,
+        "x": 118,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 23,
+        "y": 176,
+        "x": 136,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 24,
+        "y": 176,
+        "x": 154,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 25,
+        "y": 176,
+        "x": 172,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 26,
+        "y": 176,
+        "x": 190,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 27,
+        "y": 198,
+        "x": 46,
+        "item": "create:schedule",
+        "count": 1
+      },
+      {
+        "player": true,
+        "index": 28,
+        "y": 198,
+        "x": 64,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 29,
+        "y": 198,
+        "x": 82,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 30,
+        "y": 198,
+        "x": 100,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 31,
+        "y": 198,
+        "x": 118,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 198,
+        "x": 136,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 198,
+        "x": 154,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 198,
+        "x": 172,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 198,
+        "x": 190,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 36,
+        "y": 88,
+        "x": 54,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 37,
+        "y": 88,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      }
+    ]
+  },
+  {
+    "id": "schedule-editor",
+    "kind": "schedule-editor",
+    "screen": "com.simibubi.create.content.trains.schedule.ScheduleScreen",
+    "bounds": {
+      "y": 112,
+      "x": 192,
+      "height": 226,
+      "width": 256
+    },
+    "slots": [
+      {
+        "player": true,
+        "index": 0,
+        "y": 140,
+        "x": 46,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 1,
+        "y": 140,
+        "x": 64,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 2,
+        "y": 140,
+        "x": 82,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 3,
+        "y": 140,
+        "x": 100,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 4,
+        "y": 140,
+        "x": 118,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 5,
+        "y": 140,
+        "x": 136,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 6,
+        "y": 140,
+        "x": 154,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 7,
+        "y": 140,
+        "x": 172,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 8,
+        "y": 140,
+        "x": 190,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 9,
+        "y": 158,
+        "x": 46,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 10,
+        "y": 158,
+        "x": 64,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 11,
+        "y": 158,
+        "x": 82,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 12,
+        "y": 158,
+        "x": 100,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 13,
+        "y": 158,
+        "x": 118,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 14,
+        "y": 158,
+        "x": 136,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 15,
+        "y": 158,
+        "x": 154,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 16,
+        "y": 158,
+        "x": 172,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 17,
+        "y": 158,
+        "x": 190,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 18,
+        "y": 176,
+        "x": 46,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 19,
+        "y": 176,
+        "x": 64,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 20,
+        "y": 176,
+        "x": 82,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 21,
+        "y": 176,
+        "x": 100,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 22,
+        "y": 176,
+        "x": 118,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 23,
+        "y": 176,
+        "x": 136,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 24,
+        "y": 176,
+        "x": 154,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 25,
+        "y": 176,
+        "x": 172,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 26,
+        "y": 176,
+        "x": 190,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 27,
+        "y": 198,
+        "x": 46,
+        "item": "create:schedule",
+        "count": 1
+      },
+      {
+        "player": true,
+        "index": 28,
+        "y": 198,
+        "x": 64,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 29,
+        "y": 198,
+        "x": 82,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 30,
+        "y": 198,
+        "x": 100,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 31,
+        "y": 198,
+        "x": 118,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 32,
+        "y": 198,
+        "x": 136,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 33,
+        "y": 198,
+        "x": 154,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 34,
+        "y": 198,
+        "x": 172,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": true,
+        "index": 35,
+        "y": 198,
+        "x": 190,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 36,
+        "y": 88,
+        "x": 54,
+        "item": "minecraft:air",
+        "count": 0
+      },
+      {
+        "player": false,
+        "index": 37,
+        "y": 88,
+        "x": 74,
+        "item": "minecraft:air",
+        "count": 0
+      }
+    ]
+  },
+  {
+    "id": "createbigcannons-autocannon-ammo-container",
+    "kind": "ammo",
+    "screen": "rbasamoyai.createbigcannons.munitions.autocannon.ammo_container.AutocannonAmmoContainerScreen",
+    "bounds": {
+      "y": 127,
+      "x": 231,
+      "height": 195,
+      "width": 179
+    },
+    "slots": [
+      {
+        "count": 0,
+        "player": false,
+        "index": 0,
+        "y": 26,
+        "x": 32,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": false,
+        "index": 1,
+        "y": 26,
+        "x": 59,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 2,
+        "y": 105,
+        "x": 8,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 3,
+        "y": 105,
+        "x": 26,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 4,
+        "y": 105,
+        "x": 44,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 5,
+        "y": 105,
+        "x": 62,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 6,
+        "y": 105,
+        "x": 80,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 7,
+        "y": 105,
+        "x": 98,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 8,
+        "y": 105,
+        "x": 116,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 9,
+        "y": 105,
+        "x": 134,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 10,
+        "y": 105,
+        "x": 152,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 11,
+        "y": 123,
+        "x": 8,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 12,
+        "y": 123,
+        "x": 26,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 13,
+        "y": 123,
+        "x": 44,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 14,
+        "y": 123,
+        "x": 62,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 15,
+        "y": 123,
+        "x": 80,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 16,
+        "y": 123,
+        "x": 98,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 17,
+        "y": 123,
+        "x": 116,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 18,
+        "y": 123,
+        "x": 134,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 19,
+        "y": 123,
+        "x": 152,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 20,
+        "y": 141,
+        "x": 8,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 21,
+        "y": 141,
+        "x": 26,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 22,
+        "y": 141,
+        "x": 44,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 23,
+        "y": 141,
+        "x": 62,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 24,
+        "y": 141,
+        "x": 80,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 25,
+        "y": 141,
+        "x": 98,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 26,
+        "y": 141,
+        "x": 116,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 27,
+        "y": 141,
+        "x": 134,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 28,
+        "y": 141,
+        "x": 152,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 29,
+        "y": 163,
+        "x": 8,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 30,
+        "y": 163,
+        "x": 26,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 31,
+        "y": 163,
+        "x": 44,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 32,
+        "y": 163,
+        "x": 62,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 33,
+        "y": 163,
+        "x": 80,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 34,
+        "y": 163,
+        "x": 98,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 35,
+        "y": 163,
+        "x": 116,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 36,
+        "y": 163,
+        "x": 134,
+        "item": "minecraft:air"
+      },
+      {
+        "count": 0,
+        "player": true,
+        "index": 37,
+        "y": 163,
+        "x": 152,
+        "item": "minecraft:air"
+      }
+    ]
+  },
+  {
+    "id": "item-createbigcannons-timed-fuze",
+    "kind": "fuze",
+    "screen": "rbasamoyai.createbigcannons.munitions.fuzes.TimedFuzeScreen",
+    "bounds": {
+      "y": 183,
+      "x": 231,
+      "height": 83,
+      "width": 179
+    },
+    "slots": []
+  },
+  {
+    "id": "item-createbigcannons-proximity-fuze",
+    "kind": "fuze",
+    "screen": "rbasamoyai.createbigcannons.munitions.fuzes.ProximityFuzeScreen",
+    "bounds": {
+      "y": 183,
+      "x": 231,
+      "height": 83,
+      "width": 179
+    },
+    "slots": []
+  },
+  {
+    "id": "item-createbigcannons-delayed-inertia-fuze",
+    "kind": "fuze",
+    "screen": "rbasamoyai.createbigcannons.munitions.fuzes.DelayedInertiaFuzeScreen",
+    "bounds": {
+      "y": 183,
+      "x": 231,
+      "height": 83,
+      "width": 179
+    },
+    "slots": []
+  },
+  {
+    "id": "item-createbigcannons-delayed-impact-fuze",
+    "kind": "fuze",
+    "screen": "rbasamoyai.createbigcannons.munitions.fuzes.DelayedImpactFuzeScreen",
+    "bounds": {
+      "y": 183,
+      "x": 231,
+      "height": 83,
+      "width": 179
+    },
+    "slots": []
+  }
+]

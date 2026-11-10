@@ -1,0 +1,24 @@
+{
+  "includes": [
+    "../oversize_interface.json"
+  ],
+  "desktop": {
+    "width": 176,
+    "height": 164,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 87
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.siu.extendedae.oversize_interface"
+      },
+      "position": {
+        "left": 8,
+        "top": -4
+      }
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "includes": [
+    "../pattern_modifier.json"
+  ],
+  "desktop": {
+    "width": 176,
+    "height": 139,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 87
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.siu.extendedae.pattern_modifier"
+      },
+      "position": {
+        "left": 8,
+        "top": -4
+      }
+    }
+  },
+  "slots": {
+    "ENCODED_PATTERN": {
+      "left": 8,
+      "top": 77,
+      "grid": "BREAK_AFTER_9COLS"
+    },
+    "EX_1": {
+      "left": 58,
+      "top": 54,
+      "grid": "HORIZONTAL"
+    },
+    "EX_2": {
+      "left": 102,
+      "top": 54,
+      "grid": "HORIZONTAL"
+    },
+    "EX_3": {
+      "left": 53,
+      "top": 91,
+      "grid": "HORIZONTAL"
+    },
+    "EX_4": {
+      "left": 8,
+      "top": 44,
+      "grid": "HORIZONTAL"
+    },
+    "EX_5": {
+      "left": 62,
+      "top": 44,
+      "grid": "HORIZONTAL"
+    }
+  }
+}

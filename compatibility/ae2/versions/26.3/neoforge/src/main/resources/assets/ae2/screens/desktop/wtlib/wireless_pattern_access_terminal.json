@@ -1,0 +1,13 @@
+{
+  "includes": [
+    "../../wtlib/wireless_pattern_access_terminal.json"
+  ],
+  "desktop": {
+    "width": 195,
+    "height": 103,
+    "resize": "list",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  }
+}

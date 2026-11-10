@@ -1,0 +1,230 @@
+{
+  "updated": "2026-11-10T16:53:09.284549+00:00",
+  "complete": 70,
+  "total": 70,
+  "percent": 100,
+  "subphase": {
+    "name": "final focused runtime profiles",
+    "complete": 37,
+    "total": 37
+  },
+  "stage": "reviewed",
+  "handoff": "runtime-handoff-complete-1732-01.json",
+  "composition": {
+    "markdown_checkboxes": 69,
+    "additional_explicit_independent_review_gate": 1
+  },
+  "requirements_ledger": {
+    "file": "output/release-readiness/final-requirement-audit-1472-01/requirements.json",
+    "sha256": "4facfb9043947b7ba428020679338e4df1ca8296f4f4c988fa9a1dfaeab346bb"
+  },
+  "per_mod_reports": {
+    "complete": 24,
+    "total": 24
+  },
+  "additional_publisher_native": {
+    "complete": 4,
+    "total": 4
+  },
+  "final_runtime": {
+    "complete": 37,
+    "total": 37,
+    "queues": [
+      {
+        "queue": "final-core-diagnostics-01.json",
+        "status": "passed",
+        "complete": 12,
+        "total": 12
+      },
+      {
+        "queue": "final-core-enchanting-book-01.json",
+        "status": "passed",
+        "complete": 2,
+        "total": 2
+      },
+      {
+        "queue": "supplemental-modern-powah-01.json",
+        "status": "passed",
+        "complete": 2,
+        "total": 2
+      },
+      {
+        "queue": "final-rei-workspace-policy-01.json",
+        "status": "passed",
+        "complete": 2,
+        "total": 2
+      },
+      {
+        "queue": "final-installation-campaign-01.json",
+        "status": "passed",
+        "complete": 3,
+        "total": 3
+      },
+      {
+        "queue": "final-smallships-paging-01.json",
+        "status": "passed",
+        "complete": 4,
+        "total": 4
+      },
+      {
+        "queue": "final-minimum-gui-543-01/manifest.json",
+        "status": "passed",
+        "complete": 12,
+        "total": 12
+      }
+    ]
+  },
+  "closed_requirement_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70
+  ],
+  "runtime_requirement_acceptance": [
+    {
+      "id": 49,
+      "evidence": {
+        "file": "output/release-readiness/final-core-diagnostics-01.json",
+        "sha256": "6c7f346502ef264ef384b274e0a3dd3018c03d24fbb6cf1f1c61de227307580a"
+      }
+    },
+    {
+      "id": 50,
+      "evidence": {
+        "file": "output/release-readiness/final-core-enchanting-book-01.json",
+        "sha256": "13f5680a283c24160c5cacde4326a24a9f89e05ff7ee5033dd5e4f5c9c59ca56"
+      }
+    },
+    {
+      "id": 44,
+      "evidence": {
+        "file": "output/release-readiness/final-installation-campaign-01.json",
+        "sha256": "45c745efccba8d0597d7fe6294f01047224ef7df5bfa9d4b29404da2cefe666c"
+      }
+    },
+    {
+      "id": 28,
+      "evidence": {
+        "file": "output/release-readiness/final-smallships-paging-01.json",
+        "sha256": "2871c07a09a412cdf32840a32e76901ec47cf1238f5e6e65d878bb7994c25ac1"
+      },
+      "exact_final_Core_delta": {
+        "file": "output/release-readiness/session-registration-bytecode-build16-1654-01.json",
+        "sha256": "78ed68780826e3333dc3ea418faf1dea46522481260b6a5b8778024bbdf77a53"
+      },
+      "harness_scope_amendment": {
+        "file": "output/release-readiness/SmallShips-harness-amendments-1684-01/manifest.json",
+        "sha256": "4eb2038b6450a7d1a2ed3a63bc7d1ca62ae2f2ec9b2788d99a632b102c57f8cd"
+      }
+    },
+    {
+      "id": 34,
+      "evidence": {
+        "file": "output/release-readiness/final-minimum-gui-543-01/manifest.json",
+        "sha256": "fdd26c7bad04cabcdc0a23997541f28911ae1ffcdf4e04c288582b4dd05be1fa"
+      }
+    }
+  ],
+  "confirmed_blocker": {
+    "bug": "Replacement session registered twice in Core desktop sessions list",
+    "fix_scope": "Six canonical Core files; removing only the second insertion",
+    "status": "fixed-in-all12-Core-jars-native-replacement-passed",
+    "evidence": "build/all-target-rollout/gameplay/1.21.1-neoforge-readiness-final-smallships-1211-neoforge-04/smallships-paging-release/original-actions.json",
+    "acceptance": "readiness-final-smallships-1211-neoforge-05/summary.json"
+  },
+  "final_reports": {
+    "coverage_records": 399,
+    "coverage_counts": {
+      "functional-pass": 367,
+      "read-only-status-pass": 31,
+      "native-only-qualified": 1
+    },
+    "dashboard": "passed",
+    "documentation": "13files promoted;12packaged contracts and57introduced links passed",
+    "independent_review": "APPROVED; no actionable findings"
+  },
+  "stage_acceptance": [
+    {
+      "file": "output/release-readiness/final-acceptance-1450-01/manifest.json",
+      "sha256": "1e5cac2080925c930b8fbc42db3771c49f451f92094b193cddb899a4c5ca59f2"
+    },
+    {
+      "file": "output/release-readiness/release-manifest-final.json",
+      "sha256": "581506e5c7833cc0f42ed6e21248a3ba568b2a2ff61112c0e4b6c31dfbbf2541"
+    }
+  ],
+  "release_manifest": {
+    "file": "output/release-readiness/release-manifest-final.json",
+    "sha256": "581506e5c7833cc0f42ed6e21248a3ba568b2a2ff61112c0e4b6c31dfbbf2541"
+  },
+  "independent_review": {
+    "file": "output/release-readiness/independent-review-completion-1731-01/approval.json",
+    "sha256": "17827eff41b26d5284c31f41084bffe382a99432d5e350b80b105687ecd8880a"
+  }
+}

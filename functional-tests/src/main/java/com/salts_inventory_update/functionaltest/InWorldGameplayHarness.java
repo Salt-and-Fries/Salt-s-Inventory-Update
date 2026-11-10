@@ -1609,9 +1609,51 @@ public final class InWorldGameplayHarness {
     }
 
     private static void hudServerSelected(String label, int expected) {
-        addFirst("hud-server-" + label, () -> task = server(() -> hudSelected(player().getInventory())),
-            InWorldGameplayHarness::taskDone,
-            () -> check("hud-server-" + label, ((Number) task.join()).intValue() == expected), 3);
+        // Native carried-item packets and integrated-server execute tasks use
+        // independent queues. Settling after a one-shot read cannot refresh an
+        // early value. Observe delivery without repeating input or changing it.
+        class SelectionObservation {
+            CompletableFuture<Integer> pending;
+            long started, sampledAt;
+            int last = Integer.MIN_VALUE, samples;
+            boolean matched, expired;
+
+            void sample() {
+                sampledAt = System.nanoTime();
+                samples++;
+                pending = server(() -> hudSelected(player().getInventory()));
+            }
+
+            void start() {
+                started = System.nanoTime();
+                sample();
+            }
+
+            boolean ready() {
+                if (matched || expired) return true;
+                long now = System.nanoTime();
+                if (now - started >= 1_000_000_000L) {
+                    expired = true;
+                    return true;
+                }
+                if (!pending.isDone()) return false;
+                last = pending.join(); // Propagate a failed authoritative read.
+                if (last == expected) {
+                    matched = true;
+                    return true;
+                }
+                if (now - sampledAt >= 50_000_000L) sample();
+                return false;
+            }
+
+            void verify() {
+                record("hud-server-" + label + "-observation", "INFO",
+                    "expected=" + expected + ", observed=" + last + ", samples=" + samples + ", expired=" + expired);
+                check("hud-server-" + label, matched && last == expected);
+            }
+        }
+        SelectionObservation observation = new SelectionObservation();
+        addFirst("hud-server-" + label, observation::start, observation::ready, observation::verify, 3);
     }
 
     private static void hudPointerOutside() {
@@ -3172,7 +3214,11 @@ public final class InWorldGameplayHarness {
                 }
             } else {
                 settle=-1;
-                if(System.currentTimeMillis()-stepStarted>((active.name().equals("spatial-manual-review")||active.name().equals("walls-manual")) ? 1800000L : MOUSE_TWEAKS_ONLY && active.name().startsWith("mt-") ? 8000L : 45000L)) throw new IllegalStateException("Stage timed out; screen="+(nativeScreen()==null?"none":nativeScreen().getClass().getName())+", sessions="+sessions().size()+", carried="+carried());
+                long stageLimit=active.name().equals("world-create-and-connect")
+                    ? Long.parseLong(System.getenv().getOrDefault("SIU_QA_WORLD_TIMEOUT_MS","45000"))
+                    : (active.name().equals("spatial-manual-review")||active.name().equals("walls-manual")) ? 1800000L
+                    : MOUSE_TWEAKS_ONLY && active.name().startsWith("mt-") ? 8000L : 45000L;
+                if(System.currentTimeMillis()-stepStarted>stageLimit) throw new IllegalStateException("Stage timed out; screen="+(nativeScreen()==null?"none":nativeScreen().getClass().getName())+", sessions="+sessions().size()+", carried="+carried());
             }
         } catch(Throwable e) {
             boolean requiredHandshakeFailed = active != null && active.name().equals("desktop-handshake");

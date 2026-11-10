@@ -1,0 +1,24 @@
+{
+  "includes": [
+    "../ex_molecular_assembler.json"
+  ],
+  "desktop": {
+    "width": 176,
+    "height": 110,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 87
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.siu.extendedae.ex_molecular_assembler"
+      },
+      "position": {
+        "left": 8,
+        "top": -4
+      }
+    }
+  }
+}

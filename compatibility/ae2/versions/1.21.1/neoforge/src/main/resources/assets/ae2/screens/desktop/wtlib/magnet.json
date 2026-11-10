@@ -1,0 +1,67 @@
+{
+  "includes": [
+    "../../wtlib/magnet.json"
+  ],
+  "desktop": {
+    "width": 176,
+    "height": 170,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true
+  },
+  "background": null,
+  "generatedBackground": {
+    "width": 176,
+    "height": 170
+  },
+  "widgets": {
+    "back": {
+      "left": 152,
+      "top": -5,
+      "hideEdge": true
+    },
+    "pickup_mode": {
+      "left": 45,
+      "top": 84
+    },
+    "insert_mode": {
+      "left": 117,
+      "top": 84
+    },
+    "copy_down": {
+      "left": 63,
+      "top": 84
+    },
+    "copy_up": {
+      "left": 99,
+      "top": 84
+    },
+    "switch": {
+      "left": 81,
+      "top": 84
+    }
+  },
+  "images": {
+    "wirelessSlotBackground": {
+      "texture": "wtlib/guis/magnet.png",
+      "srcRect": [
+        7,
+        21,
+        18,
+        18
+      ]
+    }
+  },
+  "slots": {
+    "AE2WTLIB_PICKUP_CONFIG": {
+      "left": 8,
+      "top": 26,
+      "grid": "BREAK_AFTER_9COLS"
+    },
+    "AE2WTLIB_INSERT_CONFIG": {
+      "left": 8,
+      "top": 107,
+      "grid": "BREAK_AFTER_9COLS"
+    }
+  }
+}

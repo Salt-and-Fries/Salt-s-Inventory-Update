@@ -162,7 +162,7 @@ final class DesktopApiViewsTest {
                     assertFalse(context.inventoryAvailable());
                     closes.incrementAndGet();
                 }
-                return method.getReturnType() == boolean.class ? false : null;
+                return defaultMockValue(method);
             });
         Object window = view(screen, new Object(), definition);
         invoke(screen, "apiClosed", window);
@@ -212,7 +212,7 @@ final class DesktopApiViewsTest {
                     return new DesktopWindowSurface(DesktopSurfaceMode.MOD_OWNED, new DesktopInsets(2, 3, 4, 5),
                         true, List.of(), DesktopViewportPolicy.PRESERVE);
                 }
-                return method.getReturnType() == boolean.class ? false : null;
+                return defaultMockValue(method);
             });
         Object window = view(screen, new Object(), definition);
         assertEquals(2, context(screen, window).contentX());
@@ -240,11 +240,84 @@ final class DesktopApiViewsTest {
                     return DesktopWindowSurface.modOwned(List.of(
                         DesktopWindowRegion.interactive(prepared.get() ? 80 : 0, 0, 10, 10)));
                 }
-                return method.getReturnType() == boolean.class ? false : null;
+                return defaultMockValue(method);
             });
         Object window = view(screen, new Object(), definition);
         assertSame(window, invoke(screen, "windowAt", 85.0, 5.0));
         assertNull(invoke(screen, "windowAt", 5.0, 5.0), "The prior widget position must not remain interactive");
+    }
+
+    @Test
+    void adjacentBuiltinControlsRemainDistinctControllerDestinations() throws Exception {
+        InventoryDesktopScreen screen = screen();
+        Object window = view(screen, new Object(), surfaceDefinition(DesktopWindowSurface.SALT));
+        set(window, "apiDefinition", null);
+        var menu = new net.minecraft.world.inventory.AbstractContainerMenu(null, 1) {
+            @Override public boolean stillValid(net.minecraft.world.entity.player.Player player) { return true; }
+            @Override public ItemStack quickMoveStack(net.minecraft.world.entity.player.Player player, int slot) { return ItemStack.EMPTY; }
+        };
+        set(window, "legacyMenu", menu);
+        Object attachment = Proxy.newProxyInstance(
+            com.salts_inventory_update.api.client.desktop.DesktopBuiltinAttachment.class.getClassLoader(),
+            new Class<?>[]{com.salts_inventory_update.api.client.desktop.DesktopBuiltinAttachment.class},
+            (proxy, method, arguments) -> method.getName().equals("regions")
+                ? List.of(DesktopWindowRegion.interactive(1, 30, 5, 5).withRole(DesktopHitRole.CONTROL),
+                    DesktopWindowRegion.interactive(10, 30, 5, 5).withRole(DesktopHitRole.CONTROL))
+                : defaultMockValue(method));
+        set(window, "builtinAttachments", List.of(attachment));
+        @SuppressWarnings("unchecked") var targets = (List<com.salts_inventory_update.api.client.desktop.DesktopControllerTarget>)
+            invoke(screen, "workspaceControllerTargets", window, List.of());
+        var controls = targets.stream().filter(target -> target.group().equals("controls")).toList();
+        assertEquals(2, controls.size());
+        assertNotEquals(controls.get(0).column(), controls.get(1).column(),
+            "Native five-pixel toggles must not merge into one quantized D-pad destination");
+    }
+
+    @Test
+    void nativeControlInsideOccludedBuiltinContentStillReceivesTheRealPress() throws Exception {
+        InventoryDesktopScreen screen = screen();
+        Object window = view(screen, new Object(), surfaceDefinition(DesktopWindowSurface.SALT));
+        set(window, "apiDefinition", null); // Built-in owners have no API window definition.
+        AtomicInteger presses = new AtomicInteger();
+        Object attachment = Proxy.newProxyInstance(
+            com.salts_inventory_update.api.client.desktop.DesktopBuiltinAttachment.class.getClassLoader(),
+            new Class<?>[]{com.salts_inventory_update.api.client.desktop.DesktopBuiltinAttachment.class},
+            (proxy, method, arguments) -> switch (method.getName()) {
+                case "occludes" -> true;
+                case "mouseClicked" -> { presses.incrementAndGet(); yield true; }
+                case "regions" -> List.of();
+                default -> defaultMockValue(method);
+            });
+        set(window, "builtinAttachments", List.of(attachment));
+        Method click = List.of(InventoryDesktopScreen.class.getDeclaredMethods()).stream()
+            .filter(method -> method.getName().equals("mouseClicked") && method.getParameterCount() == 2)
+            .findFirst().orElseThrow();
+        Constructor<?> event = click.getParameterTypes()[0].getDeclaredConstructors()[0];
+        Class<?> buttonType = event.getParameterTypes()[2];
+        int left = 0;
+        try { left = Class.forName("com.mojang.blaze3d.platform.InputConstants").getField("MOUSE_BUTTON_LEFT").getInt(null); }
+        catch (NoSuchFieldException legacy) { }
+        Object button = buttonType == int.class ? left : buttonType.getDeclaredConstructor(int.class, int.class).newInstance(left, 0);
+        assertEquals(true, click.invoke(screen, event.newInstance(50.0, 40.0, button), false));
+        assertEquals(1, presses.get(), "Occluding the base slots must not swallow the native subview's control");
+    }
+
+    @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void managementControlFilterHidesOnlyItsRequestedControl() throws Exception {
+        InventoryDesktopScreen screen = screen();
+        var definition = new DesktopWindowDefinition<Object, Void>() {
+            @Override public boolean managementControlAllowed(DesktopWindowContext<Object, Void> context,
+                    com.salts_inventory_update.api.client.desktop.DesktopWindowControl control) {
+                return control != com.salts_inventory_update.api.client.desktop.DesktopWindowControl.CLOSE;
+            }
+        };
+        Object window = view(screen, new Object(), definition);
+        Class<?> controls = Class.forName(InventoryDesktopScreen.class.getName() + "$WindowControl");
+        assertEquals(false, invoke(screen, "apiControlAllowed", window, Enum.valueOf((Class)controls, "CLOSE")));
+        assertEquals(true, invoke(screen, "apiControlAllowed", window, Enum.valueOf((Class)controls, "PIN")));
+        assertTrue(new DesktopWindowDefinition<Object, Void>() {}.managementControlAllowed(null,
+            com.salts_inventory_update.api.client.desktop.DesktopWindowControl.CLOSE), "Older consumers inherit the permissive default");
     }
 
     @Test
@@ -261,7 +334,7 @@ final class DesktopApiViewsTest {
                     true, List.of(), DesktopViewportPolicy.CLAMP);
                 case "decoration" -> decoration;
                 case "options" -> DesktopWindowOptions.DEFAULT;
-                default -> method.getReturnType() == boolean.class ? false : null;
+                default -> defaultMockValue(method);
             });
         Object window = view(screen, new Object(), definition);
         assertEquals(34, context(screen, window).contentY());
@@ -296,7 +369,7 @@ final class DesktopApiViewsTest {
                         if (!((com.salts_inventory_update.api.client.desktop.DesktopWindowState) arguments[1]).open()) events.add("disposed");
                         return null;
                     case "closed": events.add("closed"); closed.set(true); return null;
-                    default: return method.getReturnType() == boolean.class ? false : null;
+                    default: return defaultMockValue(method);
                 }
             });
         owner[0] = view(screen, new Object(), definition);
@@ -317,7 +390,7 @@ final class DesktopApiViewsTest {
                 if (method.getName().equals("surface")) return DesktopWindowSurface.SALT;
                 if (method.getName().equals("keyPressed")) { invoke(screen, "apiClosed", owner[0]); return true; }
                 if (method.getName().equals("closed")) closed.set(true);
-                return method.getReturnType() == boolean.class ? false : null;
+                return defaultMockValue(method);
             });
         owner[0] = view(screen, new Object(), definition);
         set(screen, "apiKeyboardFocusWindow", owner[0]);
@@ -335,7 +408,7 @@ final class DesktopApiViewsTest {
                 case "surface" -> DesktopWindowSurface.SALT;
                 case "layoutRevision" -> "layout-2";
                 case "loadLocalState" -> { loaded.set((CompoundTag) arguments[1]); yield null; }
-                default -> method.getReturnType() == boolean.class ? false : null;
+                default -> defaultMockValue(method);
             });
         Object window = view(screen, new Object(), definition);
         set(window, "apiInitialSize", DesktopWindowSize.of(120, 100));
@@ -360,7 +433,7 @@ final class DesktopApiViewsTest {
             new Class<?>[]{DesktopWindowDefinition.class}, (proxy, method, arguments) -> {
                 if (method.getName().equals("surface")) return DesktopWindowSurface.SALT;
                 if (method.getName().equals("environmentChanged")) notifications.incrementAndGet();
-                return method.getReturnType() == boolean.class ? false : null;
+                return defaultMockValue(method);
             });
         Object window = view(screen, new Object(), definition);
         invoke(screen, "notifyApiEnvironment", window);
@@ -417,7 +490,7 @@ final class DesktopApiViewsTest {
                     true, List.of(), DesktopViewportPolicy.ADAPT);
                 case "surfaceUnavailable" -> { unavailable.incrementAndGet(); yield null; }
                 case "options" -> DesktopWindowOptions.DEFAULT;
-                default -> method.getReturnType() == boolean.class ? false : null;
+                default -> defaultMockValue(method);
             });
         Object window = view(screen, new Object(), provider);
         assertEquals(1, unavailable.get());
@@ -446,7 +519,7 @@ final class DesktopApiViewsTest {
                 case "popups" -> dismissed.get() == 0 ? List.of(popup) : List.of();
                 case "dismissPopup" -> { dismissed.incrementAndGet(); yield true; }
                 case "options" -> DesktopWindowOptions.DEFAULT;
-                default -> method.getReturnType() == boolean.class ? false : null;
+                default -> defaultMockValue(method);
             });
         Object window = view(screen, new Object(), provider);
         assertSame(window, invoke(screen, "apiModalWindow"));
@@ -481,7 +554,7 @@ final class DesktopApiViewsTest {
                     };
                 }
                 case "options" -> DesktopWindowOptions.DEFAULT;
-                default -> method.getReturnType() == boolean.class ? false : null;
+                default -> defaultMockValue(method);
             });
         Object window = view(screen, new Object(), provider);
         assertFalse(context(screen, window).windowHandle().isOpen());
@@ -539,7 +612,7 @@ final class DesktopApiViewsTest {
                 case "windowStateChanged" -> { events.add("state"); yield null; }
                 case "closed" -> { events.add("closed"); yield null; }
                 case "render", "moved", "environmentChanged" -> { events.add(method.getName()); yield null; }
-                default -> method.getReturnType() == boolean.class ? false : null;
+                default -> defaultMockValue(method);
             });
         Object window = view(screen, host, provider);
         invoke(screen, "notifyApiEnvironment", window);
@@ -568,7 +641,7 @@ final class DesktopApiViewsTest {
                 case "surface" -> DesktopWindowSurface.SALT;
                 case "options" -> DesktopWindowOptions.DEFAULT;
                 case "mouseClicked" -> { invoke(screen, "cancelApiInput", windows(screen).get(0)); yield true; }
-                default -> method.getReturnType() == boolean.class ? false : null;
+                default -> defaultMockValue(method);
             });
         Object window = view(screen, new Object(), provider);
         Method clicked = List.of(InventoryDesktopScreen.class.getDeclaredMethods()).stream()
@@ -622,12 +695,18 @@ final class DesktopApiViewsTest {
         assertEquals(1, keys.get());
     }
 
+    /** Proxy fixtures must model the additive API's permissive default explicitly. */
+    private static Object defaultMockValue(Method method) {
+        if (method.getName().equals("managementControlAllowed")) return Boolean.TRUE;
+        return method.getReturnType() == boolean.class ? Boolean.FALSE : null;
+    }
+
     private static Object surfaceDefinition(DesktopWindowSurface surface) {
         return Proxy.newProxyInstance(DesktopWindowDefinition.class.getClassLoader(),
             new Class<?>[]{DesktopWindowDefinition.class}, (proxy, method, arguments) -> switch (method.getName()) {
                 case "surface" -> surface;
                 case "options" -> DesktopWindowOptions.DEFAULT;
-                default -> method.getReturnType() == boolean.class ? false : null;
+                default -> defaultMockValue(method);
             });
     }
 
@@ -755,7 +834,7 @@ final class DesktopApiViewsTest {
                     com.salts_inventory_update.api.client.desktop.DesktopWindowControl.CLOSE,
                     new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(100, 4, 12, 12)));
                 case "options" -> options;
-                default -> method.getReturnType() == boolean.class ? false : null;
+                default -> defaultMockValue(method);
             });
     }
 
@@ -775,7 +854,7 @@ final class DesktopApiViewsTest {
                     case "surface" -> DesktopWindowSurface.SALT;
                     case "externalRegions" -> List.of(DesktopWindowRegion.visualAndInteractive(-20, 0, 20, 80));
                     case "toString" -> "Test view definition";
-                    default -> method.getReturnType() == boolean.class ? false : null;
+                    default -> defaultMockValue(method);
                 };
             });
     }

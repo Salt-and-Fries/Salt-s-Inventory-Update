@@ -107,5 +107,19 @@
     "gui.ae2.DesktopWindow.wirelesscraftingterm",
     "gui.ae2.DesktopWindow.wirelessterm"
   ],
-  "translationSha256": "e4bcbd399316042b5cb2daebf079895c3bad2110497191398f284cbeda1389ed"
+  "translationSha256": "e4bcbd399316042b5cb2daebf079895c3bad2110497191398f284cbeda1389ed",
+  "localAdaptations": {
+    "assets/ae2/screens/desktop/drive.json": {
+      "originalSha256": "cacfb5734c5e59d57157bd515dd7a808880894db7d301390364dc2f130876a91",
+      "sha256": "2ae1389c51b2e42f37e4c8a15ad2515b61138c33ec06db70e652ed9def3f6695",
+      "reason": "Approved ME Drive alignment fix: inherit native STORAGE_CELL coordinates rather than the old fork override. Native slot and placement-icon origins stay aligned across vintage and modern layouts.",
+      "previousShippingResourceJsonIdentical": true
+    }
+  },
+  "translationAdditions": {
+    "gui.ae2.DesktopWindow.portable_mana_cell": "Portable Mana Cell",
+    "gui.ae2.DesktopWindow.wireless_requester_terminal": "ME Requester Terminal"
+  },
+  "adaptedTranslationSha256": "f226ea497542974c9af459254dc45901754af7c91fac9ba0ab68bd84d448e0f3",
+  "translationReferenceLineEndings": "CRLF"
 }

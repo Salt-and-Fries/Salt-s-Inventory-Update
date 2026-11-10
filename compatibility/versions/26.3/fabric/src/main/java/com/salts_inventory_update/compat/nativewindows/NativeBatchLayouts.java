@@ -28,12 +28,18 @@ public final class NativeBatchLayouts {
         return crop(view,50,count==12?8:18,76,count==12?63:53);
     }
     public static DesktopNativeLayout ossuary(DesktopNativeView view) { return crop(view,19,14,141,57); }
-    // The 26.x upstream screen removed its recipe book; omit that now-empty left column.
     public static DesktopNativeLayout smelter(DesktopNativeView view) { return crop(view,44,16,109,56); }
     public static DesktopNativeLayout combiner(DesktopNativeView view) { return crop(view,19,16,102,56); }
     public static DesktopNativeLayout runes(DesktopNativeView view) { return crop(view,26,46,126,19); }
     public static DesktopNativeLayout fletching(DesktopNativeView view) { return crop(view,29,16,125,55); }
-    public static DesktopNativeLayout chunkLoader(DesktopNativeView view) { return crop(view,4,5,165,67); }
+    public static DesktopNativeLayout visualWorkbench(DesktopNativeView view) {
+        // The original CraftingMenu remains authoritative, including Visual
+        // Workbench's persistent grid. Keep the recipe toggle inside the frame.
+        return checked(view,DesktopNativeLayout.builder().canvas(141,56)
+            .keep("recipe-toggle",box(5,34,20,19),0,18)
+            .keep("crafting",box(29,16,116,56),25,0).build());
+    }
+    public static DesktopNativeLayout chunkLoader(DesktopNativeView view) { return crop(view,4,5,165,77); }
     public static DesktopNativeLayout anvil(DesktopNativeView view) {
         // Move the text field intact. Reserve the complete native repair-cost line without
         // baking the lower Inventory label into the empty-state artwork.

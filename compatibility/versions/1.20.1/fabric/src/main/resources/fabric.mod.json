@@ -16,6 +16,10 @@
     "discord": "https://discord.gg/kfdE9gGGxP"
   },
   "mixins": [
+    "salts_inventory_compat.techreborn.mixins.json",
+    "salts_inventory_compat.kibe.mixins.json",
+    "salts_inventory_compat.zenith.mixins.json",
+    "salts_inventory_compat.reviewed-native.mixins.json",
     "salts_inventory_compat.simplyswords.mixins.json",
     "salts_inventory_compat.chipped.mixins.json",
     "salts_inventory_compat.tieredz.mixins.json",
@@ -27,7 +31,8 @@
     "salts_inventory_compat.feeding-trough.mixins.json",
     "salts_inventory_compat.farmers-delight.mixins.json",
     "salts_inventory_compat.alloy-forgery.mixins.json",
-    "salts_inventory_compat.seasons-extras.mixins.json"
+    "salts_inventory_compat.seasons-extras.mixins.json",
+    "salts_inventory_compat.extended-ae.mixins.json"
   ],
   "entrypoints": {
     "modmenu": [
@@ -67,6 +72,7 @@
     "fabric-api": "*"
   },
   "suggests": {
+    "zenith": "*",
     "chipped": "*",
     "extendeddrawersaddon": "*",
     "graveyard": "*",

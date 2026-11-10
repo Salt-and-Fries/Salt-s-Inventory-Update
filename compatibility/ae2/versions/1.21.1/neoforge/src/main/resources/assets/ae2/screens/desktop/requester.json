@@ -1,0 +1,13 @@
+{
+  "includes": [
+    "../requester.json"
+  ],
+  "desktop": {
+    "width": 195,
+    "height": 123,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  }
+}

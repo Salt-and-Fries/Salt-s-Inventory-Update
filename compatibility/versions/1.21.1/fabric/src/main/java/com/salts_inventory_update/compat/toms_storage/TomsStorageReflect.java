@@ -237,6 +237,7 @@ public final class TomsStorageReflect {
     }
 
     private static String tagLocationString(Object tag) {
+        if(tag instanceof net.minecraft.tags.TagKey<?> key)return key.location().toString();
         Object location = invoke(tag, "location");
         return location != null ? location.toString() : tag.toString();
     }

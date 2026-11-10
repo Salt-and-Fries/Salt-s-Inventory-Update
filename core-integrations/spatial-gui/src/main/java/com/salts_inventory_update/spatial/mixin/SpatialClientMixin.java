@@ -12,7 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.tastytrash.spatialGUI.client.SpatialGUIClient;
 import org.tastytrash.spatialGUI.SpatialGUI;
 
-@Mixin(value = SpatialGUIClient.class, remap = false)
+@org.spongepowered.asm.mixin.Pseudo
+@Mixin(targets = "org.tastytrash.spatialGUI.client.SpatialGUIClient", remap = false)
 public class SpatialClientMixin {
     @Inject(method = "shouldHookScreen", at = @At("HEAD"), cancellable = true)
     private static void salts$desktop(Screen screen, CallbackInfoReturnable<Boolean> cir) {

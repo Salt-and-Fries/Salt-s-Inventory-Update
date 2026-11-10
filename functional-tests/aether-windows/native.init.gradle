@@ -1,0 +1,156 @@
+// Native screenshot fixture: Core, Compatibility and Controlify are absent.
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.security.MessageDigest
+
+gradle.projectsEvaluated {
+    def root=gradle.rootProject
+    def minecraft=root.providers.gradleProperty('nativeMinecraft').getOrElse('1.20.1')
+    def loader=root.providers.gradleProperty('nativeLoader').getOrElse('fabric')
+    def runId=root.providers.gradleProperty('nativeRun').getOrElse('reference-01')
+    def integrated=root.providers.gradleProperty('nativeIntegrated').map{it.toBoolean()}.getOrElse(false)
+    def enhancedNeo = minecraft=='1.21.1' && loader=='neoforge'
+    if(integrated && !(minecraft=='1.20.1' && loader=='forge') && !enhancedNeo)throw new GradleException('Reviewed integrated launcher supports Forge 1.20.1 and NeoForge 1.21.1')
+    if(!(minecraft in ['1.20.1','1.21.1','1.21.11','26.1.2','26.2','26.3']) || !(loader in ['fabric','forge','neoforge']) || !(runId ==~ /[a-z0-9-]+/))throw new GradleException("Invalid native capture target: ${minecraft}/${loader}/${runId}")
+    def target=root.project(":${minecraft}:${loader}")
+    def fixturePath=root.providers.gradleProperty('nativeFixture').orNull
+    if(!fixturePath)throw new GradleException('Pass an audited fixture via -PnativeFixture')
+    def fixture=new JsonSlurper().parse(root.file(fixturePath))
+    if(fixture.minecraft!=minecraft||fixture.loader!=loader)throw new GradleException('Native fixture target mismatch')
+    def generated=target.layout.buildDirectory.dir('native-reference-metadata').get().asFile
+    def qa=target.sourceSets.create('nativeUiReference')
+    qa.java.srcDir(root.file(enhancedNeo?'build/aether-ports/observer':integrated?'build/project-everything-56-implementation/forge-observer':minecraft=='1.20.1'?'functional-tests/remaining-ui-audit/native/java':minecraft=='1.21.1'?'functional-tests/remaining-ui-audit/native/java-1.21.1':"build/all-target-rollout/native-observers/java-${minecraft}"));qa.java.srcDir(new File(generated,'java'));qa.resources.srcDir(new File(generated,'resources'))
+    qa.compileClasspath+=target.sourceSets.main.compileClasspath
+    def metadata=target.tasks.register('nativeReferenceMetadata'){
+        outputs.dir(generated)
+        doLast{
+            def resources=new File(generated,'resources');resources.mkdirs()
+            new File(resources,'pack.mcmeta').text=JsonOutput.toJson([pack:[pack_format:minecraft=='1.20.1'?15:minecraft=='1.21.1'?48:999,description:'Excluded native UI reference capture']])
+            def java=new File(generated,'java/com/siu_reference');java.mkdirs()
+            if(loader=='fabric'){
+                new File(resources,'fabric.mod.json').text=JsonOutput.toJson([schemaVersion:1,id:'native_ui_reference',version:'1.0.0',environment:'client',entrypoints:[client:['com.siu_reference.NativeReferenceFabric']],depends:[minecraft:minecraft,'fabric-api':'*']])
+                new File(java,'NativeReferenceFabric.java').text='''package com.siu_reference;
+public final class NativeReferenceFabric implements net.fabricmc.api.ClientModInitializer {
+ public void onInitializeClient(){net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(mc->NativeUiReference.tick());}
+}'''
+            }else if(loader=='forge'){
+                def meta=new File(resources,'META-INF/mods.toml');meta.parentFile.mkdirs();meta.text='modLoader="javafml"\nloaderVersion="[47,)"\nlicense="Test fixture"\n[[mods]]\nmodId="native_ui_reference"\nversion="1.0.0"\ndisplayName="Native UI reference capture"\n'
+                new File(java,'NativeReferenceForge.java').text='''package com.siu_reference;
+@net.minecraftforge.fml.common.Mod("native_ui_reference")
+public final class NativeReferenceForge {
+ public NativeReferenceForge(){net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener((net.minecraftforge.event.TickEvent.ClientTickEvent e)->{if(e.phase==net.minecraftforge.event.TickEvent.Phase.END)NativeUiReference.tick();});}
+}'''
+            }else{
+                def meta=new File(resources,'META-INF/neoforge.mods.toml');meta.parentFile.mkdirs();meta.text='modLoader="javafml"\nloaderVersion="[1,)"\nlicense="Test fixture"\n[[mods]]\nmodId="native_ui_reference"\nversion="1.0.0"\ndisplayName="Native UI reference capture"\n'
+                new File(java,'NativeReferenceNeoForge.java').text='''package com.siu_reference;
+@net.neoforged.fml.common.Mod("native_ui_reference")
+public final class NativeReferenceNeoForge {
+ public NativeReferenceNeoForge(){net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientTickEvent.Post e)->NativeUiReference.tick());}
+}'''
+            }
+        }
+    }
+    target.tasks.named(qa.compileJavaTaskName).configure{dependsOn(metadata)}
+    target.tasks.named(qa.processResourcesTaskName).configure{dependsOn(metadata)}
+    def qaJar=target.tasks.register('nativeReferenceJar',Jar){from(qa.output);archiveFileName='native-ui-reference.jar';destinationDirectory=target.layout.buildDirectory.dir('native-reference-artifact')}
+    def original=target.tasks.named('runClient').get()
+    target.tasks.register('runNativeReference',JavaExec){
+        dependsOn(target.tasks.named(qa.classesTaskName),qaJar)
+        dependsOn(original.taskDependencies.getDependencies(original).findAll{!(it.name in ['runClient','classes','compileJava','processResources'])})
+        javaLauncher.set(original.javaLauncher);mainClass.set(original.mainClass)
+        minHeapSize='512m';maxHeapSize=root.providers.gradleProperty('nativeHeap').getOrElse('3g')
+        def output=root.file("build/remaining-ui-audit/gameplay/${minecraft}-${loader}-${integrated?'integrated':'native'}-${runId}")
+        workingDir=target.layout.buildDirectory.dir("remaining-audit-native/${runId}").get().asFile
+        if(root.providers.gradleProperty('nativeRuntimeRoot').isPresent())
+            workingDir=new File(root.file(root.providers.gradleProperty('nativeRuntimeRoot').get()),"${minecraft}-${loader}-${runId}")
+        environment('MOD_CLASSES','');environment('NATIVE_REFERENCE_OUTPUT',output.absolutePath);environment('NATIVE_REFERENCE_LOADER',loader)
+        environment('SIU_AUDIT_CORE',integrated.toString())
+        doFirst{
+            if(root.providers.gradleProperty('nativeRuntimeRoot').isPresent() && workingDir.isDirectory()
+                    && workingDir.list().length>0)
+                throw new GradleException('Preserve the existing runtime and its mods/configuration; choose a fresh, side-specific run ID: '+workingDir)
+            workingDir.mkdirs();output.mkdirs()
+            if(new File(output,'ready.json').exists())throw new GradleException('Preserve the existing capture; choose a new run ID')
+            def retained={f->!f.canonicalPath.startsWith(root.projectDir.canonicalPath+File.separator)||f.canonicalPath.contains(File.separator+'.gradle'+File.separator)||f.canonicalPath.contains(File.separator+'moddev'+File.separator)}
+            def runtime=original.hasProperty('classpathProvider')?original.classpathProvider:original.classpath
+            classpath=runtime.filter(retained)
+            def mixinOverride=root.providers.gradleProperty('qaMixinExtrasJar').orNull
+            if(mixinOverride){def lib=root.file(mixinOverride);if(!lib.isFile())throw new GradleException('Missing QA MixinExtras override');classpath=root.files(lib)+classpath.filter{!it.name.startsWith('mixinextras-fabric-')};new File(output,'qa-mixinextras.json').text=JsonOutput.prettyPrint(JsonOutput.toJson([reason:'Use MixinExtras with EXPRESSION support required by the audited Sounds mixin in the named development launcher',file:lib.absolutePath,sha256:MessageDigest.getInstance('SHA-256').digest(lib.bytes).encodeHex().toString()]))}
+            if(loader=='fabric')classpath+=qa.output
+            args=original.args+original.argumentProviders.collectMany{it.asArguments().toList()}
+            jvmArgs=(original.jvmArgs+original.jvmArgumentProviders.collectMany{it.asArguments().toList()}).findAll{!it.startsWith('-Dfabric.classPathGroups=')&&!it.startsWith('-Dfml.modFolders=')}
+            jvmArgs+=['-XX:ActiveProcessorCount=2']
+            systemProperties(original.systemProperties.findAll{k,v->!(k in ['fabric.classPathGroups','fml.modFolders'])})
+            if(loader=='forge' && original.systemProperties['log4j.configurationFile'])
+                systemProperty('log4j.configurationFile',new File(original.systemProperties['log4j.configurationFile'].toString()).toURI().toASCIIString())
+            if(loader=='fabric')systemProperty('fabric.classPathGroups',qa.output.files.collect{it.absolutePath}.join(File.pathSeparator))
+            if(loader=='forge'){
+                def launch=new File(workingDir,'launch');launch.mkdirs()
+                args=args.collect{arg->
+                    if(!arg.startsWith('@'))return arg
+                    def source=new File(arg.substring(1).replace('\\\\','\\'));def copy=new File(launch,'native-'+source.name)
+                    boolean skip=false
+                    copy.text=source.readLines().findAll{line->
+                        if(skip){skip=false;return false}
+                        if(line.trim()=='--mixin.config'){skip=true;return false}
+                        return true
+                    }.join('\n')
+                    '@'+copy.absolutePath
+                }
+                jvmArgs=jvmArgs.collect{arg->
+                    if(!arg.startsWith('@'))return arg
+                    def file=new File(arg.substring(1).replace('\\\\','\\'));def copy=new File(launch,file.name)
+                    copy.text=file.readLines().collect{line->
+                        def unquoted=line.replace('"','')
+                        if(unquoted.startsWith('-Dlog4j.configurationFile=')||unquoted.startsWith('-Dlog4j2.configurationFile=')) {
+                            def equals=unquoted.indexOf('=')
+                            def path=unquoted.substring(equals+1).replace('\\\\','\\')
+                            return unquoted.substring(0,equals+1)+new File(path).toURI().toASCIIString()
+                        }
+                        if(!line.contains('-DlegacyClassPath.file='))return line
+                        def path=line.substring(line.indexOf('-DlegacyClassPath.file=')+'-DlegacyClassPath.file='.length()).replace('"','').replace('\\\\','\\')
+                        def filtered=new File(launch,'nativeLegacyClasspath.txt');filtered.text=new File(path).readLines().findAll{retained(new File(it))}.join('\n')
+                        '-DlegacyClassPath.file="'+filtered.absolutePath.replace('\\','/')+'"'
+                    }.join('\n');'@'+copy.absolutePath
+                }
+            }
+            def mods=new File(workingDir,'mods');mods.mkdirs()
+            def inputs=fixture.artifacts.findAll{it.coordinate}.collect{r->
+                def file=root.file(r.path)
+                if(MessageDigest.getInstance('SHA-512').digest(file.bytes).encodeHex().toString()!=r.sha512)throw new GradleException('Upstream artifact hash mismatch')
+                [file:file,filename:r.filename]
+            }
+            if(integrated)for(def property:['nativeCoreJar','nativeCompatJar']){
+                def path=root.providers.gradleProperty(property).orNull
+                if(!path)throw new GradleException('Integrated review requires '+property)
+                def file=root.file(path);if(!file.isFile())throw new GradleException('Missing '+file)
+                inputs.add([file:file,filename:file.name])
+            }
+            if(loader=='forge'){
+                def arguments=['python',root.file('tools/remap-controlify-forge-qa.py'),'--java',javaLauncher.get().executablePath.asFile,'--installer-tools',target.configurations.getByName('installerToolsRuntime').singleFile,'--mappings',target.extensions.getByName('obfuscation').srgToNamedMappings.get().asFile,'--output-directory',mods,'--evidence',new File(output,'forge-remap-lineage.json')]
+                inputs.each{e->arguments+=['--jar',e.file]}
+                def task=root.providers.exec{commandLine(arguments)};println(task.standardOutput.asText.get());task.result.get().assertNormalExitValue()
+                root.copy{from(qaJar.get().archiveFile);into(mods)}
+            }else {
+                inputs.each{e->root.copy{from(e.file);into(mods);rename{e.filename}}}
+                if(loader=='neoforge')root.copy{from(qaJar.get().archiveFile);into(mods)}
+            }
+            // Disposable capture worlds acknowledge only the welcome page.
+            // Leave the publisher's other client preferences at their defaults.
+            if(inputs.any{it.filename.toLowerCase().contains('wover') || it.filename.toLowerCase().contains('worldweaver')}){
+                def settings=new File(workingDir,'config/wover/client.json');settings.parentFile.mkdirs()
+                settings.text=JsonOutput.toJson([internal:[did_present_welcome_screen:true]])
+                new File(output,'welcome-fixture-setting.json').text=JsonOutput.toJson([scope:'Disposable native screenshot fixture only',file:'config/wover/client.json',internal:[did_present_welcome_screen:true]])
+            }
+            if(root.providers.gradleProperty('nativeEasyAnvilsPlainReference').map{it.toBoolean()}.getOrElse(false)){
+                if(minecraft!='1.21.11')throw new GradleException('The native formatting-guide workaround is scoped to the reproduced 1.21.11 failure')
+                def settings=new File(workingDir,'config/easyanvils-server.toml');settings.parentFile.mkdirs()
+                def text=settings.isFile()?settings.text:''
+                settings.text=text.contains('renaming_supports_formatting')?text.replaceAll(/renaming_supports_formatting\s*=\s*true/,'renaming_supports_formatting = false'):'[miscellaneous]\nrenaming_supports_formatting = false\n'
+                new File(output,'native-easyanvils-reference-setting.json').text=JsonOutput.prettyPrint(JsonOutput.toJson([scope:'Original UI reference only; SIU and Compatibility absent',reason:'The default 21.11.1 formatting guide crashes in the untouched publisher UI. Disable its native optional formatting feature for this reference frame; the SIU comparison keeps formatting enabled with its compatibility argument conversion.',file:'config/easyanvils-server.toml',renaming_supports_formatting:false]))
+            }
+            new File(output,'staged-artifacts.json').text=JsonOutput.prettyPrint(JsonOutput.toJson([minecraft:minecraft,loader:loader,siu_loaded:integrated,compatibility_loaded:integrated,artifacts:inputs.collect{e->[file:e.file.absolutePath,filename:e.filename,sha256:MessageDigest.getInstance('SHA-256').digest(e.file.bytes).encodeHex().toString()]},runtimeClasspath:classpath.files.collect{it.absolutePath}]))
+            new File(workingDir,'options.txt').text='tutorialStep:none\nrenderDistance:2\nsimulationDistance:5\nguiScale:2\npauseOnLostFocus:false\nautoJump:false\n'
+        }
+    }
+}

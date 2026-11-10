@@ -1,0 +1,24 @@
+{
+  "includes": [
+    "../assembler_matrix.json"
+  ],
+  "desktop": {
+    "width": 195,
+    "height": 114,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 87
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.extendedae.assembler_matrix"
+      },
+      "position": {
+        "left": 8,
+        "top": -4
+      }
+    }
+  }
+}

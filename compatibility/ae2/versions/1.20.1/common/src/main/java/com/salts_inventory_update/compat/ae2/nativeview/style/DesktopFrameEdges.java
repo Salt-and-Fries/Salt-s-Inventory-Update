@@ -35,9 +35,14 @@ public final class DesktopFrameEdges {
 
     /** Replace the old inventory transition with a plain side-bordered strip, then close its full width. */
     public static void catalogBottom(GuiGraphicsExtractor graphics, Blitter header, Blitter bottom,
-            int x, int y, int width) {
-        header.copy().src(header.getSrcX(), header.getSrcY() + 4, width, 4)
-                .dest(x, y - 4).blit(graphics.unwrap());
+            int x, int y, int width, int inventoryCut) {
+        // Only the blank area after the final catalog row may be repainted.
+        // AE2 15 leaves six footer pixels; newer art leaves eight. A fixed
+        // four-row splice overwrote the last two slot-border pixels on AE2 15.
+        int joinHeight = Math.max(0, Math.min(4, bottom.getSrcHeight() - inventoryCut - 4));
+        if (joinHeight > 0)
+            header.copy().src(header.getSrcX(), header.getSrcY() + 4, width, joinHeight)
+                    .dest(x, y - joinHeight).blit(graphics.unwrap());
         bottom(graphics, bottom, Math.min(176, bottom.getSrcWidth()), x, y, width);
     }
 }

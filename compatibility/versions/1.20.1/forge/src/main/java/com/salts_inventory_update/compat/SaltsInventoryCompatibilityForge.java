@@ -8,6 +8,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 public final class SaltsInventoryCompatibilityForge {
     public SaltsInventoryCompatibilityForge() {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
+        com.salts_inventory_update.compat.platform.LoaderMenus.initialize(bus);
         CompatibilityBootstrap.initializeCommon();
         // Mod presence is reliable after Forge completes mod construction.
         bus.addListener((FMLCommonSetupEvent event) -> event.enqueueWork(() ->

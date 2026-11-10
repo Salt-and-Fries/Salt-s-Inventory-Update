@@ -28,6 +28,7 @@ CLASSES = {
                'curios/CuriosDesktopMenu', 'curios/CuriosPanelDefinition', 'curios/CuriosCharacterButton'],
     'raised': ['raised/RaisedHudIntegration'],
     'ae2': ['ae2/AE2Bootstrap'],
+    'ae2-wireless-terminals': ['ae2/AE2Bootstrap', 'ae2/nativeview/WirelessTerminalDesktop'],
     'toms-storage': ['toms_storage/client/TomsStorageClientCompat', 'toms_storage/server/TomsStorageServerCompat'],
     'jei': ['jei/RuntimeRecipeBrowserAccess', 'jei/SaltsJeiPlugin'],
     'rei': ['rei/RuntimeReiRecipeBrowserAccess'],

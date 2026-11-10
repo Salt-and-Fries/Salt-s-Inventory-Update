@@ -209,6 +209,57 @@ final class DesktopSlotGesturesTest {
         assertEquals(2, invoke(drag, "size"));
     }
 
+    @ParameterizedTest
+    @ValueSource(ints = {1, 2, 3, 7, 17, 32, 63, 64})
+    void crossMenuPreviewConservesItemsAtCapacityAndRejectsOtherItemTypes(int count) throws Exception {
+        InventoryDesktopScreen screen = screen(count);
+        TestMenu almostFull = new TestMenu(1), empty = new TestMenu(1), incompatible = new TestMenu(1);
+        almostFull.slots.get(0).set(new ItemStack(Items.DIRT, 63));
+        incompatible.slots.get(0).set(new ItemStack(Items.SAND, 4));
+        Object first = nested("SlotHit", almostFull.slots.get(0), 0, 0, 0, almostFull, 5);
+        Object second = nested("SlotHit", empty.slots.get(0), 0, 0, 0, empty, 6);
+        Object wrong = nested("SlotHit", incompatible.slots.get(0), 0, 0, 0, incompatible, 7);
+        Object drag = nested("DragDistribution", leftButton(), AbstractContainerMenu.QUICKCRAFT_TYPE_CHARITABLE);
+        for (Object hit : List.of(first, second, wrong, first, second)) invoke(drag, "add", hit);
+        set(screen, "dragDistribution", drag);
+        List<?> targets = (List<?>) invoke(screen, "previewDragTargets", drag);
+        assertEquals(Math.min(count, 2), targets.size(), "Repeated hover must not add duplicate targets; sand rejects dirt");
+        Object targetSlots = java.util.Arrays.stream(screen.getClass().getDeclaredMethods())
+            .anyMatch(m -> m.getName().equals("dragPreviewSlots"))
+                ? invoke(screen, "dragPreviewSlots", targets) : targets.size();
+        int placed = 0;
+        for (Object hit : targets) {
+            Object preview = invoke(screen, "dragSlotPreview", hit, AbstractContainerMenu.QUICKCRAFT_TYPE_CHARITABLE, targetSlots);
+            ItemStack stack = (ItemStack) invoke(preview, "stack");
+            Slot slot = (Slot) invoke(hit, "slot");
+            assertTrue(stack.getCount() <= 64);
+            placed += stack.getCount() - slot.getItem().getCount();
+        }
+        assertEquals(count, placed + (int) invoke(screen, "dragPreviewRemaining", drag, targets));
+        assertEquals(63, almostFull.slots.get(0).getItem().getCount(), "Preview cannot mutate a different mod's native menu");
+        assertTrue(empty.slots.get(0).getItem().isEmpty());
+        assertEquals(4, incompatible.slots.get(0).getItem().getCount());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {2, 3, 7, 17, 32, 63, 64})
+    void asynchronousCursorReductionAcrossDifferentMenusNeverOverAllocates(int count) throws Exception {
+        InventoryDesktopScreen screen = screen(64);
+        TestMenu first = new TestMenu(1), second = new TestMenu(1), third = new TestMenu(1);
+        Object drag = nested("DragDistribution", leftButton(), AbstractContainerMenu.QUICKCRAFT_TYPE_GREEDY);
+        for (Object hit : List.of(nested("SlotHit", first.slots.get(0), 0, 0, 0, first, 5),
+                                 nested("SlotHit", second.slots.get(0), 0, 0, 0, second, 6),
+                                 nested("SlotHit", third.slots.get(0), 0, 0, 0, third, 7))) invoke(drag, "add", hit);
+        set(screen, "dragDistribution", drag);
+        screen.setSharedCarried(new ItemStack(Items.DIRT, count));
+        List<?> targets = (List<?>) invoke(screen, "previewDragTargets", drag);
+        assertEquals(Math.min(count, 3), targets.size());
+        assertEquals(count - targets.size(), invoke(screen, "dragPreviewRemaining", drag, targets));
+        assertTrue(first.slots.get(0).getItem().isEmpty());
+        assertTrue(second.slots.get(0).getItem().isEmpty());
+        assertTrue(third.slots.get(0).getItem().isEmpty());
+    }
+
     @Test
     void computedPreviewMatchesDistributionWithoutMutatingMenuOrReturnedStacks() throws Exception {
         InventoryDesktopScreen screen = screen(16);

@@ -56,7 +56,7 @@ public final class TomsStorageDesktopWindows {
     private static final int SMALL_BUTTON = 14;
     private static final int DESKTOP_TOP_BAR_HEIGHT = 16;
     private static final int DESKTOP_WINDOW_PADDING = 8;
-    private static final int STORAGE_TERMINAL_ROWS = 7;
+    private static final int STORAGE_TERMINAL_ROWS = 6;
     private static final int STORAGE_TERMINAL_COLUMNS = 9;
     private static final int STORAGE_TERMINAL_MIN_COLUMNS = 3;
     private static final int STORAGE_TERMINAL_MIN_ROWS = 2;
@@ -138,8 +138,17 @@ public final class TomsStorageDesktopWindows {
     public interface Definition<T extends AbstractContainerMenu, S> extends DesktopWindowDefinition<T, S> {
     }
 
-    public static final class Terminal implements Definition<AbstractContainerMenu, TerminalState> {
+    public static final class Terminal implements Definition<AbstractContainerMenu, TerminalState>, com.salts_inventory_update.api.client.desktop.DesktopWindowPresentation {
         private final boolean crafting;
+        @Override public String layoutRevision(DesktopWindowContext<AbstractContainerMenu,TerminalState> c) { return crafting?"native-crafting-terminal-2":"native-storage-terminal-2"; }
+        @Override public void loadLocalState(DesktopWindowContext<AbstractContainerMenu,TerminalState> c,CompoundTag tag) { c.state().initialNativeSize=!tag.contains("toms:native_size"); }
+        @Override public void saveLocalState(DesktopWindowContext<AbstractContainerMenu,TerminalState> c,CompoundTag tag) { tag.putBoolean("toms:native_size",true); }
+        @Override public DesktopWindowSize desiredWindowSize(DesktopWindowContext<?,?> raw) {
+            if(!((TerminalState)raw.state()).initialNativeSize)return null;
+            return DesktopWindowSize.of(STORAGE_TERMINAL_WINDOW_WIDTH,crafting?CRAFTING_TERMINAL_WINDOW_HEIGHT:STORAGE_TERMINAL_WINDOW_HEIGHT);
+        }
+        @Override public void opened(DesktopWindowContext<AbstractContainerMenu,TerminalState> c) { c.state().initialNativeSize=false; }
+
 
         public Terminal(boolean crafting) {
             this.crafting = crafting;
@@ -542,7 +551,6 @@ public final class TomsStorageDesktopWindows {
         }
 
         private void renderCraftingArea(DesktopRenderContext<AbstractContainerMenu, TerminalState> context, int x, int y) {
-            context.text(Component.literal("Craft"), x, y - 10, 0xFF404040, false);
             renderRecipeBookButton(context, this.craftingRecipeBookButtonX(context), this.craftingRecipeBookButtonY(context));
             for (int i = 0; i < 9; i++) {
                 context.slot(i + 1, x + CRAFTING_TERMINAL_CRAFT_INPUT_X + i % 3 * SLOT, y + CRAFTING_TERMINAL_CRAFT_INPUT_Y + i / 3 * SLOT);
@@ -815,132 +823,163 @@ public final class TomsStorageDesktopWindows {
     }
 
     public static final class InventoryConfigurator implements Definition<AbstractContainerMenu, Void> {
-        @Override
-        public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return DesktopWindowSize.of(154, 82);
-        }
+        private static final int CONTENT_WIDTH=160, CONTENT_HEIGHT=108;
+        private static final int FILTER_X=84, FILTER_Y=46, CLEAR_X=143;
 
-        @Override
-        public void render(DesktopRenderContext<AbstractContainerMenu, Void> context) {
-            int x = context.contentX() + 34;
-            int y = context.contentY() + 24;
-            context.text(Component.literal("Connector Filter"), context.contentX() + PAD, context.contentY() + PAD, 0xFF404040, false);
-            context.slotBackground(x, y);
-            context.slot(0, x, y);
-            int bx = context.contentX() + PAD;
-            int by = y;
-            renderCycleButton(context, bx, by, priorityIcon(context.model()), false);
-            renderCycleButton(context, bx + 18, by, TomsStorageCompat.id("icons/add"), false);
-            renderCycleButton(context, bx + 36, by, TomsStorageCompat.id("icons/deny"), false);
-            renderCycleButton(context, bx + 54, by, sideIcon(context.model()), false);
-            renderCycleButton(context, bx + 72, by, TomsStorageCompat.id(skip(context.model()) ? "icons/skip_inv" : "icons/include_inv"), skip(context.model()));
-            renderCycleButton(context, bx + 90, by, TomsStorageCompat.id(keepLast(context.model()) ? "icons/keep_last_1" : "icons/keep_last_off"), keepLast(context.model()));
-            renderCycleButton(context, bx + 108, by, TomsStorageCompat.id("icons/deny"), false);
+        @Override public String layoutRevision(DesktopWindowContext<AbstractContainerMenu,Void> context) {
+            return "configurator-separated-column-2";
         }
-
-        @Override
-        public DesktopSlotHit slotAt(DesktopSlotContext<AbstractContainerMenu, Void> context, double mouseX, double mouseY) {
-            return context.containerSlotHit(0, context.contentX() + 34, context.contentY() + 24, mouseX, mouseY);
+        @Override public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
+            return com.salts_inventory_update.api.client.desktop.DesktopInsets.SALT.surfaceSize(CONTENT_WIDTH,CONTENT_HEIGHT);
         }
-
-        @Override
-        public boolean mouseClicked(DesktopInputContext<AbstractContainerMenu, Void> context, MouseButtonEvent event, boolean doubleClick) {
-            int bx = context.contentX() + PAD;
-            int y = context.contentY() + 24;
-            int index = buttonIndex(event, bx, y, 7);
-            if (index < 0) {
-                return false;
-            }
-            switch (index) {
-                case 0 -> context.sendMenuButton((((TomsStorageReflect.enumOrdinalField(context.model(), "priority", 2) + 1) % 5) << 3));
+        @Override public DesktopWindowSize minSize(DesktopWindowContext<AbstractContainerMenu,Void> context) {
+            return com.salts_inventory_update.api.client.desktop.DesktopInsets.SALT.surfaceSize(CONTENT_WIDTH,CONTENT_HEIGHT);
+        }
+        @Override public void render(DesktopRenderContext<AbstractContainerMenu,Void> context) {
+            int x=context.contentX(),y=context.contentY();
+            int fx=x+FILTER_X,fy=y+FILTER_Y;
+            // Preserve the publisher's complete empty-filter guide. Painting a
+            // regular slot over it would erase the checker icon in the centre.
+            context.texture(TomsStorageCompat.id("textures/gui/inventory_configurator.png"),
+                fx-1,fy-1,79,31,18,18,18,18,256,256);
+            context.texturelessSlot(0,fx,fy);
+            renderCycleButton(context,x+1,y+1,priorityIcon(context.model()),false);
+            renderCycleButton(context,x+1,y+19,TomsStorageCompat.id("icons/add"),false);
+            renderCycleButton(context,x+1,y+37,TomsStorageCompat.id("icons/deny"),false);
+            renderCycleButton(context,x+1,y+55,sideIcon(context.model()),false);
+            renderCycleButton(context,x+1,y+73,TomsStorageCompat.id(skip(context.model())?"icons/skip_inv":"icons/include_inv"),skip(context.model()));
+            renderCycleButton(context,x+1,y+91,TomsStorageCompat.id(keepLast(context.model())?"icons/keep_last_1":"icons/keep_last_off"),keepLast(context.model()));
+            renderCycleButton(context,x+CLEAR_X,y+1,TomsStorageCompat.id("icons/deny"),false);
+        }
+        @Override public DesktopSlotHit slotAt(DesktopSlotContext<AbstractContainerMenu,Void> context,double x,double y) {
+            return context.menuSlotHit(0,context.contentX()+FILTER_X,context.contentY()+FILTER_Y,x,y);
+        }
+        private static int controlAt(DesktopWindowContext<AbstractContainerMenu,Void> context,double x,double y) {
+            int left=context.contentX()+1,top=context.contentY()+1;
+            for(int i=0;i<6;i++)if(contains(x,y,left,top+i*18,BUTTON,BUTTON))return i;
+            return contains(x,y,context.contentX()+CLEAR_X,top,BUTTON,BUTTON)?6:-1;
+        }
+        private static boolean editableFilter(ItemStack stack) {
+            try {
+                return Class.forName("com.tom.storagemod.item.IItemFilter",false,
+                    stack.getItem().getClass().getClassLoader()).isInstance(stack.getItem());
+            } catch(ClassNotFoundException absent) { return false; }
+        }
+        @Override public boolean mouseClicked(DesktopInputContext<AbstractContainerMenu,Void> context,MouseButtonEvent event,boolean twice) {
+            if(event.button()==GLFW.GLFW_MOUSE_BUTTON_RIGHT && contains(event.x(),event.y(),
+                    context.contentX()+FILTER_X-1,context.contentY()+FILTER_Y-1,18,18)
+                    && editableFilter(context.model().getSlot(0).getItem()))
+                return context.sendMenuButton(6);
+            if(event.button()!=GLFW.GLFW_MOUSE_BUTTON_LEFT)return false;
+            int index=controlAt(context,event.x(),event.y());
+            return switch(index) {
+                case 0 -> context.sendMenuButton(((TomsStorageReflect.enumOrdinalField(context.model(),"priority",2)+1)%5)<<3);
                 case 1 -> context.sendMenuButton(1);
                 case 2 -> context.sendMenuButton(2);
-                case 3 -> context.sendMenuButton((((TomsStorageReflect.enumOrdinalField(context.model(), "side", 0) + 1) % 6) << 3) | 3);
-                case 4 -> context.sendMenuButton((skip(context.model()) ? 0 : 1) << 3 | 4);
-                case 5 -> context.sendMenuButton((keepLast(context.model()) ? 0 : 1) << 3 | 5);
+                case 3 -> context.sendMenuButton((((TomsStorageReflect.enumOrdinalField(context.model(),"side",0)+1)%6)<<3)|3);
+                case 4 -> context.sendMenuButton(((skip(context.model())?0:1)<<3)|4);
+                case 5 -> context.sendMenuButton(((keepLast(context.model())?0:1)<<3)|5);
                 case 6 -> context.sendMenuButton(7);
-                default -> {
-                    return false;
-                }
-            }
-            return true;
+                default -> false;
+            };
+        }
+        @Override public boolean appendTooltip(DesktopRenderContext<AbstractContainerMenu,Void> context,int x,int y) {
+            String key=switch(controlAt(context,x,y)) {
+                case 0 -> "tooltip.toms_storage.priority_"+TomsStorageReflect.enumNameField(context.model(),"priority","NORMAL").toLowerCase(Locale.ROOT);
+                case 1 -> "tooltip.toms_storage.inv_config.add_connected";
+                case 2 -> "tooltip.toms_storage.inv_config.remove_all_connected";
+                case 3 -> "tooltip.toms_storage.side_"+TomsStorageReflect.enumNameField(context.model(),"side","DOWN").toLowerCase(Locale.ROOT);
+                case 4 -> skip(context.model())?"tooltip.toms_storage.inv_config.skip":"tooltip.toms_storage.inv_config.include";
+                case 5 -> keepLast(context.model())?"tooltip.toms_storage.keepLast_on":"tooltip.toms_storage.keepLast_off";
+                case 6 -> "tooltip.toms_storage.inv_config.remove_filter";
+                default -> null;
+            };
+            if(key==null)return false;
+            context.tooltip(Component.translatable(key),x,y);return true;
         }
     }
 
-    public static final class LevelEmitter implements Definition<AbstractContainerMenu, LevelEmitterState> {
-        @Override
-        public LevelEmitterState createState(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return new LevelEmitterState();
+    /** Native two-bank amount controls and editable count; only the inventory is detached. */
+    public static final class LevelEmitter implements Definition<AbstractContainerMenu, LevelEmitterState>, com.salts_inventory_update.api.client.desktop.DesktopWindowPresentation {
+        private static final int[] AMOUNTS={1,10,100,1000}, SHIFT_AMOUNTS={1,16,32,64};
+        private static final int[] BUTTON_X={14,39,69,104}, BUTTON_W={20,25,30,35};
+        @Override public LevelEmitterState createState(DesktopWindowSetupContext<AbstractContainerMenu> c) { return new LevelEmitterState(); }
+        @Override public String layoutRevision(DesktopWindowContext<AbstractContainerMenu,LevelEmitterState> c) { return "native-emitter-two-banks-1"; }
+        @Override public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> c) { return com.salts_inventory_update.api.client.desktop.DesktopInsets.SALT.surfaceSize(164,62); }
+        @Override public DesktopWindowSize minSize(DesktopWindowContext<AbstractContainerMenu,LevelEmitterState> c) { return com.salts_inventory_update.api.client.desktop.DesktopInsets.SALT.surfaceSize(164,62); }
+        private int nativeCount(DesktopWindowContext<AbstractContainerMenu,LevelEmitterState> c) { return TomsStorageReflect.intField(c.model(),"count",0); }
+        private boolean nativeBelow(DesktopWindowContext<AbstractContainerMenu,LevelEmitterState> c) { return TomsStorageReflect.booleanField(c.model(),"lessThan",false); }
+        private int count(DesktopWindowContext<AbstractContainerMenu,LevelEmitterState> c) { return c.state().pendingCount>=0?c.state().pendingCount:nativeCount(c); }
+        private boolean below(DesktopWindowContext<AbstractContainerMenu,LevelEmitterState> c) { return c.state().pendingCount>=0?c.state().pendingBelow:nativeBelow(c); }
+        @Override public void tick(DesktopWindowContext<AbstractContainerMenu,LevelEmitterState> c) {
+            var s=c.state();
+            // Core serializes optimistic mutations. Coalesce a pasted value
+            // while its first digit is awaiting acknowledgement, then deliver
+            // the final value through the same authenticated public API.
+            if(s.pendingSend!=null&&com.salts_inventory_update.api.client.desktop.DesktopClientApi.canDispatchOptimisticMutationNow())s.pendingSend.run();
+            if(s.pendingSend==null&&s.pendingCount==nativeCount(c)&&s.pendingBelow==nativeBelow(c))s.pendingCount=-1;
         }
 
-        @Override
-        public DesktopWindowSize minSize(DesktopWindowContext<AbstractContainerMenu, LevelEmitterState> context) {
-            return DesktopWindowSize.of(160, 104);
+        @Override public java.util.List<com.salts_inventory_update.api.client.desktop.DesktopWindowRegion> externalRegions(DesktopWindowContext<?,?> c) { return leftNativeControl(); }
+        @Override @SuppressWarnings("unchecked") public void renderBehindFrame(DesktopRenderContext<?,?> raw) {
+            var c=(DesktopRenderContext<AbstractContainerMenu,LevelEmitterState>)raw;
+            renderCycleButton(c,c.windowX()-18,c.windowY()+5,TomsStorageCompat.id(below(c)?"icons/less_than":"icons/greater_than"),below(c));
         }
-
-        @Override
-        public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return DesktopWindowSize.of(160, 104);
+        @Override public java.util.List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> textInputBounds(DesktopWindowContext<AbstractContainerMenu,LevelEmitterState> c) {
+            return List.of(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(c.contentX()+63,c.contentY()+25,61,12));
         }
-
-        @Override
-        public void render(DesktopRenderContext<AbstractContainerMenu, LevelEmitterState> context) {
-            int x = context.contentX() + PAD;
-            int y = context.contentY() + PAD;
-            int count = TomsStorageReflect.intField(context.model(), "count", 0);
-            boolean lessThan = TomsStorageReflect.booleanField(context.model(), "lessThan", false);
-            context.slot(0, x, y + 24);
-            context.text(Component.literal(lessThan ? "Emit below" : "Emit above"), x + 28, y + 10, 0xFF404040, false);
-            context.fill(x + 28, y + 25, x + 112, y + 38, 0xFF8F8F8F);
-            context.text(Integer.toString(count), x + 32, y + 28, 0xFFFFFFFF, false);
-            renderCycleButton(context, x + 116, y + 24, TomsStorageCompat.id(lessThan ? "icons/less_than" : "icons/greater_than"), lessThan);
-            for (int i = 0; i < 4; i++) {
-                int value = switch (i) {
-                    case 0 -> -10;
-                    case 1 -> -1;
-                    case 2 -> 1;
-                    default -> 10;
-                };
-                int bx = x + 28 + i * 24;
-                context.fill(bx, y + 46, bx + 22, y + 60, 0xFF777777);
-                context.text((value > 0 ? "+" : "") + value, bx + 3, y + 49, 0xFFFFFFFF, false);
+        @Override public void render(DesktopRenderContext<AbstractContainerMenu,LevelEmitterState> c) {
+            int x=c.contentX(),y=c.contentY(); var s=c.state();
+            // Retain the exact original cell and amount-field rims from the installed atlas.
+            c.texture(TomsStorageCompat.id("textures/gui/level_emitter.png"),x,y,6,14,164,62,164,62,256,256);
+            c.texturelessSlot(0,x+37,y+24);
+            if(!s.amountFocused)s.amountBox.text(Integer.toString(count(c)));
+            s.amountBox.focused(s.amountFocused);
+            DesktopWidgets.renderTextBox(c,s.amountBox,x+63,y+25,61);
+            for(int row=0;row<2;row++)for(int i=0;i<4;i++) {
+                int v=(net.minecraft.client.gui.screens.Screen.hasShiftDown()?SHIFT_AMOUNTS[i]:AMOUNTS[i])*(row==0?1:-1);
+                nativeAmountButton(c,x+BUTTON_X[i],y+2+row*40,BUTTON_W[i],(v>0?"+":"")+v);
             }
         }
-
-        @Override
-        public DesktopSlotHit slotAt(DesktopSlotContext<AbstractContainerMenu, LevelEmitterState> context, double mouseX, double mouseY) {
-            return context.containerSlotHit(0, context.contentX() + PAD, context.contentY() + PAD + 24, mouseX, mouseY);
-        }
-
-        @Override
-        public boolean mouseClicked(DesktopInputContext<AbstractContainerMenu, LevelEmitterState> context, MouseButtonEvent event, boolean doubleClick) {
-            int x = context.contentX() + PAD;
-            int y = context.contentY() + PAD;
-            if (buttonHit(event, x + 116, y + 24, BUTTON, BUTTON)) {
-                sendLevelEmitter(context, TomsStorageReflect.intField(context.model(), "count", 0), !TomsStorageReflect.booleanField(context.model(), "lessThan", false));
-                return true;
-            }
-            for (int i = 0; i < 4; i++) {
-                int value = switch (i) {
-                    case 0 -> -10;
-                    case 1 -> -1;
-                    case 2 -> 1;
-                    default -> 10;
-                };
-                int bx = x + 28 + i * 24;
-                if (buttonHit(event, bx, y + 46, 22, 14)) {
-                    int count = Math.max(0, TomsStorageReflect.intField(context.model(), "count", 0) + value);
-                    sendLevelEmitter(context, count, TomsStorageReflect.booleanField(context.model(), "lessThan", false));
-                    return true;
-                }
+        @Override public DesktopSlotHit slotAt(DesktopSlotContext<AbstractContainerMenu,LevelEmitterState> c,double x,double y) { return c.menuSlotHit(0,c.contentX()+37,c.contentY()+24,x,y); }
+        @Override public boolean mouseClicked(DesktopInputContext<AbstractContainerMenu,LevelEmitterState> c,MouseButtonEvent e,boolean twice) {
+            if(e.button()!=GLFW.GLFW_MOUSE_BUTTON_LEFT)return false;
+            var s=c.state(); int x=c.contentX(),y=c.contentY();
+            if(contains(e.x(),e.y(),x+63,y+25,61,12)) { s.amountFocused=true;s.amountBox.focused(true);s.amountBox.moveToEnd(false);return true; }
+            s.amountFocused=false;s.amountBox.focused(false);
+            if(contains(e.x(),e.y(),c.windowX()-18,c.windowY()+5,16,16)) { sendLevelEmitter(c,count(c),!below(c));return true; }
+            for(int row=0;row<2;row++)for(int i=0;i<4;i++)if(contains(e.x(),e.y(),x+BUTTON_X[i],y+2+row*40,BUTTON_W[i],20)) {
+                int delta=(e.hasShiftDown()||net.minecraft.client.gui.screens.Screen.hasShiftDown()?SHIFT_AMOUNTS[i]:AMOUNTS[i])*(row==0?1:-1);
+                int next=(int)Math.max(0L,Math.min(Integer.MAX_VALUE,(long)count(c)+delta));
+                sendLevelEmitter(c,next,below(c));s.amountBox.text(Integer.toString(next));return true;
             }
             return false;
+        }
+        private void edited(DesktopInputContext<AbstractContainerMenu,LevelEmitterState> c) {
+            String text=c.state().amountBox.text();
+            if(text.isBlank())return;
+            try { int value=Integer.parseInt(text);if(value>=0)sendLevelEmitter(c,value,below(c)); } catch(NumberFormatException invalid) { /* Partial numeric edits do not alter the native value. */ }
+        }
+        @Override public boolean keyPressed(DesktopInputContext<AbstractContainerMenu,LevelEmitterState> c,KeyEvent e) {
+            var s=c.state();if(!s.amountFocused)return false;
+            var edit=DesktopWidgets.editTextBoxKey(s.amountBox,e,10);s.amountFocused=s.amountBox.focused();
+            if(edit.changed())edited(c);return edit.consumed();
+        }
+        @Override public boolean charTyped(DesktopInputContext<AbstractContainerMenu,LevelEmitterState> c,CharacterEvent e) {
+            if(!c.state().amountFocused)return false;
+            var edit=DesktopWidgets.editTextBoxChar(c.state().amountBox,e,10);if(edit.changed())edited(c);return edit.consumed();
+        }
+        @Override public boolean wantsTextInput(DesktopWindowContext<AbstractContainerMenu,LevelEmitterState> c) { return c.state().amountFocused; }
+        @Override public boolean appendTooltip(DesktopRenderContext<AbstractContainerMenu,LevelEmitterState> c,int x,int y) {
+            if(!contains(x,y,c.windowX()-18,c.windowY()+5,16,16))return false;
+            c.tooltip(Component.translatable("tooltip.toms_storage.level_emitter."+(below(c)?"less_than":"greater_than")),x,y);return true;
         }
     }
 
     public static final class InventoryLink implements Definition<AbstractContainerMenu, InventoryLinkState> {
+        @Override public String layoutRevision(DesktopWindowContext<AbstractContainerMenu,InventoryLinkState> c) { return "native-link-list-1"; }
         @Override public List<com.salts_inventory_update.api.client.desktop.DesktopWindowBounds> textInputBounds(DesktopWindowContext<AbstractContainerMenu,InventoryLinkState> context) {
-            return List.of(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(context.contentX()+PAD,context.contentY()+PAD+14,106,13));
+            return List.of(new com.salts_inventory_update.api.client.desktop.DesktopWindowBounds(context.contentX()+4,context.contentY()+16,109,12));
         }
         @Override
         public InventoryLinkState createState(DesktopWindowSetupContext<AbstractContainerMenu> context) {
@@ -949,46 +988,47 @@ public final class TomsStorageDesktopWindows {
 
         @Override
         public DesktopWindowSize minSize(DesktopWindowContext<AbstractContainerMenu, InventoryLinkState> context) {
-            return DesktopWindowSize.of(192, 174);
+            return com.salts_inventory_update.api.client.desktop.DesktopInsets.SALT.surfaceSize(166,148);
         }
 
         @Override
         public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return DesktopWindowSize.of(192, 174);
+            return com.salts_inventory_update.api.client.desktop.DesktopInsets.SALT.surfaceSize(166,148);
         }
 
         @Override
         public void render(DesktopRenderContext<AbstractContainerMenu, InventoryLinkState> context) {
             InventoryLinkState state = context.state();
-            int x = context.contentX() + PAD;
-            int y = context.contentY() + PAD;
-            context.text(Component.literal("Beacon " + TomsStorageReflect.intField(context.model(), "beaconLvl", 0)), x, y, 0xFF404040, false);
-            state.nameBox.text(state.name);
-            state.nameBox.focused(state.nameFocused);
-            DesktopWidgets.renderTextBox(context, state.nameBox, x, y + 14, 106);
-            renderCycleButton(context, x + 110, y + 13, TomsStorageCompat.id("icons/add"), false);
-            renderCycleButton(context, x + 128, y + 13, TomsStorageCompat.id("icons/deny"), false);
-            renderCycleButton(context, x + 146, y + 13, TomsStorageCompat.id(state.publicChannel ? "icons/allow" : "icons/deny"), state.publicChannel);
-            int listY = y + 34;
-            for (int i = 0; i < 6; i++) {
-                int index = state.scroll + i;
-                int rowY = listY + i * 16;
-                boolean selected = index < state.channels.size() && state.channels.get(index).id().equals(state.selected);
-                context.fill(x, rowY, x + 164, rowY + 15, selected ? 0xFF7A7A7A : 0xFF9A9A9A);
-                if (index < state.channels.size()) {
-                    LinkChannel channel = state.channels.get(index);
-                    context.text(channel.name(), x + 4, rowY + 3, 0xFFFFFFFF, false);
-                    context.sprite(TomsStorageCompat.id(channel.publicChannel() ? "icons/allow" : "icons/deny"), x + 146, rowY, 14, 14);
-                }
-            }
+            int x = context.contentX();
+            int y = context.contentY();
+            context.text(Component.translatable("label.toms_storage.inventory_connector.beacon_level",TomsStorageReflect.intField(context.model(),"beaconLvl",0)),x,y,0xFF404040,false);
+            var linkTexture=TomsStorageCompat.id("textures/gui/inventory_link.png");
+            // Exact original gray search/list artwork, without its outer frame or title.
+            context.texture(linkTexture,x,y+14,6,24,166,132,166,132,256,256);
+            state.nameBox.text(state.name);state.nameBox.focused(state.nameFocused);
+            DesktopWidgets.renderTextBox(context,state.nameBox,x+4,y+16,109);
+            renderCycleButton(context,x+115,y+14,TomsStorageCompat.id("icons/add"),false);
+            renderCycleButton(context,x+132,y+14,TomsStorageCompat.id("icons/deny"),false);
+            renderCycleButton(context,x+149,y+14,TomsStorageCompat.id(state.publicChannel?"icons/lock_off":"icons/lock_on"),false);
+            state.listScroll.row=clamp(state.listScroll.row,0,Math.max(0,state.channels.size()-6));
+            context.withClip(x+6,y+32,106,96,()->{for(int i=0;i<6&&state.listScroll.row+i<state.channels.size();i++) {
+                LinkChannel channel=state.channels.get(state.listScroll.row+i);int yy=y+32+i*16;
+                nativeListRow(context,x+6,yy,106,16,channel.id().equals(state.selected));
+                context.sprite(TomsStorageCompat.id(channel.publicChannel()?"icons/lock_off":"icons/lock_on"),x+97,yy+1,14,14);
+                String name=context.trimToWidth(channel.name(),84);
+                context.text(name,x+7+(86-context.fontWidth(name))/2,yy+4,0xFFFFFFFF,true);
+            }});
+            nativeListThumb(context,state.listScroll,state.channels.size(),x+114,y+31,100,16);
+
         }
 
         @Override
         public boolean mouseClicked(DesktopInputContext<AbstractContainerMenu, InventoryLinkState> context, MouseButtonEvent event, boolean doubleClick) {
+            if(event.button()!=GLFW.GLFW_MOUSE_BUTTON_LEFT)return false;
             InventoryLinkState state = context.state();
-            int x = context.contentX() + PAD;
-            int y = context.contentY() + PAD;
-            if (contains(event.x(), event.y(), x, y + 14, 106, 13)) {
+            int x = context.contentX();
+            int y = context.contentY();
+            if (contains(event.x(), event.y(), x+4, y+16, 109, 12)) {
                 state.nameFocused = true;
                 state.nameBox.text(state.name);
                 state.nameBox.focused(true);
@@ -997,20 +1037,20 @@ public final class TomsStorageDesktopWindows {
             }
             state.nameFocused = false;
             state.nameBox.focused(false);
-            if (buttonHit(event, x + 110, y + 13, BUTTON, BUTTON)) {
+            if (buttonHit(event, x+115, y+14, BUTTON, BUTTON)) {
                 CompoundTag tag = new CompoundTag();
                 tag.putString("d", state.name.isBlank() ? "Channel" : state.name);
                 tag.putBoolean("p", state.publicChannel);
                 context.sendPayload(TomsStorageCompat.NBT_CHANNEL, TomsStoragePayloads.writeNbt(tag));
                 return true;
             }
-            if (buttonHit(event, x + 128, y + 13, BUTTON, BUTTON) && state.selected != null) {
+            if (buttonHit(event, x+132, y+14, BUTTON, BUTTON) && state.selected != null) {
                 CompoundTag tag = new CompoundTag();
                 tag.putUUID("id", state.selected);
                 context.sendPayload(TomsStorageCompat.NBT_CHANNEL, TomsStoragePayloads.writeNbt(tag));
                 return true;
             }
-            if (buttonHit(event, x + 146, y + 13, BUTTON, BUTTON)) {
+            if (buttonHit(event, x+149, y+14, BUTTON, BUTTON)) {
                 state.publicChannel = !state.publicChannel;
                 if (state.selected != null) {
                     CompoundTag tag = new CompoundTag();
@@ -1020,9 +1060,10 @@ public final class TomsStorageDesktopWindows {
                 }
                 return true;
             }
-            int listY = y + 34;
-            if (contains(event.x(), event.y(), x, listY, 164, 96)) {
-                int index = state.scroll + (int) ((event.y() - listY) / 16);
+            if(nativeListPress(state.listScroll,state.channels.size(),event.x(),event.y(),x+6,y+31,114,100,16))return true;
+            int listY = y+32;
+            if (contains(event.x(), event.y(), x+6, listY, 106, 96)) {
+                int index = state.listScroll.row + (int) ((event.y() - listY) / 16);
                 if (index >= 0 && index < state.channels.size()) {
                     LinkChannel channel = state.channels.get(index);
                     state.selected = channel.id();
@@ -1040,14 +1081,12 @@ public final class TomsStorageDesktopWindows {
 
         @Override
         public boolean mouseScrolled(DesktopInputContext<AbstractContainerMenu, InventoryLinkState> context, double mouseX, double mouseY, double scrollX, double scrollY) {
-            InventoryLinkState state = context.state();
-            int max = Math.max(0, state.channels.size() - 6);
-            if (max <= 0) {
-                return false;
-            }
-            state.scroll = clamp(state.scroll + (scrollY < 0 ? 1 : -1), 0, max);
-            return true;
+            return contains(mouseX,mouseY,context.contentX()+4,context.contentY()+30,125,114)
+                &&nativeListWheel(context.state().listScroll,context.state().channels.size(),6,scrollY);
         }
+
+        @Override public boolean mouseDragged(DesktopInputContext<AbstractContainerMenu,InventoryLinkState> c,MouseButtonEvent e,double dx,double dy) { return nativeListDrag(c.state().listScroll,c.state().channels.size(),e.y(),c.contentY()+31,100,16); }
+        @Override public boolean mouseReleased(DesktopInputContext<AbstractContainerMenu,InventoryLinkState> c,MouseButtonEvent e) { boolean held=c.state().listScroll.dragging;c.state().listScroll.dragging=false;return held; }
 
         @Override
         public boolean keyPressed(DesktopInputContext<AbstractContainerMenu, InventoryLinkState> context, KeyEvent event) {
@@ -1101,7 +1140,7 @@ public final class TomsStorageDesktopWindows {
             context.state().channels.clear();
             context.state().channels.addAll(snapshot.channels());
             context.state().selected = snapshot.selected();
-            context.state().scroll = clamp(context.state().scroll, 0, Math.max(0, context.state().channels.size() - 6));
+            context.state().listScroll.row = clamp(context.state().listScroll.row, 0, Math.max(0, context.state().channels.size() - 6));
         }
     }
 
@@ -1152,146 +1191,161 @@ public final class TomsStorageDesktopWindows {
         }
     }
 
-    public static final class TagItemFilter implements Definition<AbstractContainerMenu, TagFilterState> {
-        @Override
-        public TagFilterState createState(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return new TagFilterState();
+    /** Original paired gray lists, guide cell and native +/- arrangement. */
+    public static final class TagItemFilter implements Definition<AbstractContainerMenu,TagFilterState>, com.salts_inventory_update.api.client.desktop.DesktopWindowPresentation {
+        @Override public TagFilterState createState(DesktopWindowSetupContext<AbstractContainerMenu> c) { return new TagFilterState(); }
+        @Override public String layoutRevision(DesktopWindowContext<AbstractContainerMenu,TagFilterState> c) { return "native-tag-lists-1"; }
+        @Override public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> c) { return com.salts_inventory_update.api.client.desktop.DesktopInsets.SALT.surfaceSize(164,60); }
+        @Override public DesktopWindowSize minSize(DesktopWindowContext<AbstractContainerMenu,TagFilterState> c) { return com.salts_inventory_update.api.client.desktop.DesktopInsets.SALT.surfaceSize(164,60); }
+        @Override public List<com.salts_inventory_update.api.client.desktop.DesktopWindowRegion> externalRegions(DesktopWindowContext<?,?> c) { return leftNativeControl(); }
+        @Override public void renderBehindFrame(DesktopRenderContext<?,?> c) { renderAllowToggle(c,c.windowX()-18,c.windowY()+5,TomsStorageReflect.booleanField(c.model(),"allowList",false)); }
+        @Override public void tick(DesktopWindowContext<AbstractContainerMenu,TagFilterState> c) {
+            Slot slot=c.menuSlot(0); List<String> tags=slot==null||slot.getItem().isEmpty()?List.of():slot.getItem().getTags().map(t->t.location().toString()).toList();
+            var s=c.state();if(!s.availableTags.equals(tags)) { s.availableTags.clear();s.availableTags.addAll(tags);s.selectedAvailable=null;s.availableScroll.row=0; }
         }
-
-        @Override
-        public DesktopWindowSize minSize(DesktopWindowContext<AbstractContainerMenu, TagFilterState> context) {
-            return DesktopWindowSize.of(212, 104);
+        @Override public void render(DesktopRenderContext<AbstractContainerMenu,TagFilterState> c) {
+            int x=c.contentX(),y=c.contentY();var s=c.state();
+            c.texture(TomsStorageCompat.id("textures/gui/tag_filter.png"),x,y,6,14,164,59,164,59,256,256);
+            c.texturelessSlot(0,x+2,y+1);
+            nativeList(c,s.availableTags,s.selectedAvailable,s.availableScroll,x+22,y+1,61,58,14);
+            renderCycleButton(c,x+84,y,TomsStorageCompat.id("icons/add"),false);
+            renderCycleButton(c,x+84,y+17,TomsStorageCompat.id("icons/deny"),false);
+            nativeList(c,s.filterTags,s.selectedFilter,s.filterScroll,x+103,y+1,61,58,14);
         }
-
-        @Override
-        public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return DesktopWindowSize.of(212, 104);
-        }
-
-        @Override
-        public void tick(DesktopWindowContext<AbstractContainerMenu, TagFilterState> context) {
-            Slot slot = context.menuSlot(0);
-            List<String> itemTags = slot == null || slot.getItem().isEmpty()
-                ? List.of()
-                : slot.getItem().getTags().map(tag -> tag.location().toString()).toList();
-            if (!context.state().availableTags.equals(itemTags)) {
-                context.state().availableTags.clear();
-                context.state().availableTags.addAll(itemTags);
-            }
-        }
-
-        @Override
-        public void render(DesktopRenderContext<AbstractContainerMenu, TagFilterState> context) {
-            int x = context.contentX() + PAD;
-            int y = context.contentY() + PAD;
-            renderCycleButton(context, x, y, TomsStorageCompat.id(TomsStorageReflect.booleanField(context.model(), "allowList", false) ? "icons/allow" : "icons/deny"), false);
-            context.slot(0, x, y + 22);
-            renderTagList(context, context.state().availableTags, context.state().selectedAvailable, x + 28, y, 66, 64);
-            renderCycleButton(context, x + 98, y + 12, TomsStorageCompat.id("icons/add"), false);
-            renderCycleButton(context, x + 98, y + 32, TomsStorageCompat.id("icons/deny"), false);
-            renderTagList(context, context.state().filterTags, context.state().selectedFilter, x + 118, y, 66, 64);
-        }
-
-        @Override
-        public DesktopSlotHit slotAt(DesktopSlotContext<AbstractContainerMenu, TagFilterState> context, double mouseX, double mouseY) {
-            return context.menuSlotHit(0, context.contentX() + PAD, context.contentY() + PAD + 22, mouseX, mouseY);
-        }
-
-        @Override
-        public boolean mouseClicked(DesktopInputContext<AbstractContainerMenu, TagFilterState> context, MouseButtonEvent event, boolean doubleClick) {
-            TagFilterState state = context.state();
-            int x = context.contentX() + PAD;
-            int y = context.contentY() + PAD;
-            if (buttonHit(event, x, y, BUTTON, BUTTON)) {
-                context.sendMenuButton(TomsStorageReflect.booleanField(context.model(), "allowList", false) ? 0 : 1);
-                return true;
-            }
-            if (buttonHit(event, x + 98, y + 12, BUTTON, BUTTON) && state.selectedAvailable != null) {
-                if (!state.filterTags.contains(state.selectedAvailable)) {
-                    state.filterTags.add(state.selectedAvailable);
+        @Override public DesktopSlotHit slotAt(DesktopSlotContext<AbstractContainerMenu,TagFilterState> c,double x,double y) { return c.menuSlotHit(0,c.contentX()+2,c.contentY()+1,x,y); }
+        @Override public boolean mouseClicked(DesktopInputContext<AbstractContainerMenu,TagFilterState> c,MouseButtonEvent e,boolean twice) {
+            if(e.button()!=GLFW.GLFW_MOUSE_BUTTON_LEFT)return false;
+            int x=c.contentX(),y=c.contentY();var s=c.state();
+            if(contains(e.x(),e.y(),c.windowX()-18,c.windowY()+5,16,16))return c.sendMenuButton(TomsStorageReflect.booleanField(c.model(),"allowList",false)?0:1);
+            if(contains(e.x(),e.y(),x+84,y,16,16)) { if(s.selectedAvailable!=null&&!s.filterTags.contains(s.selectedAvailable)) { s.filterTags.add(s.selectedAvailable);sendTagFilter(c,s.filterTags); } return true; }
+            if(contains(e.x(),e.y(),x+84,y+17,16,16)) { if(s.selectedFilter!=null) { s.filterTags.remove(s.selectedFilter);s.selectedFilter=null;sendTagFilter(c,s.filterTags); } return true; }
+            for(int side=0;side<2;side++) {
+                int lx=x+(side==0?22:103);var list=side==0?s.availableTags:s.filterTags;var scroll=side==0?s.availableScroll:s.filterScroll;
+                if(nativeListPress(scroll,list.size(),e.x(),e.y(),lx,y+1,61,58,14))return true;
+                if(contains(e.x(),e.y(),lx,y+1,53,56)) { int index=scroll.row+(int)(e.y()-y-1)/14;
+                    if(index<list.size()) { if(side==0)s.selectedAvailable=list.get(index);else s.selectedFilter=list.get(index); } return true;
                 }
-                sendTagFilter(context, state.filterTags);
-                return true;
-            }
-            if (buttonHit(event, x + 98, y + 32, BUTTON, BUTTON) && state.selectedFilter != null) {
-                state.filterTags.remove(state.selectedFilter);
-                state.selectedFilter = null;
-                sendTagFilter(context, state.filterTags);
-                return true;
-            }
-            String available = pickTag(state.availableTags, event, x + 28, y, 66, 64);
-            if (available != null) {
-                state.selectedAvailable = available;
-                return true;
-            }
-            String filter = pickTag(state.filterTags, event, x + 118, y, 66, 64);
-            if (filter != null) {
-                state.selectedFilter = filter;
-                return true;
             }
             return false;
         }
-
-        @Override
-        public void customPayload(DesktopWindowContext<AbstractContainerMenu, TagFilterState> context, ResourceLocation channel, byte[] data) {
-            if (!TomsStorageCompat.TAG_SNAPSHOT_CHANNEL.equals(channel)) {
-                return;
-            }
-            context.state().filterTags.clear();
-            context.state().filterTags.addAll(TomsStoragePayloads.readTagSnapshot(data));
+        @Override public boolean mouseScrolled(DesktopInputContext<AbstractContainerMenu,TagFilterState> c,double x,double y,double sx,double sy) {
+            var s=c.state();if(contains(x,y,c.contentX()+22,c.contentY()+1,60,56))return nativeListWheel(s.availableScroll,s.availableTags.size(),4,sy);
+            if(contains(x,y,c.contentX()+103,c.contentY()+1,60,56))return nativeListWheel(s.filterScroll,s.filterTags.size(),4,sy);return false;
+        }
+        @Override public boolean mouseDragged(DesktopInputContext<AbstractContainerMenu,TagFilterState> c,MouseButtonEvent e,double dx,double dy) {
+            var s=c.state();boolean a=nativeListDrag(s.availableScroll,s.availableTags.size(),e.y(),c.contentY()+1,58,14);
+            return nativeListDrag(s.filterScroll,s.filterTags.size(),e.y(),c.contentY()+1,58,14)||a;
+        }
+        @Override public boolean mouseReleased(DesktopInputContext<AbstractContainerMenu,TagFilterState> c,MouseButtonEvent e) { var s=c.state();boolean held=s.availableScroll.dragging||s.filterScroll.dragging;s.availableScroll.dragging=s.filterScroll.dragging=false;return held; }
+        @Override public boolean appendTooltip(DesktopRenderContext<AbstractContainerMenu,TagFilterState> c,int x,int y) {
+            if(contains(x,y,c.windowX()-18,c.windowY()+5,16,16)) { c.tooltip(Component.translatable("tooltip.toms_storage."+(TomsStorageReflect.booleanField(c.model(),"allowList",false)?"allowList":"denyList")),x,y);return true; }
+            var s=c.state();for(int side=0;side<2;side++) { int lx=c.contentX()+(side==0?22:103);if(contains(x,y,lx,c.contentY()+1,52,56)) {
+                var list=side==0?s.availableTags:s.filterTags;int i=(side==0?s.availableScroll:s.filterScroll).row+(y-c.contentY()-1)/14;
+                if(i<list.size()){c.tooltip(Component.literal(list.get(i)),x,y);return true;}
+            }}return false;
+        }
+        @Override public void customPayload(DesktopWindowContext<AbstractContainerMenu,TagFilterState> c,ResourceLocation channel,byte[] data) {
+            if(!TomsStorageCompat.TAG_SNAPSHOT_CHANNEL.equals(channel))return;
+            var s=c.state();s.filterTags.clear();s.filterTags.addAll(TomsStoragePayloads.readTagSnapshot(data));
+            if(!s.filterTags.contains(s.selectedFilter))s.selectedFilter=null;
         }
     }
 
     public static final class FilingCabinet implements Definition<AbstractContainerMenu, FilingCabinetState> {
-        @Override
-        public FilingCabinetState createState(DesktopWindowSetupContext<AbstractContainerMenu> context) {
+        private static final int COLUMNS = 9, ROWS = 5, GAP = 4;
+        private static final int GRID_HEIGHT = ROWS * SLOT;
+
+        @Override public FilingCabinetState createState(DesktopWindowSetupContext<AbstractContainerMenu> context) {
             return new FilingCabinetState();
         }
 
-        @Override
-        public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
-            return DesktopWindowSize.of(196, 126);
+        @Override public DesktopWindowSize defaultSize(DesktopWindowSetupContext<AbstractContainerMenu> context) {
+            return com.salts_inventory_update.api.client.desktop.DesktopInsets.SALT.surfaceSize(
+                COLUMNS * SLOT + GAP + DesktopWidgets.SCROLLBAR_BACKGROUND_WIDTH, GRID_HEIGHT);
         }
 
-        @Override
-        public void render(DesktopRenderContext<AbstractContainerMenu, FilingCabinetState> context) {
-            int x = context.contentX() + PAD;
-            int y = context.contentY() + PAD;
-            for (int row = 0; row < 5; row++) {
-                for (int col = 0; col < 9; col++) {
-                    context.slot(row * 9 + col, x + col * SLOT, y + row * SLOT);
-                }
-            }
-            int max = Math.max(0, Math.max(0, context.model().slots.size() - 36) / 9 - 5);
-            renderScrollbar(context, x + 9 * SLOT + 6, y, 5 * SLOT, context.state().scrollRow, max);
+        private static int maximum(AbstractContainerMenu menu) {
+            // The menu exposes only 45 cells; its backing cabinet has many
+            // more. Use the publisher's capacity, just as its own screen does.
+            int capacity=((Number)com.salts_inventory_update.compat.nativewindows.ForeignMenuAccess.invoke(menu,"getContainerSize")).intValue();
+            return Math.max(0,(capacity+COLUMNS-1)/COLUMNS-ROWS);
         }
 
-        @Override
-        public DesktopSlotHit slotAt(DesktopSlotContext<AbstractContainerMenu, FilingCabinetState> context, double mouseX, double mouseY) {
-            int x = context.contentX() + PAD;
-            int y = context.contentY() + PAD;
-            for (int i = 0; i < 45; i++) {
-                DesktopSlotHit hit = context.menuSlotHit(i, x + i % 9 * SLOT, y + i / 9 * SLOT, mouseX, mouseY);
-                if (hit != null) {
-                    return hit;
-                }
+        @Override public void render(DesktopRenderContext<AbstractContainerMenu,FilingCabinetState> context) {
+            int x=context.contentX()+1, y=context.contentY()+1;
+            for(int row=0;row<ROWS;row++)for(int col=0;col<COLUMNS;col++)
+                context.slot(row*COLUMNS+col,x+col*SLOT,y+row*SLOT);
+            renderScrollbar(context,context.contentX()+COLUMNS*SLOT+GAP,context.contentY(),
+                GRID_HEIGHT,context.state().scrollRow,maximum(context.model()));
+        }
+
+        @Override public DesktopSlotHit slotAt(DesktopSlotContext<AbstractContainerMenu,FilingCabinetState> context,double mouseX,double mouseY) {
+            int x=context.contentX()+1, y=context.contentY()+1;
+            for(int i=0;i<ROWS*COLUMNS;i++) {
+                var hit=context.menuSlotHit(i,x+i%COLUMNS*SLOT,y+i/COLUMNS*SLOT,mouseX,mouseY);
+                if(hit!=null)return hit;
             }
             return null;
         }
 
-        @Override
-        public boolean mouseScrolled(DesktopInputContext<AbstractContainerMenu, FilingCabinetState> context, double mouseX, double mouseY, double scrollX, double scrollY) {
-            int max = Math.max(0, Math.max(0, context.model().slots.size() - 36) / 9 - 5);
-            if (max <= 0) {
-                return false;
-            }
-            context.state().scrollRow = clamp(context.state().scrollRow + (scrollY < 0 ? 1 : -1), 0, max);
-            context.sendMenuButton(context.state().scrollRow);
+        private static boolean row(DesktopInputContext<AbstractContainerMenu,FilingCabinetState> context,int requested) {
+            int next=clamp(requested,0,maximum(context.model()));
+            if(next==context.state().scrollRow)return true;
+            if(!context.sendMenuButton(next))return false;
+            // The native server pages its backing cabinet and synchronizes
+            // the 45 visible slots. Keep the client projection at offset zero:
+            // an offset on both sides makes padding cells on the final partial
+            // page write beyond the publisher's client-side backing inventory.
+            context.state().scrollRow=next;
             return true;
+        }
+
+        @Override public boolean mouseScrolled(DesktopInputContext<AbstractContainerMenu,FilingCabinetState> context,
+                double mouseX,double mouseY,double scrollX,double scrollY) {
+            if(scrollY==0||maximum(context.model())==0)return false;
+            return row(context,context.state().scrollRow+(scrollY<0?1:-1));
+        }
+
+        @Override public boolean mouseClicked(DesktopInputContext<AbstractContainerMenu,FilingCabinetState> context,
+                MouseButtonEvent event,boolean twice) {
+            int x=context.contentX()+COLUMNS*SLOT+GAP, y=context.contentY();
+            int max=maximum(context.model());
+            if(event.button()!=GLFW.GLFW_MOUSE_BUTTON_LEFT||max==0||event.x()<x||event.x()>=x+DesktopWidgets.SCROLLBAR_BACKGROUND_WIDTH
+                    ||event.y()<y||event.y()>=y+GRID_HEIGHT)return false;
+            int travel=GRID_HEIGHT-2-DesktopWidgets.SCROLLBAR_THUMB_HEIGHT;
+            int thumb=y+1+Math.round((float)context.state().scrollRow/max*travel);
+            context.state().scrollGrab=event.y()>=thumb&&event.y()<thumb+DesktopWidgets.SCROLLBAR_THUMB_HEIGHT
+                ? event.y()-thumb : DesktopWidgets.SCROLLBAR_THUMB_HEIGHT/2.0;
+            context.state().draggingScrollbar=true;
+            return drag(context,event.y());
+        }
+
+        private static boolean drag(DesktopInputContext<AbstractContainerMenu,FilingCabinetState> context,double y) {
+            int travel=GRID_HEIGHT-2-DesktopWidgets.SCROLLBAR_THUMB_HEIGHT;
+            double fraction=(y-context.contentY()-1-context.state().scrollGrab)/travel;
+            return row(context,(int)Math.round(fraction*maximum(context.model())));
+        }
+
+        @Override public boolean mouseDragged(DesktopInputContext<AbstractContainerMenu,FilingCabinetState> context,
+                MouseButtonEvent event,double dx,double dy) {
+            return context.state().draggingScrollbar&&event.button()==GLFW.GLFW_MOUSE_BUTTON_LEFT&&drag(context,event.y());
+        }
+
+        @Override public boolean mouseReleased(DesktopInputContext<AbstractContainerMenu,FilingCabinetState> context,MouseButtonEvent event) {
+            if(!context.state().draggingScrollbar||event.button()!=GLFW.GLFW_MOUSE_BUTTON_LEFT)return false;
+            context.state().draggingScrollbar=false;
+            return true;
+        }
+
+        @Override public List<com.salts_inventory_update.api.client.desktop.DesktopScrollRegion> controllerScrollRegions(
+                DesktopWindowContext<AbstractContainerMenu,FilingCabinetState> context) {
+            return List.of(new com.salts_inventory_update.api.client.desktop.DesktopScrollRegion(context.contentX(),context.contentY(),
+                COLUMNS*SLOT,GRID_HEIGHT,SLOT,context.state().scrollRow>0,context.state().scrollRow<maximum(context.model())));
         }
     }
 
     public static final class TerminalState {
+        private boolean initialNativeSize=true;
         private final List<TerminalEntry> entries = new ArrayList<>();
         private String search = "";
         private final DesktopTextBoxState searchBox = new DesktopTextBoxState();
@@ -1311,9 +1365,15 @@ public final class TomsStorageDesktopWindows {
     }
 
     public static final class LevelEmitterState {
+        private final DesktopTextBoxState amountBox=new DesktopTextBoxState();
+        private boolean amountFocused;
+        private int pendingCount=-1;
+        private boolean pendingBelow;
+        private Runnable pendingSend;
     }
 
     public static final class InventoryLinkState {
+        private final NativeListState listScroll=new NativeListState();
         private final List<LinkChannel> channels = new ArrayList<>();
         private UUID selected;
         private String name = "";
@@ -1324,6 +1384,7 @@ public final class TomsStorageDesktopWindows {
     }
 
     public static final class TagFilterState {
+        private final NativeListState availableScroll=new NativeListState(),filterScroll=new NativeListState();
         private final List<String> availableTags = new ArrayList<>();
         private final List<String> filterTags = new ArrayList<>();
         private String selectedAvailable;
@@ -1332,6 +1393,8 @@ public final class TomsStorageDesktopWindows {
 
     public static final class FilingCabinetState {
         private int scrollRow;
+        private boolean draggingScrollbar;
+        private double scrollGrab;
     }
 
     private static void renderTerminalControls(DesktopRenderContext<AbstractContainerMenu, TerminalState> context, TerminalState state, int x, int y) {
@@ -1599,15 +1662,18 @@ public final class TomsStorageDesktopWindows {
     ) {
         context.sendPayload(
             TomsStorageCompat.TERMINAL_ACTION_CHANNEL,
-            TomsStoragePayloads.writeTerminalAction(context.minecraft().player.registryAccess(), action, modifier, stack, quantity)
+            TerminalPacketContext.supply(context.minecraft().getConnection(), () -> TomsStoragePayloads.writeTerminalAction(context.minecraft().player.registryAccess(), action, modifier, stack, quantity))
         );
     }
 
-    private static void sendLevelEmitter(DesktopInputContext<AbstractContainerMenu, LevelEmitterState> context, int count, boolean lessThan) {
-        CompoundTag tag = new CompoundTag();
-        tag.putInt("count", count);
-        tag.putBoolean("lessThan", lessThan);
-        context.sendPayload(TomsStorageCompat.NBT_CHANNEL, TomsStoragePayloads.writeNbt(tag));
+    private static void sendLevelEmitter(DesktopInputContext<AbstractContainerMenu,LevelEmitterState> c,int count,boolean below) {
+        var s=c.state();s.pendingCount=count;s.pendingBelow=below;
+        s.pendingSend=()->{
+            if(!c.windowHandle().isOpen()||!c.inventoryAvailable()){s.pendingSend=null;return;}
+            CompoundTag tag=new CompoundTag();tag.putInt("count",s.pendingCount);tag.putBoolean("lessThan",s.pendingBelow);
+            if(c.sendPayload(TomsStorageCompat.NBT_CHANNEL,TomsStoragePayloads.writeNbt(tag)))s.pendingSend=null;
+        };
+        s.pendingSend.run();
     }
 
     private static void sendTagFilter(DesktopInputContext<AbstractContainerMenu, TagFilterState> context, List<String> tags) {
@@ -1774,6 +1840,51 @@ public final class TomsStorageDesktopWindows {
         context.sprite(hovered ? hoveredSprite : normal, x, y, BUTTON, BUTTON);
     }
 
+    /** Attached native controls stay outside the frame, as in Tom's original screens. */
+    private static List<com.salts_inventory_update.api.client.desktop.DesktopWindowRegion> leftNativeControl() {
+        return List.of(com.salts_inventory_update.api.client.desktop.DesktopWindowRegion.interactive(-18,5,16,16)
+            .withRole(com.salts_inventory_update.api.client.desktop.DesktopHitRole.CONTROL));
+    }
+    private static void renderAllowToggle(DesktopRenderContext<?,?> c,int x,int y,boolean allow) { renderCycleButton(c,x,y,TomsStorageCompat.id(allow?"icons/allow":"icons/deny"),false); }
+    private static void nativeListRow(DesktopRenderContext<?,?> c,int x,int y,int width,int height,boolean selected) {
+        boolean hovered=contains(c.mouseX(),c.mouseY(),x,y,width,height);
+        c.sprite(TomsStorageCompat.id("widget/small_button"+(selected?"_selected":"")+(hovered?"_hovered":"")),x,y,width,height);
+    }
+    private static void nativeAmountButton(DesktopRenderContext<?,?> c,int x,int y,int width,String label) {
+        boolean hovered=contains(c.mouseX(),c.mouseY(),x,y,width,20);
+        c.sprite(ResourceLocation.fromNamespaceAndPath("minecraft",hovered?"widget/button_highlighted":"widget/button"),x,y,width,20);
+        c.text(label,x+(width-c.fontWidth(label))/2,y+6,0xFFFFFFFF,true);
+    }
+    private static final class NativeListState { int row;boolean dragging;double grab; }
+    private static void nativeList(DesktopRenderContext<?,?> c,List<String> values,String selected,NativeListState s,int x,int y,int width,int height,int rowHeight) {
+        int max=Math.max(0,values.size()-height/rowHeight);s.row=clamp(s.row,0,max);
+        c.withClip(x,y,width-8,height,()->{for(int i=0;i<height/rowHeight&&s.row+i<values.size();i++) {
+            String text=values.get(s.row+i);int yy=y+i*rowHeight;
+            nativeListRow(c,x,yy,width-8,rowHeight,text.equals(selected));
+            c.text(c.trimToWidth(text,width-12),x+1,yy+3,0xFFFFFFFF,false);
+        }});
+        nativeListThumb(c,s,values.size(),x+width-6,y,height,rowHeight);
+    }
+    private static int nativeThumbHeight(int height,int rows,int size) { return Math.min(9,height); }
+    private static void nativeListThumb(DesktopRenderContext<?,?> c,NativeListState s,int size,int x,int y,int height,int rowHeight) {
+        int rows=height/rowHeight,max=Math.max(0,size-rows),h=nativeThumbHeight(height,rows,size);
+        int yy=y+(max==0?0:(height-h)*s.row/max);
+        c.sprite(TomsStorageCompat.id("widget/small_scroll"+(max==0?"_disabled":contains(c.mouseX(),c.mouseY(),x,yy,5,h)?"_hovered":"")),x,yy,5,h);
+    }
+    private static boolean nativeListWheel(NativeListState s,int size,int rows,double amount) {
+        if(amount==0)return false;int before=s.row;s.row=clamp(s.row+(amount<0?1:-1),0,Math.max(0,size-rows));return s.row!=before;
+    }
+    private static boolean nativeListPress(NativeListState s,int size,double mx,double my,int x,int y,int width,int height,int rowHeight) {
+        if(!contains(mx,my,x+width-6,y,6,height))return false;
+        int max=Math.max(0,size-height/rowHeight),h=nativeThumbHeight(height,height/rowHeight,size);if(max==0)return true;
+        int yy=y+(height-h)*s.row/max;s.grab=contains(mx,my,x+width-8,yy,8,h)?my-yy:h/2.0;s.dragging=true;
+        return nativeListDrag(s,size,my,y,height,rowHeight);
+    }
+    private static boolean nativeListDrag(NativeListState s,int size,double my,int y,int height,int rowHeight) {
+        if(!s.dragging)return false;int max=Math.max(0,size-height/rowHeight),h=nativeThumbHeight(height,height/rowHeight,size);
+        s.row=height<=h?0:clamp((int)Math.round((my-y-s.grab)*max/(height-h)),0,max);return true;
+    }
+
     private static void renderTagList(DesktopRenderContext<?, ?> context, List<String> tags, String selected, int x, int y, int width, int height) {
         context.fill(x, y, x + width, y + height, 0xFF5F5544);
         int rows = height / 12;
@@ -1857,7 +1968,7 @@ public final class TomsStorageDesktopWindows {
 
     private static int buttonIndex(MouseButtonEvent event, int x, int y, int count) {
         for (int i = 0; i < count; i++) {
-            if (buttonHit(event, x + i * 18, y, BUTTON, BUTTON) || buttonHit(event, x, y + i * 18, BUTTON, BUTTON)) {
+            if (buttonHit(event, x, y + i * 18, BUTTON, BUTTON)) {
                 return i;
             }
         }
@@ -1866,7 +1977,7 @@ public final class TomsStorageDesktopWindows {
 
     private static int buttonIndex(double mouseX, double mouseY, int x, int y, int count) {
         for (int i = 0; i < count; i++) {
-            if (contains(mouseX, mouseY, x + i * 18, y, BUTTON, BUTTON) || contains(mouseX, mouseY, x, y + i * 18, BUTTON, BUTTON)) {
+            if (contains(mouseX, mouseY, x, y + i * 18, BUTTON, BUTTON)) {
                 return i;
             }
         }

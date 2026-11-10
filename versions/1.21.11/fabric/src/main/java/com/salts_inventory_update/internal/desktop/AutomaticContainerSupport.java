@@ -23,7 +23,8 @@ public final class AutomaticContainerSupport {
         // A repeated homogeneous grid with no machine data is a storage candidate.
         // Isolated bait/filter/result cells are excluded rather than reordered.
         if (!((com.salts_inventory_update.mixin.accessor.AbstractContainerMenuAccessor)menu).salts_inventory_update$getDataSlots().isEmpty()) return;
-        var slots = menu.slots.stream().filter(s -> s.container != inventory && s.isActive()).toList();
+        var slots = menu.slots.stream().filter(s -> s.container != inventory && s.isActive()
+            &&s.x>=0&&s.y>=0&&!com.salts_inventory_update.api.desktop.DesktopMenuBindings.isVirtualSlot(menu,s)).toList();
         var groups = new java.util.IdentityHashMap<net.minecraft.world.Container,
             java.util.Map<Grid, java.util.List<net.minecraft.world.inventory.Slot>>>();
         for (var slot : slots) groups.computeIfAbsent(slot.container, unused -> new java.util.HashMap<>())
@@ -67,14 +68,19 @@ public final class AutomaticContainerSupport {
         MenuType<?> type = menu.getType();
         if (type == null || DesktopServerApi.hasWindowSupport(type)) return false;
         var id = BuiltInRegistries.MENU.getKey(type);
-        if (id == null || id.getNamespace().equals("minecraft")) return false;
+        // Some upstream mods register their own menus in the default namespace. Only an
+        // explicit native-template capability may opt those menus into automatic transport.
+        if (id == null || id.getNamespace().equals("minecraft") && !described) return false;
         int playerTop = Integer.MAX_VALUE, machineBottom = -1;
         for (var slot : menu.slots) {
             if (!slot.isActive()) continue;
             if (slot.container == player.getInventory()) playerTop = Math.min(playerTop, slot.y);
             else if (slot.x >= 0 && slot.y >= 0) machineBottom = Math.max(machineBottom, slot.y + 17);
         }
-        return machineBottom > 0 && (described || playerTop != Integer.MAX_VALUE && machineBottom < playerTop);
+        // Explicit native templates can represent inventory configuration tools
+        // whose controls have no owned item slots. Structural fallback remains
+        // restricted to an upper machine area with a separate player inventory.
+        return described || machineBottom > 0 && playerTop != Integer.MAX_VALUE && machineBottom < playerTop;
     }
     @SuppressWarnings({"rawtypes","unchecked"})
     public static Consumer<net.minecraft.network.RegistryFriendlyByteBuf> openingWriter(MenuProvider provider,ServerPlayer player,MenuType<?> type) {
@@ -84,6 +90,29 @@ public final class AutomaticContainerSupport {
             var codec=(net.minecraft.network.codec.StreamCodec)openingCodec(type);
             return buffer->codec.encode(buffer,value);
         } catch(NoSuchMethodException ordinaryProvider) { return null; }
+    }
+    /** Explicit SIU factories own their wire format; native provider bytes are
+     * composed only when the opening has no registered SIU serializer. */
+    public static Consumer<net.minecraft.network.RegistryFriendlyByteBuf> captureOpeningWriter(
+        MenuProvider provider, AbstractContainerMenu menu, Consumer<net.minecraft.network.RegistryFriendlyByteBuf> extra,
+        Consumer<net.minecraft.network.RegistryFriendlyByteBuf> registered, boolean nativeWireFormat) {
+        if(!nativeWireFormat && extra!=null)return extra;
+        if(registered!=null)return registered;
+        return providerOpeningWriter(provider,menu,extra);
+    }
+    /** The same complete-payload priority applies to explicitly integrated menus. */
+    public static Consumer<net.minecraft.network.RegistryFriendlyByteBuf> registeredOpeningWriter(
+        Consumer<net.minecraft.network.RegistryFriendlyByteBuf> extra,
+        Consumer<net.minecraft.network.RegistryFriendlyByteBuf> registered, boolean nativeWireFormat) {
+        return nativeWireFormat && registered!=null ? registered : extra!=null ? extra : registered;
+    }
+    /** NeoForge writes provider data before the caller's extra opening bytes. */
+    public static Consumer<net.minecraft.network.RegistryFriendlyByteBuf> providerOpeningWriter(
+        MenuProvider provider, AbstractContainerMenu menu, Consumer<net.minecraft.network.RegistryFriendlyByteBuf> extra) {
+        try {
+            Method nativeWriter=provider.getClass().getMethod("writeClientSideData",AbstractContainerMenu.class,net.minecraft.network.RegistryFriendlyByteBuf.class);
+            return buffer->{invoke(nativeWriter,provider,menu,buffer);if(extra!=null)extra.accept(buffer);};
+        } catch(NoSuchMethodException absentOnFabric) { return extra; }
     }
     @SuppressWarnings({"rawtypes","unchecked"})
     public static AbstractContainerMenu create(MenuType<?> type,int id,Inventory inventory,net.minecraft.core.RegistryAccess registries,byte[] data) {

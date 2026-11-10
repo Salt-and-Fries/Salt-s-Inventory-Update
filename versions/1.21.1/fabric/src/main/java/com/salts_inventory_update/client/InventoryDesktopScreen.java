@@ -99,7 +99,7 @@ import net.minecraft.world.inventory.EnchantmentMenu;
 import net.minecraft.world.inventory.FurnaceMenu;
 import net.minecraft.world.inventory.GrindstoneMenu;
 import net.minecraft.world.inventory.LoomMenu;
-import net.minecraft.world.inventory.MerchantMenu;
+import com.salts_inventory_update.api.desktop.DesktopMerchantAccess;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.RecipeBookMenu;
 import net.minecraft.world.inventory.SmithingMenu;
@@ -749,32 +749,35 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int ENCHANTMENT_BUTTON_WIDTH = 108;
     private static final int ENCHANTMENT_BUTTON_HEIGHT = 19;
     private static final int MERCHANT_CONTENT_MARGIN = 6;
-    private static final int MERCHANT_CONTENT_WIDTH = 236;
+    private static final int MERCHANT_CONTENT_WIDTH = 242;
     private static final int MERCHANT_CONTENT_HEIGHT = 80;
+    private static final int MERCHANT_BOTTOM_PADDING = 4;
     private static final int MERCHANT_VISIBLE_TRADES = 4;
     private static final int MERCHANT_TRADE_ROW_HEIGHT = 20;
     private static final int MERCHANT_TRADE_LIST_X = 0;
-    private static final int MERCHANT_TRADE_LIST_Y = 0;
-    private static final int MERCHANT_TRADE_LIST_WIDTH = 112;
-    private static final int MERCHANT_TRADE_SCROLLBAR_X = 116;
+    private static final int MERCHANT_TRADE_LIST_Y = 10;
+    private static final int MERCHANT_TRADE_LIST_WIDTH = 88;
+    private static final int MERCHANT_TRADE_SCROLLBAR_X = 92;
     private static final int MERCHANT_TRADE_SCROLLBAR_WIDTH = 6;
     private static final int MERCHANT_PAYMENT_1_SLOT = 0;
     private static final int MERCHANT_PAYMENT_2_SLOT = 1;
     private static final int MERCHANT_RESULT_SLOT = 2;
-    private static final int MERCHANT_PAYMENT_1_X = 135;
-    private static final int MERCHANT_PAYMENT_2_X = 161;
-    private static final int MERCHANT_RESULT_X = 213;
-    private static final int MERCHANT_SLOT_Y = 45;
-    private static final int MERCHANT_TRADE_ARROW_X = 183;
-    private static final int MERCHANT_TRADE_ARROW_Y = 45;
+    private static final int MERCHANT_DETAIL_OFFSET_X = -8;
+    private static final int MERCHANT_DETAIL_OFFSET_Y = 16;
+    private static final int MERCHANT_PAYMENT_1_X = 136;
+    private static final int MERCHANT_PAYMENT_2_X = 162;
+    private static final int MERCHANT_RESULT_X = 220;
+    private static final int MERCHANT_SLOT_Y = 37;
+    private static final int MERCHANT_TRADE_ARROW_X = 186;
+    private static final int MERCHANT_TRADE_ARROW_Y = 37;
     private static final int MERCHANT_TRADE_ARROW_WIDTH = 10;
     private static final int MERCHANT_TRADE_ARROW_HEIGHT = 9;
     private static final int MERCHANT_OUT_OF_STOCK_WIDTH = 28;
     private static final int MERCHANT_OUT_OF_STOCK_HEIGHT = 21;
-    private static final int MERCHANT_DETAIL_LABEL_Y = 5;
-    private static final int MERCHANT_PROGRESS_X = 134;
-    private static final int MERCHANT_PROGRESS_Y = 22;
-    private static final int MERCHANT_PROGRESS_WIDTH = 96;
+    private static final int MERCHANT_DETAIL_LABEL_Y = 0;
+    private static final int MERCHANT_PROGRESS_X = 136;
+    private static final int MERCHANT_PROGRESS_Y = 12;
+    private static final int MERCHANT_PROGRESS_WIDTH = 102;
     private static final int MERCHANT_PROGRESS_HEIGHT = 5;
     private static final int CREATIVE_CONTENT_MARGIN = 6;
     private static final int CREATIVE_TAB_WIDTH = 26;
@@ -1075,7 +1078,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (menu instanceof LoomMenu) return new ItemStack(Items.LOOM);
         if (menu instanceof SmithingMenu) return new ItemStack(Items.SMITHING_TABLE);
         if (menu instanceof StonecutterMenu) return new ItemStack(Items.STONECUTTER);
-        if (menu instanceof MerchantMenu) return new ItemStack(Items.EMERALD);
+        if (menu instanceof DesktopMerchantAccess) return new ItemStack(Items.EMERALD);
         if (menu instanceof net.minecraft.world.inventory.HorseInventoryMenu) return new ItemStack(Items.SADDLE);
         return new ItemStack(window.kind == WindowKind.CONTAINER ? Items.CHEST : Items.BOOK);
     }
@@ -1642,7 +1645,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private boolean contextualOutputFits(InventoryWindow destination, ItemStack output) {
         List<Slot> slots;
         if (destination.kind == WindowKind.INVENTORY) slots = this.minecraft.player.inventoryMenu.slots.stream().filter(slot ->
-            slot.container == this.minecraft.player.getInventory() && slot.getContainerSlot() >= 0 && slot.getContainerSlot() < 36
+            slot.container == com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(this.minecraft.player) && slot.getContainerSlot() >= 0 && slot.getContainerSlot() < 36
                 || InventoryExpansion.isExtraSlot(slot)).toList();
         else slots = destination.session == null ? List.of() : destination.session.containerSlots();
         long capacity = 0;
@@ -1753,6 +1756,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         screen.setFocusedWindow(window);
         screen.handleWindowOpened(window, "api-view-add");
         return screen.apiWindowHandle(window);
+    }
+
+    static boolean canStartFallbackTitleDrag(DesktopHitRole role, boolean slotHit) {
+        return role != DesktopHitRole.SLOT && !slotHit;
     }
 
     private boolean beginSurfaceInteraction(InventoryWindow window, MouseButtonEvent event, boolean doubleClick) {
@@ -3324,6 +3331,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (builtinPoint) {
             this.bringToFront(window);
             this.setApiKeyboardFocus(null);
+            // Occlusion blocks hidden base cells, not controls rendered by the subview.
+            if (this.apiMouseClicked(window, event, doubleClick)) return true;
             SlotHit hit = window.slotAt(this, event.x(), event.y());
             if (hit != null) this.handleSlotMouseClicked(hit, event, doubleClick, previousClickedSlotKey);
             return true;
@@ -3373,7 +3382,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             boolean creativeTitleWidgetClick = window.kind == WindowKind.CREATIVE
                 && (this.creativeSearchBoxContains(window, event.x(), event.y()) || this.creativeTabPageButtonAt(window, event.x(), event.y()) != null);
             boolean jeiTitleWidgetClick = window.kind == WindowKind.JEI && this.jeiDefaultTabButtonContains(window, event.x(), event.y());
-            if (!this.externallyPresented() && !window.locked && this.apiOptions(window).movable() && window.isTopBar(event.x(), event.y()) && !creativeTitleWidgetClick && !jeiTitleWidgetClick) {
+            if (!this.externallyPresented() && !window.locked && this.apiOptions(window).movable() && window.isTopBar(event.x(), event.y()) && canStartFallbackTitleDrag(window.apiSurface.hitRole(window.x, window.y, window.width, window.height, event.x(), event.y()), window.slotAt(this, event.x(), event.y()) != null) && !creativeTitleWidgetClick && !jeiTitleWidgetClick) {
                 this.movingWindow = window;
                 this.resizingWindow = null;
                 this.scrollingJeiWindow = null;
@@ -4054,7 +4063,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (menu == null || this.minecraft == null || this.minecraft.player == null || carried.isEmpty()) {
             return false;
         }
-        Inventory playerInventory = this.minecraft.player.getInventory();
+        Inventory playerInventory = com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(this.minecraft.player);
         for (Slot slot : DesktopMenuBindings.all(menu)) {
             if (excludePlayerInventorySlots && DesktopMenuBindings.isPlayerInventorySlot(menu, slot, playerInventory)
                 || DesktopItemSourceLocks.isSlotLocked(this.minecraft.player, slot)
@@ -4946,11 +4955,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private void merchantTradeClicked(InventoryWindow window, int tradeIndex) {
         AbstractContainerMenu menu = window.containerMenu();
-        if (!(menu instanceof MerchantMenu merchantMenu) || this.minecraft == null || this.minecraft.player == null) {
+        if (!(menu instanceof DesktopMerchantAccess merchantMenu) || this.minecraft == null || this.minecraft.player == null) {
             return;
         }
 
-        if (tradeIndex < 0 || tradeIndex >= merchantMenu.getOffers().size()) {
+        if (tradeIndex < 0 || tradeIndex >= merchantMenu.desktopOffers().size()) {
             return;
         }
 
@@ -4959,8 +4968,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (window.session != null) {
             if (DesktopContainerClient.clickButton(window.session.sessionId(), tradeIndex)) {
                 window.merchantSelectedTrade = tradeIndex;
-                merchantMenu.setSelectionHint(tradeIndex);
-                merchantMenu.tryMoveItems(tradeIndex);
+                merchantMenu.desktopSelect(tradeIndex);
+                merchantMenu.desktopMovePayment(tradeIndex);
             } else {
                 DesktopDebug.warn("client merchant trade dropped session={} trade={} reason=packet-send-failed", window.session.sessionId(), tradeIndex);
             }
@@ -4968,10 +4977,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         window.merchantSelectedTrade = tradeIndex;
-        merchantMenu.setSelectionHint(tradeIndex);
-        merchantMenu.tryMoveItems(tradeIndex);
+        merchantMenu.desktopSelect(tradeIndex);
+        merchantMenu.desktopMovePayment(tradeIndex);
         if (this.minecraft.gameMode != null && window.legacyMenu == menu && this.minecraft.player.containerMenu == menu) {
-            this.minecraft.gameMode.handleInventoryButtonClick(merchantMenu.containerId, tradeIndex);
+            this.minecraft.gameMode.handleInventoryButtonClick(((AbstractContainerMenu)merchantMenu).containerId, tradeIndex);
         }
     }
 
@@ -5143,8 +5152,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return true;
         }
 
-        if (window != null && window.containerMenu() instanceof MerchantMenu merchantMenu && this.merchantTradeListContains(window, x, y)) {
-            MerchantOffers offers = merchantMenu.getOffers();
+        if (window != null && window.containerMenu() instanceof DesktopMerchantAccess merchantMenu && this.merchantTradeListContains(window, x, y)) {
+            MerchantOffers offers = merchantMenu.desktopOffers();
             int maxScroll = Math.max(0, offers.size() - MERCHANT_VISIBLE_TRADES);
             if (maxScroll > 0) {
                 int oldScroll = window.merchantScroll;
@@ -5635,7 +5644,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         ItemStack stack = source.copyWithCount(source.getMaxStackSize());
-        this.minecraft.player.getInventory().setItem(inventorySlot, stack);
+        com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(this.minecraft.player).setItem(inventorySlot, stack);
         this.minecraft.gameMode.handleCreativeModeItemAdd(stack, menuSlotId);
         this.minecraft.player.inventoryMenu.broadcastChanges();
         DesktopDebug.trace("client creative catalog swap desktop={} inventorySlot={} menuSlot={} stack={}", this.desktopId, inventorySlot, menuSlotId, stack);
@@ -5991,6 +6000,28 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean bindEmbeddedSession(DesktopContainerSession session, @Nullable DesktopContainerSession replaced) {
+        var handler = DesktopClientApi.embeddedSessionHandler(session.menu());
+        if (handler == null) return false;
+        boolean accepted = false;
+        try { accepted = ((com.salts_inventory_update.api.client.desktop.DesktopEmbeddedSessionHandler) handler).opened(session.embeddedView()); }
+        catch (RuntimeException failure) {
+            com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                session.sourceKey(), "embedded-open", "Embedded session callback failed", failure);
+        }
+        if (!accepted) {
+            this.sessions.remove(session);
+            DesktopContainerClient.closeSession(session.sessionId());
+            session.close();
+        } else {
+            if (!this.sessions.contains(session)) this.sessions.add(session);
+            if (replaced != null) { this.removeSession(replaced.sessionId()); replaced.close(); }
+        }
+        return true;
+    }
+
     private void addOrReplaceSession(DesktopContainerSession session, boolean visible) {
         WindowTransitionState transitionState = null;
         DesktopContainerSession transitionReplacedSession = null;
@@ -6085,6 +6116,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.sessions.add(session);
         if (!session.isCompanion()) this.clearSlotInteractionState("session-add");
         session.setCarried(this.sharedCarried);
+        if (this.bindEmbeddedSession(session, transitionReplacedSession)) return;
         if (session.specialKind() == DesktopPackets.SPECIAL_CAMEL || session.specialKind() == DesktopPackets.SPECIAL_LLAMA) {
             DesktopDebug.warn(
                 "SIU_MOUNT_DIAG client_add_session_start desktop={} session={} special={} entityId={} columns={} visible={} source={} slots={} containerSlots={} content={}x{}",
@@ -6189,7 +6221,6 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             window.height = Math.min(defaultWindowHeight, Math.max(1, this.desktopHeight()));
         }
         if (transitionReplacedSession != null) {
-            this.sessions.add(session);
             for (InventoryWindow transitionWindow : List.copyOf(this.windows)) {
                 if (transitionWindow.session == transitionReplacedSession) {
                     this.saveWindowState(transitionWindow, false);
@@ -6666,7 +6697,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     private boolean isPlayerInventorySlot(Slot slot) {
         LocalPlayer player = this.player();
-        return player != null && slot.container == player.getInventory();
+        return player != null && slot.container == com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(player);
     }
 
     private int storageSlotCount(InventoryWindow window) {
@@ -7047,7 +7078,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (menu instanceof EnchantmentMenu) {
             return Math.max(titleWidth, ENCHANTMENT_CONTENT_MARGIN * 2 + ENCHANTMENT_CONTENT_WIDTH);
         }
-        if (menu instanceof MerchantMenu) {
+        if (menu instanceof DesktopMerchantAccess) {
             return Math.max(titleWidth, MERCHANT_CONTENT_MARGIN * 2 + MERCHANT_CONTENT_WIDTH);
         }
         StorageGridSize defaultGrid = defaultStorageGridSize(safeMenuType(menu), slotCount);
@@ -7095,8 +7126,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (menu instanceof EnchantmentMenu) {
             return TOP_BAR_HEIGHT + ENCHANTMENT_CONTENT_MARGIN * 2 + ENCHANTMENT_CONTENT_HEIGHT;
         }
-        if (menu instanceof MerchantMenu) {
-            return TOP_BAR_HEIGHT + MERCHANT_CONTENT_MARGIN * 2 + MERCHANT_CONTENT_HEIGHT;
+        if (menu instanceof DesktopMerchantAccess) {
+            return TOP_BAR_HEIGHT + MERCHANT_CONTENT_MARGIN * 2 + MERCHANT_CONTENT_HEIGHT + MERCHANT_BOTTOM_PADDING;
         }
         StorageGridSize defaultGrid = defaultStorageGridSize(safeMenuType(menu), slotCount);
         if (defaultGrid != null) {
@@ -7313,6 +7344,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void resetWindowGeometry(InventoryWindow window) {
+        if (!DesktopClientApi.allowsGeometryReset(window.apiInstanceId)) return;
         DesktopWindowSize defaultSize = this.defaultWindowSize(window);
         int oldX = window.x;
         int oldY = window.y;
@@ -8744,7 +8776,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return false;
         }
 
-        Inventory inventory = this.minecraft.player.getInventory();
+        Inventory inventory = com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(this.minecraft.player);
         int direction = scrollY < 0.0D ? 1 : -1;
         int selected = Math.floorMod(inventory.selected + direction, HOTBAR_SLOT_COUNT);
         this.selectHotbarSlot(selected);
@@ -8758,7 +8790,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         int selected = clamp(slot, 0, HOTBAR_SLOT_COUNT - 1);
-        Inventory inventory = this.minecraft.player.getInventory();
+        Inventory inventory = com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(this.minecraft.player);
         if (inventory.selected == selected) {
             return;
         }
@@ -8813,6 +8845,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (window == this.apiKeyboardFocusWindow) this.setApiKeyboardFocus(null);
 
 
+        // Native removed() emits its final configuration. Deliver it while the
+        // detached server session is still live and before its close packet.
+        if (window.apiDefinition instanceof com.salts_inventory_update.client.automatic.AutomaticNativeWindow)
+            this.apiClosed(window);
         if (window.session != null) {
             DesktopContainerClient.closeSession(window.session.sessionId());
             this.sessions.remove(window.session);
@@ -8896,7 +8932,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean apiControlAllowed(InventoryWindow window, WindowControl control) {
+        if (window.apiDefinition != null && !((DesktopWindowDefinition) window.apiDefinition).managementControlAllowed(
+                this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE), DesktopWindowControl.valueOf(control.name()))) return false;
         if (this.externallyPresented()) return false;
         if (this.isCompanion(window)) return false;
         DesktopWindowOptions options = this.apiOptions(window);
@@ -8983,7 +9022,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         DesktopWindowContext<AbstractContainerMenu, Void> context = this.apiContext(window, null, (int) x, (int) y);
         for (var attachment : window.builtinAttachments) {
             if (attachment.slotAt((DesktopSlotContext<AbstractContainerMenu, Void>) context, x, y) != null
-                    || attachment.occludes(context, x, y)) return true;
+                    || (!attachment.replacesContent(context) && attachment.occludes(context, x, y))) return true;
         }
         return false;
     }
@@ -9138,7 +9177,6 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 this.renderApiDecoration(graphics, window, titleLayout, mouseX, mouseY);
             }
             if (window.apiDisposed) return;
-
 
             switch (window.kind) {
                 case INVENTORY -> this.renderInventoryWindow(graphics, window, mouseX, mouseY);
@@ -9423,7 +9461,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         for (DesktopSlotHit slot : slots) {
             String group = "slots";
             WorkspaceControllerSlots.Cell cell = null;
-            if (window.kind == WindowKind.INVENTORY || window.kind == WindowKind.CREATIVE) {
+            SlotHit physical = window.kind == WindowKind.CHARACTER
+                ? window.slotAt(this, slot.x() + 8.0, slot.y() + 8.0) : null;
+            if (physical != null && physical.sessionId() != DesktopPackets.PLAYER_MENU_SESSION) {
+                // Embedded menus reuse native slot IDs. Their controller identities
+                // must stay separate from the player's armor/crafting cells.
+                group = "embedded:" + physical.sessionId();
+                cell = new WorkspaceControllerSlots.Cell(slot.y() - window.y, slot.x() - window.x);
+            } else if (window.kind == WindowKind.INVENTORY || window.kind == WindowKind.CREATIVE) {
                 group = slot.menuSlotId() >= 36 && slot.menuSlotId() <= 44 ? "hotbar" : "inventory-grid";
             } else if (window.kind == WindowKind.CHARACTER) {
                 if (slot.menuSlotId() >= 5 && slot.menuSlotId() <= 8) {
@@ -9458,9 +9503,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             String group = "controls";
             // API controls and virtual grids may use any spacing. Quantizing them to
             // 20px cells merges adjacent 18px entries and makes D-pad movement skip items.
-            int row = window.apiDefinition != null || window.kind == WindowKind.JEI ? control.y() - window.y + control.height() / 2
+            int row = window.apiDefinition != null || !window.builtinAttachments.isEmpty() || window.kind == WindowKind.JEI ? control.y() - window.y + control.height() / 2
                 : Math.floorDiv(control.y() - window.y, 20);
-            int column = window.apiDefinition != null || window.kind == WindowKind.JEI ? control.x() - window.x + control.width() / 2
+            int column = window.apiDefinition != null || !window.builtinAttachments.isEmpty() || window.kind == WindowKind.JEI ? control.x() - window.x + control.width() / 2
                 : Math.floorDiv(control.x() - window.x, 20);
             double x = control.x() + control.width() / 2.0;
             double y = control.y() + control.height() / 2.0;
@@ -9476,7 +9521,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 group = "loom-patterns";
                 row = (control.y() - loomContentY(window) - LOOM_PATTERN_GRID_Y) / LOOM_PATTERN_BUTTON_SIZE;
                 column = (control.x() - loomContentX(window) - LOOM_PATTERN_GRID_X) / LOOM_PATTERN_BUTTON_SIZE;
-            } else if (menu instanceof MerchantMenu && this.merchantTradeRowsContain(window, x, y)) {
+            } else if (menu instanceof DesktopMerchantAccess && this.merchantTradeRowsContain(window, x, y)) {
                 group = "merchant-trades";
                 row = (control.y() - merchantContentY(window) - MERCHANT_TRADE_LIST_Y) / MERCHANT_TRADE_ROW_HEIGHT;
                 column = 0;
@@ -9503,8 +9548,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             return layout.maxScrollRow() > 0;
         }
         AbstractContainerMenu menu = window.containerMenu();
-        if (menu instanceof MerchantMenu merchant && this.merchantTradeListContains(window, x, y))
-            return merchantMaxScroll(merchant.getOffers()) > 0;
+        if (menu instanceof DesktopMerchantAccess merchant && this.merchantTradeListContains(window, x, y))
+            return merchantMaxScroll(merchant.desktopOffers()) > 0;
         if (menu instanceof StonecutterMenu stonecutter && this.stonecutterRecipeGridContains(window, x, y))
             return stonecutterMaxScroll(stonecutter) > 0;
         if (menu instanceof LoomMenu loom && this.shouldDisplayLoomPatterns(loom) && this.loomPatternGridContains(window, x, y))
@@ -9536,11 +9581,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.rememberCreativeWindow(window);
             return old != window.creativeScrollRow;
         }
-        if (window.containerMenu() instanceof MerchantMenu merchant && this.merchantTradeListContains(window, x, y)) {
+        if (window.containerMenu() instanceof DesktopMerchantAccess merchant && this.merchantTradeListContains(window, x, y)) {
             int row = Math.floorDiv((int) y - merchantContentY(window) - MERCHANT_TRADE_LIST_Y, MERCHANT_TRADE_ROW_HEIGHT);
             if (edgeOnly && !workspaceScrollEdge(row, MERCHANT_VISIBLE_TRADES, direction)) return false;
             int old = window.merchantScroll;
-            window.merchantScroll = clamp(old + direction, 0, merchantMaxScroll(merchant.getOffers()));
+            window.merchantScroll = clamp(old + direction, 0, merchantMaxScroll(merchant.desktopOffers()));
             return old != window.merchantScroll;
         }
         if (window.containerMenu() instanceof StonecutterMenu stonecutter && this.stonecutterRecipeGridContains(window, x, y)) {
@@ -9605,7 +9650,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.setCreativeSharedCarried(ItemStack.EMPTY, "controller-catalog-clear");
             return;
         }
-        Inventory inventory = this.minecraft.player.getInventory();
+        Inventory inventory = com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(this.minecraft.player);
         int requested = fullStack ? source.getMaxStackSize() : 1;
         // Prefer compatible existing stacks, then empty slots. Never replace an unrelated occupied slot.
         for (int pass = 0; pass < 2 && requested > 0; pass++) {
@@ -9629,7 +9674,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (this.minecraft == null || this.minecraft.player == null || this.minecraft.gameMode == null
                 || !this.minecraft.player.isCreative() || window == null || window.kind != WindowKind.CREATIVE
                 || hit == null || hit.sessionId() != DesktopPackets.PLAYER_MENU_SESSION
-                || hit.menu() != this.playerMenu() || hit.slot().container != this.minecraft.player.getInventory()
+                || hit.menu() != this.playerMenu() || hit.slot().container != com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(this.minecraft.player)
                 || hit.slot().getContainerSlot() < 0 || hit.slot().getContainerSlot() >= HOTBAR_SLOT_COUNT
                 || hit.slotId() != 36 + hit.slot().getContainerSlot()
                 || DesktopItemSourceLocks.isSlotLocked(this.minecraft.player, hit.slot())) return false;
@@ -9682,8 +9727,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                     loomContentY(window) + LOOM_PATTERN_GRID_Y + i / LOOM_PATTERN_COLUMNS * LOOM_PATTERN_BUTTON_SIZE,
                     LOOM_PATTERN_BUTTON_SIZE, LOOM_PATTERN_BUTTON_SIZE));
             }
-        } else if (menu instanceof MerchantMenu merchant) {
-            for (int i = 0; i < MERCHANT_VISIBLE_TRADES && window.merchantScroll + i < merchant.getOffers().size(); i++) {
+        } else if (menu instanceof DesktopMerchantAccess merchant) {
+            for (int i = 0; i < MERCHANT_VISIBLE_TRADES && window.merchantScroll + i < merchant.desktopOffers().size(); i++) {
                 result.add(new DesktopWindowBounds(merchantContentX(window) + MERCHANT_TRADE_LIST_X,
                     merchantContentY(window) + MERCHANT_TRADE_LIST_Y + i * MERCHANT_TRADE_ROW_HEIGHT, MERCHANT_TRADE_LIST_WIDTH, MERCHANT_TRADE_ROW_HEIGHT));
             }
@@ -9807,7 +9852,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private @Nullable RecipeBookButtonRect recipeBookButtonRect(InventoryWindow window) {
+        if (window.kind == WindowKind.CHARACTER) for (var attachment : window.builtinAttachments) {
+            var bounds = attachment.recipeBookButtonBounds(this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
+            if (bounds.isPresent()) { var rect = (DesktopWindowBounds) bounds.get(); return new RecipeBookButtonRect(rect.x(), rect.y()); }
+        }
         if (this.contextualRecipePresentation && this.externallyPresented()) return null;
+        // Native hosts paint and route their own controls. A built-in toggle at
+        // vanilla coordinates can otherwise steal clicks from a moved output.
+        if (window.apiDefinition instanceof com.salts_inventory_update.client.automatic.AutomaticNativeWindow) return null;
 
         if (window.kind == WindowKind.CHARACTER && this.vanillaRecipeBookMenu(window) != null) {
             int contentX = characterContentX(window);
@@ -10069,8 +10121,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private Component vanillaTitleBarTitle(AbstractContainerMenu menu, Component fallback) {
-        if (menu instanceof MerchantMenu) {
-            return Component.translatable("merchant.trades");
+        if (menu instanceof DesktopMerchantAccess) {
+            // Its Trades caption shares a content heading line with name/level.
+            return fallback;
         }
         if (menu instanceof SmithingMenu) {
             return Component.literal("Smithing");
@@ -10712,6 +10765,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void applyCustomPayload(DesktopCustomPayload payload) {
+        var embeddedSession = this.session(payload.sessionId());
+        var embeddedHandler = embeddedSession == null ? null : DesktopClientApi.embeddedSessionHandler(embeddedSession.menu());
+        if (embeddedHandler != null) {
+            try { ((com.salts_inventory_update.api.client.desktop.DesktopEmbeddedSessionHandler) embeddedHandler)
+                    .customPayload(embeddedSession.embeddedView(), payload.channel(), payload.data()); }
+            catch (RuntimeException failure) {
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                    com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                    embeddedSession.sourceKey(), "embedded-payload", "Embedded session callback failed", failure);
+            }
+            return;
+        }
         InventoryWindow window = this.windowForSession(payload.sessionId());
         if (window == null || window.apiDefinition == null) {
             DesktopDebug.trace("client custom payload dropped desktop={} session={} channel={} reason=no-api-window", this.desktopId, payload.sessionId(), payload.channel());
@@ -13841,7 +13906,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         if (player == null || !slot.isActive() || slot.isFake() || !slot.hasItem() || !slot.mayPickup(player)) {
             return false;
         }
-        if (slot.container == player.getInventory()) {
+        if (slot.container == com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(player)) {
             int containerSlot = slot.getContainerSlot();
             return containerSlot >= 0 && containerSlot < Inventory.INVENTORY_SIZE;
         }
@@ -14832,15 +14897,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int minX = window.containerMinSlotX();
         int minY = window.containerMinSlotY();
         DesktopDebug.detail(
-            "client render container desktop={} window={} menu={} slots={} api={} resizable={} false={} mouse={},{}",
+            "client render container desktop={} window={} menu={} slots={} api={} resizable={} mouse={},{}",
             this.desktopId,
             window.debugName(),
             safeMenuKey(menu),
             slots.size(),
             definitionName(window.apiDefinition),
             this.isResizableStorageWindow(window),
-            false,
-            false,
             mouseX,
             mouseY
         );
@@ -14907,7 +14970,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.renderEnchantmentWindow(graphics, window, slots, enchantmentMenu, mouseX, mouseY);
             return;
         }
-        if (menu instanceof MerchantMenu merchantMenu) {
+        if (menu instanceof DesktopMerchantAccess merchantMenu) {
             this.renderMerchantWindow(graphics, window, slots, merchantMenu, mouseX, mouseY);
             return;
         }
@@ -17120,22 +17183,19 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         GuiGraphicsExtractor graphics,
         InventoryWindow window,
         List<Slot> slots,
-        MerchantMenu menu,
+        DesktopMerchantAccess menu,
         int mouseX,
         int mouseY
     ) {
         int contentX = merchantContentX(window);
         int contentY = merchantContentY(window);
-        MerchantOffers offers = menu.getOffers();
+        MerchantOffers offers = menu.desktopOffers();
         this.clampMerchantState(window, offers);
 
-        graphics.fill(
-            contentX + MERCHANT_TRADE_LIST_X,
-            contentY + MERCHANT_TRADE_LIST_Y,
-            contentX + MERCHANT_TRADE_LIST_X + MERCHANT_TRADE_LIST_WIDTH,
-            contentY + MERCHANT_TRADE_LIST_Y + MERCHANT_VISIBLE_TRADES * MERCHANT_TRADE_ROW_HEIGHT,
-            this.uiColor(0x33111111)
-        );
+        Component caption = Component.translatable("merchant.trades");
+        graphics.text(this.font, caption,
+            contentX + MERCHANT_TRADE_LIST_X + (MERCHANT_TRADE_LIST_WIDTH - this.font.width(caption)) / 2,
+            contentY + MERCHANT_DETAIL_LABEL_Y, this.uiColor(COLOR_WINDOW_TITLE), false);
 
         for (int row = 0; row < MERCHANT_VISIBLE_TRADES; row++) {
             int tradeIndex = window.merchantScroll + row;
@@ -17149,14 +17209,18 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         this.renderMerchantScrollbar(graphics, window, offers, contentX, contentY);
-        this.renderMerchantDetailLabel(graphics, window, menu, contentX, contentY);
-        this.renderContainerSlotIfPresent(graphics, slots, MERCHANT_PAYMENT_1_SLOT, contentX + MERCHANT_PAYMENT_1_X, contentY + MERCHANT_SLOT_Y, mouseX, mouseY);
-        this.renderContainerSlotIfPresent(graphics, slots, MERCHANT_PAYMENT_2_SLOT, contentX + MERCHANT_PAYMENT_2_X, contentY + MERCHANT_SLOT_Y, mouseX, mouseY);
+        int detailX = contentX + MERCHANT_DETAIL_OFFSET_X;
+        int detailY = contentY + MERCHANT_DETAIL_OFFSET_Y;
+        this.renderMerchantDetailLabel(graphics, window, menu, detailX, detailY);
+        this.renderContainerSlotIfPresent(graphics, slots, MERCHANT_PAYMENT_1_SLOT, detailX + MERCHANT_PAYMENT_1_X, detailY + MERCHANT_SLOT_Y, mouseX, mouseY);
+        this.renderContainerSlotIfPresent(graphics, slots, MERCHANT_PAYMENT_2_SLOT, detailX + MERCHANT_PAYMENT_2_X, detailY + MERCHANT_SLOT_Y, mouseX, mouseY);
 
         MerchantOffer selectedOffer = window.merchantSelectedTrade >= 0 && window.merchantSelectedTrade < offers.size() ? offers.get(window.merchantSelectedTrade) : null;
-        this.renderMerchantSlotArrow(graphics, contentX + MERCHANT_TRADE_ARROW_X, contentY + MERCHANT_TRADE_ARROW_Y, selectedOffer != null && selectedOffer.isOutOfStock());
-        this.renderContainerSlotIfPresent(graphics, slots, MERCHANT_RESULT_SLOT, contentX + MERCHANT_RESULT_X, contentY + MERCHANT_SLOT_Y, mouseX, mouseY);
-        this.renderMerchantProgress(graphics, menu, selectedOffer, contentX, contentY);
+        this.renderMerchantSlotArrow(graphics, detailX + MERCHANT_TRADE_ARROW_X, detailY + MERCHANT_TRADE_ARROW_Y, selectedOffer != null && selectedOffer.isOutOfStock());
+        this.renderLargeContainerSlotIfPresent(graphics, slots, MERCHANT_RESULT_SLOT,
+            detailX + MERCHANT_RESULT_X - LARGE_SLOT_ITEM_OFFSET,
+            detailY + MERCHANT_SLOT_Y - LARGE_SLOT_ITEM_OFFSET, mouseX, mouseY);
+        this.renderMerchantProgress(graphics, menu, selectedOffer, detailX, detailY);
     }
 
     private void renderMerchantSlotArrow(GuiGraphicsExtractor graphics, int x, int y, boolean outOfStock) {
@@ -17187,14 +17251,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         );
     }
 
-    private void renderMerchantDetailLabel(GuiGraphicsExtractor graphics, InventoryWindow window, MerchantMenu menu, int contentX, int contentY) {
-        int traderLevel = clamp(menu.getTraderLevel(), 1, VillagerData.MAX_VILLAGER_LEVEL);
+    private void renderMerchantDetailLabel(GuiGraphicsExtractor graphics, InventoryWindow window, DesktopMerchantAccess menu, int contentX, int contentY) {
+        int traderLevel = clamp(menu.desktopLevel(), 1, VillagerData.MAX_VILLAGER_LEVEL);
         Component level = Component.translatable("merchant.level." + traderLevel);
-        String label = Component.translatable("merchant.title", window.title, level).getString();
+        Component customHeading = menu.desktopHeading();
+        String label = customHeading == null ? window.title.getString() + " - " + level.getString() : customHeading.getString();
         int labelMaxWidth = MERCHANT_CONTENT_WIDTH - MERCHANT_PROGRESS_X;
         label = this.truncatedTitle(label, labelMaxWidth);
         int x = contentX + MERCHANT_PROGRESS_X + Math.max(0, (labelMaxWidth - this.font.width(label)) / 2) - 3;
-        graphics.text(this.font, label, x, contentY + MERCHANT_DETAIL_LABEL_Y, this.uiColor(COLOR_WINDOW_TITLE), false);
+        graphics.text(this.font, label, x, contentY + MERCHANT_DETAIL_LABEL_Y, this.uiColor(customHeading == null ? COLOR_WINDOW_TITLE : menu.desktopHeadingColor()), false);
     }
 
     private void renderMerchantTradeRow(
@@ -17207,40 +17272,34 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int mouseX,
         int mouseY
     ) {
-        boolean hovered = contains(mouseX, mouseY, rowX, rowY, MERCHANT_TRADE_LIST_WIDTH, MERCHANT_TRADE_ROW_HEIGHT - 1);
+        boolean hovered = contains(mouseX, mouseY, rowX, rowY, MERCHANT_TRADE_LIST_WIDTH, MERCHANT_TRADE_ROW_HEIGHT);
         boolean selected = tradeIndex == window.merchantSelectedTrade;
-        int background = selected ? 0x665E8B57 : hovered ? 0x44FFFFFF : 0x22111111;
-        if (offer.isOutOfStock()) {
-            background = selected ? 0x665B4A4A : hovered ? 0x44A08080 : 0x22330000;
-        }
-
-        graphics.fill(rowX, rowY, rowX + MERCHANT_TRADE_LIST_WIDTH, rowY + MERCHANT_TRADE_ROW_HEIGHT - 1, this.uiColor(background));
-        graphics.outline(rowX, rowY, MERCHANT_TRADE_LIST_WIDTH, MERCHANT_TRADE_ROW_HEIGHT - 1, this.uiColor(selected ? 0xFF111111 : 0x55111111));
+        // The same nine-sliced native button used by vanilla's 88x20 offers.
+        // Keep the selection outline and red X visible even for exhausted rows.
+        this.blitSprite(graphics, ResourceLocation.withDefaultNamespace(selected || hovered ? "widget/button_highlighted" : "widget/button"), rowX, rowY, MERCHANT_TRADE_LIST_WIDTH, MERCHANT_TRADE_ROW_HEIGHT);
+        if (selected) graphics.outline(rowX, rowY, MERCHANT_TRADE_LIST_WIDTH, MERCHANT_TRADE_ROW_HEIGHT, this.uiColor(0xFFFFFFFF));
 
         ItemStack costA = offer.getCostA();
         ItemStack baseCostA = offer.getBaseCostA();
-        this.renderMerchantOfferItem(graphics, costA, rowX + 4, rowY + 2);
+        this.renderMerchantOfferItem(graphics, costA, rowX + 5, rowY + 1);
         if (!ItemStack.matches(costA, baseCostA) || costA.getCount() != baseCostA.getCount()) {
-            this.blitSprite(graphics, MERCHANT_DISCOUNT_STRIKETHROUGH_SPRITE, rowX + 11, rowY + 14, 9, 2);
+            this.blitSprite(graphics, MERCHANT_DISCOUNT_STRIKETHROUGH_SPRITE, rowX + 12, rowY + 13, 9, 2);
         }
 
         ItemStack costB = offer.getCostB();
         if (!costB.isEmpty()) {
-            this.renderMerchantOfferItem(graphics, costB, rowX + 25, rowY + 2);
+            this.renderMerchantOfferItem(graphics, costB, rowX + 35, rowY + 1);
         }
 
         this.blitSprite(graphics,
             offer.isOutOfStock() ? MERCHANT_TRADE_ARROW_OUT_OF_STOCK_SPRITE : MERCHANT_TRADE_ARROW_SPRITE,
-            rowX + 50,
-            rowY + 5,
+            rowX + 55,
+            rowY + 4,
             MERCHANT_TRADE_ARROW_WIDTH,
             MERCHANT_TRADE_ARROW_HEIGHT
         );
-        this.renderMerchantOfferItem(graphics, offer.getResult(), rowX + 68, rowY + 2);
+        this.renderMerchantOfferItem(graphics, offer.getResult(), rowX + 68, rowY + 1);
 
-        if (offer.isOutOfStock()) {
-            graphics.fill(rowX, rowY, rowX + MERCHANT_TRADE_LIST_WIDTH, rowY + MERCHANT_TRADE_ROW_HEIGHT - 1, this.uiColor(0x44000000));
-        }
     }
 
     private void renderMerchantOfferItem(GuiGraphicsExtractor graphics, ItemStack stack, int x, int y) {
@@ -17264,9 +17323,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         this.blitSprite(graphics, sprite, x, thumbY, MERCHANT_TRADE_SCROLLBAR_WIDTH, thumbHeight);
     }
 
-    private void renderMerchantProgress(GuiGraphicsExtractor graphics, MerchantMenu menu, @Nullable MerchantOffer selectedOffer, int contentX, int contentY) {
-        int traderLevel = menu.getTraderLevel();
-        if (!menu.showProgressBar() || !VillagerData.canLevelUp(traderLevel)) {
+    private void renderMerchantProgress(GuiGraphicsExtractor graphics, DesktopMerchantAccess menu, @Nullable MerchantOffer selectedOffer, int contentX, int contentY) {
+        int traderLevel = menu.desktopLevel();
+        if (!menu.desktopShowProgress() || !VillagerData.canLevelUp(traderLevel)) {
             return;
         }
 
@@ -17275,27 +17334,31 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         int minXp = VillagerData.getMinXpPerLevel(traderLevel);
         int maxXp = VillagerData.getMaxXpPerLevel(traderLevel);
         int xpRange = Math.max(1, maxXp - minXp);
-        int currentXp = clamp(menu.getTraderXp() - minXp, 0, xpRange);
-        int previewXp = selectedOffer == null || selectedOffer.isOutOfStock() ? 0 : selectedOffer.getXp();
-        int futureXp = Math.max(currentXp, clamp(menu.getFutureTraderXp() - minXp, 0, xpRange));
-        futureXp = Math.max(futureXp, clamp(menu.getTraderXp() + previewXp - minXp, 0, xpRange));
-        int currentWidth = clamp(Math.round(MERCHANT_PROGRESS_WIDTH * (currentXp / (float) xpRange)), 0, MERCHANT_PROGRESS_WIDTH);
-        int futureWidth = clamp(Math.round(MERCHANT_PROGRESS_WIDTH * (futureXp / (float) xpRange)), 0, MERCHANT_PROGRESS_WIDTH);
-        graphics.fill(x, y, x + MERCHANT_PROGRESS_WIDTH, y + MERCHANT_PROGRESS_HEIGHT, this.uiColor(0xFF252A33));
-        graphics.fill(x, y, x + futureWidth, y + MERCHANT_PROGRESS_HEIGHT, this.uiColor(0xFF6B6B37));
-        graphics.fill(x, y, x + currentWidth, y + MERCHANT_PROGRESS_HEIGHT, this.uiColor(0xFF4A9F4A));
-        graphics.outline(x, y, MERCHANT_PROGRESS_WIDTH, MERCHANT_PROGRESS_HEIGHT, this.uiColor(0xFF111111));
+        this.blitSprite(graphics, ResourceLocation.withDefaultNamespace("container/villager/experience_bar_background"), x, y, MERCHANT_PROGRESS_WIDTH, MERCHANT_PROGRESS_HEIGHT);
+        if (menu.desktopXp() < minXp) return;
+        float pixelsPerXp = 100.0F / xpRange;
+        int currentWidth = clamp(Mth.floor((menu.desktopXp() - minXp) * pixelsPerXp), 0, 100);
+        this.blitSprite(graphics, ResourceLocation.withDefaultNamespace("container/villager/experience_bar_current"), MERCHANT_PROGRESS_WIDTH, MERCHANT_PROGRESS_HEIGHT, 0, 0, x, y, currentWidth + 1, MERCHANT_PROGRESS_HEIGHT);
+        // Vanilla reports a prospective XP delta only when valid payment makes
+        // an actual result available. Merely selecting an offer is not a preview.
+        int previewXp = selectedOffer == null || selectedOffer.isOutOfStock() ? 0 : menu.desktopFutureXp();
+        int previewWidth = clamp(Mth.floor(previewXp * pixelsPerXp), 0, 100 - currentWidth);
+        if (previewWidth > 0) {
+            this.blitSprite(graphics, ResourceLocation.withDefaultNamespace("container/villager/experience_bar_result"), MERCHANT_PROGRESS_WIDTH, 3, 0, 0, x + currentWidth + 1, y + 1, previewWidth, 3);
+        }
     }
 
     private @Nullable SlotHit merchantSlotAt(InventoryWindow window, List<Slot> slots, AbstractContainerMenu menu, double mouseX, double mouseY) {
-        int contentX = merchantContentX(window);
-        int contentY = merchantContentY(window);
+        int contentX = merchantContentX(window) + MERCHANT_DETAIL_OFFSET_X;
+        int contentY = merchantContentY(window) + MERCHANT_DETAIL_OFFSET_Y;
         int[] containerSlots = {MERCHANT_PAYMENT_1_SLOT, MERCHANT_PAYMENT_2_SLOT, MERCHANT_RESULT_SLOT};
         int[] slotXs = {contentX + MERCHANT_PAYMENT_1_X, contentX + MERCHANT_PAYMENT_2_X, contentX + MERCHANT_RESULT_X};
         int[] slotYs = {contentY + MERCHANT_SLOT_Y, contentY + MERCHANT_SLOT_Y, contentY + MERCHANT_SLOT_Y};
 
         for (int i = 0; i < containerSlots.length; i++) {
-            if (!contains(mouseX, mouseY, slotXs[i] - 1, slotYs[i] - 1, SLOT_SIZE, SLOT_SIZE)) {
+            int inset = containerSlots[i] == MERCHANT_RESULT_SLOT ? LARGE_SLOT_ITEM_OFFSET : 1;
+            int size = containerSlots[i] == MERCHANT_RESULT_SLOT ? LARGE_SLOT_TEXTURE_SIZE : SLOT_SIZE;
+            if (!contains(mouseX, mouseY, slotXs[i] - inset, slotYs[i] - inset, size, size)) {
                 continue;
             }
 
@@ -17309,11 +17372,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private int merchantTradeAt(InventoryWindow window, double mouseX, double mouseY) {
-        if (!(window.containerMenu() instanceof MerchantMenu merchantMenu) || !this.merchantTradeRowsContain(window, mouseX, mouseY)) {
+        if (!(window.containerMenu() instanceof DesktopMerchantAccess merchantMenu) || !this.merchantTradeRowsContain(window, mouseX, mouseY)) {
             return -1;
         }
 
-        MerchantOffers offers = merchantMenu.getOffers();
+        MerchantOffers offers = merchantMenu.desktopOffers();
         this.clampMerchantState(window, offers);
         int contentY = merchantContentY(window);
         int row = ((int) mouseY - contentY - MERCHANT_TRADE_LIST_Y) / MERCHANT_TRADE_ROW_HEIGHT;
@@ -17324,11 +17387,11 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private @Nullable MerchantOfferItemHit merchantOfferItemAt(double mouseX, double mouseY) {
         for (int i = this.windows.size() - 1; i >= 0; i--) {
             InventoryWindow window = this.windows.get(i);
-            if (!(window.containerMenu() instanceof MerchantMenu merchantMenu) || !this.merchantTradeRowsContain(window, mouseX, mouseY)) {
+            if (!(window.containerMenu() instanceof DesktopMerchantAccess merchantMenu) || !this.merchantTradeRowsContain(window, mouseX, mouseY)) {
                 continue;
             }
 
-            MerchantOffers offers = merchantMenu.getOffers();
+            MerchantOffers offers = merchantMenu.desktopOffers();
             this.clampMerchantState(window, offers);
             int contentX = merchantContentX(window);
             int contentY = merchantContentY(window);
@@ -17341,13 +17404,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             MerchantOffer offer = offers.get(tradeIndex);
             int rowX = contentX + MERCHANT_TRADE_LIST_X;
             int rowY = contentY + MERCHANT_TRADE_LIST_Y + row * MERCHANT_TRADE_ROW_HEIGHT;
-            if (contains(mouseX, mouseY, rowX + 4, rowY + 2, SLOT_ITEM_SIZE, SLOT_ITEM_SIZE)) {
+            if (contains(mouseX, mouseY, rowX + 5, rowY + 1, SLOT_ITEM_SIZE, SLOT_ITEM_SIZE)) {
                 return new MerchantOfferItemHit(offer.getCostA());
             }
-            if (!offer.getCostB().isEmpty() && contains(mouseX, mouseY, rowX + 25, rowY + 2, SLOT_ITEM_SIZE, SLOT_ITEM_SIZE)) {
+            if (!offer.getCostB().isEmpty() && contains(mouseX, mouseY, rowX + 35, rowY + 1, SLOT_ITEM_SIZE, SLOT_ITEM_SIZE)) {
                 return new MerchantOfferItemHit(offer.getCostB());
             }
-            if (contains(mouseX, mouseY, rowX + 68, rowY + 2, SLOT_ITEM_SIZE, SLOT_ITEM_SIZE)) {
+            if (contains(mouseX, mouseY, rowX + 68, rowY + 1, SLOT_ITEM_SIZE, SLOT_ITEM_SIZE)) {
                 return new MerchantOfferItemHit(offer.getResult());
             }
         }
@@ -17372,7 +17435,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             mouseY,
             merchantContentX(window) + MERCHANT_TRADE_LIST_X,
             merchantContentY(window) + MERCHANT_TRADE_LIST_Y,
-            MERCHANT_TRADE_LIST_WIDTH + MERCHANT_TRADE_SCROLLBAR_WIDTH + 1,
+            MERCHANT_TRADE_SCROLLBAR_X + MERCHANT_TRADE_SCROLLBAR_WIDTH - MERCHANT_TRADE_LIST_X,
             MERCHANT_VISIBLE_TRADES * MERCHANT_TRADE_ROW_HEIGHT
         );
     }
@@ -17436,7 +17499,9 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private static int merchantContentY(InventoryWindow window) {
-        return window.y + TOP_BAR_HEIGHT + MERCHANT_CONTENT_MARGIN;
+        // Use the existing vertical margins for the shared native heading line.
+        // Four complete 20px rows still fit in the unchanged window height.
+        return window.y + TOP_BAR_HEIGHT;
     }
 
     private static int smithingContentX(InventoryWindow window) {
@@ -17726,6 +17791,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private void renderCharacterWindow(GuiGraphicsExtractor graphics, InventoryWindow window, int mouseX, int mouseY) {
+        com.salts_inventory_update.api.client.desktop.DesktopRenderContext<AbstractContainerMenu, Void> builtinContext = this.apiContext(window, graphics, mouseX, mouseY);
+        for (var attachment : window.builtinAttachments) if (attachment.replacesContent(builtinContext)) {
+            attachment.renderContent(builtinContext);
+            var guide = this.recipeBookButtonRect(window);
+            if (guide != null) this.renderRecipeBookButton(graphics, window, guide.x(), guide.y(), mouseX, mouseY);
+            this.renderCharacterEffects(graphics, window);
+            return;
+        }
         AbstractContainerMenu menu = this.playerMenu();
         int contentX = characterContentX(window);
         int contentY = characterContentY(window);
@@ -19128,8 +19201,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
 
         private MouseTweaksSlot(SlotHit hit) {
             super(InventoryExpansion.isExtraSlot(hit.slot())
-                    || DesktopMenuBindings.isPlayerInventorySlot(hit.menu(), hit.slot(), InventoryDesktopScreen.this.player().getInventory())
-                        ? InventoryDesktopScreen.this.player().getInventory() : hit.slot().container,
+                    || DesktopMenuBindings.isPlayerInventorySlot(hit.menu(), hit.slot(), com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(InventoryDesktopScreen.this.player()))
+                        ? com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(InventoryDesktopScreen.this.player()) : hit.slot().container,
                 InventoryExpansion.isExtraSlot(hit.slot()) ? InventoryExpansion.storageOrder(hit.slot())
                     : DesktopMenuBindings.physicalIndex(hit.menu(), hit.slot()), hit.x(), hit.y());
             this.hit = hit;
@@ -19601,6 +19674,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         }
 
         @Override public java.util.Optional<DesktopWindowBounds> builtinSlotBounds(int id) {
+            for (var attachment : this.window.builtinAttachments) {
+                var bounds = attachment.builtinSlotBounds((com.salts_inventory_update.api.client.desktop.DesktopWindowContext) this, id);
+                if (bounds.isPresent()) return bounds;
+            }
             if (this.window.kind != WindowKind.CHARACTER) return java.util.Optional.empty();
             int x, y;
             if (id >= 5 && id <= 8) { x = CHARACTER_ARMOR_X; y = CHARACTER_ARMOR_Y + (id - 5) * SLOT_SIZE; }
@@ -20655,6 +20732,14 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             for (int i = this.builtinAttachments.size() - 1; i >= 0; i--) {
                 var attachment = this.builtinAttachments.get(i);
                 var context = screen.apiContext(this, null, (int) mouseX, (int) mouseY);
+                var embedded = attachment.embeddedSlotAt(context, mouseX, mouseY);
+                if (embedded != null) {
+                    var owned = screen.session(embedded.sessionId());
+                    if (owned != null && DesktopClientApi.embeddedSessionHandler(owned.menu()) != null) {
+                        Slot nativeSlot = DesktopMenuBindings.slot(owned.menu(), embedded.hit().menuSlotId());
+                        if (nativeSlot != null) return new SlotHit(nativeSlot, embedded.hit().menuSlotId(), embedded.hit().x(), embedded.hit().y(), owned.menu(), owned.sessionId());
+                    }
+                }
                 DesktopSlotHit hit = attachment.slotAt(context, mouseX, mouseY);
                 if (hit != null) {
                     AbstractContainerMenu menu = (AbstractContainerMenu) context.model();
@@ -20734,7 +20819,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 if (menu instanceof EnchantmentMenu) {
                     return screen.enchantmentSlotAt(this, slots, menu, mouseX, mouseY);
                 }
-                if (menu instanceof MerchantMenu) {
+                if (menu instanceof DesktopMerchantAccess) {
                     return screen.merchantSlotAt(this, slots, menu, mouseX, mouseY);
                 }
 

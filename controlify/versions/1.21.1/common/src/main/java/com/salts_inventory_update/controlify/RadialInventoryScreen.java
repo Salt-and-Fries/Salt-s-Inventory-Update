@@ -21,7 +21,7 @@ import net.minecraft.world.inventory.*;
 
 /** A normal modal container screen for Controlify; all actual slot actions stay in Salt's API. */
 public final class RadialInventoryScreen extends AbstractContainerScreen<InventoryMenu>
-        implements WorkspaceContainerScreen, ScreenProcessorProvider, ISnapBehaviour {
+        implements WorkspaceContainerScreen, ScreenProcessorProvider, ISnapBehaviour, com.salts_inventory_update.api.client.recipebrowser.DesktopRecipeBrowserScreen {
     private final SaltsControlifyClient owner;
     private WorkspaceLayout<UUID> placements;
     private UUID hoveredWindow;

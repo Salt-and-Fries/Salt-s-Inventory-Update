@@ -1,0 +1,188 @@
+package com.salts_inventory_update.compat.ae2.nativeview;
+
+import appeng.client.gui.AEBaseScreen;
+import appeng.client.gui.style.BackgroundGenerator;
+import com.salts_inventory_update.api.client.desktop.DesktopInsets;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+
+/** Version-local native composition; the original menu/widgets still own every action. */
+public final class ExtendedAeLayout {
+    private ExtendedAeLayout() { }
+    /** Give directly-created native controls stable AE2 desktop registrations. */
+    public static void prepare(AEBaseScreen<?> screen){
+        if(!ExtendedAePackets.supports(screen))return;
+        String name=screen.getClass().getSimpleName();
+        if(name.equals("GuiPatternModifier")){
+            int i=0;for(Object b:(java.util.List<?>)ExtendedAePackets.field(screen,"multiBtns"))retain(screen,"siu_multi"+i++,b,0,0);
+            int j=0;for(Object b:(java.util.List<?>)ExtendedAePackets.field(screen,"propertyBtns"))retain(screen,"siu_property"+j++,b,0,0);
+            retain(screen,"siu_replace",ExtendedAePackets.field(screen,"replace"),0,0);
+            retain(screen,"siu_clone",ExtendedAePackets.field(screen,"clone"),0,0);
+        }else if(name.contains("PatternTerminal")||name.contains("WirelessExPAT")){
+            Object searchMode=ExtendedAePackets.optionalField(screen,"searchMode");
+            if(searchMode!=null)retain(screen,"siu_search_mode",searchMode,73,17);
+        }else if(name.equals("GuiConfigModifier")){
+            if(ExtendedAePackets.optionalField(screen.getMenu(),"mode")==null){
+                Object host=ExtendedAePackets.field(screen.getMenu(),"host");
+                setField(screen.getMenu(),"mode",ExtendedAePackets.invoke(ExtendedAePackets.invoke(host,"getSettings"),"mode"));
+            }
+            retain(screen,"siu_mode",ExtendedAePackets.field(screen,"changeMode"),12,22);
+        }else if(name.equals("GuiVoidCell")){
+            int i=0;for(String field:new String[]{"trash","matterBall","singularity"})retain(screen,"siu_"+field,ExtendedAePackets.field(screen,field),22+32*i++,20);
+        }else if(name.equals("GuiWirelessConnector")){
+            retain(screen,"siu_status",ExtendedAePackets.field(screen,"statusIcon"),152,-4);
+            Object highlight=ExtendedAePackets.optionalField(screen,"highlight");
+            if(highlight!=null)retain(screen,"siu_highlight",highlight,152,24);
+            retain(screen,"siu_remote",ExtendedAePackets.field(screen,"remote"),24,76);
+        }else if(name.equals("GuiWirelessHub")){
+            for(String field:new String[]{"remotes","highlightBtn","disconnectBtn"}){
+                int i=0;for(Object b:(Object[])ExtendedAePackets.field(screen,field))retain(screen,"siu_"+field+i++,b,0,0);
+            }
+        }
+    }
+    @SuppressWarnings("unchecked") private static void retain(AEBaseScreen<?> screen,String name,Object widget,int x,int y){
+        var container=(appeng.client.gui.WidgetContainer)ExtendedAePackets.field(screen,"widgets");
+        var retained=(java.util.Map<?,?>)ExtendedAePackets.field(container,"widgets");
+        if(retained.get(name)==widget)return;
+        // Native PAT rebuilds row controls after searches and provider updates.
+        // AE2 26 rejects duplicate ids even when the new control replaces it.
+        retained.remove(name);
+        var styles=(java.util.Map<String,appeng.client.gui.style.WidgetStyle>)ExtendedAePackets.field(screen.getStyle(),"widgets");
+        var style=new appeng.client.gui.style.WidgetStyle();style.setLeft(x);style.setTop(y);
+        styles.put(name,style);
+        if(widget instanceof net.minecraft.client.gui.components.AbstractWidget button){style.setWidth(button.getWidth());style.setHeight(button.getHeight());container.add(name,button);}
+        else if(widget instanceof appeng.client.gui.ICompositeWidget composite)container.add(name,composite);
+        else throw new IllegalStateException("Unsupported Extended AE control "+widget.getClass().getName());
+    }
+    public static boolean fixed(AEBaseScreen<?> screen){return ExtendedAePackets.supports(screen)&&screen.getStyle().getTerminalStyle()==null;}
+    public static int inset(Object owner){
+        if(!ExtendedAePackets.supports(owner))return 0;
+        String n=owner.getClass().getSimpleName();
+        return n.contains("PatternTerminal")||n.contains("WirelessExPAT")||n.contains("UWirelessExPAT")||n.contains("ExCraftingTerminal")||n.contains("WirelessExCT")||n.equals("SetAmount")?0:10;
+    }
+    public static DesktopInsets insets(AEBaseScreen<?> screen){return new DesktopInsets(0,inset(screen),0,0);}
+    public static boolean background(AEBaseScreen<?> screen,GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){
+        if(!fixed(screen))return false;
+        var body=screen.desktopContentBounds();int x=body.getX(),y=body.getY(),w=body.getWidth(),h=body.getHeight(),top=inset(screen);
+        BackgroundGenerator.draw(w,h+top,g,x,y-top);
+        int extra=screen.getClass().getSimpleName().equals("GuiPatternModifier")?16:0;
+        int first=screen.getClass().getSimpleName().contains("PatternTerminal")||screen.getClass().getSimpleName().contains("WirelessExPAT")?23:14;
+        int bottom=screen.getClass().getSimpleName().equals("GuiAssemblerMatrix")?104:h-4;
+        // Extra frame height belongs to the upgrade tray; never expose the old player inventory.
+        if(screen.getClass().getSimpleName().equals("GuiExIOPort")||screen.getClass().getSimpleName().equals("GuiModExportBus"))
+            bottom=Math.min(bottom,screen.getStyle().getBackground().getSrcHeight()-screen.desktopInventoryCut()-4);
+        if(screen.getClass().getSimpleName().contains("PatternTerminal")||screen.getClass().getSimpleName().contains("WirelessExPAT"))bottom=Math.min(bottom,30+18*((Number)ExtendedAePackets.field(screen,"visibleRows")).intValue());
+        g.enableScissor(x+4,y+first+extra,x+w-4,y+bottom);
+        try{screen.drawBG(g,x,y+extra,mouseX,mouseY,delta);}finally{g.disableScissor();}
+        return true;
+    }
+    public static void drawBackground(AEBaseScreen<?> screen,GuiGraphicsExtractor g,int x,int y,int mx,int my,float dt){
+        if(!background(screen,g,mx,my,dt))screen.drawBG(g,x,y,mx,my,dt);
+    }
+    private static final class NativeBottom {
+        static final java.lang.reflect.Method DRAW=find();
+        private static java.lang.reflect.Method find(){
+            try{var method=AEBaseScreen.class.getDeclaredMethod("drawDesktopBottomEdge",GuiGraphicsExtractor.class);method.setAccessible(true);return method;}
+            catch(ReflectiveOperationException error){throw new IllegalStateException("Missing AE2 desktop footer",error);}
+        }
+    }
+    public static void drawBottom(AEBaseScreen<?> screen,GuiGraphicsExtractor g){
+        if(fixed(screen))return;
+        try{NativeBottom.DRAW.invoke(screen,g);}catch(ReflectiveOperationException error){throw new IllegalStateException("Native AE2 desktop footer",error);}
+    }
+    public static boolean patternLabels(Object owner,GuiGraphicsExtractor g){
+        if(!(owner instanceof AEBaseScreen<?> screen)||!screen.isDesktopHosted()||!screen.getClass().getSimpleName().equals("GuiPatternModifier"))return false;
+        int page=((Number)ExtendedAePackets.field(screen.getMenu(),"page")).intValue();String mode=page==0?"multiply":page==1?"replace":page==2?"properties":"clone";
+        var font=Minecraft.getInstance().font;g.text(font,Component.translatable("gui.siu.extendedae.mode."+mode),8,14,screen.getStyle().getColor(appeng.client.gui.style.PaletteColor.DEFAULT_TEXT_COLOR).toARGB(),false);
+        if(page==2){
+            g.text(font,Component.translatable("gui.extendedae.pattern_modifier.pattern_mode.substitute"),8,38,screen.getStyle().getColor(appeng.client.gui.style.PaletteColor.DEFAULT_TEXT_COLOR).toARGB(),false);
+            g.text(font,Component.translatable("gui.extendedae.pattern_modifier.pattern_mode.fluid_substitute"),8,60,screen.getStyle().getColor(appeng.client.gui.style.PaletteColor.DEFAULT_TEXT_COLOR).toARGB(),false);
+        }
+        if(page==3){String namespace="extendedae";
+            g.text(font,Component.translatable("gui."+namespace+".pattern_modifier.target"),52,41,screen.getStyle().getColor(appeng.client.gui.style.PaletteColor.DEFAULT_TEXT_COLOR).toARGB(),false);
+            g.text(font,Component.translatable("gui."+namespace+".pattern_modifier.blank"),52,78,screen.getStyle().getColor(appeng.client.gui.style.PaletteColor.DEFAULT_TEXT_COLOR).toARGB(),false);
+        }
+        return true;
+    }
+    /** These controls are created directly by the addon, outside AE2's named-widget table. */
+    public static void layout(AEBaseScreen<?> screen){
+        if(!ExtendedAePackets.supports(screen)||!screen.isDesktopHosted())return;
+        int x=screen.getGuiLeft(),y=screen.getGuiTop();String name=screen.getClass().getSimpleName();
+        restoreRaisedTabs(screen);
+        if(name.contains("PatternTerminal")||name.contains("WirelessExPAT")||name.contains("UWirelessExPAT")){
+            int rows=Math.max(2,(screen.desktopContentBounds().getHeight()-35)/18);
+            if(((Number)ExtendedAePackets.field(screen,"visibleRows")).intValue()!=rows){
+                setField(screen,"visibleRows",rows);ExtendedAePackets.invoke(screen,"resetScrollbar");
+            }
+        }
+        if(name.equals("GuiPatternModifier")){
+            Object multi=ExtendedAePackets.field(screen,"multiBtns");int i=0;
+            for(Object button:(java.util.List<?>)multi){int k=i++;position(button,x+(k==8?133:7+k%4*30),y+(k==8?42:k<4?32:54));}
+            i=0;for(Object button:(java.util.List<?>)ExtendedAePackets.field(screen,"propertyBtns")){int k=i++;position(button,x+(k%2==0?116:146),y+(k<2?32:54));}
+            position(ExtendedAePackets.field(screen,"replace"),x+123,y+42);
+            position(ExtendedAePackets.field(screen,"clone"),x+80,y+52);
+        }else if(name.equals("GuiWirelessConnector")){
+            retain(screen,"siu_highlight",ExtendedAePackets.field(screen,"highlight"),152,24);
+            position(ExtendedAePackets.field(screen,"statusIcon"),x+152,y-4);
+            position(ExtendedAePackets.field(screen,"highlight"),x+152,y+24);
+            Object remote=ExtendedAePackets.field(screen,"remote");position(remote,x+24,y+76);ExtendedAePackets.invoke(remote,"refreshBounds");
+        }else if(name.equals("GuiWirelessHub")){
+            Object[]remotes=(Object[])ExtendedAePackets.field(screen,"remotes"),highlight=(Object[])ExtendedAePackets.field(screen,"highlightBtn"),disconnect=(Object[])ExtendedAePackets.field(screen,"disconnectBtn");
+            for(int i=0;i<remotes.length;i++){int px=x+(i<4?37:120),py=y+44+i%4*28;position(remotes[i],px,py);position(highlight[i],px-18,py);position(disconnect[i],px+18,py);}
+        }
+    }
+    /** A native corner tab is positioned against the outer frame, not its inset work area. */
+    @SuppressWarnings("unchecked") private static void restoreRaisedTabs(AEBaseScreen<?> screen){
+        int lift=inset(screen);if(lift==0)return;
+        var container=ExtendedAePackets.field(screen,"widgets");
+        var widgets=(java.util.Map<String,net.minecraft.client.gui.components.AbstractWidget>)ExtendedAePackets.field(container,"widgets");
+        var styles=(java.util.Map<String,appeng.client.gui.style.WidgetStyle>)ExtendedAePackets.field(screen.getStyle(),"widgets");
+        for(var entry:widgets.entrySet()){
+            var widget=entry.getValue();var style=styles.get(entry.getKey());
+            if(widget instanceof appeng.client.gui.widgets.TabButton&&style!=null&&style.getTop()!=null&&style.getTop()<0
+                    &&widget.getX()>=screen.getGuiLeft()+screen.desktopContentBounds().getWidth()/2)
+                widget.setY(screen.getGuiTop()+style.getTop()-lift);
+        }
+    }
+    public static boolean virtualSlot(net.minecraft.world.inventory.Slot slot){
+        for(Class<?> type=slot.getClass();type!=null;type=type.getSuperclass())
+            if(type.getName().endsWith(".AssemblerMatrixSlot")||type.getName().endsWith(".OutputResultSlot"))return true;
+        return false;
+    }
+    /** Addon action slots aren't vanilla pickup slots; invoke their native override. */
+    public static boolean clickActionSlot(AEBaseScreen<?> screen,net.minecraft.client.input.MouseButtonEvent event){
+        var slot=screen.desktopSlotAt(event.x(),event.y());
+        if(slot==null||!virtualSlot(slot)||event.button()<0||event.button()>2)return false;
+        var kind=event.button()==2?net.minecraft.world.inventory.ContainerInput.CLONE:
+                net.minecraft.client.Minecraft.getInstance().hasShiftDown()?net.minecraft.world.inventory.ContainerInput.QUICK_MOVE:net.minecraft.world.inventory.ContainerInput.PICKUP;
+        // Match the protected Minecraft override by its descriptor, since its
+        // published name differs between Fabric intermediary and Forge SRG.
+        for(Class<?> type=screen.getClass();type!=null&&type.getName().contains(".extendedae.");type=type.getSuperclass())
+            for(var method:type.getDeclaredMethods())if(method.getReturnType()==void.class&&java.util.Arrays.equals(method.getParameterTypes(),new Class<?>[]{net.minecraft.world.inventory.Slot.class,int.class,int.class,net.minecraft.world.inventory.ContainerInput.class}))try{
+                method.setAccessible(true);method.invoke(screen,slot,slot.index,event.button(),kind);return true;
+            }catch(ReflectiveOperationException error){throw new IllegalStateException("Native Extended AE action slot",error);}
+        throw new IllegalStateException("Missing Extended AE action-slot override");
+    }
+    public static void afterForeground(Object owner){
+        if(!(owner instanceof AEBaseScreen<?> screen)||!screen.isDesktopHosted())return;
+        Object buttons=ExtendedAePackets.optionalField(screen,"highlightBtns");
+        if(buttons instanceof java.util.Map<?,?> map){
+            var styles=(java.util.Map<?,?>)ExtendedAePackets.field(screen.getStyle(),"widgets");
+            var container=ExtendedAePackets.field(screen,"widgets");
+            var retained=(java.util.Map<?,?>)ExtendedAePackets.field(container,"widgets");
+            var names=new java.util.HashSet<String>();for(Object key:map.keySet())names.add("siu_highlight_row_"+key);
+            retained.keySet().removeIf(key->key instanceof String name&&name.startsWith("siu_highlight_row_")&&!names.contains(name));
+            styles.keySet().removeIf(key->key instanceof String name&&name.startsWith("siu_highlight_row_")&&!names.contains(name));
+            for(var entry:map.entrySet()){
+                var button=(net.minecraft.client.gui.components.AbstractWidget)entry.getValue();
+                retain(screen,"siu_highlight_row_"+entry.getKey(),button,button.getX()-screen.getGuiLeft(),button.getY()-screen.getGuiTop());
+            }
+        }
+    }
+    private static void setField(Object owner,String name,Object value){for(Class<?> type=owner.getClass();type!=null;type=type.getSuperclass())try{var f=type.getDeclaredField(name);f.setAccessible(true);f.set(owner,value);return;}catch(NoSuchFieldException ignored){}catch(ReflectiveOperationException e){throw new IllegalStateException(e);}throw new IllegalStateException(name);}
+    private static void position(Object widget,int x,int y){
+        if(widget instanceof net.minecraft.client.gui.components.AbstractWidget nativeWidget) nativeWidget.setPosition(x,y);
+        else ExtendedAePackets.invoke(widget,"setPosition",x,y);
+    }
+}

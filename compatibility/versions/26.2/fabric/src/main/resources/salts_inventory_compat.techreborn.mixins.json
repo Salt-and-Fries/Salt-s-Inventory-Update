@@ -1,0 +1,20 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.compat.techreborn.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "RebornSyncMixin",
+    "RebornNetworkMixin",
+    "RebornBlockPosMixin",
+    "RebornReceiverMixin"
+  ],
+  "client": [
+    "RebornScreenMixin",
+    "RebornClientPacketMixin",
+    "RebornFaceCaptureMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

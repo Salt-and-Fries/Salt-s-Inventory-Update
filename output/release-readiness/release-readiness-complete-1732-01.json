@@ -1,0 +1,44 @@
+{
+  "status": "all70-release-readiness-requirements-complete-independent-review-approved",
+  "completed": "2026-11-10T16:53:09.287403+00:00",
+  "release_manifest": {
+    "file": "output/release-readiness/release-manifest-final.json",
+    "sha256": "581506e5c7833cc0f42ed6e21248a3ba568b2a2ff61112c0e4b6c31dfbbf2541"
+  },
+  "progress": {
+    "file": "output/release-readiness/progress.json",
+    "sha256": "2a72f697ea56330468dbc2e666a22a4112c7a0a444ae142fcfb51b251d8b370f"
+  },
+  "independent_review": {
+    "file": "output/release-readiness/independent-review-completion-1731-01/approval.json",
+    "sha256": "17827eff41b26d5284c31f41084bffe382a99432d5e350b80b105687ecd8880a"
+  },
+  "source_identity": {
+    "pointer": {
+      "file": "output\\release-readiness\\candidate-current.json",
+      "sha256": "96a8a1ee9ce4f05c9fc72ee02178edf7b51531325eb2d5cd97c02c5f48f14911"
+    },
+    "source_snapshot": {
+      "file": "output\\release-readiness\\candidate-build16-final-documented-1682-01.json",
+      "sha256": "07afd57ae0edbf8f18a08b22bbbfaddd0bc52b02ad0b6bebebbfdd27d20f7eef"
+    },
+    "source_tree_sha256": "40a6721c4c1163e0ba44176b24ae213c6524df23235c0a09d156447473253178",
+    "source_archive": {
+      "file": "output\\release-readiness\\candidate-build16-final-documented-1682-01.review-source.zip",
+      "sha256": "2573ebea0c242ffa3d267c312e7fd39bdc88445359f94a0e03deb45efce6deee",
+      "purpose": "Immutable local review/reproduction inputs, including QA fixtures. Not staged to public dist or published by this task."
+    },
+    "artifact_integrity": {
+      "file": "output\\release-readiness\\candidate-integrity.json",
+      "sha256": "bf5c2378b03e76ec6d72e2aa4843ffaee30ba2a7979ca372bc7f76c7923357b7"
+    },
+    "scope": "Exact recorded source and 36 artifact identities; gameplay qualification remains separate."
+  },
+  "shipping_jars": 36,
+  "targets": 12,
+  "committed": false,
+  "pushed": false,
+  "tagged": false,
+  "published": false,
+  "scope": "Original69requirements supported within their preserved scopes, plus explicit independent review gate70 approved. No unresolved release-blocking SIU entries in the authoritative coverage. Known upstream and representative multiplayer limitations remain documented. No publication authorized or performed."
+}

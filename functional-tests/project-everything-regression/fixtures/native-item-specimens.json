@@ -1,0 +1,35 @@
+{
+  "scope": "Initialized player-fixture inputs copied from authoritative native item state. No publisher menu slots are seeded. Exact publisher hashes are required; exact full-data conservation assertions remain in force.",
+  "specimens": [
+    {
+      "item": "simplyswords:brimstone_claymore",
+      "publisher_sha256": [
+        "b374382303e5ecdfa2b0e1156dd3b9a03af189279d2bf7ccd3c7017374757ad9"
+      ],
+      "snbt": "{AttributeModifiers:[{Amount:5.0d,AttributeName:\"minecraft:generic.attack_damage\",Name:\"Weapon modifier\",Operation:0,Slot:\"mainhand\",UUID:[I;-885041709,1683771192,-1533567981,-1556236849]},{Amount:-3.099999964237213d,AttributeName:\"minecraft:generic.attack_speed\",Name:\"Weapon modifier\",Operation:0,Slot:\"mainhand\",UUID:[I;-98353636,1098926181,-1340359474,-1752847197]}],Damage:0,SimplySwordsAwakeningDamageScale:0.5f,SimplySwordsAwakeningSpeedScale:0.75f,SimplySwordsComponents:{\"simplyswords:awakening\":0,\"simplyswords:gem_power\":{has_nether_power:1b,has_runic_power:1b,nether_power:\"simplyswords:empty_power\",runic_power:\"simplyswords:empty_power\"},\"simplyswords:weapon_implicit\":{implicit_id:\"simplyswords:claymore_deflect\",value:15,weapon_type:\"simplyswords:claymore\"}},siu_regression_marker:42}",
+      "native_evidence": "build/remaining-ui-audit/gameplay/1.20.1-fabric-siu-project-everything-all-03-c1-1/regression-failures/registry-simplyswords-runic_forge/regression-state.json",
+      "native_evidence_sha256": "cf30de11f28b8f4ff47ba53c017d96c09a9d37cf95278d94fb25626b84d6c7d7",
+      "reason": "The native UniqueWeaponItem inventory tick initializes awakening, implicit, socket and attribute data. Use the native initialized specimen for an exact preservation test."
+    },
+    {
+      "item": "bountiful:decree",
+      "publisher_sha256": [
+        "e1fc030ed37cd23ff4d83da90061217a44e4d1011cd523204592c2332d55d74c"
+      ],
+      "snbt": "{\"bountiful:decree_data\":'{\"ids\":[\"inventor\"]}',siu_regression_marker:42}",
+      "native_evidence": "build/remaining-ui-audit/gameplay/1.20.1-fabric-siu-project-everything-all-03-c1-1/regression-failures/atlas-bountiful/regression-state.json",
+      "native_evidence_sha256": "acf7b83e7e2166d5bf16c7bc6286a3da7c3f2219ab03b34288216d4f44853dda",
+      "reason": "The native decree data getter initializes the decree ids. Use the native initialized decree for an exact preservation test."
+    },
+    {
+      "item": "ad_astra:energizer",
+      "publisher_sha256": [
+        "a8e35d0c92e50b13fb9cd07217f55f580e64a14178f82fcdfea47109a1678246"
+      ],
+      "snbt": "{BotariumData:{Energy:0L},siu_regression_marker:42}",
+      "native_evidence": "build/remaining-ui-audit/gameplay/1.20.1-fabric-siu-project-everything-all-03-c6-6/regression-failures/registry-powah-energy_discharger_starter/regression-state.json",
+      "native_evidence_sha256": "718e2e4359575d5acaf53e068a6e23262a6d2adcec069e9161de6896e8d10e89",
+      "reason": "Native energy access initializes the empty energizer with BotariumData.Energy=0. Use its authoritative initialized zero-energy player specimen; subsequent transfer checks still compare the complete data exactly."
+    }
+  ]
+}

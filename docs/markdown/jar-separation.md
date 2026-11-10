@@ -35,6 +35,14 @@ qualified references and accidental packaged core classes.
 
 ## Core input interoperability
 
+Core also owns global redundant-sort button suppression requested for native
+screens and detached windows alike. Its optional `CharmInventoryTidyingMixin`
+prevents Charm from attaching its duplicate tidying controls; it contributes no
+inventory UI, transport or publisher implementation. The production archive
+guard permits exactly this Core-owned hook and its directory entry. It continues
+to reject every other `compat` implementation entry. Compatibility-to-Core
+source and bytecode checks have no exception for it or any integration.
+
 Core 0.1.5 also owns optional Mouse Tweaks input interoperability. This bridges the desktop screen and its existing public-API slot geometry to Mouse Tweaks' published custom-screen interface; it does not provide a third-party inventory UI. Core + Mouse Tweaks works without Compatibility. Optional mixins are selected by API bytecode presence, and upstream classes are compile-only dependencies. Neither Mouse Tweaks nor Compatibility is bundled or required by Core. The compatibility providers and their API-only dependency direction remain unchanged.
 
 ## Module and packaging contract

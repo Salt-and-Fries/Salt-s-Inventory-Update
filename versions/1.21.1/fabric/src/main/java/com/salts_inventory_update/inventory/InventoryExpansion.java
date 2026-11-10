@@ -59,7 +59,7 @@ public final class InventoryExpansion {
     }
 
     public static boolean isMainInventorySlot(net.minecraft.world.entity.player.Player player, Slot slot) {
-        return (slot.container == player.getInventory()
+        return (slot.container == com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(player)
             && slot.getContainerSlot() >= VANILLA_MAIN_START
             && slot.getContainerSlot() < VANILLA_MAIN_END)
             || isExtraSlot(slot);
@@ -112,7 +112,7 @@ public final class InventoryExpansion {
     }
 
     public static boolean canStowRecipeGrid(net.minecraft.world.entity.player.Player player, List<ItemStack> incoming) {
-        net.minecraft.world.entity.player.Inventory inventory = player.getInventory();
+        net.minecraft.world.entity.player.Inventory inventory = com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(player);
         List<ItemStack> main = new ArrayList<>(inventory.items.size());
         for (ItemStack stack : inventory.items) {
             main.add(stack.copy());

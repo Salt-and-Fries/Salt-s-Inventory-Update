@@ -32,6 +32,7 @@ These integrations reuse each mod's original artwork and controls, with small la
 
 | Mod | Supported Minecraft versions and loaders |
 | --- | --- |
+| Kibe | 1.20.1 Fabric; 1.21.1 Fabric/NeoForge |
 | Oxidized | 1.20.1 and 1.21.1 Fabric |
 | Brick & Mortar | 1.20.1 Fabric/Forge; 1.21.1 Fabric/NeoForge |
 | Expanded Delight | 1.20.1 Fabric; 1.21.1 NeoForge |

@@ -1,0 +1,361 @@
+[
+  {
+    "id": "vinery-fermentation-barrel-1.4.41",
+    "screen": "net.satisfy.vinery.client.gui.FermentationBarrelGui",
+    "bounds": {
+      "height": 166,
+      "width": 176,
+      "y": 142,
+      "x": 232
+    },
+    "slots": [
+      {
+        "x": 39,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": false,
+        "index": 0,
+        "y": 17
+      },
+      {
+        "x": 67,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": false,
+        "index": 1,
+        "y": 58
+      },
+      {
+        "x": 85,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": false,
+        "index": 2,
+        "y": 58
+      },
+      {
+        "x": 103,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": false,
+        "index": 3,
+        "y": 58
+      },
+      {
+        "x": 123,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": false,
+        "index": 4,
+        "y": 58
+      },
+      {
+        "x": 103,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": false,
+        "index": 5,
+        "y": 17
+      },
+      {
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 6,
+        "y": 84
+      },
+      {
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 7,
+        "y": 84
+      },
+      {
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 8,
+        "y": 84
+      },
+      {
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 9,
+        "y": 84
+      },
+      {
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 10,
+        "y": 84
+      },
+      {
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 11,
+        "y": 84
+      },
+      {
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 12,
+        "y": 84
+      },
+      {
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 13,
+        "y": 84
+      },
+      {
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 14,
+        "y": 84
+      },
+      {
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 15,
+        "y": 102
+      },
+      {
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 16,
+        "y": 102
+      },
+      {
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 17,
+        "y": 102
+      },
+      {
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 18,
+        "y": 102
+      },
+      {
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 19,
+        "y": 102
+      },
+      {
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 20,
+        "y": 102
+      },
+      {
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 21,
+        "y": 102
+      },
+      {
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 22,
+        "y": 102
+      },
+      {
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 23,
+        "y": 102
+      },
+      {
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 24,
+        "y": 120
+      },
+      {
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 25,
+        "y": 120
+      },
+      {
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 26,
+        "y": 120
+      },
+      {
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 27,
+        "y": 120
+      },
+      {
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 28,
+        "y": 120
+      },
+      {
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 29,
+        "y": 120
+      },
+      {
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 30,
+        "y": 120
+      },
+      {
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 31,
+        "y": 120
+      },
+      {
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 32,
+        "y": 120
+      },
+      {
+        "x": 8,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 33,
+        "y": 142
+      },
+      {
+        "x": 26,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 34,
+        "y": 142
+      },
+      {
+        "x": 44,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 35,
+        "y": 142
+      },
+      {
+        "x": 62,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 36,
+        "y": 142
+      },
+      {
+        "x": 80,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 37,
+        "y": 142
+      },
+      {
+        "x": 98,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 38,
+        "y": 142
+      },
+      {
+        "x": 116,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 39,
+        "y": 142
+      },
+      {
+        "x": 134,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 40,
+        "y": 142
+      },
+      {
+        "x": 152,
+        "item": "minecraft:air",
+        "count": 0,
+        "player": true,
+        "index": 41,
+        "y": 142
+      }
+    ],
+    "widgets": [
+      {
+        "visible": true,
+        "width": 70,
+        "type": "dev.ftb.mods.ftblibrary.sidebar.SidebarGroupGuiButton",
+        "y": 0,
+        "x": 0,
+        "height": 36,
+        "message": ""
+      }
+    ]
+  }
+]

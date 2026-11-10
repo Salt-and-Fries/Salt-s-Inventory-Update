@@ -1,0 +1,12 @@
+{
+  "default": "travelersbackpack:standard",
+  "upgraded": "travelersbackpack:standard{Tier:4,StorageSlots:99,UpgradeSlots:6,ToolSlots:6,ShowToolSlots:1b,Inventory:{Size:99,Items:[{Slot:0,id:\"minecraft:stone\",Count:12b},{Slot:12,id:\"minecraft:bread\",Count:8b}]},Upgrades:{Size:6,Items:[{Slot:0,id:\"travelersbackpack:crafting_upgrade\",Count:1b,tag:{TabOpen:0b}},{Slot:1,id:\"travelersbackpack:tanks_upgrade\",Count:1b,tag:{TabOpen:0b}},{Slot:2,id:\"travelersbackpack:furnace_upgrade\",Count:1b,tag:{TabOpen:0b}},{Slot:3,id:\"travelersbackpack:pickup_upgrade\",Count:1b,tag:{TabOpen:0b}},{Slot:4,id:\"travelersbackpack:magnet_upgrade\",Count:1b,tag:{TabOpen:0b}},{Slot:5,id:\"travelersbackpack:void_upgrade\",Count:1b,tag:{TabOpen:0b}}]},ToolsInventory:{Size:6,Items:[{Slot:0,id:\"minecraft:iron_pickaxe\",Count:1b},{Slot:1,id:\"minecraft:iron_axe\",Count:1b}]}}",
+  "upgrades": [
+    "crafting",
+    "tanks",
+    "furnace",
+    "pickup",
+    "magnet",
+    "void"
+  ]
+}

@@ -7,11 +7,13 @@
   "refmap": "salts_inventory_update.refmap.json",
   "mixins": [
     "accessor.AbstractContainerMenuAccessor",
+    "accessor.MerchantMenuAccessMixin",
     "InventoryExpansionInventoryMixin",
     "InventoryMenuMixin",
     "PlayerInventoryExpansionMixin",
     "server.ChestOpenersCounterMixin",
     "accessor.PlayerEnderChestContainerAccessor",
+    "accessor.PlayerInventoryAccessor",
     "server.ChestMenuEnderChestMixin",
     "server.CraftingMenuMixin",
     "server.ServerPlayerInventoryExpansionMixin",
@@ -21,6 +23,7 @@
     "server.FurnaceCookingCounterMixin"
   ],
   "client": [
+    "client.compat.CharmInventoryTidyingMixin",
     "client.ClientPacketListenerInventoryExpansionMixin",
     "client.GameRendererMixin",
     "client.GuiMixin",
@@ -40,6 +43,8 @@
     "client.AutomaticRecipeButtonMixin",
     "client.AutomaticRecipeBookMixin",
     "client.MultiPlayerGameModeMixin",
+    "client.NativeSessionPayloadMixin",
+    "client.NativeSessionCloseMixin",
     "client.MouseHandlerAccessor",
     "client.MouseHandlerHandoffMixin",
     "client.RecipeBookComponentAccessor",

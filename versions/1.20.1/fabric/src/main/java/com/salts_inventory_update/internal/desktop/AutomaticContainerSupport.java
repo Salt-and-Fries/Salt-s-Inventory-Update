@@ -23,7 +23,8 @@ public final class AutomaticContainerSupport {
         // A repeated homogeneous grid with no machine data is a storage candidate.
         // Isolated bait/filter/result cells are excluded rather than reordered.
         if (!((com.salts_inventory_update.mixin.accessor.AbstractContainerMenuAccessor)menu).salts_inventory_update$getDataSlots().isEmpty()) return;
-        var slots = menu.slots.stream().filter(s -> s.container != inventory && s.isActive()).toList();
+        var slots = menu.slots.stream().filter(s -> s.container != inventory && s.isActive()
+            &&s.x>=0&&s.y>=0&&!com.salts_inventory_update.api.desktop.DesktopMenuBindings.isVirtualSlot(menu,s)).toList();
         var groups = new java.util.IdentityHashMap<net.minecraft.world.Container,
             java.util.Map<Grid, java.util.List<net.minecraft.world.inventory.Slot>>>();
         for (var slot : slots) groups.computeIfAbsent(slot.container, unused -> new java.util.HashMap<>())
@@ -81,14 +82,19 @@ public final class AutomaticContainerSupport {
         MenuType<?> type = menu.getType();
         if (type == null || DesktopServerApi.hasWindowSupport(type)) return false;
         var id = BuiltInRegistries.MENU.getKey(type);
-        if (id == null || id.getNamespace().equals("minecraft")) return false;
+        // Some upstream mods register their own menus in the default namespace. Only an
+        // explicit native-template capability may opt those menus into automatic transport.
+        if (id == null || id.getNamespace().equals("minecraft") && !described) return false;
         int playerTop = Integer.MAX_VALUE, machineBottom = -1;
         for (var slot : menu.slots) {
             if (!slot.isActive()) continue;
             if (slot.container == player.getInventory()) playerTop = Math.min(playerTop, slot.y);
             else if (slot.x >= 0 && slot.y >= 0) machineBottom = Math.max(machineBottom, slot.y + 17);
         }
-        return machineBottom > 0 && (described || playerTop != Integer.MAX_VALUE && machineBottom < playerTop);
+        // Explicit native templates can represent inventory configuration tools
+        // whose controls have no owned item slots. Structural fallback remains
+        // restricted to an upper machine area with a separate player inventory.
+        return described || machineBottom > 0 && playerTop != Integer.MAX_VALUE && machineBottom < playerTop;
     }
     public static Consumer<FriendlyByteBuf> openingWriter(MenuProvider provider, ServerPlayer player) {
         Method method = unique(provider.getClass(), void.class, ServerPlayer.class, FriendlyByteBuf.class);
@@ -96,7 +102,9 @@ public final class AutomaticContainerSupport {
     }
     public static AbstractContainerMenu create(MenuType<?> type, int id, Inventory inventory, byte[] data) {
         Method method = Arrays.stream(type.getClass().getMethods())
-            .filter(m -> AbstractContainerMenu.class.isAssignableFrom(m.getReturnType()))
+            // Some loader extensions declare an unbounded generic T, whose
+            // concrete method erases to Object (e.g. Moonlight's Fabric factory).
+            .filter(m -> m.getReturnType()==Object.class || AbstractContainerMenu.class.isAssignableFrom(m.getReturnType()))
             .filter(m -> Arrays.equals(m.getParameterTypes(), new Class<?>[]{int.class, Inventory.class, FriendlyByteBuf.class}))
             .filter(m -> !m.isBridge()).findFirst().orElse(null);
         if (method == null) return type.create(id, inventory);

@@ -43,10 +43,11 @@ public final class GearMenuBridge {
     }
     public static boolean ready(AbstractContainerMenu menu,boolean reforge) {
         if(reforge) {
-            return Boolean.TRUE.equals(ForeignMenuAccess.invoke(menu,"isReforgeReady"));
+            ForeignMenuAccess.invoke(menu,"updateResult");
+            return ForeignMenuAccess.flag(menu,"reforgeReady");
         }
         if(menu.slots.isEmpty()||!menu.getSlot(0).hasItem())return false;
-        return !((net.minecraft.world.item.ItemStack)ForeignMenuAccess.invoke(menu,"getUnlickedGem")).isEmpty()
+        return Boolean.TRUE.equals(ForeignMenuAccess.invoke(menu,"hasUnlinkedGem"))
             &&Boolean.TRUE.equals(ForeignMenuAccess.invoke(menu,"canLinkSameGem"));
     }
     private static final class ReadyState {

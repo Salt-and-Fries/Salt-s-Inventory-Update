@@ -22,8 +22,11 @@ public final class DesktopSortSlots {
         });
     }
     public static boolean isStorage(AbstractContainerMenu menu) {
+        var explicit=adapter(menu);
+        if(explicit!=null)return DesktopMenuBindings.all(menu).stream().anyMatch(slot->
+            !DesktopMenuBindings.isVirtualSlot(menu,slot)&&explicit.test(menu,slot));
         return menu instanceof ChestMenu || menu instanceof ShulkerBoxMenu
-            || menu instanceof HopperMenu || menu instanceof DispenserMenu || adapter(menu) != null
+            || menu instanceof HopperMenu || menu instanceof DispenserMenu
             || AutomaticContainerSupport.isStorage(menu);
     }
     private static BiPredicate<AbstractContainerMenu, Slot> adapter(AbstractContainerMenu menu) {

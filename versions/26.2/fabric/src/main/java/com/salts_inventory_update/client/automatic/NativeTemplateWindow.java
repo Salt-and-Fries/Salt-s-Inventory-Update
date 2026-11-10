@@ -40,7 +40,7 @@ public final class NativeTemplateWindow extends AutomaticNativeWindow {
         for(int i=0;i<s.screen.getMenu().slots.size();i++){
             var slot=s.screen.getMenu().getSlot(i);
             slots.add(new DesktopNativeView.Slot(i,new DesktopWindowBounds(slot.x-1,slot.y-1,18,18),
-                com.salts_inventory_update.api.desktop.DesktopMenuBindings.isPlayerInventorySlot(s.screen.getMenu(),slot,net.minecraft.client.Minecraft.getInstance().player.getInventory()),slot.isActive()));
+                com.salts_inventory_update.api.desktop.DesktopMenuBindings.isPlayerInventorySlot(s.screen.getMenu(),slot,com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(net.minecraft.client.Minecraft.getInstance().player)),slot.isActive()));
         }
         var widgets=new ArrayList<DesktopNativeView.Widget>();int index=0;
         for(var child:s.screen.children())if(child instanceof AbstractWidget w){
@@ -51,10 +51,13 @@ public final class NativeTemplateWindow extends AutomaticNativeWindow {
         return new DesktopNativeView(s.screen.getClass().getName(),new DesktopWindowBounds(0,0,Math.max(1,a.salts_inventory_update$nativeWidth()),Math.max(1,a.salts_inventory_update$nativeHeight())),
             new DesktopWindowBounds(l.x(),l.y(),l.width(),l.height()),slots,widgets);
     }
-    private <C> C extension(DesktopWindowContext<?,?> c) { return NativeTemplateContexts.view(c,consumerState,view); }
+    private <C> C extension(DesktopWindowContext<?,?> c) { return NativeTemplateContexts.view(c,consumerState,view,(x,y)->sourceAt(c,x,y)); }
     private <R> R call(Supplier<R> callback,R fallback) {
         if(template==null||failed)return fallback;
         try{return callback.get();}catch(RuntimeException failure){failed=true;DesktopDebug.warn("native template callback failed screen={} reason={}",view.screenType(),failure.toString());return fallback;}
+    }
+    private boolean retained(DesktopWindowContext<?,?> c,DesktopNativeView.Slot slot) {
+        return !slot.player()||call(()->template.retainPlayerSlot(extension(c),slot.menuSlotId()),false);
     }
     private void run(Runnable callback){call(()->{callback.run();return true;},false);}
     @Override public State createState(DesktopWindowSetupContext<AbstractContainerMenu> c) {
@@ -65,9 +68,10 @@ public final class NativeTemplateWindow extends AutomaticNativeWindow {
         run(()->template.prepareLayout(extension(c)));
         try {
             DesktopNativeLayout next=inspector.override(view);
-            if(next==null)next=call(()->template.nativeLayout(extension(c)),DesktopNativeLayout.automatic(view.automaticBounds()));
+            if(next==null)next=call(()->template.nativeLayout(extension(c)),null);
+            if(next==null)next=DesktopNativeLayout.automatic(view.automaticBounds());
             plan=Objects.requireNonNull(next,"native layout");
-            for(var slot:view.slots())if(!slot.player()&&slot.active())for(var region:plan.regions())
+            for(var slot:view.slots())if(retained(c,slot)&&slot.active())for(var region:plan.regions())
                 if(!region.covers(slot.bounds())&&region.pieces().stream().anyMatch(piece->DesktopNativeRegion.intersects(piece,slot.bounds())))
                     throw new IllegalArgumentException("Region "+region.id()+" partially clips real slot "+slot.menuSlotId()+"; include or hide the complete cell");
             layoutError="";
@@ -119,7 +123,16 @@ public final class NativeTemplateWindow extends AutomaticNativeWindow {
     @Override public Component title(DesktopWindowContext<AbstractContainerMenu,State> c){return call(()->template.title(extension(c)),c.originalTitle());}
     @Override public DesktopWindowOptions options(DesktopWindowContext<AbstractContainerMenu,State> c){return call(()->template.options(extension(c)),DesktopWindowOptions.DEFAULT);}
     @Override public boolean modal(DesktopWindowContext<AbstractContainerMenu,State> c){return call(()->template.modal(extension(c)),false);}
-    @Override public DesktopWindowDecoration decoration(DesktopWindowContext<AbstractContainerMenu,State> c){return call(()->template.decoration(extension(c)),null);}
+    @Override public DesktopWindowDecoration decoration(DesktopWindowContext<AbstractContainerMenu,State> c){
+        DesktopWindowDecoration renderer=call(()->template.decoration(extension(c)),null);
+        if(renderer==null)return null;
+        return new DesktopWindowDecoration<AbstractContainerMenu,State>() {
+            @Override public DesktopChromeMetrics metrics(){return renderer.metrics();}
+            @Override public void render(DesktopRenderContext<AbstractContainerMenu,State> draw,List<DesktopControlState> controls){
+                run(()->renderer.render(extension(draw),controls));
+            }
+        };
+    }
     @Override public DesktopWindowAttachment attachment(DesktopWindowContext<AbstractContainerMenu,State> c){return call(()->template.attachment(extension(c)),null);}
     @Override public List<DesktopPopup> popups(DesktopWindowContext<AbstractContainerMenu,State> c){return call(()->template.popups(extension(c)),List.of());}
     @Override public boolean dismissPopup(DesktopWindowContext<AbstractContainerMenu,State> c,String id,DesktopPopup.Dismissal why){return call(()->template.dismissPopup(extension(c),id,why),false);}
@@ -175,7 +188,10 @@ public final class NativeTemplateWindow extends AutomaticNativeWindow {
     @Override public DesktopSlotHit slotAt(DesktopSlotContext<AbstractContainerMenu,State> c,double x,double y){
         if(inspecting)return null;DesktopSlotHit custom=call(()->template.slotAt(extension(c),x,y),null);if(custom!=null)return custom;
         var point=sourceAt(c,x,y);if(point.isEmpty())return null;
-        for(var slot:view.slots())if(!slot.player()&&slot.active()&&DesktopNativeRegion.contains(slot.bounds(),point.get().x(),point.get().y())){
+        // Native screens dispatch active widgets before their underlying slots.
+        // A state such as Mowzie's Replenish button can cover an old input cell.
+        for(var widget:view.widgets())if(widget.visible()&&widget.active()&&DesktopNativeRegion.contains(widget.bounds(),point.get().x(),point.get().y()))return null;
+        for(var slot:view.slots())if(retained(c,slot)&&slot.active()&&DesktopNativeRegion.contains(slot.bounds(),point.get().x(),point.get().y())){
             var region=layout().regions().stream().filter(r->r.id().equals(point.get().regionId())).findFirst().orElseThrow();
             if(!region.covers(slot.bounds()))return null;
             return DesktopSlotHit.of(slot.menuSlotId(),regionX(c,region)+slot.bounds().x()-region.source().x()+1,
@@ -189,17 +205,17 @@ public final class NativeTemplateWindow extends AutomaticNativeWindow {
         var capture=DesktopNativeView.union(sourceBounds).orElseThrow();
         var point=inspecting?Optional.<DesktopNativeLayout.Point>empty():sourceAt(c,c.mouseX(),c.mouseY());
         int mx=point.map(p->(int)nativeX(s,p.x())).orElse(-10000),my=point.map(p->(int)nativeY(s,p.y())).orElse(-10000);
-        var frame=new AutomaticNativeScope.Frame(s.screen,s,c,null,s.layout,-a.salts_inventory_update$nativeLeft()-capture.x(),-a.salts_inventory_update$nativeTop()-capture.y());
+        var frame=new AutomaticNativeScope.Frame(s.screen,s,c,c instanceof DesktopInputContext<?,?> input?input:null,s.layout,-a.salts_inventory_update$nativeLeft()-capture.x(),-a.salts_inventory_update$nativeTop()-capture.y());
         try{s.buffer.capture(c,s,frame,capture,mx,my);}finally{s.endObservation();}
     }
     private void paintFragments(DesktopRenderContext<AbstractContainerMenu,State> c,boolean exterior) {
         for(var r:layout().regions())if(r.exterior()==exterior){
             var painted=r;
-            for(var slot:view.slots())if(!slot.player()&&slot.active()&&r.covers(slot.bounds())
+            for(var slot:view.slots())if(retained(c,slot)&&slot.active()&&r.covers(slot.bounds())
                 &&!call(()->template.nativeSlotBackground(extension(c),slot.menuSlotId()),true))painted=painted.cut(slot.bounds());
             for(var piece:painted.pieces())c.state().buffer.paint(c.nativeGraphics(),piece,
                 regionX(c,r)+piece.x()-r.source().x(),regionY(c,r)+piece.y()-r.source().y(),exterior?null:new DesktopWindowBounds(c.contentX(),c.contentY(),viewport(c).width(),viewport(c).height()));
-            for(var slot:view.slots())if(!slot.player()&&slot.active()&&r.covers(slot.bounds())){
+            for(var slot:view.slots())if(retained(c,slot)&&slot.active()&&r.covers(slot.bounds())){
                 var b=slot.bounds();int x=regionX(c,r)+b.x()-r.source().x()+1,y=regionY(c,r)+b.y()-r.source().y()+1;
                 if(call(()->template.nativeSlotBackground(extension(c),slot.menuSlotId()),true))c.texturelessSlot(slot.menuSlotId(),x,y);
                 else c.slot(slot.menuSlotId(),x,y);
@@ -256,20 +272,34 @@ public final class NativeTemplateWindow extends AutomaticNativeWindow {
         if(!inspecting&&p.isPresent()&&AutomaticNativeScope.call(inputFrame(c,c),()->c.state().screen.mouseScrolled(nativeX(c.state(),p.get().x()),nativeY(c.state(),p.get().y()),sx,sy)))return true;
         var l=layout();if(c.shiftDown()||sx!=0)scrollX+=(int)((sx!=0?-sx:-sy)*18);else scrollY-=(int)(sy*18);
         var vp=viewport(c);scrollX=Math.max(0,Math.min(scrollX,l.width()-vp.width()));scrollY=Math.max(0,Math.min(scrollY,l.height()-vp.height()));
-        return vp.horizontal()||vp.vertical();
+        // A native screen still owns its pixels when a wheel control reaches
+        // its limit and returns false. Do not turn that into world/hotbar input.
+        return p.isPresent()||vp.horizontal()||vp.vertical();
     }
     @Override public void mouseMoved(DesktopInputContext<AbstractContainerMenu,State> c,double x,double y){
         run(()->template.mouseMoved(extension(c),x,y));
         var p=inspecting?Optional.<DesktopNativeLayout.Point>empty():sourceAt(c,x,y);
         AutomaticNativeScope.call(inputFrame(c,c),()->{c.state().screen.mouseMoved(p.map(v->nativeX(c.state(),v.x())).orElse(-10000d),p.map(v->nativeY(c.state(),v.y())).orElse(-10000d));return null;});
     }
-    @Override public boolean keyPressed(DesktopInputContext<AbstractContainerMenu,State> c,KeyEvent e){if(inspecting&&inspector.key(e))return true;return call(()->template.keyPressed(extension(c),e),false)||super.keyPressed(c,e);}
+    private boolean nestedTextInput(DesktopWindowContext<?,?> c) {
+        return c.state() instanceof State s&&s.screen instanceof DesktopNativeTextInput input&&input.desktopNativeTextInputFocused();
+    }
+    @Override public boolean keyPressed(DesktopInputContext<AbstractContainerMenu,State> c,KeyEvent e){
+        if(inspecting&&inspector.key(e))return true;
+        if(call(()->template.keyPressed(extension(c),e),false))return true;
+        if(nestedTextInput(c))return AutomaticNativeScope.call(inputFrame(c,c),()->c.state().screen.keyPressed(e));
+        return super.keyPressed(c,e);
+    }
     @Override public boolean keyReleased(DesktopInputContext<AbstractContainerMenu,State> c,KeyEvent e){
         if(call(()->template.keyReleased(extension(c),e),false))return true;
         var focused=c.state().screen.getFocused();return focused!=null&&AutomaticNativeScope.call(inputFrame(c,c),()->focused.keyReleased(e));
     }
-    @Override public boolean charTyped(DesktopInputContext<AbstractContainerMenu,State> c,CharacterEvent e){return call(()->template.charTyped(extension(c),e),false)||super.charTyped(c,e);}
-    @Override public boolean wantsTextInput(DesktopWindowContext<AbstractContainerMenu,State> c){return call(()->template.wantsTextInput(extension(c)),false)||super.wantsTextInput(c);}
+    @Override public boolean charTyped(DesktopInputContext<AbstractContainerMenu,State> c,CharacterEvent e){
+        if(call(()->template.charTyped(extension(c),e),false))return true;
+        if(nestedTextInput(c))return AutomaticNativeScope.call(inputFrame(c,c),()->c.state().screen.charTyped(e));
+        return super.charTyped(c,e);
+    }
+    @Override public boolean wantsTextInput(DesktopWindowContext<AbstractContainerMenu,State> c){return call(()->template.wantsTextInput(extension(c)),false)||super.wantsTextInput(c)||nestedTextInput(c);}
     @Override public boolean appendTooltip(DesktopRenderContext<AbstractContainerMenu,State> c,int x,int y){return call(()->template.appendTooltip(extension(c),x,y),false)||super.appendTooltip(c,x,y);}
     @Override public RecipeBookComponent createRecipeBook(DesktopWindowContext<AbstractContainerMenu,State> c){var custom=call(()->template.createRecipeBook(extension(c)),null);return custom!=null?custom:super.createRecipeBook(c);}
     @Override public void customPayload(DesktopWindowContext<AbstractContainerMenu,State> c,Identifier channel,byte[] data){run(()->template.customPayload(extension(c),channel,data));}

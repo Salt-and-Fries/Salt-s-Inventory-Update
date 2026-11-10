@@ -1,5 +1,6 @@
 package com.salts_inventory_update.client;
 
+import com.salts_inventory_update.SaltsInventoryUpdate;
 import com.salts_inventory_update.api.client.desktop.DesktopMenuFactories;
 import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
 
@@ -215,7 +216,11 @@ public final class DesktopContainerClient {
                     openingData == null ? new byte[0] : openingData.data(),
                     openingData == null ? -1 : openingData.replacesSessionId());
             } catch (RuntimeException failure) {
-                if (payload.specialKind() != DesktopPackets.SPECIAL_AUTOMATIC_NATIVE) throw failure;
+                if (payload.specialKind() != DesktopPackets.SPECIAL_AUTOMATIC_NATIVE) {
+                    SaltsInventoryUpdate.LOGGER.error("[desktop] Failed to reconstruct desktop session {} ({})",
+                        payload.sessionId(), payload.title().getString(), failure);
+                    throw failure;
+                }
                 DesktopDebug.warn("client native reconstruction declined session={} reason={}", payload.sessionId(), failure.toString());
                 declineAutomaticWindow(payload.sessionId());
                 return;

@@ -1,0 +1,24 @@
+{
+  "includes": [
+    "../wireless_ex_pat.json"
+  ],
+  "desktop": {
+    "width": 195,
+    "height": 107,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.siu.extendedae.wireless_ex_pat"
+      },
+      "position": {
+        "left": 7,
+        "top": 6
+      }
+    }
+  }
+}

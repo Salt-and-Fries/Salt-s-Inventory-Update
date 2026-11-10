@@ -1,0 +1,7 @@
+{
+  "nativeVersion": "19.2.17",
+  "classes": [
+    "appeng/client/gui/widgets/CPUSelectionList"
+  ],
+  "dependencyReference": "https://github.com/ramidzkh/Applied-Botanics/blob/1.6.0-alpha.3/gradle.properties"
+}

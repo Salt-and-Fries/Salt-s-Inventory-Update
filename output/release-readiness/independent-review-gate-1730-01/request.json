@@ -1,0 +1,19 @@
+{
+  "status": "independent-context-free-review-running",
+  "requested": "2026-11-10T16:29:15.958905+00:00",
+  "agent": "/root/final_release_review_01",
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "xhigh",
+  "fork_turns": "none",
+  "prompt": {
+    "file": "build/release-readiness/final-independent-review-prompt.txt",
+    "sha256": "3944d1ec7631c7a8d3924fc3263bcedffd4f7ff1a42e43ca95e079c723092342"
+  },
+  "manifest": {
+    "file": "output/release-readiness/independent-review-gate-1730-01/manifest-before-review.json",
+    "sha256": "296b5ed6bb36deee3f482c250c56adf2405e148495cfca1c9931e21a7eee9abe"
+  },
+  "source_tree_sha256": "40a6721c4c1163e0ba44176b24ae213c6524df23235c0a09d156447473253178",
+  "reports": "output/release-readiness/independent-review-final-01/",
+  "scope": "Read-only independent code/evidence review; no subagents or native/full-suite replay. User explicitly requested this final reviewer."
+}

@@ -1,0 +1,17 @@
+{
+  "minecraft": "1.20.1",
+  "profession": "librarian",
+  "level": 4,
+  "xp": 200,
+  "recipes": [
+    "{buy:{id:\"minecraft:paper\",Count:24b},sell:{id:\"minecraft:emerald\",Count:1b},uses:0,maxUses:16,xp:5,rewardExp:0b,priceMultiplier:0.0f}",
+    "{buy:{id:\"minecraft:emerald\",Count:9b},sell:{id:\"minecraft:enchanted_book\",Count:1b,tag:{StoredEnchantments:[{id:\"minecraft:mending\",lvl:1s}]}},buyB:{id:\"minecraft:book\",Count:1b},uses:0,maxUses:16,xp:5,rewardExp:0b,priceMultiplier:0.0f}",
+    "{buy:{id:\"minecraft:emerald\",Count:9b},sell:{id:\"minecraft:bookshelf\",Count:1b},uses:0,maxUses:16,xp:5,rewardExp:0b,priceMultiplier:0.0f}",
+    "{buy:{id:\"minecraft:book\",Count:4b},sell:{id:\"minecraft:emerald\",Count:1b},uses:0,maxUses:16,xp:5,rewardExp:0b,priceMultiplier:0.0f}",
+    "{buy:{id:\"minecraft:emerald\",Count:1b},sell:{id:\"minecraft:lantern\",Count:1b},uses:0,maxUses:16,xp:5,rewardExp:0b,priceMultiplier:0.0f}",
+    "{buy:{id:\"minecraft:emerald\",Count:1b},sell:{id:\"minecraft:glass\",Count:4b},uses:0,maxUses:16,xp:5,rewardExp:0b,priceMultiplier:0.0f}",
+    "{buy:{id:\"minecraft:ink_sac\",Count:5b},sell:{id:\"minecraft:emerald\",Count:1b},uses:12,maxUses:12,xp:5,rewardExp:0b,priceMultiplier:0.0f}",
+    "{buy:{id:\"minecraft:emerald\",Count:18b},sell:{id:\"minecraft:enchanted_book\",Count:1b,tag:{StoredEnchantments:[{id:\"minecraft:efficiency\",lvl:4s}]}},buyB:{id:\"minecraft:book\",Count:1b},uses:0,maxUses:16,xp:5,rewardExp:0b,priceMultiplier:0.0f}"
+  ],
+  "scope": "Matched visual states; fixture payments seeded, no gameplay suite"
+}

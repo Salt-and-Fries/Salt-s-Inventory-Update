@@ -261,6 +261,8 @@ foreach ($version in $versions) {
 
     $fabricRoot = Join-Path $RepoRoot "versions\$version\fabric\src\main\java\com\salts_inventory_update"
     $client = Join-Path $fabricRoot 'client\InventoryDesktopScreen.java'
+    Assert-Contains -Path $client -Text 'return this.window.kind == WindowKind.CHARACTER ? characterContentX(this.window)' -Label "$version Character attachments use the player-preview origin"
+    Assert-Contains -Path $client -Text 'return this.window.kind == WindowKind.CHARACTER ? characterContentY(this.window)' -Label "$version Character attachment input and drawing share the same origin"
     Assert-Contains -Path $client -Text 'this.clampWindowIntoDesktop(this.movingWindow, 0);' -Label "$version drag keeps the full visual window inside all four edges"
     Assert-NotContains -Path $client -Text 'this.desktopHeight() - TOP_BAR_HEIGHT));' -Label "$version no title-only bottom boundary"
     Assert-Matches -Path $client -Pattern '(?s)protected void init\(\).{0,400}clampInitialWindowSize\(window\).{0,700}clampWindowIntoDesktop\(window, 0\)' -Label "$version viewport changes recover full window bounds"
@@ -615,7 +617,7 @@ Assert-Matches -Path $sophisticatedHostedDefinition -Pattern '(?s)visibleRows = 
 Assert-Matches -Path $sophisticatedHostedDefinition -Pattern '(?s)int storageSlotCount = context\.model\(\) instanceof StorageContainerMenuBase<\?> storage\s*\? allStorageSlots\(context\.state\(\), storage\)\.size\(\).{0,900}int rows = Math\.min\(requestedRows, Math\.max\(MIN_VISIBLE_ROWS, totalRows\)\).{0,250}standardContentWidth\(columns, scrolling, inventoryControlWidth\)' -Label 'Sophisticated resize snapping uses the unfiltered inventory, removes unused rows, and reserves width only for an active scrollbar'
 Assert-Matches -Path $sophisticatedHostedDefinition -Pattern '\(scrolling \? SCROLLBAR_RESERVE : 0\)' -Label 'Sophisticated standard width has no permanent empty scrollbar gutter'
 Assert-Contains -Path $sophisticatedHostedDefinition -Text 'private static final int STANDARD_MIN_CONTENT_WIDTH = 9 * SLOT;' -Label 'Sophisticated compact standard width is the exact nine-column hosted grid'
-Assert-Matches -Path $sophisticatedHostedDefinition -Pattern '(?s)legacyScrollbarGutterMigrationPending.{0,1100}obsoleteScrollbarGutter = unusedWidth == SCROLLBAR_RESERVE.{0,250}duplicatedNativeMargins = occupiedContentWidth == STANDARD_MIN_CONTENT_WIDTH.{0,400}context\.windowWidth\(\) - unusedWidth' -Label 'Sophisticated existing compact windows discard obsolete scrollbar and doubled-native-margin width only'
+Assert-JavaMethodMatches -Path $sophisticatedHostedDefinition -SignaturePattern 'public @Nullable DesktopWindowSize desiredWindowSize\(DesktopWindowContext<\?, \?> context\)' -Pattern '(?s)legacyScrollbarGutterMigrationPending.*obsoleteScrollbarGutter = unusedWidth == SCROLLBAR_RESERVE.*duplicatedNativeMargins = occupiedContentWidth == STANDARD_MIN_CONTENT_WIDTH.*if \(\(obsoleteScrollbarGutter \|\| duplicatedNativeMargins\).*context\.contentWidth\(\) - unusedWidth >= STANDARD_MIN_CONTENT_WIDTH.*context\.windowWidth\(\) - unusedWidth' -Label 'Sophisticated existing compact windows discard obsolete scrollbar and doubled-native-margin width only'
 Assert-Contains -Path $sophisticatedHostedDefinition -Text 'return saltSize(columns * SLOT, rows * SLOT);' -Label 'Sophisticated regular settings defaults fit their exact grid'
 Assert-Matches -Path $sophisticatedHostedDefinition -Pattern '(?s)this\.kind == LayoutKind\.LIMITED_BARREL_SETTINGS.{0,180}return saltSize\(MIN_CONTENT_WIDTH, 92\)' -Label 'Sophisticated limited settings defaults retain specialized space'
 Assert-Matches -Path $sophisticatedHostedDefinition -Pattern '(?s)kind == LayoutKind\.LIMITED_BARREL_SETTINGS.{0,150}contentHeight = 92.{0,250}kind == LayoutKind\.SETTINGS.{0,450}contentWidth = Math\.max\(1, settings\.getSlotsOnLine\(\)\) \* SLOT;\s*contentHeight = rows \* SLOT' -Label 'Sophisticated fixed settings size removes native side margins and template footer without clipping limited barrels'
@@ -655,7 +657,18 @@ Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)boolean tooltipEligib
 Assert-Count -Path $desktopInventoryScreen -Text '!region.constrainsWindow()' -Expected 2 -Label '26.2 transient regions do not affect placement or visible clamping bounds'
 Assert-Contains -Path $desktopInventoryScreen -Text '&& region.constrainsWindow()' -Label '26.2 desktop clamps only stable hosted external regions'
 Assert-Matches -Path $desktopContainerSession -Pattern '(?s)DesktopMenuBindings\.prepareSnapshot\(menu, items\);.{0,1500}menu\.initializeContents\(payload\.stateId\(\), items, payload\.carried\(\)\);.{0,500}DesktopMenuBindings\.size\(menu\).{0,700}snapshot mismatch after initialization' -Label '26.2 desktop sessions revalidate logical slot count after menu initialization'
-Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)boolean apiInitialized = this\.initializeApiWindow\(window, apiDefinition, apiSetup\);.{0,1200}!apiInitialized.{0,900}window\.apiDefinition = null;.{0,500}window\.width = Math\.min\(defaultWindowWidth.{0,900}this\.sessions\.add\(session\);.{0,1200}this\.sessions\.remove\(transitionReplacedSession\);' -Label '26.2 hosted session transitions fall back to the reconstructed incoming menu before committing old-window removal'
+Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)boolean apiInitialized = this\.initializeApiWindow\(window, apiDefinition, apiSetup\);.{0,1200}!apiInitialized.{0,900}window\.apiDefinition = null;.{0,500}window\.width = Math\.min\(defaultWindowWidth.{0,2100}this\.sessions\.remove\(transitionReplacedSession\);' -Label '26.2 hosted session transitions fall back to the reconstructed incoming menu before committing old-window removal'
+foreach ($sessionVersion in @('1.20.1', '1.21.1', '1.21.11', '26.1.2', '26.2', '26.3')) {
+    $sessionScreen = Join-Path $RepoRoot "versions\$sessionVersion\fabric\src\main\java\com\salts_inventory_update\client\InventoryDesktopScreen.java"
+    $sessionSource = Get-Content -LiteralPath $sessionScreen -Raw
+    $replacementMethod = [regex]::Match($sessionSource, '(?ms)^    private void addOrReplaceSession\([^)]*\) \{.*?(?=^    private )').Value
+    if (-not $replacementMethod -or [regex]::Matches($replacementMethod, [regex]::Escape('this.sessions.add(session);')).Count -ne 1) {
+        Add-Failure "$sessionVersion replacement method must register the incoming session exactly once"
+    } else {
+        Write-Host "PASS $sessionVersion replacement method registers the incoming session exactly once" -ForegroundColor Green
+    }
+    Assert-Matches -Path $sessionScreen -Pattern '(?s)this\.sessions\.add\(session\);.{0,12000}boolean apiInitialized = this\.initializeApiWindow\(window, apiDefinition, apiSetup\);' -Label "$sessionVersion registers incoming sessions before hosted initialization"
+}
 Assert-Contains -Path $desktopPackets -Text 'clientboundPlay().register(DesktopMutationAckPayload.TYPE, DesktopMutationAckPayload.CODEC);' -Label '26.2 registers the clientbound mutation acknowledgement'
 Assert-Matches -Path $desktopPackets -Pattern '(?s)record DesktopMutationAckPayload\(.{0,300}long connectionNonce,.{0,200}long playerSessionToken,.{0,200}long mutationId,.{0,200}boolean sequenceAccepted' -Label '26.2 mutation acknowledgements carry connection, player-token, and sequence authentication'
 $serializedMutationPayloads = @(
@@ -757,7 +770,8 @@ Assert-Matches -Path $sophisticatedMixinPlugin -Pattern '(?s)mixinClassName\.end
 Assert-Matches -Path $desktopContainerSessions -Pattern '(?s)hasOpenSessionMatching\(Player player, Predicate<AbstractContainerMenu> menuPredicate\).{0,800}menuPredicate\.test\(session\.menu\)' -Label 'detached menu ownership can be checked without exposing session state'
 Assert-Matches -Path $sophisticatedStorageOpenersMixin -Pattern '(?s)counter instanceof SophisticatedOpenersCounter.{0,500}hasOpenSessionMatching.{0,900}player\.containerMenu = desktopMenu;.{0,500}counter\.isOwnContainer\(player\).{0,300}finally \{\s*player\.containerMenu = previousMenu;' -Label 'Sophisticated physical storage opener checks use official ownership semantics for detached menus'
 Assert-Matches -Path $sophisticatedMixinPlugin -Pattern '(?s)mixinClassName\.endsWith\("\.SophisticatedStorageOpenersMixin"\).{0,150}return this\.storageEnabled;' -Label 'storage opener mixin remains guarded by Sophisticated Storage presence'
-Assert-Matches -Path $desktopContainerSession -Pattern '(?s)this\.sourceLock = DesktopItemSourceLocks\.acquire\(player, menu\).{0,2500}public void close\(\).{0,300}this\.sourceLock\.close\(\)' -Label 'client detached sessions hold and release item-source leases'
+Assert-Contains -Path $desktopContainerSession -Text 'this.sourceLock = DesktopItemSourceLocks.acquire(player, menu);' -Label 'client detached sessions acquire their registered item-source lease'
+Assert-JavaMethodMatches -Path $desktopContainerSession -SignaturePattern '(?m)^    public void close\(\)' -Pattern '(?s)if \(this\.closed\) \{\s*return;\s*\}\s*this\.closed = true;.*this\.sourceLock\.close\(\)' -Label 'client detached sessions release their item-source lease exactly once'
 Assert-Matches -Path $desktopContainerClient -Pattern '(?s)DesktopContainerSession session = null;\s*boolean sessionHandedOff = false;(?:(?!ClientPlayNetworking\.registerGlobalReceiver).)*openOrAddSession\(context\.client\(\), session, payload\.visible\(\)\);\s*sessionHandedOff = true;(?:(?!ClientPlayNetworking\.registerGlobalReceiver).)*catch \(RuntimeException exception\) \{\s*if \(!sessionHandedOff && session != null\) \{\s*session\.close\(\);' -Label 'failed client reconstruction releases its provisional item-source lease'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)public void removeSession\(int sessionId\).{0,500}session\.close\(\)' -Label 'client session removal releases its item-source lease'
 Assert-Matches -Path $desktopInventoryScreen -Pattern '(?s)this\.sessions\.remove\(transitionReplacedSession\);\s*transitionReplacedSession\.close\(\)' -Label 'client atomic session transitions release the replaced item-source lease'
@@ -935,10 +949,18 @@ foreach ($version in $versions) {
 }
 
 Assert-File -Path (Join-Path $RepoRoot 'artwork\window_controls.pdn') -Label 'canonical window-controls source artwork' | Out-Null
-$bundledNullable = Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'versions') -Recurse -Filter 'Nullable.java' -File -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -match 'org[\\/]jspecify[\\/]annotations' }
+$nullableRoot = Join-Path $RepoRoot 'versions'
+if (Get-Command rg -ErrorAction SilentlyContinue) {
+    # Keep generated trees in this check, but avoid PowerShell materializing
+    # every disposable world's directories as FileSystemInfo objects.
+    $bundledNullable = @(& rg --files --hidden --no-ignore -g 'Nullable.java' -- $nullableRoot 2>$null |
+        Where-Object { $_ -match 'org[\\/]jspecify[\\/]annotations' })
+} else {
+    $bundledNullable = @(Get-ChildItem -LiteralPath $nullableRoot -Recurse -Filter 'Nullable.java' -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -match 'org[\\/]jspecify[\\/]annotations' } | Select-Object -ExpandProperty FullName)
+}
 if ($bundledNullable) {
-    Add-Failure "bundled JSpecify annotation sources remain: $($bundledNullable.FullName -join ', ')"
+    Add-Failure "bundled JSpecify annotation sources remain: $($bundledNullable -join ', ')"
 } else {
     Write-Host 'PASS no bundled JSpecify annotation sources' -ForegroundColor Green
 }

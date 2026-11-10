@@ -69,7 +69,7 @@ class NativeMachineLayoutsTest {
         for(int row=0;row<2;row++)for(int col=0;col<5;col++)input.add(new int[]{44+18*col,43+18*row});
         var view=view(input.toArray(int[][]::new),List.of());realSlots(view,NativeMachineLayouts::alloyForge);
         var layout=NativeMachineLayouts.alloyForge(view);
-        assertEquals(72,layout.height());assertTrue(layout.regions().stream().anyMatch(r->r.exterior()&&r.y()<0));
+        assertEquals(71,layout.height());assertTrue(layout.regions().stream().anyMatch(r->r.exterior()&&r.y()<0));
     }
     @Test void unexpectedSlotTopologyFallsBackRatherThanLosingARealSlot(){
         var view=view(new int[][]{{10,20},{134,48}},List.of());

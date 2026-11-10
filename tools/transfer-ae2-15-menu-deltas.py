@@ -8,7 +8,9 @@ import argparse
 import copy
 import importlib
 import json
+import os
 import re
+import shutil
 import struct
 import zipfile
 from pathlib import Path
@@ -140,7 +142,7 @@ def capture_created_menu(factory):
     factory['maxStack']=max(2,factory['maxStack'])
 
 
-def class_parents(data):
+def class_parents(data, declarations=False):
     cp, pos, index = [None] * struct.unpack_from('>H',data,8)[0], 10, 1
     while index < len(cp):
         tag = data[pos]; pos += 1
@@ -155,6 +157,17 @@ def class_parents(data):
         index += 1
     access, own, parent, count = struct.unpack_from('>HHHH',data,pos);pos += 8
     parents = ([cp[cp[parent]]] if parent else []) + [cp[cp[struct.unpack_from('>H',data,pos+2*i)[0]]] for i in range(count)]
+    if declarations:
+        pos+=2*count
+        members=[]
+        for group in range(2):
+            count=struct.unpack_from('>H',data,pos)[0];pos+=2
+            for _ in range(count):
+                access,name,desc,attributes=struct.unpack_from('>HHHH',data,pos);pos+=8
+                members.append((cp[name],cp[desc]))
+                for _ in range(attributes):
+                    length=struct.unpack_from('>I',data,pos+2)[0];pos+=6+length
+        return cp[cp[own]],parents,members
     return cp[cp[own]], parents
 
 
@@ -172,6 +185,7 @@ def remap_runtime(inventory, raw_folder, named_folder, original=None, minecraft_
     classes, members, handle_tags, dynamic_names = {}, {}, {}, {}
     dynamic_interfaces = {}
     hierarchy = {}
+    declared = set()
     fallback = {}
     def class_strings(a, b):
         if isinstance(a, str) and isinstance(b, str):
@@ -203,6 +217,7 @@ def remap_runtime(inventory, raw_folder, named_folder, original=None, minecraft_
         for group in ['fields', 'methods']:
             if len(raw[group]) != len(named[group]): raise ValueError('Mapped member count differs: ' + raw['class'])
             for a, b in zip(raw[group], named[group]):
+                declared.add((named['class'], b['name'], b['desc']))
                 member(named['class'], a, b)
                 if group == 'methods':
                     if len(a['instructions']) != len(b['instructions']): raise ValueError('Mapped instruction count differs: ' + raw['class'] + '.' + a['name'])
@@ -225,7 +240,9 @@ def remap_runtime(inventory, raw_folder, named_folder, original=None, minecraft_
                 if parts[0] == 'c': owner = parts[1 + named_index]
                 elif len(parts) > 4 and parts[0] == '' and parts[1] in ['m','f']:
                     desc, names = parts[2], parts[3:]
-                    members[(owner, names[named_index], descriptor(desc, official_named))] = (names[raw_index], descriptor(desc, official_raw))
+                    signature=(owner, names[named_index], descriptor(desc, official_named))
+                    declared.add(signature)
+                    members[signature] = (names[raw_index], descriptor(desc, official_raw))
         else:
             for line in lines:
                 parts = line.split()
@@ -242,22 +259,40 @@ def remap_runtime(inventory, raw_folder, named_folder, original=None, minecraft_
             for name in jar.namelist():
                 if name.endswith('.class'):
                     owner, parents = class_parents(jar.read(name));hierarchy[owner] = parents
+        # Resolve actual JDK declarations instead of assuming every method
+        # exists on Object. This keeps inherited collection calls stable while
+        # still reaching Minecraft interfaces for getFocused and similar calls.
+        java=shutil.which('java')
+        home=Path(os.environ.get('JAVA_HOME') or (str(Path(java).resolve().parents[1]) if java else ''))
+        image=home/'jmods/java.base.jmod'
+        if not image.is_file():raise ValueError('A JDK java.base.jmod is required for inherited symbol mapping')
+        with zipfile.ZipFile(image) as jar:
+            for name in jar.namelist():
+                if not name.startswith('classes/java/') or not name.endswith('.class'):continue
+                owner,parents,entries=class_parents(jar.read(name),True);hierarchy[owner]=parents
+                for name,desc in entries:
+                    signature=(owner,name,desc);declared.add(signature);members[signature]=(name,desc)
     def inherited(owner,name,desc,seen=None):
         seen = set() if seen is None else seen
         if owner in seen: return None
         seen.add(owner)
         pair = members.get((owner,name,desc))
-        if pair is not None: return pair
+        if pair is not None and (owner,name,desc) in declared: return pair
         for parent in hierarchy.get(owner,[]):
             pair = inherited(parent,name,desc,seen)
             if pair is not None: return pair
-        # The named-symbol gate has already validated these inherited JDK
-        # methods; their names stay stable in every Minecraft namespace.
-        if owner.startswith('java/'): return (name,string(desc))
+        pair = members.get((owner,name,desc))
+        if pair is not None:return pair
+        # Reaching Object must not mask a Minecraft interface later in the
+        # hierarchy (for example ContainerEventHandler.getFocused). Unmapped
+        # JDK calls retain their stable name in value() without a guessed hit.
         return None
     def string(v):
         if v in classes: return classes[v]
-        return re.sub(r'L(net/minecraft/[^;]+);', lambda m: 'L' + classes.get(m[1], m[1]) + ';', v)
+        # Minecraft also maps classes under com/mojang/blaze3d (including the
+        # nested key type). Restricting descriptors to net/minecraft leaves a
+        # named class in an otherwise valid production contract.
+        return re.sub(r'L([^;]+);', lambda m: 'L' + classes.get(m[1], m[1]) + ';', v)
     def value(v):
         if isinstance(v, str): return string(v)
         if isinstance(v, list): return [value(x) for x in v]
@@ -269,8 +304,9 @@ def remap_runtime(inventory, raw_folder, named_folder, original=None, minecraft_
             if name is not None: result['name'] = name
             elif len(candidates) == 1: result['name'] = next(iter(candidates))
         if all(k in v for k in ['owner', 'name', 'desc']):
-            pair = inherited(v['owner'], v['name'], v['desc'])
-            if pair is None:
+            own_api = v['owner'].startswith('com/salts_inventory_update/')
+            pair = None if own_api else inherited(v['owner'], v['name'], v['desc'])
+            if pair is None and not own_api:
                 candidates = fallback.get((v['name'], v['desc']), set())
                 if len(candidates) == 1: pair = next(iter(candidates))
                 elif v['owner'].startswith('net/minecraft/') and v['name'] != '<init>':

@@ -1,0 +1,292 @@
+{
+  "status": "final-tests-and-artifacts-qualified-documentation-and-independent-review-pending",
+  "created": "2026-11-10T16:19:42.620564+00:00",
+  "candidate": {
+    "pointer": {
+      "file": "output\\release-readiness\\candidate-current.json",
+      "sha256": "927e1dc7930e98c40dd1aaf0bd68bd4a81bfd2e19e2a4653bd20516916d00a1d"
+    },
+    "source_snapshot": {
+      "file": "output\\release-readiness\\candidate-build16-focused-archive-schema-1723-01.json",
+      "sha256": "ae5dfe0ae183f975bf98f10e2e2dae872ecb048b94f0a966c27c42ef00e574e7"
+    },
+    "source_tree_sha256": "92b2e261e5fc7f5359a68a841e24939486fe64b757f71e5dfc0c403ef6a509a5",
+    "source_archive": {
+      "file": "output\\release-readiness\\candidate-build16-focused-archive-schema-1723-01.review-source.zip",
+      "sha256": "3ae5d9ff1be710733a239b264442368c2e7596e6d06dee07fae33891bcb31eb6",
+      "purpose": "Immutable local review/reproduction inputs, including QA fixtures. Not staged to public dist or published by this task."
+    },
+    "artifact_integrity": {
+      "file": "output\\release-readiness\\candidate-integrity.json",
+      "sha256": "bf5c2378b03e76ec6d72e2aa4843ffaee30ba2a7979ca372bc7f76c7923357b7"
+    },
+    "scope": "Exact recorded source and 36 artifact identities; gameplay qualification remains separate."
+  },
+  "actions": [
+    {
+      "name": "archive-final-mapped-JUnit",
+      "status": "passed",
+      "started": "2026-11-10T14:46:33.331190+00:00",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-u",
+        "tools/archive-release-junit.py",
+        "--id",
+        "build15-01",
+        "--build-log",
+        "output/release-readiness/session-registration-parity-guard-1666-01/normal-build.log"
+      ],
+      "exit_code": 0,
+      "finished": "2026-11-10T14:46:35.965165+00:00",
+      "log": {
+        "file": "output/release-readiness/final-acceptance-1450-01/archive-final-mapped-JUnit.log",
+        "sha256": "cc45ae215701e26bec1296b31a115341d39e6d6e32195591ccde3d22a4790911"
+      }
+    },
+    {
+      "name": "final36notice-and-pixel-provenance",
+      "status": "passed",
+      "started": "2026-11-10T14:46:35.966523+00:00",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-u",
+        "tools/audit-release-provenance.py",
+        "--id",
+        "build15-01"
+      ],
+      "exit_code": 0,
+      "finished": "2026-11-10T14:46:36.426008+00:00",
+      "log": {
+        "file": "output/release-readiness/final-acceptance-1450-01/final36notice-and-pixel-provenance.log",
+        "sha256": "f70013b93b79ff3a3ed4e4c7e13377ff94a2f3c974ddb2605893bf51496d9841"
+      }
+    },
+    {
+      "name": "strict-final16-source-archive-and-native-transition",
+      "status": "passed",
+      "started": "2026-11-10T14:46:36.427128+00:00",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-u",
+        "build/release-readiness/create_session_certificate_1674.py"
+      ],
+      "exit_code": 0,
+      "finished": "2026-11-10T14:49:13.006876+00:00",
+      "log": {
+        "file": "output/release-readiness/final-acceptance-1450-01/strict-final16-source-archive-and-native-transition.log",
+        "sha256": "220d1d83e294ccf4d2d877e2b59b84e72e0e16a3a2b3f918981045186aa0e7fe"
+      }
+    },
+    {
+      "name": "archive-final16-mapped-JUnit",
+      "status": "passed",
+      "started": "2026-11-10T14:54:17.628790+00:00",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-u",
+        "tools/archive-release-junit.py",
+        "--id",
+        "build16-01",
+        "--build-log",
+        "output/release-readiness/session-registration-parity-guard-1666-01/normal-build.log"
+      ],
+      "exit_code": 0,
+      "finished": "2026-11-10T14:54:17.910795+00:00",
+      "log": {
+        "file": "output/release-readiness/final-acceptance-retained-sealing-1691-01/archive-final16-mapped-JUnit.log",
+        "sha256": "504a1758c2395b758f213bc448f00b6e47aee80777fd4f08db977b8aae6ecc0a"
+      }
+    },
+    {
+      "name": "final36-build16-notice-and-pixel-provenance",
+      "status": "passed",
+      "started": "2026-11-10T14:54:17.911838+00:00",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-u",
+        "tools/audit-release-provenance.py",
+        "--id",
+        "build16-01"
+      ],
+      "exit_code": 0,
+      "finished": "2026-11-10T14:54:18.238907+00:00",
+      "log": {
+        "file": "output/release-readiness/final-acceptance-retained-sealing-1691-01/final36-build16-notice-and-pixel-provenance.log",
+        "sha256": "5e651ab779b7071850a27d34ddc7d1dbd773930f4aceb4a2dd9d49b3bec2124d"
+      }
+    },
+    {
+      "name": "seal-readiness-powah-modern-1211-neoforge-06",
+      "status": "passed",
+      "started": "2026-11-10T14:55:36.144405+00:00",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-u",
+        "build/release-readiness/seal_retained_powah_1693.py",
+        "--run",
+        "readiness-powah-modern-1211-neoforge-06"
+      ],
+      "exit_code": 0,
+      "finished": "2026-11-10T14:55:38.852151+00:00",
+      "log": {
+        "file": "output/release-readiness/final-acceptance-retained-subjects-1694-01/seal-readiness-powah-modern-1211-neoforge-06.log",
+        "sha256": "708bae46de9c39b6fc704eec99350db9c3354836f2b1824ebd28e46363f5a28b"
+      }
+    },
+    {
+      "name": "qualify-native-readiness-powah-modern-1211-neoforge-06",
+      "status": "passed",
+      "started": "2026-11-10T14:58:15.110538+00:00",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-u",
+        "build/release-readiness/qualify_powah_retained_final16_1673.py",
+        "--run",
+        "readiness-powah-modern-1211-neoforge-06"
+      ],
+      "exit_code": 0,
+      "finished": "2026-11-10T14:58:17.708974+00:00",
+      "log": {
+        "file": "output/release-readiness/final-acceptance-policy-bytes-1696-01/qualify-native-readiness-powah-modern-1211-neoforge-06.log",
+        "sha256": "86fe9fc60b9946a5e67aff7baba09b8c980a2937d9b9bfc3cfbd26e5ca1ff368"
+      }
+    },
+    {
+      "name": "seal-readiness-powah-modern-2612-neoforge-01",
+      "status": "passed",
+      "started": "2026-11-10T14:58:17.710816+00:00",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-u",
+        "build/release-readiness/seal_retained_powah_1693.py",
+        "--run",
+        "readiness-powah-modern-2612-neoforge-01"
+      ],
+      "exit_code": 0,
+      "finished": "2026-11-10T14:58:20.992867+00:00",
+      "log": {
+        "file": "output/release-readiness/final-acceptance-policy-bytes-1696-01/seal-readiness-powah-modern-2612-neoforge-01.log",
+        "sha256": "9429f0ebf52fbb105dc4b4f7b081b8adf37473e0170a77de4c0c42c6695f7a09"
+      }
+    },
+    {
+      "name": "qualify-native-readiness-powah-modern-2612-neoforge-01",
+      "status": "passed",
+      "started": "2026-11-10T14:58:20.993804+00:00",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-u",
+        "build/release-readiness/qualify_powah_retained_final16_1673.py",
+        "--run",
+        "readiness-powah-modern-2612-neoforge-01"
+      ],
+      "exit_code": 0,
+      "finished": "2026-11-10T14:58:22.745988+00:00",
+      "log": {
+        "file": "output/release-readiness/final-acceptance-policy-bytes-1696-01/qualify-native-readiness-powah-modern-2612-neoforge-01.log",
+        "sha256": "0c4fc7fe6f0c37359af9d6540f60736c70c95003b40e12842d2875f25b1e5e4a"
+      }
+    },
+    {
+      "name": "Powah-thirteen-historical-aliases",
+      "status": "passed",
+      "started": "2026-11-10T14:58:22.747952+00:00",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-u",
+        "tools/reconcile-powah-release-evidence.py",
+        "--generation",
+        "build16",
+        "--runs",
+        "G:\\Codex Projects\\Salts Inventory Update\\output\\release-readiness\\final-acceptance-1450-01\\four-Powah-sealed-runs.json"
+      ],
+      "exit_code": 0,
+      "finished": "2026-11-10T14:58:37.338907+00:00",
+      "log": {
+        "file": "output/release-readiness/final-acceptance-policy-bytes-1696-01/Powah-thirteen-historical-aliases.log",
+        "sha256": "c237417f83e680d0d37da257af669671d2e8538a3be8ec13eb872b51c9e0598b"
+      }
+    },
+    {
+      "name": "original-completed-native-features",
+      "status": "passed",
+      "started": "2026-11-10T14:58:37.339966+00:00",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-u",
+        "tools/reconcile-original-feature-release-evidence.py",
+        "--generation",
+        "build16"
+      ],
+      "exit_code": 0,
+      "finished": "2026-11-10T14:59:16.029924+00:00",
+      "log": {
+        "file": "output/release-readiness/final-acceptance-policy-bytes-1696-01/original-completed-native-features.log",
+        "sha256": "230f31e0a20dcb195c22aee4497faaace710849622c15c17600004143b7519b0"
+      }
+    },
+    {
+      "name": "final-coverage-backlog",
+      "status": "passed",
+      "started": "2026-11-10T16:04:51.990401+00:00",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-u",
+        "tools/build-release-coverage-backlog.py",
+        "--generation",
+        "build16"
+      ],
+      "exit_code": 0,
+      "finished": "2026-11-10T16:10:01.235194+00:00",
+      "log": {
+        "file": "output/release-readiness/final-acceptance-archived-QA-1716-01/final-coverage-backlog.log",
+        "sha256": "1fbf65096011a3219d11d809f3a44efad9fb22cb963a37878c4fcde31c4b0f9e"
+      }
+    },
+    {
+      "name": "final-qualification-dashboard",
+      "status": "passed",
+      "started": "2026-11-10T16:19:42.622006+00:00",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-u",
+        "tools/collect-release-qualification.py",
+        "--generation",
+        "build16"
+      ],
+      "exit_code": 0,
+      "finished": "2026-11-10T16:25:18.744030+00:00",
+      "log": {
+        "file": "output/release-readiness/final-dashboard-schema-1724-01/dashboard.log",
+        "sha256": "721428d29e6cf1bbea14997dbc7a04006bf0527057b3a52ebfa76b03c7b50957"
+      }
+    }
+  ],
+  "previous_attempt": {
+    "file": "output/release-readiness/final-dashboard-schema-1724-01/previous-manifest.json",
+    "sha256": "3497e24da7295299bd2aaece1c520391ce4efb4bfae8186e505ab480275a52be"
+  },
+  "coverage_source_only_alias": {
+    "file": "output/release-readiness/final-dashboard-schema-1724-01/coverage-source-only-alias.json",
+    "sha256": "7b3cd2a9c577b3db63273af95575e929d4bed6d1684eb7acec10e6ba585f2f41"
+  },
+  "finished": "2026-11-10T16:25:20.238220+00:00",
+  "qualification": {
+    "file": "output/release-readiness/qualification-current.json",
+    "sha256": "944279b4e983aa5525ff192e7fe32449c71943a6811adcf95dd7d44494195ab9"
+  },
+  "coverage": {
+    "file": "output/release-readiness/coverage-backlog.json",
+    "sha256": "c2fc67e95933b5a31418ee9b08bb232c846fcffec13c6fafb9b707709ffa1be1"
+  },
+  "coverage_counts": {
+    "functional-pass": 367,
+    "read-only-status-pass": 31,
+    "native-only-qualified": 1
+  },
+  "final_transition": {
+    "file": "output/release-readiness/session-registration-evidence-build16-01.json",
+    "sha256": "9c3a25a5c677c8954b34cd8d4581f9ae7954c0409e6420f83d9e8003b91acdfe"
+  },
+  "remaining": "Review/promote documents, freeze manifest, independent review. No publication."
+}

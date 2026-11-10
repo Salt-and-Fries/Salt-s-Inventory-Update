@@ -23,6 +23,7 @@ import net.p3pp3rf1y.sophisticatedstorage.common.gui.LimitedBarrelContainerMenu;
 import net.p3pp3rf1y.sophisticatedstorage.common.gui.LimitedBarrelSettingsContainerMenu;
 import net.p3pp3rf1y.sophisticatedstorage.common.gui.StorageContainerMenu;
 import net.p3pp3rf1y.sophisticatedstorage.common.gui.StorageSettingsContainerMenu;
+import net.p3pp3rf1y.sophisticatedstorage.common.gui.DecorationTableMenu;
 import net.p3pp3rf1y.sophisticatedstorage.init.ModBlocks;
 import net.p3pp3rf1y.sophisticatedstorage.network.OpenStorageInventoryPayload;
 
@@ -42,6 +43,7 @@ public final class SophisticatedStorageCompat {
         registerSettings(limitedSettings);
         registerOpenStorage(settings);
         registerOpenStorage(limitedSettings);
+        SophisticatedCoreCompat.registerSync(ModBlocks.DECORATION_TABLE_CONTAINER_TYPE.get());
     }
 
     public static void initializeClient() {
@@ -116,6 +118,11 @@ public final class SophisticatedStorageCompat {
             MenuType<LimitedBarrelContainerMenu> limited = ModBlocks.LIMITED_BARREL_CONTAINER_TYPE.get();
             MenuType<StorageSettingsContainerMenu> settings = ModBlocks.SETTINGS_CONTAINER_TYPE.get();
             MenuType<LimitedBarrelSettingsContainerMenu> limitedSettings = ModBlocks.LIMITED_BARREL_SETTINGS_CONTAINER_TYPE.get();
+            // The Fabric port writes its own BlockPos opening bytes through
+            // SophisticatedPlayer, rather than the ExtendedMenuType's codec.
+            DesktopMenuFactories.register(ModBlocks.DECORATION_TABLE_CONTAINER_TYPE.get(), (minecraft, player, id, data) ->
+                fromOpeningData(minecraft, data, buffer -> DecorationTableMenu.fromBuffer(id, player.getInventory(), buffer))
+            );
 
             DesktopMenuFactories.register(storage, (minecraft, player, id, data) ->
                 fromOpeningData(minecraft, data, buffer -> StorageContainerMenu.fromBuffer(id, player.getInventory(), buffer))

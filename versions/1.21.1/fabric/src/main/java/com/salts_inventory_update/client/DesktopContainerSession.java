@@ -1,5 +1,7 @@
 package com.salts_inventory_update.client;
 
+import com.salts_inventory_update.api.client.desktop.DesktopClientApi;
+
 import com.salts_inventory_update.api.client.desktop.DesktopMenuFactories;
 
 import java.util.ArrayList;
@@ -18,7 +20,7 @@ import net.minecraft.world.entity.animal.horse.Llama;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.HorseInventoryMenu;
-import net.minecraft.world.inventory.MerchantMenu;
+import com.salts_inventory_update.api.desktop.DesktopMerchantAccess;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -147,6 +149,20 @@ public final class DesktopContainerSession {
         );
     }
 
+    private com.salts_inventory_update.api.client.desktop.DesktopEmbeddedSession<AbstractContainerMenu> embeddedView;
+    public com.salts_inventory_update.api.client.desktop.DesktopEmbeddedSession<AbstractContainerMenu> embeddedView() {
+        if (this.embeddedView == null) this.embeddedView = new com.salts_inventory_update.api.client.desktop.DesktopEmbeddedSession<>() {
+            @Override public AbstractContainerMenu menu() { return DesktopContainerSession.this.menu; }
+            @Override public int sessionId() { return DesktopContainerSession.this.sessionId; }
+            @Override public boolean isOpen() { return !DesktopContainerSession.this.closed; }
+            @Override public void close() { if (isOpen()) DesktopContainerClient.closeSession(sessionId()); }
+            @Override public boolean sendPayload(net.minecraft.resources.ResourceLocation channel, byte[] data) {
+                return isOpen() && DesktopContainerClient.sendCustomPayload(sessionId(), channel, data);
+            }
+        };
+        return this.embeddedView;
+    }
+
     public void close() {
         if (this.closed) {
             return;
@@ -154,6 +170,13 @@ public final class DesktopContainerSession {
         this.closed = true;
         com.salts_inventory_update.internal.desktop.AutomaticContainerSources.release(this.menu);
             this.sourceLock.close();
+            var embedded = DesktopClientApi.embeddedSessionHandler(this.menu);
+            if (embedded != null) try { embedded.closed(this.sessionId); }
+            catch (RuntimeException failure) {
+                com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
+                    com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
+                    this.sourceKey, "embedded-close", "Embedded session callback failed", failure);
+            }
     }
 
     private static AbstractContainerMenu createMenu(
@@ -332,12 +355,12 @@ public final class DesktopContainerSession {
     }
 
     public void applyMerchantOffers(DesktopMerchantOffersPayload payload) {
-        if (this.menu instanceof MerchantMenu merchantMenu) {
-            merchantMenu.setOffers(payload.offers());
-            merchantMenu.setMerchantLevel(payload.villagerLevel());
-            merchantMenu.setXp(payload.villagerXp());
-            merchantMenu.setShowProgressBar(payload.showProgress());
-            merchantMenu.setCanRestock(payload.canRestock());
+        if (this.menu instanceof DesktopMerchantAccess merchantMenu) {
+            merchantMenu.desktopSetOffers(payload.offers());
+            merchantMenu.desktopSetLevel(payload.villagerLevel());
+            merchantMenu.desktopSetXp(payload.villagerXp());
+            merchantMenu.desktopSetProgress(payload.showProgress());
+            merchantMenu.desktopSetRestock(payload.canRestock());
         }
     }
 

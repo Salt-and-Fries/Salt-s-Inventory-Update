@@ -58,7 +58,11 @@ public abstract class StorageScreenBaseMixin implements SophisticatedScreenAcces
      * leaving the later real set size intact for the native placement-count calculation.
      */
     @Redirect(
-        method = "renderSlot",
+        // This override keeps Minecraft's SRG name in the original Forge JAR.
+        method = {
+            "renderSlot(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/world/inventory/Slot;)V",
+            "m_280092_(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/world/inventory/Slot;)V"
+        },
         at = @At(value = "INVOKE", target = "Ljava/util/Set;size()I", ordinal = 0),
         require = 1,
         remap = false

@@ -99,7 +99,7 @@ public final class InventoryExpansion {
     }
 
     public static boolean isMainInventorySlot(net.minecraft.world.entity.player.Player player, Slot slot) {
-        boolean vanillaMain = slot.container == player.getInventory()
+        boolean vanillaMain = slot.container == com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(player)
             && slot.getContainerSlot() >= VANILLA_MAIN_START
             && slot.getContainerSlot() < VANILLA_MAIN_END;
         boolean negotiatedExtra = isGameplayEnabled(player)

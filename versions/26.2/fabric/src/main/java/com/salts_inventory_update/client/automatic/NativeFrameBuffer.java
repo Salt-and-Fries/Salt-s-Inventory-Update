@@ -10,35 +10,47 @@ import java.util.List;
 final class NativeFrameBuffer implements AutoCloseable {
     private GuiRenderState captured;
     private DesktopWindowBounds bounds;
+    private int captureOffsetX,captureOffsetY;
     void capture(DesktopRenderContext<?,?> context,AutomaticNativeWindow.State state,AutomaticNativeScope.Frame frame,DesktopWindowBounds source,int mouseX,int mouseY) {
         bounds=source;captured=new GuiRenderState();
         var graphics=new GuiGraphicsExtractor(context.minecraft(),captured,mouseX,mouseY);
-        graphics.pose().translate(frame.offsetX(),frame.offsetY());
-        state.capturing=true;
-        try { AutomaticNativeScope.call(frame,()->{state.screen.extractBackground(graphics,mouseX,mouseY,context.minecraft().getDeltaTracker().getGameTimeDeltaPartialTick(false));state.screen.extractRenderState(graphics,mouseX,mouseY,context.minecraft().getDeltaTracker().getGameTimeDeltaPartialTick(false));return null;}); }
-        finally {state.capturing=false;}
+        // Vanilla model/picture submissions use absolute native coordinates and do
+        // not apply the graphics pose. Capture every layer in that same space,
+        // then translate the complete result once when painting the window.
+        captureOffsetX=frame.offsetX();captureOffsetY=frame.offsetY();
+        var nativeFrame=new AutomaticNativeScope.Frame(frame.screen(),frame.owner(),frame.rendering(),
+            frame.input(),frame.layout(),0,0);
+        var mc=context.minecraft();var previousScreen=mc.gui.screen();
+        state.capturing=true;((com.salts_inventory_update.mixin.client.NativeGuiScreenAccessor)mc.gui).salts_inventory_update$nativeScreen(state.screen);
+        try { AutomaticNativeScope.call(nativeFrame,()->{state.screen.extractBackground(graphics,mouseX,mouseY,context.minecraft().getDeltaTracker().getGameTimeDeltaPartialTick(false));state.screen.extractRenderState(graphics,mouseX,mouseY,context.minecraft().getDeltaTracker().getGameTimeDeltaPartialTick(false));return null;}); }
+        finally {((com.salts_inventory_update.mixin.client.NativeGuiScreenAccessor)mc.gui).salts_inventory_update$nativeScreen(previousScreen);state.capturing=false;}
     }
     void paint(GuiGraphicsExtractor graphics,DesktopWindowBounds source,int x,int y,DesktopWindowBounds parent) {
         if(captured==null)return;
-        var transform=new Matrix3x2f(graphics.pose()).translate(x-source.x()+bounds.x(),y-source.y()+bounds.y());
+        var transform=new Matrix3x2f(graphics.pose()).translate(x-source.x()+bounds.x()+captureOffsetX,y-source.y()+bounds.y()+captureOffsetY);
         var clip=new ScreenRectangle(x,y,source.width(),source.height()).transformMaxBounds(graphics.pose());
         if(parent!=null)clip=intersect(clip,new ScreenRectangle(parent.x(),parent.y(),parent.width(),parent.height()).transformMaxBounds(graphics.pose()));
         final var outputClip=clip;
+        if(!visible(outputClip))return;
         var output=((AutomaticGraphicsCaptureAccessor)graphics).salts_inventory_update$renderState();
         ((AutomaticRenderStateAccessor)captured).salts_inventory_update$traverse(raw->{
             var node=(AutomaticRenderNodeAccessor)raw;
-            each(node.salts_inventory_update$elementStates(),s->output.addGuiElement(new MovedElement(s,transform,outputClip)));
-            each(node.salts_inventory_update$glyphStates(),s->output.addGlyphToCurrentLayer(new MovedElement(s,transform,outputClip)));
-            each(node.salts_inventory_update$itemStates(),s->output.addItem(new GuiItemRenderState( new Matrix3x2f(transform).mul(s.pose()),s.itemStackRenderState(),s.x(),s.y(),clip(s.scissorArea(),transform,outputClip))));
+            each(node.salts_inventory_update$elementStates(),s->{var moved=new MovedElement(s,transform,outputClip);if(visible(moved.bounds())&&visible(moved.scissorArea()))output.addGuiElement(moved);});
+            each(node.salts_inventory_update$glyphStates(),s->{var moved=new MovedElement(s,transform,outputClip);if(visible(moved.bounds())&&visible(moved.scissorArea()))output.addGlyphToCurrentLayer(moved);});
+            each(node.salts_inventory_update$itemStates(),s->{var scissor=clip(s.scissorArea(),transform,outputClip);if(visible(scissor))output.addItem(new GuiItemRenderState(new Matrix3x2f(transform).mul(s.pose()),s.itemStackRenderState(),s.x(),s.y(),scissor));});
             each(node.salts_inventory_update$textStates(),s->{
                 var a=(AutomaticTextStateAccessor)(Object)s;
-                output.addText(new GuiTextRenderState(a.salts_inventory_update$font(),a.salts_inventory_update$text(),new Matrix3x2f(transform).mul(s.pose),a.salts_inventory_update$x(),a.salts_inventory_update$y(),a.salts_inventory_update$color(),a.salts_inventory_update$backgroundColor(),a.salts_inventory_update$dropShadow(),a.salts_inventory_update$includeEmpty(),clip(s.scissor,transform,outputClip)));
+                var scissor=clip(s.scissor,transform,outputClip);
+                if(visible(scissor))output.addText(new GuiTextRenderState(a.salts_inventory_update$font(),a.salts_inventory_update$text(),new Matrix3x2f(transform).mul(s.pose),a.salts_inventory_update$x(),a.salts_inventory_update$y(),a.salts_inventory_update$color(),a.salts_inventory_update$backgroundColor(),a.salts_inventory_update$dropShadow(),a.salts_inventory_update$includeEmpty(),scissor));
             });
-            each(node.salts_inventory_update$picturesInPictureStates(),s->output.addPicturesInPictureState(NativePictureStates.move(s,transform,outputClip)));
+            each(node.salts_inventory_update$picturesInPictureStates(),s->{if(visible(clip(s.bounds(),transform,outputClip))&&visible(clip(s.scissorArea(),transform,outputClip)))output.addPicturesInPictureState(NativePictureStates.move(s,transform,outputClip));});
             output.up();
         },GuiRenderState.TraverseRange.ALL);
     }
     private static <T> void each(List<T> values,java.util.function.Consumer<T> action){if(values!=null)values.forEach(action);}
+    // Empty captured fragments have nothing to submit; newer RenderPass rejects
+    // zero-area scissors instead of silently ignoring them.
+    private static boolean visible(ScreenRectangle r){return r==null||r.width()>0&&r.height()>0;}
     static ScreenRectangle intersect(ScreenRectangle a,ScreenRectangle b){if(a==null)return b;if(b==null)return a;var c=a.intersection(b);return c==null?ScreenRectangle.empty():c;}
     static ScreenRectangle clip(ScreenRectangle s,Matrix3x2fc transform,ScreenRectangle parent){return intersect(s==null?null:s.transformMaxBounds(transform),parent);}
     private record MovedElement(GuiElementRenderState source,Matrix3x2fc transform,ScreenRectangle parent) implements GuiElementRenderState {

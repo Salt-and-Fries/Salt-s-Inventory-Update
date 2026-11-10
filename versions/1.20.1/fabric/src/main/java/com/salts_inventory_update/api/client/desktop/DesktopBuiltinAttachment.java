@@ -11,6 +11,15 @@ import com.salts_inventory_update.api.client.input.MouseButtonEvent;
  * Instances belong to one window, and must not install a second inventory click transport.
  */
 public interface DesktopBuiltinAttachment {
+    /** Opt-in content replacement. Core retains its frame, guide and effects. */
+    default boolean replacesContent(DesktopWindowContext<AbstractContainerMenu, Void> context) { return false; }
+    default void renderContent(DesktopRenderContext<AbstractContainerMenu, Void> context) { }
+    /** Absolute GUI bounds; empty retains normal built-in geometry. */
+    default java.util.Optional<DesktopWindowBounds> builtinSlotBounds(DesktopWindowContext<AbstractContainerMenu, Void> context, int menuSlotId) { return java.util.Optional.empty(); }
+    default java.util.Optional<DesktopWindowBounds> recipeBookButtonBounds(DesktopWindowContext<AbstractContainerMenu, Void> context) { return java.util.Optional.empty(); }
+    /** A real cell of a live, registered embedded session; Core validates ownership and slot ID. */
+    default @Nullable DesktopSessionSlotHit embeddedSlotAt(DesktopSlotContext<AbstractContainerMenu, Void> context, double x, double y) { return null; }
+
     default void opened(DesktopWindowContext<AbstractContainerMenu, Void> context) { }
     /** Release transient hover/global native state while hidden; the instance may resume later. */
     default void suspended(DesktopWindowContext<AbstractContainerMenu, Void> context) { }

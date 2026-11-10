@@ -561,7 +561,7 @@ subprojects {
         }
         tasks.withType<Jar>().configureEach {
             exclude("**/*.pdn")
-            if ((coreModule || controlifyModule) && minecraftVersion == "1.21.11" && project.name == "neoforge") {
+            if ((coreModule || controlifyModule || compatibilityModule) && minecraftVersion == "1.21.11" && project.name == "neoforge") {
                 // NeoForge synthesizes metadata separately for client resources and server data.
                 // A single explicit 1.21.11 pack range cannot express both format codecs.
                 exclude("pack.mcmeta")
@@ -570,7 +570,7 @@ subprojects {
                 rename { "LICENSE_salts_inventory_update" }
             }
         }
-        if ((coreModule || controlifyModule) && minecraftVersion == "1.21.11" && project.name == "neoforge") {
+        if ((coreModule || controlifyModule || compatibilityModule) && minecraftVersion == "1.21.11" && project.name == "neoforge") {
             // Keep ordinary development resources consistent with the production archive.
             tasks.named<ProcessResources>("processResources") { exclude("pack.mcmeta") }
         }
@@ -964,6 +964,7 @@ subprojects {
                 if (compatibilityModule) {
                     java.srcDir(rootProject.file("compatibility/versions/$minecraftVersion/fabric/src/main/java"))
                     java.exclude("**/SaltsInventoryCompatibilityFabric.java", "**/SaltsInventoryCompatibilityFabricClient.java", "**/compat/trinkets/**",
+                        "**/compat/accessories/fabric/**", "**/compat/aether/fabric/**", "**/compat/techreborn/**",
                         "**/compat/rei/SaltsReiClientPlugin.java", "**/compat/emi/SaltsEmiClientPlugin.java")
                     if (minecraftVersion in setOf("1.20.1", "1.21.1", "26.1.2")) {
                         java.exclude("**/compat/alloyforgery/mixin/**", "**/compat/seasonsextras/mixin/**",
@@ -1286,7 +1287,15 @@ gradle.projectsEvaluated {
                         if (missing.isNotEmpty()) {
                             throw GradleException("${jarFile.name} is missing required entries: $missing")
                         }
-                        if (entries.any { it.contains("/compat/") || it.contains("sophisticated.mixins") }) {
+                        // Core owns global redundant-sort input interoperability
+                        // even without the optional UI Compatibility module.
+                        // Its optional, compile-only Charm hook is not a window
+                        // provider. Keep every other compatibility entry forbidden.
+                        val coreSortInterop = setOf(
+                            "com/salts_inventory_update/mixin/client/compat/",
+                            "com/salts_inventory_update/mixin/client/compat/CharmInventoryTidyingMixin.class"
+                        )
+                        if (entries.any { (it.contains("/compat/") && it !in coreSortInterop) || it.contains("sophisticated.mixins") }) {
                             throw GradleException("${jarFile.name} contains compatibility implementation")
                         }
 

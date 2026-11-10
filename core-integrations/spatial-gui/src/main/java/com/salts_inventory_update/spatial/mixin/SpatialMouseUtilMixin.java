@@ -10,7 +10,8 @@ import org.joml.Vector2d;
 import org.tastytrash.spatialGUI.util.RenderUtil;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 
-@Mixin(value = MouseHandlerUtil.class, remap = false)
+@org.spongepowered.asm.mixin.Pseudo
+@Mixin(targets = "org.tastytrash.spatialGUI.util.MouseHandlerUtil", remap = false)
 public class SpatialMouseUtilMixin {
     @Shadow private static double mappedX;
     @Shadow private static double mappedY;

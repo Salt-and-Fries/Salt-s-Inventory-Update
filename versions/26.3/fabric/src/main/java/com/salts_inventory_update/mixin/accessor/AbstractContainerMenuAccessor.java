@@ -8,6 +8,8 @@ import net.minecraft.world.inventory.Slot;
 
 @Mixin(AbstractContainerMenu.class)
 public interface AbstractContainerMenuAccessor {
+    @org.spongepowered.asm.mixin.gen.Accessor("stateId")
+    void salts_inventory_update$setStateId(int stateId);
     @org.spongepowered.asm.mixin.Mutable
     @org.spongepowered.asm.mixin.gen.Accessor("containerId")
     void salts_inventory_update$setContainerId(int id);

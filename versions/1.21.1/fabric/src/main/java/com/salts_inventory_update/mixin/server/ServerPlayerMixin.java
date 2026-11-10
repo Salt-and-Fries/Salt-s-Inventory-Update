@@ -27,7 +27,7 @@ public abstract class ServerPlayerMixin {
     private void salts_inventory_update$openDesktopMenu(MenuProvider provider, CallbackInfoReturnable<OptionalInt> cir) {
         ServerPlayer player = (ServerPlayer) (Object) this;
         if (DesktopContainerSessions.shouldCapture(player)) {
-            OptionalInt desktopSession = DesktopContainerSessions.openMenuSession(player, provider);
+            OptionalInt desktopSession = DesktopContainerSessions.captureNativeMenuSession(player, provider, null);
             if (desktopSession != null) {
                 cir.setReturnValue(desktopSession);
                 cir.cancel();
@@ -35,11 +35,14 @@ public abstract class ServerPlayerMixin {
         }
     }
 
-    @Inject(method="openMenu(Lnet/minecraft/world/MenuProvider;Ljava/util/function/Consumer;)Ljava/util/OptionalInt;",at=@At("HEAD"),cancellable=true,require=0)
+    // This overload is supplied by NeoForge. A strict descriptor selector is
+    // required: permissive string remapping can otherwise select vanilla's
+    // one-argument openMenu when the optional overload is absent on Fabric.
+    @Inject(target=@org.spongepowered.asm.mixin.injection.Desc(value="openMenu",args={MenuProvider.class,java.util.function.Consumer.class},ret=OptionalInt.class),at=@At("HEAD"),cancellable=true,require=0,remap=false)
     private void salts_inventory_update$extendedDesktopMenu(MenuProvider provider,java.util.function.Consumer<net.minecraft.network.RegistryFriendlyByteBuf> writer,CallbackInfoReturnable<OptionalInt> cir) {
         ServerPlayer player=(ServerPlayer)(Object)this;
         if(DesktopContainerSessions.shouldCapture(player)) {
-            OptionalInt result=DesktopContainerSessions.openMenuSession(player,provider,writer);
+            OptionalInt result=DesktopContainerSessions.captureNativeMenuSession(player,provider,writer);
             if(result!=null)cir.setReturnValue(result);
         }
     }

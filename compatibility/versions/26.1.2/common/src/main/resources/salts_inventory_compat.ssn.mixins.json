@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.compat.ssn.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "plugin": "com.salts_inventory_update.compat.ssn.mixin.SsnMixinPlugin",
+  "client": [
+    "SsnMouseScopeMixin",
+    "SsnKeyboardScopeMixin",
+    "SsnWidgetMessageMixin",
+    "SsnIntegerInputMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

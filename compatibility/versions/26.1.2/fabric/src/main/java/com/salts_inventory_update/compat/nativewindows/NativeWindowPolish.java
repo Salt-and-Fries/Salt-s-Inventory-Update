@@ -10,7 +10,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
-/** Optional native integrations reuse native artwork through the public template API. */
+/** Optional 1.20.1 integrations reuse native artwork through the public template API. */
 public final class NativeWindowPolish {
     private static final Set<Identifier> REGISTERED = new HashSet<>();
 
@@ -94,6 +94,19 @@ public final class NativeWindowPolish {
             .map(DesktopNativeView.Slot::bounds).toList();
         var bounds = DesktopNativeView.union(cells).orElse(view.automaticBounds());
         return DesktopNativeLayout.builder().keep("native-slots", bounds, 0, 0).build();
+    }
+
+    /** Keep the five modifier sockets, their connector lines and the native waystone name. */
+    public static DesktopNativeLayout waystoneModifiers(DesktopNativeView view) {
+        var cells=view.slots().stream().filter(slot->!slot.player()&&slot.active())
+            .map(DesktopNativeView.Slot::bounds).toList();
+        var bounds=DesktopNativeView.union(cells).orElse(view.automaticBounds());
+        int width=Math.max(160,bounds.width());
+        var layout=DesktopNativeLayout.builder().canvas(width,bounds.height()+16)
+            .keep("modifier-sockets",bounds,(width-bounds.width())/2,16);
+        if(view.imageBounds().width()==176)
+            layout.keep("waystone-name",new DesktopWindowBounds(125,4,47,12),width-47,0);
+        return layout.build();
     }
 
     /** Native hatch animation and input are retained; only the preview's placement and blank gap change. */

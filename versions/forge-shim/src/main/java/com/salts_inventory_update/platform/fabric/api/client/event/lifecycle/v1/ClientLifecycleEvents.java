@@ -4,16 +4,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
 public final class ClientLifecycleEvents {
     public static final ClientStarted CLIENT_STARTED = new ClientStarted();
+    private static boolean setupComplete;
+    private static boolean started;
 
     private ClientLifecycleEvents() {
     }
 
     public static void onClientSetup(FMLClientSetupEvent event) {
-        event.enqueueWork(() -> CLIENT_STARTED.invoker(Minecraft.getInstance()));
+        event.enqueueWork(() -> setupComplete = true);
+    }
+
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || !setupComplete || started) return;
+        // All mods must finish their client-setup work before the started event.
+        // Compatibility registers its callbacks during that same Forge phase.
+        started = true;
+        CLIENT_STARTED.invoker(Minecraft.getInstance());
     }
 
     @FunctionalInterface

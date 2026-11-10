@@ -7,12 +7,24 @@ import java.lang.reflect.InvocationTargetException;
 public final class CompatibilityBootstrap {
     private CompatibilityBootstrap() { }
     public static void initializeCommon() {
+        if (DesktopEnvironment.isModLoaded("fabricloader")) initialize("techreborn", "com.salts_inventory_update.compat.techreborn.TechRebornWindows", "initializeCommon");
+        initialize("universal-graves", "com.salts_inventory_update.compat.graves.UniversalGravesWindows", "initializeCommon");
+        initialize("travelersbackpack", "com.salts_inventory_update.compat.travelersbackpack.TravelersWindows", "initializeCommon");
+        initialize("toms_trading_network", "com.salts_inventory_update.compat.tomstrading.TomsTradingWindows", "initializeCommon");
+        initialize("tradingpost", "com.salts_inventory_update.compat.tradingpost.TradingPostWindows", "initializeCommon");
+        com.salts_inventory_update.compat.nativewindows.ReviewedNativeWindows.initializeCommon();
         initialize("graveyard", "com.salts_inventory_update.compat.graveyard.OssuarySync", "initializeCommon");
         initialize("animal_feeding_trough", "com.salts_inventory_update.compat.feedingtrough.FeedingTroughIntegration", "initializeCommon");
         initialize("ae2", "com.salts_inventory_update.compat.ae2.AE2Bootstrap", "initializeCommon");
         initialize("toms_storage", "com.salts_inventory_update.compat.toms_storage.server.TomsStorageServerCompat", "initialize");
     }
     public static void initializeClient() {
+        if (DesktopEnvironment.isModLoaded("fabricloader")) initialize("techreborn", "com.salts_inventory_update.compat.techreborn.TechRebornClient", "initializeClient");
+        initialize("universal-graves", "com.salts_inventory_update.compat.graves.UniversalGravesWindows", "initializeClient");
+        initialize("travelersbackpack", "com.salts_inventory_update.compat.travelersbackpack.TravelersWindows", "initializeClient");
+        initialize("toms_trading_network", "com.salts_inventory_update.compat.tomstrading.TomsTradingWindows", "initializeClient");
+        initialize("tradingpost", "com.salts_inventory_update.compat.tradingpost.TradingPostWindows", "initializeClient");
+        com.salts_inventory_update.compat.nativewindows.ReviewedNativeWindows.initializeClient();
         initialize("graveyard", "com.salts_inventory_update.compat.graveyard.GraveyardNativeUi", "initialize");
         if (DesktopEnvironment.isModLoaded("fabricloader")) initialize("betterend", "com.salts_inventory_update.compat.betterend.BetterEndNativeUi", "initialize");
         initialize("runes", "com.salts_inventory_update.compat.runes.RunesNativeUi", "initialize");

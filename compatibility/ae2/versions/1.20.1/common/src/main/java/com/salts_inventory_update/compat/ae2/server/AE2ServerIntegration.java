@@ -1,9 +1,12 @@
 package com.salts_inventory_update.compat.ae2.server;
 
 import java.util.UUID;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import com.salts_inventory_update.api.desktop.DesktopInventoryIdentity;
 import com.salts_inventory_update.api.desktop.DesktopMenuBindings;
+import com.salts_inventory_update.api.desktop.DesktopItemSources;
 import com.salts_inventory_update.api.server.desktop.DesktopCompanionLease;
 import com.salts_inventory_update.api.server.desktop.DesktopCompanionSpec;
 import com.salts_inventory_update.api.server.desktop.DesktopServerApi;
@@ -29,6 +32,26 @@ public final class AE2ServerIntegration {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(AE2ServerIntegration.class);
     public static final net.minecraft.resources.ResourceLocation TOOLBOX_CHANNEL = com.salts_inventory_update.compat.ae2.menu.DesktopProtocol.TOOLBOX_CHANNEL;
     public static final net.minecraft.resources.ResourceLocation CPU_STATE_CHANNEL = com.salts_inventory_update.compat.ae2.menu.DesktopProtocol.CPU_STATE_CHANNEL;
+
+    // One identity for every view of the same live portable item. Charge and
+    // contained resources may change in place; replacing the source ends its lock.
+    private static final Map<net.minecraft.world.item.ItemStack, String> ITEM_SOURCE_IDS = new WeakHashMap<>();
+
+    private static DesktopItemSources.Source itemSource(net.minecraft.world.entity.player.Player player,
+                                                       AbstractContainerMenu menu) {
+        if (!(menu instanceof AEBaseMenu ae)
+                || !(ae.getTarget() instanceof appeng.api.implementations.menuobjects.ItemMenuHost host)
+                || host.getPlayer() != player) return null;
+        Integer slot = host.getSlot();
+        if (slot == null || slot < 0 || slot >= player.getInventory().getContainerSize()) return null;
+        var source = host.getItemStack();
+        if (source.isEmpty() || player.getInventory().getItem(slot) != source) return null;
+        String identity;
+        synchronized (ITEM_SOURCE_IDS) {
+            identity = ITEM_SOURCE_IDS.computeIfAbsent(source, ignored -> UUID.randomUUID().toString());
+        }
+        return new DesktopItemSources.Source(slot, identity, source, current -> current == source);
+    }
 
     private static final class ToolboxState {
         DesktopCompanionLease lease;
@@ -109,6 +132,7 @@ public final class AE2ServerIntegration {
     @SuppressWarnings("unchecked")
     private void registerMenu(MenuType<?> untyped, Object untypedBuilder) {
         var type = (MenuType<AEBaseMenu>) untyped;
+        DesktopItemSources.register(type, AE2ServerIntegration::itemSource);
         var builder=(com.salts_inventory_update.compat.ae2.menu.NativeDesktopBuilder)untypedBuilder;
         DesktopMenuBindings.register(type, new DesktopMenuBindings.SlotAccess() {
             @Override public int size(AbstractContainerMenu menu) { return menu.slots.size(); }
@@ -173,14 +197,21 @@ public final class AE2ServerIntegration {
 
             @Override
             public void opened(DesktopServerSessionContext<AEBaseMenu, ToolboxState> context) {
+                com.salts_inventory_update.compat.ae2.nativeview.ExtendedAePackets.opened(context);
                 updateToolbox(context);
                 updateCpuState(context, true);
+                com.salts_inventory_update.compat.ae2.nativeview.RequesterDesktop.update(context);
             }
 
             @Override
             public void tick(DesktopServerSessionContext<AEBaseMenu, ToolboxState> context) {
+                com.salts_inventory_update.compat.ae2.nativeview.ExtendedAePackets.tick(context.menu());
                 updateToolbox(context);
                 updateCpuState(context, false);
+                com.salts_inventory_update.compat.ae2.nativeview.RequesterDesktop.update(context);
+            }
+            @Override public void closed(DesktopServerSessionContext<AEBaseMenu, ToolboxState> context) {
+                com.salts_inventory_update.compat.ae2.nativeview.ExtendedAePackets.closed(context.menu());
             }
         });
         DesktopServerApi.registerOpeningData(type, (player, menu, output) -> {
@@ -217,10 +248,20 @@ public final class AE2ServerIntegration {
                         DesktopSessions.withSessionTransition(player, request.sessionId(), () -> packet.serverPacketData(player));
                     } finally {
                         try {
-                            request.setCarriedStack(menu.getCarried());
+                            if (DesktopSessions.hasOpenSessionMatching(player, candidate -> candidate == menu)) {
+                                request.setCarriedStack(menu.getCarried());
+                            } else {
+                                // A replaced native menu no longer owns this payload context.
+                                // Keep the canonical cursor through Core's enclosing callback;
+                                // native removed() has already cleared the old menu mirror.
+                                menu.setCarried(player.inventoryMenu.getCarried().copy());
+                            }
                             request.broadcastChanges();
                         } finally {
-                            menu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
+                            // Keep the committed shared cursor on this menu.
+                            // Salt adopts the menu's cursor when the callback
+                            // returns; clearing it here discards in-place mana
+                            // container updates (and their carried tablet).
                             if (player.containerMenu == menu) player.containerMenu = previous;
                         }
                     }
@@ -229,5 +270,7 @@ public final class AE2ServerIntegration {
 
             });
         }
+        com.salts_inventory_update.compat.ae2.nativeview.RequesterDesktop.register(type);
+        com.salts_inventory_update.compat.ae2.nativeview.ExtendedAePackets.register(type);
     }
 }

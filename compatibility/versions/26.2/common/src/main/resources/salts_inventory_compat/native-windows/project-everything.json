@@ -1,0 +1,3558 @@
+[
+  {
+    "id": "shared-ag-bakery-small-pot",
+    "mods": [
+      "bakery",
+      "candlelight",
+      "farm_and_charm"
+    ],
+    "screen": "net.satisfy.farm_and_charm.client.gui.CookingPotGui",
+    "menu": "farm_and_charm:cooking_pot_gui_handler",
+    "regions": [
+      {
+        "source": [
+          5,
+          25,
+          25,
+          43
+        ],
+        "at": [
+          0,
+          14
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          28,
+          16,
+          146,
+          72
+        ],
+        "at": [
+          25,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      143,
+      56
+    ],
+    "title": "Small Cooking Pot",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": true,
+    "machineUtility": false,
+    "menus": [
+      "farm_and_charm:cooking_pot_gui_handler"
+    ]
+  },
+  {
+    "id": "candlelight-cooking-pan",
+    "mods": [
+      "candlelight",
+      "farm_and_charm"
+    ],
+    "screen": "net.satisfy.farm_and_charm.client.gui.RoasterGui",
+    "menu": "farm_and_charm:roaster_gui_handler",
+    "regions": [
+      {
+        "source": [
+          5,
+          25,
+          25,
+          43
+        ],
+        "at": [
+          0,
+          17
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          28,
+          16,
+          146,
+          72
+        ],
+        "at": [
+          25,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      143,
+      56
+    ],
+    "title": "Cooking Pan",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": true,
+    "machineUtility": false,
+    "menus": [
+      "farm_and_charm:roaster_gui_handler"
+    ]
+  },
+  {
+    "id": "candlelight-cobblestone-stove",
+    "mods": [
+      "candlelight",
+      "farm_and_charm"
+    ],
+    "screen": "net.satisfy.farm_and_charm.client.gui.StoveGui",
+    "menu": "farm_and_charm:stove_gui_handler",
+    "regions": [
+      {
+        "source": [
+          5,
+          25,
+          25,
+          43
+        ],
+        "at": [
+          0,
+          14
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          28,
+          17,
+          150,
+          68
+        ],
+        "at": [
+          25,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      147,
+      51
+    ],
+    "title": "Cobblestone Stove",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": true,
+    "machineUtility": false,
+    "menus": [
+      "farm_and_charm:stove_gui_handler"
+    ]
+  },
+  {
+    "id": "item-candlelight-letter-open",
+    "mods": [
+      "candlelight"
+    ],
+    "screen": "net.satisfy.candlelight.client.gui.LetterGui",
+    "menu": "candlelight:letter_screen",
+    "regions": [
+      {
+        "source": [
+          32,
+          12,
+          84,
+          68
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          88,
+          8,
+          149,
+          42
+        ],
+        "at": [
+          58,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          99,
+          41,
+          138,
+          72
+        ],
+        "at": [
+          68,
+          33
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      119,
+      64
+    ],
+    "title": "Letter",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": true,
+    "machineUtility": false,
+    "menus": [
+      "candlelight:letter_screen"
+    ]
+  },
+  {
+    "id": "herbalbrews-cauldron",
+    "mods": [
+      "herbalbrews"
+    ],
+    "screen": "net.satisfy.herbalbrews.client.gui.CauldronGui",
+    "menu": "herbalbrews:cauldron_gui_handler",
+    "regions": [
+      {
+        "source": [
+          55,
+          15,
+          165,
+          75
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Brewing Cauldron",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": true,
+    "machineUtility": false,
+    "menus": [
+      "herbalbrews:cauldron_gui_handler"
+    ]
+  },
+  {
+    "id": "herbalbrews-copper-tea-kettle",
+    "mods": [
+      "herbalbrews"
+    ],
+    "screen": "net.satisfy.herbalbrews.client.gui.TeaKettleGui",
+    "menu": "herbalbrews:tea_kettle_gui_handler",
+    "regions": [
+      {
+        "source": [
+          11,
+          11,
+          166,
+          75
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          94,
+          72,
+          166,
+          80
+        ],
+        "at": [
+          83,
+          61
+        ],
+        "cutouts": [
+          [
+            94,
+            57,
+            112,
+            75
+          ]
+        ]
+      }
+    ],
+    "canvas": [
+      155,
+      69
+    ],
+    "title": "Tea Kettle",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [
+      [
+        56,
+        5,
+        140,
+        15
+      ]
+    ],
+    "recipeBook": true,
+    "machineUtility": false,
+    "menus": [
+      "herbalbrews:tea_kettle_gui_handler"
+    ]
+  },
+  {
+    "id": "meadow-cheese-form",
+    "mods": [
+      "meadow"
+    ],
+    "screen": "net.satisfy.meadow.client.gui.CheeseFormGui",
+    "menu": "meadow:cheese_form",
+    "regions": [
+      {
+        "source": [
+          5,
+          25,
+          25,
+          43
+        ],
+        "at": [
+          0,
+          17
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          28,
+          7,
+          150,
+          60
+        ],
+        "at": [
+          25,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      147,
+      53
+    ],
+    "title": "Cheese Form",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "meadow:cheese_form"
+    ]
+  },
+  {
+    "id": "meadow-cooking-cauldron",
+    "mods": [
+      "meadow"
+    ],
+    "screen": "net.satisfy.meadow.client.gui.CookingCauldronGui",
+    "menu": "meadow:cooking_cauldron",
+    "regions": [
+      {
+        "source": [
+          5,
+          25,
+          25,
+          43
+        ],
+        "at": [
+          0,
+          25
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          28,
+          8,
+          149,
+          66
+        ],
+        "at": [
+          25,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      146,
+      58
+    ],
+    "title": "Cooking Cauldron",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "meadow:cooking_cauldron"
+    ]
+  },
+  {
+    "id": "meadow-fondue",
+    "mods": [
+      "meadow"
+    ],
+    "screen": "net.satisfy.meadow.client.gui.FondueGui",
+    "menu": "meadow:fondue",
+    "regions": [
+      {
+        "source": [
+          35,
+          7,
+          141,
+          70
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      106,
+      63
+    ],
+    "title": "Fondue",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "meadow:fondue"
+    ]
+  },
+  {
+    "id": "meadow-woodcutter",
+    "mods": [
+      "meadow"
+    ],
+    "screen": "net.satisfy.meadow.client.gui.WoodcutterGui",
+    "menu": "meadow:woodcutter",
+    "regions": [
+      {
+        "source": [
+          30,
+          14,
+          134,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          140,
+          30,
+          164,
+          54
+        ],
+        "at": [
+          108,
+          15
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      136,
+      58
+    ],
+    "title": "Woodcutter",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "meadow:woodcutter"
+    ]
+  },
+  {
+    "id": "nethervinery-crimson-fermentation-barrel",
+    "mods": [
+      "nethervinery",
+      "vinery"
+    ],
+    "screen": "net.satisfy.vinery.client.gui.FermentationBarrelGui",
+    "menu": "vinery:fermentation_barrel_gui_handler",
+    "regions": [
+      {
+        "source": [
+          5,
+          25,
+          25,
+          43
+        ],
+        "at": [
+          0,
+          19
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          27,
+          14,
+          149,
+          72
+        ],
+        "at": [
+          20,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      142,
+      58
+    ],
+    "title": "Crimson Aging Barrel",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": true,
+    "machineUtility": false,
+    "menus": [
+      "vinery:fermentation_barrel_gui_handler"
+    ]
+  },
+  {
+    "id": "nethervinery-crimson-apple-press",
+    "mods": [
+      "nethervinery"
+    ],
+    "screen": "net.satisfy.nethervinery.client.gui.ApplePressGui",
+    "menu": "nethervinery:apple_press_gui_handler",
+    "regions": [
+      {
+        "source": [
+          42,
+          14,
+          137,
+          68
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Crimson Apple Press",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": true,
+    "machineUtility": false,
+    "menus": [
+      "nethervinery:apple_press_gui_handler"
+    ]
+  },
+  {
+    "id": "vinery-apple-press",
+    "mods": [
+      "vinery"
+    ],
+    "screen": "net.satisfy.vinery.client.gui.ApplePressGui",
+    "menu": "vinery:apple_press_gui_handler",
+    "regions": [
+      {
+        "source": [
+          39,
+          14,
+          137,
+          68
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Apple Press",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": true,
+    "machineUtility": false,
+    "menus": [
+      "vinery:apple_press_gui_handler"
+    ]
+  },
+  {
+    "id": "vinery-basket",
+    "mods": [
+      "vinery"
+    ],
+    "screen": "net.satisfy.vinery.client.gui.BasketGui",
+    "menu": "vinery:basket_gui_handler",
+    "regions": [
+      {
+        "source": [
+          60,
+          16,
+          115,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Basket",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": true,
+    "machineUtility": false,
+    "menus": [
+      "vinery:basket_gui_handler"
+    ]
+  },
+  {
+    "id": "ad-astra-giselle-addon-automation-nasa-workbench",
+    "mods": [
+      "ad_astra_giselle_addon"
+    ],
+    "screen": "ad_astra_giselle_addon.client.screen.AutomationNasaWorkbenchScreen",
+    "menu": "ad_astra_giselle_addon:automation_nasa_workbench",
+    "regions": [
+      {
+        "source": [
+          8,
+          19,
+          166,
+          130
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Automation NASA Workbench",
+    "color": [
+      77,
+      74,
+      78
+    ],
+    "darkFrame": true,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": true,
+    "menus": [
+      "ad_astra_giselle_addon:automation_nasa_workbench"
+    ]
+  },
+  {
+    "id": "ad-astra-giselle-addon-fuel-loader",
+    "mods": [
+      "ad_astra_giselle_addon"
+    ],
+    "screen": "ad_astra_giselle_addon.client.screen.FuelLoaderScreen",
+    "menu": "ad_astra_giselle_addon:fuel_loader",
+    "regions": [
+      {
+        "source": [
+          61,
+          23,
+          113,
+          81
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Fuel Loader",
+    "color": [
+      77,
+      74,
+      78
+    ],
+    "darkFrame": true,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": true,
+    "menus": [
+      "ad_astra_giselle_addon:fuel_loader"
+    ]
+  },
+  {
+    "id": "ad-astra-giselle-addon-gravity-normalizer",
+    "mods": [
+      "ad_astra_giselle_addon"
+    ],
+    "screen": "ad_astra_giselle_addon.client.screen.GravityNormalizerScreen",
+    "menu": "ad_astra_giselle_addon:gravity_normalizer",
+    "regions": [
+      {
+        "source": [
+          5,
+          17,
+          173,
+          114
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Gravity Normalizer(Deprecated)",
+    "color": [
+      77,
+      74,
+      78
+    ],
+    "darkFrame": true,
+    "clean": [
+      [
+        0,
+        102,
+        91,
+        114
+      ],
+      [
+        0,
+        113,
+        174,
+        114
+      ]
+    ],
+    "recipeBook": false,
+    "machineUtility": true,
+    "menus": [
+      "ad_astra_giselle_addon:gravity_normalizer"
+    ]
+  },
+  {
+    "id": "ad-astra-giselle-addon-rocket-sensor",
+    "mods": [
+      "ad_astra_giselle_addon"
+    ],
+    "screen": "ad_astra_giselle_addon.client.screen.RocketSensorScreen",
+    "menu": "ad_astra_giselle_addon:rocket_sensor",
+    "regions": [
+      {
+        "source": [
+          7,
+          17,
+          169,
+          173
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Rocket Sensor",
+    "color": [
+      77,
+      74,
+      78
+    ],
+    "darkFrame": true,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": true,
+    "menus": [
+      "ad_astra_giselle_addon:rocket_sensor"
+    ]
+  },
+  {
+    "id": "bf-moa-clean",
+    "mods": [
+      "aether_protect_your_moa"
+    ],
+    "screen": "com.aetherteam.protect_your_moa.client.gui.screen.inventory.MoaInventoryScreen",
+    "menu": "salts_inventory_compat:moa",
+    "regions": [
+      {
+        "source": [
+          7,
+          17,
+          80,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Moa",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "salts_inventory_compat:moa"
+    ]
+  },
+  {
+    "id": "archon-scripture-table",
+    "mods": [
+      "archon"
+    ],
+    "screen": "safro.archon.client.screen.ScriptureTableScreen",
+    "menu": "archon:scripture_table",
+    "regions": [
+      {
+        "source": [
+          14,
+          15,
+          158,
+          75
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Scripture Table",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "archon:scripture_table"
+    ]
+  },
+  {
+    "id": "item-archon-experience-pouch",
+    "mods": [
+      "archon"
+    ],
+    "screen": "safro.archon.client.screen.ExperiencePouchScreen",
+    "menu": "archon:experience_pouch",
+    "regions": [
+      {
+        "source": [
+          6,
+          3,
+          224,
+          103
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      218,
+      100
+    ],
+    "title": "Experience Pouch",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "archon:experience_pouch"
+    ]
+  },
+  {
+    "id": "blue-skies-snowcap-oven",
+    "mods": [
+      "blue_skies"
+    ],
+    "screen": "com.legacy.blue_skies.client.gui.screen.SnowcapOvenScreen",
+    "menu": "blue_skies:snowcap_oven",
+    "regions": [
+      {
+        "source": [
+          19,
+          15,
+          138,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Snowcap Oven",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "blue_skies:snowcap_oven"
+    ]
+  },
+  {
+    "id": "blue-skies-horizonite-forge",
+    "mods": [
+      "blue_skies"
+    ],
+    "screen": "com.legacy.blue_skies.client.gui.screen.HorizoniteForgeScreen",
+    "menu": "blue_skies:horizonite_forge",
+    "regions": [
+      {
+        "source": [
+          19,
+          15,
+          138,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Horizonite Forge",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "blue_skies:horizonite_forge"
+    ]
+  },
+  {
+    "id": "blue-skies-summoning-table",
+    "mods": [
+      "blue_skies"
+    ],
+    "screen": "com.legacy.blue_skies.client.gui.screen.SummoningTableScreen",
+    "menu": "blue_skies:summoning_table",
+    "regions": [
+      {
+        "source": [
+          14,
+          15,
+          164,
+          69
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Summoning Table",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "blue_skies:summoning_table"
+    ]
+  },
+  {
+    "id": "blue-skies-alchemy-table",
+    "mods": [
+      "blue_skies"
+    ],
+    "screen": "com.legacy.blue_skies.client.gui.screen.AlchemyTableScreen",
+    "menu": "blue_skies:alchemy_table",
+    "regions": [
+      {
+        "source": [
+          11,
+          14,
+          165,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Alchemy",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [
+      [
+        156,
+        71,
+        170,
+        83
+      ]
+    ],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "blue_skies:alchemy_table"
+    ]
+  },
+  {
+    "id": "blue-skies-food-prep-table",
+    "mods": [
+      "blue_skies"
+    ],
+    "screen": "com.legacy.blue_skies.client.gui.screen.FoodPrepScreen",
+    "menu": "blue_skies:food_prep_table",
+    "regions": [
+      {
+        "source": [
+          42,
+          16,
+          135,
+          82
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Prepare Food",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [
+      [
+        7,
+        72,
+        61,
+        82
+      ]
+    ],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "blue_skies:food_prep_table"
+    ]
+  },
+  {
+    "id": "own-bf-bag-of-spoils-aligned",
+    "mods": [
+      "blue_skies"
+    ],
+    "screen": "com.legacy.blue_skies.client.gui.screen.BagOfSpoilsScreen",
+    "menu": "blue_skies:bag_of_spoils",
+    "regions": [
+      {
+        "source": [
+          43,
+          18,
+          134,
+          38
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Bag of Spoils",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "blue_skies:bag_of_spoils"
+    ]
+  },
+  {
+    "id": "own-bf-camel-real-aligned",
+    "mods": [
+      "blue_skies"
+    ],
+    "screen": "com.legacy.blue_skies.client.gui.screen.MountInventoryScreen",
+    "menu": "blue_skies:mount_inventory",
+    "regions": [
+      {
+        "source": [
+          7,
+          17,
+          169,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Crystal Camel",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "blue_skies:mount_inventory"
+    ]
+  },
+  {
+    "id": "pr-botania-bauble-box",
+    "mods": [
+      "botania"
+    ],
+    "screen": "vazkii.botania.client.gui.box.BaubleBoxGui",
+    "menu": "botania:bauble_box",
+    "regions": [
+      {
+        "source": [
+          7,
+          7,
+          169,
+          80
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Trinket Case",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "botania:bauble_box"
+    ]
+  },
+  {
+    "id": "item-botania-flower-bag",
+    "mods": [
+      "botania"
+    ],
+    "screen": "vazkii.botania.client.gui.bag.FlowerPouchGui",
+    "menu": "botania:flower_bag",
+    "regions": [
+      {
+        "source": [
+          15,
+          24,
+          161,
+          98
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Flower Pouch",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "botania:flower_bag"
+    ]
+  },
+  {
+    "id": "item-wands-palette",
+    "mods": [
+      "wands"
+    ],
+    "screen": "net.nicguzzo.wands.client.screens.PaletteScreen",
+    "menu": "wands:palette_menu",
+    "regions": [
+      {
+        "source": [
+          49,
+          3,
+          151,
+          17
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          7,
+          17,
+          169,
+          126
+        ],
+        "at": [
+          0,
+          18
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      162,
+      127
+    ],
+    "title": "Palette",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "wands:palette_menu"
+    ]
+  },
+  {
+    "id": "item-wands-magic-bag-1",
+    "mods": [
+      "wands"
+    ],
+    "screen": "net.nicguzzo.wands.client.screens.MagicBagScreen",
+    "menu": "wands:magic_bag_menu",
+    "regions": [
+      {
+        "source": [
+          77,
+          17,
+          117,
+          60
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Magic Bag Tier 1",
+    "color": [
+      132,
+      132,
+      132
+    ],
+    "darkFrame": true,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "wands:magic_bag_menu"
+    ]
+  },
+  {
+    "id": "charm-kiln",
+    "mods": [
+      "charm"
+    ],
+    "screen": "svenhjol.charm.feature.kilns.KilnScreen",
+    "menu": "charm:kiln",
+    "regions": [
+      {
+        "source": [
+          19,
+          15,
+          137,
+          71
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Kiln",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "charm:kiln"
+    ],
+    "screens": [
+      "svenhjol.charm.feature.kilns.client.Screen"
+    ]
+  },
+  {
+    "id": "charm-woodcutter",
+    "mods": [
+      "charm"
+    ],
+    "screen": "svenhjol.charm.feature.woodcutters.WoodcutterScreen",
+    "menu": "charm:woodcutter",
+    "regions": [
+      {
+        "source": [
+          18,
+          13,
+          164,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Woodcutter",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "charm:woodcutter"
+    ],
+    "screens": [
+      "svenhjol.charm.feature.woodcutters.client.Screen"
+    ]
+  },
+  {
+    "id": "bb-charm-atlas",
+    "mods": [
+      "charm"
+    ],
+    "screen": "svenhjol.charm.feature.atlases.AtlasScreen",
+    "menu": "charm:atlas",
+    "regions": [
+      {
+        "source": [
+          7,
+          17,
+          25,
+          71
+        ],
+        "at": [
+          0,
+          12
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          61,
+          4,
+          135,
+          77
+        ],
+        "at": [
+          24,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          156,
+          4,
+          173,
+          21
+        ],
+        "at": [
+          104,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          159,
+          72,
+          169,
+          82
+        ],
+        "at": [
+          108,
+          61
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      121,
+      78
+    ],
+    "title": "Atlas",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "charm:atlas"
+    ]
+  },
+  {
+    "id": "minecraft-anvil",
+    "mods": [
+      "easyanvils"
+    ],
+    "screen": "fuzs.easyanvils.client.gui.screens.inventory.ModAnvilScreen",
+    "menu": "easyanvils:repair",
+    "regions": [
+      {
+        "source": [
+          59,
+          19,
+          168,
+          37
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          26,
+          45,
+          154,
+          66
+        ],
+        "at": [
+          0,
+          24
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      128,
+      56
+    ],
+    "title": "Repair & Name",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "easyanvils:repair"
+    ],
+    "screens": [
+      "fuzs.easyanvils.common.client.gui.screens.inventory.ModAnvilScreen"
+    ]
+  },
+  {
+    "id": "minecraft-enchanting-table",
+    "mods": [
+      "easymagic"
+    ],
+    "screen": "fuzs.easymagic.client.gui.screens.inventory.ModEnchantmentScreen",
+    "menu": "easymagic:enchanting",
+    "regions": [
+      {
+        "source": [
+          12,
+          13,
+          169,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Enchant",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "easymagic:enchanting"
+    ],
+    "screens": [
+      "fuzs.easymagic.common.client.gui.screens.inventory.ModEnchantmentScreen"
+    ]
+  },
+  {
+    "id": "exposure-lightroom",
+    "mods": [
+      "exposure"
+    ],
+    "screen": "io.github.mortuusars.exposure.gui.screen.LightroomScreen",
+    "menu": "exposure:lightroom",
+    "regions": [
+      {
+        "source": [
+          -21,
+          41,
+          -3,
+          59
+        ],
+        "at": [
+          0,
+          29
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          4,
+          14,
+          172,
+          111
+        ],
+        "at": [
+          24,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          -19,
+          91,
+          -1,
+          109
+        ],
+        "at": [
+          0,
+          78
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      186,
+      97
+    ],
+    "title": "Lightroom",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "exposure:lightroom"
+    ]
+  },
+  {
+    "id": "exposure-camera",
+    "mods": [
+      "exposure"
+    ],
+    "screen": "io.github.mortuusars.exposure.gui.screen.camera.CameraAttachmentsScreen",
+    "menu": "exposure:camera",
+    "regions": [
+      {
+        "source": [
+          12,
+          14,
+          165,
+          89
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Camera",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "exposure:camera",
+      "exposure:camera_in_hand",
+      "exposure:camera_on_stand"
+    ],
+    "screens": [
+      "io.github.mortuusars.exposure.client.gui.screen.camera.CameraAttachmentsScreen"
+    ]
+  },
+  {
+    "id": "exposure-film-rename",
+    "mods": [
+      "exposure"
+    ],
+    "screen": "io.github.mortuusars.exposure.gui.screen.ItemRenameScreen",
+    "menu": "exposure:item_rename",
+    "regions": [
+      {
+        "source": [
+          3,
+          15,
+          21,
+          33
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          28,
+          17,
+          178,
+          33
+        ],
+        "at": [
+          25,
+          1
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          132,
+          41,
+          174,
+          62
+        ],
+        "at": [
+          133,
+          25
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      175,
+      46
+    ],
+    "title": "Rename",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "exposure:item_rename"
+    ]
+  },
+  {
+    "id": "bf-gallery-painting-selector",
+    "mods": [
+      "gallery"
+    ],
+    "screen": "com.teamabnormals.gallery.client.gui.screens.inventory.PaintingSelectorScreen",
+    "menu": "gallery:painting_selector",
+    "regions": [
+      {
+        "source": [
+          11,
+          8,
+          169,
+          116
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Paintings",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [
+      [
+        8,
+        5,
+        78,
+        15
+      ]
+    ],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "gallery:painting_selector"
+    ]
+  },
+  {
+    "id": "guard-villager-inventory",
+    "mods": [
+      "guardvillagers"
+    ],
+    "screen": "dev.sterner.guardvillagers.client.screen.GuardVillagerScreen",
+    "menu": "minecraft:guard_screen",
+    "regions": [
+      {
+        "source": [
+          7,
+          7,
+          77,
+          80
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": [
+          [
+            76,
+            61,
+            94,
+            79
+          ],
+          [
+            76,
+            43,
+            94,
+            61
+          ]
+        ]
+      },
+      {
+        "source": [
+          76,
+          43,
+          95,
+          80
+        ],
+        "at": [
+          74,
+          36
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          79,
+          17,
+          162,
+          41
+        ],
+        "at": [
+          74,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          99,
+          43,
+          141,
+          63
+        ],
+        "at": [
+          99,
+          36
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      157,
+      73
+    ],
+    "title": "Guard",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "minecraft:guard_screen",
+      "guardvillagers:guard_screen"
+    ]
+  },
+  {
+    "id": "bf-forge-guard",
+    "mods": [
+      "guardvillagers"
+    ],
+    "screen": "tallestegg.guardvillagers.client.gui.GuardInventoryScreen",
+    "menu": "salts_inventory_compat:guard",
+    "regions": [
+      {
+        "source": [
+          7,
+          7,
+          77,
+          80
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": [
+          [
+            76,
+            61,
+            94,
+            79
+          ],
+          [
+            76,
+            43,
+            94,
+            61
+          ]
+        ]
+      },
+      {
+        "source": [
+          76,
+          43,
+          95,
+          80
+        ],
+        "at": [
+          74,
+          36
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          79,
+          17,
+          162,
+          41
+        ],
+        "at": [
+          74,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          99,
+          43,
+          141,
+          63
+        ],
+        "at": [
+          99,
+          36
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      157,
+      73
+    ],
+    "title": "Guard",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "salts_inventory_compat:guard"
+    ]
+  },
+  {
+    "id": "item-itemfilters-and",
+    "mods": [
+      "itemfilters"
+    ],
+    "screen": "dev.latvian.mods.itemfilters.gui.InventoryFilterScreen",
+    "menu": "itemfilters:inventory_filter",
+    "regions": [
+      {
+        "source": [
+          7,
+          15,
+          169,
+          69
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "[AND Filter]",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "itemfilters:inventory_filter"
+    ]
+  },
+  {
+    "id": "own-ae-part-requester-terminal",
+    "mods": [
+      "merequester"
+    ],
+    "screen": "com.almostreliable.merequester.client.RequesterTerminalScreen",
+    "menu": "ae2:requester_terminal",
+    "regions": [
+      {
+        "source": [
+          7,
+          17,
+          189,
+          78
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "own ae part requester terminal",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "ae2:requester_terminal"
+    ]
+  },
+  {
+    "id": "merequester-requester",
+    "mods": [
+      "merequester"
+    ],
+    "screen": "com.almostreliable.merequester.client.RequesterScreen",
+    "menu": "ae2:requester",
+    "regions": [
+      {
+        "source": [
+          7,
+          17,
+          189,
+          116
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "merequester requester",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "ae2:requester"
+    ]
+  },
+  {
+    "id": "own-ae-part-cell-dock",
+    "mods": [
+      "megacells"
+    ],
+    "screen": "gripe._90.megacells.client.gui.CellDockScreen",
+    "menu": "ae2:cell_dock",
+    "regions": [
+      {
+        "source": [
+          79,
+          36,
+          98,
+          55
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "own ae part cell dock",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "ae2:cell_dock"
+    ]
+  },
+  {
+    "id": "bf-sculptor-clean",
+    "mods": [
+      "mowziesmobs"
+    ],
+    "screen": "com.bobmowzie.mowziesmobs.client.gui.GuiSculptorTrade",
+    "menu": "mowziesmobs:sculptor_trade",
+    "regions": [
+      {
+        "source": [
+          7,
+          7,
+          66,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          68,
+          18,
+          171,
+          74
+        ],
+        "at": [
+          64,
+          6
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      167,
+      67
+    ],
+    "title": "Tongbi, the Sculptor",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "mowziesmobs:sculptor_trade"
+    ]
+  },
+  {
+    "id": "own-bf-umvuthi-aligned",
+    "mods": [
+      "mowziesmobs"
+    ],
+    "screen": "com.bobmowzie.mowziesmobs.client.gui.GuiUmvuthiTrade",
+    "menu": "mowziesmobs:umvuthi_trade",
+    "regions": [
+      {
+        "source": [
+          7,
+          7,
+          66,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          68,
+          18,
+          171,
+          74
+        ],
+        "at": [
+          64,
+          6
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      167,
+      67
+    ],
+    "title": "Umvuthi, the Sunbird",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "mowziesmobs:umvuthi_trade"
+    ]
+  },
+  {
+    "id": "own-bf-minion-trade-real",
+    "mods": [
+      "mowziesmobs"
+    ],
+    "screen": "com.bobmowzie.mowziesmobs.client.gui.GuiUmvuthanaTrade",
+    "menu": "mowziesmobs:umvuthana_trade",
+    "regions": [
+      {
+        "source": [
+          7,
+          7,
+          66,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          69,
+          18,
+          171,
+          76
+        ],
+        "at": [
+          65,
+          6
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      167,
+      67
+    ],
+    "title": "Umvuthana",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "mowziesmobs:umvuthana_trade"
+    ]
+  },
+  {
+    "id": "pr-mythic-direwolf-inventory",
+    "mods": [
+      "mythicmounts"
+    ],
+    "screen": "com.yahoo.chirpycricket.mythicmounts.screen.MountScreen",
+    "menu": "mythicmounts:mountscreen",
+    "regions": [
+      {
+        "source": [
+          7,
+          17,
+          80,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Dire Wolf",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "mythicmounts:mountscreen",
+      "mythicmounts:mount_inventory"
+    ]
+  },
+  {
+    "id": "ag-niftycarts-plow",
+    "mods": [
+      "niftycarts"
+    ],
+    "screen": "net.jmb19905.niftycarts.client.screen.PlowScreen",
+    "menu": "niftycarts:plow",
+    "regions": [
+      {
+        "source": [
+          56,
+          16,
+          121,
+          54
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Plow",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "niftycarts:plow"
+    ]
+  },
+  {
+    "id": "bf-wolf-isolated",
+    "mods": [
+      "revampedwolf"
+    ],
+    "screen": "baguchan.revampedwolf.client.screen.WolfInventoryScreen",
+    "menu": "salts_inventory_compat:wolf",
+    "regions": [
+      {
+        "source": [
+          7,
+          17,
+          80,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Wolf",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "salts_inventory_compat:wolf"
+    ]
+  },
+  {
+    "id": "smallships-brigg",
+    "mods": [
+      "smallships"
+    ],
+    "screen": "com.talhanation.smallships.client.gui.screens.inventory.ShipContainerScreen",
+    "menu": "minecraft:ship_container",
+    "regions": [
+      {
+        "source": [
+          7,
+          17,
+          169,
+          125
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          114,
+          124,
+          170,
+          138
+        ],
+        "at": [
+          106,
+          112
+        ],
+        "cutouts": [
+          [
+            97,
+            107,
+            115,
+            125
+          ],
+          [
+            115,
+            107,
+            133,
+            125
+          ],
+          [
+            133,
+            107,
+            151,
+            125
+          ],
+          [
+            151,
+            107,
+            169,
+            125
+          ]
+        ]
+      },
+      {
+        "source": [
+          177,
+          17,
+          256,
+          124
+        ],
+        "at": [
+          168,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      247,
+      126
+    ],
+    "title": "Brigg",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "minecraft:ship_container",
+      "smallships:ship_container"
+    ]
+  },
+  {
+    "id": "bb-spawn-hamster",
+    "mods": [
+      "spawn"
+    ],
+    "screen": "com.ninni.spawn.client.inventory.HamsterInventoryScreen",
+    "menu": "salts_inventory_compat:hamster",
+    "regions": [
+      {
+        "source": [
+          7,
+          16,
+          169,
+          72
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Hamster",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "salts_inventory_compat:hamster"
+    ]
+  },
+  {
+    "id": "spell-engine-spell-binding",
+    "mods": [
+      "spell_engine"
+    ],
+    "screen": "net.spell_engine.spellbinding.SpellBindingScreen",
+    "menu": "spell_engine:spell_binding",
+    "regions": [
+      {
+        "source": [
+          13,
+          -4,
+          172,
+          74
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Bind Spells",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "spell_engine:spell_binding"
+    ]
+  },
+  {
+    "id": "stalwart-dungeons-teleporter",
+    "mods": [
+      "stalwart_dungeons"
+    ],
+    "screen": "net.mcreator.stalwartdungeons.client.gui.TeleporterGUIScreen",
+    "menu": "stalwart_dungeons:teleporter_gui",
+    "regions": [
+      {
+        "source": [
+          78,
+          38,
+          98,
+          58
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Teleporter",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "stalwart_dungeons:teleporter_gui"
+    ]
+  },
+  {
+    "id": "own-supp-cannon",
+    "mods": [
+      "supplementaries"
+    ],
+    "screen": "net.mehvahdjukaar.supplementaries.client.screens.CannonScreen",
+    "menu": "supplementaries:cannon",
+    "regions": [
+      {
+        "source": [
+          7,
+          17,
+          123,
+          72
+        ],
+        "at": [
+          0,
+          8
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          123,
+          9,
+          169,
+          72
+        ],
+        "at": [
+          119,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      165,
+      63
+    ],
+    "title": "Cannon",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "supplementaries:cannon"
+    ]
+  },
+  {
+    "id": "own-supp-present",
+    "mods": [
+      "supplementaries"
+    ],
+    "screen": "net.mehvahdjukaar.supplementaries.client.screens.PresentScreen",
+    "menu": "supplementaries:present",
+    "regions": [
+      {
+        "source": [
+          11,
+          15,
+          161,
+          71
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Gift",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "supplementaries:present"
+    ]
+  },
+  {
+    "id": "own-supp-trapped-present",
+    "mods": [
+      "supplementaries"
+    ],
+    "screen": "net.mehvahdjukaar.supplementaries.client.screens.TrappedPresentScreen",
+    "menu": "supplementaries:trapped_present",
+    "regions": [
+      {
+        "source": [
+          56,
+          25,
+          116,
+          57
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Trapped Present",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "supplementaries:trapped_present"
+    ]
+  },
+  {
+    "id": "supplementaries-lunch-basket",
+    "mods": [
+      "supplementaries"
+    ],
+    "screen": "net.mehvahdjukaar.supplementaries.client.screens.VariableSizeContainerScreen",
+    "menu": "supplementaries:variable_size",
+    "regions": [
+      {
+        "source": [
+          60,
+          24,
+          116,
+          62
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Lunch Basket",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "supplementaries:variable_size",
+      "supplementaries:lunch_basket",
+      "supplementaries:sack"
+    ]
+  },
+  {
+    "id": "supplementaries-notice-board",
+    "mods": [
+      "supplementaries"
+    ],
+    "screen": "net.mehvahdjukaar.supplementaries.client.screens.NoticeBoardScreen",
+    "menu": "supplementaries:notice_board",
+    "regions": [
+      {
+        "source": [
+          33,
+          32,
+          53,
+          52
+        ],
+        "at": [
+          0,
+          22
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          80,
+          9,
+          144,
+          73
+        ],
+        "at": [
+          26,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      90,
+      64
+    ],
+    "title": "Notice Board",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "supplementaries:notice_board"
+    ]
+  },
+  {
+    "id": "supplementaries-pulley-block",
+    "mods": [
+      "supplementaries"
+    ],
+    "screen": "net.mehvahdjukaar.supplementaries.client.screens.PulleyScreen",
+    "menu": "supplementaries:pulley_block",
+    "regions": [
+      {
+        "source": [
+          68,
+          28,
+          106,
+          67
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Pulley Block",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "supplementaries:pulley_block"
+    ]
+  },
+  {
+    "id": "pr-tierify-reforge",
+    "mods": [
+      "tiered"
+    ],
+    "screen": "elocindev.tierify.screen.client.ReforgeScreen",
+    "menu": "tiered:reforge",
+    "regions": [
+      {
+        "source": [
+          16,
+          5,
+          48,
+          39
+        ],
+        "at": [
+          0,
+          10
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          44,
+          46,
+          62,
+          64
+        ],
+        "at": [
+          39,
+          25
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          79,
+          33,
+          97,
+          51
+        ],
+        "at": [
+          74,
+          10
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          114,
+          46,
+          132,
+          64
+        ],
+        "at": [
+          109,
+          25
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          79,
+          54,
+          99,
+          74
+        ],
+        "at": [
+          73,
+          35
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      127,
+      56
+    ],
+    "title": "Reforge Gear",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "tiered:reforge"
+    ]
+  },
+  {
+    "id": "transmog-transmogrification-table",
+    "mods": [
+      "transmog"
+    ],
+    "screen": "com.hidoni.transmog.gui.TransmogScreen",
+    "menu": "transmog:transmog",
+    "regions": [
+      {
+        "source": [
+          9,
+          15,
+          163,
+          60
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Transmogrify",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "transmog:transmog"
+    ]
+  },
+  {
+    "id": "villagersplus-alchemist-table",
+    "mods": [
+      "villagersplus"
+    ],
+    "screen": "com.lion.villagersplus.client.screen.AlchemistTableScreen",
+    "menu": "villagersplus:alchemist_table_screen_handler",
+    "regions": [
+      {
+        "source": [
+          14,
+          15,
+          120,
+          76
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Alchemist Table",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [
+      [
+        7,
+        72,
+        64,
+        82
+      ]
+    ],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "villagersplus:alchemist_table_screen_handler"
+    ]
+  },
+  {
+    "id": "bf-warp-plate",
+    "mods": [
+      "waystones"
+    ],
+    "screen": "net.blay09.mods.waystones.client.gui.screen.WarpPlateScreen",
+    "menu": "waystones:warp_plate",
+    "regions": [
+      {
+        "source": [
+          51,
+          16,
+          126,
+          91
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Warp Plate",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "waystones:warp_plate"
+    ],
+    "screens": [
+      "net.blay09.mods.waystones.client.gui.screen.WaystoneContainerScreen"
+    ]
+  },
+  {
+    "id": "design-wands-tools-request",
+    "mods": [
+      "wands"
+    ],
+    "screen": "net.nicguzzo.wands.client.screens.WandToolScreen",
+    "menu": "wands:wand_menu",
+    "title": "Wand tools",
+    "regions": [
+      {
+        "source": [
+          7,
+          30,
+          170,
+          49
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      },
+      {
+        "source": [
+          7,
+          83,
+          169,
+          159
+        ],
+        "at": [
+          0,
+          25
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      163,
+      101
+    ],
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "playerSlots": true,
+    "menus": [
+      "wands:wand_menu",
+      "wands:wand_tools_menu"
+    ]
+  },
+  {
+    "id": "villagersplus-ore-grinder",
+    "mods": [
+      "villagersplus"
+    ],
+    "screen": "com.lion.villagersplus.client.screen.OreGrinderScreen",
+    "menu": "villagersplus:ore_grinder_screen_handler",
+    "regions": [
+      {
+        "source": [
+          20,
+          15,
+          138,
+          71
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Ore Grinder",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false,
+    "menus": [
+      "villagersplus:ore_grinder_screen_handler"
+    ]
+  },
+  {
+    "id": "bountiful-decree-analyzer",
+    "mods": [
+      "bountiful"
+    ],
+    "screen": "io.ejekta.bountiful.client.AnalyzerScreen",
+    "menu": "bountiful:analyzer",
+    "menus": [
+      "bountiful:analyzer"
+    ],
+    "regions": [
+      {
+        "source": [
+          5,
+          5,
+          172,
+          80
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      167,
+      75
+    ],
+    "title": "Decree Analyzer",
+    "color": [
+      65,
+      82,
+      43
+    ],
+    "darkFrame": true,
+    "clean": [
+      [
+        5,
+        5,
+        144,
+        16
+      ]
+    ],
+    "recipeBook": false,
+    "machineUtility": false
+  },
+  {
+    "id": "blue-skies-arcs",
+    "mods": [
+      "blue_skies"
+    ],
+    "screen": "com.legacy.blue_skies.client.gui.screen.ArcsScreen",
+    "menu": "blue_skies:arc_inventory",
+    "menus": [
+      "blue_skies:arc_inventory"
+    ],
+    "regions": [
+      {
+        "source": [
+          5,
+          5,
+          171,
+          80
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      166,
+      75
+    ],
+    "title": "Arcs",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [
+      [
+        80,
+        5,
+        169,
+        16
+      ]
+    ],
+    "recipeBook": false,
+    "machineUtility": false
+  },
+  {
+    "id": "blue-skies-toolbox",
+    "mods": [
+      "blue_skies"
+    ],
+    "screen": "com.legacy.blue_skies.client.gui.screen.ToolboxScreen",
+    "menu": "blue_skies:toolbox",
+    "menus": [
+      "blue_skies:toolbox"
+    ],
+    "regions": [
+      {
+        "source": [
+          7,
+          5,
+          169,
+          70
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      162,
+      65
+    ],
+    "title": "Tool Box",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [
+      [
+        55,
+        16,
+        169,
+        27
+      ]
+    ],
+    "recipeBook": false,
+    "machineUtility": false
+  },
+  {
+    "id": "spawn-pigment-shifter",
+    "mods": [
+      "spawn"
+    ],
+    "screen": "com.ninni.spawn.client.inventory.PigmentShifterScreen",
+    "menu": "spawn:pigment_shifter",
+    "regions": [
+      {
+        "source": [
+          7,
+          18,
+          169,
+          74
+        ],
+        "at": [
+          0,
+          0
+        ],
+        "cutouts": []
+      }
+    ],
+    "canvas": [
+      0,
+      0
+    ],
+    "title": "Customize",
+    "color": [
+      198,
+      198,
+      198
+    ],
+    "darkFrame": false,
+    "clean": [],
+    "recipeBook": false,
+    "machineUtility": false
+  }
+]

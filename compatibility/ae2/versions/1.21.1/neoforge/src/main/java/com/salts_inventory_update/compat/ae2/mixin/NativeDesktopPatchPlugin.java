@@ -60,7 +60,19 @@ public final class NativeDesktopPatchPlugin implements IMixinConfigPlugin {
                 raw.accept(writer);
                 ClassNode original = new ClassNode();
                 new org.objectweb.asm.ClassReader(writer.toByteArray()).accept(original, org.objectweb.asm.ClassReader.EXPAND_FRAMES);
-                NativeClassPatch.verify(original, patch);
+                try {
+                    NativeClassPatch.verify(original, patch);
+                } catch (IllegalStateException primaryMismatch) {
+                    // Applied Botanics' published 1.21.1 baseline uses 19.2.17.
+                    // Its CPU formatting differs from 19.2.18. The alternative
+                    // retains those native instructions and is fingerprinted
+                    // just as strictly; unknown binaries still fail closed.
+                    String alternative = "ae2-native-patches-19.2.17/" + name + ".json";
+                    if (NativeDesktopPatchPlugin.class.getClassLoader().getResource(alternative) == null) throw primaryMismatch;
+                    patch = read(alternative);
+                    NativeClassPatch.verify(original, patch);
+                    LoggerFactory.getLogger(NativeDesktopPatchPlugin.class).info("Verified AE2 19.2.17 desktop variant for {}", name);
+                }
                 patches.put(name.replace('/', '.'), patch);
             }
             active = true;

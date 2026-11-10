@@ -1,0 +1,24 @@
+{
+  "includes": [
+    "../set_output_sides.json"
+  ],
+  "desktop": {
+    "width": 93,
+    "height": 92,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 0
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.extendedae.set_output_sides"
+      },
+      "position": {
+        "left": 8,
+        "top": -4
+      }
+    }
+  }
+}

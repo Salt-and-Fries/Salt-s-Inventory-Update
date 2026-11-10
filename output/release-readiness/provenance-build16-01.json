@@ -1,0 +1,348 @@
+{
+  "status": "passed",
+  "scope": "Packaged notice/asset provenance checks; no publication or legal opinion.",
+  "artifacts": [
+    {
+      "file": "dist\\core\\salts_inventory_update-1.20.1-Fabric-0.1.6.jar",
+      "sha256": "764690b7bd5f478861ce5a16e8a80545f52efa55f50b172adc42282f90fe5e1e",
+      "checks": [
+        "root MIT notice exact",
+        "Fabric paging artwork and Apache-2.0 license exact"
+      ]
+    },
+    {
+      "file": "dist\\core\\salts_inventory_update-1.20.1-Forge-0.1.6.jar",
+      "sha256": "d52d211641950b22f4e18b52a970595ef4620bfc5dea561951dedd8ae19b08fd",
+      "checks": [
+        "root MIT notice exact",
+        "Fabric paging artwork and Apache-2.0 license exact"
+      ]
+    },
+    {
+      "file": "dist\\core\\salts_inventory_update-1.21.1-Fabric-0.1.6.jar",
+      "sha256": "8ce7a5aff709a8c366420b0169e7ff30210b917ea453991d989ece0ae4eb3b17",
+      "checks": [
+        "root MIT notice exact",
+        "Fabric paging artwork and Apache-2.0 license exact"
+      ]
+    },
+    {
+      "file": "dist\\core\\salts_inventory_update-1.21.1-NeoForge-0.1.6.jar",
+      "sha256": "cebb6ab34204afe5908f8faba2a7fa800d47a0e78d7eca36548ad8b4f191396f",
+      "checks": [
+        "root MIT notice exact",
+        "Fabric paging artwork and Apache-2.0 license exact"
+      ]
+    },
+    {
+      "file": "dist\\core\\salts_inventory_update-1.21.11-Fabric-0.1.6.jar",
+      "sha256": "04e9c8b70a5073cc923e0240c3adcf3c078cf7e71675f61a8247f59aa2388f1b",
+      "checks": [
+        "root MIT notice exact",
+        "Fabric paging artwork and Apache-2.0 license exact"
+      ]
+    },
+    {
+      "file": "dist\\core\\salts_inventory_update-1.21.11-NeoForge-0.1.6.jar",
+      "sha256": "94738b6e2f4a327a513c768a772a2a135b645415c792351350895eeb37d15628",
+      "checks": [
+        "root MIT notice exact",
+        "Fabric paging artwork and Apache-2.0 license exact"
+      ]
+    },
+    {
+      "file": "dist\\core\\salts_inventory_update-26.1.2-Fabric-0.1.6.jar",
+      "sha256": "f6f9eb96ede4d0d38a32b8529b80766664ad7d8b56a7111c6022fc085b81fd95",
+      "checks": [
+        "root MIT notice exact",
+        "Fabric paging artwork and Apache-2.0 license exact"
+      ]
+    },
+    {
+      "file": "dist\\core\\salts_inventory_update-26.1.2-NeoForge-0.1.6.jar",
+      "sha256": "671deda68bcc56e1f4318b7fbf938760a2b79854024964ebd312452c473625e2",
+      "checks": [
+        "root MIT notice exact",
+        "Fabric paging artwork and Apache-2.0 license exact"
+      ]
+    },
+    {
+      "file": "dist\\core\\salts_inventory_update-26.2-Fabric-0.1.6.jar",
+      "sha256": "c1db86c6ebf612aede4ba435b303063670e8c65cea96bf64d4cf48f4378e276f",
+      "checks": [
+        "root MIT notice exact",
+        "Fabric paging artwork and Apache-2.0 license exact"
+      ]
+    },
+    {
+      "file": "dist\\core\\salts_inventory_update-26.2-NeoForge-0.1.6.jar",
+      "sha256": "c79a52f2b89fa5737a43de09b146a4379f1d7cfad2b2456e3aa3139ab51f986d",
+      "checks": [
+        "root MIT notice exact",
+        "Fabric paging artwork and Apache-2.0 license exact"
+      ]
+    },
+    {
+      "file": "dist\\core\\salts_inventory_update-26.3-Fabric-0.1.6.jar",
+      "sha256": "729f0abe580ced1337bf0cc3bef79eb9a27ca78a198f498828f1075ca4de40f6",
+      "checks": [
+        "root MIT notice exact",
+        "Fabric paging artwork and Apache-2.0 license exact"
+      ]
+    },
+    {
+      "file": "dist\\core\\salts_inventory_update-26.3-NeoForge-0.1.6.jar",
+      "sha256": "d244372fad2bb2f5e221d78063f2059e62a2a7dd8c671e4253363fe5a590a37b",
+      "checks": [
+        "root MIT notice exact",
+        "Fabric paging artwork and Apache-2.0 license exact"
+      ]
+    },
+    {
+      "file": "dist\\compatibility\\salts_inventory_compat-1.20.1-Fabric-0.1.3.jar",
+      "sha256": "12eb51b8a0437006859cc7109dbd740e7b7095d07e0dc97af39ffcb734ad095d",
+      "checks": [
+        "root MIT notice exact",
+        "adapted AE2 LGPL-3.0-or-later license/source notice exact",
+        "legacy CPU imported pixel provenance checked"
+      ]
+    },
+    {
+      "file": "dist\\compatibility\\salts_inventory_compat-1.20.1-Forge-0.1.3.jar",
+      "sha256": "ed69e570a417dd22c8ca7dca7d7672eae5e18500c8af69c8b366705af720a894",
+      "checks": [
+        "root MIT notice exact",
+        "adapted AE2 LGPL-3.0-or-later license/source notice exact",
+        "legacy CPU imported pixel provenance checked"
+      ]
+    },
+    {
+      "file": "dist\\compatibility\\salts_inventory_compat-1.21.1-Fabric-0.1.3.jar",
+      "sha256": "8ed5583e53f896b2888aab6c78fd56a744ac977d102c14641e4efa84697f41d8",
+      "checks": [
+        "root MIT notice exact",
+        "adapted AE2 LGPL-3.0-or-later license/source notice exact",
+        "legacy CPU imported pixel provenance checked"
+      ]
+    },
+    {
+      "file": "dist\\compatibility\\salts_inventory_compat-1.21.1-NeoForge-0.1.3.jar",
+      "sha256": "76441fce9f0f94c2e56f7e897514fc3be7f2c086a1a47a9d86ef282db2dca0cd",
+      "checks": [
+        "root MIT notice exact",
+        "adapted AE2 LGPL-3.0-or-later license/source notice exact",
+        "legacy CPU imported pixel provenance checked"
+      ]
+    },
+    {
+      "file": "dist\\compatibility\\salts_inventory_compat-1.21.11-Fabric-0.1.3.jar",
+      "sha256": "b1c4a04904c2edb216f5a20e71670a56fc613afe42df606d7df0ca9c1afcf824",
+      "checks": [
+        "root MIT notice exact",
+        "adapted AE2 LGPL-3.0-or-later license/source notice exact",
+        "legacy CPU imported pixel provenance checked"
+      ]
+    },
+    {
+      "file": "dist\\compatibility\\salts_inventory_compat-1.21.11-NeoForge-0.1.3.jar",
+      "sha256": "38968327f78e1ade6bb822936d6e0c23ac587499c4b6454a513fbeba8594007b",
+      "checks": [
+        "root MIT notice exact",
+        "adapted AE2 LGPL-3.0-or-later license/source notice exact",
+        "legacy CPU imported pixel provenance checked"
+      ]
+    },
+    {
+      "file": "dist\\compatibility\\salts_inventory_compat-26.1.2-Fabric-0.1.3.jar",
+      "sha256": "336b5443d84b4aeae2b853f5bd34f2bb46054ac7a2bec1989c9386b6f4260378",
+      "checks": [
+        "root MIT notice exact",
+        "adapted AE2 LGPL-3.0-or-later license/source notice exact",
+        "legacy CPU imported pixel provenance checked"
+      ]
+    },
+    {
+      "file": "dist\\compatibility\\salts_inventory_compat-26.1.2-NeoForge-0.1.3.jar",
+      "sha256": "07a30125a218a4cb0d5233b7cdc7006debf43c205bb77367adfe64b1486ed0ee",
+      "checks": [
+        "root MIT notice exact",
+        "adapted AE2 LGPL-3.0-or-later license/source notice exact",
+        "legacy CPU imported pixel provenance checked"
+      ]
+    },
+    {
+      "file": "dist\\compatibility\\salts_inventory_compat-26.2-Fabric-0.1.3.jar",
+      "sha256": "5e7d311ed67cf051125c7f25fa09baeddf9c54285e70a7bb3fa0c7f7afa221cc",
+      "checks": [
+        "root MIT notice exact",
+        "adapted AE2 LGPL-3.0-or-later license/source notice exact",
+        "legacy CPU imported pixel provenance checked"
+      ]
+    },
+    {
+      "file": "dist\\compatibility\\salts_inventory_compat-26.2-NeoForge-0.1.3.jar",
+      "sha256": "6bb7f5a830320a167214e8b79e7953c60e38bf25d7dc20e33707032c38c3f463",
+      "checks": [
+        "root MIT notice exact",
+        "adapted AE2 LGPL-3.0-or-later license/source notice exact",
+        "legacy CPU imported pixel provenance checked"
+      ]
+    },
+    {
+      "file": "dist\\compatibility\\salts_inventory_compat-26.3-Fabric-0.1.3.jar",
+      "sha256": "2b81294da50d9c0b07c4ca80704ed3d5db70e03fb8013da8d5814749d241ff02",
+      "checks": [
+        "root MIT notice exact",
+        "adapted AE2 LGPL-3.0-or-later license/source notice exact",
+        "legacy CPU imported pixel provenance checked"
+      ]
+    },
+    {
+      "file": "dist\\compatibility\\salts_inventory_compat-26.3-NeoForge-0.1.3.jar",
+      "sha256": "0eb9da21befa3083d6c6c9d28ed69252b8c62c11fe4bd604a8b2b917b84c237e",
+      "checks": [
+        "root MIT notice exact",
+        "adapted AE2 LGPL-3.0-or-later license/source notice exact",
+        "legacy CPU imported pixel provenance checked"
+      ]
+    },
+    {
+      "file": "dist\\controlify\\salts_inventory_controlify-1.20.1-Fabric-0.1.1.jar",
+      "sha256": "e1f9c2f4e812a1e8d7aca07b9b1287b8acc9c8a6a374de3d5060a362a551c209",
+      "checks": [
+        "root MIT notice exact",
+        "seven CC0 recordings match source manifest",
+        "original Kenney notices exact",
+        "Minecraft event aliases distinguished from redistributed recordings"
+      ]
+    },
+    {
+      "file": "dist\\controlify\\salts_inventory_controlify-1.20.1-Forge-0.1.1.jar",
+      "sha256": "14175dac25364b8fb74cc910aa55a3386f72f26f42b5f17a5ffefb957f25ebdc",
+      "checks": [
+        "root MIT notice exact",
+        "seven CC0 recordings match source manifest",
+        "original Kenney notices exact",
+        "Minecraft event aliases distinguished from redistributed recordings"
+      ]
+    },
+    {
+      "file": "dist\\controlify\\salts_inventory_controlify-1.21.1-Fabric-0.1.1.jar",
+      "sha256": "3be06c64028818e150ad5b3c566088cef03c25ac82e338773386c1a915e3ec34",
+      "checks": [
+        "root MIT notice exact",
+        "seven CC0 recordings match source manifest",
+        "original Kenney notices exact",
+        "Minecraft event aliases distinguished from redistributed recordings"
+      ]
+    },
+    {
+      "file": "dist\\controlify\\salts_inventory_controlify-1.21.1-NeoForge-0.1.1.jar",
+      "sha256": "27bd2c9be078fd6cf5ffb54d21b66678cac67666d4e6361e10392a0786abc19d",
+      "checks": [
+        "root MIT notice exact",
+        "seven CC0 recordings match source manifest",
+        "original Kenney notices exact",
+        "Minecraft event aliases distinguished from redistributed recordings"
+      ]
+    },
+    {
+      "file": "dist\\controlify\\salts_inventory_controlify-1.21.11-Fabric-0.1.1.jar",
+      "sha256": "76cbf19afb32c29d234f6e983a110437e62eb13ec935000b451c6ff8be65304b",
+      "checks": [
+        "root MIT notice exact",
+        "seven CC0 recordings match source manifest",
+        "original Kenney notices exact",
+        "Minecraft event aliases distinguished from redistributed recordings"
+      ]
+    },
+    {
+      "file": "dist\\controlify\\salts_inventory_controlify-1.21.11-NeoForge-0.1.1.jar",
+      "sha256": "7ba28a0e5358b86a38a5d16057c3b4fa8f6ab2b000b411909c593604305362d6",
+      "checks": [
+        "root MIT notice exact",
+        "seven CC0 recordings match source manifest",
+        "original Kenney notices exact",
+        "Minecraft event aliases distinguished from redistributed recordings"
+      ]
+    },
+    {
+      "file": "dist\\controlify\\salts_inventory_controlify-26.1.2-Fabric-0.1.1.jar",
+      "sha256": "10137864a492ecf1a070aa25e4936ac70677f22fbfc9bf46a29354e1ae4567ef",
+      "checks": [
+        "root MIT notice exact",
+        "seven CC0 recordings match source manifest",
+        "original Kenney notices exact",
+        "Minecraft event aliases distinguished from redistributed recordings"
+      ]
+    },
+    {
+      "file": "dist\\controlify\\salts_inventory_controlify-26.1.2-NeoForge-0.1.1.jar",
+      "sha256": "8f9acd5f2ac89439480066bffe3c7a9e22df785b41f3b21de54525ca265ab70e",
+      "checks": [
+        "root MIT notice exact",
+        "seven CC0 recordings match source manifest",
+        "original Kenney notices exact",
+        "Minecraft event aliases distinguished from redistributed recordings"
+      ]
+    },
+    {
+      "file": "dist\\controlify\\salts_inventory_controlify-26.2-Fabric-0.1.1.jar",
+      "sha256": "17976b6022e63735f1410b3ab2cdaac563dc1ad6cf8bfaf893e41a3262d20fd4",
+      "checks": [
+        "root MIT notice exact",
+        "seven CC0 recordings match source manifest",
+        "original Kenney notices exact",
+        "Minecraft event aliases distinguished from redistributed recordings"
+      ]
+    },
+    {
+      "file": "dist\\controlify\\salts_inventory_controlify-26.2-NeoForge-0.1.1.jar",
+      "sha256": "45244749e13623690c725a51e7009cda289d42732aa8d5fb83b140c227a677c7",
+      "checks": [
+        "root MIT notice exact",
+        "seven CC0 recordings match source manifest",
+        "original Kenney notices exact",
+        "Minecraft event aliases distinguished from redistributed recordings"
+      ]
+    },
+    {
+      "file": "dist\\controlify\\salts_inventory_controlify-26.3-Fabric-0.1.1.jar",
+      "sha256": "ef5a130d4440091a32f62865e88b96ee922dab4a3568a0734c20b26692b1f055",
+      "checks": [
+        "root MIT notice exact",
+        "seven CC0 recordings match source manifest",
+        "original Kenney notices exact",
+        "Minecraft event aliases distinguished from redistributed recordings"
+      ]
+    },
+    {
+      "file": "dist\\controlify\\salts_inventory_controlify-26.3-NeoForge-0.1.1.jar",
+      "sha256": "9f75c6ab63bacd3ae0dba84faddfb0448ded5b6bd0c0ce647f2d0e7de72a0a02",
+      "checks": [
+        "root MIT notice exact",
+        "seven CC0 recordings match source manifest",
+        "original Kenney notices exact",
+        "Minecraft event aliases distinguished from redistributed recordings"
+      ]
+    }
+  ],
+  "fabric_artwork": {
+    "publisher_file": "C:\\Users\\texca\\.gradle\\caches\\modules-2\\files-2.1\\net.fabricmc.fabric-api\\fabric-item-group-api-v1\\4.0.14+1802ada577\\41b2e9bbfe5955cf1dc62157b569d10b834b94c4\\fabric-item-group-api-v1-4.0.14+1802ada577.jar",
+    "publisher_sha256": "f68d0d23ba3b9c943640c19bd87aedd2f932e598b7b10c5dcf074fb96f357b23",
+    "resource": "assets/fabric/textures/gui/creative_buttons.png",
+    "source_rgba_equal": true
+  },
+  "ae2_legacy_cpu": {
+    "source_jar": "G:\\Codex Projects\\Salts Inventory Update\\build\\ae2-port\\appliedenergistics2-26.3.1-alpha.jar",
+    "source_sha256": "85da904d110e811f77fa5227f8d9fbc212028311badbceaead32bd4d275bc970",
+    "regions": 7,
+    "license": "LGPL-3.0-or-later"
+  },
+  "cc0_audio": {
+    "manifest": "controlify\\versions\\26.3\\common\\src\\main\\resources\\assets\\salts_inventory_controlify\\licenses\\ui-sounds\\palette-manifest.json",
+    "manifest_sha256": "a291b13e8d6d511da53cdc669ab6bcbe375347bbce59801e19d2da4b1d00f340",
+    "recordings": 7
+  },
+  "source_offer": "Corresponding adapted source remains in compatibility/ae2, with build helpers included in the final candidate source snapshot. Source publication remains a separate user-authorized action."
+}

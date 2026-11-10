@@ -386,6 +386,8 @@ Initialize every field used by your menu's full synchronization before that firs
 
 Your handler must validate operation-specific permissions, indexes, quantities and storage state. Treat virtual-entry ids/counts as requests, never as authoritative stacks. Preserve backing inventory rules, `mayPlace`/`mayPickup`, source locks and cursor reconciliation. Use `reject(reason)` for a diagnostic on a mod-specific refusal, then return from your handler. Its reason is limited to 512 characters. It records a warning; it does not abort execution, undo mutations or send an error reply by itself. Send your own response if your UI needs one. If a native handler needs a temporary active-menu assumption, adapt it explicitly; a context does not make the player's global menu point at this detached session.
 
+Server cursor access through `carriedStack()` and `setCarriedStack(...)` requires a live, valid session on the server thread. A native opener called inside `DesktopSessions.withSessionTransition(...)` can replace that session before the enclosing callback returns. The retired context no longer authorizes a cursor commit, including from a `finally` block. Core keeps the canonical cursor on the player inventory menu and clears the retired menu's copy during removal. A navigation bridge should commit a native mirror only while its original menu remains live; it must not copy a retired menu's cleared cursor back over the canonical stack.
+
 ### Transport and capture bounds
 
 | Field | Limit |
@@ -634,6 +636,42 @@ slot bound, including hidden/cosmetic slots. The [Curios adapters](curios.md) co
 native-loader releases using only these APIs and the existing menu/session registration contracts.
 
 ## Native templates in Core 0.1.6
+
+### Embedded built-in subviews and management policies
+
+The additive [built-in subview contracts](builtin-subviews.md) are available on
+all twelve targets. Existing attachment/definition methods and their defaults
+remain compatible. `BuiltinSubviewExample` in the compiled UI examples shows
+registration, owner validation, real session-slot hits and normal server close.
+
+`registerEmbeddedSession(type, handler)` advertises a native menu whose content
+is presented by an existing built-in attachment. Register its normal native menu
+factory and common-side session opener as usual. `opened(handle)` must reject a
+late or unsolicited response when its requested owner is gone. Returning false
+requests normal authenticated closure. Core calls `closed(id)` once on disposal;
+remove the integration's own references there. `handle.close()` requests server
+closure and does not dispose local state early. `sendPayload` uses the existing
+authenticated session channel and returns false after closure. These hooks grant
+no new server permissions and must run on the client thread.
+
+An attachment can opt into `replacesContent` and `renderContent`; Core retains
+its frame, guide and effects. Use `builtinSlotBounds` and `slotAt` together for
+relocated player cells; `recipeBookButtonBounds` relocates the guide. Return a
+`DesktopSessionSlotHit` from `embeddedSlotAt` only for a live session registered
+with this contract, with the native cell's actual slot ID. Core resolves and
+validates the session and physical slot before its normal gesture transport.
+Blank replacement pixels should use `occludes` so hidden base cells cannot
+receive input. Hit/layout callbacks must remain pure, including when sampled
+for controller navigation. The original attachment contracts above remain the
+default when no replacement is active.
+
+`DesktopWindowDefinition.managementControlAllowed(context, control)` can remove
+individual title controls without changing server capabilities. Its default is
+true. `registerGeometryResetPolicy(id, predicate)` can preserve joined geometry
+for a paired window's UUID; permit unrelated UUIDs. A thrown policy reports a
+diagnostic and preserves geometry. Both registrations participate in integration
+rollback. They do not replace action predicates or allow independent movement
+of a parent-owned child.
 
 The [native-template guide](native-window-templates-1.20.1.md) covers automatic window composition, retained native fragments, exterior panels, standard slot backgrounds, local profiles and the in-game inspector. These additive contracts are available across every supported version and loader; existing API window definitions retain priority.
 

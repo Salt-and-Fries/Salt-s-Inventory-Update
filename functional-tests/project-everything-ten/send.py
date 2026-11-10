@@ -12,10 +12,10 @@ def read(path):
         return {}
 
 
-def send(output, kind, **arguments):
+def send(output, command_type, **arguments):
     sequence = max(read(output / "reply.json").get("sequence", -1),
                    read(output / "command.json").get("sequence", -1)) + 1
-    request = {"sequence": sequence, "type": kind, "ticks": 8, **arguments}
+    request = {"sequence": sequence, "type": command_type, "ticks": 8, **arguments}
     temporary = output / "command.tmp"
     temporary.write_text(json.dumps(request))
     # Windows can briefly deny replacement while the client reads the previous

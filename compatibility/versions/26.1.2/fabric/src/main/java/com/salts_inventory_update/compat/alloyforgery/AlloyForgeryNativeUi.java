@@ -16,6 +16,7 @@ public final class AlloyForgeryNativeUi {
     }
     private static final class State { int hovered=-1; }
     private static final class Template implements DesktopNativeTemplate<AbstractContainerMenu,State> {
+        @Override public void prepareLayout(DesktopWindowContext<AbstractContainerMenu,State> c){AlloyScreens.prepare(c.model());}
         @Override public State createState(DesktopWindowSetupContext<AbstractContainerMenu> c){return new State();}
         @Override public DesktopNativeLayout nativeLayout(DesktopNativeContext<AbstractContainerMenu,State> c){return NativeMachineLayouts.alloyForge(c.nativeView());}
         private int inputAt(DesktopWindowContext<AbstractContainerMenu,State> c,double x,double y) {

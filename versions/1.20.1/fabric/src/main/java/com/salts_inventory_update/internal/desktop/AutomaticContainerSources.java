@@ -30,7 +30,11 @@ public final class AutomaticContainerSources {
         }
         BlockEntity block = provider instanceof BlockEntity be ? be : null;
         if (block == null) for (var slot : menu.slots) if (slot.container instanceof BlockEntity be) { block = be; break; }
-        if (block != null) SOURCES.put(menu, new Source(owner, block, -1, ItemStack.EMPTY));
+        // Some native providers (for example a conductor's mounted toolbox)
+        // are virtual block entities. They have their own menu validity rules
+        // and are not the block entity placed at that position in the world.
+        if (block != null && block.hasLevel() && block.getLevel().getBlockEntity(block.getBlockPos()) == block)
+            SOURCES.put(menu, new Source(owner, block, -1, ItemStack.EMPTY));
         return null;
     }
     public static void bindClient(Player owner, AbstractContainerMenu menu, String key) {

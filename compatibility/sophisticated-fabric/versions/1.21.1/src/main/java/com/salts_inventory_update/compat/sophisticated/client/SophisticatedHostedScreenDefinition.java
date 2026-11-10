@@ -197,6 +197,14 @@ public final class SophisticatedHostedScreenDefinition<T extends AbstractContain
                 return desiredSizeWithClosedTabs(context, state, null);
             }
             state.legacyScrollbarGutterMigrationPending = false;
+            // Older saved windows included the rows but omitted the toolbar
+            // height. Restore that known size before deciding to add a gutter.
+            if (context.model() instanceof StorageContainerMenuBase<?> storage
+                    && context.windowHeight() == SALT_VERTICAL_CHROME + storage.getNumberOfRows() * SLOT) {
+                var complete = DesktopWindowSize.of(context.windowWidth(),
+                    SALT_VERTICAL_CHROME + standardContentHeight(storage.getNumberOfRows()));
+                return desiredSizeWithClosedTabs(context, state, complete);
+            }
             if (layout.scrollbar != null) {
                 return desiredSizeWithClosedTabs(context, state, null);
             } else {

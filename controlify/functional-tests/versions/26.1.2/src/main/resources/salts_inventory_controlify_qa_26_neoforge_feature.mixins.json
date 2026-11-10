@@ -1,7 +1,12 @@
 {
   "required": true,
+  "minVersion": "0.8",
   "package": "com.salts_inventory_update.controlify.qa.mixin",
   "compatibilityLevel": "JAVA_25",
-  "client": ["FeatureNeoForgeTooltipProbeMixin"],
-  "injectors": { "defaultRequire": 1 }
+  "client": [
+    "FeatureNeoForgeTooltipProbeMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

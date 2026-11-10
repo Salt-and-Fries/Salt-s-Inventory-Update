@@ -10,14 +10,15 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 /** Native Curios launcher at the vanilla player-preview anchor in Character. */
 public final class CuriosCharacterButton implements DesktopBuiltinAttachment {
     private static final int X = 27, Y = 9, SIZE = 10;
+    private static int x(DesktopWindowContext<?,?> c){return com.salts_inventory_update.compat.aether.AetherEquipmentClient.generalButtonX(c);}
     private static boolean contains(DesktopWindowContext<?, ?> c, double x, double y) {
-        return x >= c.contentX() + X && x < c.contentX() + X + SIZE
+        return x >= x(c) && x < x(c) + SIZE
             && y >= c.contentY() + Y && y < c.contentY() + Y + SIZE;
     }
     @Override public void render(DesktopRenderContext<AbstractContainerMenu, Void> c) {
         boolean hover = contains(c, c.mouseX(), c.mouseY());
         c.sprite(ResourceLocation.fromNamespaceAndPath("curios", hover ? "button_highlighted" : "button"),
-            c.contentX() + X, c.contentY() + Y, SIZE, SIZE);
+            x(c), c.contentY() + Y, SIZE, SIZE);
     }
     @Override public boolean mouseClicked(DesktopInputContext<AbstractContainerMenu, Void> c, MouseButtonEvent event, boolean doubleClick) {
         if (!contains(c, event.x(), event.y())) return false;
@@ -29,7 +30,7 @@ public final class CuriosCharacterButton implements DesktopBuiltinAttachment {
         c.tooltip(Component.translatable("key.curios.open.desc"), x, y); return true;
     }
     @Override public List<DesktopWindowRegion> regions(DesktopWindowContext<AbstractContainerMenu, Void> c) {
-        return List.of(DesktopWindowRegion.interactive(c.contentX() - c.windowX() + X,
-            c.contentY() - c.windowY() + Y, SIZE, SIZE));
+        return List.of(DesktopWindowRegion.interactive(x(c) - c.windowX(),
+            c.contentY() - c.windowY() + Y, SIZE, SIZE).withRole(DesktopHitRole.CONTROL));
     }
 }

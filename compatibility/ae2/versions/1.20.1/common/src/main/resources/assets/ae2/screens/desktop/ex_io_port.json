@@ -1,0 +1,24 @@
+{
+  "includes": [
+    "../ex_io_port.json"
+  ],
+  "desktop": {
+    "width": 176,
+    "height": 104,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 87
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.siu.extendedae.ex_io_port"
+      },
+      "position": {
+        "left": 8,
+        "top": -4
+      }
+    }
+  }
+}

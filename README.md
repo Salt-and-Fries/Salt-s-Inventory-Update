@@ -1,5 +1,13 @@
 # Salt's Inventory Update
 
+The candidate's scoped tests, archive checks and evidence reconciliation are
+recorded in [final verification](docs/release/FINAL_VERIFICATION.md).
+The [release manifest](output/release-readiness/release-manifest-final.json)
+tracks exact source/jar identities and independent review status. No publication
+is performed by this qualification task. Use the [installation guide](docs/release/INSTALLATION.md)
+and [reviewed upstream pins](docs/release/compatibility-pins.md) for matching files.
+Older validation reports below retain their named artifacts and original scope.
+
 Salt's Inventory Update is a multi-version, multi-loader inventory framework. It builds three independent mods for each of twelve supported targets: **Salt's Inventory Update** (`salts_inventory_update`, core), **Salt's Inventory Compatibility** (`salts_inventory_compat`, optional extension), and **Salt's Inventory Controlify** (`salts_inventory_controlify`, optional controller client).
 
 Salt's Inventory Controlify provides the controller workspace across all twelve Minecraft and loader targets. Its [installation, controls and build guide](controlify/README.md) describes the radial presentation, separate JARs and pinned upstream dependencies. Install the matching rebuilt core from this branch alongside the native Controlify build, YACL and the controller JAR.
@@ -131,15 +139,15 @@ For publishing, configure the existing Prism `publishing` block for core and a s
 
 Standalone release notes: [Core 0.1.6](changelogs/changelog-0.1.6.md), [Compatibility 0.1.3](changelogs/changelog-compatibility-0.1.3.md), and [Controlify 0.1.1](changelogs/changelog-controlify-0.1.1.md).
 
-## Public API for 0.1.4
+## Public API for 0.1.6
 
-The [API guide](docs/markdown/desktop_window_api.md) covers optional providers, menu and client-only windows, native UI reuse, shared real-inventory companions, original-surface management controls and session-aware actions. [Compilable examples](api-examples/README.md) include a standalone nine-slot companion consumer. The public API is version 6 and desktop wire protocol is version 4; previous public API entrypoints were removed.
+The [API guide](docs/markdown/desktop_window_api.md) covers optional providers, menu and client-only windows, native UI reuse, shared real-inventory companions, original-surface management controls and session-aware actions. [Compilable examples](api-examples/README.md) include a standalone nine-slot companion consumer and a built-in subview consumer. The public integration API is version 6 and desktop wire protocol is version 5. The current additive subview contracts preserve existing exported API signatures.
 
 `./gradlew verifyApiExamples` compiles the examples against all twelve loader/version targets. `build` also verifies these examples and checks that every release jar contains the redesigned API.
 
 See [the separation and extension guide](docs/markdown/jar-separation.md) for the architecture audit, new API hooks and rules for adding integrations without changing core.
 
-Core 0.1.5 uses public integration API 6. Minimize and Ghost Pins have been removed, including settings and API members; ordinary pins and Persistent Windows remain available. See the [API migration guide](docs/markdown/desktop_window_api.md#migrating-to-015--api-6) and [window cleanup validation](functional-tests/WINDOW-CLEANUP-VALIDATION.md).
+Core 0.1.6 retains public integration API 6, introduced in 0.1.5. Minimize and Ghost Pins have been removed, including settings and API members; ordinary pins and Persistent Windows remain available. See the [API migration guide](docs/markdown/desktop_window_api.md#migrating-to-015--api-6) and [window cleanup validation](functional-tests/WINDOW-CLEANUP-VALIDATION.md).
 
 Window Movement Control defaults to **Left Alt**. Rebind it in Minecraft's **Controls → Key Binds → Salt's Inventory Update**, alongside the mod's character and recipe-browser bindings. **Window Movement Key** in Salt's Inventory settings opens that standard Key Binds screen. Minecraft's Controls screen contains only the **Hold / Toggle** selector; the mod settings share the same saved preference. Hold remains the default. Toggle switches camera/world control while windows are open and resets when you leave the workspace, open another menu, enter text, or lose game focus. It does not change the existing movement-key behavior. Holding the vanilla **Open/Close Inventory** binding closes the workspace after the configured duration, including when that binding is remapped to another key or mouse button. Help displays the selected binding; Persistent Windows retains its existing hide/restore behavior.
 

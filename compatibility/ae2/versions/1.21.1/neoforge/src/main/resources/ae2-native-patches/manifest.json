@@ -50,7 +50,7 @@
       "class": "appeng/client/gui/WidgetContainer",
       "fields": 8,
       "methods": 29,
-      "changes": 9,
+      "changes": 10,
       "scope": "base desktop layout/rendering and input"
     },
     {

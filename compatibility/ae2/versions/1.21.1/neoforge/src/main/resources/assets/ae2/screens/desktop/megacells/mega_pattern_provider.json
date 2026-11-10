@@ -1,0 +1,22 @@
+{
+  "includes": [
+    "../../megacells/mega_pattern_provider.json"
+  ],
+  "desktop": {
+    "width": 176,
+    "height": 124,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  },
+  "background": {
+    "texture": "guis/megacells/mega_pattern_provider.png",
+    "srcRect": [
+      0,
+      0,
+      176,
+      213
+    ]
+  }
+}

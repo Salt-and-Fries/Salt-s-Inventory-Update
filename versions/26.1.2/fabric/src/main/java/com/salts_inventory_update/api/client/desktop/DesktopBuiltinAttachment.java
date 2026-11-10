@@ -1,5 +1,7 @@
 package com.salts_inventory_update.api.client.desktop;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -10,6 +12,19 @@ import net.minecraft.client.input.MouseButtonEvent;
  * menu window for another inventory; this contribution does not create a second slot transport.
  */
 public interface DesktopBuiltinAttachment {
+    /** Opt-in content replacement. Core retains its frame, guide and effects. */
+    default boolean replacesContent(DesktopWindowContext<AbstractContainerMenu, Void> context) { return false; }
+    default void renderContent(DesktopRenderContext<AbstractContainerMenu, Void> context) { }
+    /** Absolute GUI bounds; empty retains normal built-in geometry. */
+    default java.util.Optional<DesktopWindowBounds> builtinSlotBounds(DesktopWindowContext<AbstractContainerMenu, Void> context, int menuSlotId) { return java.util.Optional.empty(); }
+    default java.util.Optional<DesktopWindowBounds> recipeBookButtonBounds(DesktopWindowContext<AbstractContainerMenu, Void> context) { return java.util.Optional.empty(); }
+    /** A real cell of a live, registered embedded session; Core validates ownership and slot ID. */
+    default @Nullable DesktopSessionSlotHit embeddedSlotAt(DesktopSlotContext<AbstractContainerMenu, Void> context, double x, double y) { return null; }
+
+    /** Native player-menu hit; Core retains its normal authenticated gesture transport. */
+    default @Nullable DesktopSlotHit slotAt(DesktopSlotContext<AbstractContainerMenu, Void> context, double x, double y) { return null; }
+    /** Blocks underlying owner slots within an active content replacement. */
+    default boolean occludes(DesktopWindowContext<AbstractContainerMenu, Void> context, double x, double y) { return false; }
     default void opened(DesktopWindowContext<AbstractContainerMenu, Void> context) { }
     default void suspended(DesktopWindowContext<AbstractContainerMenu, Void> context) { }
     default void closed(DesktopWindowContext<AbstractContainerMenu, Void> context) { }

@@ -161,6 +161,31 @@ class InventorySortTest {
         assertThrows(IllegalArgumentException.class, () -> new DesktopSortInventoryPayload(1, 1, 1, null));
     }
 
+
+    @Test void emptyStorageCellsNeedNoPickupPermissionToReceiveSortedItems() throws Throwable {
+        var m = menu(4).put(2, Items.DIRT, 10).put(3, Items.IRON_INGOT, 5);
+        for (int i = 0; i < 4; i++) {
+            m.slots.set(i, new Slot(m.storage, i, 0, 0) {
+                @Override public boolean mayPickup(Player player) { return hasItem(); }
+            });
+        }
+        assertTrue(execute(m, m.slots));
+        assertTrue(m.slots.get(0).hasItem()); assertTrue(m.slots.get(1).hasItem());
+        assertFalse(m.slots.get(2).hasItem()); assertFalse(m.slots.get(3).hasItem());
+        assertEquals(15, m.total()); assertEquals(5, m.count(Items.IRON_INGOT));
+    }
+
+    @Test void occupiedCellsWithoutPickupPermissionStillRejectSorting() {
+        var m = menu(2).put(0, Items.DIRT, 10).put(1, Items.IRON_INGOT, 5);
+        m.slots.set(0, new Slot(m.storage, 0, 0, 0) {
+            @Override public boolean mayPickup(Player player) { return false; }
+        });
+        assertThrows(IllegalStateException.class, () -> execute(m, m.slots));
+        assertEquals(10, m.slots.get(0).getItem().getCount());
+        assertTrue(m.slots.get(0).getItem().is(Items.DIRT));
+        assertEquals(15, m.total());
+    }
+
     private static void withTags(Item item, List<String> tags, Runnable check) throws Exception {
         var holder = item.builtInRegistryHolder(); var original = holder.tags().toList();
         Method bind = Holder.Reference.class.getDeclaredMethod("bindTags", Collection.class); bind.setAccessible(true);
@@ -168,5 +193,59 @@ class InventorySortTest {
             bind.invoke(holder, tags.stream().map(id -> TagKey.create(Registries.ITEM, Identifier.parse(id))).toList());
             check.run();
         } finally { bind.invoke(holder, original); }
+    }
+
+    @Test void seededMixedNativeSortingPreservesEveryNamedItemAndProtectedCell() throws Throwable {
+        var keys = new java.util.ArrayList<ItemStack>();
+        for (var item : java.util.List.of(Items.DIRT, Items.IRON_INGOT, Items.BONE, Items.OAK_PLANKS)) {
+            for (int variant = 0; variant < 3; variant++) {
+                var key = new ItemStack(item, 1);
+                var name = net.minecraft.network.chat.Component.literal("Regression variant " + variant);
+                try { ItemStack.class.getMethod("setHoverName", net.minecraft.network.chat.Component.class).invoke(key, name); }
+                catch (NoSuchMethodException modern) {
+                    var type = Class.forName("net.minecraft.core.component.DataComponentType");
+                    var component = Class.forName("net.minecraft.core.component.DataComponents").getField("CUSTOM_NAME").get(null);
+                    ItemStack.class.getMethod("set", type, Object.class).invoke(key, component, name);
+                }
+                keys.add(key);
+            }
+        }
+        int successful = 0;
+        for (int seed = 0; seed < 80; seed++) {
+            var random = new java.util.Random(0x51A7L + seed);
+            var m = menu(27); var mutable = new java.util.ArrayList<Slot>();
+            for (int i = 0; i < m.slots.size(); i++) {
+                final int index = i, limit = seed == 0 ? 64 : 16 << random.nextInt(3);
+                var key = keys.get(random.nextInt(keys.size()));
+                if (random.nextInt(3) != 0) m.storage.setItem(i, key.copyWithCount(1 + random.nextInt(limit)));
+                final boolean restricted = seed != 0 && i % 5 == 0;
+                var slot = new Slot(m.storage, index, 0, 0) {
+                    @Override public int getMaxStackSize(ItemStack stack) { return limit; }
+                    @Override public boolean mayPlace(ItemStack stack) { return !restricted || stack.is(key.getItem()); }
+                };
+                m.slots.set(i, slot);
+                if (seed == 0 || i % 7 != 0) mutable.add(slot);
+            }
+            var before = m.slots.stream().map(s -> s.getItem().copy()).toList();
+            boolean sorted = execute(m, mutable);
+            if (sorted) successful++;
+            for (var key : keys) {
+                int expected = before.stream().filter(s -> !s.isEmpty() && ItemStack.matches(s.copyWithCount(1), key)).mapToInt(ItemStack::getCount).sum();
+                int actual = m.slots.stream().map(Slot::getItem).filter(s -> !s.isEmpty() && ItemStack.matches(s.copyWithCount(1), key)).mapToInt(ItemStack::getCount).sum();
+                assertEquals(expected, actual, "Named-item ledger at seed " + seed);
+            }
+            for (int i = 0; i < m.slots.size(); i++) {
+                var slot = m.slots.get(i); var stack = slot.getItem();
+                assertTrue(stack.isEmpty() || keys.stream().anyMatch(k -> ItemStack.matches(stack.copyWithCount(1), k)), "No new item or metadata");
+                assertTrue(stack.isEmpty() || stack.getCount() <= slot.getMaxStackSize(stack), "Native cell capacity");
+                if (!sorted || !mutable.contains(slot)) assertTrue(ItemStack.matches(before.get(i), stack), "Refusal and protected-cell immutability");
+            }
+            if (sorted) {
+                var first = m.slots.stream().map(s -> s.getItem().copy()).toList();
+                assertTrue(execute(m, mutable), "A successful layout can be sorted again");
+                for (int i = 0; i < first.size(); i++) assertTrue(ItemStack.matches(first.get(i), m.slots.get(i).getItem()), "Sorting idempotence");
+            }
+        }
+        assertTrue(successful > 0, "The scenarios exercise successful sorting as well as safe refusals");
     }
 }

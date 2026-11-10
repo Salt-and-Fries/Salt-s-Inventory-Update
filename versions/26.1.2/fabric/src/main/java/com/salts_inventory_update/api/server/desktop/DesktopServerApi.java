@@ -19,6 +19,7 @@ import com.salts_inventory_update.api.desktop.DesktopPayloadCodecs;
 public final class DesktopServerApi {
     private static final Map<MenuType<?>, OpeningDataWriter<?>> OPENING_DATA = new LinkedHashMap<>();
     private static final Map<MenuType<?>, Map<Identifier, DesktopServerPayloadHandler<?>>> PAYLOAD_HANDLERS = new LinkedHashMap<>();
+    private static final Map<MenuType<?>, Map<Identifier, DesktopServerPayloadHandler<?>>> NATIVE_PAYLOAD_HANDLERS = new LinkedHashMap<>();
     private static final Map<MenuType<?>, DesktopServerWindowHandler<?, ?>> WINDOW_HANDLERS = new LinkedHashMap<>();
 
     private DesktopServerApi() {
@@ -56,19 +57,33 @@ public final class DesktopServerApi {
         Identifier channel,
         DesktopServerPayloadHandler<T> handler
     ) {
+        registerPayload(PAYLOAD_HANDLERS,menuType,channel,handler);
+    }
+
+    /** Adds an authenticated action to a native template without replacing its original opening transport. */
+    public static synchronized <T extends AbstractContainerMenu> void registerNativePayload(
+        MenuType<T> menuType, Identifier channel, DesktopServerPayloadHandler<T> handler
+    ) {
+        registerPayload(NATIVE_PAYLOAD_HANDLERS,menuType,channel,handler);
+    }
+
+    private static <T extends AbstractContainerMenu> void registerPayload(
+        Map<MenuType<?>,Map<Identifier,DesktopServerPayloadHandler<?>>> registry,
+        MenuType<T> menuType,Identifier channel,DesktopServerPayloadHandler<T> handler
+    ) {
         Objects.requireNonNull(menuType, "menuType");
         Objects.requireNonNull(channel, "channel");
         Objects.requireNonNull(handler, "handler");
-        Map<Identifier, DesktopServerPayloadHandler<?>> handlers =
-            PAYLOAD_HANDLERS.computeIfAbsent(menuType, ignored -> new LinkedHashMap<>());
-        if (handlers.containsKey(channel)) {
+        if (findPayloadHandler(menuType,channel)!=null) {
             throw DesktopRegistrationScope.conflict("Server payload already registered for " + menuType + " / " + channel);
         }
+        Map<Identifier, DesktopServerPayloadHandler<?>> handlers =
+            registry.computeIfAbsent(menuType, ignored -> new LinkedHashMap<>());
         handlers.put(channel, handler);
         DesktopRegistrationScope.onRollback(() -> {
             synchronized (DesktopServerApi.class) {
                 handlers.remove(channel, handler);
-                if (handlers.isEmpty()) PAYLOAD_HANDLERS.remove(menuType, handlers);
+                if (handlers.isEmpty()) registry.remove(menuType, handlers);
             }
         });
     }
@@ -91,11 +106,9 @@ public final class DesktopServerApi {
     @SuppressWarnings("unchecked")
     public static synchronized @Nullable DesktopServerPayloadHandler<AbstractContainerMenu> findPayloadHandler(MenuType<?> menuType, Identifier channel) {
         Map<Identifier, DesktopServerPayloadHandler<?>> handlers = PAYLOAD_HANDLERS.get(menuType);
-        if (handlers == null) {
-            return null;
-        }
-
-        return (DesktopServerPayloadHandler<AbstractContainerMenu>) handlers.get(channel);
+        var handler=handlers==null?null:handlers.get(channel);
+        if(handler==null){handlers=NATIVE_PAYLOAD_HANDLERS.get(menuType);handler=handlers==null?null:handlers.get(channel);}
+        return (DesktopServerPayloadHandler<AbstractContainerMenu>) handler;
     }
 
     @SuppressWarnings("unchecked")

@@ -49,6 +49,8 @@ public final class DesktopUpdates {
                 cpu.postUpdate(update.status());
             } else if (packet instanceof NetworkStatusPacket update && content instanceof NetworkStatusScreen network) {
                 network.processServerUpdate(update.status());
+            } else if (com.salts_inventory_update.compat.ae2.nativeview.ExtendedAePackets.applyNativeUpdate(packet,content)) {
+                // Original Extended AE PAT is a sibling, not an AE2 PAT subclass.
             } else if (packet instanceof PatternAccessTerminalPacket update
                     && content instanceof PatternAccessTermScreen<?> terminal) {
                 if (update.fullUpdate()) {

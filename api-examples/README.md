@@ -1,6 +1,6 @@
-# Optional API examples for 0.1.4
+# Optional API examples for 0.1.6 / API 6
 
-The separate [native-template example](native-template/README.md) demonstrates the experimental Minecraft 1.20.1 Fabric/Forge native composition API. Run `verifyNativeTemplateExample` to check its public-API-only classpath on both loaders.
+The [native-template example](native-template/README.md) demonstrates native composition through Core 0.1.6 / API 6 on all twelve supported targets. `verifyNativeTemplateExample` checks its public-API-only classpath; final compile and ABI evidence is recorded in [candidate verification](../docs/release/FINAL_VERIFICATION.md).
 
 `optional-mod` is the external-style loading fixture. Its ordinary entrypoint contains no Salt references. The common test suite compiles its providers against the public API, removes Salt from the runtime classpath for an absence test, then verifies phased discovery and dedicated-server client-class safety.
 
@@ -16,6 +16,11 @@ client=example.desktop.ExampleClientIntegration
 Save this as `META-INF/salts_inventory_update.integration.properties`. Do not install the providers as ordinary mod entrypoints. Keep Salt compile-only and optional in loader metadata. When your preferences action runs, call `ExampleUiHooks.openPreferences.test(instanceKey, model)`; if it returns false, open your usual preferences screen.
 
 Run `./gradlew verifyApiExamples` to compile every example on all twelve targets. The canonical source uses 26.3 native names; `prepareApiExamples` produces each target's input/graphics/identifier adaptation in `build/generated/api-examples`. Legacy input wrappers live in `com.salts_inventory_update.api.client.input`. `compileApiExamples` compiles against that loader's production output and real Minecraft classpath. These are reusable integration sources, not a complete distributable test mod, and they do not enter Salt's release jars. The optional compatibility extension also compiles on every target, using a classpath containing only Salt's public API.
+
+`BuiltinSubviewExample` demonstrates the additive embedded-session registration,
+owner rejection, server-requested close and relocated built-in slot bounds.
+Combine those lifecycle methods with your native renderer and pure hit queries as
+described in the [built-in subview contract](../docs/markdown/builtin-subviews.md).
 
 The terminal uses a reproducible 10,000-entry catalog and a server-validated selection action. It demonstrates virtual rendering and session-targeted synchronization without manufacturing inventory items. Replace its catalog/selection backend with your actual storage permissions and transaction logic for withdrawals.
 

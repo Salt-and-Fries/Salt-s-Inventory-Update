@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.compat.techreborn.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "RebornSyncMixin"
+  ],
+  "client": [
+    "RebornScreenMixin",
+    "RebornClientPacketMixin",
+    "RebornPopupScissorMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

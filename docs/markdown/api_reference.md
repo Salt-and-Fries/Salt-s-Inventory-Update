@@ -507,10 +507,18 @@ public interface DesktopCompanionLease extends AutoCloseable {
 `com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopBuiltinAttachment.java).
 
 ```java
+import org.jspecify.annotations.Nullable;
 import java.util.List;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.client.input.MouseButtonEvent;
 public interface DesktopBuiltinAttachment {
+    default boolean replacesContent(DesktopWindowContext<AbstractContainerMenu, Void> context);
+    default void renderContent(DesktopRenderContext<AbstractContainerMenu, Void> context);
+    default java.util.Optional<DesktopWindowBounds> builtinSlotBounds(DesktopWindowContext<AbstractContainerMenu, Void> context, int menuSlotId);
+    default java.util.Optional<DesktopWindowBounds> recipeBookButtonBounds(DesktopWindowContext<AbstractContainerMenu, Void> context);
+    default @Nullable DesktopSessionSlotHit embeddedSlotAt(DesktopSlotContext<AbstractContainerMenu, Void> context, double x, double y);
+    default @Nullable DesktopSlotHit slotAt(DesktopSlotContext<AbstractContainerMenu, Void> context, double x, double y);
+    default boolean occludes(DesktopWindowContext<AbstractContainerMenu, Void> context, double x, double y);
     default void opened(DesktopWindowContext<AbstractContainerMenu, Void> context);
     default void suspended(DesktopWindowContext<AbstractContainerMenu, Void> context);
     default void closed(DesktopWindowContext<AbstractContainerMenu, Void> context);
@@ -540,6 +548,12 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 public final class DesktopClientApi {
+    public static synchronized <T extends AbstractContainerMenu> void registerNativeScreen(MenuType<T> type,NativeScreenFactory<T> factory);
+    ) public static synchronized net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> createNativeScreen( AbstractContainerMenu menu,net.minecraft.world.entity.player.Inventory inventory,net.minecraft.network.chat.Component title);
+    @FunctionalInterface public interface NativeScreenFactory<T extends AbstractContainerMenu> {
+        net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> create(T menu,net.minecraft.world.entity.player.Inventory inventory, net.minecraft.network.chat.Component title);
+    }
+    public static synchronized void registerBuiltinMerchant(MenuType<?> type);
     public static synchronized void registerNativeMatcher(Identifier id,int priority,Set<MenuType<?>> menuTypes, DesktopWindowMatcher matcher,java.util.function.Function<DesktopWindowLookupContext,DesktopNativeTemplate<?,?>> factory);
     public static synchronized List<String> nativeTemplateMenuIds();
     public static void setWorkspaceHost(DesktopWorkspaceHost host);
@@ -554,6 +568,10 @@ public final class DesktopClientApi {
     public static void onClientStarted(java.util.function.Consumer<net.minecraft.client.Minecraft> action);
     public static synchronized void registerHelpPage(Identifier id, DesktopHelpPage page);
     public static synchronized List<DesktopHelpPage> helpPages();
+    public static synchronized <T extends AbstractContainerMenu> void registerEmbeddedSession( net.minecraft.world.inventory.MenuType<T> type, DesktopEmbeddedSessionHandler<T> handler);
+    public static synchronized DesktopEmbeddedSessionHandler<?> embeddedSessionHandler(AbstractContainerMenu menu);
+    public static synchronized void registerGeometryResetPolicy(Identifier id, java.util.function.Predicate<java.util.UUID> allowsReset);
+    public static synchronized boolean allowsGeometryReset(java.util.UUID instanceId);
     public static boolean isDesktopAvailable();
     public static synchronized <T extends AbstractContainerMenu, S> void registerWindow(MenuType<T> menuType, DesktopWindowDefinition<T, S> definition);
     public static synchronized <T extends AbstractContainerMenu, S> void replaceWindow(MenuType<T> menuType, DesktopWindowDefinition<T, S> definition);
@@ -623,6 +641,36 @@ public record DesktopContextualMenu(Kind kind, List<Category> categories, List<R
 ```java
 public record DesktopControllerTarget(String group, int row, int column, int x, int y, int width, int height) {
     public DesktopControllerTarget(String group, int row, int column, int x, int y, int width, int height);
+}
+```
+
+## DesktopEmbeddedSession
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopEmbeddedSession.java).
+
+```java
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.resources.Identifier;
+public interface DesktopEmbeddedSession<T extends AbstractContainerMenu> {
+    T menu();
+    int sessionId();
+    boolean isOpen();
+    void close();
+    boolean sendPayload(Identifier channel, byte[] data);
+}
+```
+
+## DesktopEmbeddedSessionHandler
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopEmbeddedSessionHandler.java).
+
+```java
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.resources.Identifier;
+public interface DesktopEmbeddedSessionHandler<T extends AbstractContainerMenu> {
+    boolean opened(DesktopEmbeddedSession<T> session);
+    default void closed(int sessionId);
+    default void customPayload(DesktopEmbeddedSession<T> session, Identifier channel, byte[] data);
 }
 ```
 
@@ -725,6 +773,7 @@ public final class DesktopMouseButtons {
 ```java
 public interface DesktopNativeContext<T,S> extends DesktopWindowContext<T,S> {
     DesktopNativeView nativeView();
+    default java.util.Optional<DesktopNativeLayout.Point> nativeSourceAt(double desktopX,double desktopY);
 }
 ```
 
@@ -816,6 +865,17 @@ public interface DesktopNativeRenderContext {
 }
 ```
 
+## DesktopNativeRenderTarget
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopNativeRenderTarget.java).
+
+```java
+import java.util.Optional;
+public record DesktopNativeRenderTarget(int pixelWidth, int pixelHeight, double guiScale) {
+    public static Optional<DesktopNativeRenderTarget> current();
+}
+```
+
 ## DesktopNativeTemplate
 
 `com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopNativeTemplate.java).
@@ -826,6 +886,17 @@ public interface DesktopNativeTemplate<T extends AbstractContainerMenu,S> extend
     default DesktopNativeLayout nativeLayout(DesktopNativeContext<T,S> context);
     default void renderNativeUnderlay(DesktopRenderContext<T,S> context);
     default boolean nativeSlotBackground(DesktopNativeContext<T,S> context,int menuSlotId);
+    default boolean retainPlayerSlot(DesktopNativeContext<T,S> context,int menuSlotId);
+}
+```
+
+## DesktopNativeTextInput
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopNativeTextInput.java).
+
+```java
+public interface DesktopNativeTextInput {
+    boolean desktopNativeTextInputFocused();
 }
 ```
 
@@ -923,6 +994,17 @@ public record DesktopScrollRegion(int x, int y, int width, int height, int rowHe
     public DesktopScrollRegion(int x, int y, int width, int height, int rowHeight, boolean canScrollUp, boolean canScrollDown, double nativeScrollStep);
     public boolean contains(double px, double py);
     public boolean accepts(double px, double py, int direction, boolean edgeOnly);
+}
+```
+
+## DesktopSessionSlotHit
+
+`com.salts_inventory_update.api.client.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/client/desktop/DesktopSessionSlotHit.java).
+
+```java
+import java.util.Objects;
+public record DesktopSessionSlotHit(int sessionId, DesktopSlotHit hit) {
+    public DesktopSessionSlotHit(int sessionId, DesktopSlotHit hit);
 }
 ```
 
@@ -1039,6 +1121,7 @@ public interface DesktopWindowContext<T, S> {
     @Nullable Slot menuSlot(int menuSlotId);
     @Nullable Slot containerSlot(int containerSlotIndex);
     int menuSlotId(Slot slot);
+    default java.util.Optional<DesktopWindowBounds> builtinSlotBounds(int menuSlotId);
     int fontWidth(String text);
     int fontWidth(Component text);
     String trimToWidth(String text, int maxWidth);
@@ -1072,6 +1155,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 public interface DesktopWindowDefinition<T, S> {
+    default boolean managementControlAllowed(DesktopWindowContext<T,S> context, DesktopWindowControl control);
     default @Nullable DesktopWindowAttachment attachment(DesktopWindowContext<T, S> context);
     default java.util.List<DesktopScrollRegion> controllerScrollRegions(DesktopWindowContext<T, S> context);
     default java.util.List<DesktopWindowBounds> textInputBounds(DesktopWindowContext<T,S> context);
@@ -1734,6 +1818,32 @@ public final class DesktopMenuBindings {
 }
 ```
 
+## DesktopMerchantAccess
+
+`com.salts_inventory_update.api.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/desktop/DesktopMerchantAccess.java).
+
+```java
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.trading.MerchantOffers;
+public interface DesktopMerchantAccess {
+    MerchantOffers desktopOffers();
+    void desktopSetOffers(MerchantOffers offers);
+    void desktopSelect(int index);
+    void desktopMovePayment(int index);
+    int desktopLevel();
+    int desktopXp();
+    int desktopFutureXp();
+    boolean desktopShowProgress();
+    boolean desktopCanRestock();
+    void desktopSetLevel(int level);
+    void desktopSetXp(int xp);
+    void desktopSetProgress(boolean show);
+    void desktopSetRestock(boolean restock);
+    default Component desktopHeading();
+    default int desktopHeadingColor();
+}
+```
+
 ## DesktopPayloadCodecs
 
 `com.salts_inventory_update.api.desktop`. Native 26.3; available with the version-specific types described above. [Source](../../versions/26.3/fabric/src/main/java/com/salts_inventory_update/api/desktop/DesktopPayloadCodecs.java).
@@ -1811,6 +1921,7 @@ public final class DesktopServerApi {
     public static synchronized <T extends AbstractContainerMenu, S> void registerWindow( MenuType<T> menuType, DesktopServerWindowHandler<T, S> handler );
     public static synchronized <T extends AbstractContainerMenu, S> void replaceWindow( MenuType<T> menuType, DesktopServerWindowHandler<T, S> handler );
     public static synchronized <T extends AbstractContainerMenu> void registerPayload( MenuType<T> menuType, Identifier channel, DesktopServerPayloadHandler<T> handler );
+    public static synchronized <T extends AbstractContainerMenu> void registerNativePayload( MenuType<T> menuType, Identifier channel, DesktopServerPayloadHandler<T> handler );
     public static synchronized <T extends AbstractContainerMenu, P> void registerPayload( MenuType<T> menuType, Identifier channel, StreamCodec<? super RegistryFriendlyByteBuf, P> codec, DesktopTypedServerPayloadHandler<T, P> handler );
     @SuppressWarnings("unchecked") public static synchronized @Nullable DesktopServerPayloadHandler<AbstractContainerMenu> findPayloadHandler(MenuType<?> menuType, Identifier channel);
     @SuppressWarnings("unchecked") public static synchronized @Nullable DesktopServerWindowHandler<AbstractContainerMenu, Object> findWindowHandler(MenuType<?> menuType);
@@ -1998,3 +2109,8 @@ public interface DesktopTypedServerPayloadHandler<T extends AbstractContainerMen
     void handle(DesktopServerPayloadContext<T> context, P payload);
 }
 ```
+
+
+### Screens that provide their own recipe browser
+
+`DesktopRecipeBrowserScreen` is an additive public marker in `api.client.recipebrowser`. Implement it on a screen that already supplies its own recipe-browser presentation. The REI adapter suppresses its automatic overlay for that screen while keeping recipe and search access available through the ordinary browser bridge. The marker has no methods and does not transfer inventory or session ownership. It removes the need for integrations to name a private Controlify screen. Existing consumers remain binary compatible.

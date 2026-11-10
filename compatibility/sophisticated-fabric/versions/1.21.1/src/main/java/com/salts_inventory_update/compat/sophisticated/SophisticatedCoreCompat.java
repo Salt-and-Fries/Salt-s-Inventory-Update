@@ -261,7 +261,7 @@ public final class SophisticatedCoreCompat {
         return slot.getContainerSlot();
     }
 
-    private static void registerSync(MenuType<?> menuType) {
+    static void registerSync(MenuType<?> menuType) {
         register(menuType, SyncContainerClientDataPayload.TYPE.id(), SyncContainerClientDataPayload.STREAM_CODEC, (context, payload) -> {
             if (payload.data() == null) {
                 return;

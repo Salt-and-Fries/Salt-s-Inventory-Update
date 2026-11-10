@@ -76,4 +76,19 @@ class NativeMachineLayoutsTest {
         var layout=NativeMachineLayouts.identifying(view);
         assertEquals(view.automaticBounds(),layout.regions().get(0).source());
     }
+    @Test void decorationKeepsOutputRimAndPreviewWithoutPlayerInventory(){
+        for(int playerY:new int[]{139,163}) {
+            int[][] cells={{8,17},{8,47},{8,77},{8,107},{56,47},{56,77},{56,107},
+                {100,17},{118,17},{136,17},{100,107},{136,107}};
+            var slots=new ArrayList<DesktopNativeView.Slot>();
+            for(var cell:cells)slots.add(new DesktopNativeView.Slot(slots.size(),box(cell[0]-1,cell[1]-1,18,18),false,true));
+            slots.add(new DesktopNativeView.Slot(12,box(44,playerY-1,18,18),true,true));
+            var nativeView=new DesktopNativeView("DecorationTableScreen",box(0,0,250,playerY+87),
+                box(0,0,250,playerY),slots,List.of());
+            realSlots(nativeView,NativeMachineLayouts::decorationTable);
+            var layout=NativeMachineLayouts.decorationTable(nativeView);
+            assertTrue(layout.sourceAt(150-6,132-15).isPresent(),"large output's bottom rim");
+            assertTrue(layout.sourceAt(238-6,130-15).isPresent(),"full model preview");
+        }
+    }
 }

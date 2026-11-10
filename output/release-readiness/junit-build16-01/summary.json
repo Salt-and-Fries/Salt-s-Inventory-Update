@@ -1,0 +1,2275 @@
+{
+  "status": "passed",
+  "scope": "Current six-mapping Core/Compatibility JUnit sets accepted by the named successful source build. These are unit/contract checks, not live gameplay or separate loader/hardware executions.",
+  "source_build": {
+    "file": "output\\release-readiness\\session-registration-parity-guard-1666-01\\normal-build.log",
+    "sha256": "b45c42004b36b93c725ad7dc6b55c73063777a7b1dde2825b26af35d59ab3057"
+  },
+  "artifacts": [
+    {
+      "family": "core",
+      "minecraft": "1.20.1",
+      "loader": "fabric",
+      "file": "dist\\core\\salts_inventory_update-1.20.1-Fabric-0.1.6.jar",
+      "sha256": "764690b7bd5f478861ce5a16e8a80545f52efa55f50b172adc42282f90fe5e1e",
+      "bundle_entry": "1.20.1/fabric/salts_inventory_update-1.20.1-Fabric-0.1.6.jar",
+      "license_files": [
+        "LICENSE-creative-buttons-fabric",
+        "LICENSE_salts_inventory_update"
+      ]
+    },
+    {
+      "family": "core",
+      "minecraft": "1.20.1",
+      "loader": "forge",
+      "file": "dist\\core\\salts_inventory_update-1.20.1-Forge-0.1.6.jar",
+      "sha256": "d52d211641950b22f4e18b52a970595ef4620bfc5dea561951dedd8ae19b08fd",
+      "bundle_entry": "1.20.1/forge/salts_inventory_update-1.20.1-Forge-0.1.6.jar",
+      "license_files": [
+        "LICENSE-creative-buttons-fabric",
+        "LICENSE_salts_inventory_update"
+      ]
+    },
+    {
+      "family": "core",
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "file": "dist\\core\\salts_inventory_update-1.21.1-Fabric-0.1.6.jar",
+      "sha256": "8ce7a5aff709a8c366420b0169e7ff30210b917ea453991d989ece0ae4eb3b17",
+      "bundle_entry": "1.21.1/fabric/salts_inventory_update-1.21.1-Fabric-0.1.6.jar",
+      "license_files": [
+        "LICENSE-creative-buttons-fabric",
+        "LICENSE_salts_inventory_update"
+      ]
+    },
+    {
+      "family": "core",
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "file": "dist\\core\\salts_inventory_update-1.21.1-NeoForge-0.1.6.jar",
+      "sha256": "cebb6ab34204afe5908f8faba2a7fa800d47a0e78d7eca36548ad8b4f191396f",
+      "bundle_entry": "1.21.1/neoforge/salts_inventory_update-1.21.1-NeoForge-0.1.6.jar",
+      "license_files": [
+        "LICENSE-creative-buttons-fabric",
+        "LICENSE_salts_inventory_update"
+      ]
+    },
+    {
+      "family": "core",
+      "minecraft": "1.21.11",
+      "loader": "fabric",
+      "file": "dist\\core\\salts_inventory_update-1.21.11-Fabric-0.1.6.jar",
+      "sha256": "04e9c8b70a5073cc923e0240c3adcf3c078cf7e71675f61a8247f59aa2388f1b",
+      "bundle_entry": "1.21.11/fabric/salts_inventory_update-1.21.11-Fabric-0.1.6.jar",
+      "license_files": [
+        "LICENSE-creative-buttons-fabric",
+        "LICENSE_salts_inventory_update"
+      ]
+    },
+    {
+      "family": "core",
+      "minecraft": "1.21.11",
+      "loader": "neoforge",
+      "file": "dist\\core\\salts_inventory_update-1.21.11-NeoForge-0.1.6.jar",
+      "sha256": "94738b6e2f4a327a513c768a772a2a135b645415c792351350895eeb37d15628",
+      "bundle_entry": "1.21.11/neoforge/salts_inventory_update-1.21.11-NeoForge-0.1.6.jar",
+      "license_files": [
+        "LICENSE-creative-buttons-fabric",
+        "LICENSE_salts_inventory_update"
+      ]
+    },
+    {
+      "family": "core",
+      "minecraft": "26.1.2",
+      "loader": "fabric",
+      "file": "dist\\core\\salts_inventory_update-26.1.2-Fabric-0.1.6.jar",
+      "sha256": "f6f9eb96ede4d0d38a32b8529b80766664ad7d8b56a7111c6022fc085b81fd95",
+      "bundle_entry": "26.1.2/fabric/salts_inventory_update-26.1.2-Fabric-0.1.6.jar",
+      "license_files": [
+        "LICENSE-creative-buttons-fabric",
+        "LICENSE_salts_inventory_update"
+      ]
+    },
+    {
+      "family": "core",
+      "minecraft": "26.1.2",
+      "loader": "neoforge",
+      "file": "dist\\core\\salts_inventory_update-26.1.2-NeoForge-0.1.6.jar",
+      "sha256": "671deda68bcc56e1f4318b7fbf938760a2b79854024964ebd312452c473625e2",
+      "bundle_entry": "26.1.2/neoforge/salts_inventory_update-26.1.2-NeoForge-0.1.6.jar",
+      "license_files": [
+        "LICENSE-creative-buttons-fabric",
+        "LICENSE_salts_inventory_update"
+      ]
+    },
+    {
+      "family": "core",
+      "minecraft": "26.2",
+      "loader": "fabric",
+      "file": "dist\\core\\salts_inventory_update-26.2-Fabric-0.1.6.jar",
+      "sha256": "c1db86c6ebf612aede4ba435b303063670e8c65cea96bf64d4cf48f4378e276f",
+      "bundle_entry": "26.2/fabric/salts_inventory_update-26.2-Fabric-0.1.6.jar",
+      "license_files": [
+        "LICENSE-creative-buttons-fabric",
+        "LICENSE_salts_inventory_update"
+      ]
+    },
+    {
+      "family": "core",
+      "minecraft": "26.2",
+      "loader": "neoforge",
+      "file": "dist\\core\\salts_inventory_update-26.2-NeoForge-0.1.6.jar",
+      "sha256": "c79a52f2b89fa5737a43de09b146a4379f1d7cfad2b2456e3aa3139ab51f986d",
+      "bundle_entry": "26.2/neoforge/salts_inventory_update-26.2-NeoForge-0.1.6.jar",
+      "license_files": [
+        "LICENSE-creative-buttons-fabric",
+        "LICENSE_salts_inventory_update"
+      ]
+    },
+    {
+      "family": "core",
+      "minecraft": "26.3",
+      "loader": "fabric",
+      "file": "dist\\core\\salts_inventory_update-26.3-Fabric-0.1.6.jar",
+      "sha256": "729f0abe580ced1337bf0cc3bef79eb9a27ca78a198f498828f1075ca4de40f6",
+      "bundle_entry": "26.3/fabric/salts_inventory_update-26.3-Fabric-0.1.6.jar",
+      "license_files": [
+        "LICENSE-creative-buttons-fabric",
+        "LICENSE_salts_inventory_update"
+      ]
+    },
+    {
+      "family": "core",
+      "minecraft": "26.3",
+      "loader": "neoforge",
+      "file": "dist\\core\\salts_inventory_update-26.3-NeoForge-0.1.6.jar",
+      "sha256": "d244372fad2bb2f5e221d78063f2059e62a2a7dd8c671e4253363fe5a590a37b",
+      "bundle_entry": "26.3/neoforge/salts_inventory_update-26.3-NeoForge-0.1.6.jar",
+      "license_files": [
+        "LICENSE-creative-buttons-fabric",
+        "LICENSE_salts_inventory_update"
+      ]
+    },
+    {
+      "family": "compatibility",
+      "minecraft": "1.20.1",
+      "loader": "fabric",
+      "file": "dist\\compatibility\\salts_inventory_compat-1.20.1-Fabric-0.1.3.jar",
+      "sha256": "12eb51b8a0437006859cc7109dbd740e7b7095d07e0dc97af39ffcb734ad095d",
+      "bundle_entry": "1.20.1/fabric/salts_inventory_compat-1.20.1-Fabric-0.1.3.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "META-INF/LICENSE_ae2_desktop",
+        "META-INF/NOTICE_ae2_desktop.txt"
+      ]
+    },
+    {
+      "family": "compatibility",
+      "minecraft": "1.20.1",
+      "loader": "forge",
+      "file": "dist\\compatibility\\salts_inventory_compat-1.20.1-Forge-0.1.3.jar",
+      "sha256": "ed69e570a417dd22c8ca7dca7d7672eae5e18500c8af69c8b366705af720a894",
+      "bundle_entry": "1.20.1/forge/salts_inventory_compat-1.20.1-Forge-0.1.3.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "META-INF/LICENSE_ae2_desktop",
+        "META-INF/NOTICE_ae2_desktop.txt"
+      ]
+    },
+    {
+      "family": "compatibility",
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "file": "dist\\compatibility\\salts_inventory_compat-1.21.1-Fabric-0.1.3.jar",
+      "sha256": "8ed5583e53f896b2888aab6c78fd56a744ac977d102c14641e4efa84697f41d8",
+      "bundle_entry": "1.21.1/fabric/salts_inventory_compat-1.21.1-Fabric-0.1.3.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "META-INF/LICENSE_ae2_desktop",
+        "META-INF/NOTICE_ae2_desktop.txt"
+      ]
+    },
+    {
+      "family": "compatibility",
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "file": "dist\\compatibility\\salts_inventory_compat-1.21.1-NeoForge-0.1.3.jar",
+      "sha256": "76441fce9f0f94c2e56f7e897514fc3be7f2c086a1a47a9d86ef282db2dca0cd",
+      "bundle_entry": "1.21.1/neoforge/salts_inventory_compat-1.21.1-NeoForge-0.1.3.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "META-INF/LICENSE_ae2_desktop",
+        "META-INF/NOTICE_ae2_desktop.txt"
+      ]
+    },
+    {
+      "family": "compatibility",
+      "minecraft": "1.21.11",
+      "loader": "fabric",
+      "file": "dist\\compatibility\\salts_inventory_compat-1.21.11-Fabric-0.1.3.jar",
+      "sha256": "b1c4a04904c2edb216f5a20e71670a56fc613afe42df606d7df0ca9c1afcf824",
+      "bundle_entry": "1.21.11/fabric/salts_inventory_compat-1.21.11-Fabric-0.1.3.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "META-INF/LICENSE_ae2_desktop",
+        "META-INF/NOTICE_ae2_desktop.txt"
+      ]
+    },
+    {
+      "family": "compatibility",
+      "minecraft": "1.21.11",
+      "loader": "neoforge",
+      "file": "dist\\compatibility\\salts_inventory_compat-1.21.11-NeoForge-0.1.3.jar",
+      "sha256": "38968327f78e1ade6bb822936d6e0c23ac587499c4b6454a513fbeba8594007b",
+      "bundle_entry": "1.21.11/neoforge/salts_inventory_compat-1.21.11-NeoForge-0.1.3.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "META-INF/LICENSE_ae2_desktop",
+        "META-INF/NOTICE_ae2_desktop.txt"
+      ]
+    },
+    {
+      "family": "compatibility",
+      "minecraft": "26.1.2",
+      "loader": "fabric",
+      "file": "dist\\compatibility\\salts_inventory_compat-26.1.2-Fabric-0.1.3.jar",
+      "sha256": "336b5443d84b4aeae2b853f5bd34f2bb46054ac7a2bec1989c9386b6f4260378",
+      "bundle_entry": "26.1.2/fabric/salts_inventory_compat-26.1.2-Fabric-0.1.3.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "META-INF/LICENSE_ae2_desktop",
+        "META-INF/NOTICE_ae2_desktop.txt"
+      ]
+    },
+    {
+      "family": "compatibility",
+      "minecraft": "26.1.2",
+      "loader": "neoforge",
+      "file": "dist\\compatibility\\salts_inventory_compat-26.1.2-NeoForge-0.1.3.jar",
+      "sha256": "07a30125a218a4cb0d5233b7cdc7006debf43c205bb77367adfe64b1486ed0ee",
+      "bundle_entry": "26.1.2/neoforge/salts_inventory_compat-26.1.2-NeoForge-0.1.3.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "META-INF/LICENSE_ae2_desktop",
+        "META-INF/NOTICE_ae2_desktop.txt"
+      ]
+    },
+    {
+      "family": "compatibility",
+      "minecraft": "26.2",
+      "loader": "fabric",
+      "file": "dist\\compatibility\\salts_inventory_compat-26.2-Fabric-0.1.3.jar",
+      "sha256": "5e7d311ed67cf051125c7f25fa09baeddf9c54285e70a7bb3fa0c7f7afa221cc",
+      "bundle_entry": "26.2/fabric/salts_inventory_compat-26.2-Fabric-0.1.3.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "META-INF/LICENSE_ae2_desktop",
+        "META-INF/NOTICE_ae2_desktop.txt"
+      ]
+    },
+    {
+      "family": "compatibility",
+      "minecraft": "26.2",
+      "loader": "neoforge",
+      "file": "dist\\compatibility\\salts_inventory_compat-26.2-NeoForge-0.1.3.jar",
+      "sha256": "6bb7f5a830320a167214e8b79e7953c60e38bf25d7dc20e33707032c38c3f463",
+      "bundle_entry": "26.2/neoforge/salts_inventory_compat-26.2-NeoForge-0.1.3.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "META-INF/LICENSE_ae2_desktop",
+        "META-INF/NOTICE_ae2_desktop.txt"
+      ]
+    },
+    {
+      "family": "compatibility",
+      "minecraft": "26.3",
+      "loader": "fabric",
+      "file": "dist\\compatibility\\salts_inventory_compat-26.3-Fabric-0.1.3.jar",
+      "sha256": "2b81294da50d9c0b07c4ca80704ed3d5db70e03fb8013da8d5814749d241ff02",
+      "bundle_entry": "26.3/fabric/salts_inventory_compat-26.3-Fabric-0.1.3.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "META-INF/LICENSE_ae2_desktop",
+        "META-INF/NOTICE_ae2_desktop.txt"
+      ]
+    },
+    {
+      "family": "compatibility",
+      "minecraft": "26.3",
+      "loader": "neoforge",
+      "file": "dist\\compatibility\\salts_inventory_compat-26.3-NeoForge-0.1.3.jar",
+      "sha256": "0eb9da21befa3083d6c6c9d28ed69252b8c62c11fe4bd604a8b2b917b84c237e",
+      "bundle_entry": "26.3/neoforge/salts_inventory_compat-26.3-NeoForge-0.1.3.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "META-INF/LICENSE_ae2_desktop",
+        "META-INF/NOTICE_ae2_desktop.txt"
+      ]
+    },
+    {
+      "family": "controlify",
+      "minecraft": "1.20.1",
+      "loader": "fabric",
+      "file": "dist\\controlify\\salts_inventory_controlify-1.20.1-Fabric-0.1.1.jar",
+      "sha256": "e1f9c2f4e812a1e8d7aca07b9b1287b8acc9c8a6a374de3d5060a362a551c209",
+      "bundle_entry": "1.20.1/fabric/salts_inventory_controlify-1.20.1-Fabric-0.1.1.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "assets/salts_inventory_controlify/licenses/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/ATTRIBUTION.md",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-interface-sounds-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-ui-audio-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/palette-manifest.json"
+      ]
+    },
+    {
+      "family": "controlify",
+      "minecraft": "1.20.1",
+      "loader": "forge",
+      "file": "dist\\controlify\\salts_inventory_controlify-1.20.1-Forge-0.1.1.jar",
+      "sha256": "14175dac25364b8fb74cc910aa55a3386f72f26f42b5f17a5ffefb957f25ebdc",
+      "bundle_entry": "1.20.1/forge/salts_inventory_controlify-1.20.1-Forge-0.1.1.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "assets/salts_inventory_controlify/licenses/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/ATTRIBUTION.md",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-interface-sounds-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-ui-audio-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/palette-manifest.json"
+      ]
+    },
+    {
+      "family": "controlify",
+      "minecraft": "1.21.1",
+      "loader": "fabric",
+      "file": "dist\\controlify\\salts_inventory_controlify-1.21.1-Fabric-0.1.1.jar",
+      "sha256": "3be06c64028818e150ad5b3c566088cef03c25ac82e338773386c1a915e3ec34",
+      "bundle_entry": "1.21.1/fabric/salts_inventory_controlify-1.21.1-Fabric-0.1.1.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "assets/salts_inventory_controlify/licenses/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/ATTRIBUTION.md",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-interface-sounds-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-ui-audio-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/palette-manifest.json"
+      ]
+    },
+    {
+      "family": "controlify",
+      "minecraft": "1.21.1",
+      "loader": "neoforge",
+      "file": "dist\\controlify\\salts_inventory_controlify-1.21.1-NeoForge-0.1.1.jar",
+      "sha256": "27bd2c9be078fd6cf5ffb54d21b66678cac67666d4e6361e10392a0786abc19d",
+      "bundle_entry": "1.21.1/neoforge/salts_inventory_controlify-1.21.1-NeoForge-0.1.1.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "assets/salts_inventory_controlify/licenses/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/ATTRIBUTION.md",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-interface-sounds-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-ui-audio-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/palette-manifest.json"
+      ]
+    },
+    {
+      "family": "controlify",
+      "minecraft": "1.21.11",
+      "loader": "fabric",
+      "file": "dist\\controlify\\salts_inventory_controlify-1.21.11-Fabric-0.1.1.jar",
+      "sha256": "76cbf19afb32c29d234f6e983a110437e62eb13ec935000b451c6ff8be65304b",
+      "bundle_entry": "1.21.11/fabric/salts_inventory_controlify-1.21.11-Fabric-0.1.1.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "assets/salts_inventory_controlify/licenses/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/ATTRIBUTION.md",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-interface-sounds-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-ui-audio-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/palette-manifest.json"
+      ]
+    },
+    {
+      "family": "controlify",
+      "minecraft": "1.21.11",
+      "loader": "neoforge",
+      "file": "dist\\controlify\\salts_inventory_controlify-1.21.11-NeoForge-0.1.1.jar",
+      "sha256": "7ba28a0e5358b86a38a5d16057c3b4fa8f6ab2b000b411909c593604305362d6",
+      "bundle_entry": "1.21.11/neoforge/salts_inventory_controlify-1.21.11-NeoForge-0.1.1.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "assets/salts_inventory_controlify/licenses/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/ATTRIBUTION.md",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-interface-sounds-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-ui-audio-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/palette-manifest.json"
+      ]
+    },
+    {
+      "family": "controlify",
+      "minecraft": "26.1.2",
+      "loader": "fabric",
+      "file": "dist\\controlify\\salts_inventory_controlify-26.1.2-Fabric-0.1.1.jar",
+      "sha256": "10137864a492ecf1a070aa25e4936ac70677f22fbfc9bf46a29354e1ae4567ef",
+      "bundle_entry": "26.1.2/fabric/salts_inventory_controlify-26.1.2-Fabric-0.1.1.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "assets/salts_inventory_controlify/licenses/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/ATTRIBUTION.md",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-interface-sounds-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-ui-audio-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/palette-manifest.json"
+      ]
+    },
+    {
+      "family": "controlify",
+      "minecraft": "26.1.2",
+      "loader": "neoforge",
+      "file": "dist\\controlify\\salts_inventory_controlify-26.1.2-NeoForge-0.1.1.jar",
+      "sha256": "8f9acd5f2ac89439480066bffe3c7a9e22df785b41f3b21de54525ca265ab70e",
+      "bundle_entry": "26.1.2/neoforge/salts_inventory_controlify-26.1.2-NeoForge-0.1.1.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "assets/salts_inventory_controlify/licenses/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/ATTRIBUTION.md",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-interface-sounds-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-ui-audio-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/palette-manifest.json"
+      ]
+    },
+    {
+      "family": "controlify",
+      "minecraft": "26.2",
+      "loader": "fabric",
+      "file": "dist\\controlify\\salts_inventory_controlify-26.2-Fabric-0.1.1.jar",
+      "sha256": "17976b6022e63735f1410b3ab2cdaac563dc1ad6cf8bfaf893e41a3262d20fd4",
+      "bundle_entry": "26.2/fabric/salts_inventory_controlify-26.2-Fabric-0.1.1.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "assets/salts_inventory_controlify/licenses/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/ATTRIBUTION.md",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-interface-sounds-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-ui-audio-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/palette-manifest.json"
+      ]
+    },
+    {
+      "family": "controlify",
+      "minecraft": "26.2",
+      "loader": "neoforge",
+      "file": "dist\\controlify\\salts_inventory_controlify-26.2-NeoForge-0.1.1.jar",
+      "sha256": "45244749e13623690c725a51e7009cda289d42732aa8d5fb83b140c227a677c7",
+      "bundle_entry": "26.2/neoforge/salts_inventory_controlify-26.2-NeoForge-0.1.1.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "assets/salts_inventory_controlify/licenses/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/ATTRIBUTION.md",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-interface-sounds-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-ui-audio-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/palette-manifest.json"
+      ]
+    },
+    {
+      "family": "controlify",
+      "minecraft": "26.3",
+      "loader": "fabric",
+      "file": "dist\\controlify\\salts_inventory_controlify-26.3-Fabric-0.1.1.jar",
+      "sha256": "ef5a130d4440091a32f62865e88b96ee922dab4a3568a0734c20b26692b1f055",
+      "bundle_entry": "26.3/fabric/salts_inventory_controlify-26.3-Fabric-0.1.1.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "assets/salts_inventory_controlify/licenses/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/ATTRIBUTION.md",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-interface-sounds-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-ui-audio-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/palette-manifest.json"
+      ]
+    },
+    {
+      "family": "controlify",
+      "minecraft": "26.3",
+      "loader": "neoforge",
+      "file": "dist\\controlify\\salts_inventory_controlify-26.3-NeoForge-0.1.1.jar",
+      "sha256": "9f75c6ab63bacd3ae0dba84faddfb0448ded5b6bd0c0ce647f2d0e7de72a0a02",
+      "bundle_entry": "26.3/neoforge/salts_inventory_controlify-26.3-NeoForge-0.1.1.jar",
+      "license_files": [
+        "LICENSE_salts_inventory_update",
+        "assets/salts_inventory_controlify/licenses/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/ATTRIBUTION.md",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-interface-sounds-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/kenney-ui-audio-License.txt",
+        "assets/salts_inventory_controlify/licenses/ui-sounds/palette-manifest.json"
+      ]
+    }
+  ],
+  "tests": 2007,
+  "projects": [
+    {
+      "project": "versions/1.20.1/fabric",
+      "tests": 257,
+      "failures": 0,
+      "skipped": 0,
+      "errors": 0,
+      "xml_files": [
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.automatic.NativeTemplateContextsTest.xml",
+          "sha256": "d5004edb87c28db61769182ebee4cb40ccc22ed5511bc4f3b15efd607ca27587",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.automatic.NativeTemplateContextsTest.xml",
+          "suite": "com.salts_inventory_update.client.automatic.NativeTemplateContextsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopApiContractTest.xml",
+          "sha256": "bc7b9892d1e80c8b88aa69e5360cea7e3eef0e08cc7f0d11211b0e037f3a4b21",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopApiContractTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopApiContractTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopApiViewsTest.xml",
+          "sha256": "93bbdf79a67d14bfe0683bc8ebb5a95f163d46697f5d9f07044eaed331270776",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopApiViewsTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopApiViewsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopEmbeddedSessionTest.xml",
+          "sha256": "47dec111afc8931d18449ce469f94c7bc1719fbf41ae56395326e9841783d706",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopEmbeddedSessionTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopEmbeddedSessionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopRecipeProviderTest.xml",
+          "sha256": "75a5dbbb5cb03add1d9bbcace1251ad75ea5f4180138df16d4ab8e6565342ad7",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopRecipeProviderTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopRecipeProviderTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopSessionResynchronizationTest.xml",
+          "sha256": "3463d446caea843c7030ec5e3c0bc05d164a23d742a64e4c9a5a7a19a7bcbee2",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopSessionResynchronizationTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopSessionResynchronizationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopSharedCursorApiTest.xml",
+          "sha256": "962d7658c0d1c46a15decc38c549117bad2dccb689456a5d123dd45703f7f810",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopSharedCursorApiTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopSharedCursorApiTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopSlotGesturesTest.xml",
+          "sha256": "efeea0bb836bc0fdac38ce51d7158f155a03cd77e248738c34b32b0432a51dce",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopSlotGesturesTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopSlotGesturesTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopWorkspaceApiTest.xml",
+          "sha256": "cad08fc6285b86af13224c5e1325c1ba973bda56b8fe6df66d668e2fa039f032",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopWorkspaceApiTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopWorkspaceApiTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.NativeHeaderSlotInputTest.xml",
+          "sha256": "6fbbd4f25dfd2cdadd21347bb457e6caa5115f13cff3c02ef476459ab2cca621",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.NativeHeaderSlotInputTest.xml",
+          "suite": "com.salts_inventory_update.client.NativeHeaderSlotInputTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.NativeTemplateCapabilitiesTest.xml",
+          "sha256": "f0cf2327d9002a8a98cee150a7145e95b8f47248d1952b20c45084ff9bfa595b",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.NativeTemplateCapabilitiesTest.xml",
+          "suite": "com.salts_inventory_update.client.NativeTemplateCapabilitiesTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.NativeTemplateLayoutTest.xml",
+          "sha256": "ed8d1770e9246912fdf79ab766d8f3691aaa9f378e2ecbdb740b6e0009e0bbcb",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.NativeTemplateLayoutTest.xml",
+          "suite": "com.salts_inventory_update.client.NativeTemplateLayoutTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.NativeTemplateViewportTest.xml",
+          "sha256": "44e616436ee8ed0bc4da2c724ecf4e31d25457dac3182e1399eb0265fb7034ad",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.NativeTemplateViewportTest.xml",
+          "suite": "com.salts_inventory_update.client.NativeTemplateViewportTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.WindowFeatureRemovalTest.xml",
+          "sha256": "fa310216c136ced17e3bb1e29139621f59aa3cab9cd5c6423ee4154a48fdf111",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WindowFeatureRemovalTest.xml",
+          "suite": "com.salts_inventory_update.client.WindowFeatureRemovalTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.WorkspaceControllerSlotsTest.xml",
+          "sha256": "a48f825db3e9d463bbf33deb49b5b27ada9c23433439a661d6cce8d79456932f",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WorkspaceControllerSlotsTest.xml",
+          "suite": "com.salts_inventory_update.client.WorkspaceControllerSlotsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest.xml",
+          "sha256": "f1849bbce7d33a84a28894af42c2e8312bb4bfd375b3bfc1114dc2c77f8f8c8c",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest.xml",
+          "suite": "com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest.xml",
+          "sha256": "14b01b51b13c2df599d0e5bc3f0801a901f25ed37cd87b8c35f46aa888c68cd3",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.internal.desktop.ContextualRecipeSourceIdentityTest.xml",
+          "sha256": "281f5c7b08fbba386ff1817470e192aabddf3ab4da91b015bba918ba7efb5b0c",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.ContextualRecipeSourceIdentityTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.ContextualRecipeSourceIdentityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.internal.desktop.ContextualRecipesTest.xml",
+          "sha256": "10f950e94e0140ac1a422d8373042072db57dd1ddfa4c9ffc08b581b65a3cdcd",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.ContextualRecipesTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.ContextualRecipesTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest.xml",
+          "sha256": "b9f2cf9644f66bcdac5f6d93c5a205a85b48922489cf3afdaad43681e013f040",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.internal.desktop.VirtualRecipeSourceContractTest.xml",
+          "sha256": "158c0aff4503fa58fea23fbbad913937f1c95ab9ab91b671637cfddff7fee569",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.VirtualRecipeSourceContractTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.VirtualRecipeSourceContractTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest.xml",
+          "sha256": "1a77cc70f0d003028e404b1b311ff73ee65a5e887c54f9eec09c316990125300",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.server.DesktopPickupAllTest.xml",
+          "sha256": "e7cf471cdceef7e8a2aa8b849be25daabd5c7c771d572a621fd884bd3200f595",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.DesktopPickupAllTest.xml",
+          "suite": "com.salts_inventory_update.server.DesktopPickupAllTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest.xml",
+          "sha256": "48d3f4c8b4e2de2379c1c3284ce2043f3de262f70b888f97b8880a2b6b4aac76",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest.xml",
+          "suite": "com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.server.InventorySortTest.xml",
+          "sha256": "465f2e1985c9bfa98b8d74f720b546973871b0bb9fe687798eea706820fc92ad",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.InventorySortTest.xml",
+          "suite": "com.salts_inventory_update.server.InventorySortTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.server.NativeConfigurationEligibilityTest.xml",
+          "sha256": "52688301a1867f926ddc611837e72a2397383e55208adf74068cb2679bcd3047",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeConfigurationEligibilityTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeConfigurationEligibilityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.server.NativeCursorPublicationTest.xml",
+          "sha256": "7378aed9ba869074be518eb28488d25d2322bb4dcc214a01760b3c713589ab36",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorPublicationTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeCursorPublicationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.server.NativePayloadRegistrationTest.xml",
+          "sha256": "a87cdcda1986f48d2bde0441d2b17dd760f2b7bc4345b5609316fd1c722b6de3",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativePayloadRegistrationTest.xml",
+          "suite": "com.salts_inventory_update.server.NativePayloadRegistrationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.server.NativeSelectorEligibilityTest.xml",
+          "sha256": "d109a0c5a7621eb3fe980f950fcc3a3648abee5a79311e5e824f36ca69b08a44",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeSelectorEligibilityTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeSelectorEligibilityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.server.NativeStorageRolesTest.xml",
+          "sha256": "2f50490c53d09d593e81f50d17c561f455da5ec3e092eb1634e0a398c3e26258",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeStorageRolesTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeStorageRolesTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.server.OptionalMenuHookDescriptorTest.xml",
+          "sha256": "094644950745f91c16e1fa5684b9b9c637b9012afc14b111ddafda71629cb64f",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.OptionalMenuHookDescriptorTest.xml",
+          "suite": "com.salts_inventory_update.server.OptionalMenuHookDescriptorTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest.xml",
+          "sha256": "124cfa1bb350d9c96dab1b8917e29859d821224e9355178a6544fcb7a9d1ec6a",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest.xml",
+          "suite": "com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest.xml",
+          "sha256": "ae560075548e7f2505de00c755c42dadb73a3a4c41708c0c2993a95b15c1e2aa",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest.xml",
+          "suite": "com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.server.ScopedUseTargetTest.xml",
+          "sha256": "360f16e73ea903ae052e5199e909ecc109ee4d655f0255af57a002c6213d0c54",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ScopedUseTargetTest.xml",
+          "suite": "com.salts_inventory_update.server.ScopedUseTargetTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.server.SortWindowsTest.xml",
+          "sha256": "1aed19595e7e1b2641a95e39b069ef24490563008f2f1e3e0d71da0114f989e0",
+          "origin": "versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.SortWindowsTest.xml",
+          "suite": "com.salts_inventory_update.server.SortWindowsTest"
+        }
+      ]
+    },
+    {
+      "project": "compatibility/versions/1.20.1/fabric",
+      "tests": 158,
+      "failures": 0,
+      "skipped": 0,
+      "errors": 0,
+      "xml_files": [
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopMenuActionTest.xml",
+          "sha256": "bd5d1131d5e8da94086196002551bbcdfb45c39e4f35add3373eee409d2fd604",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopMenuActionTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopMenuActionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest.xml",
+          "sha256": "11e7257333871f2df0f21f18be286978f2daa03aa28637e16e77ea817dc366b7",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest.xml",
+          "sha256": "086c31d8b11c7288d51a99192757fc5c0b3185198158a3d720109af5169abcbe",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.LegacyPacketMixinTargetsTest.xml",
+          "sha256": "580fd235df42409bee06d0256f55f9710112e13caad22be76c96950967375d0c",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.LegacyPacketMixinTargetsTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.LegacyPacketMixinTargetsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopBuilderBridgeTest.xml",
+          "sha256": "9adb6a3a97559d10e7eca1f22e82e6fe6255b718c9871682caf94a3e8b806c29",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopBuilderBridgeTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.menu.DesktopBuilderBridgeTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest.xml",
+          "sha256": "35e5cfa4d2032fc8c023501362f1ae4c35ce897c84b4920f982ca1a463f31272",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopMenuPacketsTest.xml",
+          "sha256": "c18458b19dbd25393872854c95f772e32a72096be292448cf084df2380577c33",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopMenuPacketsTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.menu.DesktopMenuPacketsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopMenuUpdatePacketTest.xml",
+          "sha256": "84f918b9658eaa40779c3a738c0d11cd712103d87ad7b08c41c9144d05635496",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopMenuUpdatePacketTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.menu.DesktopMenuUpdatePacketTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.menu.LegacyRecipeBoundsTest.xml",
+          "sha256": "883b9ea38160cbc02a645740251e1fa01f8fa16319926d8dc57ef93ba9d39ae5",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.menu.LegacyRecipeBoundsTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.menu.LegacyRecipeBoundsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.menu.LegacyToolboxInventoriesTest.xml",
+          "sha256": "29cab98272b9f27c53acfca0e3d50ac660f9d9e5aa9959373344e82723958988",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.menu.LegacyToolboxInventoriesTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.menu.LegacyToolboxInventoriesTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.mixin.NativeDesktopPatchPluginTest.xml",
+          "sha256": "cf35c849ec005da81d88b4d18aaac0772d641ec2177e4be59dd3204c03ae182f",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.mixin.NativeDesktopPatchPluginTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.mixin.NativeDesktopPatchPluginTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest.xml",
+          "sha256": "897c61282e6d990045ba325bb67fe72da9c3f1ac90333ce0a390849ffac55ab7",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest.xml",
+          "sha256": "9d55b9e8391e06f69b1984bc5da242c67ee4eca33aa9db4bae6d0e745cbd25e0",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.nativeview.LegacyCatalogRowsTest.xml",
+          "sha256": "e575bf11caa33c7d7be07cdfc692347c302cf7fb4304bdafbe708006b1c5351c",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.nativeview.LegacyCatalogRowsTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.nativeview.LegacyCatalogRowsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.nativeview.LegacyCpuArtworkTest.xml",
+          "sha256": "67c6fc32bf043e173bd0371ae1d589d00d79d7e9376f45fe7e54883e73ad3629",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.nativeview.LegacyCpuArtworkTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.nativeview.LegacyCpuArtworkTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.nativeview.LegacyDesktopStyleTest.xml",
+          "sha256": "69a866269443ff8a5ae6e765745807f83979af52aaf5e33db0ac478406f06f4d",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.nativeview.LegacyDesktopStyleTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.nativeview.LegacyDesktopStyleTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.nativeview.LegacyInventoryRowsTest.xml",
+          "sha256": "5647e6c153effa22bf54913a1408c4be555203c1bc569ef62f9d73ba8c20f9a0",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.nativeview.LegacyInventoryRowsTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.nativeview.LegacyInventoryRowsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.nativeview.LegacyKeyBindingTest.xml",
+          "sha256": "5d314858ac40f226ee9fcb4a1f6d2fa2a853bc55366b41c6374869f77294207e",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.nativeview.LegacyKeyBindingTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.nativeview.LegacyKeyBindingTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.nativeview.LegacyToolbarBackingTest.xml",
+          "sha256": "9e92a77e6c5b013736eff553263e274dfedd086fedd373f5cfaf2e77834e4ead",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.nativeview.LegacyToolbarBackingTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.nativeview.LegacyToolbarBackingTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.aether.AetherCharacterLayoutTest.xml",
+          "sha256": "f4a470b5b4fa6b6fc604097715199a8df5089f793c406e94109bf0f939d8865c",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.aether.AetherCharacterLayoutTest.xml",
+          "suite": "com.salts_inventory_update.compat.aether.AetherCharacterLayoutTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.aether.AetherLayoutsTest.xml",
+          "sha256": "4164fd8b2ea0dd98292a81c4d2574b858850c3d97a6090ad5e27ab1e7e2a369b",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.aether.AetherLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.aether.AetherLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.bumblezone.BumblezoneLayoutsTest.xml",
+          "sha256": "25b9286b2da6cf8c84ce8713c099e4ce5b7d97bf5526b88933cc3a5fd03d4ced",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.bumblezone.BumblezoneLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.bumblezone.BumblezoneLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.chipped.ChippedWindowLogicTest.xml",
+          "sha256": "52c303e9783e614eaf656bd6b5e4099ea8c25704c0187ae9e886ce9012acc922",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.chipped.ChippedWindowLogicTest.xml",
+          "suite": "com.salts_inventory_update.compat.chipped.ChippedWindowLogicTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.create.CreateLayoutsTest.xml",
+          "sha256": "be58b62b7d908aa2a573243396401dde6ba022d27fe4ddcba694184a887e0a1e",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.create.CreateLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.create.CreateLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.enchanted.EnchantedLayoutsTest.xml",
+          "sha256": "66cd7fbee493f98774e541e6f3a7613a20310b0d64376719a52c224871802cf6",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.enchanted.EnchantedLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.enchanted.EnchantedLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.equipment.EquipmentPanelSelectionTest.xml",
+          "sha256": "4bfc544f3cdf4f5b18d97ff47ddb6c8f5f597272e4d3c9ace0925bcb04164893",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.equipment.EquipmentPanelSelectionTest.xml",
+          "suite": "com.salts_inventory_update.compat.equipment.EquipmentPanelSelectionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.geckolib.GeckoLibStackSynchronizationTest.xml",
+          "sha256": "cc73a6cc6bf46d2465fcd28404ab5db47c72326f2ab3fee40a2aec21aeba26ea",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.geckolib.GeckoLibStackSynchronizationTest.xml",
+          "suite": "com.salts_inventory_update.compat.geckolib.GeckoLibStackSynchronizationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.ironchests.IronChestGridTest.xml",
+          "sha256": "30fa4c3eee56293f535dc43961453add299f1569b8cf8948420a97a1c5988a38",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ironchests.IronChestGridTest.xml",
+          "suite": "com.salts_inventory_update.compat.ironchests.IronChestGridTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.nativewindows.NativeBatchLayoutsTest.xml",
+          "sha256": "31274304bb03669f43b1333d63ff83a9ac4209ed8b78a048d0e431b0284c1351",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeBatchLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.nativewindows.NativeBatchLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml",
+          "sha256": "2b5e8836304bef0df97d14e4701b705c0822fd7fa41061d821a56f37ef0bf953",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.nativewindows.NativeWindowPolishTest.xml",
+          "sha256": "8c0171eed1bde13eec28b38153fc6571b994ef5dd9deeab24adc4ca900ab9ef3",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeWindowPolishTest.xml",
+          "suite": "com.salts_inventory_update.compat.nativewindows.NativeWindowPolishTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.nativewindows.ReviewedNativeWindowsTest.xml",
+          "sha256": "24adb0ce9f3dd7cec7c36c8e6c5dd7f2d9d532e9b474d8426db7fafa3cfd834d",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.ReviewedNativeWindowsTest.xml",
+          "suite": "com.salts_inventory_update.compat.nativewindows.ReviewedNativeWindowsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest.xml",
+          "sha256": "675aa91cfa38f51a592fcf7107b9c27f4f4a1ea46394b3d75ee885283496544e",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest.xml",
+          "suite": "com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.simplyswords.SimplySwordsLayoutTest.xml",
+          "sha256": "6b0f7d8dfbc0f23151ffdbb7e076300dfd2175a4834a04316c51d82d865164e3",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.simplyswords.SimplySwordsLayoutTest.xml",
+          "suite": "com.salts_inventory_update.compat.simplyswords.SimplySwordsLayoutTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest.xml",
+          "sha256": "c67fab71615f540499c5b3931461e5082899e71650de322d19ae3c8a6f1fa9ef",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest.xml",
+          "suite": "com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.20.1\\fabric\\TEST-com.salts_inventory_update.compat.zenith.ZenithLayoutsTest.xml",
+          "sha256": "15de66d21f7d56933e9e3d3c23bc9226b95d214ba18df8161d7b51375da96b2b",
+          "origin": "compatibility\\versions\\1.20.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.zenith.ZenithLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.zenith.ZenithLayoutsTest"
+        }
+      ]
+    },
+    {
+      "project": "versions/1.21.1/fabric",
+      "tests": 249,
+      "failures": 0,
+      "skipped": 0,
+      "errors": 0,
+      "xml_files": [
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopApiContractTest.xml",
+          "sha256": "7610c93e46a5dc688615d859f965ecb633dcb2ed55639f7386cbb58d1a086a36",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopApiContractTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopApiContractTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopApiViewsTest.xml",
+          "sha256": "10acd74846e2bfafabaec99af8460f048f9efd2076bd3a1834d2bf0a86fc2ae4",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopApiViewsTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopApiViewsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopCursorRevisionTest.xml",
+          "sha256": "caadc09555d656931ef0f091e9d9f5d2342aa4801b55cd193b6b3c0a2c931666",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopCursorRevisionTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopCursorRevisionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopEmbeddedSessionTest.xml",
+          "sha256": "cc46cebd3a3afad0ba19d8375f6113d8921b0a2ad3f92dd93c62690d941d5a1e",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopEmbeddedSessionTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopEmbeddedSessionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopRecipeProviderTest.xml",
+          "sha256": "134a0e286d35d08ea4cceb9e383d2a6fc0e0cc3af6573127ffbaf2e943b75ebb",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopRecipeProviderTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopRecipeProviderTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopSharedCursorApiTest.xml",
+          "sha256": "db1a7bb2bc6577e883a4c687531c62bb9ed99401270548e4c144c5635ab86b67",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopSharedCursorApiTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopSharedCursorApiTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopSlotGesturesTest.xml",
+          "sha256": "e803f57b2628d5f23f2553c45d2136d09f95eacaa457e8cb7f799eea3a393c71",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopSlotGesturesTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopSlotGesturesTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.client.DesktopWorkspaceApiTest.xml",
+          "sha256": "607d65b2c528b3c45782743f8272bede871dbd3759d72053436a34e8331d6a24",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopWorkspaceApiTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopWorkspaceApiTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.client.NativeHeaderSlotInputTest.xml",
+          "sha256": "38dbae0af23bec8bc18e9053b2058d4262648c3f1f8d9b2c377f3145a295ec43",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.NativeHeaderSlotInputTest.xml",
+          "suite": "com.salts_inventory_update.client.NativeHeaderSlotInputTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.client.WindowFeatureRemovalTest.xml",
+          "sha256": "d588c9c9204e399dc61f6e23bc48ed2fcde7164e7c059f9db71df5d90ba88448",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WindowFeatureRemovalTest.xml",
+          "suite": "com.salts_inventory_update.client.WindowFeatureRemovalTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.client.WorkspaceControllerSlotsTest.xml",
+          "sha256": "3227ada7c3470f41b8aceb847088a0cf2e70e6a2b5140bfdb37b1934da42086f",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WorkspaceControllerSlotsTest.xml",
+          "suite": "com.salts_inventory_update.client.WorkspaceControllerSlotsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest.xml",
+          "sha256": "a2d590d9c09343dccb2d91df097dfa7e0ccb69dd8fd6de550a787a2bac2a3757",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest.xml",
+          "suite": "com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest.xml",
+          "sha256": "136722ec432726b64099e0ee057fedf059328d3ba3cfd8705b04227884a76da4",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest.xml",
+          "sha256": "cfa95c1b17b3b9ebd5104047dee3c44a9485b9f0cdc61dc6b0491692daa2d652",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest.xml",
+          "sha256": "5ca19a325e45687ec972538546db5ba510077eeb2de15537bd89a763a2ed65ed",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest.xml",
+          "sha256": "2fb229664854b4be49e862fc9a5b59bb3db6693119677a851b1b11d6190cc570",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.ContextualPhysicalSourcesTest.xml",
+          "sha256": "0907caf1ec5ac75bba6f63c3b038d19222e40d5939d8c3c9a3b26e32fae38d72",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ContextualPhysicalSourcesTest.xml",
+          "suite": "com.salts_inventory_update.server.ContextualPhysicalSourcesTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.DesktopPickupAllTest.xml",
+          "sha256": "5aa49e6f3fcd8abb0d2326589f4575439f3fcaa053cb63340c3a4b0fa6507f02",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.DesktopPickupAllTest.xml",
+          "suite": "com.salts_inventory_update.server.DesktopPickupAllTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest.xml",
+          "sha256": "78a214fa19a4bfa4be02c20177fbf87b0433a476a3c633f79f84518f16ed06bb",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest.xml",
+          "suite": "com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.HoverCleanupAuthorizationTest.xml",
+          "sha256": "020946048939fbb595bbd638d45ec399bc540387f44d39f6fcb9c9fa2e0ca15e",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.HoverCleanupAuthorizationTest.xml",
+          "suite": "com.salts_inventory_update.server.HoverCleanupAuthorizationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.InventorySortTest.xml",
+          "sha256": "aa275ac48176f14585c9854e3bebffcb4d60bf57bff9309de49fa15b85369de9",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.InventorySortTest.xml",
+          "suite": "com.salts_inventory_update.server.InventorySortTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml",
+          "sha256": "acbce301767b7921a608e55e291bc246c23da3dddca9e600c91e2c737627d90c",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeCursorBroadcastTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.NativeCursorPublicationTest.xml",
+          "sha256": "43d94b2dede0d891c7d4cb7047cea02c1ebb126f997f2ac91c87ad2f549e69a0",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorPublicationTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeCursorPublicationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml",
+          "sha256": "de4880d5e0bb48de8833901a543a15ec58d5c033fac2aa34eaedbeb5f1517d78",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeOpeningCodecTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.NativeSelectorEligibilityTest.xml",
+          "sha256": "b55acc86c988393a7a96642cd68e4cd15e35d547ac81ff2a1e2e91a9462a8e75",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeSelectorEligibilityTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeSelectorEligibilityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.OptionalMenuHookDescriptorTest.xml",
+          "sha256": "d51fa2b9fa3df0eb0be912f4bf0e45a44e2b67d58dfa8e9e59445de5a7c7a61c",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.OptionalMenuHookDescriptorTest.xml",
+          "suite": "com.salts_inventory_update.server.OptionalMenuHookDescriptorTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest.xml",
+          "sha256": "399b1581b190332c8bce6f07bc7a21f87e36ecf27f175144e9a465007863396c",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest.xml",
+          "suite": "com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest.xml",
+          "sha256": "fc8156d68478fe91329f9c769ebee94920a1d7186c79876a570e6dfbfc96e028",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest.xml",
+          "suite": "com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.ScopedUseTargetTest.xml",
+          "sha256": "d56c1e594aadbc46599a0352e780e14c884675cfd1dc591bfa8e3eb5971df64b",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ScopedUseTargetTest.xml",
+          "suite": "com.salts_inventory_update.server.ScopedUseTargetTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.server.SortWindowsTest.xml",
+          "sha256": "41b4e9ed82139a2bb2ab606fd2470b609ce4b89cabec0a1a8c044f2ad79528c5",
+          "origin": "versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.SortWindowsTest.xml",
+          "suite": "com.salts_inventory_update.server.SortWindowsTest"
+        }
+      ]
+    },
+    {
+      "project": "compatibility/versions/1.21.1/fabric",
+      "tests": 84,
+      "failures": 0,
+      "skipped": 0,
+      "errors": 0,
+      "xml_files": [
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopMenuActionTest.xml",
+          "sha256": "94ddd8f918f4ffd62077faa521a0e7476042761283fdba0f33b475d8cfc9b4dd",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopMenuActionTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopMenuActionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest.xml",
+          "sha256": "1f1feefa38af253b2253a5d15475a1909f93df7a2c674e1f28f3989edce5dfb0",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest.xml",
+          "sha256": "9e13d04e88754bec5b13c275e1239a7aa4c93d2690ac5700ea73404e2bb59b3f",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest.xml",
+          "sha256": "71a85e8152e3d075458d6176af14f153dbb69671a79e48072a0106606e45147a",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest.xml",
+          "sha256": "d77cd6aff9816f620837e4c246c35a546846a3833ce9c7bae1dd1e8db45bfde7",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest.xml",
+          "sha256": "0d092c2b620d4c74a845627c02b510c2a3479ca7b5a1ae93f26c16d3947d4d7e",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.aether.AetherCharacterLayoutTest.xml",
+          "sha256": "f3506d1286dccd8d2ced6df45216d9ef7cd9fbda5249a1150e0583df870c5fd8",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.aether.AetherCharacterLayoutTest.xml",
+          "suite": "com.salts_inventory_update.compat.aether.AetherCharacterLayoutTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.aether.AetherLayoutsTest.xml",
+          "sha256": "8eafe167fcb99f4263a06d2c9b63a6a8ae59be8049a9a80509ab4593d6bc8755",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.aether.AetherLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.aether.AetherLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.chipped.ChippedWindowLogicTest.xml",
+          "sha256": "b3a7677fae5d720de53939619c15858047af814b1ad6d56b855b82b52268eca2",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.chipped.ChippedWindowLogicTest.xml",
+          "suite": "com.salts_inventory_update.compat.chipped.ChippedWindowLogicTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.enchanted.EnchantedLayoutsTest.xml",
+          "sha256": "9c0be86abd5ff66c85750fe80b32d81e2d62d549aa7272314164be8ae93141ae",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.enchanted.EnchantedLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.enchanted.EnchantedLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.equipment.EquipmentPanelSelectionTest.xml",
+          "sha256": "faeaafc1b5031f8790aa9d39c10125a19404d0f7e86520032b104a1cd6fb2146",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.equipment.EquipmentPanelSelectionTest.xml",
+          "suite": "com.salts_inventory_update.compat.equipment.EquipmentPanelSelectionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.jei.RecipeHitBoundsTest.xml",
+          "sha256": "6d51c48fcb98bca176ffff567ede3d5221c0fc124e8289940a5895f712e42c60",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.jei.RecipeHitBoundsTest.xml",
+          "suite": "com.salts_inventory_update.compat.jei.RecipeHitBoundsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.nativewindows.NativeBatchLayoutsTest.xml",
+          "sha256": "968a3a41654bce7fd40bab2c11af7f09e54a2726ca4321d13d4c3f055193196f",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeBatchLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.nativewindows.NativeBatchLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml",
+          "sha256": "d4e33e19e0976e3a1e39290124f8434da8a16fb7b4479750fff234156c12dee4",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest.xml",
+          "sha256": "825db40de5a9b9686317ffb9abef01b42e3a0842adaec71104b4f69c3547eb3f",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest.xml",
+          "suite": "com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.simplyswords.SimplySwordsLayoutTest.xml",
+          "sha256": "68943f075637f74db6d45a0ee8843569aeb4f68c5218751061f298e95f259366",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.simplyswords.SimplySwordsLayoutTest.xml",
+          "suite": "com.salts_inventory_update.compat.simplyswords.SimplySwordsLayoutTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.1\\fabric\\TEST-com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest.xml",
+          "sha256": "b4be4f7cf92fc893158921db8ab1fcf9057a8e0ef78c69b109a1c8e68753c736",
+          "origin": "compatibility\\versions\\1.21.1\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest.xml",
+          "suite": "com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest"
+        }
+      ]
+    },
+    {
+      "project": "versions/1.21.11/fabric",
+      "tests": 249,
+      "failures": 0,
+      "skipped": 0,
+      "errors": 0,
+      "xml_files": [
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.client.DesktopApiContractTest.xml",
+          "sha256": "488bfe47b456f265220f16a89f3521fe3e21be9a0f2a5d000fc04931a5c018cf",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopApiContractTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopApiContractTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.client.DesktopApiViewsTest.xml",
+          "sha256": "f7491e0c96da92bb386a77a0b6c2bdf92bb95d61b2b4cf0b5f3e9ce0f460b54a",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopApiViewsTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopApiViewsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.client.DesktopEmbeddedSessionTest.xml",
+          "sha256": "660a736587fec63c81010b681b5454b0d7de4dc2adff2f6dc06ccf8a37f7ceec",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopEmbeddedSessionTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopEmbeddedSessionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.client.DesktopRecipeProviderTest.xml",
+          "sha256": "86c10711d843156684e72818dd448b8f27d2c0be165b7d5f733b48c46f8f2979",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopRecipeProviderTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopRecipeProviderTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.client.DesktopSharedCursorApiTest.xml",
+          "sha256": "b4de4ccd60d5f26876121a567dabaa8e33ee4919e007255f57dee7fd8a970546",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopSharedCursorApiTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopSharedCursorApiTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.client.DesktopSlotGesturesTest.xml",
+          "sha256": "b0ebc6e2133c8073702a324c14c5975287dbbd79627b476c4b531429900e09bb",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopSlotGesturesTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopSlotGesturesTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.client.DesktopWorkspaceApiTest.xml",
+          "sha256": "a2119647e88fdb5cd1909cd95cd266174a590c85fb26354fbbfd735ca2d2170a",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopWorkspaceApiTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopWorkspaceApiTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.client.NativeHeaderSlotInputTest.xml",
+          "sha256": "3ca8444682ebada89a7108decc39d2acb1a13cc50ad13ed6f0e5b59d27538718",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.NativeHeaderSlotInputTest.xml",
+          "suite": "com.salts_inventory_update.client.NativeHeaderSlotInputTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.client.WindowFeatureRemovalTest.xml",
+          "sha256": "a8858217763e0fcc8ab866fc1ba681bd6abc43dc5960969b83b8341ce58cf3fe",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WindowFeatureRemovalTest.xml",
+          "suite": "com.salts_inventory_update.client.WindowFeatureRemovalTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.client.WorkspaceControllerSlotsTest.xml",
+          "sha256": "473b87f35bddd01f839e7c26a7bd87ba5a3f3492c215104cd5b7df1423021180",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WorkspaceControllerSlotsTest.xml",
+          "suite": "com.salts_inventory_update.client.WorkspaceControllerSlotsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest.xml",
+          "sha256": "68cc7186ac5e4f3d0fc3e0b04911f26a8826e64934e58a9ec48ec36d05015186",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest.xml",
+          "suite": "com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest.xml",
+          "sha256": "9a77566d2cd2798091ba8c56f6c6237d3ae9ed5bb8df8555b7a23ca9abcebfd8",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest.xml",
+          "sha256": "b781d1d9fbaa5e159f6096a3195a4cca676e439803d0ff88f7ddf1a484e40a30",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest.xml",
+          "sha256": "f3c767fba1c4a5e9b2778f90b4ed95cf14bb96ac826f08c40a2e8d7648906984",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest.xml",
+          "sha256": "b009076c5f3c0801ca62a84e595fa533f71b7c1d518af0aaaac1d00d98a1a5e2",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.ContextualPhysicalSourcesTest.xml",
+          "sha256": "f6bb1e7a7bcb6a08554c18015fdd1dfc6e29e04fb19d4c28f89e12c1a3ab1bec",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ContextualPhysicalSourcesTest.xml",
+          "suite": "com.salts_inventory_update.server.ContextualPhysicalSourcesTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.DesktopPickupAllTest.xml",
+          "sha256": "41cd9f27013ff7b44a25e13c2a99cf7d86a4971196908542aaae67e22a23d265",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.DesktopPickupAllTest.xml",
+          "suite": "com.salts_inventory_update.server.DesktopPickupAllTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest.xml",
+          "sha256": "b067527f1ec719b80c4ce0c2f61f8cb3d897d06b913867b15d59094fcb20b112",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest.xml",
+          "suite": "com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.HoverCleanupAuthorizationTest.xml",
+          "sha256": "1d9584a44aa9a7013454349a7ebebbad68720204f968d2f42ef45e0a4a8862f4",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.HoverCleanupAuthorizationTest.xml",
+          "suite": "com.salts_inventory_update.server.HoverCleanupAuthorizationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.InventorySortTest.xml",
+          "sha256": "0b3a287d1e57ab39e2b6ee4d10f9da1cce078b06fc0518b79938a381c0e75670",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.InventorySortTest.xml",
+          "suite": "com.salts_inventory_update.server.InventorySortTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml",
+          "sha256": "aacbdd2afb3b498058b80452e4e6fea87b8df294b040375c6e2764f1a810f95c",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeCursorBroadcastTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.NativeCursorPublicationTest.xml",
+          "sha256": "b7948a8b8d02ff743b22ec58b9adb8926e1ee2c2ba7efcd4a18199b7e01613da",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorPublicationTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeCursorPublicationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml",
+          "sha256": "99d148dff06c94646fd9fdf0a2c647aab561a7ad1bc3e5aef9ff9b3138fa6b3b",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeOpeningCodecTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.NativeSelectorEligibilityTest.xml",
+          "sha256": "f62e967f675f7da97ca2010c4123a8df9194b20f66b6d3004e3055b0f79c8b90",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeSelectorEligibilityTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeSelectorEligibilityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.OptionalMenuHookDescriptorTest.xml",
+          "sha256": "7e0adece7c2feb4ddb1740415effa73604adb33479563d201430e45c554b4bda",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.OptionalMenuHookDescriptorTest.xml",
+          "suite": "com.salts_inventory_update.server.OptionalMenuHookDescriptorTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest.xml",
+          "sha256": "e39adf05dc55661f34e9e15f866dcd5cbb1e1f47d7e40c89c1c49f8163b3e066",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest.xml",
+          "suite": "com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest.xml",
+          "sha256": "472c0a1f1dd6675c3b0625f66929f877c769f8c5761eb0d0084fa5a36b3bab92",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest.xml",
+          "suite": "com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.ScopedUseTargetTest.xml",
+          "sha256": "0e5da5fb7c985d9bdb06a1076bb022ad21a6b86b9816c24d43d2f7e67df10043",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ScopedUseTargetTest.xml",
+          "suite": "com.salts_inventory_update.server.ScopedUseTargetTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.server.SortWindowsTest.xml",
+          "sha256": "2db8a21b01f91e534583dc472e05549192f81a33fd69e54aed4ab63e60755727",
+          "origin": "versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.SortWindowsTest.xml",
+          "suite": "com.salts_inventory_update.server.SortWindowsTest"
+        }
+      ]
+    },
+    {
+      "project": "compatibility/versions/1.21.11/fabric",
+      "tests": 53,
+      "failures": 0,
+      "skipped": 0,
+      "errors": 0,
+      "xml_files": [
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopMenuActionTest.xml",
+          "sha256": "dc63ed500994897934d281e46d6e954c2a3757bf535d913fca83fa1ddd2f8592",
+          "origin": "compatibility\\versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopMenuActionTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopMenuActionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest.xml",
+          "sha256": "18e6421aef86333fc8e1d37ab791262a3723320b3436d0d0fb0ee2c281b61d69",
+          "origin": "compatibility\\versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest.xml",
+          "sha256": "48d36be378ce42184b700300f7cfdcfcb39d5faf2602a07a4a323eaf25835c08",
+          "origin": "compatibility\\versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest.xml",
+          "sha256": "cf837507fbfb4976f9104b06f84c7bd23d190db349db74cff4341c084329534e",
+          "origin": "compatibility\\versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest.xml",
+          "sha256": "736e9ab143734ff759f696b3a9478de595dfaccbba1ff5526f9706c8da3e4d12",
+          "origin": "compatibility\\versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest.xml",
+          "sha256": "9f5be97e91ea92ead38e48c577168bd639cce70a8484b8ec88e58b4c197e59b9",
+          "origin": "compatibility\\versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.compat.jei.RecipeHitBoundsTest.xml",
+          "sha256": "57bcad892787148e02eb36e0f80f9bab239070d28ed6f58c957cf47f9d01da73",
+          "origin": "compatibility\\versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.jei.RecipeHitBoundsTest.xml",
+          "suite": "com.salts_inventory_update.compat.jei.RecipeHitBoundsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml",
+          "sha256": "a52f6b771038c6904172662c50b9d00a69646df6d0c1c6b56c6d136734ac7b0a",
+          "origin": "compatibility\\versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest.xml",
+          "sha256": "18510ecefb89022e4ac15c008e8d991387918fda4cc550af5687d56bf52b278b",
+          "origin": "compatibility\\versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest.xml",
+          "suite": "com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\1.21.11\\fabric\\TEST-com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest.xml",
+          "sha256": "d3db700899f58a8c80fe5da27988031b18023905b1fa0384f8229186a8deb4d3",
+          "origin": "compatibility\\versions\\1.21.11\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest.xml",
+          "suite": "com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest"
+        }
+      ]
+    },
+    {
+      "project": "versions/26.1.2/fabric",
+      "tests": 266,
+      "failures": 0,
+      "skipped": 0,
+      "errors": 0,
+      "xml_files": [
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopApiContractTest.xml",
+          "sha256": "dd7d8bb80daee595a6d758f7785538c2df5a8af8103987dafa9cbac5a8712570",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopApiContractTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopApiContractTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopApiViewsTest.xml",
+          "sha256": "b2fac65315ba688c1ee431eaf5c0ea0bc2e325bbabf9bed74f3baa1230d9db72",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopApiViewsTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopApiViewsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopEmbeddedSessionTest.xml",
+          "sha256": "c5bc14aab782682599f280c9f2df18c5bd5bb185420becf162de306cb0826990",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopEmbeddedSessionTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopEmbeddedSessionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopMouseButtonsTest.xml",
+          "sha256": "b60b3b7683ca6983a82523ee7d05044797147f60c7d270dec78b563a9c907db0",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopMouseButtonsTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopMouseButtonsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopRecipeProviderTest.xml",
+          "sha256": "c240118091e1a15a9a1ad75d130173da5eaffdf1489034c505a919e7bfc575f6",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopRecipeProviderTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopRecipeProviderTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopSharedCursorApiTest.xml",
+          "sha256": "90d1dda127b092652d79415a0a5e0798d072fce6ff6f81bd9e642f1f318bfd70",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopSharedCursorApiTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopSharedCursorApiTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopSlotGesturesTest.xml",
+          "sha256": "45ed80c92c94872e65bc8c2f8e2e8fc26d14393fa66de1651d03927e3583c864",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopSlotGesturesTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopSlotGesturesTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopWorkspaceApiTest.xml",
+          "sha256": "77d80a4a79206beff13cb4d6a105b5c72c129f3c52d33427b28bb87af67b84eb",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopWorkspaceApiTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopWorkspaceApiTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.client.NativeHeaderSlotInputTest.xml",
+          "sha256": "1d4b549afd41d54595233dff77a0f221c6d1d6108508597c26d6814ccefa5b91",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.NativeHeaderSlotInputTest.xml",
+          "suite": "com.salts_inventory_update.client.NativeHeaderSlotInputTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.client.WindowFeatureRemovalTest.xml",
+          "sha256": "d68a9d78757cfa77ee49252f1969973ad54a424d6f45f81b5bda9799e3fa6504",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WindowFeatureRemovalTest.xml",
+          "suite": "com.salts_inventory_update.client.WindowFeatureRemovalTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.client.WorkspaceControllerSlotsTest.xml",
+          "sha256": "5b76c8b91b2564add224b0fcfa436eea4734e25d642d7cd3a3eae5027d0815cd",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WorkspaceControllerSlotsTest.xml",
+          "suite": "com.salts_inventory_update.client.WorkspaceControllerSlotsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest.xml",
+          "sha256": "62b056710351d8308c8abb01169e07691e9d2e468133548217b592c380677075",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest.xml",
+          "suite": "com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest.xml",
+          "sha256": "083330f2d48aaca2ef68bfcabca0f499f75b4c47b0afb7c7e9e4e8d1f5cf050e",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest.xml",
+          "sha256": "caa85c219ffc9c91c12bbe777bc67f01ae47bd8b94a29f5d2f435af12378f4e5",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest.xml",
+          "sha256": "73c045aad39cfab53aa58085169eed92a88ff991ab527880ed133cc57d1c7df5",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest.xml",
+          "sha256": "f107f06f100902739fae511d4f1e1763c089ffdea7f1de1166f1988a175c4224",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.server.DesktopPickupAllTest.xml",
+          "sha256": "a2069cca5325175d152fc53cdd22561c6cfc5bb7e5f27ffcce17e984d759094b",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.DesktopPickupAllTest.xml",
+          "suite": "com.salts_inventory_update.server.DesktopPickupAllTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest.xml",
+          "sha256": "da8e7adad1cdf0de57bc85d3594bbb5972bc94c0e9f80275b812ed37aba2bab3",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest.xml",
+          "suite": "com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.server.HoverCleanupAuthorizationTest.xml",
+          "sha256": "74f466fb5bae631253f4ab84ddf57c43f0fc9bf27275906fa8f405afbdec1a7b",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.HoverCleanupAuthorizationTest.xml",
+          "suite": "com.salts_inventory_update.server.HoverCleanupAuthorizationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.server.InventorySortTest.xml",
+          "sha256": "196ac79d0163610f66bb5e8d7c3430bbc4aaed442a938d59b6bf443bf03b14b6",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.InventorySortTest.xml",
+          "suite": "com.salts_inventory_update.server.InventorySortTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml",
+          "sha256": "7fbcfc624a4779475defd0b3d45430b67e83a12800c109f81dfe4eca9b0bdfa5",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeCursorBroadcastTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.server.NativeCursorPublicationTest.xml",
+          "sha256": "d8cd8f51cf61d59f99a557b69f6a49ebb7433e95d7da31f29bf065f0ffcaf67c",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorPublicationTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeCursorPublicationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml",
+          "sha256": "60e8d1cf2cc724b25e25be241f5dbf38eaa2f2b79f21902fa750e28344abb22c",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeOpeningCodecTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.server.NativeSelectorEligibilityTest.xml",
+          "sha256": "8e2685b93fb445951f43d7e72b1a86716318fb7e653aa82b672e4da4be00f44a",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeSelectorEligibilityTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeSelectorEligibilityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.server.OptionalMenuHookDescriptorTest.xml",
+          "sha256": "7790557394f19badbb3310f743ed51e4ef0b91d0ad56402edb2ef96ed9084ff7",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.OptionalMenuHookDescriptorTest.xml",
+          "suite": "com.salts_inventory_update.server.OptionalMenuHookDescriptorTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest.xml",
+          "sha256": "f60639e0d58ce416eebe24ba3efcef929f5e1f9a07601588b2a4bcf8764fd630",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest.xml",
+          "suite": "com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest.xml",
+          "sha256": "55928f7c2705843ed521f4e82583e879eba045cd6ca636626c81f5656e70f17a",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest.xml",
+          "suite": "com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.server.ScopedUseTargetTest.xml",
+          "sha256": "54834efcc4950f00b50d2be0f59feede863738e07eba971f05ae330763ec8150",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ScopedUseTargetTest.xml",
+          "suite": "com.salts_inventory_update.server.ScopedUseTargetTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.server.SortWindowsTest.xml",
+          "sha256": "839be93f591dd44dba5b3a2c4ee1a03173b8c6424ea221474391c12e1439cfd7",
+          "origin": "versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.SortWindowsTest.xml",
+          "suite": "com.salts_inventory_update.server.SortWindowsTest"
+        }
+      ]
+    },
+    {
+      "project": "compatibility/versions/26.1.2/fabric",
+      "tests": 52,
+      "failures": 0,
+      "skipped": 0,
+      "errors": 0,
+      "xml_files": [
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopMenuActionTest.xml",
+          "sha256": "f0294fb281afa689d77ca0acd4c90ab3340c1d83d4124d6640d2686c047038b5",
+          "origin": "compatibility\\versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopMenuActionTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopMenuActionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest.xml",
+          "sha256": "3bd1c154eaf1937a3075cb6a478d8f978a5c5a028343e01a21fb61969c71f171",
+          "origin": "compatibility\\versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest.xml",
+          "sha256": "360686362b58eeeab05b9de018ae59f93613c13133b9ccb8d57efb44669bd0c9",
+          "origin": "compatibility\\versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest.xml",
+          "sha256": "76a0af3165a556282ccc5a2c465f7575dae08c6d69eae88f4ccdf586d2345c04",
+          "origin": "compatibility\\versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest.xml",
+          "sha256": "8fa0b0d7a73c3122a444779627a590e846389ef2084b851b4fe6ab098dc16982",
+          "origin": "compatibility\\versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest.xml",
+          "sha256": "9c6af36cc0ddcacf5db09421ada2d2c9dfc378e0be32a1c5eb7c0c591f08e597",
+          "origin": "compatibility\\versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.compat.nativewindows.ModernSmelterLayoutTest.xml",
+          "sha256": "867862b2156c9f4d777836271fc0ea05f468518740e6c2e4dc825f2259007aa6",
+          "origin": "compatibility\\versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.ModernSmelterLayoutTest.xml",
+          "suite": "com.salts_inventory_update.compat.nativewindows.ModernSmelterLayoutTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml",
+          "sha256": "cc90f8826b5645ab8acfa0b150e1f20965bb4b61db8a1768eaf6b196ff996eae",
+          "origin": "compatibility\\versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest.xml",
+          "sha256": "5773ce9fbf8f45d5d41e36129d78fea356d5878d585ccc57b1561b0867ecedf3",
+          "origin": "compatibility\\versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest.xml",
+          "suite": "com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.1.2\\fabric\\TEST-com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest.xml",
+          "sha256": "55cd5e90e74a73387496e25d915bf9b70bfd4cc279aad201869b6d715a62df74",
+          "origin": "compatibility\\versions\\26.1.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest.xml",
+          "suite": "com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest"
+        }
+      ]
+    },
+    {
+      "project": "versions/26.2/fabric",
+      "tests": 266,
+      "failures": 0,
+      "skipped": 0,
+      "errors": 0,
+      "xml_files": [
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopApiContractTest.xml",
+          "sha256": "8815587294e94f4a3835a50d1d048150e1a28d7f366e38a6c12dde78a60745c6",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopApiContractTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopApiContractTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopApiViewsTest.xml",
+          "sha256": "e79befac3da52a73a27b01ab767eb31fefd411972dbfb2cd49ad660cabf2b882",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopApiViewsTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopApiViewsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopEmbeddedSessionTest.xml",
+          "sha256": "215bcdd56194b9ae6c012d46ab788e244fa9cefcc424451ca5088790e25d5f46",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopEmbeddedSessionTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopEmbeddedSessionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopMouseButtonsTest.xml",
+          "sha256": "4e06d8c895cc4fe38db13c6f7a2e23bb12560136e4518a1286d666a2824d3d0b",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopMouseButtonsTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopMouseButtonsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopRecipeProviderTest.xml",
+          "sha256": "a70ba8352a98584d22ae1806b667a68b41274cfb170e97bff61602fae9d757e0",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopRecipeProviderTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopRecipeProviderTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopSharedCursorApiTest.xml",
+          "sha256": "ec188f9f68fc4ba6d7cb0b57d2442350a48a586c178e60ac3fd342472de312ce",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopSharedCursorApiTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopSharedCursorApiTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopSlotGesturesTest.xml",
+          "sha256": "728297c7ec0e6b48bc4185e18f924f4f3c367a5f4a2770e5f29e00aa25aea5f1",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopSlotGesturesTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopSlotGesturesTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.client.DesktopWorkspaceApiTest.xml",
+          "sha256": "5e9d54d41fb66e9b8285461c874ecb57ea45a15fc6c555bcadb74aaa90875229",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopWorkspaceApiTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopWorkspaceApiTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.client.NativeHeaderSlotInputTest.xml",
+          "sha256": "1335c2b4633796941394ecb176dc04f27fc47884dfd7966a6373c84983d2df15",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.NativeHeaderSlotInputTest.xml",
+          "suite": "com.salts_inventory_update.client.NativeHeaderSlotInputTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.client.WindowFeatureRemovalTest.xml",
+          "sha256": "096b51fae0d343499afe1a8b8cba8c73cf6ecdb77f71bc4a9a12a79ef7ecab11",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WindowFeatureRemovalTest.xml",
+          "suite": "com.salts_inventory_update.client.WindowFeatureRemovalTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.client.WorkspaceControllerSlotsTest.xml",
+          "sha256": "be3b8a6b9ddc1ed13b5dbcd03b97c09f784f165cd4514b180bb176b6a9b644e4",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WorkspaceControllerSlotsTest.xml",
+          "suite": "com.salts_inventory_update.client.WorkspaceControllerSlotsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest.xml",
+          "sha256": "b04396c3ed09c6786481b16def642431152dded8b237ef91baeac2a727afc08b",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest.xml",
+          "suite": "com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest.xml",
+          "sha256": "2c3ba8dce0c98e60cf25026c87154e446cb58c5b020e32991c9369c99a6d37b5",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest.xml",
+          "sha256": "7bdece46e84323ed9322fdbda674f9b78d917c990dac815654961c91bb513727",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest.xml",
+          "sha256": "13f56ad6a17808bad04d82c4631d7e46cdcd5266071daa273a3ca8deaa5dcf10",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest.xml",
+          "sha256": "737da43835c70681b555ffee5ec592515c59720542773245aa064de5926a4234",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.server.DesktopPickupAllTest.xml",
+          "sha256": "a3b6fd17b01fb4b2e3a41b098874584556129e1aa5a3e2388bb5060b0a807010",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.DesktopPickupAllTest.xml",
+          "suite": "com.salts_inventory_update.server.DesktopPickupAllTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest.xml",
+          "sha256": "fc07b1a48a18a3e8470301f68ff90e5f429d031ab4a39684524832e0bd63c2ec",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest.xml",
+          "suite": "com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.server.HoverCleanupAuthorizationTest.xml",
+          "sha256": "92d53294eb14268e7218b69764d853b84dac5db2cd458ecb04693f45b4bd0728",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.HoverCleanupAuthorizationTest.xml",
+          "suite": "com.salts_inventory_update.server.HoverCleanupAuthorizationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.server.InventorySortTest.xml",
+          "sha256": "a73f8ef2904ef57754979ad73072a8850908bbe9a576220efc4dd361c772fd2e",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.InventorySortTest.xml",
+          "suite": "com.salts_inventory_update.server.InventorySortTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml",
+          "sha256": "beb8bc2eb8ef9306e043df387e70fbc3938a73d0fb368e7226d86ea11c4ef22b",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeCursorBroadcastTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.server.NativeCursorPublicationTest.xml",
+          "sha256": "793d51bd323a512aabbe600fb454bfea7d8ca4a51cc9eca52c32a58fcd0fa1af",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorPublicationTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeCursorPublicationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml",
+          "sha256": "5264e71711a29d8c5cedf9ec55185a5b13e578b018272d2cb9383e70df769b8d",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeOpeningCodecTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.server.NativeSelectorEligibilityTest.xml",
+          "sha256": "2d266eaed2d7b596b0c2ead588fda5b75da394f6ace430166bac4e3b9e805a60",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeSelectorEligibilityTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeSelectorEligibilityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.server.OptionalMenuHookDescriptorTest.xml",
+          "sha256": "06927a700ac08f81193351f2599d83acb814f2e5b844d2d7a7e81485495f1f1b",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.OptionalMenuHookDescriptorTest.xml",
+          "suite": "com.salts_inventory_update.server.OptionalMenuHookDescriptorTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest.xml",
+          "sha256": "977ed1004fae7e9a93b77e32e186ff1d0a6de60ec8a34ceb16144eaaca3342aa",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest.xml",
+          "suite": "com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest.xml",
+          "sha256": "fe5f2f9b2d4b3b203a1ed25fcdbc0a9657de6951aeeeedcb9539a5b3130b947c",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest.xml",
+          "suite": "com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.server.ScopedUseTargetTest.xml",
+          "sha256": "cb2906a9b0b97c73f64135caba45140d51726f388de647cfb015430b46e0cd82",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ScopedUseTargetTest.xml",
+          "suite": "com.salts_inventory_update.server.ScopedUseTargetTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.server.SortWindowsTest.xml",
+          "sha256": "6790b2a84e5c81bc294bdece10bd545f9a17bb27214cc8cb1e68a9028f620ae6",
+          "origin": "versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.SortWindowsTest.xml",
+          "suite": "com.salts_inventory_update.server.SortWindowsTest"
+        }
+      ]
+    },
+    {
+      "project": "compatibility/versions/26.2/fabric",
+      "tests": 52,
+      "failures": 0,
+      "skipped": 0,
+      "errors": 0,
+      "xml_files": [
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopMenuActionTest.xml",
+          "sha256": "bafedc4322bdb90becf3cf76b428f173c0ef2b339e28cc9d8deb0c406dbd30e4",
+          "origin": "compatibility\\versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopMenuActionTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopMenuActionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest.xml",
+          "sha256": "f732677afa7042c0c3e8af3e211cfacc56ed0ff57011c4bba7e92727b0181a0d",
+          "origin": "compatibility\\versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest.xml",
+          "sha256": "7830b5b8c79e071dd964e8526c43150f202eebd88d2515c04b2fceffb5e2b985",
+          "origin": "compatibility\\versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest.xml",
+          "sha256": "8f55ed8ff1e52fe6a999a5498fba8b3bcea1ecd45c9e330e1cce2e96021dfc37",
+          "origin": "compatibility\\versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest.xml",
+          "sha256": "0f8e63e743cc31d46cd2250549e46af4b70dc2ffb420b363632a3797fba743f8",
+          "origin": "compatibility\\versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest.xml",
+          "sha256": "d893aa02a71be48e38d5e8b75c3291f2c3dcd9e190fa3c6f6c4083a1ec199d38",
+          "origin": "compatibility\\versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.compat.nativewindows.ModernSmelterLayoutTest.xml",
+          "sha256": "4b8ea2c1714e4381dbb706f0904406a10cbc6dd4b1f468a6140b948f72ea7627",
+          "origin": "compatibility\\versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.ModernSmelterLayoutTest.xml",
+          "suite": "com.salts_inventory_update.compat.nativewindows.ModernSmelterLayoutTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml",
+          "sha256": "200bd05e7a36fd9ec304b6051f30ee5f7f244e3af2534fc04e935898981bfa86",
+          "origin": "compatibility\\versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest.xml",
+          "sha256": "a7dd741b79fb9c5f17349bb2368c36f88aa424353004979fa2e255695177f8f9",
+          "origin": "compatibility\\versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest.xml",
+          "suite": "com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.2\\fabric\\TEST-com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest.xml",
+          "sha256": "71ab78dd0be7320d0dabe61886dc4574e4085d664ee7e42614b7dd9adbd5ce05",
+          "origin": "compatibility\\versions\\26.2\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest.xml",
+          "suite": "com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest"
+        }
+      ]
+    },
+    {
+      "project": "versions/26.3/fabric",
+      "tests": 267,
+      "failures": 0,
+      "skipped": 0,
+      "errors": 0,
+      "xml_files": [
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.client.DesktopApiContractTest.xml",
+          "sha256": "2b6d2f7eb0ee63bea0bf53fcdbfff3bdde9beae6542476bba83f85478081280f",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopApiContractTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopApiContractTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.client.DesktopApiViewsTest.xml",
+          "sha256": "05a930931a655de258d56116c78f8ef37c97d29c0bd9443e858b5f8ac6d482e7",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopApiViewsTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopApiViewsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.client.DesktopEmbeddedSessionTest.xml",
+          "sha256": "7f82a65e7844637ba21c0a00488ea636b2fb46a727680d5bff515ce55f8d7e64",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopEmbeddedSessionTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopEmbeddedSessionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.client.DesktopMouseButtonsTest.xml",
+          "sha256": "267a70d263a6f63a9e49fe930b26aebac2e72b4c4ec779bee303069229f236d2",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopMouseButtonsTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopMouseButtonsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.client.DesktopRecipeProviderTest.xml",
+          "sha256": "0f9440e072811d2d7e3bb566a6b09fb346b42f00c395b36a954965689882d28b",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopRecipeProviderTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopRecipeProviderTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.client.DesktopSharedCursorApiTest.xml",
+          "sha256": "202a433674112bb19a0c025bdaf1151bbec17c11da46e23c78c30a5ca8421faf",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopSharedCursorApiTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopSharedCursorApiTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.client.DesktopSlotGesturesTest.xml",
+          "sha256": "26a65fc74756f6efc9eebe4c47a9a5d5029085b6ef7ba2366f0af1a4ff656a29",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopSlotGesturesTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopSlotGesturesTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.client.DesktopWorkspaceApiTest.xml",
+          "sha256": "af0ced900cfb53dd05170e7be393c6d18899dc873305708232f4fd587329a246",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.DesktopWorkspaceApiTest.xml",
+          "suite": "com.salts_inventory_update.client.DesktopWorkspaceApiTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.client.NativeHeaderSlotInputTest.xml",
+          "sha256": "4e4fd6ab271b20a8cc1698a58f049f154e21f13ec833a273e9ab4f6c64d89345",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.NativeHeaderSlotInputTest.xml",
+          "suite": "com.salts_inventory_update.client.NativeHeaderSlotInputTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.client.WindowFeatureRemovalTest.xml",
+          "sha256": "610f46bde988a3df7086cdd78b0f88f2dd92a04388fa14c98d1f36c404daf618",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WindowFeatureRemovalTest.xml",
+          "suite": "com.salts_inventory_update.client.WindowFeatureRemovalTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.client.WorkspaceControllerSlotsTest.xml",
+          "sha256": "45eab5d81bfd3bcfb1c228d05f7a6982add1a9334aeb31119c44f59ce42e13ab",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WorkspaceControllerSlotsTest.xml",
+          "suite": "com.salts_inventory_update.client.WorkspaceControllerSlotsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest.xml",
+          "sha256": "f2fac49e2fee6899aac345572d9ef47a879e2c41f53fe3ad385dd634104a5704",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest.xml",
+          "suite": "com.salts_inventory_update.client.WorkspaceSurfaceGeometryTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest.xml",
+          "sha256": "f20349cc97b22f35ca38569fc5a71f1edbf885cce5f79e4e8665b366996b0003",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.ContextualCookingAvailabilityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest.xml",
+          "sha256": "004026e1f3a28729f94263d8a4bdf01a1d5ea21e896fea3d435dbcbe713c9e3d",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.NativeProviderOpeningDataTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest.xml",
+          "sha256": "52b0bb7b67da4c4b08a6c70d572174b40a412198c09d2c6dd54311ae1fb88dd6",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.PartialRecipeAllocationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest.xml",
+          "sha256": "42d6a095b6371909909c41de9b6c7745e2eb524752d0bf610f513ea0f10645ca",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest.xml",
+          "suite": "com.salts_inventory_update.internal.desktop.WorkspacePreviewSourceTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.server.DesktopPickupAllTest.xml",
+          "sha256": "27388081bf6dec8efca911538e1f17beba1443c60df77e64e69e0b108c5032ac",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.DesktopPickupAllTest.xml",
+          "suite": "com.salts_inventory_update.server.DesktopPickupAllTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest.xml",
+          "sha256": "98a26b147bf071fe23493f4f6eb09940b9c7ded8259603157e1edb2330d4a71b",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest.xml",
+          "suite": "com.salts_inventory_update.server.DesktopWorkspaceQuickMoveTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.server.HoverCleanupAuthorizationTest.xml",
+          "sha256": "c4c311859352a02d25567da55c69396056f8f6d7828780152d83ddf009ec1782",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.HoverCleanupAuthorizationTest.xml",
+          "suite": "com.salts_inventory_update.server.HoverCleanupAuthorizationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.server.InventorySortTest.xml",
+          "sha256": "69b8906ef4ae218e42997f0eca38702a78aa382ac455e7f03ecf031660b3c10c",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.InventorySortTest.xml",
+          "suite": "com.salts_inventory_update.server.InventorySortTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml",
+          "sha256": "f9671cc4dc4d36451969947a5be3b5b4e5787eed34ca84aee2a0da3b88fb75aa",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorBroadcastTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeCursorBroadcastTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.server.NativeCursorPublicationTest.xml",
+          "sha256": "34344a163b4ebf0962c243b46e433308ad763fd4f3219deede5db1728dcf4b10",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeCursorPublicationTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeCursorPublicationTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml",
+          "sha256": "8b922d49a64a2de97947ead6d10cc44b9d3a5d0bf357fa9df06a2f85e2ea37c9",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeOpeningCodecTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeOpeningCodecTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.server.NativeSelectorEligibilityTest.xml",
+          "sha256": "e320c7ebaff42934943aa8154132bcde6bbcb023be3cff639d08ced60fc380d7",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.NativeSelectorEligibilityTest.xml",
+          "suite": "com.salts_inventory_update.server.NativeSelectorEligibilityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.server.OptionalMenuHookDescriptorTest.xml",
+          "sha256": "76a1a4f3858e0e4846b12b6890beca302fd50f36e86228ede0d22191702cff37",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.OptionalMenuHookDescriptorTest.xml",
+          "suite": "com.salts_inventory_update.server.OptionalMenuHookDescriptorTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest.xml",
+          "sha256": "138bac0322d22cc9d47617271c388fb29b1829fc25dd9b34ac2346f6a2130b60",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest.xml",
+          "suite": "com.salts_inventory_update.server.PlayerMenuClickSnapshotsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest.xml",
+          "sha256": "3d392e578749006e62282d45326a4eb3a97b866ab6fb77e927992060c3c22a92",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest.xml",
+          "suite": "com.salts_inventory_update.server.ScopedUseTargetMixinTargetTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.server.ScopedUseTargetTest.xml",
+          "sha256": "4912535f1f64e480d93b59bd7749084e955f8619a2c674d0998a6d3e0c94188d",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.ScopedUseTargetTest.xml",
+          "suite": "com.salts_inventory_update.server.ScopedUseTargetTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.server.SortWindowsTest.xml",
+          "sha256": "0647b3d8c11e53a0da63e8c7da1b63709ea0f49fe8eeb784bdba54d6d107b422",
+          "origin": "versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.server.SortWindowsTest.xml",
+          "suite": "com.salts_inventory_update.server.SortWindowsTest"
+        }
+      ]
+    },
+    {
+      "project": "compatibility/versions/26.3/fabric",
+      "tests": 54,
+      "failures": 0,
+      "skipped": 0,
+      "errors": 0,
+      "xml_files": [
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopMenuActionTest.xml",
+          "sha256": "b8688d520241e4771013b30657f2b47369cd45618440e409af8241f66e0cbe54",
+          "origin": "compatibility\\versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopMenuActionTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopMenuActionTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest.xml",
+          "sha256": "195bfa1b96d6f6b7b9e4fb385ced2a9d2894a43ff92f6c1ed71b8a06ffbd629e",
+          "origin": "compatibility\\versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopPacketLifetimeTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest.xml",
+          "sha256": "9b3453a77c4ed7ad0a9d74e1740e4f1c74500622057e354386d98aa37684b303",
+          "origin": "compatibility\\versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.DesktopResourceFidelityTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest.xml",
+          "sha256": "9654609e909f9e4cca9795a07ce6b4742f817dc88b9e2abf7f5cbaa8fdefa34e",
+          "origin": "compatibility\\versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.menu.DesktopCpuStateTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest.xml",
+          "sha256": "cfaca530d09b7288c13bd4315d209ecd0dd30b12fef1a8da59fdde8c6ca7b39b",
+          "origin": "compatibility\\versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.NativeDeltaCodecTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest.xml",
+          "sha256": "4fbf011187526e6c4d347ec53e4a8bc8c819dfbb0f3247853fc2154ac43d517c",
+          "origin": "compatibility\\versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest.xml",
+          "suite": "com.salts_inventory_update.compat.ae2.NativeMenuRegistryTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.compat.jei.RecipeHitBoundsTest.xml",
+          "sha256": "9f65c2fd30a9e3a30571a94d4c9cd9ea3c2bd107ff1b063c9cadf7980c3efb40",
+          "origin": "compatibility\\versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.jei.RecipeHitBoundsTest.xml",
+          "suite": "com.salts_inventory_update.compat.jei.RecipeHitBoundsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.compat.nativewindows.ModernSmelterLayoutTest.xml",
+          "sha256": "cca48c7fd228eb1a6885fdf847f2f3fbd20ad3a279b0b0280958f4530067f448",
+          "origin": "compatibility\\versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.ModernSmelterLayoutTest.xml",
+          "suite": "com.salts_inventory_update.compat.nativewindows.ModernSmelterLayoutTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml",
+          "sha256": "68a3ee6ceb1e002ceb08714a4573c844e0bbc8ad09556c041f726a95dc3a6c54",
+          "origin": "compatibility\\versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest.xml",
+          "suite": "com.salts_inventory_update.compat.nativewindows.NativeMachineLayoutsTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest.xml",
+          "sha256": "e74beb76d573005e251c4e7f35b907bfda570c1440cf225622ce45e707d45f38",
+          "origin": "compatibility\\versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest.xml",
+          "suite": "com.salts_inventory_update.compat.OptionalIntegrationBootstrapTest"
+        },
+        {
+          "file": "output\\release-readiness\\junit-build16-01\\xml\\compatibility\\versions\\26.3\\fabric\\TEST-com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest.xml",
+          "sha256": "96c7e62ea5070f35803d19342d0e1322114d764f772763980fae0e822eedf4ec",
+          "origin": "compatibility\\versions\\26.3\\fabric\\build\\test-results\\test\\TEST-com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest.xml",
+          "suite": "com.salts_inventory_update.compat.toms_storage.TomsSidebarHitTest"
+        }
+      ]
+    }
+  ]
+}

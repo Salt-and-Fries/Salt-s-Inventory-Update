@@ -76,6 +76,26 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
         return null;
     }
     private static final Map<UUID, State> OPEN = new HashMap<>();
+    static void sendAddonPayload(AEBaseMenu menu,net.minecraft.resources.ResourceLocation channel,byte[] bytes) {
+        var owner=OPEN.get(menu.desktopSyncId());
+        if(owner==null||owner.model!=menu||owner.handle==null||!owner.handle.isOpen()||owner.addonPayload==null)return;
+        owner.addonPayload.accept(channel,bytes);
+    }
+
+    /** Unnamed addon menus use their own localized screen-document title. */
+    private static Component nativeContentTitle(Component title) {
+        if (!(title.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents text)
+                || !text.getKey().startsWith("gui.ae2.DesktopWindow.")
+                || !Component.translatable(text.getKey()).getString().equals(text.getKey()))
+            return title;
+        // MenuTypeBuilder may append the real custom name after its synthetic
+        // prefix. Preserve that name, while omitting only the unknown prefix.
+        var siblings=title.getSiblings();
+        var nativeTitle=Component.empty().withStyle(title.getStyle());
+        int first=!siblings.isEmpty() && siblings.get(0).getString().equals(" - ") ? 1 : 0;
+        for(int i=first;i<siblings.size();i++)nativeTitle.append(siblings.get(i).copy());
+        return nativeTitle;
+    }
 
     public static final class State {
         AEBaseMenu model;
@@ -91,6 +111,7 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
         boolean companion;
         String toolboxBadge;
         int sessionId;
+        java.util.function.BiConsumer<net.minecraft.resources.ResourceLocation,byte[]> addonPayload;
         boolean pendingCompanionDock;
         List<Integer> initialOwners = List.of();
         int dockAge;
@@ -129,7 +150,7 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
             setContent(menu.isDesktopToolboxCompanion()
                     ? new com.salts_inventory_update.compat.ae2.nativeview.ToolboxCompanionScreen(
                             (appeng.menu.me.networktool.NetworkToolMenu) menu, title)
-                    : InitScreens.createDesktopContent(menu, menu.getPlayerInventory(), title));
+                    : InitScreens.createDesktopContent(menu, menu.getPlayerInventory(), nativeContentTitle(title)));
             content.loadDesktopPreferences(preferences);
             NativeContentRegistry.register(menu.desktopSyncId(),
                     packet -> DesktopUpdates.apply(packet, content));
@@ -139,6 +160,8 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
         }
 
         private void setContent(AEBaseScreen<?> next) {
+            WirelessTerminalDesktop.prepare(next);
+            ExtendedAeLayout.prepare(next);
             if (next.getMenu() instanceof appeng.menu.implementations.SkyChestMenu) {
                 int rows = (next.getMenu().getSlots(SlotSemantics.STORAGE).size() + 8) / 9;
                 next.getStyle().getDesktop().addNativeInventoryRows(rows - 3, 18);
@@ -302,7 +325,7 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
         int width = context.windowWidth(), height = context.windowHeight();
         for (var segment : content.desktopSurfaceSegments()) {
             regions.add(DesktopWindowRegion.visualAndInteractive(segment.getX(), segment.getY(),
-                    segment.getWidth(), segment.getHeight()));
+                    segment.getWidth(), segment.getHeight() + ExtendedAeLayout.inset(content)));
         }
         boolean companion = context.companion() || context.model().isDesktopToolboxCompanion();
         // Keep explicit title movement/menu regions clear of even the largest native row.
@@ -315,13 +338,13 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
         for (var child : content.children()) {
             if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget && widget.visible) {
                 regions.add(DesktopWindowRegion.interactive(widget.getX() - content.getGuiLeft(),
-                        widget.getY() - content.getGuiTop(), widget.getWidth(), widget.getHeight())
+                        widget.getY() - content.getGuiTop() + ExtendedAeLayout.inset(content), widget.getWidth(), widget.getHeight())
                         .withRole(DesktopHitRole.CONTROL));
             }
         }
         for (var slot : content.desktopSlots()) {
             if (content.desktopSlotVisible(slot)) {
-                regions.add(DesktopWindowRegion.interactive(slot.x - 1, slot.y - 1, 18, 18)
+                regions.add(DesktopWindowRegion.interactive(slot.x - 1, slot.y - 1 + ExtendedAeLayout.inset(content), 18, 18)
                         .withRole(DesktopHitRole.SLOT));
             }
         }
@@ -339,7 +362,7 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
         }
         return companion
                 ? DesktopWindowSurface.modOwned(regions)
-                : new DesktopWindowSurface(DesktopSurfaceMode.SALT, DesktopInsets.ZERO, false,
+                : new DesktopWindowSurface(DesktopSurfaceMode.SALT, ExtendedAeLayout.insets(context.state().content), false,
                         regions, DesktopViewportPolicy.PRESERVE);
     }
 
@@ -394,33 +417,35 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
         var content = context.state().content;
         var title = content.desktopManagementTitlePosition();
         int right = context.windowWidth();
-        int top = Math.max(0, title.getY() - 2);
+        int top = Math.max(0, title.getY() + ExtendedAeLayout.inset(content) - 2);
         for (var child : content.children()) {
             if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget && widget.visible
-                    && widget.getY() - content.getGuiTop() < top + 11
-                    && widget.getY() + widget.getHeight() - content.getGuiTop() > top
+                    && widget.getY() - content.getGuiTop() + ExtendedAeLayout.inset(content) < top + 11
+                    && widget.getY() + widget.getHeight() - content.getGuiTop() + ExtendedAeLayout.inset(content) > top
                     && widget.getX() - content.getGuiLeft() > title.getX()) {
                 right = Math.min(right, widget.getX() - content.getGuiLeft());
             }
         }
         var slots = content.desktopSlots().stream().filter(content::desktopSlotVisible).toList();
-        boolean intersects = false, fitsAbove = true;
-        for (var slot : slots) {
-            if (slot.x - 1 < right && slot.x + 17 > right - 100) {
-                intersects |= slot.y - 1 < top + 11 && slot.y + 17 > top;
-                fitsAbove &= !(slot.y - 1 < top + 9 && slot.y + 17 > top - 2);
+        // Preserve native slot/art positions. Find the nearest clear title
+        // band above them instead of moving the Drive's slots away from its art.
+        for (int candidate = top; candidate >= 0; candidate--) {
+            boolean clear = true;
+            for (var slot : slots) {
+                if (slot.x - 1 < right && slot.x + 17 > right - 100
+                        && slot.y - 1 + ExtendedAeLayout.inset(content) < candidate + 11 && slot.y + 17 + ExtendedAeLayout.inset(content) > candidate) {
+                    clear = false;
+                    break;
+                }
             }
+            if (clear) { top = candidate; break; }
         }
-        // Native Drive/assembler slots can touch the last two pixels of the original title band.
-        // Use the clear band just above them instead of overlaying their artwork or shrinking controls.
-        if (intersects && fitsAbove && top >= 2)
-            top -= 2;
         for (var slot : slots) {
-            if (slot.y - 1 < top + 11 && slot.y + 17 > top && slot.x - 1 > title.getX()) {
+            if (slot.y - 1 + ExtendedAeLayout.inset(content) < top + 11 && slot.y + 17 + ExtendedAeLayout.inset(content) > top && slot.x - 1 > title.getX()) {
                 right = Math.min(right, slot.x - 1);
             }
         }
-        return new DesktopChromeMetrics(19, Math.max(0, title.getX()), Math.max(0, title.getY()),
+        return new DesktopChromeMetrics(19, Math.max(0, title.getX()), Math.max(0, title.getY() + ExtendedAeLayout.inset(content)),
                 11, 11, 3, context.windowWidth() - right + 2, top, 3);
     }
 
@@ -451,6 +476,7 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
             return DesktopWindowSize.of(68, 80);
         }
         var size = InitScreens.desktopDefaultContentSize(context.model());
+        size = WirelessTerminalDesktop.initialSize(context.model(), size);
         if (context.model() instanceof appeng.menu.implementations.SkyChestMenu) {
             int rows = (context.model().getSlots(SlotSemantics.STORAGE).size() + 8) / 9;
             size[1] += Math.max(0, rows - 3) * 18;
@@ -459,7 +485,7 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
                 && net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledWidth() < 400) {
             size[0] = 238;
         }
-        return DesktopWindowSize.of(size[0], size[1]);
+        return DesktopWindowSize.of(size[0], size[1] + ExtendedAeLayout.inset(context.model()));
     }
 
     @Override
@@ -554,6 +580,7 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
                 context.contentX(), context.contentY(), context.contentWidth(), context.contentHeight(),
                 new net.minecraft.client.renderer.Rect2i(context.windowX(), context.windowY(),
                         context.windowWidth(), context.windowHeight())));
+        ExtendedAeLayout.layout(context.state().content);
         int firstControl = context.state().managerControls.stream()
                 .filter(control -> control
                         .control() != com.salts_inventory_update.api.client.desktop.DesktopWindowControl.RESIZE_GRIP)
@@ -600,12 +627,16 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
             context.fill(context.contentX(), context.contentY(), context.contentX() + context.contentWidth(),
                     context.contentY() + context.contentHeight(), content.desktopBackgroundColor());
         }
-        context.withClip(context.contentX(), context.contentY(), context.contentWidth(), context.contentHeight(),
+        boolean extendedFrame = ExtendedAeLayout.fixed(content);
+        context.withClip(extendedFrame ? context.windowX() : context.contentX(), extendedFrame ? context.windowY() : context.contentY(),
+                extendedFrame ? context.windowWidth() : context.contentWidth(), extendedFrame ? context.windowHeight() : context.contentHeight(),
                 () -> NativeMenuPacketScope.run(context.model(), () -> {
                     var graphics = com.salts_inventory_update.api.client.gui.GuiGraphicsExtractor.wrap(context.nativeGraphics());
                     content.extractDesktopContent(graphics, context.state().mouseX, context.state().mouseY);
                 }));
         if (content.usesAeDesktopLayout()) {
+            WirelessTerminalDesktop.slotBackgrounds(content,
+                    com.salts_inventory_update.api.client.gui.GuiGraphicsExtractor.wrap(context.nativeGraphics()));
             content.extractDesktopRealSlots(com.salts_inventory_update.api.client.gui.GuiGraphicsExtractor.wrap(context.nativeGraphics()), false,
                     context.state().mouseX, context.state().mouseY, slot -> gestureAppearance(context, slot));
         } else
@@ -631,6 +662,8 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
         content.extractDesktopAttachments(com.salts_inventory_update.api.client.gui.GuiGraphicsExtractor.wrap(context.nativeGraphics()), context.state().mouseX, context.state().mouseY);
         LegacyFrameRendering.cpuJoin(content,
                 com.salts_inventory_update.api.client.gui.GuiGraphicsExtractor.wrap(context.nativeGraphics()));
+        WirelessTerminalDesktop.finishFrame(content,
+                com.salts_inventory_update.api.client.gui.GuiGraphicsExtractor.wrap(context.nativeGraphics()));
         if (content.usesAeDesktopLayout()) {
             content.extractDesktopRealSlots(com.salts_inventory_update.api.client.gui.GuiGraphicsExtractor.wrap(context.nativeGraphics()), true,
                     context.state().mouseX, context.state().mouseY, slot -> gestureAppearance(context, slot));
@@ -653,6 +686,7 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
         var content = context.state().content;
         var slot = content.desktopSlotAt(x, y);
         if (slot == null || slot instanceof FakeSlot || slot instanceof CraftingTermSlot
+                || slot instanceof appeng.client.gui.me.patternaccess.PatternSlot || ExtendedAeLayout.virtualSlot(slot)
                 || !context.model().slots.contains(slot)) {
             return null;
         }
@@ -662,6 +696,8 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
     private boolean input(DesktopInputContext<AEBaseMenu, State> context, java.util.function.BooleanSupplier callback) {
         layout(context);
         boolean[] handled = { false };
+        context.state().addonPayload=context::sendPayload;
+        try {
         NativeMenuPacketScope.run(context.model(),
                 () -> context.state().content.withDesktopActions(new NativeContentActions() {
                     @Override
@@ -680,6 +716,7 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
                         layout(context);
                     }
                 }, () -> handled[0] = callback.getAsBoolean()));
+        } finally { context.state().addonPayload=null; }
         context.model().flushDesktopActions(context::sendPayload);
         return handled[0];
     }
@@ -691,7 +728,8 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
             context.state().keyboardControl = null;
         layout(context);
 
-        return input(context, () -> context.state().content.siu$desktopMouseClicked(event, doubleClick));
+        return input(context, () -> ExtendedAeLayout.clickActionSlot(context.state().content,event)
+                || context.state().content.siu$desktopMouseClicked(event, doubleClick));
     }
 
     @Override
@@ -786,6 +824,8 @@ public final class AEWindow implements DesktopWindowDefinition<AEBaseMenu, AEWin
     @Override
     public void customPayload(DesktopWindowContext<AEBaseMenu, State> context,
             net.minecraft.resources.ResourceLocation channel, byte[] data) {
+        if(channel.equals(ExtendedAePackets.SYNC)) { ExtendedAePackets.receive(context.state().content,data);return; }
+        if(channel.equals(RequesterDesktop.SYNC)) { RequesterDesktop.receive(context.state().content,data);return; }
         if (channel.equals(com.salts_inventory_update.compat.ae2.menu.DesktopProtocol.TOOLBOX_CHANNEL)) {
             if (data.length != 4) {
                 throw new IllegalArgumentException("Invalid AE toolbox association data");

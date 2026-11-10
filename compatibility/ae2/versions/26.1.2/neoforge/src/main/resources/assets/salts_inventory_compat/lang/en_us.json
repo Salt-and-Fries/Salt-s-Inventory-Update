@@ -1,0 +1,9 @@
+{
+  "gui.siu.extendedae.pattern_modifier": "Pattern Modifier",
+  "gui.siu.extendedae.wireless_ex_pat": "Pattern Access",
+  "gui.siu.extendedae.set_precise_bus_amount": "Set Amount",
+  "gui.siu.extendedae.mode.multiply": "Multiply mode",
+  "gui.siu.extendedae.mode.replace": "Replace mode",
+  "gui.siu.extendedae.mode.properties": "Properties mode",
+  "gui.siu.extendedae.mode.clone": "Clone mode"
+}

@@ -4,6 +4,19 @@ The optional compatibility extension consumes unmodified upstream Applied
 Energistics 2 and Salt's public API. The sibling reference fork is read-only.
 Core contains no AE2 dependency, classes, assets or integration hooks.
 
+Extended AE windows are available on 1.20.1 Fabric/Forge, 1.21.1 NeoForge and
+26.1.2 NeoForge, using each release's native vintage or modern AE2 artwork.
+See [target coverage and focused checks](extended-ae-all-targets.md).
+
+Applied Botanics' 1.20.1 portable mana cell reuses this integration, including its
+native mana renderer, settings and upgrades. See the
+[implementation and focused runtime checks](applied-botanics-1.20.1.md).
+
+AE2 Wireless Terminals' five inventory interfaces now use this integration on
+1.20.1 Fabric and Forge, preserving their native callbacks and top-right return
+tabs. The newer Forge release's wireless settings page is retained as well.
+See the [implementation and focused checks](wireless-terminals-1.20.1.md).
+
 ## Version-specific UI baseline
 
 Each adapter uses the installed AE2 release's native artwork, controls and
@@ -230,3 +243,14 @@ contracts require renewed review and runtime checks before release activation.
 JUnit results, JAR hashes and scoped gameplay results. It checks the reference
 HEAD, clean status, all 4,862 tracked-file hashes and its built JAR hash. The
 reference is never built, patched or rewritten by this project.
+
+AE2 Wireless Terminals support follows the add-on's published loader/version matrix:
+[1.20.1 Fabric/Forge](wireless-terminals-1.20.1.md) and
+[newer NeoForge targets](wireless-terminals-modern.md). Each uses its installed
+AE2/AE2WTLib screen assets and native callbacks.
+
+After regenerating native widget deltas, run `tools/fix-ae2-tab-joins.py`.
+It keeps modern white return arrows on the native framed background and draws
+generic tab joins before their icons, using actual bounds and the owning palette.
+The focused return-tab and upstream-atlas pixel checks live beside the modern
+wireless terminal observers in `functional-tests/ae2-wireless-modern/`.

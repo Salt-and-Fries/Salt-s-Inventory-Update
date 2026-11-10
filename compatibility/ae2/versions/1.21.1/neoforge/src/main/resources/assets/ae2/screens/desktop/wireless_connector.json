@@ -1,0 +1,24 @@
+{
+  "includes": [
+    "../wireless_connector.json"
+  ],
+  "desktop": {
+    "width": 176,
+    "height": 166,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 87
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.extendedae.wireless_connect"
+      },
+      "position": {
+        "left": 8,
+        "top": -4
+      }
+    }
+  }
+}

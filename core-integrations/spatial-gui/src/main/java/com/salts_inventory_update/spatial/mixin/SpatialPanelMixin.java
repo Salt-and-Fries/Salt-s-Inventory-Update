@@ -11,7 +11,8 @@ import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.tastytrash.spatialGUI.render.InventoryRenderer;
 
-@Mixin(value=InventoryRenderer.class,remap=false)
+@org.spongepowered.asm.mixin.Pseudo
+@Mixin(targets = "org.tastytrash.spatialGUI.render.InventoryRenderer", remap = false)
 public abstract class SpatialPanelMixin {
     @Shadow @Final private static PoseStack WORLD_POSE_STACK;
     @Unique private float salts$fitScale=1;

@@ -15,6 +15,15 @@ description = "${description}"
 [[mixins]]
 config = "${mod_id}.sophisticated.mixins.json"
 
+[[mixins]]
+config = "${mod_id}.ssn.mixins.json"
+
+[[mixins]]
+config = "${mod_id}.ssn-transport.mixins.json"
+
+[[mixins]]
+config = "${mod_id}.powah.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId = "neoforge"
 type = "required"
@@ -189,3 +198,12 @@ type = "optional"
 versionRange = "[0,)"
 ordering = "AFTER"
 side = "BOTH"
+
+[[mixins]]
+config="salts_inventory_compat.reviewed-native.mixins.json"
+
+[[mixins]]
+config="salts_inventory_compat.kibe.mixins.json"
+
+[[mixins]]
+config="salts_inventory_compat.extended-ae.mixins.json"

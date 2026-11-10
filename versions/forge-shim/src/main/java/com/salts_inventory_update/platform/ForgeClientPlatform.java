@@ -55,6 +55,7 @@ public final class ForgeClientPlatform {
         modBus.addListener(ForgeClientPlatform::onRegisterKeyMappings);
         modBus.addListener(ForgeClientPlatform::onClientSetup);
         modBus.addListener(ClientLifecycleEvents::onClientSetup);
+        MinecraftForge.EVENT_BUS.addListener(ClientLifecycleEvents::onClientTick);
         MinecraftForge.EVENT_BUS.addListener(ClientTickEvents::onClientTick);
         MinecraftForge.EVENT_BUS.addListener(ClientCommandRegistrationCallback.EVENT::onRegisterClientCommands);
         MinecraftForge.EVENT_BUS.addListener(ForgeClientPlatform::onMovementInputUpdate);

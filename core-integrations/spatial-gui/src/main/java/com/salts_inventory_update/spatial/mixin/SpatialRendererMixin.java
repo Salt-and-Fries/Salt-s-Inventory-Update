@@ -8,7 +8,8 @@ import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.*;
 import org.tastytrash.spatialGUI.render.SpatialGUIRenderer;
 
-@Mixin(value = SpatialGUIRenderer.class, remap = false)
+@org.spongepowered.asm.mixin.Pseudo
+@Mixin(targets = "org.tastytrash.spatialGUI.render.SpatialGUIRenderer", remap = false)
 public class SpatialRendererMixin {
     @Inject(method = "updateMousePosition()V", at = @At("HEAD"), cancellable = true)
     private void salts$keepNativeMovementCoordinates(CallbackInfo ci) {

@@ -14,6 +14,7 @@ public final class MouseTweaksMixinPlugin implements IMixinConfigPlugin {
     @Override public void onLoad(String mixinPackage) {
         try {
             MixinService.getService().getBytecodeProvider().getClassNode("yalter.mousetweaks.api.IMTModGuiContainer3Ex");
+            MixinService.getService().getBytecodeProvider().getClassNode("yalter.mousetweaks.Main");
             this.present = true;
         } catch (ClassNotFoundException | IOException absent) { this.present = false; }
     }

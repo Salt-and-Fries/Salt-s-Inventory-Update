@@ -131,3 +131,6 @@ type = "optional"
 versionRange = "[0,)"
 ordering = "AFTER"
 side = "BOTH"
+
+[[mixins]]
+config="salts_inventory_compat.reviewed-native.mixins.json"

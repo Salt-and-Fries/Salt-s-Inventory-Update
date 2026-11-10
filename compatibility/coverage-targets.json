@@ -511,6 +511,43 @@
           "download_url": "https://cdn.modrinth.com/data/I0UYcPa0/versions/ed738xvb/inmis-2.7.2-1.20.1.jar",
           "sha512": "98dca2d8a9b371bf4c84a4300aaa0c87e6cac3d5f598600ea78f4e74dbe6d73dff2b1f1f53d8fb251d71ecb23097376d857012ef5eb1e3122bea2dee4363f652",
           "dependencies": []
+        },
+        "ae2-wireless-terminals": {
+          "project": "applied-energistics-2-wireless-terminals",
+          "project_id": "pNabrMMw",
+          "versions_api": "https://api.modrinth.com/v2/project/pNabrMMw/version",
+          "available": true,
+          "version": "15.2.1-fabric",
+          "version_id": "QewbGM3G",
+          "filename": "ae2wtlib-15.2.1-fabric.jar",
+          "download_url": "https://cdn.modrinth.com/data/pNabrMMw/versions/QewbGM3G/ae2wtlib-15.2.1-fabric.jar",
+          "sha512": "aa1593f4466370daf2c4acbeea93dbb6249e9aaddaacc0383b0b016067ca47202398d89255812fa5758c56e873fbedb23595c1f05be01e9736f978a771332bca",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "XxWD5pD3",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "5aaWibi9",
+              "file_name": null,
+              "dependency_type": "optional"
+            },
+            {
+              "version_id": null,
+              "project_id": "P7dR8mSH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
         }
       },
       "qa_runtime": {
@@ -933,6 +970,43 @@
           "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
           "available": false,
           "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "ae2-wireless-terminals": {
+          "project": "applied-energistics-2-wireless-terminals",
+          "project_id": "pNabrMMw",
+          "versions_api": "https://api.modrinth.com/v2/project/pNabrMMw/version",
+          "available": true,
+          "version": "15.3.3-forge",
+          "version_id": "z8QXeyI0",
+          "filename": "ae2wtlib-15.3.3-forge.jar",
+          "download_url": "https://cdn.modrinth.com/data/pNabrMMw/versions/z8QXeyI0/ae2wtlib-15.3.3-forge.jar",
+          "sha512": "f036f278e6d1360147b04f2090829154e75e456f3b2c0af7571b537bf0fd13e97f29211f7a044f9437a171a1c525195737860895118eab70b2b4af54485367d4",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "9s6osm5g",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "XxWD5pD3",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "vvuO3ImH",
+              "file_name": null,
+              "dependency_type": "required"
+            },
+            {
+              "version_id": null,
+              "project_id": "lhGA9TYQ",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
         }
       }
     },
@@ -1424,6 +1498,13 @@
               "dependency_type": "required"
             }
           ]
+        },
+        "ae2-wireless-terminals": {
+          "project": "applied-energistics-2-wireless-terminals",
+          "project_id": "pNabrMMw",
+          "versions_api": "https://api.modrinth.com/v2/project/pNabrMMw/version",
+          "available": false,
+          "reason": "No official upstream release lists this Minecraft version and loader."
         }
       },
       "qa_runtime": {
@@ -1868,6 +1949,25 @@
           "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
           "available": false,
           "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "ae2-wireless-terminals": {
+          "project": "applied-energistics-2-wireless-terminals",
+          "project_id": "pNabrMMw",
+          "versions_api": "https://api.modrinth.com/v2/project/pNabrMMw/version",
+          "available": true,
+          "version": "19.5.1",
+          "version_id": "CxSEpEnO",
+          "filename": "ae2wtlib-19.5.1.jar",
+          "download_url": "https://cdn.modrinth.com/data/pNabrMMw/versions/CxSEpEnO/ae2wtlib-19.5.1.jar",
+          "sha512": "0659d755c6ae91551d30c20b948d5bde0a39b2ae9825b1a4e132f0bbd10e032f18d82b6847261360589f36980ed3597ef6c6947b680523a1de767a9b7953682e",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "XxWD5pD3",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
         }
       },
       "qa_runtime": {
@@ -2159,6 +2259,13 @@
           "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
           "available": false,
           "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "ae2-wireless-terminals": {
+          "project": "applied-energistics-2-wireless-terminals",
+          "project_id": "pNabrMMw",
+          "versions_api": "https://api.modrinth.com/v2/project/pNabrMMw/version",
+          "available": false,
+          "reason": "No official upstream release lists this Minecraft version and loader."
         }
       },
       "qa_runtime": {
@@ -2522,6 +2629,13 @@
           "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
           "available": false,
           "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "ae2-wireless-terminals": {
+          "project": "applied-energistics-2-wireless-terminals",
+          "project_id": "pNabrMMw",
+          "versions_api": "https://api.modrinth.com/v2/project/pNabrMMw/version",
+          "available": false,
+          "reason": "No official upstream release lists this Minecraft version and loader."
         }
       },
       "qa_runtime": {
@@ -2806,6 +2920,13 @@
           "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
           "available": false,
           "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "ae2-wireless-terminals": {
+          "project": "applied-energistics-2-wireless-terminals",
+          "project_id": "pNabrMMw",
+          "versions_api": "https://api.modrinth.com/v2/project/pNabrMMw/version",
+          "available": false,
+          "reason": "No official upstream release lists this Minecraft version and loader."
         }
       },
       "qa_runtime": {
@@ -3210,6 +3331,25 @@
           "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
           "available": false,
           "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "ae2-wireless-terminals": {
+          "project": "applied-energistics-2-wireless-terminals",
+          "project_id": "pNabrMMw",
+          "versions_api": "https://api.modrinth.com/v2/project/pNabrMMw/version",
+          "available": true,
+          "version": "26.1.2-beta",
+          "version_id": "oB0wuNDF",
+          "filename": "ae2wtlib-26.1.2-beta.jar",
+          "download_url": "https://cdn.modrinth.com/data/pNabrMMw/versions/oB0wuNDF/ae2wtlib-26.1.2-beta.jar",
+          "sha512": "45f8a9cc9e4b786857640dfbe8bdee8d0addc812785c6835cbed9a0c42de682dfe34c51040658d1a62139e6ff7bfaf007847ebcbcd1f72164052de7694e47d4e",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "XxWD5pD3",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
         }
       },
       "qa_runtime": {
@@ -3494,6 +3634,13 @@
           "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
           "available": false,
           "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "ae2-wireless-terminals": {
+          "project": "applied-energistics-2-wireless-terminals",
+          "project_id": "pNabrMMw",
+          "versions_api": "https://api.modrinth.com/v2/project/pNabrMMw/version",
+          "available": false,
+          "reason": "No official upstream release lists this Minecraft version and loader."
         }
       },
       "qa_runtime": {
@@ -3898,6 +4045,25 @@
           "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
           "available": false,
           "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "ae2-wireless-terminals": {
+          "project": "applied-energistics-2-wireless-terminals",
+          "project_id": "pNabrMMw",
+          "versions_api": "https://api.modrinth.com/v2/project/pNabrMMw/version",
+          "available": true,
+          "version": "26.2.0-beta",
+          "version_id": "sFImQ4Hm",
+          "filename": "ae2wtlib-26.2.0-beta.jar",
+          "download_url": "https://cdn.modrinth.com/data/pNabrMMw/versions/sFImQ4Hm/ae2wtlib-26.2.0-beta.jar",
+          "sha512": "a1ff8a5551dfa07a59e9167fb5c9e9f16f715072e4057ce4ec635189ebfd3948face5b86f3279d1e7042f72b1ea4d72909093eefdae1f8bb9c5b8a98fde60ff3",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "XxWD5pD3",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
         }
       },
       "qa_runtime": {
@@ -4182,6 +4348,13 @@
           "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
           "available": false,
           "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "ae2-wireless-terminals": {
+          "project": "applied-energistics-2-wireless-terminals",
+          "project_id": "pNabrMMw",
+          "versions_api": "https://api.modrinth.com/v2/project/pNabrMMw/version",
+          "available": false,
+          "reason": "No official upstream release lists this Minecraft version and loader."
         }
       },
       "qa_runtime": {
@@ -4585,6 +4758,25 @@
           "versions_api": "https://api.modrinth.com/v2/project/I0UYcPa0/version",
           "available": false,
           "reason": "No upstream release for this supported Minecraft version and loader in the reviewed release inventory."
+        },
+        "ae2-wireless-terminals": {
+          "project": "applied-energistics-2-wireless-terminals",
+          "project_id": "pNabrMMw",
+          "versions_api": "https://api.modrinth.com/v2/project/pNabrMMw/version",
+          "available": true,
+          "version": "26.3.1-beta",
+          "version_id": "4QO067RQ",
+          "filename": "ae2wtlib-26.3.1-beta.jar",
+          "download_url": "https://cdn.modrinth.com/data/pNabrMMw/versions/4QO067RQ/ae2wtlib-26.3.1-beta.jar",
+          "sha512": "1cca05af9bc4d8f81b36e80b074410a5081fd580b91f43c83ecd334de28d68fdd30377cb34075a56a8ecd51dd40ad87080ee33e642cb657980b4f907f53187fd",
+          "dependencies": [
+            {
+              "version_id": null,
+              "project_id": "XxWD5pD3",
+              "file_name": null,
+              "dependency_type": "required"
+            }
+          ]
         }
       },
       "qa_runtime": {

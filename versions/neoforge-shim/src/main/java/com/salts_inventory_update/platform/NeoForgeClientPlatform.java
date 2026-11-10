@@ -12,6 +12,7 @@ import com.salts_inventory_update.debug.DesktopDebug;
 
 import net.minecraft.client.KeyMapping;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
@@ -33,6 +34,7 @@ public final class NeoForgeClientPlatform {
     private static final int MOVEMENT_LOG_INTERVAL = 20;
 
     private static boolean initialized;
+    private static boolean clientStartedPending;
     private static Field keyPressesField;
     private static Constructor<?> keyPressesConstructor;
     private static Field moveVectorField;
@@ -66,6 +68,7 @@ public final class NeoForgeClientPlatform {
         modBus.addListener(KeyMappingHelper::onRegisterKeyMappings);
         modBus.addListener(NeoForgeClientPlatform::onClientSetup);
         NeoForge.EVENT_BUS.addListener(ClientTickEvents::onStartClientTick);
+        NeoForge.EVENT_BUS.addListener(NeoForgeClientPlatform::onClientStartedTick);
         NeoForge.EVENT_BUS.addListener(ClientTickEvents::onEndClientTick);
         NeoForge.EVENT_BUS.addListener(ClientCommandRegistrationCallback.EVENT::onRegisterClientCommands);
         NeoForge.EVENT_BUS.addListener(NeoForgeClientPlatform::onMovementInputUpdate);
@@ -136,8 +139,16 @@ public final class NeoForgeClientPlatform {
     private static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             WindowedInventoryClient.initialize();
-            ClientLifecycleEvents.fireStarted(Minecraft.getInstance());
+            clientStartedPending = true;
         });
+    }
+
+    private static void onClientStartedTick(ClientTickEvent.Post ignored) {
+        if (!clientStartedPending) return;
+        // Compatibility callbacks are registered by other mods' setup work.
+        // The first runtime tick runs after every setup task has completed.
+        clientStartedPending = false;
+        ClientLifecycleEvents.fireStarted(Minecraft.getInstance());
     }
 
     private static void onMovementInputUpdate(MovementInputUpdateEvent event) {

@@ -1,0 +1,28 @@
+{
+  "source": "Publisher-generated default config from successful production fixture; all item recipes enabled, no overrides.",
+  "profile": "build/remaining-ui-audit/gameplay/1.20.1-forge-siu-project-everything-oracles-02-0",
+  "artifacts": [
+    {
+      "family": "upstream",
+      "file": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\15fbfa6c1446afe0-sophisticatedbackpacks-1.20.1-3.26.18.2237.jar",
+      "filename": "sophisticatedbackpacks-1.20.1-3.26.18.2237.jar",
+      "sha256": "a686dc6c47ca2f3bb83a88f206e8dd73dd038e820d371c980b7a18f7d705031b",
+      "sha512": "15fbfa6c1446afe0f273eb896ad92bf76bc5ddeaee431e030d8969c4e496b450358ffe04e4cbe69d94e3e020212bcd83068cc7c4636098631923d71233c359cd"
+    },
+    {
+      "family": "upstream",
+      "file": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\ae5b8e36119b2929-sophisticatedstorage-1.20.1-1.5.11.2210.jar",
+      "filename": "sophisticatedstorage-1.20.1-1.5.11.2210.jar",
+      "sha256": "0bf9812815b838cbb19ca5ae7890b78a3c7359f48781de9c4a6d8cbb2f0ce8a1",
+      "sha512": "ae5b8e36119b29290901fcbd8cfb769f699f76095d17278512f9d551b20b437980f84912f0100cfeb40d7bb3d7c1cad763aad87a67fe837e1dc07d1e3f7ba2c2"
+    },
+    {
+      "family": "upstream",
+      "file": "G:\\Codex Projects\\Salts Inventory Update\\build\\compatibility-coverage\\upstream-fixtures\\jars\\83c6c7903da651b0-sophisticatedcore-1.20.1-1.5.19.2441.jar",
+      "filename": "sophisticatedcore-1.20.1-1.5.19.2441.jar",
+      "sha256": "0e8ef7068d67f7c84df95a4af1eaffe3c2662cfd9b09ca788820d2ab82c72287",
+      "sha512": "83c6c7903da651b06af64c4d98d0e2280c4c17ef47b1b59fddf172abf618131412c50fd6c582471ae926d5a1042f434e7c2b610fece92c70ce4113b6be966763"
+    }
+  ],
+  "config_sha256": "61e26d745a4a3231bdcf262b9dda98e0c21b8330ff5b94f101518d7f80bed31c"
+}

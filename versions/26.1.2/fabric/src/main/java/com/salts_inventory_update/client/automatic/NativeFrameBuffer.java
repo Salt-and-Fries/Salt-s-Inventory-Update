@@ -10,17 +10,24 @@ import java.util.List;
 final class NativeFrameBuffer implements AutoCloseable {
     private GuiRenderState captured;
     private DesktopWindowBounds bounds;
+    private int captureOffsetX,captureOffsetY;
     void capture(DesktopRenderContext<?,?> context,AutomaticNativeWindow.State state,AutomaticNativeScope.Frame frame,DesktopWindowBounds source,int mouseX,int mouseY) {
         bounds=source;captured=new GuiRenderState();
         var graphics=new GuiGraphicsExtractor(context.minecraft(),captured,mouseX,mouseY);
-        graphics.pose().translate(frame.offsetX(),frame.offsetY());
-        state.capturing=true;
-        try { AutomaticNativeScope.call(frame,()->{state.screen.extractBackground(graphics,mouseX,mouseY,context.minecraft().getDeltaTracker().getGameTimeDeltaPartialTick(false));state.screen.extractRenderState(graphics,mouseX,mouseY,context.minecraft().getDeltaTracker().getGameTimeDeltaPartialTick(false));return null;}); }
-        finally {state.capturing=false;}
+        // Vanilla model/picture submissions use absolute native coordinates and do
+        // not apply the graphics pose. Capture every layer in that same space,
+        // then translate the complete result once when painting the window.
+        captureOffsetX=frame.offsetX();captureOffsetY=frame.offsetY();
+        var nativeFrame=new AutomaticNativeScope.Frame(frame.screen(),frame.owner(),frame.rendering(),
+            frame.input(),frame.layout(),0,0);
+        var mc=context.minecraft();var previousScreen=mc.screen;
+        state.capturing=true;mc.screen=state.screen;
+        try { AutomaticNativeScope.call(nativeFrame,()->{state.screen.extractBackground(graphics,mouseX,mouseY,context.minecraft().getDeltaTracker().getGameTimeDeltaPartialTick(false));state.screen.extractRenderState(graphics,mouseX,mouseY,context.minecraft().getDeltaTracker().getGameTimeDeltaPartialTick(false));return null;}); }
+        finally {mc.screen=previousScreen;state.capturing=false;}
     }
     void paint(GuiGraphicsExtractor graphics,DesktopWindowBounds source,int x,int y,DesktopWindowBounds parent) {
         if(captured==null)return;
-        var transform=new Matrix3x2f(graphics.pose()).translate(x-source.x()+bounds.x(),y-source.y()+bounds.y());
+        var transform=new Matrix3x2f(graphics.pose()).translate(x-source.x()+bounds.x()+captureOffsetX,y-source.y()+bounds.y()+captureOffsetY);
         var clip=new ScreenRectangle(x,y,source.width(),source.height()).transformMaxBounds(graphics.pose());
         if(parent!=null)clip=intersect(clip,new ScreenRectangle(parent.x(),parent.y(),parent.width(),parent.height()).transformMaxBounds(graphics.pose()));
         final var outputClip=clip;

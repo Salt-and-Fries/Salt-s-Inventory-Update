@@ -2,6 +2,7 @@
 from pathlib import Path
 import argparse, hashlib, json, shutil, subprocess, sys
 from datetime import datetime, timezone
+from full_suite_provenance import SCHEMA as QA_PROVENANCE_SCHEMA,bundle as archive_qa_inputs,ordinary_gameplay_evidence,sha as provenance_sha,sources as full_qa_sources,verify_attempt as verify_qa_attempt
 
 ROOT = Path(__file__).resolve().parents[1]
 PHASES = ['core', 'compatibility', 'toms-pickup', 'mouse-tweaks', 'raised', 'spatial', 'controller', 'ae2-atlas', 'config', 'ancient-remnants', 'startup', 'accessories', 'dedicated-server']
@@ -90,6 +91,9 @@ def fingerprints(case):
     if not result: raise RuntimeError('No production inputs for '+case['key'])
     return result
 
+def qa_fingerprints(case):
+    return full_qa_sources(ROOT,case)
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--phase',choices=PHASES,required=True)
@@ -104,6 +108,15 @@ def main():
     if set(args.case)-{r['key'] for r in rows}: parser.error('Unknown selected case key')
     if args.plan_only:
         print(json.dumps(rows,indent=2));return
+    if args.phase!='core':
+        # The legacy Core12 passes remain preserved, but omitted actual launcher
+        # dependencies. Verify/replay their baseline under the same v2 contract
+        # before any remaining complete-suite phase proceeds. The outer runtime
+        # lock is already held; recurse into main(), never a second lock owner.
+        original_argv=sys.argv
+        sys.argv=[str(Path(__file__)),'--phase','core','--run-id',args.run_id,'--resume']
+        try:main()
+        finally:sys.argv=original_argv
     output=ROOT/'build/full-validation-20261023'/args.run_id/args.phase
     output.mkdir(parents=True,exist_ok=True)
     manifest=output/'results.json'
@@ -112,10 +125,13 @@ def main():
     old={r['key']:r for r in previous}
     for r in rows:
         r.update(status='PENDING',attempts=old.get(r['key'],{}).get('attempts',[]))
-        if r['key'] in old and args.resume and old[r['key']].get('status')=='PASS' and old[r['key']].get('artifacts')==fingerprints(r):
+        accepted=old.get(r['key'],{}).get('attempts',[])
+        if (r['key'] in old and args.resume and old[r['key']].get('status')=='PASS'
+                and old[r['key']].get('artifacts')==fingerprints(r)
+                and accepted and accepted[-1].get('qa_inputs')==qa_fingerprints(r)):
             r.update(status='PASS',artifacts=old[r['key']]['artifacts'])
     def save():
-        manifest.write_text(json.dumps(dict(run_id=args.run_id,phase=args.phase,updated_at=now(),cases=rows),indent=2)+'\n')
+        manifest.write_text(json.dumps(dict(run_id=args.run_id,phase=args.phase,qa_provenance_schema=QA_PROVENANCE_SCHEMA,updated_at=now(),cases=rows),indent=2)+'\n')
     save()
     pwsh=shutil.which('pwsh')
     if not pwsh: raise RuntimeError('PowerShell 7 is required')
@@ -123,7 +139,7 @@ def main():
         subprocess.run([sys.executable,str(ROOT/'tools/prepare-mouse-tweaks-qa.py')],cwd=ROOT,check=True)
     for r in rows:
         if args.case and r['key'] not in args.case: continue
-        if r['status']=='PASS': print('VERIFIED PASS',r['key'],flush=True);continue
+        if r['status']=='PASS': verify_qa_attempt(ROOT,r['attempts'][-1],r);print('VERIFIED PASS',r['key'],flush=True);continue
         if (output/'stop.request').exists(): raise RuntimeError('Stopped at case boundary')
         slug=(args.run_id+'-'+r['name']+'-'+str(r['minecraft'])+'-'+str(r['loader'])).replace('.','-')
         attempt=len(r['attempts'])+1
@@ -135,18 +151,43 @@ def main():
         if r['gradle']:
             # Static task/flag arguments only; use PowerShell to execute the batch wrapper.
             command=[pwsh,'-NoProfile','-Command','& $args[0] @($args | Select-Object -Skip 1); exit $LASTEXITCODE',str(ROOT/'gradlew.bat'),*values]
-        qa_sources=[ROOT/'functional-tests/src/main/java/com/salts_inventory_update/functionaltest/InWorldGameplayHarness.java',ROOT/r['script']]
         entry=dict(run_id=run_id,started_at=now(),log=log.relative_to(ROOT).as_posix(),command=command,
-                   qa_inputs={p.relative_to(ROOT).as_posix():sha(p) for p in qa_sources})
+                   qa_inputs=qa_fingerprints(r),qa_provenance_schema=QA_PROVENANCE_SCHEMA)
+        entry['qa_source_archive']=archive_qa_inputs(ROOT,entry['qa_inputs'])
         r['attempts'].append(entry);r.update(status='RUNNING',artifacts=fingerprints(r));save()
         print('START',r['key'],run_id,flush=True)
         with log.open('w',encoding='utf-8') as stream:
             result=subprocess.run(command,cwd=ROOT,stdout=stream,stderr=subprocess.STDOUT,
                                   creationflags=subprocess.CREATE_NO_WINDOW if sys.platform=='win32' else 0)
         entry.update(finished_at=now(),exit_code=result.returncode)
+        if fingerprints(r)!=r['artifacts'] or qa_fingerprints(r)!=entry['qa_inputs']:
+            entry['input_changed_during_profile']=True
+            r['status']='FAIL';save()
+            raise RuntimeError('Production/QA inputs changed during profile: '+r['key'])
+        if result.returncode==0:
+            try:
+                entry['runtime_evidence']=ordinary_gameplay_evidence(ROOT,r,entry)
+                entry['log_sha256']=provenance_sha(log)
+                verify_qa_attempt(ROOT,entry,r)
+            except BaseException as error:
+                entry['provenance_error']=repr(error);r['status']='FAIL';save();raise
         r['status']='PASS' if result.returncode==0 else 'FAIL';save()
         print(r['status'],r['key'],str(log),flush=True)
         if result.returncode: raise RuntimeError('Case failed; inspect evidence before resuming: '+r['key'])
     print(f"Completed {sum(r['status']=='PASS' for r in rows)}/{len(rows)} current-artifact cases: {manifest}",flush=True)
 
-if __name__=='__main__': main()
+if __name__=='__main__':
+    if '--plan-only' in sys.argv:
+        main()
+    else:
+        # Own the complete serial campaign, including any intentional separate
+        # client/server processes launched by one profile.
+        import msvcrt
+        lock_path=ROOT/'build/project-everything-regression/runtime.lock'
+        lock_path.parent.mkdir(parents=True,exist_ok=True)
+        with lock_path.open('a+b') as lock:
+            lock.seek(0);lock.write(b'0');lock.flush();lock.seek(0)
+            msvcrt.locking(lock.fileno(),msvcrt.LK_NBLCK,1)
+            try: main()
+            finally:
+                lock.seek(0);msvcrt.locking(lock.fileno(),msvcrt.LK_UNLCK,1)

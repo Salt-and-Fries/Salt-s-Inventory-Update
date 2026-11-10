@@ -84,6 +84,39 @@ def cut_frame_contract(target):
     return target
 
 
+def catalog_slot_input_contract(target):
+    """Let AE2's provider slots reach their native inventory-action handler."""
+    method = next(m for m in target['methods'] if m['name'] == 'desktopMouseClicked')
+    nodes = method['instructions']
+    pattern = 'appeng/client/gui/me/patternaccess/PatternSlot'
+    if any(n.get('desc') == pattern for n in nodes):
+        return target
+    index = next(i for i, n in enumerate(nodes)
+                 if n.get('op') == 193 and n.get('desc') == 'appeng/menu/slot/FakeSlot')
+    # Ordinary real slots remain Core-owned. Provider slots are client-side
+    # representations whose native handler addresses a server-side provider ID.
+    assert nodes[index - 1].get('op') == 25 and nodes[index + 1].get('op') == 154
+    nodes[index - 1:index - 1] = [copy.deepcopy(nodes[index - 1]),
+        {'type': 3, 'op': 193, 'desc': pattern}, copy.deepcopy(nodes[index + 1])]
+    return target
+
+
+def legacy_slot_highlight_contract(target):
+    """Use 1.20.1's actual hover renderer instead of unavailable later sprites."""
+    for method in target['methods']:
+        if method['name'] != 'extractDesktopRealSlots':
+            continue
+        for node in method['instructions']:
+            if node.get('name') == 'blitSprite':
+                node.update(op=184,
+                    owner='com/salts_inventory_update/compat/ae2/nativeview/LegacySlotHighlights',
+                    name='render',
+                    desc='(Lcom/salts_inventory_update/api/client/gui/GuiGraphicsExtractor;'
+                         + node['desc'][1:],
+                    interface=False)
+    return target
+
+
 def toolbox_inventory_contract(target):
     result=copy.deepcopy(target);owner=result['class']
     constructor=next(m for m in result['methods'] if m['name']=='<init>');nodes=constructor['instructions']
@@ -352,6 +385,14 @@ def transfer(name, base, integrated, patch, target):
         if any((x['name'], x['desc']) == (method['name'], method['desc']) for x in merged['methods']):
             raise ValueError('Added method collides: ' + name + '.' + method['name'])
         merged['methods'].append(copy.deepcopy(method))
+    if name.endswith('/WidgetContainer'):
+        # This reusable native tab has no menu field. Retain the current
+        # authenticated desktop owner; outside that scope the adapter itself
+        # falls back to AE2's ordinary transport.
+        priority=next(m for m in merged['methods'] if m['name']=='openPriorityGui')
+        for node in priority['instructions']:
+            if node.get('owner')==menus.TRANSPORT and node.get('name')=='sendDefault':
+                node.update(owner='com/salts_inventory_update/compat/ae2/nativeview/NativeMenuPacketScope',name='send')
     return merged
 
 
@@ -457,6 +498,8 @@ def main():
         if name==SCREEN:
             merged=toolbar_attachment_contract(merged)
             merged=cut_frame_contract(merged)
+            merged=catalog_slot_input_contract(merged)
+            merged=legacy_slot_highlight_contract(merged)
         if name.endswith('/AECheckbox'): merged = checkbox_contract(merged)
         if name.endswith('/StyleManager'):
             method = next(m for m in merged['methods'] if m['name'] == 'loadIndependentStyleDoc')

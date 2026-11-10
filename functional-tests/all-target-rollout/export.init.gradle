@@ -1,0 +1,12 @@
+import groovy.json.JsonOutput
+gradle.projectsEvaluated {
+    rootProject.allprojects.findAll { p -> p.path.startsWith(':compatibility:') && ['fabric','forge','neoforge'].contains(p.name) }.each { p ->
+        p.tasks.register('exportRolloutClasspath') {
+            dependsOn(p.tasks.named('classes'))
+            doLast {
+                def out=rootProject.file('build/all-target-rollout/classpaths/'+p.parent.name+'-'+p.name+'.json');out.parentFile.mkdirs()
+                out.text=JsonOutput.prettyPrint(JsonOutput.toJson([compile:p.sourceSets.main.compileClasspath.files.collect{it.absolutePath},output:p.sourceSets.main.output.files.collect{it.absolutePath}]))
+            }
+        }
+    }
+}

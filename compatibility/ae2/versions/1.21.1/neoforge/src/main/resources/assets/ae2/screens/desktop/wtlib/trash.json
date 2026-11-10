@@ -1,0 +1,59 @@
+{
+  "includes": [
+    "../../wtlib/trash.json"
+  ],
+  "desktop": {
+    "width": 176,
+    "height": 88,
+    "resize": "fixed",
+    "showTitle": true,
+    "preserveAeLayout": true
+  },
+  "background": null,
+  "generatedBackground": {
+    "width": 176,
+    "height": 88
+  },
+  "widgets": {
+    "back": {
+      "left": 152,
+      "top": -5,
+      "hideEdge": true
+    }
+  },
+  "images": {
+    "wirelessSlotBackground": {
+      "texture": "wtlib/guis/trash.png",
+      "srcRect": [
+        7,
+        17,
+        18,
+        18
+      ]
+    }
+  },
+  "slots": {
+    "AE2WTLIB_TRASH": {
+      "left": 8,
+      "top": 26,
+      "grid": "BREAK_AFTER_9COLS"
+    }
+  },
+  "text": {
+    "title": {
+      "position": {
+        "left": 8,
+        "top": -9999
+      }
+    },
+    "dialog_title": {
+      "text": {
+        "translate": "gui.ae2wtlib.trash"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    }
+  }
+}

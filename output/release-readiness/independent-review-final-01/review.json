@@ -1,0 +1,924 @@
+{
+  "schema": "siu-independent-release-review-v1",
+  "created": "2026-11-10T16:51:08.249374+00:00",
+  "verdict": "APPROVED",
+  "reviewed_source_tree_sha256": "40a6721c4c1163e0ba44176b24ae213c6524df23235c0a09d156447473253178",
+  "reviewed_manifest_sha256": "296b5ed6bb36deee3f482c250c56adf2405e148495cfca1c9931e21a7eee9abe",
+  "reviewed_manifest": "output/release-readiness/release-manifest-final.json",
+  "immutable_reviewed_manifest": "output/release-readiness/independent-review-gate-1730-01/manifest-before-review.json",
+  "reviewed_source_snapshot": {
+    "file": "output\\release-readiness\\candidate-build16-final-documented-1682-01.json",
+    "sha256": "07afd57ae0edbf8f18a08b22bbbfaddd0bc52b02ad0b6bebebbfdd27d20f7eef"
+  },
+  "reviewed_source_archive": {
+    "file": "output\\release-readiness\\candidate-build16-final-documented-1682-01.review-source.zip",
+    "sha256": "2573ebea0c242ffa3d267c312e7fd39bdc88445359f94a0e03deb45efce6deee",
+    "purpose": "Immutable local review/reproduction inputs, including QA fixtures. Not staged to public dist or published by this task."
+  },
+  "versions": {
+    "core": "0.1.6",
+    "compatibility": "0.1.3",
+    "controlify": "0.1.1"
+  },
+  "assessment": "All 69 original checklist requirements are supported within their preserved original scopes. No actionable release-blocking SIU defect or unmet original requirement was identified. The separate independent-review gate is performed here; publication is not authorized.",
+  "original_requirement_audit_sha256": "4facfb9043947b7ba428020679338e4df1ca8296f4f4c988fa9a1dfaeab346bb",
+  "checks_performed": [
+    {
+      "name": "Frozen identity and original requirements",
+      "result": "passed",
+      "source_files": 6594,
+      "source_archive_members": 6595,
+      "original_requirements_preserved": 69,
+      "documentation_only_delta_files": 13,
+      "current_manifest_reference_hashes": 73
+    },
+    {
+      "name": "Artifact and exported binary API integrity",
+      "result": "passed",
+      "shipping_jars": 36,
+      "additional_assets": 4,
+      "checksum_files": 3,
+      "bundle_members": 62,
+      "log": "artifact-integrity.log",
+      "receipt": "independent-artifact-integrity.json"
+    },
+    {
+      "name": "Source and production module boundaries",
+      "result": "passed",
+      "core_and_compatibility_jars": 24,
+      "controlify_jars": 12,
+      "logs": [
+        "module-boundaries.log",
+        "controlify-boundaries.log"
+      ]
+    },
+    {
+      "name": "Focused archival/selection/source-retention unit tests",
+      "result": "passed",
+      "methods": 15,
+      "receipt": "focused-check-results.json",
+      "limit": "Offline tests only. Registration test temporary output directories were redirected into this report directory; assertions were unchanged."
+    },
+    {
+      "name": "Build15-to16 exact registration correction",
+      "result": "passed",
+      "archive_pairs": 36,
+      "exact_Core_removals": 12,
+      "byte_identical_companions": 24,
+      "freshly_compiled_inspector_identical": true,
+      "actual_unique_session_observations": 10,
+      "receipt": "registration-bytecode-results.json"
+    },
+    {
+      "name": "Build14-to15 exact render/book/REI correction",
+      "result": "passed",
+      "archive_pairs": 36,
+      "freshly_compiled_inspector_identical": true,
+      "receipt": "render-rei-bytecode-results.json",
+      "native_archives": {
+        "diagnostic": 12,
+        "book_reload": 2,
+        "REI": 2
+      },
+      "native_receipt": "render-book-rei-native-archive-checks.json"
+    },
+    {
+      "name": "Complete-phase original archives and whole-stage bindings",
+      "result": "passed",
+      "phases": 13,
+      "original_cases": 226,
+      "dedicated_server_cases": 58,
+      "receipt": "full-phase-archive-checks.json",
+      "limit": "Offline provenance and original native-predicate validation; no new gameplay executions."
+    },
+    {
+      "name": "Publisher original scopes and explicit retention",
+      "result": "passed",
+      "publisher_profiles": 65,
+      "strict_Traveler_absent_retentions": 28,
+      "original_report_checks": 68071,
+      "original_cases": 2706,
+      "closed_queue_precedence_records": 14,
+      "receipt": "publisher-archive-checks.json",
+      "limit": "Entry/policy-only and invalid-fixture cases are not functional acceptances."
+    },
+    {
+      "name": "Coverage and historical failure binding audit",
+      "result": "passed",
+      "dispositions": 399,
+      "acceptances": 406,
+      "final_subject_tuples": 406,
+      "unique_report_hashes": 207,
+      "failure_records": 212,
+      "hashed_original_successor_refs": 388,
+      "original_boundary_findings": 31
+    },
+    {
+      "name": "Risk-focused production and native review",
+      "result": "passed",
+      "areas": [
+        "source/session ownership",
+        "stale clicks/canonical cursor",
+        "equipment and attachment lifetime",
+        "public API/optional boundaries",
+        "publisher selection",
+        "upstream limits and documentation"
+      ],
+      "visual_sample": [
+        "1.21.11 Fabric enchanting_table.png",
+        "1.21.11 NeoForge book-after-reload.png"
+      ]
+    }
+  ],
+  "findings": [],
+  "release_blocking_findings": 0,
+  "nonblocking_actionable_findings": 0,
+  "requirements": [
+    {
+      "id": 1,
+      "original_requirement": "Implement the agreed Project Everything inventory-window queue. Additional Create addons remain deferred at the user's request. [Implementation scope](docs/markdown/project-everything-current-remaining.md)",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "The agreed implementation queue is empty; deferred Create addons stay excluded. Compiled integration inventory and native feature records support the original inventory-window scope.",
+      "evidence_paths": [
+        "docs/markdown/project-everything-current-remaining.md"
+      ]
+    },
+    {
+      "id": 2,
+      "original_requirement": "Preserve the audited native-only DungeonZ, ElevatorMod, Sortilege, Armor Statues, Things and Wraith Waystones interfaces. The recorded checks are focused checks on their listed targets. [Evidence](compatibility/native-screen-preservation.md)",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Three sealed native-only runs retain sixteen observed screens and 89 current-scope assertions. Actual ownership/input journals were inspected; unrelated world/gameplay behavior is not promoted.",
+      "evidence_paths": [
+        "output/release-readiness/focused-evidence-readiness-native-only-1201-fabric-03.json",
+        "output/release-readiness/focused-evidence-readiness-native-only-1201-forge-02.json",
+        "output/release-readiness/focused-evidence-readiness-native-only-1211-neoforge-01.json"
+      ]
+    },
+    {
+      "id": 3,
+      "original_requirement": "Fix Curios/Accessories launcher overlap and mutually exclusive equipment-panel switching. Preserve the corrected portrait-button inset. Live swap checks cover 1.20.1 Forge and 1.21.1 NeoForge; they do not certify every equipment combination. [Swap evidence](output/curios-accessories-swap/summary.json), [inset evidence](output/curios-accessories-swap/portrait-inset/portrait-inset-checks.json)",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Equipment selection records the new choice before closing the old panel and rejects delayed other-kind responses. Advertised publisher pins have sealed normal/cosmetic ownership and switching evidence.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-original-features-build16-01.json",
+        "output/release-readiness/accessories-publisher-scope-1706-01/manifest.json",
+        "output/release-readiness/accessories-pin-selection-tests-1707-01/manifest.json"
+      ]
+    },
+    {
+      "id": 4,
+      "original_requirement": "Reproduce and fix AE2/Requester missed clicks caused by passive host-energy changes. Also enforce legacy source-item protection for explicit sessions and ordinary clicks. Fifteen focused menu executions, 626 live assertions and 96 validator tests passed. [Explanation](docs/markdown/ae2-requester-missed-click-fix.md), [final evidence](output/ae2-click-investigation/passive-source-fix.json)",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Published snapshot history, exact live AE2 item identity and ordinary source-click guards implement the passive-host repair. Original red/green receipts and later publication/cursor follow-ups remain separate.",
+      "evidence_paths": [
+        "output/ae2-click-investigation/passive-source-fix.json",
+        "docs/markdown/ae2-requester-missed-click-fix.md"
+      ]
+    },
+    {
+      "id": 5,
+      "original_requirement": "Recover the previously blocked Charm and Bumblezone/Polymer tests using dependency-complete, compatible partitions. Those runs passed 1,266 live assertions. The original incompatible upstream combinations remain separately documented. [Recovery evidence](output/blocked-setup-recovery/summary.json)",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Dependency-complete compatible recovery partitions and original incompatible combinations remain separately identified; recovery is not described as an SIU fix to incompatible publishers.",
+      "evidence_paths": [
+        "output/blocked-setup-recovery/summary.json",
+        "docs/release/INSTALLATION_ACCEPTANCE.md"
+      ]
+    },
+    {
+      "id": 6,
+      "original_requirement": "Refresh the main regression summary, failure list, coverage tables and README links to include the equipment swap, portrait inset, setup recovery and final AE2 fix.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Final dashboard, failure index, coverage tables and README/verification links reflect the final candidate and distinguish fresh from retained execution.",
+      "evidence_paths": [
+        "output/release-readiness/failure-index-final.json"
+      ]
+    },
+    {
+      "id": 7,
+      "original_requirement": "Keep historical failed attempts intact. Mark them resolved by a named follow-up with artifact hashes, rather than deleting them or treating an unrelated later pass as a fix.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "The 212 historical failure/index records preserve named outcomes. All 388 hashed original/successor references were checked, along with latest-attempt precedence.",
+      "evidence_paths": [
+        "output/release-readiness/accessories-publisher-scope-1706-01/manifest.json",
+        "output/release-readiness/accessories-pin-selection-tests-1707-01/manifest.json",
+        "output/release-readiness/failure-index-final.json",
+        "output/release-readiness/final-phase-QA-history-1713-01/manifest.json",
+        "output/release-readiness/full-phase-history-tests-1714-01/manifest.json"
+      ]
+    },
+    {
+      "id": 8,
+      "original_requirement": "Reconcile the specialized-entry inventory against later implementation and recovery evidence. The older inventory lists **83 unentered paths and three entry-only paths**; these are historical coverage flags, not 86 confirmed remaining defects or necessarily 86 distinct windows.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "The 399 target/case dispositions retain earlier unentered and entry-only records as historical coverage flags rather than confirmed defects or additional executions.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json"
+      ]
+    },
+    {
+      "id": 9,
+      "original_requirement": "Reclassify every remaining opening/policy-only case in the older matrix. A read-only status panel needs suitable observation/control tests; a mutable inventory needs real transfers; a recipe machine needs its actual prerequisites. A generic insertion probe failing to find an input is not proof that the interface is broken or fully tested.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Every authoritative row has scoped acceptance. The 380 discovery entry/policy-only cases and 20 invalid fixture workflows are not directly promoted as functional passes.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json"
+      ]
+    },
+    {
+      "id": 10,
+      "original_requirement": "Record each remaining case as: functional pass; appropriate read-only/native-screen pass; unavailable on the exact pinned release; documented upstream incompatibility; intentionally excluded from advertised scope; or unresolved release blocker.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "The authoritative dispositions are 367 functional, 31 read-only and one native-only. All 406 acceptance subject tuples and 207 distinct report references were checked.",
+      "evidence_paths": [
+        "output/release-readiness/accessories-publisher-scope-1706-01/manifest.json",
+        "output/release-readiness/accessories-pin-selection-tests-1707-01/manifest.json",
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json"
+      ]
+    },
+    {
+      "id": 11,
+      "original_requirement": "Give every unresolved blocker an exact target, upstream versions, reproduction, required fix or fixture work, acceptance criterion and evidence destination.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "No authoritative row remains an unresolved blocker. Exact pins, native classes, original evidence and prerequisite/required-work fields remain preserved, including upstream limitations.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json"
+      ]
+    },
+    {
+      "id": 12,
+      "original_requirement": "Create the necessary world/network/item fixtures using the publisher's normal prerequisites.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Named proofs preserve real prerequisites, fixture dependencies and native entry paths. The 65 publisher profiles, complete-phase archives and selected specialized journals were independently inspected.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json"
+      ]
+    },
+    {
+      "id": 13,
+      "original_requirement": "Run each workflow through the actual SIU window, including after movement and close/reopen where applicable.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Native action/state records preserve actual SIU windows, movement, source closure and reopening where applicable. The new cargo workflow was checked directly.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json"
+      ]
+    },
+    {
+      "id": 14,
+      "original_requirement": "Check quantities, full item data, shared-cursor ownership and server persistence. Include refused inputs and invalid prerequisites where they matter.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Canonical server cursor and source authorization code was read. Selected equipment, cargo, portable-host and remote journals retain exact quantities/data, refusal and persistence predicates.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json"
+      ]
+    },
+    {
+      "id": 15,
+      "original_requirement": "Apply any resulting SIU fix to every affected supported target, then run focused regressions there.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "All six shared correction sources and twelve compiled Core archives match the bounded changes. Named affected native regressions accompany the repair chain, and unrelated archives remain constrained.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json"
+      ]
+    },
+    {
+      "id": 16,
+      "original_requirement": "Preserve passive energy drain during the tests; do not make the host static just to remove the original race.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "AE2 sources use native live-object identity rather than charge fingerprints. Neither locks nor the stale-click predicate disable passive host-energy drain.",
+      "evidence_paths": [
+        "output/ae2-click-investigation/passive-source-fix.json",
+        "docs/markdown/ae2-requester-missed-click-fix.md"
+      ]
+    },
+    {
+      "id": 17,
+      "original_requirement": "Verify valid left/right clicks under ordinary timing and bounded latency/jitter. Wait for the original server decision without retrying failed input.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Original six-target ordinary/delayed follow-ups retain bounded timing and original server decisions without retry acceptance; this is a scoped timing result.",
+      "evidence_paths": [
+        "output/ae2-click-investigation/passive-source-fix.json",
+        "docs/markdown/ae2-requester-missed-click-fix.md"
+      ]
+    },
+    {
+      "id": 18,
+      "original_requirement": "Keep strict rejection/resynchronization checks for changed editable slots/cursors, expired snapshots, old topology and invalid credentials. The six-mapping focused validator/publication tests cover the rejection predicates; live positive/negative source checks remain separately identified.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Snapshot validation rejects editable-slot/cursor changes, unknown/expired revisions and changed topology. Owner/session/connection authorization remains mandatory; stale acceptance is limited to left/right PICKUP.",
+      "evidence_paths": [
+        "output/ae2-click-investigation/passive-source-fix.json",
+        "docs/markdown/ae2-requester-missed-click-fix.md"
+      ]
+    },
+    {
+      "id": 19,
+      "original_requirement": "Verify source pickup/swap protection, multiple views of one source, last-owner close, source invalidation and ordinary storage use after the source closes.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Reference-counted leases, native source matching and final releaseSourceLock cleanup preserve the source lifecycle. Original protection and invalidation observations remain bound.",
+      "evidence_paths": [
+        "output/ae2-click-investigation/passive-source-fix.json",
+        "docs/markdown/ae2-requester-missed-click-fix.md"
+      ]
+    },
+    {
+      "id": 20,
+      "original_requirement": "Verify tagged transfers, split/drag behavior, sorting, moved-window hit areas and transfers between independent windows.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Portable-host feature groups and complete Core archives retain tagged transfers, splitting/dragging, sorting, moved hit areas and independent-window cursor ownership within their recorded scope.",
+      "evidence_paths": [
+        "output/ae2-click-investigation/passive-source-fix.json",
+        "docs/markdown/ae2-requester-missed-click-fix.md"
+      ]
+    },
+    {
+      "id": 21,
+      "original_requirement": "Use each target's native vintage/modern AE2 layout and original external tabs. Unavailable optional addons are recorded in the named runs, rather than silently substituted.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Native AE2 generations/layouts and external tabs have separate legacy/modern evidence. Unavailable optional addons are not supplied acceptance by analogy.",
+      "evidence_paths": [
+        "output/ae2-click-investigation/passive-source-fix.json",
+        "docs/markdown/ae2-requester-missed-click-fix.md"
+      ]
+    },
+    {
+      "id": 22,
+      "original_requirement": "Rerun the boundary check and inventory its exact current findings before editing; retain the old failure evidence. Before/after logs are in `build/release-readiness/`; the initial 31 violations remain preserved.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "The preserved before-log contains 31 forbidden-reference findings. Fresh source and all 24 production Core/Compatibility boundary checks pass.",
+      "evidence_paths": [
+        "output/release-readiness/session-registration-build16-1655-01/manifest.json",
+        "output/release-readiness/candidate-integrity-build16-01.json"
+      ]
+    },
+    {
+      "id": 23,
+      "original_requirement": "Replace private Core references with supported API hooks where available. The additive [built-in subview contract](docs/markdown/builtin-subviews.md) was documented before implementation. The source-boundary check passes; runtime acceptance remains open below.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Actual equipment, aircraft and Quark adapters consume public built-in subview, embedded-session and control-policy contracts. The additive recipe-browser marker was also inspected.",
+      "evidence_paths": [
+        "output/release-readiness/session-registration-build16-1655-01/manifest.json",
+        "output/release-readiness/candidate-integrity-build16-01.json"
+      ]
+    },
+    {
+      "id": 24,
+      "original_requirement": "Preserve existing public API signatures and consumer behavior. All 36 normal-build jars preserve exported binary signatures against the backed-up distribution; all twelve consumer examples compile. New defaults and lifecycle/hit contracts have focused coverage. [Artifact/ABI result](output/release-readiness/candidate-integrity.json), `build/release-readiness/source-build-13.log`. Final-artifact gameplay remains separately required.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Fresh integrity verification checks all 36 jars against the original exported binary API. Existing signatures remain compatible; twelve consumer compilations are recorded by the normal build.",
+      "evidence_paths": [
+        "output/release-readiness/session-registration-build16-1655-01/manifest.json",
+        "output/release-readiness/candidate-integrity-build16-01.json"
+      ]
+    },
+    {
+      "id": 25,
+      "original_requirement": "Keep the API-only compatibility compile classpath and both source/production-bytecode boundary checks enabled. Normal build 13 passes these unchanged boundaries: 2,063 compatibility classes, 809 API-only compile-classpath entries and all 24 production Core/Compatibility boundaries. No private-Core compatibility exclusions were added.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Fresh source/production boundaries pass without private-Core allowances. The normal build records the API-only classpath and twelve Controlify isolation gates.",
+      "evidence_paths": [
+        "output/release-readiness/session-registration-build16-1655-01/manifest.json",
+        "output/release-readiness/candidate-integrity-build16-01.json"
+      ]
+    },
+    {
+      "id": 26,
+      "original_requirement": "Run focused Aether/Curios/Accessories, aircraft side-panel, Quark backpack and Traveler's Backpack regressions after their bridges change. Fresh exact-build13 checks passed on [1.20.1 Fabric](output/release-readiness/boundary-build13-1201-fabric/summary.json), [1.20.1 Forge](output/release-readiness/boundary-build13-1201-forge/summary.json), [1.21.1 Fabric](output/release-readiness/boundary-build13-1211-fabric/summary.json) and [1.21.1 NeoForge](output/release-readiness/boundary-build13-1211-neoforge/summary.json), with each fixture's applicable surfaces/controller checks. Wider per-mod target qualification remains in sections 5 and 7.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Four affected bridge target records and later equipment/attachment native proofs retain their own exact scopes; their production ownership and public-contract paths were inspected.",
+      "evidence_paths": [
+        "output/release-readiness/session-registration-build16-1655-01/manifest.json",
+        "output/release-readiness/candidate-integrity-build16-01.json"
+      ]
+    },
+    {
+      "id": 27,
+      "original_requirement": "Compile the public API examples across all twelve supported targets (normal build13), retain optional/absent initialization guards, and replay unrelated live AE2/Tom integrations on the current artifacts. This focused API-migration acceptance does not replace the remaining complete optional-integration matrix.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "The normal build compiles twelve public API consumer examples. Core does not import moved integrations, and optional bootstrap/mixin guards avoid defining absent publisher classes.",
+      "evidence_paths": [
+        "output/release-readiness/session-registration-build16-1655-01/manifest.json",
+        "output/release-readiness/candidate-integrity-build16-01.json"
+      ]
+    },
+    {
+      "id": 28,
+      "original_requirement": "Replay the existing six-assertion Small Ships cargo/page workflow on final jars for 1.20.1 Fabric/Forge and 1.21.1 Fabric/NeoForge. The original ordinary Galleon entry, next/previous replacement, held shared cursor and exact recovery must pass. Its [four pinned plans](output/release-readiness/smallships-paging-preparation-150-01/plan.json) preserve all assertions; only the two 1.21.1 public ground-height prerequisites translate. This separate supplemental queue runs after the existing final installation gate, leaving the original 174-job plan unchanged. Original Brigg/Galley three-cell cargo checks do not substitute for page transitions. Preparation is not gameplay acceptance.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Four cargo/page workflows retain six checks each. New build16 NeoForge states show ten actual unique-session observations, and all twelve Core deltas remove only the duplicate registration.",
+      "evidence_paths": [
+        "output/release-readiness/final-smallships-paging-01.json"
+      ]
+    },
+    {
+      "id": 29,
+      "original_requirement": "Exercise remaining specialized child/settings/upgrade/recipe workflows with real ingredients, power, progression and multiblocks where required. Check output creation, resource consumption, cancellation and persistence.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "The original 174-job plan and named feature follow-ups preserve actual prerequisites, outputs/resource effects, cancellation and persistence. CPU cancellation does not substitute for completed crafting output.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json"
+      ]
+    },
+    {
+      "id": 30,
+      "original_requirement": "Recheck Curios/Accessories/Aether switching and cosmetic/equipment ownership on the final applicable targets. Cover Fabric paths whose recent swap rollout has narrower live evidence. If Accessories Compat Layer combinations are advertised, add their own fixtures and tests; the recent swap evidence did not include that layer.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Advertised Accessories beta.54 is bound to actual staged/loaded publisher bytes and sealed normal/cosmetic workflows. Fabric and exclusive Curios/Aether scopes remain separate; Compat Layer is not accepted.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-original-features-build16-01.json",
+        "output/release-readiness/accessories-publisher-scope-1706-01/manifest.json",
+        "output/release-readiness/accessories-pin-selection-tests-1707-01/manifest.json"
+      ]
+    },
+    {
+      "id": 31,
+      "original_requirement": "Recheck attached-window ownership: Quark backpack opens/closes with Inventory; aircraft sides follow their parent and expose only their approved controls; equipment panels swap instead of opening duplicate editing surfaces.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Aether callbacks dispose embedded ownership, Aircraft main closure closes its wings, and Quark pairing follows Inventory lifetime. Stable UUID ownership and synchronous movement permissions were inspected.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-original-features-build16-01.json"
+      ]
+    },
+    {
+      "id": 32,
+      "original_requirement": "Confirm native-only books, selectors and editors still own their screens and input. Keep the six audited native-only entries and Extended AE's read-only inspectors within their documented scope.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Native book/editor/selector evidence and separate read-only inspectors preserve original input ownership and do not invent mutable storage interfaces.",
+      "evidence_paths": [
+        "output/release-readiness/focused-evidence-readiness-native-only-1201-fabric-03.json",
+        "output/release-readiness/focused-evidence-readiness-native-only-1201-forge-02.json",
+        "output/release-readiness/focused-evidence-readiness-native-only-1211-neoforge-01.json"
+      ]
+    },
+    {
+      "id": 33,
+      "original_requirement": "Inspect populated and active UI states, not only empty screenshots: no clipped slot rims, sprites, labels, search inputs or pop-outs; correct native palette; correct modern/vintage textures; original buttons retain their intended placement and function.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Populated/active layouts are accepted within named feature proofs. Actual enchanting-book images and raw framebuffer/resource predicates were checked; arbitrary packs/resolutions are not claimed.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json"
+      ]
+    },
+    {
+      "id": 34,
+      "original_requirement": "Check minimum/normal/large GUI scale, window movement/resizing where allowed, screen edges and resolution changes. Check that linked panels remain reachable and correctly aligned.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Twelve exact-final-Core GUI 1/2/3 and resize/bounds profiles are preserved. Core geometry acceptance is separate from every third-party layout at arbitrary resolutions.",
+      "evidence_paths": [
+        "output/release-readiness/final-minimum-gui-543-01/manifest.json"
+      ]
+    },
+    {
+      "id": 35,
+      "original_requirement": "Confirm foreign sorting controls stay suppressed where SIU replaces them, while native controls with distinct functionality remain usable.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Feature/attachment proofs retain distinct native controls while suppressing identified redundant sorting providers. Actual control policies and public hit/control contracts remain bounded.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-original-features-build16-01.json"
+      ]
+    },
+    {
+      "id": 36,
+      "original_requirement": "Recheck keyboard, mouse, Mouse Tweaks and included Controlify navigation against the changed windows and source protections. Include text focus, Escape, drag/click distinction and native controls exposed through attachments.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Mouse, keyboard, Mouse Tweaks, controller and text/input complete-phase archives were independently verified. Equipment input cancellation and attachment controls retain their scoped evidence.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-original-features-build16-01.json"
+      ]
+    },
+    {
+      "id": 37,
+      "original_requirement": "Exercise repeated open/close and large inventories for bounded snapshot/session/lock cleanup and reasonable responsiveness. Include invalidated sources, death, dimension changes, world exit and reconnect.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Twelve lifecycle profiles retain 1,920 checks, 432 cycles and 1,947 observed states. Server/source/client cleanup and bounded history were inspected; these are original observations.",
+      "evidence_paths": [
+        "output/release-readiness/focused-native-campaign-02.json"
+      ]
+    },
+    {
+      "id": 38,
+      "original_requirement": "Boot and cleanly stop dedicated servers on every advertised target using the final packaged jars. Check Core alone and applicable optional integrations, with no client-only class loading or caught SIU registration/mixin failure.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "All 58 original dedicated-server case archives, latest exits, original QA and whole-subject retention bindings were independently verified; no new final-byte server launches are claimed.",
+      "evidence_paths": [
+        "build/full-validation-20261023/readiness-final-20261106/dedicated-server/results.json"
+      ]
+    },
+    {
+      "id": 39,
+      "original_requirement": "Connect real separate clients to exercise the updated server paths. The [42-check remote campaign](output/release-readiness/readiness-multiplayer-modern-13/manifest.json) uses the official 26.3 Fabric dedicated server, two separate player JVMs and a reconnect JVM. Its explicit C1 diagnostic JVM setting and failed default-compilation attempts are retained in [the scope/limitations record](docs/release/INSTALLATION_ACCEPTANCE.md). This is representative cross-process acceptance, not an all-loader multiplayer claim.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "The representative 26.3 Fabric campaign retains official-server, two-client and reconnect evidence with 42 checks and normal isolated Java 25.0.5.0.3 compilation. Earlier JVM/C1 attempts remain historical.",
+      "evidence_paths": [
+        "output/release-readiness/readiness-build14-multiplayer-java25-update-01/manifest.json",
+        "output/release-readiness/isolated-java25-update-01.json"
+      ]
+    },
+    {
+      "id": 40,
+      "original_requirement": "Have two players use the same backing storage concurrently: withdrawals, deposits, output pickup and sorting. The same campaign checks authoritative full typed metadata/count ledgers, simultaneous withdrawal and furnace-output pickup, and native sorting.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "The remote campaign retains authoritative shared-storage/output/sorting typed ledgers. Representative acceptance is not expanded to every loader or network condition.",
+      "evidence_paths": [
+        "output/release-readiness/readiness-build14-multiplayer-java25-update-01/manifest.json",
+        "output/release-readiness/isolated-java25-update-01.json"
+      ]
+    },
+    {
+      "id": 41,
+      "original_requirement": "Test isolation between players, equal slot/session indices in different owners, stale input after close/replacement, invalid credentials and source ownership. The remote campaign checks distinct owner/session tokens and connection nonces, foreign credentials and source invalidation. Strict snapshot rejection has separate six-mapping validator coverage; these scopes remain distinct.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Production authorization checks owner, world, connection nonce, token, visibility and native source validity. Remote isolation and six-mapping strict snapshot rejection remain distinct scopes.",
+      "evidence_paths": [
+        "output/release-readiness/readiness-build14-multiplayer-java25-update-01/manifest.json",
+        "output/release-readiness/isolated-java25-update-01.json"
+      ]
+    },
+    {
+      "id": 42,
+      "original_requirement": "Test disconnect/reconnect and native invalidation while carrying items or while a mutation is pending. The measured remote branch is **carried items**: the campaign verifies the native saved carried-stack drop and its complete components, ordinary reconnect/pickup and source-specific closure. It does not claim a separate pending-mutation disconnect trial or impose an incorrect offline-Inventory settlement rule on vanilla 26.3.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "The measured carried-item disconnect/drop/recovery branch is explicitly retained. A separate pending-mutation disconnect branch is not claimed or newly required.",
+      "evidence_paths": [
+        "output/release-readiness/readiness-build14-multiplayer-java25-update-01/manifest.json",
+        "output/release-readiness/isolated-java25-update-01.json"
+      ]
+    },
+    {
+      "id": 43,
+      "original_requirement": "Repeat the recently fixed portable-host workflows with latency/jitter, alongside normal uninstrumented runs. Section 3 records 1,380 current-artifact focused assertions on all six applicable integration targets, including ordinary and bounded delayed trials. Those are integrated-server portable-host tests, separately scoped from the remote two-player campaign.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Ordinary and bounded delayed portable-host follow-ups cover six applicable targets with 1,380 original focused assertions, separately from the representative remote campaign.",
+      "evidence_paths": [
+        "output/ae2-click-investigation/passive-source-fix.json",
+        "docs/markdown/ae2-requester-missed-click-fix.md"
+      ]
+    },
+    {
+      "id": 44,
+      "original_requirement": "Test the advertised client/server installation combinations and version mismatch behavior. Document which modules are required on each side for each feature.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Client-only 22, server-only 18 and initial obsolete-protocol 16 checks retain exact provenance and latest-mode precedence. Installation documentation states the representative 26.3 Fabric scope.",
+      "evidence_paths": [
+        "output/release-readiness/final-installation-campaign-01.json"
+      ]
+    },
+    {
+      "id": 45,
+      "original_requirement": "Freeze the intended source revision and pinned upstream fixture versions after the fixes above. Record each target's dependency set and artifact SHA-256.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Fresh source enumeration, canonical file-map digest, immutable ZIP contents and current pointer match the reviewed identity. Runtime records retain exact upstream/dependency pins.",
+      "evidence_paths": [
+        "output/release-readiness/release-manifest-final.json"
+      ]
+    },
+    {
+      "id": 46,
+      "original_requirement": "Preserve current evidence/artifacts before a clean release build. The initial 36 jars and combined bundle are backed up in `build/release-readiness/initial-dist/`, with SHA-256 values in [baseline.json](output/release-readiness/baseline.json). No historical runtime evidence was removed.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Original distribution and later build14/build15 ledgers preserve exact old-byte locators. Equivalence reads actual original bytes rather than current same-named dist files.",
+      "evidence_paths": [
+        "output/release-readiness/baseline.json",
+        "output/release-readiness/normal-build14-subjects-preserved-01/manifest.json"
+      ]
+    },
+    {
+      "id": 47,
+      "original_requirement": "Produce all release jars through the normal production/remapping tasks from source. Build 14 produces all 36 jars using ordinary tasks. Later production changes require another normal build and affected requalification.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Normal build16 records cmd.exe /d /c gradlew.bat build with exit zero and all 36 ordinary production/remapping outputs. Relevant final compiled transitions were freshly re-inspected.",
+      "evidence_paths": [
+        "output/release-readiness/session-registration-build16-1655-01/manifest.json",
+        "output/release-readiness/candidate-integrity-build16-01.json"
+      ]
+    },
+    {
+      "id": 48,
+      "original_requirement": "Pass the ordinary root build, source parity, API/example checks, compatibility compile-classpath audit, source/bytecode boundaries and native-symbol checks. `build/release-readiness/source-build-14.log` passes all gates; final frozen-candidate gameplay remains open.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "The frozen normal build records source parity, examples, classpath/boundary, mappings and native-symbol gates. Fresh offline source/production and artifact/API checks also pass.",
+      "evidence_paths": [
+        "output/release-readiness/session-registration-build16-1655-01/manifest.json",
+        "output/release-readiness/candidate-integrity-build16-01.json"
+      ]
+    },
+    {
+      "id": 49,
+      "original_requirement": "Apply and compile the remaining detailed-render logging correction on all six source mappings/twelve Core targets. The current statement has nine placeholders and ten arguments, shifting its diagnostic mouse coordinates. The prepared change removes the obsolete constant field and both constant arguments. The [compiled-delta inspector](tools/reconcile-core-diagnostic-delta.py) permits only that exact instruction change, debug tables, and byte-identical other modules; it rejects unrelated members/resources or swapped coordinates. Its focused compiled-fixture checks are evidence for the inspector, not a product fix or permission to transfer gameplay acceptance to different jar bytes. Final archive, focused diagnostic and explicit unaffected-evidence review remain required.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Fresh strict inspectors verify all twelve logger corrections and unrelated archive members. Twelve raw diagnostic smoke archives were revalidated against their actual original subjects.",
+      "evidence_paths": [
+        "output/release-readiness/final-core-diagnostics-01.json",
+        "output/release-readiness/final-render-rei-bytecode-public-marker-build15-1536-01.json"
+      ]
+    },
+    {
+      "id": 50,
+      "original_requirement": "Fix the confirmed **1.21.11 Fabric and NeoForge enchanting-book texture** defect. The current Core uses `textures/entity/enchantment/enchanting_table_book.png`, but the actual 1.21.11 game supplies `textures/entity/enchanting_table_book.png`. Both normal runtime logs report the missing resource, and the captured window shows a black book rectangle despite passing menu-interaction checks. The other five source mappings match their native assets. [Finding, original screenshots and prepared correction](output/release-readiness/core-enchanting-book-fix-preparation-135-01/finding.json). Normally compile the corrected identifier, verify actual resource lookup and book rendering on both affected loaders before and after resource reload, and preserve menu interactions. The existing logger-only final-build/equivalence plan must be explicitly revised for this additional change; its strict unrelated-bytecode/resource checks must remain intact. Preparation alone does not resolve this release blocker.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "The 1.21.11 source uses the actual enchanting-book path. Both loader resource/render/reload archives revalidate and two representative frames were visually inspected; final16 retention is exact.",
+      "evidence_paths": [
+        "output/release-readiness/final-core-enchanting-book-01.json"
+      ]
+    },
+    {
+      "id": 51,
+      "original_requirement": "Run one final complete functional/gameplay qualification on the frozen candidate, including the applicable publisher profiles and the new focused regressions. The user explicitly authorized this full sweep on November 6 by requesting completion of this checklist; ordinary fixes continue to receive focused checks under [AGENTS.md](AGENTS.md).",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "All 226 original complete-phase cases and all 65 publisher profiles were revalidated offline, with the named affected corrections. Explicit justified equivalence preserves the campaign without relabelling launches.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json",
+        "output/release-readiness/final-phase-QA-history-1713-01/manifest.json",
+        "output/release-readiness/full-phase-history-tests-1714-01/manifest.json"
+      ]
+    },
+    {
+      "id": 52,
+      "original_requirement": "Match accepted runtime evidence to the exact final jar hashes. If a jar changes afterward, rerun the affected checks and update the candidate record. Do not transfer a pass to different bytes without an explicit justified equivalence check.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Accepted final tuples match shipping identities. Fresh 36-pair build14-to15 and 36-pair build15-to16 inspections and whole-stage binding policies reject arbitrary mixed-subject retention.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json",
+        "output/release-readiness/final-phase-QA-history-1713-01/manifest.json",
+        "output/release-readiness/full-phase-history-tests-1714-01/manifest.json"
+      ]
+    },
+    {
+      "id": 53,
+      "original_requirement": "Require zero unresolved release-blocking SIU failures, unexplained item loss/duplication, startup crashes or swallowed SIU integration failures. Classify every skipped/blocked case with its cause and support disposition.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "No unresolved release-blocking SIU defect or unsupported original requirement was found. Native limitations and preserved setup/JVM failures are not converted into SIU fixes.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json"
+      ]
+    },
+    {
+      "id": 54,
+      "original_requirement": "Keep live runtimes serial under the existing runtime lock. Preserve strict assertions, native entry prerequisites and original failed attempts.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Native launchers/coordinators hold the serial runtime lock and preserve original failures. The reviewer used offline checks and did not change assertions, journals or source evidence.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json",
+        "output/release-readiness/final-phase-QA-history-1713-01/manifest.json",
+        "output/release-readiness/full-phase-history-tests-1714-01/manifest.json"
+      ]
+    },
+    {
+      "id": 55,
+      "original_requirement": "Select Core 0.1.6, Compatibility 0.1.3 and Controlify 0.1.1 consistently for the candidate. [Version decision](docs/release/VERSION_DECISION.md), normal build13 metadata and the [36-archive descriptor audit](output/release-readiness/metadata-build13-01.json) record identity/dependency/file consistency. The read-only public Core lookup found 0.1.5 latest on November 6; destination slots must be rechecked before separately authorized publication. No release page is changed by this task.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Core 0.1.6, Compatibility 0.1.3 and Controlify 0.1.1 match all 36 artifacts and current docs. Public destination availability is deferred to separately authorized publication.",
+      "evidence_paths": [
+        "output/release-readiness/metadata-build16-01.json",
+        "docs/release/VERSION_DECISION.md"
+      ]
+    },
+    {
+      "id": 56,
+      "original_requirement": "Verify all **36 jars together** if releasing the advertised three-module bundle. [Current integrity result](output/release-readiness/candidate-integrity.json) verifies the normal build 14 standalone jars and exact bundled copies. This is archive acceptance, not gameplay certification.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "All 36 standalone jars and exact bundled copies were freshly verified together, including SHA256/SHA512 identities and complete archive membership.",
+      "evidence_paths": [
+        "output/release-readiness/session-registration-build16-1655-01/manifest.json",
+        "output/release-readiness/candidate-integrity-build16-01.json"
+      ]
+    },
+    {
+      "id": 57,
+      "original_requirement": "Verify production mappings, Java/loader/Minecraft requirements, conditional entrypoints, mixin manifests/refmaps, resource-pack metadata and required resources on each target. Normal build14's mapping/native-symbol gates and the [36-archive metadata audit](output/release-readiness/metadata-build14-09.json) pass. The audit explicitly records 32 absent non-Forge declared refmaps on inline-remapped/named paths; it does not claim those files exist or that metadata inspection replaces native launch qualification. Eleven metadata regression methods include the missing/malformed minimum-version and missing required legacy Forge refmap rejection paths. [Offline test record](output/release-readiness/helper-validator-tests-95.json)",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Current metadata receipts cover production mappings, Java/game/loader declarations, entrypoints, mixins/refmaps and assets. Absent inline/named-path refmaps are distinguished from required legacy files.",
+      "evidence_paths": [
+        "output/release-readiness/metadata-build16-01.json",
+        "docs/release/VERSION_DECISION.md"
+      ]
+    },
+    {
+      "id": 58,
+      "original_requirement": "Verify optional mods really remain optional: Core alone, Compatibility with no targets, supported integrations present, and absent/unsupported upstream versions. Unsupported native patch contracts should fail safely with clear diagnostics.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Core-only, extension-empty, present-integration and absence-safe profiles retain original boot/runtime scope. Optional bootstrap and mixin presence guards were inspected, with failures remaining diagnostic.",
+      "evidence_paths": [
+        "output/release-readiness/coverage-backlog.json",
+        "output/release-readiness/qualification-current.json"
+      ]
+    },
+    {
+      "id": 59,
+      "original_requirement": "Verify no observer/QA classes, diagnostic agents, development/source jars, private fixture data, bundled third-party publisher implementations or unintended nested Core/API jars enter the public artifacts. Integrity pass 09 verifies all 36 normal-build jars.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Fresh artifact/boundary verifiers reject observer/QA/example classes, dev/source/private fixture entries, unintended API duplication and bundled publisher implementations across all 36 jars.",
+      "evidence_paths": [
+        "output/release-readiness/session-registration-build16-1655-01/manifest.json",
+        "output/release-readiness/candidate-integrity-build16-01.json"
+      ]
+    },
+    {
+      "id": 60,
+      "original_requirement": "Recompute all three checksum files; verify every bundled jar matches its standalone file. Build 14 regenerates checksums, and integrity pass 09 verifies ZIP CRCs, exact members and no duplicates. Matching accepted runtime subjects remains open in section 7.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "All three checksum files, duplicate-member exclusion, ZIP CRCs, exact bundle membership and standalone/bundled equality were freshly checked.",
+      "evidence_paths": [
+        "output/release-readiness/session-registration-build16-1655-01/manifest.json",
+        "output/release-readiness/candidate-integrity-build16-01.json"
+      ]
+    },
+    {
+      "id": 61,
+      "original_requirement": "Update cumulative release verification to include the newest click-fix stage and all intended module families. The [normal-build verifier](functional-tests/project-everything-regression/verify_release.py) now covers all 36 jars, additive public ABI, QA exclusion, provenance notices, checksums and bundle members; historical scoped checks remain separately available.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Fresh cumulative normal-build integrity/API verification passes for all 36 current jars. Historical narrow audits remain separate from current artifact and gameplay qualification.",
+      "evidence_paths": [
+        "output/release-readiness/session-registration-build16-1655-01/manifest.json",
+        "output/release-readiness/candidate-integrity-build16-01.json"
+      ]
+    },
+    {
+      "id": 62,
+      "original_requirement": "Record the final source revision, build command/toolchains, artifact list, checksums and accepted test runs in a durable release manifest.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "The manifest binds source archives, code/doc identities, builds/toolchains, artifacts/checksums, pins and original scopes. This report records an immutable reviewed-manifest locator.",
+      "evidence_paths": [
+        "output/release-readiness/release-manifest-final.json"
+      ]
+    },
+    {
+      "id": 63,
+      "original_requirement": "Verify packaged license/attribution files against their actual sources. [Build14 provenance audit](output/release-readiness/provenance-build14-01.json) checks all 36 current jars: MIT notices, Fabric paging artwork and Apache-2.0 text (allowing only line-ending differences), seven AE2 CPU pixel regions and LGPL/source notice, and the seven CC0 recordings with original Kenney notices. Minecraft sound aliases are explicitly distinguished from redistributed recordings. This verifies packaged provenance; it does not publish corresponding source or constitute a legal opinion.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Packaged licenses/notices and artwork/audio provenance inventories remain bound to current artifacts. Artifact verification confirms packaged notices; recorded provenance inspection is not a legal opinion.",
+      "evidence_paths": [
+        "output/release-readiness/provenance-build16-01.json"
+      ]
+    },
+    {
+      "id": 64,
+      "original_requirement": "Publish an accurate Minecraft/loader/upstream compatibility table. Distinguish dedicated integration, automatic fallback and intentionally native interfaces; record required optional-addon dependencies.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Support tables distinguish dedicated adapters, automatic fallback, intentionally native screens and required dependencies. The advertised Accessories pin is selected from actual loaded bytes.",
+      "evidence_paths": [
+        "docs/release/compatibility-pins.md",
+        "docs/release/UPSTREAM_DEPENDENCIES.md"
+      ]
+    },
+    {
+      "id": 65,
+      "original_requirement": "Update README, changelog, API/example documentation and installation instructions for the actual candidate and module versions. Remove stale claims that fixed issues remain unresolved or that old full-suite results certify current jars.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Exactly thirteen Markdown promotions update README, changelogs, API/examples, installation and final verification. Historical reports remain labelled; current docs do not claim new full suites after small fixes.",
+      "evidence_paths": [
+        "docs/release/INSTALLATION.md",
+        "docs/release/RELEASE_NOTES_DRAFT.md"
+      ]
+    },
+    {
+      "id": 66,
+      "original_requirement": "Document incompatible upstream combinations and unavailable features without treating them as SIU fixes. Include matching exact versions/evidence and supported test-profile alternatives.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Incompatible partitions and native limitations retain exact versions/evidence. Supplemental Accessories beta.48 is explicitly a runtime limitation rather than a functional pass or SIU fix.",
+      "evidence_paths": [
+        "output/release-readiness/accessories-publisher-scope-1706-01/manifest.json",
+        "output/release-readiness/accessories-pin-selection-tests-1707-01/manifest.json",
+        "output/blocked-setup-recovery/summary.json",
+        "docs/release/INSTALLATION_ACCEPTANCE.md"
+      ]
+    },
+    {
+      "id": 67,
+      "original_requirement": "Provide concise first-run instructions, module selection, configuration locations, upgrade/back-up guidance for inventory data, and a way to report bugs with versions/logs/reproduction steps. The [installation guide](docs/release/INSTALLATION.md) includes the built-in config/help commands and optional mod-list route. [Twelve packaged documentation contracts](output/release-readiness/installation-doc-contracts-build14-01.json) verify Java requirements, command registration, config paths, native Left Alt defaults and packaged key labels. This read-only audit does not replace the pending live configuration/startup gates.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Installation covers module/side selection, Java requirements, config/help routes and real paths, backups/rollback and version/log/reproduction reporting. Twelve packaged contracts remain distinct from live checks.",
+      "evidence_paths": [
+        "docs/release/INSTALLATION.md",
+        "docs/release/RELEASE_NOTES_DRAFT.md"
+      ]
+    },
+    {
+      "id": 68,
+      "original_requirement": "Prepare the release notes, artifact mapping and publishing metadata for review. Ensure any preview/experimental support is labelled consistently with the validation evidence.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "Release notes, artifact mapping and publication metadata are prepared locally with representative/experimental scopes. Independent approval does not authorize publication.",
+      "evidence_paths": [
+        "docs/release/INSTALLATION.md",
+        "docs/release/RELEASE_NOTES_DRAFT.md"
+      ]
+    },
+    {
+      "id": 69,
+      "original_requirement": "Review the final source diff and intended release files, then commit/tag/push/publish only within the user's explicit instructions for those actions. Creating this checklist does not publish anything.",
+      "supported_within_original_scope": true,
+      "reviewer_basis": "This independent review examines the intended dirty-source/release snapshot and exact shipping identities. No commit, tag, push, publication or canonical source/evidence mutation was performed.",
+      "evidence_paths": [
+        "output/release-readiness/source-diff-audit-primary-1528-01/review.json",
+        "output/release-readiness/source-diff-audit-final16-primary-1720-01/review.json"
+      ]
+    }
+  ],
+  "code_and_policy_references": [
+    {
+      "file": "versions/1.21.1/fabric/src/main/java/com/salts_inventory_update/client/InventoryDesktopScreen.java",
+      "line": 6116,
+      "assessment": "One registration before hosted/embedded initialization; prior-session cleanup remains at line 6223."
+    },
+    {
+      "file": "versions/1.21.1/fabric/src/main/java/com/salts_inventory_update/server/PlayerMenuClickSnapshots.java",
+      "line": 41,
+      "assessment": "Bounded immutable stale-click predicate preserves editable slots, cursor and topology."
+    },
+    {
+      "file": "versions/1.21.1/fabric/src/main/java/com/salts_inventory_update/server/DesktopContainerSessions.java",
+      "line": 2907,
+      "assessment": "Owner/session/nonce/world/native validity authorization remains mandatory."
+    },
+    {
+      "file": "versions/1.21.1/fabric/src/main/java/com/salts_inventory_update/server/DesktopContainerSessions.java",
+      "line": 5141,
+      "assessment": "Only ordinary left/right pickup receives the narrow stale-snapshot exception."
+    },
+    {
+      "file": "versions/1.21.1/fabric/src/main/java/com/salts_inventory_update/server/DesktopContainerSessions.java",
+      "line": 5746,
+      "assessment": "Session removal precedes callbacks; detached cursor and source leases are disposed."
+    },
+    {
+      "file": "versions/1.21.1/fabric/src/main/java/com/salts_inventory_update/internal/desktop/DesktopItemSourceLocks.java",
+      "line": 86,
+      "assessment": "Reference-counted source leases and live identity protection."
+    },
+    {
+      "file": "compatibility/ae2/versions/1.20.1/common/src/main/java/com/salts_inventory_update/compat/ae2/server/AE2ServerIntegration.java",
+      "line": 40,
+      "assessment": "Live native stack identity survives charge changes while replacement invalidates ownership."
+    },
+    {
+      "file": "compatibility/versions/1.21.1/fabric/src/main/java/com/salts_inventory_update/compat/equipment/EquipmentPanelSelection.java",
+      "line": 26,
+      "assessment": "Select-before-close ordering and delayed other-kind response rejection."
+    },
+    {
+      "file": "compatibility/versions/1.21.1/fabric/src/main/java/com/salts_inventory_update/compat/aether/AetherEquipmentClient.java",
+      "line": 137,
+      "assessment": "Parent suspension/closure cleans embedded ownership."
+    },
+    {
+      "file": "compatibility/versions/1.21.1/fabric/src/main/java/com/salts_inventory_update/compat/aircraft/AircraftClient.java",
+      "line": 55,
+      "assessment": "Main closure disposes parent-owned wings by stable UUID."
+    },
+    {
+      "file": "compatibility/versions/1.21.1/fabric/src/main/java/com/salts_inventory_update/compat/quark/QuarkBackpackLink.java",
+      "line": 23,
+      "assessment": "Inventory pairing and movement/lifetime remain parent-owned."
+    },
+    {
+      "file": "compatibility/versions/1.21.1/fabric/src/main/java/com/salts_inventory_update/compat/CompatibilityBootstrap.java",
+      "line": 106,
+      "assessment": "Absent optional implementations are not resolved and initialization errors are logged."
+    },
+    {
+      "file": "tools/focused_release_evidence_session_registration.py",
+      "line": 29,
+      "assessment": "Exact six-source/parity-guard correction and constrained retention."
+    },
+    {
+      "file": "tools/focused_release_evidence_session_registration.py",
+      "line": 183,
+      "assessment": "Only nine pinned archived QA-input exceptions; unknown changes reject."
+    },
+    {
+      "file": "tools/accessories_current_pin_evidence.py",
+      "line": 29,
+      "assessment": "Exact original record/catalogue, advertised bytes and actual staging/log/seal predicates."
+    },
+    {
+      "file": "tools/focused_release_evidence_full_phase_history.py",
+      "line": 38,
+      "assessment": "Only 1,144 original inputs, two reviewed revisions and fourteen later tools; lookup restoration is exception-safe."
+    }
+  ],
+  "limitations": [
+    "Read-only code/evidence review with focused offline checks. No Minecraft client/server was launched, no complete functional/gameplay suite was replayed and no normal production rebuild was performed by the reviewer. Only inspection helpers were freshly compiled under this review directory.",
+    "Code inspection concentrated on the specified release risks and retention machinery rather than a formal proof of every line or arbitrary future modpack. The 226 cases, 65 profiles and 68,071 checks describe verified original archives, not new native executions.",
+    "The older seventeen-edge repair-prefix policy retains explicitly source-reviewed/native-qualified new-method additions rather than claiming independently exact body equivalence for every added method. I examined the bounded policy and actual risk paths, but did not recompile every historical production revision. Both final compiled transitions were independently re-executed.",
+    "Remote and installation acceptance remains representative 26.3 Fabric; carried-item disconnect is the measured branch. No all-loader/WAN, separate pending-mutation-disconnect, arbitrary controller hardware, resource-pack or resolution guarantee is supplied.",
+    "The Accessories beta.48 no-SIU control uses the same fixture manifest, NeoForge 21.1.252 and failing beta.48 bytes/symbol. Its launcher additionally stages the byte-identical extracted beta.48 as a root jar; the SIU attempt stages five upstream roots and loads beta.48 nested in Aether. This supports the documented same-failure observation, not complete classloading/root-cause equivalence or beta.48 functional acceptance. Advertised beta.54 acceptance is separately proven.",
+    "Visual inspection sampled the two named enchanting-book frames. Other populated/active layouts and GUI geometry retain their original native checks and explicit limits; this review is not a new exhaustive visual-capture campaign.",
+    "Packaged provenance is attribution evidence rather than a legal opinion. Publication destinations and commit/tag/push/publish actions need separate later authorization."
+  ],
+  "publication_authorized": false,
+  "mutations": "Only files under this independent-review directory were created. Canonical source, jars, docs, raw evidence, git state and publication were not changed."
+}

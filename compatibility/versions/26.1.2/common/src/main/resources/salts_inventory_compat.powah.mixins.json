@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.compat.powah.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "plugin": "com.salts_inventory_update.compat.nativewindows.mixin.NativeWindowsMixinPlugin",
+  "mixins": [
+    "PowahCableOpeningMixin"
+  ],
+  "client": [
+    "PowahNetworkMixin",
+    "PowahTankMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

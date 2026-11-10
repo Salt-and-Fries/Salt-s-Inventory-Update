@@ -1,8 +1,8 @@
 package com.salts_inventory_update.compat.curios;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
+import com.salts_inventory_update.compat.equipment.EquipmentPanelSelection;
+import static com.salts_inventory_update.compat.equipment.EquipmentPanelSelection.Kind.CURIOS;
 import io.netty.buffer.Unpooled;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.salts_inventory_update.api.client.desktop.*;
@@ -19,8 +19,6 @@ import top.theillusivec4.curios.client.KeyRegistry;
 
 public final class CuriosClientIntegration {
     static final ResourceLocation ART = ResourceLocation.fromNamespaceAndPath("curios", "textures/gui/curios/inventory.png");
-    private static final Map<UUID, DesktopWindowHandle> PANELS = new HashMap<>();
-    private static final Map<UUID, Long> PENDING = new HashMap<>();
     private static int heldDesktopKey = -1;
     private CuriosClientIntegration() { }
     public static void initialize() {
@@ -33,6 +31,7 @@ public final class CuriosClientIntegration {
             } finally { buffer.release(); }
         });
         DesktopClientApi.registerWindow(CuriosIntegration.MENU.get(), new CuriosPanelDefinition());
+        DesktopClientApi.onClientTick(mc -> { if (mc.player == null) EquipmentPanelSelection.DESKTOP.clear(); });
         DesktopClientApi.registerBuiltinAttachment(CuriosIntegration.id("curios_character_button"),
             DesktopWorkspaceWindow.Kind.CHARACTER, CuriosCharacterButton::new);
         // A GUI does not enqueue gameplay key-mapping clicks. Handle only keys the desktop
@@ -69,15 +68,15 @@ public final class CuriosClientIntegration {
         });
     }
     static void toggle(DesktopWindowHandle owner) {
-        var panel = PANELS.get(owner.instanceId());
-        if (panel != null && panel.isOpen()) { panel.close(); return; }
         if (!owner.isOpen() || !DesktopClientApi.isDesktopAvailable()) return;
-        long now = System.nanoTime();
-        Long pending = PENDING.get(owner.instanceId());
-        if (pending != null && now - pending < 2_000_000_000L) return;
-        PENDING.put(owner.instanceId(), now);
+        if (!EquipmentPanelSelection.DESKTOP.request(owner.instanceId(), CURIOS, System.nanoTime())) return;
+        com.salts_inventory_update.compat.aether.AetherEquipmentClient.closeAttached(owner.instanceId());
         PacketDistributor.sendToServer(new CuriosIntegration.Open(owner.instanceId()));
     }
-    static void opened(UUID owner, DesktopWindowHandle panel) { PENDING.remove(owner); PANELS.put(owner, panel); }
-    static void closed(UUID owner, DesktopWindowHandle panel) { PANELS.remove(owner, panel); }
+    static void opened(UUID owner, DesktopWindowHandle panel) {
+        if (!com.salts_inventory_update.compat.aether.AetherEquipmentClient.generalOpened(owner,panel)
+            || !EquipmentPanelSelection.DESKTOP.accept(owner, CURIOS, panel)) panel.close();
+    }
+    public static void closeAttached(UUID owner) { EquipmentPanelSelection.DESKTOP.close(owner, CURIOS); }
+    static void closed(UUID owner, DesktopWindowHandle panel) { EquipmentPanelSelection.DESKTOP.closed(owner, CURIOS, panel); }
 }

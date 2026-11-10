@@ -7,6 +7,32 @@ import java.lang.reflect.InvocationTargetException;
 public final class CompatibilityBootstrap {
     private CompatibilityBootstrap() { }
     public static void initializeCommon() {
+        initialize("techreborn", "com.salts_inventory_update.compat.techreborn.TechRebornWindows", "initializeCommon");
+        initialize("ad_astra", "com.salts_inventory_update.compat.adastra.AdAstraWindows", "initializeCommon");
+        initialize("kibe", "com.salts_inventory_update.compat.kibe.KibeWindows", "initializeCommon");
+        initialize("powah", "com.salts_inventory_update.compat.powah.PowahWindows", "initializeCommon");
+        initialize("storagenetwork", "com.salts_inventory_update.compat.ssn.SsnWindows", "initializeCommon");
+        initialize("zenith", "com.salts_inventory_update.compat.zenith.ZenithWindows", "initializeCommon");
+        initialize("aether", "com.salts_inventory_update.compat.aether.AetherWindows", "initializeCommon");
+        initialize("enchanted", "com.salts_inventory_update.compat.enchanted.EnchantedWindows", "initializeCommon");
+        initialize("quark", "com.salts_inventory_update.compat.quark.QuarkWindows", "initializeCommon");
+        initialize("modern_industrialization", "com.salts_inventory_update.compat.modernindustrialization.ModernIndustrializationWindows", "initializeCommon");
+        initialize("blue_skies", "com.salts_inventory_update.compat.blueskies.BlueSkiesIntegration", "initializeCommon");
+        initialize("minecells", "com.salts_inventory_update.compat.minecells.MineCellsWindows", "initializeCommon");
+        initialize("prominentbase", "com.salts_inventory_update.compat.prominent.ProminentWindows", "initializeCommon");
+        initialize("prominentbase", "com.salts_inventory_update.compat.prominent.ProminentShopWindows", "initializeCommon");
+        initialize("cataclysm", "com.salts_inventory_update.compat.cataclysm.WeaponFusionWindows", "initializeCommon");
+        initialize("alexsmobs", "com.salts_inventory_update.compat.alexsmobs.TransmutationWindows", "initializeCommon");
+        initialize("immersive_aircraft", "com.salts_inventory_update.compat.aircraft.AircraftWindows", "initializeCommon");
+        initialize("accessories", "com.salts_inventory_update.compat.accessories.AccessoriesIntegration", "initializeCommon");
+        initialize("universal-graves", "com.salts_inventory_update.compat.graves.UniversalGravesWindows", "initializeCommon");
+        initialize("travelersbackpack", "com.salts_inventory_update.compat.travelersbackpack.TravelersWindows", "initializeCommon");
+        initialize("toms_trading_network", "com.salts_inventory_update.compat.tomstrading.TomsTradingWindows", "initializeCommon");
+        initialize("bountiful", "com.salts_inventory_update.compat.bountiful.BountifulWindows", "initializeCommon");
+        initialize("tradingpost", "com.salts_inventory_update.compat.tradingpost.TradingPostWindows", "initializeCommon");
+        initialize("the_bumblezone", "com.salts_inventory_update.compat.bumblezone.BumblezoneWindows", "initializeCommon");
+        initialize("create", "com.salts_inventory_update.compat.create.CreateWindows", "initializeCommon");
+        com.salts_inventory_update.compat.nativewindows.ReviewedNativeWindows.initializeCommon();
         initialize("simplyswords", "com.salts_inventory_update.compat.simplyswords.SimplySwordsIntegration", "initializeCommon");
         initialize("chipped", "com.salts_inventory_update.compat.chipped.ChippedIntegration", "initializeCommon");
         initialize("extendeddrawersaddon", "com.salts_inventory_update.compat.extendeddrawersaddon.ExtendedDrawersAddonIntegration", "initializeCommon");
@@ -22,6 +48,33 @@ public final class CompatibilityBootstrap {
         initialize("ae2", "com.salts_inventory_update.compat.ae2.AE2Bootstrap", "initializeCommon");
     }
     public static void initializeClient() {
+        initialize("techreborn", "com.salts_inventory_update.compat.techreborn.TechRebornClient", "initializeClient");
+        initialize("ad_astra", "com.salts_inventory_update.compat.adastra.AdAstraClient", "initializeClient");
+        initialize("kibe", "com.salts_inventory_update.compat.kibe.KibeClient", "initializeClient");
+        initialize("powah", "com.salts_inventory_update.compat.powah.PowahClient", "initializeClient");
+        initialize("storagenetwork", "com.salts_inventory_update.compat.ssn.SsnClient", "initializeClient");
+        initialize("zenith", "com.salts_inventory_update.compat.zenith.ZenithClient", "initializeClient");
+        initialize("aether", "com.salts_inventory_update.compat.aether.AetherWindows", "initializeClient");
+        initialize("enchanted", "com.salts_inventory_update.compat.enchanted.EnchantedWindows", "initializeClient");
+        initialize("quark", "com.salts_inventory_update.compat.quark.QuarkWindows", "initializeClient");
+        initialize("modern_industrialization", "com.salts_inventory_update.compat.modernindustrialization.ModernIndustrializationWindows", "initializeClient");
+        initialize("blue_skies", "com.salts_inventory_update.compat.blueskies.BlueSkiesIntegration", "initializeClient");
+        initialize("minecells", "com.salts_inventory_update.compat.minecells.MineCellsClient", "initializeClient");
+        initialize("prominentbase", "com.salts_inventory_update.compat.prominent.ProminentWindows", "initializeClient");
+        initialize("prominentbase", "com.salts_inventory_update.compat.prominent.ProminentShopWindows", "initializeClient");
+        initialize("cataclysm", "com.salts_inventory_update.compat.cataclysm.MinistrosityWindows", "initializeClient");
+        initialize("cataclysm", "com.salts_inventory_update.compat.cataclysm.WeaponFusionWindows", "initializeClient");
+        initialize("alexsmobs", "com.salts_inventory_update.compat.alexsmobs.TransmutationWindows", "initializeClient");
+        initialize("immersive_aircraft", "com.salts_inventory_update.compat.aircraft.AircraftWindows", "initializeClient");
+        initialize("accessories", "com.salts_inventory_update.compat.accessories.AccessoriesIntegration", "initializeClient");
+        initialize("universal-graves", "com.salts_inventory_update.compat.graves.UniversalGravesWindows", "initializeClient");
+        initialize("travelersbackpack", "com.salts_inventory_update.compat.travelersbackpack.TravelersWindows", "initializeClient");
+        initialize("toms_trading_network", "com.salts_inventory_update.compat.tomstrading.TomsTradingWindows", "initializeClient");
+        initialize("bountiful", "com.salts_inventory_update.compat.bountiful.BountifulWindows", "initializeClient");
+        initialize("tradingpost", "com.salts_inventory_update.compat.tradingpost.TradingPostWindows", "initializeClient");
+        initialize("the_bumblezone", "com.salts_inventory_update.compat.bumblezone.BumblezoneWindows", "initializeClient");
+        initialize("create", "com.salts_inventory_update.compat.create.CreateWindows", "initializeClient");
+        com.salts_inventory_update.compat.nativewindows.ReviewedNativeWindows.initializeClient();
         initialize("simplyswords", "com.salts_inventory_update.compat.simplyswords.SimplySwordsClient", "initialize");
         initialize("chipped", "com.salts_inventory_update.compat.chipped.ChippedClient", "initialize");
         initialize("extendeddrawersaddon", "com.salts_inventory_update.compat.extendeddrawersaddon.ExtendedDrawersAddonIntegration", "initializeClient");

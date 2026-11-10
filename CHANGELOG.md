@@ -2,6 +2,27 @@
 
 ## 0.1.6
 
+Candidate verification and independent review status are recorded in [RELEASE_READINESS.md](RELEASE_READINESS.md) and the [release manifest](output/release-readiness/release-manifest-final.json).
+The public candidate retains Core **0.1.6**, Compatibility **0.1.3** and
+Controlify **0.1.1**; qualification does not publish these files.
+
+- Corrects detailed native-render diagnostics on every target, preserving the actual mouse coordinates.
+- Fixes the enchanting-book resource identifier on both 1.21.11 loaders, including resource reload.
+- Coordinates REI overlays through an additive public recipe-browser screen marker on every target, preserving controller method behavior and optional-module isolation.
+- Fixes duplicate registration when a hosted menu replaces its previous session; native ship cargo paging preserves one client session and exact held-item ownership.
+
+- Publishes native cursor/slot revisions before capturing immutable player-click
+  snapshots, preventing valid follow-up input from being rejected after a passive
+  portable-host update. Editable-slot, cursor, topology and session checks remain
+  strict. The mapped snapshot regression runs on all six Minecraft source families.
+- Adds backward-compatible public built-in subview/session, hit-routing and
+  management-control contracts. Core owns embedded-menu lifetime and source
+  leases; optional integrations no longer access Core implementation classes.
+- Preserves native equipment visibility controls and the recipe guide when an
+  attachment replaces Character content. Controller navigation uses distinct
+  identities for embedded equipment and adjacent native controls.
+
+- Preserves complete registered menu-opening data during native capture, including Powah's block position and clicked face, while retaining explicit SIU API payload precedence.
 - Prevents Minecraft 1.21.1's screen dimming from darkening captured native windows or appearing behind transparent tabs.
 - Automatically host conventional third-party container interfaces as desktop windows, retaining native artwork, animations, controls and inventory interactions.
 - Frames unconfigured automatic mod windows with an SIU title/control bar and a blank bottom bar, retaining the original interface's side artwork between them. Existing API and manually designed windows keep their appearance.

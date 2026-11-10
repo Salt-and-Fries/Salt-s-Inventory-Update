@@ -77,21 +77,27 @@ public class AutomaticNativeWindow implements DesktopWindowDefinition<AbstractCo
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static AutomaticNativeWindow create(Minecraft minecraft, AbstractContainerMenu menu, Component title, DesktopNativeTemplate template) {
         MenuScreens.ScreenConstructor factory = InventoryDesktopScreen.nativeContainerConstructor(menu.getType());
-        if (factory == null || minecraft.player == null) return null;
+        if (minecraft.player == null) return null;
         try {
-            Object created = factory.create(menu, minecraft.player.getInventory(), title);
+            Object created = DesktopClientApi.createNativeScreen(menu,com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(minecraft.player),title);
+            if(created==null&&factory!=null)created=factory.create(menu, com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(minecraft.player), title);
             if (!(created instanceof AbstractContainerScreen<?> screen)) return null;
             if (template == null) template = NativeProfileFiles.find(menu.getType(), screen.getClass().getName());
             int width = minecraft.getWindow().getGuiScaledWidth(), height = minecraft.getWindow().getGuiScaledHeight();
             screen.init(width, height);
             AutomaticContainerLayout layout = layout(minecraft, screen, template == null);
             if (layout == null && template != null) {
-                var bounds = DesktopNativeView.union(menu.slots.stream().filter(s -> s.container != minecraft.player.getInventory() && s.isActive())
+                var bounds = DesktopNativeView.union(menu.slots.stream().filter(s -> s.container != com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(minecraft.player) && s.isActive())
                     .map(s -> new DesktopWindowBounds(s.x-1,s.y-1,18,18)).toList()).orElse(null);
                 if (bounds != null) layout = new AutomaticContainerLayout(bounds.x(),bounds.y(),bounds.width(),bounds.height());
+                else {
+                    var access=(AutomaticContainerScreenAccessor)screen;
+                    layout=new AutomaticContainerLayout(0,0,Math.max(1,access.salts_inventory_update$nativeWidth()),
+                        Math.max(1,access.salts_inventory_update$nativeHeight()));
+                }
             }
             if (layout == null) { screen.removed(); return null; }
-            com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.inferStorage(menu, minecraft.player.getInventory());
+            com.salts_inventory_update.internal.desktop.AutomaticContainerSupport.inferStorage(menu, com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(minecraft.player));
             State state = new State(screen, layout, width, height);
             return template == null ? new AutomaticNativeWindow(state) : new NativeTemplateWindow(state, template);
         } catch (RuntimeException failure) {
@@ -104,7 +110,7 @@ public class AutomaticNativeWindow implements DesktopWindowDefinition<AbstractCo
         var access = (AutomaticContainerScreenAccessor) screen;
         var cells = new ArrayList<AutomaticContainerLayout.Cell>();
         for (Slot slot : screen.getMenu().slots)
-            if (slot.isActive()) cells.add(new AutomaticContainerLayout.Cell(slot.x, slot.y, slot.container == mc.player.getInventory()));
+            if (slot.isActive() && slot.x >= 0 && slot.y >= 0) cells.add(new AutomaticContainerLayout.Cell(slot.x, slot.y, slot.container == com.salts_inventory_update.internal.desktop.PhysicalPlayerInventory.get(mc.player)));
         var controls = new ArrayList<AutomaticContainerLayout.Control>();
         for (GuiEventListener child : screen.children()) if (child instanceof AbstractWidget w)
             controls.add(new AutomaticContainerLayout.Control(w.getX() - access.salts_inventory_update$nativeLeft(),
@@ -153,7 +159,10 @@ public class AutomaticNativeWindow implements DesktopWindowDefinition<AbstractCo
         }
         AutomaticNativeScope.call(frame(c, null, null), () -> { s.screen.tick(); return null; });
     }
-    @Override public void closed(DesktopWindowContext<AbstractContainerMenu, State> c) { c.state().buffer.close(); c.state().screen.removed(); }
+    @Override public void closed(DesktopWindowContext<AbstractContainerMenu, State> c) {
+        try { AutomaticNativeScope.call(frame(c,null,null),()->{c.state().screen.removed();return null;}); }
+        finally { c.state().buffer.close(); }
+    }
     @Override public void prepareLayout(DesktopWindowContext<AbstractContainerMenu, State> c) {
         if (c.state().pendingLayout != null) { c.state().layout = c.state().pendingLayout; c.state().pendingLayout = null; }
     }
@@ -172,7 +181,8 @@ public class AutomaticNativeWindow implements DesktopWindowDefinition<AbstractCo
                                              DesktopRenderContext<?, ?> render, DesktopInputContext<?, ?> input) {
         var a = (AutomaticContainerScreenAccessor) c.state().screen;
         var layout = c.state().layout;
-        return new AutomaticNativeScope.Frame(c.state().screen, c.state(), render, input, layout,
+        return new AutomaticNativeScope.Frame(c.state().screen, c.state(), render,
+            input!=null?input:c instanceof DesktopInputContext<?,?> capable?capable:null, layout,
             c.contentX() - layout.x() - a.salts_inventory_update$nativeLeft(),
             c.contentY() - layout.y() - a.salts_inventory_update$nativeTop());
     }

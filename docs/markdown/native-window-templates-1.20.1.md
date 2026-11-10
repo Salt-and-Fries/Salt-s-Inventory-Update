@@ -126,6 +126,21 @@ The inspector visualizes native slot/widget boundaries and includes its toolbar 
 
 ## Scope and validation
 
+### Additional 1.20.1 hooks
+
+The following additive hooks are currently implemented on **1.20.1 Fabric and Forge**. They are not a claim that these follow-up additions have already been ported to the other targets.
+
+- `DesktopNativeContext.nativeSourceAt(x, y)` resolves an absolute desktop pointer through the committed composition, including exterior fragments and scrolling. Use it when identifying a retained native control in an API input callback.
+- `DesktopNativeTemplate.retainPlayerSlot(context, menuSlotId)` opts individual player cells into the native canvas. Its default is `false`. Inventory configuration tools can keep cells that select a tool or filter without duplicating unrelated storage inventory.
+- `DesktopNativeTextInput` allows a nested native text field to report its current keyboard focus. This retains normal window keyboard ownership even when the original screen's focused child is a composite widget.
+- `DesktopClientApi.registerNativeScreen(type, factory)` supplies an original `AbstractContainerScreen` for an authenticated native menu that has no ordinary `MenuScreens` registration. It does not replace server-side menu construction or validation. Registrations participate in integration rollback.
+- `DesktopNativeRenderTarget.current()` is present only while capturing the native screen. It reports physical target width/height and GUI scale so a graphics library can compute scissor coordinates for that target. It is empty outside capture; do not cache it or change the ordinary monitor-based rendering path.
+- `DesktopServerApi.registerNativePayload(type, channel, handler)` handles bounded, authenticated desktop actions without claiming an explicit server window handler. Validate action values and the original menu's permissions. A Small Ships page button, for example, can use `DesktopSessions.withSessionTransition` to run the mod's original reopening action while retaining the same physical source and window lifetime.
+
+The merchant transport also accepts `DesktopMerchantAccess`, allowing a mod's merchant menu to reuse SIU's existing trade renderer and actions. This preserves offer selection, payment/result slots and trade synchronization instead of implementing a second trade window.
+
+Retained native widgets receive pointer priority over native slots beneath them, matching ordinary Minecraft screen dispatch. This matters when a native state replaces its input row with a wider action button. A template's explicit custom slot hook remains authoritative.
+
 For a library that sends custom menu state, `DesktopSessions.activeNetworkMenu(player)` returns the actual menu model during that player's scoped desktop server callback. It is empty outside that callback, including on other threads or for another player. Use it with `activeNetworkSessionId(player)` and `sendSessionPayload(...)` to route state through the public transport; receive it in the template's `customPayload` callback. This observation does not claim the menu as an explicit API window, and is available on all supported Core targets.
 
 An integration must preserve the upstream message schema and validate its own target types. This hook does not provide access to Core's internal session objects. Do not assume that a menu ID or container ID is the same as an SIU session ID.

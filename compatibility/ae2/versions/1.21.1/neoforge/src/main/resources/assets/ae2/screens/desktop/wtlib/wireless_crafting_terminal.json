@@ -1,0 +1,71 @@
+{
+  "includes": [
+    "../../wtlib/wireless_crafting_terminal.json"
+  ],
+  "desktop": {
+    "width": 195,
+    "height": 214,
+    "resize": "grid",
+    "showTitle": true,
+    "preserveAeLayout": true,
+    "inventoryCut": 91
+  },
+  "terminalStyle": {
+    "bottom": {
+      "texture": "guis/crafting.png",
+      "srcRect": [
+        0,
+        71,
+        195,
+        180
+      ]
+    }
+  },
+  "slots": {
+    "CRAFTING_GRID": {
+      "left": 26,
+      "bottom": 158,
+      "grid": "BREAK_AFTER_3COLS"
+    },
+    "CRAFTING_RESULT": {
+      "left": 134,
+      "bottom": 140
+    }
+  },
+  "text": {
+    "crafting_grid_title": {
+      "position": {
+        "left": 8,
+        "bottom": 177
+      }
+    }
+  },
+  "widgets": {
+    "clearCraftingGrid": {
+      "left": 81,
+      "bottom": 159
+    },
+    "clearToPlayerInv": {
+      "left": 91,
+      "bottom": 159
+    },
+    "wirelessTerminalSettingsButton": {
+      "left": 112,
+      "bottom": 114,
+      "width": 16,
+      "height": 16
+    },
+    "magnetCardMenuButton": {
+      "left": 130,
+      "bottom": 114,
+      "width": 16,
+      "height": 16
+    },
+    "trashButton": {
+      "left": 148,
+      "bottom": 114,
+      "width": 16,
+      "height": 16
+    }
+  }
+}

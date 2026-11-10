@@ -16,6 +16,7 @@
     "discord": "https://discord.gg/kfdE9gGGxP"
   },
   "mixins": [
+    "salts_inventory_compat.kibe.mixins.json",
     "salts_inventory_compat.sophisticated-fabric.mixins.json",
     "salts_inventory_compat.ae2.mixins.json",
     "salts_inventory_compat.trinkets.mixins.json",
@@ -26,7 +27,9 @@
     "salts_inventory_compat.extended-drawers.mixins.json",
     "salts_inventory_compat.tieredz.mixins.json",
     "salts_inventory_compat.chipped.mixins.json",
-    "salts_inventory_compat.simplyswords.mixins.json"
+    "salts_inventory_compat.simplyswords.mixins.json",
+    "salts_inventory_compat.reviewed-native.mixins.json",
+    "salts_inventory_compat.techreborn.mixins.json"
   ],
   "entrypoints": {
     "modmenu": [

@@ -16,13 +16,13 @@ public abstract class ServerGamePacketListenerImplMixin {
     @Shadow
     public ServerPlayer player;
 
-    @Inject(method = "handleUseItemOn", at = @At("HEAD"))
-    private void salts_inventory_update$captureDesktopUseTarget(ServerboundUseItemOnPacket packet, CallbackInfo ci) {
-        DesktopContainerSessions.captureUseTarget(this.player, packet.hitResult());
-    }
 
-    @Inject(method = "handleUseItemOn", at = @At("RETURN"))
-    private void salts_inventory_update$clearDesktopUseTarget(ServerboundUseItemOnPacket packet, CallbackInfo ci) {
-        DesktopContainerSessions.clearUseTarget(this.player);
+
+    @org.spongepowered.asm.mixin.injection.Redirect(method = "handleUseItemOn", at = @At(value = "INVOKE",
+        target = "Lnet/minecraft/server/level/ServerPlayerGameMode;useItemOn(Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/phys/BlockHitResult;)Lnet/minecraft/world/InteractionResult;"))
+    private net.minecraft.world.InteractionResult salts_inventory_update$scopedBlockTarget(
+        net.minecraft.server.level.ServerPlayerGameMode mode, ServerPlayer player, net.minecraft.world.level.Level level,
+        net.minecraft.world.item.ItemStack stack, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+        return DesktopContainerSessions.withUseTarget(player, hit, () -> mode.useItemOn(player, level, stack, hand, hit));
     }
 }

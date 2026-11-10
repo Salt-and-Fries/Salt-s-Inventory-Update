@@ -15,6 +15,13 @@ public final class AutomaticNativeScope {
                         DesktopInputContext<?, ?> input, AutomaticContainerLayout layout, int offsetX, int offsetY) { }
     private AutomaticNativeScope() { }
     public static Frame current() { return ACTIVE.get(); }
+    public static java.util.Optional<com.salts_inventory_update.api.client.desktop.DesktopNativeRenderTarget> captureTarget() {
+        Frame f=current();
+        if(f==null||!f.owner().capturing)return java.util.Optional.empty();
+        var b=f.owner().buffer;
+        return java.util.Optional.of(new com.salts_inventory_update.api.client.desktop.DesktopNativeRenderTarget(
+            Math.max(1,(int)Math.ceil(b.bounds.width()*b.scale)),b.pixelHeight,b.scale));
+    }
     public static boolean owns(Object screen) { return current() != null && current().screen() == screen; }
     public static boolean capturingSlots(Object screen) { return owns(screen) && current().owner().capturing; }
     public static int nativeScissor(int value, boolean horizontal) {

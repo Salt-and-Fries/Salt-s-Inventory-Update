@@ -30,6 +30,6 @@ public final class CuriosCharacterButton implements DesktopBuiltinAttachment {
     }
     @Override public List<DesktopWindowRegion> regions(DesktopWindowContext<AbstractContainerMenu, Void> c) {
         return List.of(DesktopWindowRegion.interactive(c.contentX() - c.windowX() + X,
-            c.contentY() - c.windowY() + Y, SIZE, SIZE));
+            c.contentY() - c.windowY() + Y, SIZE, SIZE).withRole(DesktopHitRole.CONTROL));
     }
 }

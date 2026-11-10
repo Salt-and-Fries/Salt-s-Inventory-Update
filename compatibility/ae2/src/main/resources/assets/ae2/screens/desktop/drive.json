@@ -1,8 +1,7 @@
 {
-  "includes": ["../drive.json"],
-  "slots": {
-    "STORAGE_CELL": { "left": 71, "top": 16, "grid": "BREAK_AFTER_2COLS" }
-  },
+  "includes": [
+    "../drive.json"
+  ],
   "desktop": {
     "width": 176,
     "height": 112,

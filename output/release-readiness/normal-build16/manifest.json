@@ -1,0 +1,23 @@
+{
+  "status": "normal-build-passed-qualification-pending",
+  "exit_code": 0,
+  "command": [
+    "cmd.exe",
+    "/d",
+    "/c",
+    "gradlew.bat",
+    "build"
+  ],
+  "log": {
+    "file": "output/release-readiness/session-registration-parity-guard-1666-01/normal-build.log",
+    "sha256": "b45c42004b36b93c725ad7dc6b55c73063777a7b1dde2825b26af35d59ab3057"
+  },
+  "build": {
+    "file": "output/release-readiness/session-registration-build16-1655-01/manifest.json",
+    "sha256": "2db49512e1256c5357eb041c899a878b9ebdf34d39481221eec81d412068444e"
+  },
+  "previous_failed_build": {
+    "file": "output/release-readiness/session-registration-parity-guard-1666-01/failed-build-manifest.json",
+    "sha256": "e403804e6d569d2f3233c39c50209b6ef3ef2f213ea230b3e895d5c85d7cb6ca"
+  }
+}

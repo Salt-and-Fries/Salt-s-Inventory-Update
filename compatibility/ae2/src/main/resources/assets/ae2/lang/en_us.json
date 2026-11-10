@@ -34,6 +34,7 @@
   "gui.ae2.DesktopWindow.basic_cell_chest": "ME Chest Storage",
   "gui.ae2.DesktopWindow.portable_item_cell": "Portable Item Cell",
   "gui.ae2.DesktopWindow.portable_fluid_cell": "Portable Fluid Cell",
+  "gui.ae2.DesktopWindow.portable_mana_cell": "Portable Mana Cell",
   "gui.ae2.DesktopWindow.wirelessterm": "Wireless Terminal",
   "gui.ae2.DesktopWindow.craftingterm": "Crafting Terminal",
   "gui.ae2.DesktopWindow.wirelesscraftingterm": "Wireless Crafting Terminal",
@@ -57,5 +58,6 @@
   "gui.ae2.DesktopSettings.clearGrid": "Clear crafting grid on close",
   "gui.ae2.DesktopView.processingAmount": "Processing Amount",
   "gui.ae2.DesktopView.craftError": "Crafting Error",
-  "gui.ae2.DesktopView.name": "Name"
+  "gui.ae2.DesktopView.name": "Name",
+  "gui.ae2.DesktopWindow.wireless_requester_terminal": "ME Requester Terminal"
 }

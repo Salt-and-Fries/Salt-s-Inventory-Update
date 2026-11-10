@@ -8,11 +8,13 @@ import com.salts_inventory_update.api.client.desktop.*;
 final class NativeTemplateContexts {
     private NativeTemplateContexts() { }
     @SuppressWarnings("unchecked")
-    static <C> C view(DesktopWindowContext<?,?> context,Object state,DesktopNativeView nativeView) {
+    static <C> C view(DesktopWindowContext<?,?> context,Object state,DesktopNativeView nativeView,
+            java.util.function.BiFunction<Double,Double,java.util.Optional<DesktopNativeLayout.Point>> sourceAt) {
         return (C)Proxy.newProxyInstance(DesktopNativeContext.class.getClassLoader(),new Class<?>[]{
             DesktopNativeContext.class,DesktopRenderContext.class,DesktopInputContext.class,DesktopSlotContext.class},(proxy,method,args)->{
                 if(method.getName().equals("state")&&method.getParameterCount()==0)return state;
                 if(method.getName().equals("nativeView")&&method.getParameterCount()==0)return nativeView;
+                if(method.getName().equals("nativeSourceAt")&&method.getParameterCount()==2)return sourceAt.apply((Double)args[0],(Double)args[1]);
                 if(method.getName().equals("equals")&&method.getParameterCount()==1)return proxy==args[0];
                 if(method.getName().equals("hashCode")&&method.getParameterCount()==0)return System.identityHashCode(proxy);
                 if(method.getName().equals("toString")&&method.getParameterCount()==0)return "DesktopNativeContext["+nativeView.screenType()+"]";

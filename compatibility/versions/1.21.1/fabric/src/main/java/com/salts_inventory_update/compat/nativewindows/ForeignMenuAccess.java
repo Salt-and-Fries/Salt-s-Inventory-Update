@@ -26,14 +26,19 @@ public final class ForeignMenuAccess {
     }
     public static AbstractContainerMenu create(String name,int id,Inventory inventory,ContainerLevelAccess access) {
         try{
-            if(name.endsWith("SmitherScreenHandler")) {
+            var type=Class.forName(name);
+            if(name.equals("net.smitherz.screen.SmitherScreenHandler")){
+                // SmitherZ 1.2 uses the server's configured socket count in
+                // both its constructor and its normal opening payload.
                 var config=Class.forName("net.smitherz.init.ConfigInit").getField("CONFIG").get(null);
-                int count=config.getClass().getField("maxGemSlots").getInt(config);
-                return (AbstractContainerMenu)Class.forName(name).getConstructor(int.class,Inventory.class,ContainerLevelAccess.class,int.class)
-                    .newInstance(id,inventory,access,count);
+                int sockets=config.getClass().getField("maxGemSlots").getInt(config);
+                if(sockets<0||sockets>256)throw new IllegalArgumentException("Invalid native socket count");
+                return (AbstractContainerMenu)type.getConstructor(int.class,Inventory.class,ContainerLevelAccess.class,int.class)
+                    .newInstance(id,inventory,access,sockets);
             }
-            return (AbstractContainerMenu)Class.forName(name).getConstructor(int.class,Inventory.class,ContainerLevelAccess.class)
-            .newInstance(id,inventory,access);}
+            return (AbstractContainerMenu)type.getConstructor(int.class,Inventory.class,ContainerLevelAccess.class)
+                .newInstance(id,inventory,access);
+        }
         catch(ReflectiveOperationException failure){throw new IllegalStateException("Upstream menu construction failed: "+name,failure);}
     }
 }

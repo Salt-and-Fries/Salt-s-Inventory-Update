@@ -1,0 +1,21 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.salts_inventory_update.compat.ae2.extended.mixin",
+  "plugin": "com.salts_inventory_update.compat.ae2.mixin.AE2MixinPlugin",
+  "mixins": [
+    "ContainerUpdatesMixin",
+    "NetworkMixin",
+    "ConfigurationInitialStateMixin",
+    "NativePatternPacketsMixin"
+  ],
+  "client": [
+    "PatternModifierLabelsMixin",
+    "PatternRowsMixin",
+    "NativePacketsMixin",
+    "RenamerCloseMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

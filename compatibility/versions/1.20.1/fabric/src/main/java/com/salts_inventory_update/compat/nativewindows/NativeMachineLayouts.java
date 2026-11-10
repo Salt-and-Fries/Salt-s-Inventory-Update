@@ -21,6 +21,20 @@ public final class NativeMachineLayouts {
         return DesktopNativeLayout.builder().keep("body",body,0,0).build();
     }
 
+    /** Keep the full decoration workspace, including its preview and native output rim. */
+    public static DesktopNativeLayout decorationTable(DesktopNativeView view) {
+        var players=view.slots().stream().filter(DesktopNativeView.Slot::player).toList();
+        int playerTop=players.stream().mapToInt(s->s.bounds().y()).min().orElse(view.imageBounds().height());
+        int playerLeft=players.stream().mapToInt(s->s.bounds().x()).min().orElse(45);
+        var owned=view.slots().stream().filter(s->!s.player()&&s.active()).map(DesktopNativeView.Slot::bounds).toList();
+        int top=owned.stream().mapToInt(DesktopWindowBounds::y).min().orElse(17)-1;
+        // The preview extends below the last item cell. The inventory begins
+        // five pixels after the native machine body's bottom edge.
+        var body=box(6,top,view.imageBounds().width()-12,playerTop-5-top);
+        return DesktopNativeLayout.builder().keep("decoration-workspace",body,0,0)
+            .hide(box(playerLeft-1,playerTop-12,86,9)).build();
+    }
+
     public static DesktopNativeLayout bartering(DesktopNativeView view) {
         // Gold, piglin model/count, both cooldown arrows and the returned-item grid.
         return crop(view,box(10,16,156,56));
@@ -87,7 +101,7 @@ public final class NativeMachineLayouts {
         var layout=crop(view,box(5,21,160,71)).toBuilder();
         // Owo draws the lava reservoir as a small tab above the main forge body.
         return layout.hide(box(30,21,105,13))
-                .exterior("lava-reservoir",box(57,0,66,18),55,-16).build();
+                .exterior("lava-reservoir",box(53,0,70,16),53,-16).build();
     }
 
     public static DesktopNativeLayout conditioning(DesktopNativeView view) {

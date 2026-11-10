@@ -465,6 +465,7 @@ public final class GuiGraphicsExtractor {
         ResourceLocation beacon = new ResourceLocation("minecraft", "textures/gui/container/beacon.png");
         ResourceLocation brewing = new ResourceLocation("minecraft", "textures/gui/container/brewing_stand.png");
         ResourceLocation creativeTabs = new ResourceLocation("minecraft", "textures/gui/container/creative_inventory/tabs.png");
+        ResourceLocation merchant = new ResourceLocation("minecraft", "textures/gui/container/villager2.png");
 
         add(sprites, "widget/button", widgets, 0, 66, 200, 20);
         add(sprites, "widget/button_highlighted", widgets, 0, 86, 200, 20);
@@ -508,6 +509,12 @@ public final class GuiGraphicsExtractor {
         add(sprites, "container/brewing_stand/bubbles", brewing, 185, 0, 12, 29);
 
         add(sprites, "container/creative_inventory/scroller", creativeTabs, 232, 0, 12, 15);
+        add(sprites, "container/villager/trade_arrow", merchant, 15, 171, 10, 9, 512, 256);
+        add(sprites, "container/villager/trade_arrow_out_of_stock", merchant, 25, 171, 10, 9, 512, 256);
+        add(sprites, "container/villager/out_of_stock", merchant, 311, 0, 28, 21, 512, 256);
+        add(sprites, "container/villager/scroller", merchant, 0, 199, 6, 27, 512, 256);
+        add(sprites, "container/villager/scroller_disabled", merchant, 6, 199, 6, 27, 512, 256);
+        add(sprites, "container/villager/discount_strikethrough", merchant, 0, 176, 9, 2, 512, 256);
         add(sprites, "container/creative_inventory/scroller_disabled", creativeTabs, 244, 0, 12, 15);
         for (int index = 1; index <= 7; index++) {
             int x = (index - 1) * 26;
@@ -522,6 +529,9 @@ public final class GuiGraphicsExtractor {
 
     private static void add(Map<ResourceLocation, LegacySprite> sprites, String id, ResourceLocation texture, int u, int v, int width, int height) {
         sprites.put(new ResourceLocation("minecraft", id), new LegacySprite(texture, u, v, width, height, 256, 256));
+    }
+    private static void add(Map<ResourceLocation, LegacySprite> sprites,String id,ResourceLocation texture,int u,int v,int width,int height,int textureWidth,int textureHeight) {
+        sprites.put(new ResourceLocation("minecraft",id),new LegacySprite(texture,u,v,width,height,textureWidth,textureHeight));
     }
 
     private record LegacySprite(ResourceLocation texture, int u, int v, int width, int height, int textureWidth, int textureHeight) {

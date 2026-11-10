@@ -1,6 +1,16 @@
 # Project Everything integration checklist
 
-Updated: 2026-10-27. Completion entries refer to the linked implementation evidence; the next-batch order is a planning estimate, not a new gameplay validation report.
+Updated: 2026-11-02. Completion entries refer to the linked implementation evidence; the next-batch order is a planning estimate, not a new gameplay validation report.
+
+The [current remaining queue](project-everything-current-remaining.md) is empty
+for approved inventory-window implementations. The six native-screen
+preservation checks are also complete on their audited targets; see
+[focused results and limits](../../compatibility/native-screen-preservation.md).
+The historical checkboxes below are retained as batch records.
+
+## Approved 56-family design implementation, 1.20.1
+
+The subsequent user-selected 56-family design set is implemented and reviewed for its applicable 1.20.1 Fabric/Forge targets. See [implementation and focused validation](project-everything-56-implementation-progress.md) and `output/pdf/siu-project-everything-56-implemented-comparisons.pdf` (130 actual before/after comparisons). Books and destination selectors remain native. The Charm combined-fixture conflict and Forge runtime qualification are documented in the report. This separate batch record does not change the historical counts below or imply later-version ports.
 
 ## Source and status
 
@@ -9,6 +19,54 @@ The original modpack UI audit is **199 PDF pages**, containing **647 UI-related 
 This checklist preserves every selected audit entry. It crosses off the eight completed first-batch integrations and all ten completed second-batch families on their available SIU targets, plus ten third-batch families on Minecraft 1.20.1. There are **28 delivered families**, represented by **29 original audit entries** because Farmer's Delight and Refabricated are separate audit entries. Third-batch completion is limited to 1.20.1; it does not imply later-version ports. An unchecked entry only means it has not been signed off in this batch tracker. It does not mean the mod is broken, needs an adapter, or lacks an integration already implemented elsewhere in SIU.
 
 Source inventory: `build/ui-modpack-audit-20261025/ui-audit-inventory.csv`. Detailed class and asset evidence: `build/ui-modpack-audit-20261025/ui-audit-evidence.json`. Original report: `output/pdf/salts-inventory-modpack-ui-compatibility-audit.pdf`.
+
+## Follow-up shortlist from manual report review
+
+Current post-Create scope: the user deferred further Create addons. Excluding
+the completed/parked Create group leaves 31 original shortlisted mods: 25 with
+inventory-related UI review scope and six native-only entries. See the
+[audited counts and conditional cases](project-everything-remaining-window-scope-1.20.1.md).
+The historical selection below is preserved; its unchecked boxes are not the
+current implementation status of the completed Create group.
+
+Saved on 2026-10-28 after the user's review of the native-versus-Core screenshot report. These 36 mods are selected for extra work: the original 34 selections plus Create Simulated and Create: Shuffle Filter, added at the user's request. The original selections retain their names and relative order. This is a saved backlog, not an implementation order or a new validation result. Scope and fixes remain to be decided individually.
+
+- [x] Accessories — Curios-style attached equipment/cosmetic panel on 1.20.1 Fabric, audited beta.48 release only; [implementation and focused checks](../../compatibility/accessories-1.20.1.md).
+- [ ] Ad Astra
+- [x] Applied Botanics — portable mana cell through the native AE2 adapter; [implementation](../../compatibility/ae2/applied-botanics-1.20.1.md).
+- [x] Alex's Mobs — native Transmutation Table window; [implementation](../../compatibility/alexsmobs-transmutation-1.20.1.md).
+- [x] Applied Energistics 2 Wireless Terminal — all five approved windows on 1.20.1 Fabric / Forge and 1.21.1, 26.1.2, 26.2, 26.3 NeoForge, plus each release's native settings subview. [1.20.1 implementation](../../compatibility/ae2/wireless-terminals-1.20.1.md) / [newer targets and focused checks](../../compatibility/ae2/wireless-terminals-modern.md).
+- [x] Bountiful — compact brown Bounty Board on 1.20.1; [implementation and focused checks](../../compatibility/bountiful-1.20.1.md).
+- [ ] Create
+- [ ] Create Big Cannons
+- [ ] Create Simulated
+- [ ] Create: Shuffle Filter
+- [ ] DungeonZ
+- [ ] ElevatorMod
+- [x] Enchanted Witchcraft - approved five-screen mockups implemented for 1.20.1 Fabric/Forge and 1.21.1 Fabric/NeoForge. [Applicable targets and focused coverage](../../compatibility/enchanted-all-targets.md).
+- [ ] Extended AE
+- [x] Immersive Aircraft — native equipment/fuel plus matching Port/Starboard cargo panes on 1.20.1 Fabric, audited 1.1.5 release; [implementation and focused checks](../../compatibility/immersive-aircraft-1.20.1.md).
+- [ ] Kibe
+- [x] L_Enders Cataclysm — Weapon Fusion and Netherite Ministrosity implemented for the audited 3.31 release on 1.20.1 Forge. [Fusion](../../compatibility/cataclysm-weapon-fusion-1.20.1.md), [companion inventory and focused checks](../../compatibility/cataclysm-ministrosity-1.20.1.md).
+- [x] Mine Cells — normal and unbreakable Cell Crafter on 1.20.1 Fabric (audited 2.0.0), with the approved navy/copper window and complete native parchment browser. [Focused checks](../../output/minecells-implemented/focused-checks.json). Travel selection, guidebook and overlays stay native.
+- [x] Modern Industrialization — approved machine, Forge Hammer and pipe-editor windows on 1.20.1 Fabric / 1.21.1 NeoForge; [implementation and focused checks](../../compatibility/modern-industrialization.md).
+- [ ] Powah!
+- [x] Prominent Base (Embedded) — All three audited inventory screens implemented for embedded 4.1.5 on 1.20.1 Fabric, preserving native artwork under matching stone headers. [Forge windows](../../compatibility/prominent-forge-1.20.1.md), [Cinder/Serkonid shop and focused checks](../../compatibility/prominent-shop-1.20.1.md). Dialogue, weekly quests and lottery stay native.
+- [x] Quark — approved windows and attached Backpack on 1.20.1 Forge / 1.21.1 NeoForge; [applicable targets and checks](../../compatibility/quark-all-targets.md).
+- [ ] Simple Storage Network
+- [ ] Sortilege
+- [ ] Armor Statues
+- [ ] Steam n Rails
+- [ ] Tech Reborn
+- [ ] The Aether
+- [x] The bumblezone — Crystalline Flower, Honey Cocoon and Buzzing Briefcase; [implementation](../../compatibility/bumblezone-1.20.1.md).
+- [ ] Things
+- [x] Toms Trading Network — original vending panels with inventory removed on 1.20.1; [implementation and focused checks](../../compatibility/toms-trading-network-1.20.1.md).
+- [x] Trading Post — compact merchant/search window on 1.20.1; [implementation and focused checks](../../compatibility/trading-post-1.20.1.md).
+- [x] Travelers Backpack - native storage, tool/upgrade/settings windows on 1.20.1 Fabric; [implementation and focused checks](../../compatibility/travelers-backpack-1.20.1.md).
+- [x] Gravestone / Universal Graves — four-row storage and native action footer on 1.20.1 Fabric; [implementation and focused checks](../../compatibility/universal-graves-1.20.1.md).
+- [ ] Wraith waypoints
+- [x] Zenith Renewed — seven container types across nine workstation views on 1.20.1 Fabric; [implementation and focused checks](../../compatibility/zenith-1.20.1.md).
 
 ## Completed first batch
 
@@ -208,7 +266,7 @@ Checkboxes below record completion of the first eight, second ten and the scoped
 - [ ] Audit 188: Easy Disenchanting — Framework/settings.
 - [ ] Audit 189: [Easy Magic](https://modrinth.com/mod/easy-magic) — Container/menu.
 - [ ] Audit 195: [ElevatorMod](https://modrinth.com/mod/elevatormod) — Container/menu.
-- [ ] Audit 205: [Enchanted: Witchcraft](https://modrinth.com/mod/enchanted-witchcraft) — Container/menu.
+- [x] Audit 205: [Enchanted: Witchcraft](https://modrinth.com/mod/enchanted-witchcraft) — Five screens implemented on all four applicable SIU targets. [Focused coverage](../../compatibility/enchanted-all-targets.md).
 - [x] Audit 217: ~~[Expanded Delight](https://modrinth.com/mod/expanded-delight)~~ — Container/menu. — **Completed first batch.**
 - [ ] Audit 219: [Exposure](https://modrinth.com/mod/exposure) — Container/menu.
 - [ ] Audit 220: [Extended AE](https://modrinth.com/mod/extended-ae) — Inventory/render/input.
@@ -237,9 +295,9 @@ Checkboxes below record completion of the first eight, second ten and the scoped
 - [ ] Audit 357: LibGui — Standalone screen.
 - [ ] Audit 364: [Lootr](https://modrinth.com/mod/lootr) — Framework/settings.
 - [ ] Audit 371: [ME Requester](https://modrinth.com/mod/merequester) — Container/menu.
-- [ ] Audit 381: [Mine Cells - Dead Cells Mod](https://modrinth.com/mod/minecells) — Container/menu.
+- [x] Audit 381: [Mine Cells - Dead Cells Mod](https://modrinth.com/mod/minecells) — Normal and unbreakable Cell Crafter implemented on 1.20.1 Fabric for audited 2.0.0. Both native modes retained; [30 focused checks](../../output/minecells-implemented/focused-checks.json). No other versions/loaders claimed.
 - [x] Audit 382: ~~[Miner's Delight](https://modrinth.com/mod/miners-delight)~~ — Container/menu. — **Completed second batch on available SIU targets; see scope and limits above.**
-- [ ] Audit 389: [Modern Industrialization](https://modrinth.com/mod/modern-industrialization) — Container/menu.
+- [x] Audit 389: [Modern Industrialization](https://modrinth.com/mod/modern-industrialization) — approved windows implemented; [targets and focused verification](../../compatibility/modern-industrialization.md).
 - [ ] Audit 398: [Mowzie's Mobs](https://modrinth.com/mod/mowzies-mobs) — Standalone screen.
 - [ ] Audit 405: [Mythic Mounts](https://modrinth.com/mod/mythic-mounts) — Container/menu.
 - [x] Audit 413: ~~[Nether Chested](https://modrinth.com/mod/nether-chested)~~ — Standalone screen. — **Completed first batch.**
@@ -253,7 +311,7 @@ Checkboxes below record completion of the first eight, second ten and the scoped
 - [ ] Audit 443: [Polymorphic Energistics](https://modrinth.com/mod/polymorphic-energistics) — Inventory/render/input.
 - [ ] Audit 453: [Potion Stacks](https://modrinth.com/mod/potion-stacks) — Framework/settings.
 - [ ] Audit 454: [Powah!](https://modrinth.com/mod/powah) — Container/menu.
-- [ ] Audit 459: Prominent Base (embedded) — Container/menu.
+- [x] Audit 459: Prominent Base (embedded) — Forge upgrade, armor selection and Cinder/Serkonid shop implemented on 1.20.1 Fabric for the audited embedded 4.1.5 release.
 - [ ] Audit 460: Prominent Global (pack integration) — Inventory/render/input.
 - [ ] Audit 469: [Quark](https://modrinth.com/mod/quark) — Container/menu.
 - [ ] Audit 481: [Reborn Core](https://modrinth.com/mod/reborncore) — Container/menu.
@@ -285,14 +343,14 @@ Checkboxes below record completion of the first eight, second ten and the scoped
 - [ ] Audit 589: [Transmog](https://modrinth.com/mod/transmog) — Container/menu.
 - [ ] Audit 590: [TrashSlot](https://modrinth.com/mod/trashslot) — Framework/settings.
 - [ ] Audit 591: [Traveler's Backpack](https://modrinth.com/mod/travelersbackpack) — Container/menu.
-- [ ] Audit 596: [Universal Graves](https://modrinth.com/mod/universal-graves) — Standalone screen.
+- [x] Audit 596: [Universal Graves](https://modrinth.com/mod/universal-graves) — Grave storage implemented on 1.20.1 Fabric; selection-only grave lists remain native. [Scope and checks](../../compatibility/universal-graves-1.20.1.md).
 - [ ] Audit 600: [Vanilla Backport](https://modrinth.com/mod/vanillabackport) — Inventory/render/input.
 - [ ] Audit 605: [VillagersPlus](https://modrinth.com/mod/villagersplus) — Container/menu.
 - [ ] Audit 607: [Visual Workbench](https://modrinth.com/mod/visual-workbench) — Container/menu.
 - [ ] Audit 613: [Waystones](https://modrinth.com/mod/waystones) — Container/menu.
 - [ ] Audit 619: [Wraith Waystones](https://modrinth.com/mod/fwaystones) — Container/menu.
 - [ ] Audit 632: [You're in Grave Danger](https://modrinth.com/mod/yigd) — Standalone screen.
-- [ ] Audit 645: [Zenith Renewed](https://modrinth.com/mod/zenith-renewed) — Container/menu.
+- [x] Audit 645: [Zenith Renewed](https://modrinth.com/mod/zenith-renewed) — all seven container types on 1.20.1 Fabric; [implementation](../../compatibility/zenith-1.20.1.md).
 
 ### P2 (249 entries)
 
