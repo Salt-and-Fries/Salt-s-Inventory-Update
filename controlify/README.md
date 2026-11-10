@@ -25,15 +25,14 @@ use the core JAR produced by this branch's build together with the controller JA
 ## Release version
 
 The companion has its own release version, set by `controlifyVersion` in the root
-`gradle.properties`. The current version is **0.1.1**. Production filenames end in
-`-0.1.1.jar`, for example `salts_inventory_controlify-26.3-Fabric-0.1.1.jar`.
+`gradle.properties`. The current version is **0.1.2**. Production filenames end in
+`-0.1.2.jar`, for example `salts_inventory_controlify-26.3-Fabric-0.1.2.jar`.
 The embedded mod version uses the same label on every supported game and loader.
 
 The companion requires **Core 0.1.6** on every target. The optional Compatibility
 extension is **0.1.3** and requires the same Core release. The companion's Core
 dependency is generated independently of its own release label. Use matching
-Minecraft/loader targets. Older published companions with an exact Core 0.1.4
-dependency do not accept the newer Core releases.
+Minecraft/loader targets. Companion 0.1.1 requires Core 0.1.5.
 
 Core's regular-window tutorial does not automatically open while this alternative
 workspace presentation is installed, including before a controller is connected.

@@ -12,7 +12,7 @@ Salt's Inventory Update is a multi-version, multi-loader inventory framework. It
 
 Salt's Inventory Controlify provides the controller workspace across all twelve Minecraft and loader targets. Its [installation, controls and build guide](controlify/README.md) describes the radial presentation, separate JARs and pinned upstream dependencies. Install the matching rebuilt core from this branch alongside the native Controlify build, YACL and the controller JAR.
 
-Core provides inventory expansion, vanilla desktop windows, configuration, networking, persistence and the public API. Compatibility contains Tom's Simple Storage, JEI, REI, EMI, Applied Energistics 2, Raised and the supported Sophisticated integrations, including the maintained Fabric ports on 1.20.1 and 1.21.1. The [coverage audit](docs/markdown/compatibility-coverage.md) records upstream availability for every target. AE2 support follows the [reviewed upstream version matrix](compatibility/ae2/README.md#reviewed-upstream-targets). Current development builds use Core 0.1.6, Compatibility 0.1.3 and Controlify companion 0.1.1 on every target. Match the Minecraft version and loader across installed files; Core works on its own, and both companions and supported third-party mods remain optional.
+Core provides inventory expansion, vanilla desktop windows, configuration, networking, persistence and the public API. Compatibility contains Tom's Simple Storage, JEI, REI, EMI, Applied Energistics 2, Raised and the supported Sophisticated integrations, including the maintained Fabric ports on 1.20.1 and 1.21.1. The [coverage audit](docs/markdown/compatibility-coverage.md) records upstream availability for every target. AE2 support follows the [reviewed upstream version matrix](compatibility/ae2/README.md#reviewed-upstream-targets). Current development builds use Core 0.1.6, Compatibility 0.1.3 and Controlify companion 0.1.2 on every target. Match the Minecraft version and loader across installed files; Core works on its own, and both companions and supported third-party mods remain optional.
 
 Compatibility also supports [Iron Chests: Restocked on Minecraft 1.20.1 Fabric and Forge](compatibility/iron-chests-restocked.md). All 15 chest and barrel variants open as desktop windows with sorting, transfers and resizable storage grids.
 
@@ -131,7 +131,7 @@ Build with JDK 25 installed. Gradle daemon criteria select Java 25 for Prism 0.6
 
 The ordinary root `build` compiles and tests all three mods on all twelve targets, producing **36 production JARs**. It also compiles the API examples, checks source parity, remaps production artifacts and verifies JAR contents. The 26.3 artifact task uses ModDevGradle's supported binary patch pipeline automatically; `CI=true` is no longer needed.
 
-Production JARs appear in `dist/core`, `dist/compatibility` and `dist/controlify`, with filenames such as `salts_inventory_update-1.21.1-Fabric-0.1.6.jar`, `salts_inventory_compat-1.21.1-Fabric-0.1.3.jar` and `salts_inventory_controlify-1.21.1-Fabric-0.1.1.jar`. Each directory has `SHA256SUMS.txt`. The root release build clears `dist` before building and synchronizes exact production task outputs, preventing old, development or sources JARs from entering a release. `build/release/0.1.6` is the current Core-only release bundle.
+Production JARs appear in `dist/core`, `dist/compatibility` and `dist/controlify`, with filenames such as `salts_inventory_update-1.21.1-Fabric-0.1.6.jar`, `salts_inventory_compat-1.21.1-Fabric-0.1.3.jar` and `salts_inventory_controlify-1.21.1-Fabric-0.1.2.jar`. Each directory has `SHA256SUMS.txt`. The root release build clears `dist` before building and synchronizes exact production task outputs, preventing old, development or sources JARs from entering a release. `build/release/0.1.6` is the current Core-only release bundle.
 
 The [combined latest archive](dist/salts-inventory-all-latest.zip) groups all 36 production JARs by Minecraft version and loader. Select the folder matching your installation; the extension and controller companion are optional. The archive contains JARs rather than gameplay screenshots, and upstream mod dependencies are installed separately as described in their guides.
 
@@ -141,7 +141,7 @@ Build individual targets with `./gradlew :1.21.1:fabric:build`, `./gradlew :comp
 
 For publishing, configure the existing Prism `publishing` block for core and a separate `publishing` block inside `mod("compatibility")` for the extension, using separate project IDs. Set the relevant publishing tokens in your environment and declare the matching core as a required extension release dependency. Upload the production JARs from the matching `dist` directory.
 
-Standalone release notes: [Core 0.1.6](changelogs/changelog-0.1.6.md), [Compatibility 0.1.3](changelogs/changelog-compatibility-0.1.3.md), and [Controlify 0.1.1](changelogs/changelog-controlify-0.1.1.md).
+Standalone release notes: [Core 0.1.6](changelogs/changelog-0.1.6.md), [Compatibility 0.1.3](changelogs/changelog-compatibility-0.1.3.md), and [Controlify 0.1.2](changelogs/changelog-controlify-0.1.2.md).
 
 ## Public API for 0.1.6
 
