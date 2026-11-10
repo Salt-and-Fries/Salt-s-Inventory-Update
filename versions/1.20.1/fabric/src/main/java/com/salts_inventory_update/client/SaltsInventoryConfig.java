@@ -123,6 +123,7 @@ public final class SaltsInventoryConfig {
 
         public boolean hasSeenInstructionsWindow = false;
 
+        public boolean showTopDropdown = true;
         public double eHoldCloseAllSeconds = 0.5D;
         public List<String> forcedContainerWindows = new ArrayList<>();
 
@@ -171,6 +172,7 @@ public final class SaltsInventoryConfig {
 
             this.hasSeenInstructionsWindow = defaults.hasSeenInstructionsWindow;
 
+            this.showTopDropdown = defaults.showTopDropdown;
             this.eHoldCloseAllSeconds = defaults.eHoldCloseAllSeconds;
             this.forcedContainerWindows = new ArrayList<>(defaults.forcedContainerWindows);
         }

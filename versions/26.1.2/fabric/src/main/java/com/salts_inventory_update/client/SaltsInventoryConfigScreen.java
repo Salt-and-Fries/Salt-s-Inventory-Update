@@ -130,6 +130,11 @@ public final class SaltsInventoryConfigScreen extends Screen {
             value -> SaltsInventoryConfig.update(config -> config.openInventoryWhenContainersAreOpened = value)
         );
 
+        this.addToggle(
+            "show_top_dropdown",
+            () -> SaltsInventoryConfig.get().showTopDropdown,
+            value -> SaltsInventoryConfig.update(config -> config.showTopDropdown = value)
+        );
         this.addSlider(
             "e_hold_close_all_seconds",
             0.5D,

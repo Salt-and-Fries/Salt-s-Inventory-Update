@@ -24,6 +24,9 @@ public abstract class GuiMixin {
 
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$guardSingletonDesktopScreen(@Nullable Screen incomingScreen, CallbackInfo ci) {
+        if (com.salts_inventory_update.client.NativeContainerView.changingScreen(this.minecraft, incomingScreen)) {
+            ci.cancel(); return;
+        }
         if (InventoryDesktopScreen.replaceVanillaCreativeScreen(this.minecraft, incomingScreen)) {
             ci.cancel();
             return;
@@ -33,4 +36,12 @@ public abstract class GuiMixin {
             ci.cancel();
         }
     }
+
+    @Inject(method = "setScreen", at = @At("RETURN"))
+    private void salts_inventory_update$finishedNativeSwitch(@Nullable Screen incomingScreen, CallbackInfo ci) {
+        com.salts_inventory_update.client.NativeContainerView.changedScreen();
+        if (!com.salts_inventory_update.client.DesktopTopTab.available(this.minecraft))
+            com.salts_inventory_update.client.DesktopTopTab.reset();
+    }
+
 }

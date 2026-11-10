@@ -24,6 +24,10 @@ public abstract class MinecraftMixin {
 
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
     private void salts_inventory_update$guardSingletonDesktopScreen(@Nullable Screen screen, CallbackInfo ci) {
+        var nativeViewClient = (Minecraft)(Object)this;
+        if (com.salts_inventory_update.client.NativeContainerView.changingScreen(nativeViewClient, screen)) {
+            ci.cancel(); return;
+        }
         if (InventoryDesktopScreen.replaceVanillaCreativeScreen((Minecraft) (Object) this, screen)) {
             ci.cancel();
             return;
@@ -43,5 +47,13 @@ public abstract class MinecraftMixin {
         while (this.options.keyInventory.consumeClick()) {
             DesktopDebug.trace("client consumed legacy inventory key click; release/hold controller owns E");
         }
+    }
+
+    @Inject(method = "setScreen", at = @At("RETURN"))
+    private void salts_inventory_update$finishedNativeSwitch(@Nullable Screen screen, CallbackInfo ci) {
+        var minecraft = (Minecraft)(Object)this;
+        com.salts_inventory_update.client.NativeContainerView.changedScreen();
+        if (!com.salts_inventory_update.client.DesktopTopTab.available(minecraft))
+            com.salts_inventory_update.client.DesktopTopTab.reset();
     }
 }

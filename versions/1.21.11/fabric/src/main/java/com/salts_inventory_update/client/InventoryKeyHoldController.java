@@ -3,7 +3,6 @@ package com.salts_inventory_update.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import com.salts_inventory_update.platform.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.gui.Font;
 import com.salts_inventory_update.api.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
@@ -14,9 +13,6 @@ import com.salts_inventory_update.SaltsInventoryRuntime;
 import com.salts_inventory_update.debug.DesktopDebug;
 
 public final class InventoryKeyHoldController {
-    private static final int BOX_BACKGROUND = 0xCC101010;
-    private static final int BOX_OUTLINE = 0xFF303030;
-    private static final int TEXT_COLOR = 0xFFFFFFFF;
     private static final int PROGRESS_COLOR = 0xFFFFD84A;
 
     private static @Nullable HoldAction holdAction;
@@ -81,7 +77,7 @@ public final class InventoryKeyHoldController {
                 suppressEscapeUntilRelease = true;
                 InventoryDesktopScreen.permanentlyCloseAllOpenWindows(minecraft);
             } else {
-                InventoryDesktopScreen.closeAllOpenWindows(minecraft);
+                DesktopTopTab.closeAll(minecraft);
             }
         }
     }
@@ -97,28 +93,11 @@ public final class InventoryKeyHoldController {
         holdStartedMs = 0L;
     }
 
-    public static void extractOverlay(Minecraft minecraft, GuiGraphicsExtractor graphics) {
-        long overlayDelayMs = overlayDelayMs();
-        long closeAllMs = closeAllMs();
-        if (holdAction == null || closedByHold || elapsedMs() < overlayDelayMs || !canHandleHoldAction(minecraft, holdAction)) {
-            return;
-        }
+    public static boolean isHolding() { return holdAction != null && !closedByHold; }
 
-        Font font = minecraft.font;
-        String label = holdAction == HoldAction.INVENTORY && SaltsInventoryConfig.get().persistentWindows ? "Clear Screen" : "Closing All";
-        int textWidth = font.width(label);
-        int width = Math.max(104, textWidth + 24);
-        int height = 24;
-        int x = (graphics.guiWidth() - width) / 2;
-        int y = 8;
-        int textX = x + (width - textWidth) / 2;
-        int textY = y + 8;
-        float progress = (float) Math.min(1.0, Math.max(0.0, (elapsedMs() - overlayDelayMs) / (double) Math.max(1L, closeAllMs - overlayDelayMs)));
-
-        graphics.fill(x, y, x + width, y + height, BOX_BACKGROUND);
-        graphics.outline(x, y, width, height, BOX_OUTLINE);
-        graphics.text(font, label, textX, textY, TEXT_COLOR, false);
-        drawWrappingProgress(graphics, x, y, width, height, progress);
+    public static float holdProgress() {
+        return (float)Math.min(1.0, Math.max(0.0, (elapsedMs() - overlayDelayMs())
+            / (double)Math.max(1L, closeAllMs() - overlayDelayMs())));
     }
 
     private static void beginHold(HoldAction action) {
@@ -163,6 +142,7 @@ public final class InventoryKeyHoldController {
     }
 
     private static void openInventoryFromRelease(Minecraft minecraft) {
+        if (NativeContainerView.isActive(minecraft)) { NativeContainerView.restore(minecraft); return; }
         if (minecraft.player == null || minecraft.gameMode == null) {
             return;
         }
@@ -188,6 +168,8 @@ public final class InventoryKeyHoldController {
         }
 
         Screen screen = minecraft.screen;
+        if (NativeContainerView.isActive(minecraft)
+                && screen.getFocused() instanceof net.minecraft.client.gui.components.EditBox edit && edit.isFocused()) return false;
         if (screen instanceof InventoryDesktopScreen desktop && desktop.isTextInputActive()) {
             return false;
         }
@@ -196,7 +178,7 @@ public final class InventoryKeyHoldController {
             return SaltsInventoryConfig.get().persistentWindows && screen instanceof InventoryDesktopScreen;
         }
 
-        return screen == null || screen instanceof InventoryDesktopScreen;
+        return screen == null || screen instanceof InventoryDesktopScreen || NativeContainerView.isActive(minecraft);
     }
 
     private static @Nullable HoldAction holdAction(Minecraft minecraft, KeyEvent event) {
@@ -221,7 +203,7 @@ public final class InventoryKeyHoldController {
         return SaltsInventoryConfig.get().eHoldOverlayDelayMs();
     }
 
-    private static void drawWrappingProgress(GuiGraphicsExtractor graphics, int x, int y, int width, int height, float progress) {
+    static void drawWrappingProgress(GuiGraphicsExtractor graphics, int x, int y, int width, int height, float progress) {
         int thickness = 2;
         int halfWidth = width / 2;
         int remaining = Math.round((width * 2 + height * 2) * progress);

@@ -14,6 +14,7 @@ gradle.projectsEvaluated {
     def spatialQa = root.providers.gradleProperty('qaSpatial').map { it.toBoolean() }.getOrElse(false)
     def configMenuQa = root.providers.gradleProperty('qaConfigMenu').map { it.toBoolean() }.getOrElse(false)
     def dedicatedServer = root.providers.gradleProperty('qaDedicatedServer').map { it.toBoolean() }.getOrElse(false)
+    def nativeViewQa = System.getenv('SIU_QA_NATIVE_VIEW') == 'true'
     def upstreamOnly = root.providers.gradleProperty('qaUpstreamOnly').map { it.toBoolean() }.getOrElse(false)
     if (upstreamOnly && !dedicatedServer) throw new GradleException('Upstream baseline requires a dedicated server')
     def fullScenario = root.providers.gradleProperty('qaScenario').getOrElse('core')
@@ -79,6 +80,7 @@ gradle.projectsEvaluated {
     def metadata = target.tasks.register('chestCloseQaMetadata') {
         inputs.property('minecraft', mc)
         inputs.property('mouseTweaks', mouseTweaks)
+        inputs.property('nativeView', nativeViewQa)
         inputs.property('spatial', spatialQa)
         inputs.property('mouseTweaksQaSchema', '9')
         inputs.property('loader', loader)
@@ -90,13 +92,13 @@ gradle.projectsEvaluated {
                 [pack_format: 15, description: 'Disposable gameplay fixtures'] : mc == '1.21.1' ?
                 [pack_format: 48, description: 'Disposable gameplay fixtures'] :
                 [pack_format: 15, min_format: 15, max_format: 999, supported_formats: [15,999], description: 'Disposable gameplay fixtures']])
-            if (mouseTweaks) new File(resources, 'mouse-tweaks-qa.mixins.json').text = JsonOutput.toJson([
+            if (mouseTweaks || nativeViewQa) new File(resources, 'mouse-tweaks-qa.mixins.json').text = JsonOutput.toJson([
                 required: true, minVersion: '0.8', package: 'com.salts_inventory_update.functionaltest.mixin',
                 client: [mc == '26.3' ? 'MouseTweaksModernQaInputMixin' : mc in ['1.20.1','1.21.1'] ? 'MouseTweaksLegacyQaInputMixin' : 'MouseTweaksWindowQaInputMixin'], injectors: [defaultRequire: 1]])
             if (loader == 'fabric') {
                 new File(resources, 'fabric.mod.json').text = JsonOutput.toJson([
                     schemaVersion: 1, id: 'salts_gameplay_qa', version: '1.0.0', environment: 'client',
-                    depends: [salts_inventory_update: target.version.toString(), minecraft: mc], mixins: mouseTweaks ? ['mouse-tweaks-qa.mixins.json'] : []])
+                    depends: [salts_inventory_update: target.version.toString(), minecraft: mc], mixins: (mouseTweaks || nativeViewQa) ? ['mouse-tweaks-qa.mixins.json'] : []])
             } else {
                 def definition = new File(resources, loader == 'forge' ? 'META-INF/mods.toml' : 'META-INF/neoforge.mods.toml')
                 definition.parentFile.mkdirs()
@@ -108,7 +110,7 @@ modId="salts_gameplay_qa"
 version="1.0.0"
 displayName="Salt Chest Closing QA"
 '''
-                if (mouseTweaks && loader == 'neoforge') definition.append('\n[[mixins]]\nconfig="mouse-tweaks-qa.mixins.json"\n')
+                if ((mouseTweaks || nativeViewQa) && loader == 'neoforge') definition.append('\n[[mixins]]\nconfig="mouse-tweaks-qa.mixins.json"\n')
                 if (spatialQa && loader == 'neoforge') definition.append('\n[[mixins]]\nconfig="salts_spatial_qa.mixins.json"\n')
                 def source = new File(generated, 'java/com/salts_inventory_update/functionaltest/ChestCloseQaMod.java')
                 source.parentFile.mkdirs()
@@ -124,7 +126,7 @@ public final class ChestCloseQaMod { public ChestCloseQaMod() {} }
     def qaJar = target.tasks.register('chestCloseQaJar', Jar) {
         from(qa.output)
         def configs = []
-        if (mouseTweaks) configs += 'mouse-tweaks-qa.mixins.json'
+        if (mouseTweaks || nativeViewQa) configs += 'mouse-tweaks-qa.mixins.json'
         if (spatialQa) configs += 'salts_spatial_qa.mixins.json'
         if (configs) manifest.attributes('MixinConfigs': configs.join(','))
         archiveFileName.set("chest-close-qa-${mc}-${loader}.jar")
@@ -219,7 +221,10 @@ public final class ChestCloseQaMod { public ChestCloseQaMod() {} }
             if (mods.parentFile != workingDir.canonicalFile) throw new GradleException('Unexpected QA mods path')
             mods.mkdirs()
             mods.listFiles().findAll { it.isFile() && it.name.endsWith('.jar') }.each { it.delete() }
-            def artifact = root.file('dist/core/' + production.get().archiveFile.get().asFile.name)
+            def defaultArtifact = root.providers.gradleProperty('qaUseBuiltCore').map { it.toBoolean() }.getOrElse(false)
+                ? production.get().archiveFile.get().asFile.absolutePath
+                : 'dist/core/' + production.get().archiveFile.get().asFile.name
+            def artifact = root.file(root.providers.gradleProperty('qaCoreArtifact').getOrElse(defaultArtifact))
             if (!artifact.isFile()) throw new GradleException('Build the distribution first: ' + artifact)
             def hash = MessageDigest.getInstance('SHA-256').digest(artifact.bytes).encodeHex().toString()
             new File(output, 'staged-artifacts.json').text = JsonOutput.prettyPrint(JsonOutput.toJson([

@@ -231,6 +231,7 @@ public final class WindowedInventoryClient {
 
     private static void onClientTick(Minecraft minecraft) {
         DesktopContainerClient.tick(minecraft);
+        NativeContainerView.tick(minecraft);
         if(pendingNativeInspectorTicks>0&&--pendingNativeInspectorTicks==0&&minecraft.player!=null){
             var desktop=InventoryDesktopScreen.current(minecraft);
             if(desktop!=null&&desktop.inspectNativeWindow())minecraft.setScreen(desktop);
@@ -252,6 +253,14 @@ public final class WindowedInventoryClient {
             movementControl.reset();
             InventoryKeyHoldController.reset();
             InventoryDesktopScreen.reset(minecraft);
+            setCameraMouseGrab(minecraft, false);
+            return;
+        }
+
+        if (NativeContainerView.isActive(minecraft)) {
+            while (characterWindowKey.consumeClick()) { }
+            while (jeiWindowKey.consumeClick()) { }
+            movementControl.reset();
             setCameraMouseGrab(minecraft, false);
             return;
         }

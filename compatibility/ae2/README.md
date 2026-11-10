@@ -19,6 +19,12 @@ See the [implementation and focused checks](wireless-terminals-1.20.1.md).
 
 ## Version-specific UI baseline
 
+SIU title-bar controls in AE2 windows use Core's shared sprite sheet on every
+supported target. Edit
+`artwork/shared-resources/core/assets/salts_inventory_update/textures/gui/window_controls_native_view.png`
+to change their hover and pressed states, pin and lock variants, or Shift sort
+icon. Native AE2 buttons use AE2 artwork.
+
 Each adapter uses the installed AE2 release's native artwork, controls and
 features, with the fork's desktop integration layered on top. Minecraft 1.21.1
 uses AE2 19's design; 26.3 uses AE2 26.3's design. Native changes between upstream
@@ -112,7 +118,7 @@ by unmodified clients on the normal AE2 menu path.
 * `DesktopSlotPresentation` retains defensive copies for slot art. The generic
   `DesktopContentActions` contract supplies the fork's per-input slot, close and
   subview callbacks without tying shared code to a single Minecraft input type.
-* `DesktopManagementControls` draws the fork's manager-button pixels using
+* `DesktopManagementControls` renders Core's shared SIU button sprites using
   public Salt render context and control state. The modern native window adapter
   also includes the fork's minimized-frame rendering and keyboard activation.
 * Optional mixins catalog native menu builders and attach extension-owned state

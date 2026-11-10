@@ -37,11 +37,11 @@
   "config.salts_inventory_update.global_pins": "Global Pins",
   "config.salts_inventory_update.global_pins.description": "Shares pinned layouts for player and other non-block windows across all worlds and servers. Windows attached to blocks, such as chests, remain saved per world and block.",
   "config.salts_inventory_update.persistent_windows": "Persistent Windows",
-  "config.salts_inventory_update.persistent_windows.description": "Clears windows from the screen instead of closing them when E is held or Esc is pressed, then restores them the next time a Salt window opens.",
+  "config.salts_inventory_update.persistent_windows.description": "Hides windows when Esc is pressed, then restores them the next time a Salt window opens. Close All and holding Inventory still close the workspace.",
   "config.salts_inventory_update.open_inventory_when_containers_are_opened": "Open Inventory When Containers Are Opened",
   "config.salts_inventory_update.open_inventory_when_containers_are_opened.description": "Automatically opens the player inventory window when a visible container window opens.",
   "config.salts_inventory_update.e_hold_close_all_seconds": "Inventory Hold Close-All Time",
-  "config.salts_inventory_update.e_hold_close_all_seconds.description": "How long the vanilla Inventory binding must be held to close all Salt windows. The close-all popup appears after one quarter of this time.",
+  "config.salts_inventory_update.e_hold_close_all_seconds.description": "How long Inventory must be held to close all Salt windows. The top tab opens while holding; its progress line starts after one quarter of this time.",
   "config.salts_inventory_update.enable_detailed_console_logs": "Enable Detailed Console Logs",
   "config.salts_inventory_update.enable_detailed_console_logs.description": "Adds verbose Salt desktop logs for container capture, window rendering, slot rendering, API/custom windows, and packet flow while debugging mod pack issues.",
   "config.salts_inventory_update.force_containers_as_windows": "Force Containers as Windows",
@@ -72,5 +72,10 @@
   "config.salts_inventory_update.movement_control_key.description": "Open Minecraft Key Binds and find Salt's Inventory Update to change Window Movement Control. Defaults to Left Alt.",
   "controls.salts_inventory_update.movement_control_mode": "Window Movement: %s",
   "key.categories.salts_inventory_update": "Salt's Inventory Update",
-  "key.category.salts_inventory_update.inventory": "Salt's Inventory Update"
+  "key.category.salts_inventory_update.inventory": "Salt's Inventory Update",
+  "gui.salts_inventory_update.desktop_tab.return": "Return",
+  "gui.salts_inventory_update.desktop_tab.close_all": "Close All",
+  "tooltip.salts_inventory_update.window_control.maximize": "Maximize",
+  "config.salts_inventory_update.show_top_dropdown": "Show Top Dropdown",
+  "config.salts_inventory_update.show_top_dropdown.description": "Shows the top-center dropdown on the desktop. When off, the tab and its hover area stay hidden unless Inventory is held to close all windows. The Return tab remains available in maximized UIs."
 }

@@ -49,7 +49,8 @@
     "client.AutomaticRecipeBookMixin",
     "client.AutomaticRecipeButtonAccessor",
     "client.AutomaticRecipeButtonMixin",
-    "client.AutomaticScreenBackgroundMixin"
+    "client.AutomaticScreenBackgroundMixin",
+    "client.ScreenTopTabMixin"
   ],
   "server": [],
   "injectors": {

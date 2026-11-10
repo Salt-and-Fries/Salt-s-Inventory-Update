@@ -54,7 +54,8 @@
     "client.AutomaticScreenBackgroundMixin",
     "client.AutomaticTextStateAccessor",
     "client.AutomaticGraphicsCaptureAccessor",
-    "client.NativeGuiScreenAccessor"
+    "client.NativeGuiScreenAccessor",
+    "client.ScreenTopTabMixin"
   ],
   "server": [],
   "injectors": {

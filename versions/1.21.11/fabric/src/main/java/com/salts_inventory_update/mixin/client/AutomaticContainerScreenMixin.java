@@ -14,6 +14,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = AbstractContainerScreen.class, priority = 2000)
 public abstract class AutomaticContainerScreenMixin {
+    @Inject(method = "removed", at = @At("HEAD"), cancellable = true)
+    private void salts_inventory_update$retainNativeMenu(CallbackInfo ci) {
+        // A presentation switch must not run menu.removed(), which clears crafting inputs.
+        if (com.salts_inventory_update.client.NativeContainerView.owns(this)) ci.cancel();
+    }
+
+    @Inject(method = "onClose", at = @At("HEAD"), cancellable = true)
+    private void salts_inventory_update$returnFromNative(CallbackInfo ci) {
+        var mc = net.minecraft.client.Minecraft.getInstance();
+        if (com.salts_inventory_update.client.NativeContainerView.isActive(mc)) {
+            com.salts_inventory_update.client.NativeContainerView.restore(mc); ci.cancel();
+        }
+    }
     // Intercept the call site, including native subclasses that override renderSlot.
     // Capturing artwork must not bake item/count pixels into the retained background.
     @Redirect(method = "renderSlots", at = @At(value = "INVOKE",

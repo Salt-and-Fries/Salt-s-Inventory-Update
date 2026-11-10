@@ -137,7 +137,8 @@ public final class InWorldGameplayHarness {
         }
         if (WINDOW_CONTROLS_ONLY) {
             while (STEPS.size() > 3) STEPS.removeLast();
-            if (INVENTORY_SORT_ONLY) addInventorySortRegression();
+            if ("true".equalsIgnoreCase(System.getenv("SIU_QA_NATIVE_VIEW"))) addNativeViewRegression();
+            else if (INVENTORY_SORT_ONLY) addInventorySortRegression();
             else if (WINDOW_WALLS_ONLY) {
                 addWindowWallsRegression();
                 if("true".equalsIgnoreCase(System.getenv("SIU_QA_SPATIAL_WITH_REGRESSION"))&&wallsSpatial()) addSpatialRegression();
@@ -2311,6 +2312,273 @@ public final class InWorldGameplayHarness {
         catch (IllegalArgumentException legacy) { return name.equals("PRESS") ? 1 : name.equals("REPEAT") ? 2 : 0; }
     }
 
+    private static List<Object> nativeSavedWindows;
+    private static List<List<Integer>> nativeSavedGeometry;
+    private static long nativePlayerSyncStarted, nativePlayerSyncSequence;
+    private static boolean nativeWorkspaceRetained() {
+        var windows=(List<?>)field(screen(),"windows");
+        return windows.size()==nativeSavedWindows.size()&&windows.containsAll(nativeSavedWindows);
+    }
+    private static void addNativeViewRegression() {
+        Class<?> view=ClassFor("com.salts_inventory_update.client.NativeContainerView");
+        Class<?> tab=ClassFor("com.salts_inventory_update.client.DesktopTopTab");
+        Class<?> hold=ClassFor("com.salts_inventory_update.client.InventoryKeyHoldController");
+        add("native-view-configure",()->SaltsInventoryConfig.update(c->{
+            c.hasSeenInstructionsWindow=true;c.persistentWindows=true;c.eHoldCloseAllSeconds=4.0;c.showTopDropdown=true;
+        }),()->true,()->{},2);
+        addContainer("chest","minecraft:chest",0);
+        add("native-view-workspace",()->{
+            InventoryDesktopScreen.openOrToggleInventory(mc);
+            InventoryDesktopScreen.openOrToggleCharacter(mc);
+        },()->windowKind("INVENTORY")!=null&&windowKind("CHARACTER")!=null,()->{
+            nativeSavedWindows=new ArrayList<>((List<?>)field(screen(),"windows"));
+            nativeSavedGeometry=nativeSavedWindows.stream().map(w->List.of(number(w,"x"),number(w,"y"),number(w,"width"),number(w,"height"))).toList();
+            check("native-view-workspace-has-other-windows",nativeSavedWindows.size()>=3);
+            capture("native-view-desktop-before");
+        },6);
+        add("native-view-dropdown-hidden",()->{
+            SaltsInventoryConfig.update(c->c.showTopDropdown=false);
+            SaltsInventoryConfig.reload();
+        },()->true,()->{
+            check("native-view-dropdown-setting-persists",!SaltsInventoryConfig.get().showTopDropdown);
+            check("native-view-hidden-tab-unavailable",!(Boolean)call(tab,"available",mc));
+            check("native-view-hidden-tab-does-not-capture-top-edge",!(Boolean)call(tab,"covers",mc,
+                ((Number)call(mc.getWindow(),"getGuiScaledWidth")).doubleValue()/2,0D));
+        },2);
+        add("native-view-hidden-tab-hold-exception",()->dispatchMovementKey("KEY_E","PRESS"),()->true,()->{
+            check("native-view-hidden-tab-shows-while-inventory-held",(Boolean)call(tab,"available",mc));
+            call(hold,"reset");
+            dispatchMovementKey("KEY_E","RELEASE");
+        },2);
+        add("native-view-maximize-affordance",()->setNativeViewShift(true),
+            ()->true,()->{
+                Object close=enumValue("com.salts_inventory_update.client.InventoryDesktopScreen$WindowControl","CLOSE");
+                Object window=windowSession(activeSession.sessionId());
+                check("native-view-maximize-sprite-selected",((Number)call(screen(),"controlTextureColumn",window,close)).intValue()==12);
+                check("native-view-maximize-tooltip",((net.minecraft.network.chat.Component)call(screen(),"managementControlLabel",window,close)).getString().equals("Maximize"));
+                capture("native-view-maximize-button");
+            },2);
+        add("native-view-maximize",()->{
+            setNativeViewShift(true);
+            try {clickControl("CLOSE");}
+            finally {setNativeViewShift(false);}
+        },
+            ()->(Boolean)call(view,"isActive",mc),()->{
+                check("native-view-original-chest-screen",nativeScreen().getClass().getSimpleName().equals("ContainerScreen"));
+                check("native-view-exact-live-menu",call(nativeScreen(),"getMenu")==currentSession().menu());
+                check("native-view-player-inventory-visible",currentSession().menu().slots.size()>=63);
+                check("native-view-saved-workspace-not-disposed",nativeWorkspaceRetained());
+                capture("native-view-original-container");
+            },6);
+        add("native-view-pickup",()->nativeViewClick(0,"PICKUP"),
+            ()->carried()==32&&currentSession().menu().getSlot(0).getItem().isEmpty(),()->
+                check("native-view-authenticated-pickup",carried()==32),4);
+        add("native-view-return-stack",()->nativeViewClick(0,"PICKUP"),
+            ()->carried()==0&&currentSession().menu().getSlot(0).getItem().getCount()==32,()->{},4);
+        add("native-view-inventory-press",()->{
+            dispatchMovementKey("KEY_E","PRESS");
+            try {var f=hold.getDeclaredField("holdStartedMs");f.setAccessible(true);f.setLong(null,System.currentTimeMillis()-1500);}
+            catch(ReflectiveOperationException e){throw new IllegalStateException(e);}
+        },
+            ()->(Boolean)call(hold,"isHolding"),()->{
+                check("native-view-hold-does-not-restore-early",(Boolean)call(view,"isActive",mc));
+                float progress=((Number)call(hold,"holdProgress")).floatValue();
+                check("native-view-hold-progress-visible",progress>0&&progress<1);
+                capture("native-view-hold-close-all-tab");
+            },2);
+        add("native-view-inventory-tap-return",()->dispatchMovementKey("KEY_E","RELEASE"),
+            ()->nativeScreen()==screen(),()->{
+                check("native-view-original-window-identities",nativeWorkspaceRetained());
+                check("native-view-exact-window-geometry",nativeSavedGeometry.equals(nativeSavedWindows.stream().map(w->List.of(number(w,"x"),number(w,"y"),number(w,"width"),number(w,"height"))).toList()));
+                check("native-view-cursor-retained",carried()==0);
+                capture("native-view-restored-desktop");
+            },3);
+        add("native-view-maximize-again",()->call(screen(),"maximize",windowSession(activeSession.sessionId())),
+            ()->(Boolean)call(view,"isActive",mc),()->{},3);
+        add("native-view-return-tab-reveal",()->pointAtTopDropdown(1),
+            ()->(Boolean)call(view,"isActive",mc)&&topDropdownRevealed(tab),()->{
+            check("native-view-return-tab-available-when-disabled",(Boolean)call(tab,"available",mc));
+            check("native-view-return-tab-hit",(Boolean)call(tab,"covers",mc,mc.getWindow().getGuiScaledWidth()/2D,16D));
+            capture("native-view-return-tab");
+        },3);
+        add("native-view-return-tab",()->pointAtTopDropdown(1),()->topDropdownRevealed(tab),()->{
+            pointAtTopDropdown(16);
+            spatialMouseButton(left(),"PRESS");
+            check("native-view-return-tab-press-consumed",((Set<?>)field(tab,"capturedButtons")).contains(left()));
+            spatialMouseButton(left(),"RELEASE");
+            check("native-view-return-tab-release-consumed",nativeScreen()==screen());
+            check("native-view-tab-restores-workspace",nativeWorkspaceRetained());
+        },3);
+        add("native-view-shift-transfer",()->{
+            call(screen(),"maximize",windowSession(activeSession.sessionId()));
+            nativeViewClick(0,"QUICK_MOVE");
+        },()->currentSession().menu().getSlot(0).getItem().isEmpty()&&!DesktopContainerClient.hasPendingSlotMutations(),()->{
+            check("native-view-quick-move-reaches-player",mc.player.getInventory().countItem(Items.DIRT)==32);
+            call(view,"restore",mc);
+        },4);
+        add("native-view-live-cursor-seed",()->{
+            int playerSlot=-1;for(int i=0;i<currentSession().menu().slots.size();i++)
+                if(currentSession().menu().getSlot(i).getItem().is(Items.DIRT)){playerSlot=i;break;}
+            check("native-view-player-slot-found",playerSlot>=0);
+            call(screen(),"maximize",windowSession(activeSession.sessionId()));
+            nativeViewClick(playerSlot,"PICKUP");
+        },()->carried()==32,()->{call(view,"restore",mc);check("native-view-return-preserves-held-stack",carried()==32);},3);
+        add("native-view-live-cursor-place",()->{
+            call(screen(),"maximize",windowSession(activeSession.sessionId()));
+            nativeViewClick(0,"PICKUP");
+        },()->carried()==0,()->{},4);
+        add("native-view-held-inventory-close-all",()->{
+            dispatchMovementKey("KEY_E","PRESS");
+            try {var f=hold.getDeclaredField("holdStartedMs");f.setAccessible(true);f.setLong(null,System.currentTimeMillis()-5000);}
+            catch(ReflectiveOperationException e){throw new IllegalStateException(e);}
+            call(hold,"tick",mc);
+            dispatchMovementKey("KEY_E","RELEASE");
+        },()->sessions().isEmpty()&&nativeScreen()==null,()->{
+            check("native-view-hold-closed-preserved-windows",((List<?>)field(screen(),"windows")).isEmpty());
+            check("native-view-no-return-on-hold-release",!(Boolean)call(view,"isActive",mc));
+            check("native-view-no-leftover-held-key",!(Boolean)call(hold,"isHolding"));
+            check("native-view-tab-restarts-tucked",((Number)call(field(tab,"STATE"),"y")).intValue()==-29);
+        },4);
+        addContainer("native-crafting","minecraft:crafting_table",3);
+        add("native-view-crafting-input-seed",()->server(()->{
+            serverMenu().getSlot(1).set(new ItemStack(Items.OAK_PLANKS,8));
+            serverMenu().broadcastChanges();
+            return null;
+        }),()->taskDone()&&currentSession().menu().getSlot(1).getItem().getCount()==8,()->{},3);
+        add("native-view-crafting-original",()->call(screen(),"maximize",windowSession(activeSession.sessionId())),
+            ()->(Boolean)call(view,"isActive",mc),()->{
+                check("native-view-original-crafting-screen",nativeScreen().getClass().getSimpleName().equals("CraftingScreen"));
+                capture("native-view-original-crafting");
+            },3);
+        add("native-view-escape-keeps-crafting",()->{
+            int escape=((Number)field(ClassFor("com.mojang.blaze3d.platform.InputConstants"),"KEY_ESCAPE")).intValue();
+            if (VersionInfo.MINECRAFT_VERSION.equals("1.20.1") || VersionInfo.MINECRAFT_VERSION.equals("1.21.1"))
+                call(nativeScreen(),"keyPressed",escape,0,0);
+            else call(nativeScreen(),"keyPressed",construct(ClassFor("net.minecraft.client.input.KeyEvent"),escape,0,0));
+        },
+            ()->nativeScreen()==screen(),()->{
+                check("native-view-crafting-input-not-cleared",currentSession().menu().getSlot(1).getItem().getCount()==8);
+                server(()->{check("native-view-server-crafting-input-not-cleared",serverMenu().getSlot(1).getItem().getCount()==8);return null;});
+            },5);
+        add("native-view-rebound-inventory",()->{
+            call(screen(),"maximize",windowSession(activeSession.sessionId()));
+            call(mc.options.keyInventory,"setKey",call(ClassFor("com.mojang.blaze3d.platform.InputConstants"),"getKey","key.keyboard.i"));
+            call(ClassFor("net.minecraft.client.KeyMapping"),"resetMapping");
+            dispatchMovementKey("KEY_E","PRESS");dispatchMovementKey("KEY_E","RELEASE");
+            check("native-view-old-inventory-binding-does-not-return",(Boolean)call(view,"isActive",mc));
+            dispatchMovementKey("KEY_I","PRESS");dispatchMovementKey("KEY_I","RELEASE");
+            call(mc.options.keyInventory,"setKey",call(mc.options.keyInventory,"getDefaultKey"));
+            call(ClassFor("net.minecraft.client.KeyMapping"),"resetMapping");
+        },()->nativeScreen()==screen(),()->check("native-view-rebound-key-returns",!(Boolean)call(view,"isActive",mc)),3);
+        add("native-view-player-inventory",()->{
+            if(windowKind("INVENTORY")==null)InventoryDesktopScreen.openOrToggleInventory(mc);
+            call(screen(),"maximize",windowKind("INVENTORY"));
+        },()->(Boolean)call(view,"isActive",mc),()->{
+            check("native-view-original-player-screen",nativeScreen().getClass().getSimpleName().equals("InventoryScreen"));
+            check("native-view-player-menu-identity",call(nativeScreen(),"getMenu")==mc.player.inventoryMenu);
+        },3);
+        add("native-view-player-inventory-heartbeat",()->{
+            nativePlayerSyncStarted=System.currentTimeMillis();
+            nativePlayerSyncSequence=((Number)field(DesktopContainerClient.class,"modeSequence")).longValue();
+            try {
+                boolean legacy=VersionInfo.MINECRAFT_VERSION.equals("1.20.1");
+                var counter=DesktopContainerClient.class.getDeclaredField(legacy?"modeRefreshTicks":"modeResendTicks");counter.setAccessible(true);
+                counter.setInt(null,((Number)field(DesktopContainerClient.class,legacy?"MODE_REFRESH_INTERVAL_TICKS":"MODE_RESEND_INTERVAL_TICKS")).intValue()-1);
+            } catch(ReflectiveOperationException failure){throw new IllegalStateException(failure);}
+            DesktopContainerClient.tick(mc);
+        },()->(Boolean)call(view,"isActive",mc)&&System.currentTimeMillis()-nativePlayerSyncStarted>=6000L
+                &&((Number)field(DesktopContainerClient.class,"modeSequence")).longValue()>=nativePlayerSyncSequence+2,()->{
+            check("native-view-player-inventory-survives-periodic-packets",(Boolean)call(view,"isActive",mc));
+            check("native-view-player-inventory-still-live",call(nativeScreen(),"getMenu")==mc.player.inventoryMenu);
+            capture("native-view-player-inventory-heartbeat");
+            call(view,"restore",mc);
+            check("native-view-player-inventory-returns-after-heartbeat",nativeScreen()==screen());
+        },3);
+        if("true".equalsIgnoreCase(System.getenv("SIU_QA_NATIVE_VIEW_PLAYER_ONLY"))) {
+            add("native-view-player-inventory-cleanup",()->call(tab,"closeAll",mc),
+                ()->sessions().isEmpty()&&nativeScreen()==null,()->check("native-view-player-inventory-clean-close",carried()==0),3);
+        }
+        add("native-view-mouse-inventory-binding",()->{
+            call(screen(),"maximize",windowSession(activeSession.sessionId()));
+            call(mc.options.keyInventory,"setKey",call(ClassFor("com.mojang.blaze3d.platform.InputConstants"),"getKey","key.mouse.right"));
+            call(ClassFor("net.minecraft.client.KeyMapping"),"resetMapping");
+            try {dispatchMovementMouse("PRESS");dispatchMovementMouse("RELEASE");}
+            finally {
+                call(mc.options.keyInventory,"setKey",call(mc.options.keyInventory,"getDefaultKey"));
+                call(ClassFor("net.minecraft.client.KeyMapping"),"resetMapping");
+            }
+        },()->nativeScreen()==screen(),()->check("native-view-mouse-binding-returns",!(Boolean)call(view,"isActive",mc)),3);
+        add("native-view-native-close-and-final-cleanup",()->{
+            call(screen(),"maximize",windowSession(activeSession.sessionId()));
+            call(mc.player,"closeContainer");
+            check("native-view-native-close-returns",nativeScreen()==screen());
+            Object state=field(tab,"STATE");
+            int width=((Number)call(mc.getWindow(),"getGuiScaledWidth")).intValue();
+            long now=System.currentTimeMillis();
+            for(int i=0;i<6;i++)call(state,"update",now+i*40L,width,width/2D,0D,true);
+            double rawX=((Number)call(mc.getWindow(),"getScreenWidth")).doubleValue()/2;
+            double rawY=16*((Number)call(mc.getWindow(),"getScreenHeight")).doubleValue()/((Number)call(mc.getWindow(),"getGuiScaledHeight")).intValue();
+            spatialMove(rawX,rawY,0D,0D);
+            SaltsInventoryConfig.update(c->c.showTopDropdown=true);
+            check("native-view-desktop-close-all-press",(Boolean)call(tab,"mouseButton",mc,left(),nativeInputAction("PRESS")));
+            check("native-view-desktop-close-all-release",(Boolean)call(tab,"mouseButton",mc,left(),nativeInputAction("RELEASE")));
+        },()->sessions().isEmpty()&&nativeScreen()==null,()->check("native-view-clean-shutdown",carried()==0),5);
+        addContainer("native-anvil","minecraft:anvil",4);
+        add("native-view-anvil-input",()->server(()->{
+            serverMenu().getSlot(0).set(new ItemStack(Items.IRON_SWORD));
+            player().giveExperienceLevels(20);
+            serverMenu().broadcastChanges();return null;
+        }),()->taskDone()&&currentSession().menu().getSlot(0).getItem().is(Items.IRON_SWORD),()->{},3);
+        add("native-view-original-anvil",()->call(screen(),"maximize",windowSession(activeSession.sessionId())),
+            ()->(Boolean)call(view,"isActive",mc),()->{
+                check("native-view-original-anvil-screen",nativeScreen().getClass().getSimpleName().equals("AnvilScreen"));
+                check("native-view-anvil-input-retained",currentSession().menu().getSlot(0).getItem().is(Items.IRON_SWORD));
+            },4);
+        add("native-view-anvil-rename",()->{
+            Object edit=((List<?>)call(nativeScreen(),"children")).stream().filter(child->child instanceof net.minecraft.client.gui.components.EditBox).findFirst().orElseThrow();
+            call(edit,"setValue","SIU native view");
+        },()->!currentSession().menu().getSlot(2).getItem().isEmpty()
+                &&currentSession().menu().getSlot(2).getItem().getHoverName().getString().equals("SIU native view"),()->{
+            check("native-view-native-rename-packet-routed",currentSession().menu().getSlot(2).getItem().getHoverName().getString().equals("SIU native view"));
+            capture("native-view-original-anvil");
+            call(view,"restore",mc);
+        },3);
+        add("native-view-anvil-final-close",()->call(tab,"closeAll",mc),()->sessions().isEmpty()&&nativeScreen()==null,
+            ()->check("native-view-anvil-clean-close",carried()==0),4);
+        if("true".equalsIgnoreCase(System.getenv("SIU_QA_NATIVE_VIEW_PLAYER_ONLY"))) {
+            var names=Set.of("world-create-and-connect","desktop-handshake","world-fixture","native-view-configure",
+                "native-view-player-inventory","native-view-player-inventory-heartbeat","native-view-player-inventory-cleanup");
+            STEPS.removeIf(step->!names.contains(step.name()));
+        }
+    }
+
+    private static void pointAtTopDropdown(double guiY) {
+        var window=mc.getWindow();
+        double rawX=window.getScreenWidth()/2D;
+        double rawY=guiY*window.getScreenHeight()/window.getGuiScaledHeight();
+        spatialMove(rawX,rawY,0D,0D);
+    }
+
+    private static boolean topDropdownRevealed(Class<?> tab) {
+        // A queued cursor move from releaseMouse can arrive after setScreen.
+        // Keep hovering within the tucked tab until its actual animation opens.
+        pointAtTopDropdown(1);
+        return (Boolean)call(tab,"covers",mc,mc.getWindow().getGuiScaledWidth()/2D,31D);
+    }
+
+    private static void setNativeViewShift(boolean down) {
+        mtShift=down; // QA-only InputConstants fixture on GLFW releases.
+        if (VersionInfo.MINECRAFT_VERSION.equals("26.3"))
+            call(ClassFor("org.lwjgl.sdl.SDLKeyboard"),"SDL_SetModState",(short)(down?1:0));
+    }
+
+    private static void nativeViewClick(int slot, String action) {
+        boolean modern=VersionInfo.MINECRAFT_VERSION.startsWith("26.");
+        call(mc.gameMode,modern?"handleContainerInput":"handleInventoryMouseClick",
+            currentSession().menu().containerId,slot,0,
+            enumValue("net.minecraft.world.inventory."+(modern?"ContainerInput":"ClickType"),action),mc.player);
+    }
+
     private static void dispatchMovementKey(String name, String action) {
         int key = ((Number) field(ClassFor("com.mojang.blaze3d.platform.InputConstants"), name)).intValue();
         Object keyboard = field(mc, "keyboardHandler");
@@ -2584,7 +2852,7 @@ public final class InWorldGameplayHarness {
             },8);
             add("ae2-store-in-player",InWorldGameplayHarness::storeInPlayer,()->carried()==0,()->{},8);
         }
-        if(!label.equals("chest")) add("close-"+label, InWorldGameplayHarness::closeWindows,
+        if(!label.equals("chest") && !(label.startsWith("native-") && "true".equalsIgnoreCase(System.getenv("SIU_QA_NATIVE_VIEW")) )) add("close-"+label, InWorldGameplayHarness::closeWindows,
             () -> sessions().isEmpty(), () -> check(label+"-session-closed",sessions().isEmpty()), 5);
     }
 
@@ -3425,6 +3693,8 @@ public final class InWorldGameplayHarness {
         if ("true".equalsIgnoreCase(System.getenv("SIU_QA_CHEST_CLOSE_ONLY"))) report.put("scope", "chest-close-issue-15");
         if (TOMS_PICKUP_ONLY) report.put("scope", "toms-pickup-issue-17");
         if (WINDOW_CONTROLS_ONLY) report.put("scope", "recipe-book-and-movement-controls");
+        if ("true".equalsIgnoreCase(System.getenv("SIU_QA_NATIVE_VIEW"))) report.put("scope", "native-view-and-top-tab");
+        if ("true".equalsIgnoreCase(System.getenv("SIU_QA_NATIVE_VIEW_PLAYER_ONLY"))) report.put("scope", "native-player-inventory-periodic-sync");
         if (INVENTORY_SORT_ONLY) report.put("scope", "in-place-inventory-sorting");
         if (MOUSE_TWEAKS_ONLY) report.put("scope","mouse-tweaks-core-only");
         if (MANUAL_MOUSE_TWEAKS) report.put("scope","mouse-tweaks-computer-use-fixture");

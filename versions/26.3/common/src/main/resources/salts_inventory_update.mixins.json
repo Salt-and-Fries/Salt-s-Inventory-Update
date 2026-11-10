@@ -25,6 +25,7 @@
     "client.compat.CharmInventoryTidyingMixin",
     "client.ClientPacketListenerInventoryExpansionMixin",
     "client.GuiMixin",
+    "client.ScreenTopTabMixin",
     "client.GuiMouseHandoffMixin",
     "client.HudMixin",
     "client.KeyboardHandlerMixin",

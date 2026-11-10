@@ -1081,6 +1081,21 @@ gradle.projectsEvaluated {
     val loaderAssembleTasks = uploadableLoaderProjects.map { it.tasks.named("assemble") }
     val modVersion = version.toString()
 
+    // Version folders are grouping projects, not Java modules. Give the IDE and
+    // CLI exact lifecycle tasks instead of Gradle abbreviating "build" to
+    // "buildEnvironment". These aggregate only that version's Core loaders.
+    uploadableLoaderProjects.groupBy { it.parent!! }.forEach { (gameProject, loaderProjects) ->
+        listOf("assemble", "build").forEach { lifecycle ->
+            val aggregate = gameProject.tasks.findByName(lifecycle)?.let { gameProject.tasks.named(lifecycle) }
+                ?: gameProject.tasks.register(lifecycle)
+            aggregate.configure {
+                group = "build"
+                description = "${if (lifecycle == "build") "Builds and checks" else "Assembles"} Core for Minecraft ${gameProject.name} on its supported loaders."
+                dependsOn(loaderProjects.map { it.tasks.named(lifecycle) })
+            }
+        }
+    }
+
     val collectModJars = tasks.register<Sync>("collectModJars") {
         group = "build"
         description = "Collects the twelve uploadable mod jars into a clean versioned release directory."

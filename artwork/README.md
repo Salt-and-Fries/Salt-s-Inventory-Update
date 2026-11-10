@@ -20,6 +20,8 @@ Controlify's editable wheel sprites and their existing PDN original are together
 artwork/shared-resources/controlify/assets/salts_inventory_controlify/textures/gui/contextual/wheel/
 ```
 
+`textures/gui/desktop_top_tab.png` contains the dropdown's normal, hovered and pressed frames, stacked vertically at 96 × 32 pixels each. Core and AE2 window controls use `textures/gui/window_controls_native_view.png`, including the Maximize sprite. The sheet has 13 columns and 3 rows of 11 × 11 pixel sprites. Edit these shared PNGs directly.
+
 The compact character window's crafting arrow has its own editable **16 × 16 pixel RGBA PNG**:
 
 ```

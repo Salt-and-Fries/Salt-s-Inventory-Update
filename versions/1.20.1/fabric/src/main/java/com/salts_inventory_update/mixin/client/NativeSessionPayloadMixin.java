@@ -1,7 +1,6 @@
 package com.salts_inventory_update.mixin.client;
 
 import com.salts_inventory_update.api.server.desktop.DesktopServerApi;
-import com.salts_inventory_update.client.automatic.AutomaticNativeScope;
 import net.minecraft.network.Connection;
 import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.protocol.Packet;
@@ -17,10 +16,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class NativeSessionPayloadMixin {
     @Inject(method="send(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketSendListener;)V",at=@At("HEAD"),cancellable=true)
     private void salts$nativeSessionPayload(Packet<?> packet,PacketSendListener listener,CallbackInfo ci) {
-        var scope=AutomaticNativeScope.current();
-        if(scope==null||scope.input()==null||!(packet instanceof ServerboundCustomPayloadPacket payload))return;
+        var scope=com.salts_inventory_update.client.NativeContainerView.input();
+        if(scope==null||!(packet instanceof ServerboundCustomPayloadPacket payload))return;
         var menu=scope.screen().getMenu();
-        if(DesktopServerApi.findPayloadHandler(menu.getType(),payload.getIdentifier())==null)return;
+        var type=com.salts_inventory_update.client.NativeContainerView.registeredMenuType(menu);
+        if(type==null||DesktopServerApi.findPayloadHandler(type,payload.getIdentifier())==null)return;
         var buffer=payload.getData();int size=buffer.readableBytes();
         if(size<0||size>com.salts_inventory_update.api.desktop.DesktopPayloadLimits.MAX_CUSTOM_DATA_BYTES)
             throw new IllegalArgumentException("Native session payload exceeds desktop limit");
@@ -30,16 +30,22 @@ public abstract class NativeSessionPayloadMixin {
         // Native removed() saves configuration while the owning window is
         // already being disposed. Its authenticated session is still live until
         // closeSession is sent; the ordinary input availability gate is too late.
-        com.salts_inventory_update.client.DesktopContainerClient.sendCustomPayload(scope.input().sessionId(),payload.getIdentifier(),data);ci.cancel();
+        com.salts_inventory_update.client.DesktopContainerClient.sendCustomPayload(scope.sessionId(),payload.getIdentifier(),data);ci.cancel();
     }
     /** Route vanilla rename only for a native menu that explicitly registers it. */
     @Inject(method="send(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketSendListener;)V",at=@At("HEAD"),cancellable=true)
     private void salts$nativeRename(Packet<?> packet,PacketSendListener listener,CallbackInfo ci) {
         if(!(packet instanceof net.minecraft.network.protocol.game.ServerboundRenameItemPacket rename))return;
-        var scope=AutomaticNativeScope.current();
-        if(scope==null||scope.input()==null)return;
+        var scope=com.salts_inventory_update.client.NativeContainerView.input();
+        if(scope==null)return;
+        if (com.salts_inventory_update.client.NativeContainerView.isActive(net.minecraft.client.Minecraft.getInstance())
+                && scope.screen().getMenu() instanceof net.minecraft.world.inventory.AnvilMenu) {
+            com.salts_inventory_update.client.DesktopContainerClient.renameAnvil(scope.sessionId(), rename.getName());
+            ci.cancel(); return;
+        }
         var channel=new net.minecraft.resources.ResourceLocation("minecraft","rename_item");
-        if(DesktopServerApi.findPayloadHandler(scope.screen().getMenu().getType(),channel)==null)return;
+        var type=com.salts_inventory_update.client.NativeContainerView.registeredMenuType(scope.screen().getMenu());
+        if(type==null||DesktopServerApi.findPayloadHandler(type,channel)==null)return;
         var buffer=new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         byte[] data;
         try {
@@ -51,8 +57,22 @@ public abstract class NativeSessionPayloadMixin {
         } finally {buffer.release();}
         // A refused/closing addressed action must never fall through to a
         // different ordinary container. The native menu still validates names.
-        com.salts_inventory_update.client.DesktopContainerClient.sendCustomPayload(scope.input().sessionId(),channel,data);
+        com.salts_inventory_update.client.DesktopContainerClient.sendCustomPayload(scope.sessionId(),channel,data);
         ci.cancel();
     }
 
+    @Inject(method="send(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketSendListener;)V",at=@At("HEAD"),cancellable=true)
+    private void salts$fullNativeActions(Packet<?> packet,PacketSendListener listener,CallbackInfo ci) {
+        var mc=net.minecraft.client.Minecraft.getInstance();
+        if(!com.salts_inventory_update.client.NativeContainerView.isActive(mc))return;
+        var scope=com.salts_inventory_update.client.NativeContainerView.input();
+        if(scope==null)return;
+        if(packet instanceof net.minecraft.network.protocol.game.ServerboundSelectTradePacket trade) {
+            com.salts_inventory_update.client.DesktopContainerClient.clickButton(scope.sessionId(),trade.getItem());ci.cancel();
+        } else if(packet instanceof net.minecraft.network.protocol.game.ServerboundSetBeaconPacket beacon) {
+            int primary=net.minecraft.world.effect.MobEffect.getIdFromNullable(beacon.getPrimary().orElse(null))&0xFFFF;
+            int secondary=net.minecraft.world.effect.MobEffect.getIdFromNullable(beacon.getSecondary().orElse(null))&0xFFFF;
+            com.salts_inventory_update.client.DesktopContainerClient.clickButton(scope.sessionId(),primary|(secondary<<16));ci.cancel();
+        }
+    }
 }

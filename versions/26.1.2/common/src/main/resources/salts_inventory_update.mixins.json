@@ -52,7 +52,8 @@
     "client.AutomaticRenderStateAccessor",
     "client.AutomaticScreenBackgroundMixin",
     "client.AutomaticTextStateAccessor",
-    "client.AutomaticGraphicsCaptureAccessor"
+    "client.AutomaticGraphicsCaptureAccessor",
+    "client.ScreenTopTabMixin"
   ],
   "server": [],
   "injectors": {

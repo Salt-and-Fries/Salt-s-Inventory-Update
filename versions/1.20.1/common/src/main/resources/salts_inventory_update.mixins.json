@@ -49,7 +49,8 @@
     "client.MouseHandlerHandoffMixin",
     "client.RecipeBookComponentAccessor",
     "client.RecipeBookPageAccessor",
-    "client.OverlayRecipeComponentAccessor"
+    "client.OverlayRecipeComponentAccessor",
+    "client.ScreenTopTabMixin"
   ],
   "server": [],
   "injectors": {

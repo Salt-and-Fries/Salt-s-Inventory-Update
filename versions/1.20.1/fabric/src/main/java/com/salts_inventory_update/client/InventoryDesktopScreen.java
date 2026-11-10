@@ -234,7 +234,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int MIN_CONTAINER_HEIGHT = 64;
     private static final int LEGACY_MENU_SESSION = -1;
     private static final ResourceLocation WINDOW_TEXTURE = WindowedInventoryClient.id("textures/gui/window.png");
-    private static final ResourceLocation WINDOW_CONTROLS_TEXTURE = WindowedInventoryClient.id("textures/gui/window_controls.png");
+    private static final ResourceLocation WINDOW_CONTROLS_TEXTURE = WindowedInventoryClient.id("textures/gui/window_controls_native_view.png");
     private static final ResourceLocation SLOT_TEXTURE = WindowedInventoryClient.id("textures/gui/slots.png");
     private static final ResourceLocation CONTAINER_WIDGETS_TEXTURE = WindowedInventoryClient.id("textures/gui/container_widgets.png");
     private static final ResourceLocation CHARACTER_CRAFT_ARROW_TEXTURE = WindowedInventoryClient.id("textures/gui/character_crafting_arrow.png");
@@ -272,7 +272,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     private static final int SORT_CONTROL_TEXTURE_COLUMN = 10;
     private static final int INVENTORY_SORT_CONTROL_TEXTURE_COLUMN = 1;
     private static final int FORCE_SORT_CONTROL_TEXTURE_COLUMN = 11;
-    private static final int CONTROL_TEXTURE_WIDTH = CONTROL_SIZE * 12;
+    private static final int CONTROL_TEXTURE_WIDTH = CONTROL_SIZE * 13;
     private static final int CONTROL_TEXTURE_HEIGHT = CONTROL_SIZE * 3;
     private static final int SLOT_TEXTURE_WIDTH = SLOT_SIZE * 2;
     private static final int SLOT_TEXTURE_HEIGHT = SLOT_SIZE;
@@ -1944,7 +1944,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     private Component managementControlLabel(InventoryWindow window, WindowControl control) {
-
+        if (control == WindowControl.CLOSE && this.maximizeModifierHeld() && this.canMaximize(window))
+            return Component.translatable("tooltip.salts_inventory_update.window_control.maximize");
         if (control == WindowControl.PIN && window.apiSurface.mode() == DesktopSurfaceMode.MOD_OWNED
             && window.pinMode != PinMode.UNPINNED) {
             return Component.translatable("tooltip.salts_inventory_update.window_control.unpin");
@@ -2000,6 +2001,13 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         try {
             ((DesktopWindowDefinition) window.apiDefinition).renderManagementControls(
                 this.apiContext(window, graphics, mouseX, mouseY), List.copyOf(states));
+            if (this.maximizeModifierHeld() && this.canMaximize(window)) for (var state : states) {
+                if (state.control() != DesktopWindowControl.CLOSE) continue;
+                var b = state.bounds();
+                int row = state.pressed() ? 2 : state.hovered() ? 1 : 0;
+                blitRegion(graphics, WINDOW_CONTROLS_TEXTURE, b.x(), b.y(), 12 * CONTROL_SIZE, row * CONTROL_SIZE,
+                    b.width(), b.height(), CONTROL_SIZE, CONTROL_SIZE, CONTROL_TEXTURE_WIDTH, CONTROL_TEXTURE_HEIGHT);
+            }
         } catch (RuntimeException failure) {
             com.salts_inventory_update.api.integration.DesktopDiagnostics.report(
                 com.salts_inventory_update.api.integration.DesktopDiagnostics.Level.ERROR,
@@ -2063,7 +2071,10 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         switch (action) {
             case MOVE, RESIZE -> { return false; }
             case FOCUS -> { return this.apiWindowHandle(window).focus(); }
-            case USER_CLOSE -> this.closeWindow(window, "api-user-close");
+            case USER_CLOSE -> {
+                if (this.maximizeModifierHeld() && this.canMaximize(window)) this.maximize(window);
+                else this.closeWindow(window, "api-user-close");
+            }
             case MANAGEMENT_MENU -> this.activateControl(window, WindowControl.ELLIPSIS);
 
 
@@ -2188,6 +2199,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
     }
 
     public static void reset(Minecraft minecraft) {
+        NativeContainerView.reset(minecraft);
         if (singleton == null) {
             return;
         }
@@ -2965,6 +2977,39 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             || this.apiWantsTextInput();
     }
 
+    boolean hasTopTabWindows() { return this.hasInteractiveWindows(); }
+
+    private boolean canMaximize(InventoryWindow window) {
+        return !window.apiDisposed && (window.session != null || window.legacyMenu != null
+            || window.kind == WindowKind.INVENTORY || window.kind == WindowKind.CHARACTER);
+    }
+
+    private boolean maximizeModifierHeld() {
+        if (this.minecraft == null) return false;
+        var mapping = this.minecraft.options.keyShift;
+        var binding = com.salts_inventory_update.platform.fabric.api.client.keybinding.v1.KeyBindingHelper.getBoundKeyOf(mapping);
+        if (!com.salts_inventory_update.platform.fabric.api.client.keybinding.v1.KeyBindingHelper.isKeyModifierActive(mapping)) return false;
+        if (binding.getType() == InputConstants.Type.MOUSE)
+            return org.lwjgl.glfw.GLFW.glfwGetMouseButton(this.minecraft.getWindow().getWindow(), binding.getValue()) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+        return InputConstants.isKeyDown(this.minecraft.getWindow().getWindow(), binding.getValue());
+    }
+
+    private void maximize(InventoryWindow window) {
+        AbstractContainerMenu menu = window.kind == WindowKind.INVENTORY || window.kind == WindowKind.CHARACTER
+            ? this.playerMenu() : window.containerMenu();
+        if (menu == null || this.minecraft == null) return;
+        try {
+            var nativeScreen = NativeContainerView.create(this.minecraft, menu, window.title, window.session);
+            if (nativeScreen == null) return;
+            this.clearTransientInteractionState("maximize");
+            this.syncSharedCarriedToMenus();
+            NativeContainerView.open(this.minecraft, this, nativeScreen,
+                this.apiContext(window, null, Integer.MIN_VALUE, Integer.MIN_VALUE));
+        } catch (RuntimeException failure) {
+            DesktopDebug.warn("Native container view could not open: {}", failure.toString());
+        }
+    }
+
     @Override
     public void removed() {
         for (var window : List.copyOf(this.windows)) for (var attachment : window.builtinAttachments)
@@ -3097,7 +3142,6 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             this.clearControlTooltipHover();
         }
         this.renderDebugOverlay(graphics, uiMouseX, uiMouseY);
-        InventoryKeyHoldController.extractOverlay(this.minecraft, graphics);
     }
 
 
@@ -8725,7 +8769,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             case SORT_WINDOWS -> this.sortIntoOpenWindows(window);
             case SORT_INVENTORY -> this.sortInsideWindow(window);
             case CLOSE -> {
-                this.closeWindow(window, "control-close");
+                if (this.maximizeModifierHeld() && this.canMaximize(window)) this.maximize(window);
+                else this.closeWindow(window, "control-close");
             }
 
             case FOCUS -> {
@@ -9219,6 +9264,15 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             }
 
             this.renderSurfaceControls(graphics, window, mouseX, mouseY);
+            // Native decorations (including AE2) paint their header last. Keep
+            // the modifier's Maximize icon above that native content as well.
+            if (saltDecoration && window.apiDecoration != null && this.maximizeModifierHeld() && this.canMaximize(window)) {
+                graphics.nextStratum();
+                for (ControlRect rect : titleLayout.controls()) {
+                    if (rect.control() == WindowControl.CLOSE)
+                        this.renderControlButton(graphics, window, rect.control(), rect.x(), rect.y(), mouseX, mouseY);
+                }
+            }
             if (saltDecoration && window.apiDecoration == null) {
                 this.renderResizeGrip(graphics, window, mouseX, mouseY);
             }
@@ -10120,7 +10174,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             case SORT_INVENTORY -> INVENTORY_SORT_CONTROL_TEXTURE_COLUMN;
             case FOCUS -> 0;
 
-            case CLOSE -> 2;
+            case CLOSE -> this.maximizeModifierHeld() && this.canMaximize(window) ? 12 : 2;
             case ELLIPSIS -> 3;
             case LINK -> LINK_CONTROL_TEXTURE_COLUMN;
             case LOCK -> window.locked ? 5 : 4;
@@ -18391,7 +18445,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
         graphics.fill(x, y, x + SLOT_ITEM_SIZE, y + SLOT_ITEM_SIZE, 0x80FFFFFF);
     }
 
-    private static void blitRegion(
+    static void blitRegion(
         GuiGraphicsExtractor graphics,
         ResourceLocation texture,
         int x,
@@ -18765,7 +18819,8 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
                 InstructionsLine.control(WindowControl.ELLIPSIS, "More Controls: find buttons that do not fit on the title bar."))
         ));
         private static final InstructionsPage MORE_BUTTONS = new InstructionsPage(InstructionsIcon.MORE_BUTTONS, "More window buttons", List.of(
-            InstructionsSection.binds("Title bar or More Controls", InstructionsLine.control(WindowControl.LINK, "Link: click this, then a highlighted window, to open and close them together."), InstructionsLine.control(WindowControl.CLOSE, "Close: close this window and any linked windows.")),
+            InstructionsSection.binds("Title bar or More Controls", InstructionsLine.control(WindowControl.LINK, "Link: click this, then a highlighted window, to open and close them together."), InstructionsLine.control(WindowControl.CLOSE, "Close: close this window and any linked windows. Hold the quick-move modifier to maximize a container in its original UI.")),
+            InstructionsSection.text("Top screen tab", "Hover at the top center to reveal Close All. In the original container UI, use Return or tap Inventory to restore your windows. Hold Inventory in either view to close the workspace."),
             InstructionsSection.text("Mounted storage",
                 "While riding a chest boat or another inventory entity, its window and your inventory open and close together.")
         ));
@@ -18819,7 +18874,7 @@ public final class InventoryDesktopScreen extends Screen implements MenuAccess {
             InstructionsSection.text("Saved positions", "Pin keeps a window at its saved position.")
         ));
         private static final InstructionsPage SETTINGS_BEHAVIOR = new InstructionsPage(InstructionsIcon.SETTINGS_BEHAVIOR, "Settings: behavior", List.of(
-            InstructionsSection.text("Opening and closing", "Persistent Windows: hide on Esc or by holding your Inventory binding, then restore on the next opening; hold Esc to close all.", "Open Inventory When Containers Are Opened: show inventory alongside visible containers.", "Inventory Hold Close-All Time: set the hold duration; the prompt appears after one quarter of it.")
+            InstructionsSection.text("Opening and closing", "Persistent Windows: hide on Esc, then restore on the next opening. Close All or holding Inventory closes the workspace.", "Open Inventory When Containers Are Opened: show inventory alongside visible containers.", "Inventory Hold Close-All Time: set the hold duration; the top tab shows progress after one quarter of it.")
         ));
         private static final InstructionsPage SETTINGS_ADVANCED = new InstructionsPage(InstructionsIcon.SETTINGS_ADVANCED, "Settings: compatibility", List.of(
             InstructionsSection.text("Modded menus",
